@@ -169,7 +169,7 @@ disp(fall2.p1)
 
 %%
 % Both Damon's and my filter estimation functions have a free parameter, _r_, the regularisation factor. The following plots show how the error, the filter sum, and the filter height vary with varying the free parameter _r_. The point in red indicates the value of _r_ finally chosen for the best filter. Note that for the Chichilnisky filter, the slope is very close to 1. For very little regularisation, the slope is exactly 1.
-PlotFilterDiagnostics(diagnostics);
+PlotFilterDiagnostics(diagnostics,marker_size,marker_size2,font_size);
 
 
 %% Analysis of Linear Prediction - Which input predicts output better?
@@ -192,7 +192,7 @@ legend Chichilnisky Damon
 
 %%
 % As before, we can look at how changing _r_ changes the valve shape.
-PlotFilterDiagnostics(diagnostics_valve);
+PlotFilterDiagnostics(diagnostics_valve,marker_size,marker_size2,font_size);
 
 %%
 % Using the filter calculated using Damon's code, we make a new prediction of the firing rate of the ORN. In the figure below, the data is shown in blue, the linear prediction from the PID is shown again in red, and the linear prediction from the Valve is shown in black. 
@@ -399,7 +399,7 @@ title('Filter: PID > gain','FontSize',20)
 %%
 % Once again, we can vary the free parameter to see how to best choose a filter. 
 
-PlotFilterDiagnostics(diagnostics_gain);
+PlotFilterDiagnostics(diagnostics_gain,marker_size,marker_size2,font_size);
 
 %%
 % From this filter and the stimulus, we can estimate the instantaneous gain (where the instantaneous gain is defined to be the ratio of the actual firing rate to the linear predicted firing rate)
@@ -437,7 +437,7 @@ disp(sqrt(sum(((fp(filter_length+2:end)-f(filter_length+2:end)).^2)))*mean(diff(
 % No matter what I do, I can't get use a linear filter to predict the gain well from the stimulus. 
 
 %%
-% The autocorrelation function of the gain shows that it is very tightly constrained, almost as much as the valve, and much less than the PID, which we are trying to use to predict it.
+% The autocorrelation function of the gain shows that it is very tightly constrained, almost as much as the valve, and much less than the PID, which we are trying to use to predict it. 
 cf = xcorr(f(filter_length+2:end)-mean(f)); cf=cf/max(cf);
 cp = xcorr(PID(filter_length+2:end)-mean(PID)); cp=cp/max(cp);
 cv = xcorr(Valve(filter_length+2:end)-0.5); cv=cv/max(cv);

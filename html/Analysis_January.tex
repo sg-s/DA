@@ -134,10 +134,7 @@ The line is a best fit to all the data. The slope of the best fit line to Damon'
 
 \end{verbatim} \color{black}
     \begin{par}
-Note that for the Chichilnisky filter, the slope is very close to 1. For very little regularisation, the slope is exactly 1.
-\end{par} \vspace{1em}
-\begin{par}
-Both Damon's and my filter estimation functions have a free parameter, \textit{r}, the regularisation factor. The following plots show how the error, the filter sum, and the filter height vary with varying the free parameter \textit{r}. The point in red indicates the value of \textit{r} finally chosen for the best filter.
+Both Damon's and my filter estimation functions have a free parameter, \textit{r}, the regularisation factor. The following plots show how the error, the filter sum, and the filter height vary with varying the free parameter \textit{r}. The point in red indicates the value of \textit{r} finally chosen for the best filter. Note that for the Chichilnisky filter, the slope is very close to 1. For very little regularisation, the slope is exactly 1.
 \end{par} \vspace{1em}
 
 \includegraphics [width=\textwidth]{Analysis_January_05.pdf}
@@ -154,10 +151,15 @@ First, we recalculate a new filter from the valve control signal and the ORN fir
 
 \includegraphics [width=\textwidth]{Analysis_January_06.pdf}
 \begin{par}
-Using the filter calculated using Damon's code, we make a new prediction of the firing rate of the ORN. In the figure below, the data is shown in blue, the linear prediction from the PID is shown again in red, and the linear prediction from the Valve is shown in black.
+As before, we can look at how changing \textit{r} changes the valve shape.
 \end{par} \vspace{1em}
 
 \includegraphics [width=\textwidth]{Analysis_January_07.pdf}
+\begin{par}
+Using the filter calculated using Damon's code, we make a new prediction of the firing rate of the ORN. In the figure below, the data is shown in blue, the linear prediction from the PID is shown again in red, and the linear prediction from the Valve is shown in black.
+\end{par} \vspace{1em}
+
+\includegraphics [width=\textwidth]{Analysis_January_08.pdf}
 \begin{par}
 The quality of the prediction is measured using the Root-mean-square error, calculated as:
 \end{par} \vspace{1em}
@@ -189,17 +191,17 @@ How does the response of the ORN differ for high and low stimuli? Specifically, 
 To look at this, we calculate the mean average stimulus over some window history length for every time point t, for various different window history lengths. The effect of this operation is shown in the figure below, where the legend refers to the history window in ms.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_08.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_09.pdf}
 \begin{par}
 Now, we separate neuron responses at times when the mean average stimulus is in the lowest 10\% or the highest 10\%. These points are marked either green (lowest 10\%) or red (or highest 10\%) in the figures below, while all the data is plotted in grey. Lines are fit to each of these clouds of points, and the slopes (representing the instantaneous gain) is calculated from these lines. The \textit{y} axis is the actual firing rate, while the \textit{x} axis is the predicted firing rate.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_09.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_10.pdf}
 \begin{par}
 The following plot shows how the slope of the lines of best fit, or the instantaneous gains, varies with the history length. The plot on the right shows the goodness of fit for each fit, indicating the regions where the fit is meaningful.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_10.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_11.pdf}
 
 
 \subsection*{Analysis of Linear Prediction - Filter Variation}
@@ -215,7 +217,7 @@ We have segmented the entire data set based on when the stimulus, averaged in so
 There is a mismatch between the linear prediction and the actual firing rate. Moreover, the instantaneous gain seems to be modulated by something that depends on the past history of the stimulus. Here, in the figure below, the instantaneous gain, i.e., the ratio of the actual firing rate to the predicted firing rate, is plotted along with the stimulus.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_11.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_12.pdf}
 \begin{par}
 In the above analysis, we have considered how a boxcar average over the stimulus immediately preceding the current time affects gain. Now, we want to find some optimal way of averaging the past stimulus history to predict the instantaneous gain: by doing so, we can then predict instantaneous gain, and thus get a better predictor of the actual firing rate.
 \end{par} \vspace{1em}
@@ -229,22 +231,22 @@ $$ K_g=C\setminus(s'*g) $$
 where \textit{g} is the instantaneous gain and \textit{s} is the stimulus.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_12.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_13.pdf}
 \begin{par}
 Once again, we can vary the free parameter to see how to best choose a filter.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_13.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_14.pdf}
 \begin{par}
 From this filter and the stimulus, we can estimate the instantaneous gain (where the instantaneous gain is defined to be the ratio of the actual firing rate to the linear predicted firing rate)
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_14.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_15.pdf}
 \begin{par}
 Using this estimate, we can then correct the linear prediction of the firing rate.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_15.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_16.pdf}
 \begin{par}
 Is the gain-corrected prediction any better than the linear prediction? The mean error of the gain-corrected prediction is
 \end{par} \vspace{1em}
@@ -262,6 +264,11 @@ while the mean error of the simple linear prediction is
     \begin{par}
 No matter what I do, I can't get use a linear filter to predict the gain well from the stimulus.
 \end{par} \vspace{1em}
+\begin{par}
+The autocorrelation function of the gain shows that it is very tightly constrained, almost as much as the valve, and much less than the PID, which we are trying to use to predict it.
+\end{par} \vspace{1em}
+
+\includegraphics [width=\textwidth]{Analysis_January_17.pdf}
 
 
 \subsection*{Summary/Problems}

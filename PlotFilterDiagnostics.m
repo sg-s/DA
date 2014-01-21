@@ -1,4 +1,4 @@
-function [] = PlotFilterDiagnostics(diagnostics)
+function [] = PlotFilterDiagnostics(diagnostics,marker_size,marker_size2,font_size)
 bf = diagnostics.C.bestfilter;
 figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
 subplot(2,4,1), hold on

@@ -168,10 +168,7 @@ disp(fall2.p1)
 
 
 %%
-% Note that for the Chichilnisky filter, the slope is very close to 1. For very little regularisation, the slope is exactly 1.
-
-%%
-% Both Damon's and my filter estimation functions have a free parameter, _r_, the regularisation factor. The following plots show how the error, the filter sum, and the filter height vary with varying the free parameter _r_. The point in red indicates the value of _r_ finally chosen for the best filter. 
+% Both Damon's and my filter estimation functions have a free parameter, _r_, the regularisation factor. The following plots show how the error, the filter sum, and the filter height vary with varying the free parameter _r_. The point in red indicates the value of _r_ finally chosen for the best filter. Note that for the Chichilnisky filter, the slope is very close to 1. For very little regularisation, the slope is exactly 1.
 PlotFilterDiagnostics(diagnostics);
 
 
@@ -192,6 +189,10 @@ xlabel('Lag (s)','FontSize',20)
 ylabel('Filter Amplitude (Hz)','FontSize',font_size)
 title('Filter: Valve->ORN','FontSize',20)
 legend Chichilnisky Damon
+
+%%
+% As before, we can look at how changing _r_ changes the valve shape.
+PlotFilterDiagnostics(diagnostics_valve);
 
 %%
 % Using the filter calculated using Damon's code, we make a new prediction of the firing rate of the ORN. In the figure below, the data is shown in blue, the linear prediction from the PID is shown again in red, and the linear prediction from the Valve is shown in black. 

@@ -436,6 +436,32 @@ disp(sqrt(sum(((fp(filter_length+2:end)-f(filter_length+2:end)).^2)))*mean(diff(
 %%
 % No matter what I do, I can't get use a linear filter to predict the gain well from the stimulus. 
 
+%%
+% The autocorrelation function of the gain shows that it is very tightly constrained, almost as much as the valve, and much less than the PID, which we are trying to use to predict it.
+cf = xcorr(f(filter_length+2:end)-mean(f)); cf=cf/max(cf);
+cp = xcorr(PID(filter_length+2:end)-mean(PID)); cp=cp/max(cp);
+cv = xcorr(Valve(filter_length+2:end)-0.5); cv=cv/max(cv);
+cg = xcorr(gain(filter_length+2:end)-mean(gain(filter_length+2:end))); cg=cg/max(cg);
+cn2 = xcorr(randn(1,length(f(filter_length+2:end)))); cn2 = cn2/max(cn2);
+ctime =  mean(diff(time)):mean(diff(time)):length(cf)*mean(diff(time)); 
+ctime = ctime - mean(ctime);
+figure('outerposition',[10 10 850 400],'PaperUnits','points','PaperSize',[850 400]); hold on
+subplot(1,2,1), hold on
+plot(ctime,cf,'b','LineWidth',2)
+plot(ctime,cp,'r','LineWidth',2)
+plot(ctime,cv,'g','LineWidth',2)
+plot(ctime,cg,'k','LineWidth',2)
+set(gca,'box','on','XLim',[-0.5 0.5],'FontSize',font_size,'LineWidth',2,'YLim',[0 1.5])
+xlabel('Time (s)','FontSize',font_size)
+ylabel('Normalised autocorrelation','FontSize',font_size)
+legend ORN PID Valve Gain 
+subplot(1,2,2), hold on
+plot(ctime,cn2,'r','LineWidth',2)
+set(gca,'box','on','XLim',[-0.5 0.5],'FontSize',font_size,'LineWidth',2,'YLim',[0 1.5])
+xlabel('Time (s)','FontSize',font_size)
+legend GaussianNoise
+
+
 
 %% Summary/Problems
 %

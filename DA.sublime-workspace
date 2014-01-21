@@ -1,0 +1,968 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"filter",
+				"filter_sum"
+			],
+			[
+				"Chich",
+				"Chichilnisky"
+			],
+			[
+				"mark",
+				"marker_size"
+			],
+			[
+				"Chci",
+				"Chichlinsky's"
+			],
+			[
+				"diag",
+				"diagnostics"
+			],
+			[
+				"filter_",
+				"filter_length"
+			],
+			[
+				"Fit",
+				"FitFilter2Data"
+			],
+			[
+				"shif",
+				"shift_input"
+			],
+			[
+				"Line",
+				"LineWidth"
+			],
+			[
+				"LNFit",
+				"LNFitQualityLow"
+			],
+			[
+				"high",
+				"high_slopes"
+			],
+			[
+				"Slope",
+				"SlopeRatios"
+			],
+			[
+				"output",
+				"output_data"
+			],
+			[
+				"summ",
+				"summ_fig"
+			],
+			[
+				"model",
+				"model_values"
+			],
+			[
+				"histo",
+				"history_lengths"
+			],
+			[
+				"low_s",
+				"low_slopes_err"
+			],
+			[
+				"Shelf",
+				"ShelfFilesList"
+			],
+			[
+				"XTick",
+				"XTickLabel"
+			],
+			[
+				"Odour",
+				"OdourDuration"
+			],
+			[
+				"File",
+				"FileName2GenoDate"
+			],
+			[
+				"V",
+				"Valve"
+			],
+			[
+				"Th",
+				"Thrusto"
+			],
+			[
+				"Cluster",
+				"ClusterDataButton"
+			],
+			[
+				"Thru",
+				"Thrustc"
+			],
+			[
+				"Thr",
+				"Thrusto"
+			],
+			[
+				"THR",
+				"Thrusto"
+			],
+			[
+				"WB",
+				"WBFc"
+			],
+			[
+				"WBF",
+				"WBFo"
+			],
+			[
+				"Tri",
+				"TrialVariabilityCallback"
+			],
+			[
+				"font-",
+				"font-weight"
+			],
+			[
+				"background",
+				"background	background: color image repeat attachment position"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "Analysis_January.m",
+			"settings":
+			{
+				"buffer_size": 29024,
+				"line_ending": "Unix",
+				"name": "%% Dynamical Adaptation in ORNs"
+			}
+		},
+		{
+			"file": "FindBestFilter.m",
+			"settings":
+			{
+				"buffer_size": 3192,
+				"line_ending": "Unix",
+				"name": "function [K Kdamon] = FindBestFilter(PID,f,filter_"
+			}
+		},
+		{
+			"file": "FitFilter2Data.m",
+			"settings":
+			{
+				"buffer_size": 2190,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "Back_out_1dfilter_new.m",
+			"settings":
+			{
+				"buffer_size": 1721,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "build_LNmodel_optreg.m",
+			"settings":
+			{
+				"buffer_size": 1521,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "build_LNmodel_reg.m",
+			"settings":
+			{
+				"buffer_size": 7586,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "srinivas_latex.xsl",
+			"settings":
+			{
+				"buffer_size": 8063,
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "",
+	"command_palette":
+	{
+		"height": 287.0,
+		"selected_items":
+		[
+			[
+				"Package Control: ",
+				"Package Control: List Packages"
+			],
+			[
+				"disab",
+				"Package Control: Disable Package"
+			],
+			[
+				"disable",
+				"Package Control: Disable Package"
+			],
+			[
+				"packa",
+				"Package Control: Disable Package"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"save",
+				"File: Save All"
+			],
+			[
+				"newfile",
+				"File: New View into File"
+			],
+			[
+				"sidebar",
+				"View: Toggle Side Bar"
+			],
+			[
+				"syntax js",
+				"Set Syntax: JavaScript"
+			],
+			[
+				"syntax matlb",
+				"Set Syntax: MATLAB"
+			],
+			[
+				"Package Control: Install",
+				"Package Control: Install Package"
+			],
+			[
+				"disp",
+				"Snippet: disp"
+			],
+			[
+				"error",
+				"Snippet: error"
+			],
+			[
+				"Snippet: error",
+				"Snippet: error"
+			]
+		],
+		"width": 449.0
+	},
+	"console":
+	{
+		"height": 125.0
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/Users/sigbhu/Dropbox/code/DA/srinivas_latex.xsl",
+		"/Users/sigbhu/Dropbox/code/DA/AnalyseLinearPrediction.m",
+		"/Library/WebServer/Documents/wiki/LocalSettings.php",
+		"/WebServer/Documents/wiki/LocalSettings.php",
+		"/Users/sigbhu/file",
+		"/Users/sigbhu/Dropbox/code/DA/srinivas.xsl",
+		"/Users/sigbhu/Dropbox/code/DA/Back_out_1dfilter_new.m",
+		"/Users/sigbhu/Dropbox/code/DA/analysis_old_data.m",
+		"/Users/sigbhu/Library/Application Support/Sublime Text 2/Packages/User/Preferences.sublime-settings",
+		"/Users/sigbhu/Dropbox/code/DA/temp.m",
+		"/Users/sigbhu/Dropbox/code/DA/2012_05_23_analysis_old_data.m",
+		"/Users/sigbhu/Dropbox/code/DA/FitFilter2Data.m",
+		"/Users/sigbhu/Dropbox/code/DA/publish2.m",
+		"/Users/sigbhu/Dropbox/code/DA/AnalyseAllData.m",
+		"/Users/sigbhu/Dropbox/code/DA/test.m",
+		"/Users/sigbhu/Dropbox/code/DA/build_LNmodel_reg.m",
+		"/Users/sigbhu/Dropbox/code/DA/build_LNmodel_optreg.m",
+		"/Users/sigbhu/Dropbox/code/DA/build_LNmodel_allvalues.m",
+		"/Users/sigbhu/Dropbox/code/DA/PrepData2.m",
+		"/Users/sigbhu/Dropbox/code/DA/PrepData.m",
+		"/Users/sigbhu/Dropbox/code/DA/bin_traces.m",
+		"/Users/sigbhu/Dropbox/code/DA/DA_integrate.m",
+		"/Users/sigbhu/Dropbox/code/DA/File_S1.m",
+		"/Users/sigbhu/Dropbox/code/DA/errorbar_cazzo.m",
+		"/Users/sigbhu/Dropbox/code/DA/DA_integrate_euler.m",
+		"/Users/sigbhu/Dropbox/code/DA/DA_cost_function.m",
+		"/Users/sigbhu/Dropbox/code/DA/DA_integrate_tubro.m",
+		"/Users/sigbhu/Dropbox/code/DA/DA_cost_function_dummy.m",
+		"/Users/sigbhu/Dropbox/code/DA/File_S2.m",
+		"/Users/sigbhu/Dropbox/code/code.todo",
+		"/Users/sigbhu/Dropbox/code/tracking/Track2.m",
+		"/Users/sigbhu/Dropbox/code/bash/wfmount.sh",
+		"/Users/sigbhu/Dropbox/code/bash/.newton",
+		"/.newton",
+		"/RSSBlackList.txt",
+		"/Users/sigbhu/Dropbox/code/b/FileName2GenoDate.m",
+		"/Users/sigbhu/Dropbox/code/b/TFAViewer2.m",
+		"/Users/sigbhu/Dropbox/code/b/PlotTFAResponses3.m",
+		"/Users/sigbhu/Dropbox/code/core/TrialPlot.m",
+		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/98bf81be-fb5d-403c-ae0a-9b72c407caf0/emonet.biology.yale.edu/pages/people.html",
+		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/98bf81be-fb5d-403c-ae0a-9b72c407caf0/emonet.biology.yale.edu/nfsim/download/index.php",
+		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/98bf81be-fb5d-403c-ae0a-9b72c407caf0/emonet.biology.yale.edu/nfsim/download/processRegistration.php",
+		"/Users/sigbhu/.ssh/known_hosts",
+		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/98bf81be-fb5d-403c-ae0a-9b72c407caf0/emonet.biology.yale.edu/pages/publications.html",
+		"/Users/sigbhu/Dropbox/code/zoidberg/make_fig_15_metrics.m",
+		"/Users/sigbhu/Dropbox/code/b/PlotTFAResponses2.m",
+		"/Users/sigbhu/Dropbox/code/b/PlotTrialVariability.m",
+		"/Users/sigbhu/Dropbox/code/b/AnalyseAirspeedsMultiPuffs.m",
+		"/Users/sigbhu/Dropbox/code/b/PlotDoseResponses.m",
+		"/Users/sigbhu/Dropbox/code/b/PlotTFATurns.m",
+		"/Users/sigbhu/Dropbox/code/b/PlotTFAPIDAirspeeds.m",
+		"/Users/sigbhu/Dropbox/code/b/Convert2v2.m",
+		"/Users/sigbhu/Dropbox/code/b/PlotPIDResponse.m",
+		"/Users/sigbhu/Dropbox/code/core/FrameGrabM/FrameGrabM_0_8/Readme.txt",
+		"/Users/sigbhu/Dropbox/code/b/AnalysePIDMultiPuffs3.m",
+		"/Users/sigbhu/Dropbox/code/core/oval.m",
+		"/Users/sigbhu/Dropbox/code/b/AnalysePIDMultiPuffs.m",
+		"/Users/sigbhu/Dropbox/code/b/AnalysePIDMultiPuffs2.m",
+		"/Users/sigbhu/Library/Application Support/Sublime Text 2/Packages/Default/Preferences.sublime-settings",
+		"/Users/sigbhu/Dropbox/code/b/AnalyseTrialTrends.m",
+		"/Users/sigbhu/Library/Application Support/Sublime Text 2/Packages/User/Snippets/matlab_snippets/plot(ts,linespec).sublime-snippet",
+		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/98bf81be-fb5d-403c-ae0a-9b72c407caf0/emonet.biology.yale.edu/index.html",
+		"/Users/sigbhu/Library/Application Support/Sublime Text 2/Packages/Default/Default (OSX).sublime-keymap",
+		"/Users/sigbhu/Library/Application Support/Sublime Text 2/Packages/User/Matlab.sublime-settings",
+		"/Users/sigbhu/Downloads/soda-theme-master/Soda Dark.sublime-theme",
+		"/Users/sigbhu/Library/Application Support/Sublime Text 2/Packages/User/JSON.sublime-settings",
+		"/Users/sigbhu/Dropbox/code/b/PlotTFAResponses.m",
+		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/98bf81be-fb5d-403c-ae0a-9b72c407caf0/emonet.biology.yale.edu/pages/resources.html",
+		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/98bf81be-fb5d-403c-ae0a-9b72c407caf0/biology.yale.edu/index.html",
+		"/Users/sigbhu/.ssh/id_rsa.pub",
+		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/85b5b59a-4356-47dc-8aa5-5b910dd73d40/seldon/2/index.html",
+		"/web/seldon/3/index.html",
+		"/web/seldon/3/css/base.css",
+		"/Users/sigbhu/Desktop/Untitled.html",
+		"/Users/sigbhu/Desktop/Untitled.webarchive",
+		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/85b5b59a-4356-47dc-8aa5-5b910dd73d40/index.html",
+		"/web/seldon/1/index.html",
+		"/web/seldon/1/css/skeleton.css",
+		"/web/seldon/1/css/layout.css",
+		"/web/seldon/1/css/docs.css",
+		"/web/seldon/1/css/base.css",
+		"/web/seldon/2/index.html",
+		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/85b5b59a-4356-47dc-8aa5-5b910dd73d40/seldon/1/index.html",
+		"/web/seldon/index.html",
+		"/web/seldon/2/css/base.css",
+		"/Users/sigbhu/Desktop/My Notes/1: Introduction.html",
+		"/Users/sigbhu/Dropbox/lobster_draft/data/STGDataExplorer.m",
+		"/Users/sigbhu/Dropbox/code/orn-analysis/spikesort_7_19_a.m",
+		"/Users/sigbhu/Dropbox/code/zoidberg/STG.m",
+		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/98bf81be-fb5d-403c-ae0a-9b72c407caf0/emonet.biology.yale.edu/nfsim/pages/feedback.php",
+		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/98bf81be-fb5d-403c-ae0a-9b72c407caf0/emonet.biology.yale.edu/nfsim/index.html",
+		"/labweb/pages/people.html",
+		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/98bf81be-fb5d-403c-ae0a-9b72c407caf0/emonet.biology.yale.edu/pages/contact.html",
+		"/private/etc/hosts",
+		"/Users/sigbhu/Desktop/feedback.php",
+		"/Users/sigbhu/Desktop/processRegistration.php",
+		"/Users/sigbhu/Desktop/index.php",
+		"/Users/sigbhu/Desktop/index.html",
+		"/labweb/pages/contact.html",
+		"/Users/sigbhu/Desktop/Daring Fireball: Email.html",
+		"/Users/sigbhu/Dropbox/lobster_draft/data/ZoidbergExplorer.m",
+		"/Users/sigbhu/Dropbox/code/zoidberg/RecomputePyloricityCodes.m",
+		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/85b5b59a-4356-47dc-8aa5-5b910dd73d40/essays/books/index.html",
+		"/Users/sigbhu/Desktop/My Notes/5: Brace for the coming Food Riots.html",
+		"/web/seldon/books/index.html",
+		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/98bf81be-fb5d-403c-ae0a-9b72c407caf0/emonetnew.biology.yale.edu/nfsim/index.html",
+		"/labweb/pages/software.html",
+		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/85b5b59a-4356-47dc-8aa5-5b910dd73d40/b/css.css",
+		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/85b5b59a-4356-47dc-8aa5-5b910dd73d40/articles/children-of-men/index.html",
+		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/85b5b59a-4356-47dc-8aa5-5b910dd73d40/articles/books/index.html",
+		"/web/articles/children-of-men/css/base.css",
+		"/web/articles/children-of-men/index.html",
+		"/web/articles/books/index.html",
+		"/web/articles/books/css/base.css",
+		"/web/articles/books/css/skeleton.css",
+		"/web/articles/books/css/docs.css",
+		"/web/articles/books/css/layout.css",
+		"/labweb/pages/publications.html",
+		"/web/in-development/article-template/001-books.html",
+		"/web/essays/books/index.html",
+		"/web/in-development/article-template/css/docs.css",
+		"/web/in-development/css/template.css",
+		"/web/in-development/css/article-css.css",
+		"/Users/sigbhu/Dropbox/code/b/AnalyseOdourResponse.m",
+		"/Users/sigbhu/Dropbox/code/core/AnalyseWingBeatSignal.m",
+		"/Users/sigbhu/Dropbox/code/zoidberg/MakeValidationFigures.m",
+		"/Users/sigbhu/Desktop/er/index.html",
+		"/Users/sigbhu/Dropbox/code/orn-analysis/spikesort.m"
+	],
+	"find":
+	{
+		"height": 35.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+			"AnalyseLinearPrediction.m",
+			"FitFilter2Data.m",
+			"FitFitler2Data.m"
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"FitFilter2Data",
+			"search algo",
+			"gain = ",
+			"gain",
+			"return",
+			"fp",
+			"FindBestFilter",
+			"fit",
+			"filter_length+1",
+			"STA",
+			"title",
+			"STA",
+			"filter(Kdamon",
+			"fpd =",
+			"fp=",
+			"Kdamon",
+			"[350 350]",
+			"[0 0 500 500]",
+			"[500 500]",
+			"'outerposition',[700 700]",
+			"'outerposition',[1000 700]",
+			"figure, hold on",
+			"latex",
+			"ylabel",
+			"disp",
+			"gain",
+			"filter",
+			"k",
+			"MakerFaceColor",
+			"MarkerSize",
+			"fit",
+			"fir",
+			"thisfp",
+			"hl",
+			"history_lengths",
+			"memory",
+			"f",
+			"a",
+			"lambda_i",
+			"fitfun",
+			"figon",
+			"stim",
+			"memory",
+			"a_notnormalised",
+			"D",
+			"v",
+			"fp1",
+			"fitfun",
+			"D_final",
+			"hist",
+			"past_window",
+			"marker_size",
+			"scatter",
+			"15",
+			"fsd",
+			"reg_vec",
+			"response",
+			"f",
+			"files",
+			"33",
+			"35",
+			"time",
+			"collision",
+			"stats",
+			"nfig",
+			"figure",
+			"Turns",
+			"Thrust",
+			"Thrusts",
+			"allfiles",
+			"sem",
+			"line",
+			"equalise",
+			"figure",
+			"thesetrials",
+			"thesetrials =",
+			"thesetrials",
+			"TrialPlot",
+			"plottrials",
+			"plotthis",
+			"plot",
+			"/dt",
+			"3",
+			"title",
+			"odour",
+			"FileName",
+			"title",
+			"FileName2",
+			"plot(",
+			"sublime",
+			"plot",
+			"TrialPlot",
+			"gca",
+			"a",
+			"a(3)",
+			"TrialPlot",
+			"subplot",
+			"mx",
+			"dt",
+			"title",
+			"wbfylim",
+			"thrustylim",
+			"wbfylim",
+			"TrialPlot",
+			"Trial",
+			"fly",
+			"fit",
+			"Airspeed",
+			"Maximum",
+			"Airspeed",
+			"'b'",
+			"TrialPlot",
+			"'b'",
+			"fit",
+			"'k'",
+			"function",
+			"sx",
+			"disp",
+			"YLim",
+			"data.raw",
+			"keyboard",
+			"tue",
+			"mon",
+			"GenotypeID",
+			"FoundFilesList",
+			"GenotypeID",
+			"sebas",
+			"TrialPlot"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			"filter_length+2",
+			"[800 350]",
+			"[0 0 350 350]",
+			"[350 350]",
+			"'outerposition',[10 10 1000 700]",
+			"fp",
+			"filter_length",
+			"response",
+			"thisfp",
+			"history_lengths",
+			"marker_size",
+			"rs",
+			"reg",
+			"f",
+			"response",
+			"31",
+			"33",
+			"t",
+			"PID",
+			"",
+			"s2",
+			"s3",
+			"PY",
+			"LP",
+			"AB"
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 6,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "Analysis_January.m",
+					"settings":
+					{
+						"buffer_size": 29024,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3617,
+								3617
+							]
+						],
+						"settings":
+						{
+							"auto_name": "%% Dynamical Adaptation in ORNs",
+							"syntax": "Packages/Matlab/Matlab.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 1222.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "FindBestFilter.m",
+					"settings":
+					{
+						"buffer_size": 3192,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								679,
+								693
+							]
+						],
+						"settings":
+						{
+							"auto_name": "function [K Kdamon] = FindBestFilter(PID,f,filter_",
+							"syntax": "Packages/Matlab/Matlab.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 221.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "FitFilter2Data.m",
+					"settings":
+					{
+						"buffer_size": 2190,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								972,
+								972
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Matlab/Matlab.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 601.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "Back_out_1dfilter_new.m",
+					"settings":
+					{
+						"buffer_size": 1721,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								594,
+								594
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Matlab/Matlab.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "build_LNmodel_optreg.m",
+					"settings":
+					{
+						"buffer_size": 1521,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Matlab/Matlab.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 176.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "build_LNmodel_reg.m",
+					"settings":
+					{
+						"buffer_size": 7586,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Matlab/Matlab.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 304.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "srinivas_latex.xsl",
+					"settings":
+					{
+						"buffer_size": 8063,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								693,
+								693
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/XML/XSL.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 36.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"replace":
+	{
+		"height": 64.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+			[
+				"build_lnmodel_optreg",
+				"build_LNmodel_optreg.m"
+			],
+			[
+				"pre",
+				"PrepData2.m"
+			],
+			[
+				"prep",
+				"PrepData2.m"
+			],
+			[
+				"all",
+				"build_LNmodel_allvalues.m"
+			],
+			[
+				"build_lnmodel_reg",
+				"build_LNmodel_reg.m"
+			],
+			[
+				"build_lnmodel_allvalues",
+				"build_LNmodel_allvalues.m"
+			],
+			[
+				"bin",
+				"bin_traces.m"
+			],
+			[
+				"",
+				"DA_integrate_tubro.m"
+			],
+			[
+				"trial",
+				"core/TrialPlot.m"
+			],
+			[
+				"filenam",
+				"b/FileName2GenoDate.m"
+			],
+			[
+				"plot",
+				"b/PlotTFAResponses2.m"
+			],
+			[
+				"plottfa",
+				"b/PlotTFAResponses2.m"
+			],
+			[
+				"conver",
+				"b/Convert2v2.m"
+			],
+			[
+				"pid",
+				"b/PlotTFAPIDAirspeeds.m"
+			],
+			[
+				"tria",
+				"core/TrialPlot.m"
+			],
+			[
+				"tuns",
+				"b/PlotTFATurns.m"
+			],
+			[
+				"plotdose",
+				"b/PlotDoseResponses.m"
+			],
+			[
+				"file",
+				"b/FileName2GenoDate.m"
+			],
+			[
+				"oval",
+				"core/oval.m"
+			],
+			[
+				"anlysepi",
+				"b/AnalysePIDMultiPuffs.m"
+			],
+			[
+				"analysepid",
+				"b/AnalysePIDMultiPuffs3.m"
+			],
+			[
+				"analyseair",
+				"b/AnalyseAirspeedsMultiPuffs.m"
+			],
+			[
+				"plotres2",
+				"b/PlotTFAResponses2.m"
+			],
+			[
+				"plottr",
+				"PlotTrialVariability.m"
+			],
+			[
+				"plotdos",
+				"PlotDoseResponses.m"
+			],
+			[
+				"tfa",
+				"TFAViewer2.m"
+			],
+			[
+				"plottf",
+				"PlotTFAResponses2.m"
+			],
+			[
+				"plottri",
+				"PlotTrialVariability.m"
+			],
+			[
+				"error",
+				"/Users/sigbhu/Dropbox/code/b/PlotDoseResponses.m"
+			]
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 215.0,
+	"status_bar_visible": true
+}

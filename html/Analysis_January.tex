@@ -77,7 +77,7 @@ $$ C*K=s'*f $$
 where C is
 \end{par} \vspace{1em}
 \begin{par}
-$$ C=Cov(s)+\frac{rI}{1+r} $$
+$$ C=\mathrm{Cov}(s)+\frac{rI}{1+r} $$
 \end{par} \vspace{1em}
 \begin{par}
 where \textit{I} is the identity matrix and \textit{r} is a free parameter called the regularisation factor that suppresses the high-frequency components of \textit{K}. \textit{s} is the stimulus vector (e.g. the PID) and \textit{f} is the response vector (here, the firing rate of the ORN). In practice, \textit{K} is estimated by a left matrix division:
@@ -123,7 +123,7 @@ For a linear filter calculated from the data, a plot of the actual response to t
 The line is a best fit to all the data. The slope of the best fit line to Chichilnisky's fit is:
 \end{par} \vspace{1em}
 
-        \color{lightgray} \begin{verbatim}    1.0038
+        \color{lightgray} \begin{verbatim}    0.9804
 
 \end{verbatim} \color{black}
     \begin{par}
@@ -170,7 +170,7 @@ $$ \triangle t*\sqrt[]{\Sigma \left(f-f_{p}\right)^{2}} $$
 The error in the prediction from the PID, per unit time is:
 \end{par} \vspace{1em}
 
-        \color{lightgray} \begin{verbatim}    1.3014
+        \color{lightgray} \begin{verbatim}    1.3089
 
 \end{verbatim} \color{black}
     \begin{par}
@@ -251,14 +251,14 @@ Using this estimate, we can then correct the linear prediction of the firing rat
 Is the gain-corrected prediction any better than the linear prediction? The mean error of the gain-corrected prediction is
 \end{par} \vspace{1em}
 
-        \color{lightgray} \begin{verbatim}    1.4087
+        \color{lightgray} \begin{verbatim}    1.4535
 
 \end{verbatim} \color{black}
     \begin{par}
 while the mean error of the simple linear prediction is
 \end{par} \vspace{1em}
 
-        \color{lightgray} \begin{verbatim}    1.3014
+        \color{lightgray} \begin{verbatim}    1.3089
 
 \end{verbatim} \color{black}
     \begin{par}

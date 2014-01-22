@@ -63,7 +63,7 @@ ylabel('Firing Rate (Hz)')
 %
 % where C is 
 %
-% $$ C=Cov(s)+\frac{rI}{1+r} $$
+% $$ C=\mathrm{Cov}(s)+\frac{rI}{1+r} $$
 % 
 % where _I_ is the identity matrix and _r_ is a free parameter called the regularisation factor that suppresses the high-frequency components of _K_. _s_ is the stimulus vector (e.g. the PID) and _f_ is the response vector (here, the firing rate of the ORN). In practice, _K_ is estimated by a left matrix division:
 %

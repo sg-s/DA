@@ -17,14 +17,15 @@
 % OnlyThesePoints:  vector that contains matrix coordinates of points in time that you want to 
 %                   restrict filter computation on. max(OnlyThesePoints) must be < 
 %                   length(stim)-filter_length
-% regtype:			1: addition of r I to the covariance matrix. 2: addition of rI/(1+r)
+% regtype:			1: addition of r I to the covariance matrix. 2: addition of rI/(1+r). 3: refer
+% 					to code.
 %
 % Defaults:
 % filter_length = 333;
 % reg = 50;
 % n = 1;
 % OnlyThesePoints = 1:length(stim)-filter_length; (everything)
-% regtype = 2;
+% regtype = 3;
 % 
 % Example: 
 % 
@@ -37,7 +38,7 @@ filter_length = 333;
 reg = 50;
 n = 1;
 OnlyThesePoints = 1:length(stim)-filter_length;
-regtype = 2;
+regtype = 3;
 
 % evaluate optional inputs
 for i = 1:nargin-2
@@ -75,9 +76,13 @@ end
 
 switch regtype 
 	case 1
-		C = s'*s + reg*eye(filter_length+1); 
+		C = s'*s + reg*eye(filter_length+1); % Carlotta's reg.
 	case 2
-		C = s'*s + reg*eye(filter_length+1)/(1+reg);  % Damon's suggestion, match power to original
+		C = s'*s + reg*eye(filter_length+1)/(1+reg);  % my modification
+	case 3
+		C = s'*s; % Damon's reg
+		C = (C + reg*eye(filter_length+1))*trace(C)/(trace(C) + reg*filter_length);
+
 end
    
 K = C\(s'*response);

@@ -1,149 +1,158 @@
 % FindBestFilter.m
 % created by Srinivas Gorur-Shandilya at 17:31 , 15 January 2014. Contact me at http://srinivas.gs/contact/
 % finds the best filter, searching through the space of the free parameter in my and damon's filter estimation functions
-function [K Kdamon diagnostics] = FindBestFilter(stim,response,filter_length,CRange,DRange)
+function [K diagnostics] = FindBestFilter(stim,response,filter_length,Range,regtype,aglo)
 
 if nargin < 4
 	regmax = 1e3;
 	regmin = 1e-5;
  
 else
-	regmax = CRange(2);
-	regmin = CRange(1);
+	regmax = Range(2);
+	regmin = Range(1);
 end
 
-%% Chichilnisky's method. 
-nsteps = 20;
-ss = (log(regmax)-log(regmin))/nsteps;
-reg = log(regmin):ss:log(regmax);
-reg = exp(reg);
-if length(reg) > nsteps
-	reg(end) = [];
+if nargin < 6
+	algo = 1;
 end
- 
-err = NaN(1,nsteps);
-filter_height = NaN(1,nsteps);
-filter_sum = NaN(1,nsteps);
-slope = NaN(1,nsteps);
 
-
-
-for i = 1:nsteps
-	% find the filter
-	flstr = strcat('filter_length=',mat2str(filter_length),';');
-	regstr = strcat('reg=',mat2str(reg(i)),';');
-	K = FitFilter2Data(stim,response,flstr,regstr);
-
-	% make the prediction 
-	fp = filter(K,1,stim-mean(stim)) + mean(response);
-
-	if size(fp,1) ~= 1
-		fp = fp';
+if algo == 1
+	%% Chichilnisky's method. 
+	nsteps = 20;
+	ss = (log(regmax)-log(regmin))/nsteps;
+	reg = log(regmin):ss:log(regmax);
+	reg = exp(reg);
+	if length(reg) > nsteps
+		reg(end) = [];
 	end
-	% censor initial prediction 
-	fp(1:filter_length+1) = NaN;
-
-	% find the error
-	err(i) = sqrt(sum(((fp(filter_length+2:end)-response(filter_length+2:end)).^2)));
-
-	% find other metrics
-	filter_height(i) = max(K);
-	filter_sum(i) = sum(abs(K));
-	fall= fit(fp(filter_length+2:end)',response(filter_length+2:end)','Poly1');
+	 
+	err = NaN(1,nsteps);
+	filter_height = NaN(1,nsteps);
+	filter_sum = NaN(1,nsteps);
+	slope = NaN(1,nsteps);
+	mcond = NaN(1,nsteps);
 
 
-	slope(i) = fall.p1;
-	
+	for i = 1:nsteps
+		% find the filter
+		flstr = strcat('filter_length=',mat2str(filter_length),';');
+		regstr = strcat('reg=',mat2str(reg(i)),';');
+		if nargin < 5
+			regtype = 'regtype=2;';
+		end
+		[K C] = FitFilter2Data(stim,response,flstr,regstr,regtype);
 
-end
+		% make the prediction 
+		fp = filter(K,1,stim-mean(stim)) + mean(response);
 
-% save to diagnositics
-diagnostics.C.reg = reg;
-diagnostics.C.err = err;
-diagnostics.C.slope = slope;
-diagnostics.C.filter_sum = filter_sum;
-diagnostics.C.filter_height = filter_height;
+		if size(fp,1) ~= 1
+			fp = fp';
+		end
+		% censor initial prediction 
+		fp(1:filter_length+1) = NaN;
 
-% pick a filter so that the error, the sum and slope are as close as possible to best values.
-err = (err - min(err))/min(err);
-filter_sum = (filter_sum - min(filter_sum))/min(filter_sum);
-slope = abs(1-slope);
-[~,id]=min(max([filter_sum;err;slope]));
+		% find the error--in r square
+		% err(i) = sqrt(sum(((fp(filter_length+2:end)-response(filter_length+2:end)).^2)));
+		err(i) = rsquare(fp(filter_length+2:end),response(filter_length+2:end));
 
-% and recalculate the filter
-flstr = strcat('filter_length=',mat2str(filter_length),';');
-regstr = strcat('reg=',mat2str(reg(id)),';');
-K = FitFilter2Data(stim,response,flstr,regstr);
-diagnostics.C.bestfilter = id;
+		% find other metrics
+		filter_height(i) = max(K);
 
-if nargout == 1
-	% no need to calculate Damon's filter
-	return
-end
+		% filter_sum(i) = sum(abs(K));
+		filter_sum(i) = sum(abs(diff(K)));
+		fall= fit(fp(filter_length+2:end)',response(filter_length+2:end)','Poly1');
 
-
-if nargin < 5
-	regmax = 1;
-	regmin = 1e-7;
- 
-else
-	regmax = CRange(2);
-	regmin = CRange(1);
-end
-
-
-%% Damon's code
-nsteps = 20; 
-ss = (log(regmax)-log(regmin))/nsteps;
-reg = log(regmin):ss:log(regmax);
-reg = exp(reg);
-if length(reg) > nsteps
-	reg(end) = [];
-end
- 
-
-err = NaN(1,nsteps);
-filter_height = NaN(1,nsteps);
-filter_sum = NaN(1,nsteps);
-slope = NaN(1,nsteps);
-
-for i = 1:nsteps
-	% find the filter
-	[Kdamon, ~, fp] = Back_out_1dfilter_new(stim,response,filter_length,reg(i));
-
-	% correct the prediction 
-	fp = fp+mean(response);
-
-	% censor initial prediction 
-	fp(1:filter_length+1) = NaN;
-
-	% find the error
-	err(i) = sqrt(sum((fp(filter_length+2:end) - response(filter_length+2:end)).^2 ));
-
-	% find other metrics
-	filter_height(i) = max(Kdamon);
-	filter_sum(i) = sum(abs(Kdamon));
-	[fall ~] = fit(fp(filter_length+2:end)',response(filter_length+2:end)','Poly1');
-	slope(i) = fall.p1;
-
-
+		mcond(i) = cond(C);
+		slope(i) = fall.p1;
 		
 
+	end
+
+	% save to diagnositics
+	diagnostics.reg = reg;
+	diagnostics.mcond = mcond;
+	diagnostics.err = err;
+	diagnostics.slope = slope;
+	diagnostics.filter_sum = filter_sum;
+	diagnostics.filter_height = filter_height;
+
+	% picking the best filter
+	if min(filter_sum) < filter_sum(1) && min(filter_sum) < filter_sum(end)
+		% there is a minimum. just pick it
+		[~,id]=min(filter_sum);
+	else
+		% pick a filter so that the error, the sum and slope are as close as possible to best values.
+		err = abs(err - 1);
+		filter_sum = (filter_sum - min(filter_sum))/min(filter_sum);
+		slope = abs(1-slope);
+		filter_sum = filter_sum/max(filter_sum);
+		slope = slope/max(slope);
+		[~,id]=min(max([filter_sum;err;slope]));
+	end
+
+
+	% and recalculate the filter
+	flstr = strcat('filter_length=',mat2str(filter_length),';');
+	regstr = strcat('reg=',mat2str(reg(id)),';');
+	if nargin < 6
+		regtype = 'regtype=2;';
+	end
+	K = FitFilter2Data(stim,response,flstr,regstr,regtype);
+	diagnostics.bestfilter = id;
+
+else
+
+
+	%% Damon's code
+	nsteps = 20; 
+	ss = (log(regmax)-log(regmin))/nsteps;
+	reg = log(regmin):ss:log(regmax);
+	reg = exp(reg);
+	if length(reg) > nsteps
+		reg(end) = [];
+	end
+	 
+
+	err = NaN(1,nsteps);
+	filter_height = NaN(1,nsteps);
+	filter_sum = NaN(1,nsteps);
+	slope = NaN(1,nsteps);
+
+	for i = 1:nsteps
+		% find the filter
+		[Kdamon, ~, fp] = Back_out_1dfilter_new(stim,response,filter_length,reg(i));
+
+		% correct the prediction 
+		fp = fp+mean(response);
+
+		% censor initial prediction 
+		fp(1:filter_length+1) = NaN;
+
+		% find the error
+		err(i) = sqrt(sum((fp(filter_length+2:end) - response(filter_length+2:end)).^2 ));
+
+		% find other metrics
+		filter_height(i) = max(Kdamon);
+		filter_sum(i) = sum(abs(Kdamon));
+		[fall ~] = fit(fp(filter_length+2:end)',response(filter_length+2:end)','Poly1');
+		slope(i) = fall.p1;
+
+	end
+
+	% log values to diagnostics
+	diagnostics.reg = reg;
+	diagnostics.err = err;
+	diagnostics.slope = slope;
+	diagnostics.filter_sum = filter_sum;
+	diagnostics.filter_height = filter_height;
+
+	% pick a filter so that the error, the sum and slope are as close as possible to best values.
+	err = (err - min(err))/min(err);
+	filter_sum = (filter_sum - min(filter_sum))/min(filter_sum);
+	slope = abs(1-slope);
+	[~,id]=min(max([filter_sum;err;slope]));
+
+	% and recalculate the filter
+	K = Back_out_1dfilter_new(stim,response,filter_length,reg(id));
+	diagnostics.bestfilter = id;
 end
-
-% log values to diagnostics
-diagnostics.D.reg = reg;
-diagnostics.D.err = err;
-diagnostics.D.slope = slope;
-diagnostics.D.filter_sum = filter_sum;
-diagnostics.D.filter_height = filter_height;
-
-% pick a filter so that the error, the sum and slope are as close as possible to best values.
-err = (err - min(err))/min(err);
-filter_sum = (filter_sum - min(filter_sum))/min(filter_sum);
-slope = abs(1-slope);
-[~,id]=min(max([filter_sum;err;slope]));
-
-% and recalculate the filter
-Kdamon = Back_out_1dfilter_new(stim,response,filter_length,reg(id));
-diagnostics.D.bestfilter = id;

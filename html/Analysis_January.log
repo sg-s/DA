@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.3-1.40.12 (TeX Live 2011) (format=pdflatex 2011.7.3)  22 JAN 2014 12:13
+This is pdfTeX, Version 3.1415926-2.3-1.40.12 (TeX Live 2011) (format=pdflatex 2011.7.3)  22 JAN 2014 18:18
 entering extended mode
  \write18 enabled.
  file:line:error style messages enabled.
@@ -240,7 +240,7 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <5> on input line 74.
 
 [2 <./Analysis_January_01.pdf>]
-<Analysis_January_02.pdf, id=22, 803.0pt x 351.3125pt>
+<Analysis_January_02.pdf, id=23, 803.0pt x 351.3125pt>
 File: Analysis_January_02.pdf Graphic file (type pdf)
 
 <use Analysis_January_02.pdf>
@@ -251,7 +251,7 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 107--108
 [][] 
  []
 
-<Analysis_January_03.pdf, id=23, 803.0pt x 501.875pt>
+<Analysis_January_03.pdf, id=24, 803.0pt x 501.875pt>
 File: Analysis_January_03.pdf Graphic file (type pdf)
 
 <use Analysis_January_03.pdf>
@@ -449,7 +449,7 @@ t/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2011/texmf-dist
 /fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2011/texmf-dist/f
 onts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texlive/2011/texmf-dist/fo
 nts/type1/public/amsfonts/cm/cmtt10.pfb>
-Output written on Analysis_January.pdf (14 pages, 4587457 bytes).
+Output written on Analysis_January.pdf (14 pages, 4586205 bytes).
 PDF statistics:
  180 PDF objects out of 1000 (max. 8388607)
  133 compressed objects within 2 object streams

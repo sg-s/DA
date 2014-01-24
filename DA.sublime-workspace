@@ -4,8 +4,20 @@
 		"selected_items":
 		[
 			[
+				"diag",
+				"diagnostics2"
+			],
+			[
 				"filter",
-				"filter_sum"
+				"filter_length"
+			],
+			[
+				"marker",
+				"marker_size2"
+			],
+			[
+				"filter_",
+				"filter_length"
 			],
 			[
 				"Chich",
@@ -18,14 +30,6 @@
 			[
 				"Chci",
 				"Chichlinsky's"
-			],
-			[
-				"diag",
-				"diagnostics"
-			],
-			[
-				"filter_",
-				"filter_length"
 			],
 			[
 				"Fit",
@@ -139,7 +143,7 @@
 			"file": "Analysis_January.m",
 			"settings":
 			{
-				"buffer_size": 29024,
+				"buffer_size": 22764,
 				"line_ending": "Unix",
 				"name": "%% Dynamical Adaptation in ORNs"
 			}
@@ -148,7 +152,7 @@
 			"file": "FindBestFilter.m",
 			"settings":
 			{
-				"buffer_size": 3192,
+				"buffer_size": 4077,
 				"line_ending": "Unix",
 				"name": "function [K Kdamon] = FindBestFilter(PID,f,filter_"
 			}
@@ -157,39 +161,24 @@
 			"file": "FitFilter2Data.m",
 			"settings":
 			{
-				"buffer_size": 2190,
+				"buffer_size": 2822,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "Back_out_1dfilter_new.m",
+			"file": "FilterEstimation.m",
 			"settings":
 			{
-				"buffer_size": 1721,
-				"line_ending": "Windows"
+				"buffer_size": 10966,
+				"line_ending": "Unix",
+				"name": "%% Filter Estimation"
 			}
 		},
 		{
-			"file": "build_LNmodel_optreg.m",
+			"file": "PlotFilterDiagnostics2.m",
 			"settings":
 			{
-				"buffer_size": 1521,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "build_LNmodel_reg.m",
-			"settings":
-			{
-				"buffer_size": 7586,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "srinivas_latex.xsl",
-			"settings":
-			{
-				"buffer_size": 8063,
+				"buffer_size": 2331,
 				"line_ending": "Unix"
 			}
 		}
@@ -274,13 +263,21 @@
 	},
 	"file_history":
 	[
+		"/Users/sigbhu/Dropbox/code/DA/PlotFilterDiagnostics.m",
+		"/Users/sigbhu/Dropbox/code/DA/larsen.m",
+		"/Users/sigbhu/Dropbox/code/DA/elasticnet.m",
+		"/Users/sigbhu/Dropbox/code/DA/build_LNmodel_reg.m",
+		"/Users/sigbhu/Dropbox/code/DA/build_LNmodel_optreg.m",
+		"/Users/sigbhu/Dropbox/code/DA/Back_out_1dfilter_new.m",
+		"/Users/sigbhu/Dropbox/code/DA/Analysis_January_unused.m",
+		"/Volumes/emonetlab/home/PAST/carlotta_martelli/laptop_backup/Documents/MATLAB/my_MATLAB/spasm/elasticnet.m",
+		"/Users/sigbhu/Dropbox/code/DA/SlopeProblem.m",
 		"/Users/sigbhu/Dropbox/code/DA/srinivas_latex.xsl",
 		"/Users/sigbhu/Dropbox/code/DA/AnalyseLinearPrediction.m",
 		"/Library/WebServer/Documents/wiki/LocalSettings.php",
 		"/WebServer/Documents/wiki/LocalSettings.php",
 		"/Users/sigbhu/file",
 		"/Users/sigbhu/Dropbox/code/DA/srinivas.xsl",
-		"/Users/sigbhu/Dropbox/code/DA/Back_out_1dfilter_new.m",
 		"/Users/sigbhu/Dropbox/code/DA/analysis_old_data.m",
 		"/Users/sigbhu/Library/Application Support/Sublime Text 2/Packages/User/Preferences.sublime-settings",
 		"/Users/sigbhu/Dropbox/code/DA/temp.m",
@@ -289,8 +286,6 @@
 		"/Users/sigbhu/Dropbox/code/DA/publish2.m",
 		"/Users/sigbhu/Dropbox/code/DA/AnalyseAllData.m",
 		"/Users/sigbhu/Dropbox/code/DA/test.m",
-		"/Users/sigbhu/Dropbox/code/DA/build_LNmodel_reg.m",
-		"/Users/sigbhu/Dropbox/code/DA/build_LNmodel_optreg.m",
 		"/Users/sigbhu/Dropbox/code/DA/build_LNmodel_allvalues.m",
 		"/Users/sigbhu/Dropbox/code/DA/PrepData2.m",
 		"/Users/sigbhu/Dropbox/code/DA/PrepData.m",
@@ -395,13 +390,7 @@
 		"/web/in-development/article-template/001-books.html",
 		"/web/essays/books/index.html",
 		"/web/in-development/article-template/css/docs.css",
-		"/web/in-development/css/template.css",
-		"/web/in-development/css/article-css.css",
-		"/Users/sigbhu/Dropbox/code/b/AnalyseOdourResponse.m",
-		"/Users/sigbhu/Dropbox/code/core/AnalyseWingBeatSignal.m",
-		"/Users/sigbhu/Dropbox/code/zoidberg/MakeValidationFigures.m",
-		"/Users/sigbhu/Desktop/er/index.html",
-		"/Users/sigbhu/Dropbox/code/orn-analysis/spikesort.m"
+		"/web/in-development/css/template.css"
 	],
 	"find":
 	{
@@ -422,6 +411,21 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"fit",
+			"plot(time,",
+			"S is the",
+			"diagnostics.C.",
+			"FindBest",
+			"marker_size",
+			"PLotFil",
+			"fall",
+			"Slope of fp/f",
+			"= fit",
+			"[fall",
+			"gain",
+			"diagnostics_gain",
+			"diagnostics_fake",
+			"FindBestFil",
 			"FitFilter2Data",
 			"search algo",
 			"gain = ",
@@ -534,22 +538,7 @@
 			"Airspeed",
 			"'b'",
 			"TrialPlot",
-			"'b'",
-			"fit",
-			"'k'",
-			"function",
-			"sx",
-			"disp",
-			"YLim",
-			"data.raw",
-			"keyboard",
-			"tue",
-			"mon",
-			"GenotypeID",
-			"FoundFilesList",
-			"GenotypeID",
-			"sebas",
-			"TrialPlot"
+			"'b'"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -557,6 +546,10 @@
 		"regex": false,
 		"replace_history":
 		[
+			"diagnostics.",
+			"Gain",
+			"diagnostics_fake",
+			"diagnostics_gain",
 			"filter_length+2",
 			"[800 350]",
 			"[0 0 350 350]",
@@ -592,7 +585,7 @@
 	"groups":
 	[
 		{
-			"selected": 6,
+			"selected": 0,
 			"sheets":
 			[
 				{
@@ -600,15 +593,15 @@
 					"file": "Analysis_January.m",
 					"settings":
 					{
-						"buffer_size": 29024,
+						"buffer_size": 22764,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								3617,
-								3617
+								7326,
+								7329
 							]
 						],
 						"settings":
@@ -618,7 +611,7 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 1222.0,
+						"translation.y": 2765.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
@@ -628,24 +621,25 @@
 					"file": "FindBestFilter.m",
 					"settings":
 					{
-						"buffer_size": 3192,
+						"buffer_size": 4077,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								679,
-								693
+								2059,
+								2059
 							]
 						],
 						"settings":
 						{
 							"auto_name": "function [K Kdamon] = FindBestFilter(PID,f,filter_",
-							"syntax": "Packages/Matlab/Matlab.tmLanguage"
+							"syntax": "Packages/Matlab/Matlab.tmLanguage",
+							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 221.0,
+						"translation.y": 1138.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
@@ -655,132 +649,74 @@
 					"file": "FitFilter2Data.m",
 					"settings":
 					{
-						"buffer_size": 2190,
+						"buffer_size": 2822,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								972,
-								972
+								2707,
+								2782
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Matlab/Matlab.tmLanguage"
+							"syntax": "Packages/Matlab/Matlab.tmLanguage",
+							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 601.0,
+						"translation.y": 1043.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
 					"buffer": 3,
-					"file": "Back_out_1dfilter_new.m",
+					"file": "FilterEstimation.m",
 					"settings":
 					{
-						"buffer_size": 1721,
+						"buffer_size": 10966,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								594,
-								594
+								2007,
+								2010
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Matlab/Matlab.tmLanguage",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
+							"auto_name": "%% Filter Estimation",
+							"syntax": "Packages/Matlab/Matlab.tmLanguage"
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 674.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
 					"buffer": 4,
-					"file": "build_LNmodel_optreg.m",
+					"file": "PlotFilterDiagnostics2.m",
 					"settings":
 					{
-						"buffer_size": 1521,
+						"buffer_size": 2331,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								0,
-								0
+								511,
+								511
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Matlab/Matlab.tmLanguage",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 176.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				},
-				{
-					"buffer": 5,
-					"file": "build_LNmodel_reg.m",
-					"settings":
-					{
-						"buffer_size": 7586,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								0,
-								0
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Matlab/Matlab.tmLanguage",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true
-						},
-						"translation.x": 0.0,
-						"translation.y": 304.0,
-						"zoom_level": 1.0
-					},
-					"type": "text"
-				},
-				{
-					"buffer": 6,
-					"file": "srinivas_latex.xsl",
-					"settings":
-					{
-						"buffer_size": 8063,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								693,
-								693
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/XML/XSL.tmLanguage",
-							"tab_size": 2,
-							"translate_tabs_to_spaces": true
+							"syntax": "Packages/Matlab/Matlab.tmLanguage"
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,

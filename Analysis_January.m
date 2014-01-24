@@ -51,7 +51,7 @@ ylabel('Firing Rate (Hz)')
 % The odour used, the neuron recorded from and the correlation time of the flickering stimulus are in the file name displayed above the plot.
 
 %% Filter Extraction 
-% Now, we extract a simple linear filter from the stimulus such that a convolution with the input (stimulus) gives the output (ORN firing rate). 
+% Details about the filter extraction, regularisation methods, and validation with synthetic and real data is listed in (FilterExtraction.pdf). Now, we extract a simple linear filter from the stimulus such that a convolution with the input (stimulus) gives the output (ORN firing rate). 
 
 %%
 % The filter is calculated using Chichilnisky's method. The only modification I have used is to regularise the matrix before inversion. The code is based on what Carlotta uses, and I have re-written it for clarity and modified the regularisation step.
@@ -63,7 +63,7 @@ ylabel('Firing Rate (Hz)')
 %
 % where C is 
 %
-% $$ C=\mathrm{Cov}(s)+\frac{rI}{1+r} $$
+% $$ C=s^{T}*s+\frac{rI}{1+r} $$
 % 
 % where _I_ is the identity matrix and _r_ is a free parameter called the regularisation factor that suppresses the high-frequency components of _K_. _s_ is the stimulus vector (e.g. the PID) and _f_ is the response vector (here, the firing rate of the ORN). In practice, _K_ is estimated by a left matrix division:
 %
@@ -91,6 +91,7 @@ if crop_traces
 	f = f(1:end-shift_input+1);
 	fs = fs(1:end-shift_input+1);
 end
+
 
 % compute filter
 filter_length = 333;
@@ -198,7 +199,7 @@ PlotFilterDiagnostics(diagnostics_valve,marker_size,marker_size2,font_size);
 % Using the filter calculated using Damon's code, we make a new prediction of the firing rate of the ORN. In the figure below, the data is shown in blue, the linear prediction from the PID is shown again in red, and the linear prediction from the Valve is shown in black. 
 
 figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-fp2 = filter(K2damon,1,Valve-mean(Valve)) + mean(f);
+fp2 = filter(K2,1,Valve-mean(Valve)) + mean(f);
 fp2(1:filter_length+1) = NaN;
 plot(time,f,'LineWidth',2)
 plot(time,fp,'r','LineWidth',2)

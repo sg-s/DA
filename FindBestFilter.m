@@ -3,8 +3,12 @@
 % finds the best filter, searching through the space of the free parameter in my and damon's filter estimation functions
 function [K diagnostics] = FindBestFilter(stim,response,filter_length,Range,regtype,aglo)
 
+% ensure inputs OK
+stim = stim(:);
+response = response(:);
+
 if nargin < 4
-	regmax = 1e3;
+	regmax = 100;
 	regmin = 1e-5;
  
 else
@@ -45,9 +49,6 @@ if algo == 1
 		% make the prediction 
 		fp = filter(K,1,stim-mean(stim)) + mean(response);
 
-		if size(fp,1) ~= 1
-			fp = fp';
-		end
 		% censor initial prediction 
 		fp(1:filter_length+1) = NaN;
 
@@ -60,7 +61,7 @@ if algo == 1
 
 		% filter_sum(i) = sum(abs(K));
 		filter_sum(i) = sum(abs(diff(K)));
-		fall= fit(fp(filter_length+2:end)',response(filter_length+2:end)','Poly1');
+		fall= fit(fp(filter_length+2:end),response(filter_length+2:end),'Poly1');
 
 		mcond(i) = cond(C);
 		slope(i) = fall.p1;

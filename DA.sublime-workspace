@@ -4,6 +4,14 @@
 		"selected_items":
 		[
 			[
+				"filter_le",
+				"filter_length+2:end"
+			],
+			[
+				"these",
+				"thesepoints"
+			],
+			[
 				"diag",
 				"diagnostics2"
 			],
@@ -143,16 +151,25 @@
 			"file": "Analysis_January.m",
 			"settings":
 			{
-				"buffer_size": 22764,
+				"buffer_size": 28460,
 				"line_ending": "Unix",
 				"name": "%% Dynamical Adaptation in ORNs"
+			}
+		},
+		{
+			"file": "/Users/sigbhu/Dropbox/code/core/multiplot.m",
+			"settings":
+			{
+				"buffer_size": 2263,
+				"line_ending": "Unix",
+				"name": "function [] = multiplot(varargin)"
 			}
 		},
 		{
 			"file": "FindBestFilter.m",
 			"settings":
 			{
-				"buffer_size": 4077,
+				"buffer_size": 4095,
 				"line_ending": "Unix",
 				"name": "function [K Kdamon] = FindBestFilter(PID,f,filter_"
 			}
@@ -263,6 +280,7 @@
 	},
 	"file_history":
 	[
+		"/Users/sigbhu/Dropbox/code/core/mean2.m",
 		"/Users/sigbhu/Dropbox/code/DA/PlotFilterDiagnostics.m",
 		"/Users/sigbhu/Dropbox/code/DA/larsen.m",
 		"/Users/sigbhu/Dropbox/code/DA/elasticnet.m",
@@ -389,8 +407,7 @@
 		"/labweb/pages/publications.html",
 		"/web/in-development/article-template/001-books.html",
 		"/web/essays/books/index.html",
-		"/web/in-development/article-template/css/docs.css",
-		"/web/in-development/css/template.css"
+		"/web/in-development/article-template/css/docs.css"
 	],
 	"find":
 	{
@@ -401,6 +418,7 @@
 		"height": 0.0,
 		"where_history":
 		[
+			"AnalyseLinearPrediction.m,/Users/sigbhu/Dropbox/code/DA",
 			"AnalyseLinearPrediction.m",
 			"FitFilter2Data.m",
 			"FitFitler2Data.m"
@@ -411,6 +429,9 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"gain",
+			"r-s",
+			"r-square",
 			"fit",
 			"plot(time,",
 			"S is the",
@@ -535,10 +556,7 @@
 			"fit",
 			"Airspeed",
 			"Maximum",
-			"Airspeed",
-			"'b'",
-			"TrialPlot",
-			"'b'"
+			"Airspeed"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -593,15 +611,15 @@
 					"file": "Analysis_January.m",
 					"settings":
 					{
-						"buffer_size": 22764,
+						"buffer_size": 28460,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								7326,
-								7329
+								19263,
+								19263
 							]
 						],
 						"settings":
@@ -611,25 +629,53 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 2765.0,
+						"translation.y": 7738.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
 					"buffer": 1,
-					"file": "FindBestFilter.m",
+					"file": "/Users/sigbhu/Dropbox/code/core/multiplot.m",
 					"settings":
 					{
-						"buffer_size": 4077,
+						"buffer_size": 2263,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								2059,
-								2059
+								1336,
+								1336
+							]
+						],
+						"settings":
+						{
+							"auto_name": "function [] = multiplot(varargin)",
+							"syntax": "Packages/Matlab/Matlab.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 541.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "FindBestFilter.m",
+					"settings":
+					{
+						"buffer_size": 4095,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2083,
+								2085
 							]
 						],
 						"settings":
@@ -639,13 +685,13 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 1138.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
-					"buffer": 2,
+					"buffer": 3,
 					"file": "FitFilter2Data.m",
 					"settings":
 					{
@@ -656,8 +702,8 @@
 						"selection":
 						[
 							[
-								2707,
-								2782
+								2332,
+								2332
 							]
 						],
 						"settings":
@@ -666,13 +712,13 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 1043.0,
+						"translation.y": 1008.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
-					"buffer": 3,
+					"buffer": 4,
 					"file": "FilterEstimation.m",
 					"settings":
 					{
@@ -683,8 +729,8 @@
 						"selection":
 						[
 							[
-								2007,
-								2010
+								2886,
+								2889
 							]
 						],
 						"settings":
@@ -693,13 +739,13 @@
 							"syntax": "Packages/Matlab/Matlab.tmLanguage"
 						},
 						"translation.x": 0.0,
-						"translation.y": 674.0,
+						"translation.y": 1031.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
-					"buffer": 4,
+					"buffer": 5,
 					"file": "PlotFilterDiagnostics2.m",
 					"settings":
 					{
@@ -710,8 +756,8 @@
 						"selection":
 						[
 							[
-								511,
-								511
+								96,
+								14
 							]
 						],
 						"settings":

@@ -36,8 +36,9 @@ Do ORNs exhibit fast adaptation to a flickering stimulus? Can a simple dynamical
    \item Analysis of Linear Prediction - Response to High and Low Stimuli
    \item Analysis of Linear Prediction - Filter Variation (to be done)
    \item Analysis of Linear Prediction - Does adding another linear filter improve prediction?
-   \item Analysis of Linear Prediction -  Instantaneous Gain
-   \item Summary/Problems
+   \item Analysis of Gain: Instantaneous Gain and Fitted Gain
+   \item Analysis of Gain: Smoothed gain.
+   \item Gain Analysis - Estimating the gain
    \item Next Steps
 \end{itemize}
 
@@ -206,30 +207,49 @@ So what we are doing is simply undoing the work we did in regularising the filte
 \end{par} \vspace{1em}
 
 
-\subsection*{Analysis of Linear Prediction -  Instantaneous Gain}
+\subsection*{Analysis of Gain: Instantaneous Gain and Fitted Gain}
 
 \begin{par}
-There is a mismatch between the linear prediction and the actual firing rate. Moreover, the instantaneous gain seems to be modulated by something that depends on the past history of the stimulus. Here, in the figure below, the instantaneous gain, i.e., the ratio of the actual firing rate to the predicted firing rate, is plotted along with the stimulus.
+There is a mismatch between the linear prediction and the actual firing rate. Moreover, the instantaneous gain seems to be modulated by something that depends on the past history of the stimulus (see analysis in the previous section). We also know that we cannot predict with a simple linear filter any linear errors that the filter makes. However, there is the possibility of fitting a linear filter to the gain, which is a non-linear function of the filter output. But how do we compute this gain? Here, in the figure below, the instantaneous gain, i.e., the ratio of the actual firing rate to the predicted firing rate, is plotted along with the stimulus.
 \end{par} \vspace{1em}
 
 \includegraphics [width=\textwidth]{Analysis_January_15.pdf}
 \begin{par}
-We can also calculate the moving gain by fitting lines to the data and the prediction collected in bins of size \textit{w}. The following plots show the gain computed in this way for a few different \textit{w}. WARNING. THIS CODE IS SUPER SLOW. FITTING THOUSANDS OF LINES.
+We can also calculate the moving gain by fitting lines to the data and the prediction collected in bins of size \textit{w}. The following plots show the gain computed in this way for a few different \textit{w}. We want to do this because the raw instantaneous gain is very noisy, and predicting it from PID is hard.
 \end{par} \vspace{1em}
 
 \includegraphics [width=\textwidth]{Analysis_January_16.pdf}
 \begin{par}
-Of these different gain vectors, which fixes the prediction the best? The following vector is the r-square of prediction, corrected by the each of the gain vectors, scaled by the rsquare of the simple linear prediciton. The first number is \ensuremath{>} 1, indicating that it is an improvement over the simple linear prediction. (In fact, by definition, the first number corresponds to a perfect prediction)
+Of these different gain vectors, which fixes the prediction the best? The following plot shows the r-square values of corrected linear prediction, corrected by the gain computed in different ways (lines fit to windows of different lengths). On the y-axis is the r-square, and the x-axis is the window over which the lines are fit.  The first point has a r-square of 1, indicating a perfect fit (this is by definition, since the first point is the instantaneous gain). Note that none of the other points exceed the line, which indicates the r-square of the simple linear prediction.
 \end{par} \vspace{1em}
 
-        \color{lightgray} \begin{verbatim}    1.0780    0.0007    0.0245    0.4372    0.9184
-
-\end{verbatim} \color{black}
-    \begin{par}
-Note that none of the scaled r-square values are \ensuremath{>} 1 for any of the fits (points \ensuremath{>} 3ms) so this method of finding the gain is not helpful in improving the prediction.
-\end{par} \vspace{1em}
+\includegraphics [width=\textwidth]{Analysis_January_17.pdf}
 \begin{par}
-In the above analysis, we have considered how a boxcar average over the stimulus immediately preceding the current time affects gain. Now, we want to find some optimal way of averaging the past stimulus history to predict the instantaneous gain: by doing so, we can then predict instantaneous gain, and thus get a better predictor of the actual firing rate.
+We conclude that this method of finding the gain is not helpful in improving the prediction.
+\end{par} \vspace{1em}
+
+
+\subsection*{Analysis of Gain: Smoothed gain.}
+
+\begin{par}
+Instead of calculating the instantaneous point-by-point gain, we can also smooth the instantaneous gain over some small window size \textit{w}. The following plot shows the effect of smoothing for a few window sizes \textit{w}.
+\end{par} \vspace{1em}
+
+\includegraphics [width=\textwidth]{Analysis_January_18.pdf}
+\begin{par}
+How does smoothing the gain affect our ability to correct the linear prediction? The following plot shows how the r-square of the corrected linear prediction varies with smoothing the gain. Also shown is the line which indicates the linear prediction of the uncorrected simple linear prediction.
+\end{par} \vspace{1em}
+
+\includegraphics [width=\textwidth]{Analysis_January_19.pdf}
+\begin{par}
+From this analysis of the gain, it is clear that if we do want to improve the linear prediction, the best way to do it (apart from the instantaneous gain, which would lead to a perfect prediction), is smoothing the gain in some way. In the next section, we will try to estimate the smoothed gain.
+\end{par} \vspace{1em}
+
+
+\subsection*{Gain Analysis - Estimating the gain}
+
+\begin{par}
+In the above analysis, we have considered how a boxcar average over the stimulus immediately preceding the current time affects gain. Now, we want to find some optimal way of averaging the past stimulus history to predict the instantaneous gain: by doing so, we can then predict gain, and thus get a better predictor of the actual firing rate.
 \end{par} \vspace{1em}
 \begin{par}
 In effect, we can calculate a new filter, $K_g$ such that
@@ -238,41 +258,23 @@ In effect, we can calculate a new filter, $K_g$ such that
 $$ K_g=\hat{C}\setminus(s'*g) $$
 \end{par} \vspace{1em}
 \begin{par}
-where \textit{g} is the instantaneous gain (the point-by-point ratio of the data to the linear prediction) and \textit{s} is the stimulus.
+where \textit{g} is the smoothed gain and \textit{s} is the stimulus.
 \end{par} \vspace{1em}
 \begin{par}
-Once again, we can look at how filter shape is affected by our choise of \textit{r} for the PID \ensuremath{>} gain prediction:
-\end{par} \vspace{1em}
-\begin{par}
-Once again, we can look at how filter shape is affected by our choise of \textit{r} for the PID \ensuremath{>} gain prediction:
-\end{par} \vspace{1em}
-\begin{par}
-From this filter and the stimulus, we can estimate the instantaneous gain (where the instantaneous gain is defined to be the ratio of the actual firing rate to the linear predicted firing rate)
-\end{par} \vspace{1em}
-\begin{par}
-Using these estimates, we can then correct the linear prediction of the firing rate.
-\end{par} \vspace{1em}
-\begin{par}
-Is the gain-corrected prediction any better than the linear prediction? The r-square of the PID gain corrected estimate is:
-\end{par} \vspace{1em}
-\begin{par}
-The r-square of the Valve gain corrected estimate is:
-\end{par} \vspace{1em}
-\begin{par}
-This is in comparison to the simple linear prediction with a r-square of:
-\end{par} \vspace{1em}
-\begin{par}
-The autocorrelation function of the gain shows that it is very tightly constrained, almost as much as the valve, and much less than the PID, which we are trying to use to predict it.
+For with various smoothing of the instantaneous gain, we find the best filter for each and plot it below:
 \end{par} \vspace{1em}
 
+\includegraphics [width=\textwidth]{Analysis_January_20.pdf}
+\begin{par}
+How well can we predict the smoothed gain vectors using these filters and the stimulus? The following plot shows the r-square between prediction of the smoothed gain and the smoothed gain for various smoothing windows.
+\end{par} \vspace{1em}
 
-\subsection*{Summary/Problems}
+\includegraphics [width=\textwidth]{Analysis_January_21.pdf}
+\begin{par}
+Well, that sucks. Maybe even this horrible estimation of the gain can improve the linear prediction of the firing rate in some way? Here, I plot the r-square of the gain-corrected linear prediction (corrected by the prediction of the gain), as a function of gain smoothing (in blue). Also plotted is the r-square of the gain-corrected linear prediction, corrected now with actual gain (in black).
+\end{par} \vspace{1em}
 
-\begin{enumerate}
-\setlength{\itemsep}{-1ex}
-   \item Best fit line of linear prediction to actual data does not have a slope of 1 for Damon's function. For synthetic data the slope of the line is indeed 1. However, in the real data set, it is not, even with no regularisation.
-   \item Prediction of gain from past stimulus is very poor. The correlation coefficient of the prediction with the instantaneous gain is \ensuremath{\tilde{\;}} 0.2. For comparison, the corr. coeff. of the firing rate prediction \ensuremath{>} 0.95.
-\end{enumerate}
+\includegraphics [width=\textwidth]{Analysis_January_22.pdf}
 
 
 \subsection*{Next Steps}

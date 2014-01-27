@@ -401,7 +401,7 @@ xlabel('Time (s)','FontSize',font_size)
 % So what we are doing is simply undoing the work we did in regularising the filter. 
 
 %% Analysis of Gain: Instantaneous Gain and Fitted Gain
-% There is a mismatch between the linear prediction and the actual firing rate. Moreover, the instantaneous gain seems to be modulated by something that depends on the past history of the stimulus. Here, in the figure below, the instantaneous gain, i.e., the ratio of the actual firing rate to the predicted firing rate, is plotted along with the stimulus. 
+% There is a mismatch between the linear prediction and the actual firing rate. Moreover, the instantaneous gain seems to be modulated by something that depends on the past history of the stimulus (see analysis in the previous section). We also know that we cannot predict with a simple linear filter any linear errors that the filter makes. However, there is the possibility of fitting a linear filter to the gain, which is a non-linear function of the filter output. But how do we compute this gain? Here, in the figure below, the instantaneous gain, i.e., the ratio of the actual firing rate to the predicted firing rate, is plotted along with the stimulus. 
 
 g = f./fp;
 figure('outerposition',[0 0 800 350],'PaperUnits','points','PaperSize',[800 350]); hold on
@@ -419,19 +419,21 @@ xlabel('Time (s)','FontSize',font_size)
 % We can also calculate the moving gain by fitting lines to the data and the prediction collected in bins of size _w_. The following plots show the gain computed in this way for a few different _w_. We want to do this because the raw instantaneous gain is very noisy, and predicting it from PID is hard. 
 
 % WARNING. THIS CODE IS SUPER SLOW. FITTING THOUSANDS OF LINES. 
+% we're going to cheat and pre-load data
 ws = [5 10 30 100];
 if ~(exist('gain') == 1)
-	gain = f./fp;
-	gain = repmat(gain,1,length(ws)+1);
-	for i = 1:length(ws)
-		disp(i)
-		starthere = filter_length+2+ws(i);
-		for j = starthere:1:length(f)
-			thesepoints = (j - ws(i)):j;
-			fitmetrics = fit(fp(thesepoints),f(thesepoints),'Poly1');
-			gain(j,i+1) = fitmetrics.p1;
-		end
-	end
+	% gain = f./fp;
+	% gain = repmat(gain,1,length(ws)+1);
+	% for i = 1:length(ws)
+	% 	disp(i)
+	% 	starthere = filter_length+2+ws(i);
+	% 	for j = starthere:1:length(f)
+	% 		thesepoints = (j - ws(i)):j;
+	% 		fitmetrics = fit(fp(thesepoints),f(thesepoints),'Poly1');
+	% 		gain(j,i+1) = fitmetrics.p1;
+	% 	end
+	% end
+	load('gain.mat')
 end
 
 ws = [1 ws];
@@ -447,7 +449,7 @@ xlabel('Time (s)','FontSize',font_size)
 ylabel('Gain (f/fp)','FontSize',font_size)
 
 %%
-% Of these different gain vectors, which fixes the prediction the best? The following vector is the r-square of prediction, corrected by the each of the gain vectors, scaled by the rsquare of the simple linear prediciton. The first number is > 1, indicating that it is an improvement over the simple linear prediction. (In fact, by definition, the first number corresponds to a perfect prediction)
+% Of these different gain vectors, which fixes the prediction the best? The following plot shows the r-square values of corrected linear prediction, corrected by the gain computed in different ways (lines fit to windows of different lengths). On the y-axis is the r-square, and the x-axis is the window over which the lines are fit.  The first point has a r-square of 1, indicating a perfect fit (this is by definition, since the first point is the instantaneous gain). Note that none of the other points exceed the line, which indicates the r-square of the simple linear prediction. 
 fpg = f;
 fpg = repmat(fpg,1,length(ws));
 for i = 1:length(ws)
@@ -458,10 +460,16 @@ rvalues = NaN(1,length(ws));
 for i = 1:length(ws)
 	rvalues(i) = rsquare(f(filter_length+2:end),fpg(filter_length+2:end,i));
 end
-disp(rvalues/(rsquare(f(filter_length+2:end),fp(filter_length+2:end))));
+
+figure('outerposition',[10 10 400 400],'PaperUnits','points','PaperSize',[1000 400]); hold on
+plot(ws*3,rvalues,'.','MarkerSize',marker_size2)
+xlabel('Window over which slope is fitted (ms)','FontSize',font_size)
+ylabel('r-square of corrected fit','FontSize',font_size)
+line([1 max(ws)*3],[rsquare(f(filter_length+2:end),fp(filter_length+2:end)) rsquare(f(filter_length+2:end),fp(filter_length+2:end))],'LineWidth',2)
+set(gca,'LineWidth',2,'FontSize',font_size)
 
 %%
-% Note that none of the scaled r-square values are > 1 for any of the fits (points > 3ms) so this method of finding the gain is not helpful in improving the prediction. 
+% We conclude that this method of finding the gain is not helpful in improving the prediction. 
 
 %% Analysis of Gain: Smoothed gain. 
 % Instead of calculating the instantaneous point-by-point gain, we can also smooth the instantaneous gain over some small window size _w_. The following plot shows the effect of smoothing for a few window sizes _w_. 
@@ -497,130 +505,99 @@ for i = 1:length(ws)
 	rvalues(i) = rsquare(f(filter_length+2:end),fpg(filter_length+2:end,i));
 end
 
-figure('outerposition',[10 10 400 400],'PaperUnits','points','PaperSize',[400 400]); hold on
-plot(ws*3,rvalues,'.')
+figure('outerposition',[10 10 400 400],'PaperUnits','points','PaperSize',[1000 400]); hold on
+plot(ws*3,rvalues,'.','MarkerSize',marker_size2)
 xlabel('Smoothing window (ms)','FontSize',font_size)
 ylabel('r-square of corrected fit','FontSize',font_size)
 line([1 max(ws)*3],[rsquare(f(filter_length+2:end),fp(filter_length+2:end)) rsquare(f(filter_length+2:end),fp(filter_length+2:end))],'LineWidth',2)
 set(gca,'LineWidth',2,'FontSize',font_size)
 
-
-
 %%
-% In the above analysis, we have considered how a boxcar average over the stimulus immediately preceding the current time affects gain. Now, we want to find some optimal way of averaging the past stimulus history to predict the instantaneous gain: by doing so, we can then predict instantaneous gain, and thus get a better predictor of the actual firing rate.
+% From this analysis of the gain, it is clear that if we do want to improve the linear prediction, the best way to do it (apart from the instantaneous gain, which would lead to a perfect prediction), is smoothing the gain in some way. In the next section, we will try to estimate the smoothed gain.
+
+%% Gain Analysis - Estimating the gain 
+% In the above analysis, we have considered how a boxcar average over the stimulus immediately preceding the current time affects gain. Now, we want to find some optimal way of averaging the past stimulus history to predict the instantaneous gain: by doing so, we can then predict gain, and thus get a better predictor of the actual firing rate.
 
 %%
 % In effect, we can calculate a new filter, $K_g$ such that 
 % 
 % $$ K_g=\hat{C}\setminus(s'*g) $$
 %
-% where _g_ is the instantaneous gain (the point-by-point ratio of the data to the linear prediction) and _s_ is the stimulus. 
+% where _g_ is the smoothed gain and _s_ is the stimulus. 
 
+%%
+% For with various smoothing of the instantaneous gain, we find the best filter for each and plot it below:
 
-if ~(exist('Kg_PID') == 1)
-	[Kg_PID ,diagnostics_gainPID] = FindBestFilter(PID(filter_length+2:end),gain(filter_length+2:end),filter_length);
+if ~(exist('Kg_smooth') == 1)
+	Kg_smooth = zeros(filter_length+1,size(gain2,2));
+	for i = 1:size(gain2,2)
+		Kg_smooth(:,i) = FindBestFilter(PID(filter_length+2:end),gain2(filter_length+2:end,i),filter_length);
+	end
+
 end
 
-if ~(exist('Kg_Valve') == 1)
-	[Kg_Valve ,diagnostics_gainv] = FindBestFilter(f(filter_length+2:end),gain(filter_length+2:end),filter_length);
+
+figure('outerposition',[10 10 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+plot(filtertime,Kg_smooth,'LineWidth',2)
+xlabel('Filter Lag','FontSize',font_size)
+ylabel('Filter Amplitude','FontSize',font_size)
+set(gca,'LineWidth',2,'FontSize',font_size,'box','on')
+legend(legendtext)
+
+%%
+% How well can we predict the smoothed gain vectors using these filters and the stimulus? The following plot shows the r-square between prediction of the smoothed gain and the smoothed gain for various smoothing windows. 
+
+gain2p = gain2;
+for i = 1:length(ws)
+	gain2p(:,i) = filter(Kg_smooth(:,i),1,PID-mean(PID)) + mean2(gain2(filter_length+2:end,i));
 end
 
-figure('outerposition',[0 0 800 400],'PaperUnits','points','PaperSize',[800 400]); hold on
-subplot(1,2,1), hold on
-plot(filtertime,Kg_PID,'LineWidth',2)
-set(gca,'box','on','LineWidth',2,'FontSize',font_size)
-xlabel('Lag (s)','FontSize',20)
-ylabel('Filter Amplitude','FontSize',font_size)
-title('Filter: PID > gain','FontSize',20)
+rvalues = NaN(1,length(ws));
+for i = 1:length(ws)
+	rvalues(i) = rsquare(gain2p(filter_length+2:end,i),gain2(filter_length+2:end,i));
+end
 
-subplot(1,2,2), hold on
-plot(filtertime,Kg_Valve,'LineWidth',2)
-set(gca,'box','on','LineWidth',2,'FontSize',font_size)
-xlabel('Lag (s)','FontSize',20)
-ylabel('Filter Amplitude','FontSize',font_size)
-title('Filter: Valve > gain','FontSize',20)
+figure('outerposition',[10 10 400 400],'PaperUnits','points','PaperSize',[1000 400]); hold on
+plot(ws*3,rvalues,'.','MarkerSize',marker_size2)
+xlabel('Smoothing window (ms)','FontSize',font_size)
+ylabel('r-square','FontSize',font_size)
+set(gca,'LineWidth',2,'FontSize',font_size)
 
 %%
-% Once again, we can look at how filter shape is affected by our choise of _r_ for the PID > gain prediction: 
-PlotFilterDiagnostics2(diagnostics_gainPID,marker_size,marker_size2,font_size,'PID > Gain');
-
-%%
-% Once again, we can look at how filter shape is affected by our choise of _r_ for the PID > gain prediction: 
-PlotFilterDiagnostics2(diagnostics_gainv,marker_size,marker_size2,font_size,'Valve > Gain');
+% Well, that sucks. Maybe even this horrible estimation of the gain can improve the linear prediction of the firing rate in some way? Here, I plot the r-square of the gain-corrected linear prediction (corrected by the prediction of the gain), as a function of gain smoothing (in blue). Also plotted is the r-square of the gain-corrected linear prediction, corrected now with actual gain (in black).
 
 
-%%
-% From this filter and the stimulus, we can estimate the instantaneous gain (where the instantaneous gain is defined to be the ratio of the actual firing rate to the linear predicted firing rate)
-gp_PID = filter(Kg_PID,1,PID - mean(PID)) + 1;
-gp_v = filter(Kg_Valve,1,f - mean(f)) + 1;
-figure('outerposition',[10 10 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
-plot(time,gain,'k','LineWidth',2)
-plot(time,gp_PID,'b','LineWidth',2)
-plot(time,gp_v,'r','LineWidth',2)
-set(gca,'XLim',[mean(time)-1 mean(time)+2],'box','on','LineWidth',2,'FontSize',18)
-xlabel('Time','FontSize',20)
-ylabel('Gain','FontSize',font_size)
-legend Gain 'PID Prediction' 'Valve Prediction'
+fpg = f;
+fpg = repmat(fpg,1,length(ws));
+for i = 1:length(ws)
+	fpg(:,i) = fp.*gain2(:,i);
+end
 
-%%
-% Using these estimates, we can then correct the linear prediction of the firing rate.
-fp_gpPID = fp.*gp_PID;
-fp_gpv = fp.*gp_v;
-figure('outerposition',[10 10 800 400],'PaperUnits','points','PaperSize',[850 400]); hold on
-plot(time,f,'k','LineWidth',2)
-plot(time,fp,'r','LineWidth',2)
-plot(time,fp_gpPID,'b','LineWidth',2)
-plot(time,fp_gpv,'g','LineWidth',2)
-set(gca,'XLim',[mean(time)-1 mean(time)+2],'box','on','LineWidth',2,'FontSize',18)
-xlabel('Time','FontSize',20)
-ylabel('ORN Firing Rate (Hz)','FontSize',font_size)
-legend Data LinearPrediction 'Gain Corrected (PID)' 'Gain Corrected (Valve)'
-
-%% 
-% Is the gain-corrected prediction any better than the linear prediction? The r-square of the PID gain corrected estimate is: 
-disp(rsquare(f(filter_length+2:end),fp_gpPID(filter_length+2:end)))
-
-%% 
-% The r-square of the Valve gain corrected estimate is: 
-disp(rsquare(f(filter_length+2:end),fp_gpv(filter_length+2:end)))
-
-%% 
-% This is in comparison to the simple linear prediction with a r-square of:
-disp(rsquare(f(filter_length+2:end),fp(filter_length+2:end)))
+rvalues = NaN(1,length(ws));
+for i = 1:length(ws)
+	rvalues(i) = rsquare(f(filter_length+2:end),fpg(filter_length+2:end,i));
+end
 
 
-%%
-% The autocorrelation function of the gain shows that it is very tightly constrained, almost as much as the valve, and much less than the PID, which we are trying to use to predict it. 
-cf = xcorr(f(filter_length+2:end)-mean(f),'unbiased'); cf=cf/max(cf((length(cf)+1)/2-100:(length(cf)+1)/2+100));
-cp = xcorr(PID(filter_length+2:end)-mean(PID),'unbiased'); cp=cp/max(cp((length(cp)+1)/2-100:(length(cp)+1)/2+100));
-cv = xcorr(Valve(filter_length+2:end)-mean(Valve),'unbiased'); cv=cv/max(cv((length(cv)+1)/2-100:(length(cv)+1)/2+100));
-cg = xcorr(gain(filter_length+2:end)-mean(gain(filter_length+2:end)),'unbiased');  cg=cg/max(cg((length(cg)+1)/2-100:(length(cg)+1)/2+100));
-cn2 = xcorr(randn(1,length(f(filter_length+2:end))),'unbiased'); cn2 = cn2/max(cn2);
-ctime =  mean(diff(time)):mean(diff(time)):length(cf)*mean(diff(time)); 
-ctime = ctime - mean(ctime);
-figure('outerposition',[10 10 850 400],'PaperUnits','points','PaperSize',[850 400]); hold on
-subplot(1,2,1), hold on
-plot(ctime,cf,'b','LineWidth',2)
-plot(ctime,cp,'r','LineWidth',2)
-plot(ctime,cv,'g','LineWidth',2)
-plot(ctime,cg,'k','LineWidth',2)
-set(gca,'box','on','XLim',[-0.5 0.5],'FontSize',font_size,'LineWidth',2,'YLim',[0 1.5])
-xlabel('Time (s)','FontSize',font_size)
-ylabel('Normalised autocorrelation','FontSize',font_size)
-legend ORN PID Valve Gain 
-subplot(1,2,2), hold on
-plot(ctime,cn2,'r','LineWidth',2)
-set(gca,'box','on','XLim',[-0.5 0.5],'FontSize',font_size,'LineWidth',2,'YLim',[0 1.5])
-xlabel('Time (s)','FontSize',font_size)
-legend GaussianNoise
+fpg = f;
+fpg = repmat(fpg,1,length(ws));
+for i = 1:length(ws)
+	fpg(:,i) = fp.*gain2p(:,i);
+end
+
+rvalues2 = NaN(1,length(ws));
+for i = 1:length(ws)
+	rvalues2(i) = rsquare(f(filter_length+2:end),fpg(filter_length+2:end,i));
+end
 
 
-
-%% Summary/Problems
-%
-% # Best fit line of linear prediction to actual data does not have a slope of 1 for Damon's function. For synthetic data the slope of the line is indeed 1. However, in the real data set, it is not, even with no regularisation. 
-% # Prediction of gain from past stimulus is very poor. The correlation coefficient of the prediction with the instantaneous gain is ~ 0.2. For comparison, the corr. coeff. of the firing rate prediction > 0.95. 
-
+figure('outerposition',[10 10 400 400],'PaperUnits','points','PaperSize',[1000 400]); hold on
+plot(ws*3,rvalues,'b.','MarkerSize',marker_size2), hold on
+plot(ws*3,rvalues2,'k.','MarkerSize',marker_size2)
+xlabel('Smoothing window (ms)','FontSize',font_size)
+ylabel('r-square of corrected fit','FontSize',font_size)
+line([1 max(ws)*3],[rsquare(f(filter_length+2:end),fp(filter_length+2:end)) rsquare(f(filter_length+2:end),fp(filter_length+2:end))],'LineWidth',2)
+set(gca,'LineWidth',2,'FontSize',font_size)
 
 
 
@@ -632,5 +609,5 @@ legend GaussianNoise
 % # shuffle data to check validity?
 % # fit Dynamical Adaptation model to data?
 
-% close all to remove all extraneous figures, since we are publishing to HTML anyway
+% close all to remove all extraneous figures, since we are publishing to a document anyway
 close all

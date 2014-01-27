@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.3-1.40.12 (TeX Live 2011) (format=pdflatex 2011.7.3)  24 JAN 2014 17:28
+This is pdfTeX, Version 3.1415926-2.3-1.40.12 (TeX Live 2011) (format=pdflatex 2011.7.3)  27 JAN 2014 09:25
 entering extended mode
  \write18 enabled.
  file:line:error style messages enabled.
@@ -224,10 +224,10 @@ LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
 File: Analysis_January_01.pdf Graphic file (type pdf)
 
 <use Analysis_January_01.pdf>
-Package pdftex.def Info: Analysis_January_01.pdf used on input line 57.
+Package pdftex.def Info: Analysis_January_01.pdf used on input line 58.
 (pdftex.def)             Requested size: 469.75502pt x 328.82932pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 57--58
+Overfull \hbox (10.0pt too wide) in paragraph at lines 58--59
 [][] 
  []
 
@@ -238,27 +238,27 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 57--58
 File: Analysis_January_02.pdf Graphic file (type pdf)
 
 <use Analysis_January_02.pdf>
-Package pdftex.def Info: Analysis_January_02.pdf used on input line 69.
+Package pdftex.def Info: Analysis_January_02.pdf used on input line 70.
 (pdftex.def)             Requested size: 469.75502pt x 205.52501pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 69--70
+Overfull \hbox (10.0pt too wide) in paragraph at lines 70--71
 [][] 
  []
 
 [2 <./Analysis_January_01.pdf>]
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <7> on input line 71.
+(Font)              <7> on input line 72.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <5> on input line 71.
+(Font)              <5> on input line 72.
 
 <Analysis_January_03.pdf, id=20, 1204.5pt x 401.5pt>
 File: Analysis_January_03.pdf Graphic file (type pdf)
 
 <use Analysis_January_03.pdf>
-Package pdftex.def Info: Analysis_January_03.pdf used on input line 74.
+Package pdftex.def Info: Analysis_January_03.pdf used on input line 75.
 (pdftex.def)             Requested size: 469.75502pt x 156.58437pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 74--75
+Overfull \hbox (10.0pt too wide) in paragraph at lines 75--76
 [][] 
  []
 
@@ -266,10 +266,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 74--75
 File: Analysis_January_04.pdf Graphic file (type pdf)
 
 <use Analysis_January_04.pdf>
-Package pdftex.def Info: Analysis_January_04.pdf used on input line 79.
+Package pdftex.def Info: Analysis_January_04.pdf used on input line 80.
 (pdftex.def)             Requested size: 469.75502pt x 156.58437pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 79--80
+Overfull \hbox (10.0pt too wide) in paragraph at lines 80--81
 [][] 
  []
 
@@ -277,10 +277,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 79--80
 File: Analysis_January_05.pdf Graphic file (type pdf)
 
 <use Analysis_January_05.pdf>
-Package pdftex.def Info: Analysis_January_05.pdf used on input line 84.
+Package pdftex.def Info: Analysis_January_05.pdf used on input line 85.
 (pdftex.def)             Requested size: 469.75502pt x 293.60718pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 84--85
+Overfull \hbox (10.0pt too wide) in paragraph at lines 85--86
 [][] 
  []
 
@@ -289,10 +289,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 84--85
 File: Analysis_January_06.pdf Graphic file (type pdf)
 
 <use Analysis_January_06.pdf>
-Package pdftex.def Info: Analysis_January_06.pdf used on input line 114.
+Package pdftex.def Info: Analysis_January_06.pdf used on input line 115.
 (pdftex.def)             Requested size: 469.75502pt x 205.52501pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 114--115
+Overfull \hbox (10.0pt too wide) in paragraph at lines 115--116
 [][] 
  []
 
@@ -301,10 +301,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 114--115
 File: Analysis_January_07.pdf Graphic file (type pdf)
 
 <use Analysis_January_07.pdf>
-Package pdftex.def Info: Analysis_January_07.pdf used on input line 140.
+Package pdftex.def Info: Analysis_January_07.pdf used on input line 141.
 (pdftex.def)             Requested size: 469.75502pt x 328.82932pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 140--141
+Overfull \hbox (10.0pt too wide) in paragraph at lines 141--142
 [][] 
  []
 
@@ -313,10 +313,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 140--141
 File: Analysis_January_08.pdf Graphic file (type pdf)
 
 <use Analysis_January_08.pdf>
-Package pdftex.def Info: Analysis_January_08.pdf used on input line 145.
+Package pdftex.def Info: Analysis_January_08.pdf used on input line 146.
 (pdftex.def)             Requested size: 469.75502pt x 281.8537pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 145--146
+Overfull \hbox (10.0pt too wide) in paragraph at lines 146--147
 [][] 
  []
 
@@ -325,10 +325,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 145--146
 File: Analysis_January_09.pdf Graphic file (type pdf)
 
 <use Analysis_January_09.pdf>
-Package pdftex.def Info: Analysis_January_09.pdf used on input line 150.
+Package pdftex.def Info: Analysis_January_09.pdf used on input line 151.
 (pdftex.def)             Requested size: 469.75502pt x 328.82932pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 150--151
+Overfull \hbox (10.0pt too wide) in paragraph at lines 151--152
 [][] 
  []
 
@@ -337,10 +337,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 150--151
 File: Analysis_January_10.pdf Graphic file (type pdf)
 
 <use Analysis_January_10.pdf>
-Package pdftex.def Info: Analysis_January_10.pdf used on input line 169.
+Package pdftex.def Info: Analysis_January_10.pdf used on input line 170.
 (pdftex.def)             Requested size: 469.75502pt x 205.52501pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 169--170
+Overfull \hbox (10.0pt too wide) in paragraph at lines 170--171
 [][] 
  []
 
@@ -349,10 +349,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 169--170
 File: Analysis_January_11.pdf Graphic file (type pdf)
 
 <use Analysis_January_11.pdf>
-Package pdftex.def Info: Analysis_January_11.pdf used on input line 174.
+Package pdftex.def Info: Analysis_January_11.pdf used on input line 175.
 (pdftex.def)             Requested size: 469.75502pt x 234.88573pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 174--175
+Overfull \hbox (10.0pt too wide) in paragraph at lines 175--176
 [][] 
  []
 
@@ -360,10 +360,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 174--175
 File: Analysis_January_12.pdf Graphic file (type pdf)
 
 <use Analysis_January_12.pdf>
-Package pdftex.def Info: Analysis_January_12.pdf used on input line 179.
+Package pdftex.def Info: Analysis_January_12.pdf used on input line 180.
 (pdftex.def)             Requested size: 469.75502pt x 281.8537pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 179--180
+Overfull \hbox (10.0pt too wide) in paragraph at lines 180--181
 [][] 
  []
 
@@ -372,10 +372,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 179--180
 File: Analysis_January_13.pdf Graphic file (type pdf)
 
 <use Analysis_January_13.pdf>
-Package pdftex.def Info: Analysis_January_13.pdf used on input line 184.
+Package pdftex.def Info: Analysis_January_13.pdf used on input line 185.
 (pdftex.def)             Requested size: 469.75502pt x 281.8537pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 184--185
+Overfull \hbox (10.0pt too wide) in paragraph at lines 185--186
 [][] 
  []
 
@@ -384,10 +384,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 184--185
 File: Analysis_January_14.pdf Graphic file (type pdf)
 
 <use Analysis_January_14.pdf>
-Package pdftex.def Info: Analysis_January_14.pdf used on input line 203.
+Package pdftex.def Info: Analysis_January_14.pdf used on input line 204.
 (pdftex.def)             Requested size: 469.75502pt x 205.52501pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 203--204
+Overfull \hbox (10.0pt too wide) in paragraph at lines 204--205
 [][] 
  []
 
@@ -395,49 +395,119 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 203--204
 File: Analysis_January_15.pdf Graphic file (type pdf)
 
 <use Analysis_January_15.pdf>
-Package pdftex.def Info: Analysis_January_15.pdf used on input line 215.
+Package pdftex.def Info: Analysis_January_15.pdf used on input line 216.
 (pdftex.def)             Requested size: 469.75502pt x 205.52501pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 215--216
+Overfull \hbox (10.0pt too wide) in paragraph at lines 216--217
 [][] 
  []
 
-[11 <./Analysis_January_14.pdf> <./Analysis_January_15.pdf>]
-<Analysis_January_16.pdf, id=116, 1003.75pt x 602.25pt>
+[11 <./Analysis_January_14.pdf>]
+<Analysis_January_16.pdf, id=113, 1003.75pt x 602.25pt>
 File: Analysis_January_16.pdf Graphic file (type pdf)
 
 <use Analysis_January_16.pdf>
-Package pdftex.def Info: Analysis_January_16.pdf used on input line 220.
+Package pdftex.def Info: Analysis_January_16.pdf used on input line 221.
 (pdftex.def)             Requested size: 469.75502pt x 281.8537pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 220--221
+Overfull \hbox (10.0pt too wide) in paragraph at lines 221--222
 [][] 
  []
 
-[12 <./Analysis_January_16.pdf>] [13] (./Analysis_January.aux) ) 
+<Analysis_January_17.pdf, id=114, 1003.75pt x 401.5pt>
+File: Analysis_January_17.pdf Graphic file (type pdf)
+
+<use Analysis_January_17.pdf>
+Package pdftex.def Info: Analysis_January_17.pdf used on input line 226.
+(pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 226--227
+[][] 
+ []
+
+[12 <./Analysis_January_15.pdf> <./Analysis_January_16.pdf>]
+<Analysis_January_18.pdf, id=125, 1003.75pt x 602.25pt>
+File: Analysis_January_18.pdf Graphic file (type pdf)
+
+<use Analysis_January_18.pdf>
+Package pdftex.def Info: Analysis_January_18.pdf used on input line 238.
+(pdftex.def)             Requested size: 469.75502pt x 281.8537pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 238--239
+[][] 
+ []
+
+<Analysis_January_19.pdf, id=126, 1003.75pt x 401.5pt>
+File: Analysis_January_19.pdf Graphic file (type pdf)
+
+<use Analysis_January_19.pdf>
+Package pdftex.def Info: Analysis_January_19.pdf used on input line 243.
+(pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 243--244
+[][] 
+ []
+
+[13 <./Analysis_January_17.pdf> <./Analysis_January_18.pdf>]
+<Analysis_January_20.pdf, id=138, 1003.75pt x 602.25pt>
+File: Analysis_January_20.pdf Graphic file (type pdf)
+
+<use Analysis_January_20.pdf>
+Package pdftex.def Info: Analysis_January_20.pdf used on input line 267.
+(pdftex.def)             Requested size: 469.75502pt x 281.8537pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 267--268
+[][] 
+ []
+
+[14 <./Analysis_January_19.pdf>]
+<Analysis_January_21.pdf, id=148, 1003.75pt x 401.5pt>
+File: Analysis_January_21.pdf Graphic file (type pdf)
+
+<use Analysis_January_21.pdf>
+Package pdftex.def Info: Analysis_January_21.pdf used on input line 272.
+(pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 272--273
+[][] 
+ []
+
+<Analysis_January_22.pdf, id=149, 1003.75pt x 401.5pt>
+File: Analysis_January_22.pdf Graphic file (type pdf)
+
+<use Analysis_January_22.pdf>
+Package pdftex.def Info: Analysis_January_22.pdf used on input line 277.
+(pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 277--278
+[][] 
+ []
+
+[15 <./Analysis_January_20.pdf> <./Analysis_January_21.pdf>] [16 <./Analysis_Ja
+nuary_22.pdf>] (./Analysis_January.aux) ) 
 Here is how much of TeX's memory you used:
- 2078 strings out of 493633
- 31244 string characters out of 3143378
+ 2108 strings out of 493633
+ 32048 string characters out of 3143378
  91403 words of memory out of 3000000
- 5354 multiletter control sequences out of 15000+200000
+ 5378 multiletter control sequences out of 15000+200000
  8101 words of font info for 29 fonts, out of 3000000 for 9000
  831 hyphenation exceptions out of 8191
- 38i,6n,32p,605b,243s stack positions out of 5000i,500n,10000p,200000b,50000s
-</usr/local/tex
-live/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texl
-ive/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texli
-ve/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texlive
-/2011/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2
-011/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/201
-1/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/2011/
-texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2011/t
-exmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2011/tex
-mf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/local/texlive/2011/texm
-f-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
-Output written on Analysis_January.pdf (13 pages, 4749496 bytes).
+ 38i,6n,32p,681b,243s stack positions out of 5000i,500n,10000p,200000b,50000s
+</usr/local/texlive/2011/texmf-dist/fo
+nts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2011/texmf-dist/fon
+ts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2011/texmf-dist/font
+s/type1/public/amsfonts/cm/cmmi7.pfb></usr/local/texlive/2011/texmf-dist/fonts/
+type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2011/texmf-dist/fonts/ty
+pe1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2011/texmf-dist/fonts/type
+1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/2011/texmf-dist/fonts/type1/
+public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2011/texmf-dist/fonts/type1/p
+ublic/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2011/texmf-dist/fonts/type1/pub
+lic/amsfonts/cm/cmti10.pfb></usr/local/texlive/2011/texmf-dist/fonts/type1/publ
+ic/amsfonts/cm/cmtt10.pfb>
+Output written on Analysis_January.pdf (16 pages, 4803944 bytes).
 PDF statistics:
- 164 PDF objects out of 1000 (max. 8388607)
- 121 compressed objects within 2 object streams
+ 202 PDF objects out of 1000 (max. 8388607)
+ 150 compressed objects within 2 object streams
  0 named destinations out of 1000 (max. 500000)
- 81 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 111 words of extra memory for PDF output out of 10000 (max. 10000000)
 

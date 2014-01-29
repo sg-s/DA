@@ -1,23 +1,26 @@
 % FindBestFilter.m
 % created by Srinivas Gorur-Shandilya at 17:31 , 15 January 2014. Contact me at http://srinivas.gs/contact/
 % finds the best filter, searching through the space of the free parameter in my and damon's filter estimation functions
-function [K diagnostics] = FindBestFilter(stim,response,filter_length,Range,regtype,aglo)
+function [K diagnostics] = FindBestFilter(stim,response,OnlyThesePoints,varargin)
 
 % ensure inputs OK
 stim = stim(:);
 response = response(:);
 
-if nargin < 4
-	regmax = 100;
-	regmin = 1e-5;
- 
-else
-	regmax = Range(2);
-	regmin = Range(1);
+% defaults
+regmax = 100;
+regmin = 1e-5;
+algo = 1;
+filter_length = 333;
+
+if nargin < 3
+	OnlyThesePoints = [];
 end
 
-if nargin < 6
-	algo = 1;
+
+% evaluate optional inputs
+for i = 1:nargin-4
+	eval(varargin{i})
 end
 
 if algo == 1
@@ -44,7 +47,7 @@ if algo == 1
 		if nargin < 5
 			regtype = 'regtype=2;';
 		end
-		[K C] = FitFilter2Data(stim,response,flstr,regstr,regtype);
+		[K C] = FitFilter2Data(stim,response,OnlyThesePoints,flstr,regstr,regtype);
 
 		% make the prediction 
 		fp = filter(K,1,stim-mean(stim)) + mean(response);
@@ -98,7 +101,7 @@ if algo == 1
 	if nargin < 6
 		regtype = 'regtype=2;';
 	end
-	K = FitFilter2Data(stim,response,flstr,regstr,regtype);
+	K = FitFilter2Data(stim,response,OnlyThesePoints,flstr,regstr,regtype);
 	diagnostics.bestfilter = id;
 
 else

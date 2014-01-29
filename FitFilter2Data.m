@@ -31,17 +31,27 @@
 % 
 % K=FitFilter2Data(stim, response,'filter_length=500;','n=1;','OnlyThesePoints=1:2000;')
 % calculates a 500-point filter from the data after removing mean and regularising, but only at the first 2000 points of the data.
-function [K C] = FitFilter2Data(stim, response,varargin)
+function [K C] = FitFilter2Data(stim, response, OnlyThesePoints, varargin)
 
 % defaults
 filter_length = 333;
-reg = 1;
+reg = 1; % mean of eigenvalues of C
 n = 1;
-OnlyThesePoints = 1:length(stim)-filter_length;
 regtype = 2;
+if nargin < 3
+	OnlyThesePoints = filter_length+1:length(stim);
+else
+	if isempty(OnlyThesePoints)
+		OnlyThesePoints = filter_length+1:length(stim);
+	else
+		% remove points that can't be computed
+		OnlyThesePoints(OnlyThesePoints < filter_length+1) = [];
+		
+	end
+end
 
 % evaluate optional inputs
-for i = 1:nargin-2
+for i = 1:nargin-3
 	eval(varargin{i})
 end
 
@@ -70,14 +80,15 @@ if n
 end
 
 
-% throw away first bit of response, because we don't have the stimulus before it
-response = response(filter_length+1:end);
+% throw away parts of the response for which we don't care
+response = response(OnlyThesePoints);
 
 % chop up the stimulus into blocks  
 s = zeros(length(OnlyThesePoints), filter_length+1);
-for i=OnlyThesePoints
-    s(i,:) = stim(filter_length+i:-1:i);
+for i=1:length(OnlyThesePoints)
+    s(i,:) = stim(OnlyThesePoints(i):-1:OnlyThesePoints(i)-filter_length);
 end
+
 
 % compute covariance matrix
 C = s'*s; % this is the covariance matrix, scaled by the size of the C

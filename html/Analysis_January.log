@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.3-1.40.12 (TeX Live 2011) (format=pdflatex 2011.7.3)  27 JAN 2014 09:25
+This is pdfTeX, Version 3.1415926-2.3-1.40.12 (TeX Live 2011) (format=pdflatex 2011.7.3)  29 JAN 2014 12:09
 entering extended mode
  \write18 enabled.
  file:line:error style messages enabled.
@@ -224,10 +224,10 @@ LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
 File: Analysis_January_01.pdf Graphic file (type pdf)
 
 <use Analysis_January_01.pdf>
-Package pdftex.def Info: Analysis_January_01.pdf used on input line 58.
+Package pdftex.def Info: Analysis_January_01.pdf used on input line 59.
 (pdftex.def)             Requested size: 469.75502pt x 328.82932pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 58--59
+Overfull \hbox (10.0pt too wide) in paragraph at lines 59--60
 [][] 
  []
 
@@ -238,27 +238,27 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 58--59
 File: Analysis_January_02.pdf Graphic file (type pdf)
 
 <use Analysis_January_02.pdf>
-Package pdftex.def Info: Analysis_January_02.pdf used on input line 70.
+Package pdftex.def Info: Analysis_January_02.pdf used on input line 71.
 (pdftex.def)             Requested size: 469.75502pt x 205.52501pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 70--71
+Overfull \hbox (10.0pt too wide) in paragraph at lines 71--72
 [][] 
  []
 
 [2 <./Analysis_January_01.pdf>]
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <7> on input line 72.
+(Font)              <7> on input line 73.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <5> on input line 72.
+(Font)              <5> on input line 73.
 
 <Analysis_January_03.pdf, id=20, 1204.5pt x 401.5pt>
 File: Analysis_January_03.pdf Graphic file (type pdf)
 
 <use Analysis_January_03.pdf>
-Package pdftex.def Info: Analysis_January_03.pdf used on input line 75.
+Package pdftex.def Info: Analysis_January_03.pdf used on input line 76.
 (pdftex.def)             Requested size: 469.75502pt x 156.58437pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 75--76
+Overfull \hbox (10.0pt too wide) in paragraph at lines 76--77
 [][] 
  []
 
@@ -266,10 +266,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 75--76
 File: Analysis_January_04.pdf Graphic file (type pdf)
 
 <use Analysis_January_04.pdf>
-Package pdftex.def Info: Analysis_January_04.pdf used on input line 80.
+Package pdftex.def Info: Analysis_January_04.pdf used on input line 81.
 (pdftex.def)             Requested size: 469.75502pt x 156.58437pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 80--81
+Overfull \hbox (10.0pt too wide) in paragraph at lines 81--82
 [][] 
  []
 
@@ -277,10 +277,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 80--81
 File: Analysis_January_05.pdf Graphic file (type pdf)
 
 <use Analysis_January_05.pdf>
-Package pdftex.def Info: Analysis_January_05.pdf used on input line 85.
+Package pdftex.def Info: Analysis_January_05.pdf used on input line 86.
 (pdftex.def)             Requested size: 469.75502pt x 293.60718pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 85--86
+Overfull \hbox (10.0pt too wide) in paragraph at lines 86--87
 [][] 
  []
 
@@ -289,10 +289,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 85--86
 File: Analysis_January_06.pdf Graphic file (type pdf)
 
 <use Analysis_January_06.pdf>
-Package pdftex.def Info: Analysis_January_06.pdf used on input line 115.
+Package pdftex.def Info: Analysis_January_06.pdf used on input line 116.
 (pdftex.def)             Requested size: 469.75502pt x 205.52501pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 115--116
+Overfull \hbox (10.0pt too wide) in paragraph at lines 116--117
 [][] 
  []
 
@@ -301,10 +301,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 115--116
 File: Analysis_January_07.pdf Graphic file (type pdf)
 
 <use Analysis_January_07.pdf>
-Package pdftex.def Info: Analysis_January_07.pdf used on input line 141.
+Package pdftex.def Info: Analysis_January_07.pdf used on input line 142.
 (pdftex.def)             Requested size: 469.75502pt x 328.82932pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 141--142
+Overfull \hbox (10.0pt too wide) in paragraph at lines 142--143
 [][] 
  []
 
@@ -313,10 +313,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 141--142
 File: Analysis_January_08.pdf Graphic file (type pdf)
 
 <use Analysis_January_08.pdf>
-Package pdftex.def Info: Analysis_January_08.pdf used on input line 146.
+Package pdftex.def Info: Analysis_January_08.pdf used on input line 147.
 (pdftex.def)             Requested size: 469.75502pt x 281.8537pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 146--147
+Overfull \hbox (10.0pt too wide) in paragraph at lines 147--148
 [][] 
  []
 
@@ -325,10 +325,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 146--147
 File: Analysis_January_09.pdf Graphic file (type pdf)
 
 <use Analysis_January_09.pdf>
-Package pdftex.def Info: Analysis_January_09.pdf used on input line 151.
+Package pdftex.def Info: Analysis_January_09.pdf used on input line 152.
 (pdftex.def)             Requested size: 469.75502pt x 328.82932pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 151--152
+Overfull \hbox (10.0pt too wide) in paragraph at lines 152--153
 [][] 
  []
 
@@ -337,10 +337,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 151--152
 File: Analysis_January_10.pdf Graphic file (type pdf)
 
 <use Analysis_January_10.pdf>
-Package pdftex.def Info: Analysis_January_10.pdf used on input line 170.
+Package pdftex.def Info: Analysis_January_10.pdf used on input line 171.
 (pdftex.def)             Requested size: 469.75502pt x 205.52501pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 170--171
+Overfull \hbox (10.0pt too wide) in paragraph at lines 171--172
 [][] 
  []
 
@@ -349,10 +349,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 170--171
 File: Analysis_January_11.pdf Graphic file (type pdf)
 
 <use Analysis_January_11.pdf>
-Package pdftex.def Info: Analysis_January_11.pdf used on input line 175.
+Package pdftex.def Info: Analysis_January_11.pdf used on input line 176.
 (pdftex.def)             Requested size: 469.75502pt x 234.88573pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 175--176
+Overfull \hbox (10.0pt too wide) in paragraph at lines 176--177
 [][] 
  []
 
@@ -360,10 +360,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 175--176
 File: Analysis_January_12.pdf Graphic file (type pdf)
 
 <use Analysis_January_12.pdf>
-Package pdftex.def Info: Analysis_January_12.pdf used on input line 180.
+Package pdftex.def Info: Analysis_January_12.pdf used on input line 181.
 (pdftex.def)             Requested size: 469.75502pt x 281.8537pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 180--181
+Overfull \hbox (10.0pt too wide) in paragraph at lines 181--182
 [][] 
  []
 
@@ -372,10 +372,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 180--181
 File: Analysis_January_13.pdf Graphic file (type pdf)
 
 <use Analysis_January_13.pdf>
-Package pdftex.def Info: Analysis_January_13.pdf used on input line 185.
+Package pdftex.def Info: Analysis_January_13.pdf used on input line 186.
 (pdftex.def)             Requested size: 469.75502pt x 281.8537pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 185--186
+Overfull \hbox (10.0pt too wide) in paragraph at lines 186--187
 [][] 
  []
 
@@ -384,10 +384,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 185--186
 File: Analysis_January_14.pdf Graphic file (type pdf)
 
 <use Analysis_January_14.pdf>
-Package pdftex.def Info: Analysis_January_14.pdf used on input line 204.
+Package pdftex.def Info: Analysis_January_14.pdf used on input line 205.
 (pdftex.def)             Requested size: 469.75502pt x 205.52501pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 204--205
+Overfull \hbox (10.0pt too wide) in paragraph at lines 205--206
 [][] 
  []
 
@@ -395,10 +395,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 204--205
 File: Analysis_January_15.pdf Graphic file (type pdf)
 
 <use Analysis_January_15.pdf>
-Package pdftex.def Info: Analysis_January_15.pdf used on input line 216.
+Package pdftex.def Info: Analysis_January_15.pdf used on input line 217.
 (pdftex.def)             Requested size: 469.75502pt x 205.52501pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 216--217
+Overfull \hbox (10.0pt too wide) in paragraph at lines 217--218
 [][] 
  []
 
@@ -407,10 +407,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 216--217
 File: Analysis_January_16.pdf Graphic file (type pdf)
 
 <use Analysis_January_16.pdf>
-Package pdftex.def Info: Analysis_January_16.pdf used on input line 221.
+Package pdftex.def Info: Analysis_January_16.pdf used on input line 222.
 (pdftex.def)             Requested size: 469.75502pt x 281.8537pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 221--222
+Overfull \hbox (10.0pt too wide) in paragraph at lines 222--223
 [][] 
  []
 
@@ -418,10 +418,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 221--222
 File: Analysis_January_17.pdf Graphic file (type pdf)
 
 <use Analysis_January_17.pdf>
-Package pdftex.def Info: Analysis_January_17.pdf used on input line 226.
+Package pdftex.def Info: Analysis_January_17.pdf used on input line 227.
 (pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 226--227
+Overfull \hbox (10.0pt too wide) in paragraph at lines 227--228
 [][] 
  []
 
@@ -430,10 +430,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 226--227
 File: Analysis_January_18.pdf Graphic file (type pdf)
 
 <use Analysis_January_18.pdf>
-Package pdftex.def Info: Analysis_January_18.pdf used on input line 238.
+Package pdftex.def Info: Analysis_January_18.pdf used on input line 239.
 (pdftex.def)             Requested size: 469.75502pt x 281.8537pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 238--239
+Overfull \hbox (10.0pt too wide) in paragraph at lines 239--240
 [][] 
  []
 
@@ -441,10 +441,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 238--239
 File: Analysis_January_19.pdf Graphic file (type pdf)
 
 <use Analysis_January_19.pdf>
-Package pdftex.def Info: Analysis_January_19.pdf used on input line 243.
+Package pdftex.def Info: Analysis_January_19.pdf used on input line 244.
 (pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 243--244
+Overfull \hbox (10.0pt too wide) in paragraph at lines 244--245
 [][] 
  []
 
@@ -453,10 +453,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 243--244
 File: Analysis_January_20.pdf Graphic file (type pdf)
 
 <use Analysis_January_20.pdf>
-Package pdftex.def Info: Analysis_January_20.pdf used on input line 267.
+Package pdftex.def Info: Analysis_January_20.pdf used on input line 268.
 (pdftex.def)             Requested size: 469.75502pt x 281.8537pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 267--268
+Overfull \hbox (10.0pt too wide) in paragraph at lines 268--269
 [][] 
  []
 
@@ -465,10 +465,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 267--268
 File: Analysis_January_21.pdf Graphic file (type pdf)
 
 <use Analysis_January_21.pdf>
-Package pdftex.def Info: Analysis_January_21.pdf used on input line 272.
+Package pdftex.def Info: Analysis_January_21.pdf used on input line 273.
 (pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 272--273
+Overfull \hbox (10.0pt too wide) in paragraph at lines 273--274
 [][] 
  []
 
@@ -476,10 +476,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 272--273
 File: Analysis_January_22.pdf Graphic file (type pdf)
 
 <use Analysis_January_22.pdf>
-Package pdftex.def Info: Analysis_January_22.pdf used on input line 277.
+Package pdftex.def Info: Analysis_January_22.pdf used on input line 278.
 (pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 277--278
+Overfull \hbox (10.0pt too wide) in paragraph at lines 278--279
 [][] 
  []
 
@@ -504,7 +504,7 @@ public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2011/texmf-dist/fonts/type1/p
 ublic/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2011/texmf-dist/fonts/type1/pub
 lic/amsfonts/cm/cmti10.pfb></usr/local/texlive/2011/texmf-dist/fonts/type1/publ
 ic/amsfonts/cm/cmtt10.pfb>
-Output written on Analysis_January.pdf (16 pages, 4803944 bytes).
+Output written on Analysis_January.pdf (16 pages, 4804156 bytes).
 PDF statistics:
  202 PDF objects out of 1000 (max. 8388607)
  150 compressed objects within 2 object streams

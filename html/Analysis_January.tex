@@ -34,12 +34,13 @@ Do ORNs exhibit fast adaptation to a flickering stimulus? Can a simple dynamical
    \item Analysis of Linear Prediction - Which input predicts output better?
    \item Analysis of Linear Prediction - Linearity of Prediction
    \item Analysis of Linear Prediction - Response to High and Low Stimuli
-   \item Analysis of Linear Prediction - Filter Variation (to be done)
+   \item Analysis of Linear Prediction - Filter Variation
    \item Analysis of Linear Prediction - Does adding another linear filter improve prediction?
    \item Analysis of Gain: Instantaneous Gain and Fitted Gain
    \item Analysis of Gain: Smoothed gain.
    \item Gain Analysis - Estimating the gain
    \item Next Steps
+   \item Docs
 \end{itemize}
 
 
@@ -151,11 +152,18 @@ The following plot shows how the slope of the lines of best fit, or the instanta
 \includegraphics [width=\textwidth]{Analysis_January_09.pdf}
 
 
-\subsection*{Analysis of Linear Prediction - Filter Variation (to be done)}
+\subsection*{Analysis of Linear Prediction - Filter Variation}
 
 \begin{par}
-We have segmented the entire data set based on when the stimulus, averaged in some way over the past, into high and low. Here, I will calculate filters for each of these subsets.
+We have segmented the entire data set based on when the stimulus, averaged in some way over the past, into high and low. The following plots show how the filter shape for low, high and middle 10\% of the stimuli changes with the history window size. In these plots, only 10\% of the data, either the lowest 10\% (green), the highest 10\% (red) of the middle 10\% (black), based on the window smoothing is used to compute each of the filters.
 \end{par} \vspace{1em}
+
+\includegraphics [width=\textwidth]{Analysis_January_10.pdf}
+\begin{par}
+We can also plot the height of the filter \textit{vs.} the history window size:
+\end{par} \vspace{1em}
+
+\includegraphics [width=\textwidth]{Analysis_January_11.pdf}
 
 
 \subsection*{Analysis of Linear Prediction - Does adding another linear filter improve prediction?}
@@ -167,22 +175,22 @@ An ideal linear filter should capture all the linear variation in the data. This
 First, we construct a vector of residuals by subtracting the linear prediction from the data.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_10.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_12.pdf}
 \begin{par}
 we then construct a filter from the PID to these residuals to try to predict the residuals.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_11.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_13.pdf}
 \begin{par}
 and use this filter to predict the residuals from the stimulus.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_12.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_14.pdf}
 \begin{par}
 Does adding this back to the prediction improve the prediction? The following plot shows the data (black), the linear prediction (red), and the linear prediction corrected by the prediciton of the residual (green).
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_13.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_15.pdf}
 \begin{par}
 The r-square of the corrected prediction is
 \end{par} \vspace{1em}
@@ -201,7 +209,11 @@ and the r-square of the simple linear prediction is
 How does this make any sense? If this is true, then simply adding the filters together will yield a better filter, which we should have computed in the very beginning. The filter, the second filter computed from residuals, and their sum is shown in the panel on the left. On the right is a filter with lower regularisation.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_14.pdf}
+        \color{lightgray} \begin{verbatim}Warning: Matrix is singular, close to singular or badly scaled. Results may be
+inaccurate. RCOND = NaN. 
+\end{verbatim} \color{black}
+    
+\includegraphics [width=\textwidth]{Analysis_January_16.pdf}
 \begin{par}
 So what we are doing is simply undoing the work we did in regularising the filter.
 \end{par} \vspace{1em}
@@ -213,17 +225,17 @@ So what we are doing is simply undoing the work we did in regularising the filte
 There is a mismatch between the linear prediction and the actual firing rate. Moreover, the instantaneous gain seems to be modulated by something that depends on the past history of the stimulus (see analysis in the previous section). We also know that we cannot predict with a simple linear filter any linear errors that the filter makes. However, there is the possibility of fitting a linear filter to the gain, which is a non-linear function of the filter output. But how do we compute this gain? Here, in the figure below, the instantaneous gain, i.e., the ratio of the actual firing rate to the predicted firing rate, is plotted along with the stimulus.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_15.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_17.pdf}
 \begin{par}
 We can also calculate the moving gain by fitting lines to the data and the prediction collected in bins of size \textit{w}. The following plots show the gain computed in this way for a few different \textit{w}. We want to do this because the raw instantaneous gain is very noisy, and predicting it from PID is hard.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_16.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_18.pdf}
 \begin{par}
 Of these different gain vectors, which fixes the prediction the best? The following plot shows the r-square values of corrected linear prediction, corrected by the gain computed in different ways (lines fit to windows of different lengths). On the y-axis is the r-square, and the x-axis is the window over which the lines are fit.  The first point has a r-square of 1, indicating a perfect fit (this is by definition, since the first point is the instantaneous gain). Note that none of the other points exceed the line, which indicates the r-square of the simple linear prediction.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_17.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_19.pdf}
 \begin{par}
 We conclude that this method of finding the gain is not helpful in improving the prediction.
 \end{par} \vspace{1em}
@@ -235,12 +247,12 @@ We conclude that this method of finding the gain is not helpful in improving the
 Instead of calculating the instantaneous point-by-point gain, we can also smooth the instantaneous gain over some small window size \textit{w}. The following plot shows the effect of smoothing for a few window sizes \textit{w}.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_18.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_20.pdf}
 \begin{par}
 How does smoothing the gain affect our ability to correct the linear prediction? The following plot shows how the r-square of the corrected linear prediction varies with smoothing the gain. Also shown is the line which indicates the linear prediction of the uncorrected simple linear prediction.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_19.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_21.pdf}
 \begin{par}
 From this analysis of the gain, it is clear that if we do want to improve the linear prediction, the best way to do it (apart from the instantaneous gain, which would lead to a perfect prediction), is smoothing the gain in some way. In the next section, we will try to estimate the smoothed gain.
 \end{par} \vspace{1em}
@@ -264,17 +276,17 @@ where \textit{g} is the smoothed gain and \textit{s} is the stimulus.
 For with various smoothing of the instantaneous gain, we find the best filter for each and plot it below:
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_20.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_22.pdf}
 \begin{par}
 How well can we predict the smoothed gain vectors using these filters and the stimulus? The following plot shows the r-square between prediction of the smoothed gain and the smoothed gain for various smoothing windows.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_21.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_23.pdf}
 \begin{par}
 Well, that sucks. Maybe even this horrible estimation of the gain can improve the linear prediction of the firing rate in some way? Here, I plot the r-square of the gain-corrected linear prediction (corrected by the prediction of the gain), as a function of gain smoothing (in blue). Also plotted is the r-square of the gain-corrected linear prediction, corrected now with actual gain (in black).
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_22.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_24.pdf}
 
 
 \subsection*{Next Steps}
@@ -287,6 +299,13 @@ Well, that sucks. Maybe even this horrible estimation of the gain can improve th
    \item shuffle data to check validity?
    \item fit Dynamical Adaptation model to data?
 \end{enumerate}
+
+
+\subsection*{Docs}
+
+\begin{par}
+This document was generated by MATLAB's publish function. All files needed to generate this document are on a git repository on https://bitbucket.org/srinivasgs/da
+\end{par} \vspace{1em}
 
 
 

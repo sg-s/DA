@@ -5,6 +5,7 @@
 
 % parameters to tune for figure display
 font_size = 20;
+font_size2 = 18;
 marker_size = 10;
 marker_size2 = 20;
 
@@ -81,12 +82,12 @@ filter_length = 333;
 filtertime = 0:mean(diff(time)):filter_length*mean(diff(time)); % this is the x axis for the 
 
 if ~(exist('K') == 1)
-	[K diagnostics] = FindBestFilter(PID,f,filter_length);
+	[K diagnostics] = FindBestFilter(PID,f);
 	K = K*diagnostics.slope(diagnostics.bestfilter);
 end
 
 if ~(exist('K_Valve') == 1)
-	[K_Valve diagnostics_valve] = FindBestFilter(Valve,f,filter_length);
+	[K_Valve diagnostics_valve] = FindBestFilter(Valve,f);
 	K_Valve = K_Valve*diagnostics_valve.slope(diagnostics_valve.bestfilter);
 end
 
@@ -316,8 +317,65 @@ output_data.low_slopes_err = low_slopes_err;
 output_data.low_gof = low_gof;
 output_data.high_gof = high_gof;
 
-%% Analysis of Linear Prediction - Filter Variation (to be done)
-% We have segmented the entire data set based on when the stimulus, averaged in some way over the past, into high and low. Here, I will calculate filters for each of these subsets. 
+%% Analysis of Linear Prediction - Filter Variation 
+% We have segmented the entire data set based on when the stimulus, averaged in some way over the past, into high and low. The following plots show how the filter shape for low, high and middle 10% of the stimuli changes with the history window size. In these plots, only 10% of the data, either the lowest 10% (green), the highest 10% (red) of the middle 10% (black), based on the window smoothing is used to compute each of the filters.
+
+
+Kmiddle = NaN(length(history_lengths),filter_length+1);
+Klow = NaN(length(history_lengths),filter_length+1);
+Khigh = NaN(length(history_lengths),filter_length+1);
+for i = 1:length(history_lengths)
+
+	slicelength = floor(length(PID)/10);
+	% low filter
+	this_shat = shat(i,:);
+	this_shat(1:hl(i)) = Inf; % the initial segment where we can't estimate shat is excluded
+	[sorted_shat idx] = sort(this_shat,'ascend');
+	OnlyThesePoints=idx(1:slicelength);
+	Klow(i,:)=FitFilter2Data(PID,f,OnlyThesePoints);
+
+	% low filter
+	this_shat = shat(i,:);
+	this_shat(1:hl(i)) = Inf; % the initial segment where we can't estimate shat is excluded
+	[sorted_shat idx] = sort(this_shat,'descend');
+	OnlyThesePoints=idx(1:slicelength);
+	Khigh(i,:)=FitFilter2Data(PID,f,OnlyThesePoints);
+
+	% middle filter
+	OnlyThesePoints=idx((length(idx)/2-slicelength/2):(length(idx)/2+slicelength/2));
+	Kmiddle(i,:)=FitFilter2Data(PID,f,OnlyThesePoints);
+
+	
+end
+
+% plot
+f3= figure('outerposition',[0 0 1200 600],'PaperUnits','points','PaperSize',[1200 600]); hold on
+for i = 1:length(history_lengths)
+	subplot(2,5,i), hold on
+
+	plot(filtertime,Kmiddle(i,:),'k','LineWidth',2)
+	plot(filtertime,Klow(i,:),'g','LineWidth',2)
+	plot(filtertime,Khigh(i,:),'r','LineWidth',2)
+	set(gca,'FontSize',font_size2,'LineWidth',2,'YLim',[min(min(Klow))-5 max(max(Klow))+5],'box','on')
+	title(strcat(mat2str(history_lengths(i)),'ms'))
+
+	if i == 6
+		xlabel('Filter Lag (s) ','FontSize',16)
+		ylabel('Neuron Response (Hz)','FontSize',16)
+	end
+end
+
+
+%%
+% We can also plot the height of the filter _vs._ the history window size:
+
+figure('outerposition',[10 10 1000 500],'PaperUnits','points','PaperSize',[1000 700]); hold on
+plot(history_lengths,max(Kmiddle'),'k','LineWidth',2)
+plot(history_lengths,max(Klow'),'g','LineWidth',2)
+plot(history_lengths,max(Khigh'),'r','LineWidth',2)
+set(gca,'FontSize',font_size,'LineWidth',2,'YLim',[0 max(max(Klow))+5],'box','on')
+xlabel('History Length (s) ','FontSize',font_size)
+ylabel('Filter Height (Hz)','FontSize',font_size)
 
 %% Analysis of Linear Prediction - Does adding another linear filter improve prediction?
 % An ideal linear filter should capture all the linear variation in the data. This means that if one were to construct a vector of residuals, a linear filter would be unable to predict the residuals from the data, and would lead to no improvement on the original filter. Is this true? 
@@ -338,7 +396,7 @@ xlabel('Time (s)','FontSize',font_size)
 
 %%
 % we then construct a filter from the PID to these residuals to try to predict the residuals.
-[Kres ,diagnostics_res] = FindBestFilter(PID(filter_length+2:end),res(filter_length+2:end),filter_length);
+[Kres ,diagnostics_res] = FindBestFilter(PID(filter_length+2:end),res(filter_length+2:end));
 
 figure('outerposition',[0 0 400 400],'PaperUnits','points','PaperSize',[800 400]); hold on
 plot(filtertime,Kres,'LineWidth',2)
@@ -428,7 +486,7 @@ if ~(exist('gain') == 1)
 	% 	disp(i)
 	% 	starthere = filter_length+2+ws(i);
 	% 	for j = starthere:1:length(f)
-	% 		thesepoints = (j - ws(i)):j;
+	% 		j
 	% 		fitmetrics = fit(fp(thesepoints),f(thesepoints),'Poly1');
 	% 		gain(j,i+1) = fitmetrics.p1;
 	% 	end
@@ -531,7 +589,7 @@ set(gca,'LineWidth',2,'FontSize',font_size)
 if ~(exist('Kg_smooth') == 1)
 	Kg_smooth = zeros(filter_length+1,size(gain2,2));
 	for i = 1:size(gain2,2)
-		Kg_smooth(:,i) = FindBestFilter(PID(filter_length+2:end),gain2(filter_length+2:end,i),filter_length);
+		Kg_smooth(:,i) = FindBestFilter(PID(filter_length+2:end),gain2(filter_length+2:end,i));
 	end
 
 end
@@ -608,6 +666,9 @@ set(gca,'LineWidth',2,'FontSize',font_size)
 % # Check if someone has looked at Weber's law in olfaction/ORNs
 % # shuffle data to check validity?
 % # fit Dynamical Adaptation model to data?
+
+%% Docs
+% This document was generated by MATLAB's publish function. All files needed to generate this document are on a git repository on https://bitbucket.org/srinivasgs/da
 
 % close all to remove all extraneous figures, since we are publishing to a document anyway
 close all

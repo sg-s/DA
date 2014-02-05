@@ -79,7 +79,8 @@ end
 
 % compute filter
 filter_length = 333;
-filtertime = 0:mean(diff(time)):filter_length*mean(diff(time)); % this is the x axis for the 
+filtertime = 0:mean(diff(time)):filter_length*mean(diff(time));  % this is the time axis for the filter.
+filtertime = filtertime - shift_input*(mean(diff(time))); % correct for shifted input
 
 if ~(exist('K') == 1)
 	[K diagnostics] = FindBestFilter(PID,f);
@@ -95,17 +96,18 @@ end
 figure('outerposition',[0 0 700 350],'PaperUnits','points','PaperSize',[800 350]); hold on
 subplot(1,2,1), hold on
 plot(filtertime,K,'LineWidth',2)
-set(gca,'box','on','LineWidth',2,'FontSize',font_size)
+set(gca,'box','on','LineWidth',2,'FontSize',font_size,'XLim',[min(filtertime) max(filtertime)])
 xlabel('Lag (s)','FontSize',20)
 ylabel('Filter Amplitude (Hz)','FontSize',font_size)
 title('PID > f','FontSize',font_size)
 
 subplot(1,2,2), hold on
 plot(filtertime,K_Valve,'LineWidth',2)
-set(gca,'box','on','LineWidth',2,'FontSize',font_size)
+set(gca,'box','on','LineWidth',2,'FontSize',font_size,'XLim',[min(filtertime) max(filtertime)])
 xlabel('Lag (s)','FontSize',20)
 ylabel('Filter Amplitude (Hz)','FontSize',font_size)
 title('Valve > f','FontSize',font_size)
+
 
 %%
 % The variation of filter shape with regularisation parameter for the PID > f filter is shown below:
@@ -356,7 +358,7 @@ for i = 1:length(history_lengths)
 	plot(filtertime,Kmiddle(i,:),'k','LineWidth',2)
 	plot(filtertime,Klow(i,:),'g','LineWidth',2)
 	plot(filtertime,Khigh(i,:),'r','LineWidth',2)
-	set(gca,'FontSize',font_size2,'LineWidth',2,'YLim',[min(min(Klow))-5 max(max(Klow))+5],'box','on')
+	set(gca,'FontSize',font_size2,'LineWidth',2,'YLim',[min(min(Klow))-5 max(max(Klow))+5],'box','on','XLim',[min(filtertime) max(filtertime)])
 	title(strcat(mat2str(history_lengths(i)),'ms'))
 
 	if i == 6
@@ -376,6 +378,20 @@ plot(history_lengths,max(Khigh'),'r','LineWidth',2)
 set(gca,'FontSize',font_size,'LineWidth',2,'YLim',[0 max(max(Klow))+5],'box','on')
 xlabel('History Length (s) ','FontSize',font_size)
 ylabel('Filter Height (Hz)','FontSize',font_size)
+
+%%
+% We also expect the low stimulus (high gain) filter to be slower than the high stimulus (low gain) filter. Is this so in the data? Here, I plot the time of peak of each filter _vs._ the history window size. 
+figure('outerposition',[10 10 1000 500],'PaperUnits','points','PaperSize',[1000 700]); hold on
+[~,tmax]=max(Kmiddle'); tmax = tmax*mean(diff(time)) - shift_input*mean(diff(time));
+plot(history_lengths,tmax,'k','LineWidth',2)
+[~,tmax]=max(Klow'); tmax = tmax*mean(diff(time)) - shift_input*mean(diff(time));
+plot(history_lengths,tmax,'g','LineWidth',2)
+[~,tmax]=max(Khigh'); tmax = tmax*mean(diff(time)) - shift_input*mean(diff(time));
+plot(history_lengths,tmax,'r','LineWidth',2)
+set(gca,'FontSize',font_size,'LineWidth',2,'YLim',[0 2*max(max(tmax))],'box','on')
+xlabel('History Length (s) ','FontSize',font_size)
+ylabel('Time of filter peak (s)','FontSize',font_size)
+
 
 %% Analysis of Linear Prediction - Does adding another linear filter improve prediction?
 % An ideal linear filter should capture all the linear variation in the data. This means that if one were to construct a vector of residuals, a linear filter would be unable to predict the residuals from the data, and would lead to no improvement on the original filter. Is this true? 
@@ -400,7 +416,7 @@ xlabel('Time (s)','FontSize',font_size)
 
 figure('outerposition',[0 0 400 400],'PaperUnits','points','PaperSize',[800 400]); hold on
 plot(filtertime,Kres,'LineWidth',2)
-set(gca,'box','on','LineWidth',2,'FontSize',font_size)
+set(gca,'box','on','LineWidth',2,'FontSize',font_size,'XLim',[min(filtertime) max(filtertime)])
 xlabel('Lag (s)','FontSize',20)
 ylabel('Filter Amplitude','FontSize',font_size)
 title('Filter: PID > residuals','FontSize',20)
@@ -445,14 +461,14 @@ plot(filtertime,K,'k','LineWidth',2)
 plot(filtertime,Kres,'r','LineWidth',2)
 plot(filtertime,Kres+K,'g','LineWidth',2)
 legend Filter ResidualFilter Sum
-set(gca,'FontSize',font_size,'LineWidth',2,'box','on')
+set(gca,'FontSize',font_size,'LineWidth',2,'box','on','XLim',[min(filtertime) max(filtertime)])
 ylabel('Filter Amplitude (Hz)','FontSize',font_size)
 
-K_lowreg = FitFilter2Data(PID,f,'reg=1e-1;');
+K_lowreg = FitFilter2Data(PID,f,[],'reg=1e-1;');
 subplot(1,2,2), hold on
 plot(filtertime,K_lowreg,'k','LineWidth',2)
 title('Filter with low regularisation','FontSize',font_size)
-set(gca,'FontSize',font_size,'LineWidth',2,'box','on')
+set(gca,'FontSize',font_size,'LineWidth',2,'box','on','XLim',[min(filtertime) max(filtertime)])
 xlabel('Time (s)','FontSize',font_size)
 
 %%
@@ -599,7 +615,7 @@ figure('outerposition',[10 10 600 600],'PaperUnits','points','PaperSize',[1000 6
 plot(filtertime,Kg_smooth,'LineWidth',2)
 xlabel('Filter Lag','FontSize',font_size)
 ylabel('Filter Amplitude','FontSize',font_size)
-set(gca,'LineWidth',2,'FontSize',font_size,'box','on')
+set(gca,'LineWidth',2,'FontSize',font_size,'box','on','XLim',[min(filtertime) max(filtertime)])
 legend(legendtext)
 
 %%
@@ -648,7 +664,6 @@ for i = 1:length(ws)
 	rvalues2(i) = rsquare(f(filter_length+2:end),fpg(filter_length+2:end,i));
 end
 
-
 figure('outerposition',[10 10 400 400],'PaperUnits','points','PaperSize',[1000 400]); hold on
 plot(ws*3,rvalues,'b.','MarkerSize',marker_size2), hold on
 plot(ws*3,rvalues2,'k.','MarkerSize',marker_size2)
@@ -657,18 +672,30 @@ ylabel('r-square of corrected fit','FontSize',font_size)
 line([1 max(ws)*3],[rsquare(f(filter_length+2:end),fp(filter_length+2:end)) rsquare(f(filter_length+2:end),fp(filter_length+2:end))],'LineWidth',2)
 set(gca,'LineWidth',2,'FontSize',font_size)
 
+%% Re-evaluating filter performance after filtering ORN responses
 
+%% Estimating the gain at points where the stimulus is far from the mean. 
+
+%% A note on elastic net regularisation 
+% Carlotta says in her paper that she uses elastic net regularisation (using some unknown, third party code) to minimise the L-1 and L-2 norms of the covariance matrix. However, her code shows that she uses simply L-2 minimisation as discussed previously. I talked to her, and she said that she arbitrarily chose parameters for regularisation anyway, and it is possible that she was using simple L-2 regularisation. 
 
 %% Next Steps
 % 
-% # Calculate filters for high and low stimulus zones. 
-% # Calculate filters after using elastic net regularisation. 
-% # Check if someone has looked at Weber's law in olfaction/ORNs
-% # shuffle data to check validity?
-% # fit Dynamical Adaptation model to data?
+% # Check if Weber's Law is being followed using Carlotta's step responses data
+% # Run analysis on all data files. 
+% # Fit DA model to data with tau set to zero
+% # Compute ORN firing rates using code that is not Carlotta's
 
 %% Docs
-% This document was generated by MATLAB's publish function. All files needed to generate this document are on a git repository on https://bitbucket.org/srinivasgs/da
+% This document was generated by MATLAB's publish function. All files needed to generate this document are on a git repository. To clone onto your machine, use:
+%
+%   git clone https://srinivasgs@bitbucket.com/srinivasgs/da.git
+% 
+% You will also need a bunch of functions that this depends on, which are also on git. Use
+% 
+%   git clone https://srinivasgs@bitbucket.com/srinivasgs/core.git
+% 
+% to get these. 
 
 % close all to remove all extraneous figures, since we are publishing to a document anyway
 close all

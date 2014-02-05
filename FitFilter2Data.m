@@ -29,7 +29,8 @@
 % 
 % Example: 
 % 
-% K=FitFilter2Data(stim, response,'filter_length=500;','n=1;','OnlyThesePoints=1:2000;')
+% K=FitFilter2Data(stim, response,[1:2000],'filter_length=500;','n=1;')
+% 
 % calculates a 500-point filter from the data after removing mean and regularising, but only at the first 2000 points of the data.
 function [K C] = FitFilter2Data(stim, response, OnlyThesePoints, varargin)
 
@@ -96,6 +97,7 @@ C = s'*s; % this is the covariance matrix, scaled by the size of the C
 MeanEigenValue = trace(C)/length(C); % cheat; this is the same as mean(eig(C))
 reg = reg*MeanEigenValue;
 
+
 switch regtype 
 	case 1
 		C = C + reg*eye(filter_length+1); % Carlotta's reg.
@@ -106,6 +108,5 @@ end
 
 K = C\(s'*response);
         
-
 
 

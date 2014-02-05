@@ -4,6 +4,10 @@
 		"selected_items":
 		[
 			[
+				"hi",
+				"history_lengths"
+			],
+			[
 				"filter_le",
 				"filter_length+2:end"
 			],
@@ -148,22 +152,35 @@
 	"buffers":
 	[
 		{
-			"contents": "%% Dynamical Adaptation in ORNs \n% Do ORNs exhibit fast adaptation to a flickering stimulus? Can a simple dynamical adaptation model predict ORN responses to flickering inputs? Here, I take data from Carlotta's random stimulus experiments and first check how well a simple linear prediction from the stimulus compares to the data. Then, I study how the instantaneous gain of the actual ORN response w.r.t to the predicted ORN response varies with time, and try to find a objective filter from the stimulus to this instantaneous gain to correct for systematic errors in the linear prediction.  \n\n%%\n\n% parameters to tune for figure display\nfont_size = 20;\nmarker_size = 10;\nmarker_size2 = 20;\n\n%% Data Visualisation \n% Data from this file will be used for this analysis.\n\nfilename = '/data/random-stim/final_2011_06_14_ab3A_1o3ol3X-3_20ml_30sec_30ms_rand.mat';\ndisp(filename)\n\n%%\n% Here, data from simultaneous measurements of the stimulus and from the ORN is shown. The top row shows the valve command signal (a binary signal, high means valve is open). The middle row shows the simultaneous measurement of the odour stimulus with a PID, and the bottom row shows the instantaneous firing rate of the ORN recorded from. \n\ncrop_traces = 0;\n% grab data\nif ~(exist('PID') == 1)\n	crop_traces = 1;\n	[PID time f fs Valve ntrials] = PrepData2(filename);\n\n	% make all vectors consistent\n	PID = PID(:);\n	time = time(:);\n	f = f(:);\n	fs = fs(:);\n	Valve = Valve(:);\n\n	% detrend PID\n	ptrend = fit(time,PID,'Poly1'); \n	PID = PID - (ptrend(time) - mean(ptrend(time)));\n\n	% detrend f\n	ptrend = fit(time,f,'Poly1'); \n	f = f - (ptrend(time) - mean(ptrend(time)));\n\n	clear ptrend\nend\n\n% plot the data\nfigure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on\nsubplot(3,1,1), hold on\nplot(time,Valve,'LineWidth',2)\nset(gca,'box','on','LineWidth',2,'XLim',[18 22],'YLim',[-0.1 1.1])\nylabel('stimulus')\n\nsubplot(3,1,2), hold on\nplot(time,PID,'LineWidth',2)\nset(gca,'box','on','LineWidth',2,'XLim',[18 22])\nylabel('PID (a.u.)')\n\nsubplot(3,1,3), hold on\nplot(time,f,'LineWidth',2)\nset(gca,'box','on','LineWidth',2,'XLim',[18 22])\nxlabel('Time (s)')\nylabel('Firing Rate (Hz)')\n\n%% \n% The odour used, the neuron recorded from and the correlation time of the flickering stimulus are in the file name displayed above the plot.\n\n%% Filter Extraction \n% Details about the filter extraction, regularisation methods, and validation with synthetic and real data is listed in (FilterExtraction.pdf). Here, we calculate the best filter (scaled to ensure that gain = 1) using techniques described in that document from the PID (left) and from the Valve (right).\n\n% shift input, black magic. why are we shifting input? no clue. but this is what Carlotta does. is there a lag between the to traces? why is it this? \nshift_input = 33;\nif crop_traces\n	time = time(1:end-shift_input+1);\n	Valve = Valve(1:end-shift_input+1);\n	PID = PID(shift_input:end);\n	f = f(1:end-shift_input+1);\n	fs = fs(1:end-shift_input+1);\nend\n\n\n% compute filter\nfilter_length = 333;\nfiltertime = 0:mean(diff(time)):filter_length*mean(diff(time)); % this is the x axis for the \n\nif ~(exist('K') == 1)\n	[K diagnostics] = FindBestFilter(PID,f,filter_length);\n	K = K*diagnostics.slope(diagnostics.bestfilter);\nend\n\nif ~(exist('K_Valve') == 1)\n	[K_Valve diagnostics_valve] = FindBestFilter(Valve,f,filter_length);\n	K_Valve = K_Valve*diagnostics_valve.slope(diagnostics_valve.bestfilter);\nend\n\n% plot\nfigure('outerposition',[0 0 700 350],'PaperUnits','points','PaperSize',[800 350]); hold on\nsubplot(1,2,1), hold on\nplot(filtertime,K,'LineWidth',2)\nset(gca,'box','on','LineWidth',2,'FontSize',font_size)\nxlabel('Lag (s)','FontSize',20)\nylabel('Filter Amplitude (Hz)','FontSize',font_size)\ntitle('PID > f','FontSize',font_size)\n\nsubplot(1,2,2), hold on\nplot(filtertime,K_Valve,'LineWidth',2)\nset(gca,'box','on','LineWidth',2,'FontSize',font_size)\nxlabel('Lag (s)','FontSize',20)\nylabel('Filter Amplitude (Hz)','FontSize',font_size)\ntitle('Valve > f','FontSize',font_size)\n\n%%\n% The variation of filter shape with regularisation parameter for the PID > f filter is shown below:\n\nPlotFilterDiagnostics2(diagnostics,marker_size,marker_size2,font_size,'PID > f')\n\n%%\n% The variation of filter shape with regularisation parameter for the Valve > f filter is shown below:\n\nPlotFilterDiagnostics2(diagnostics_valve,marker_size,marker_size2,font_size,'Valve > f')\n\n\n\n%%\n% The convolution of this filter with the input (PID) gives a prediction of the output. In the figure below, the data is shown in black, and the prediction from the PID filter is shown in blue and the prediction from the Valve filter is shown in red. Note that sometimes the prediction can be below zero, which doesn't mean anything physical (firing rate cannot be < 0). \n\nfigure('outerposition',[0 0 800 500],'PaperUnits','points','PaperSize',[800 500]); hold on\nfp = filter(K,1,PID-mean(PID)) + mean(f);\n% censor initial prediction\nfp(1:filter_length+1)=NaN;\n\nfp_valve = filter(K_Valve,1,Valve-mean(Valve))+mean(f);\n% censor initial prediction\nfp_valve(1:filter_length+1)=NaN;\n\nplot(time,f,'k','LineWidth',2)\nplot(time,fp,'b','LineWidth',2)\nplot(time,fp_valve,'r','LineWidth',2)\nset(gca,'XLim',[mean(time)-2 mean(time)+2],'box','on','LineWidth',2,'FontSize',font_size)\nxlabel('Time (s)','FontSize',20)\nylabel('Firing Rate (Hz)','FontSize',font_size)\ntitle('Comparison of data and prediction.')\nlegend Data PID Valve\n\n\n%% Analysis of Linear Prediction - Which input predicts output better?\n% The measurement of the stimulus should help us predict the response of the neuron better than just the valve control signal, as we now capture the fast fluctuations of the odour stimulus as it reaches the ORN. Thus, a prediction of ORN firing response from the PID signal should be better than a prediction of the ORN firing response from the valve signal. \n\n%%\n% The r-square (coefficient of determination) of the PID>f prediction is:\ndisp(rsquare(f(filter_length+2:end),fp(filter_length+2:end)))\n\n%%\n% The r-square (coefficient of determination) of the Valve>f prediction is:\ndisp(rsquare(f(filter_length+2:end),fp_valve(filter_length+2:end)))\n\n\n%% Analysis of Linear Prediction - Linearity of Prediction \n% For a linear filter calculated from the data, a plot of the actual response to the predicted response can be fit with a line of slope 1. Here the actual firing rate is plotted on the X axis and the firing rate predicted from the linear filter is plotted on the Y axis. \n\n\n\nfigure('outerposition',[0 0 800 350],'PaperUnits','points','PaperSize',[800 350]); hold on\nsubplot(1,2,1), hold on\nplot(fp,f,'.','MarkerSize',marker_size)\nset(gca,'LineWidth',2,'FontSize',20,'box','on')\nset(gca,'XLim',[min([fp; f]) max([fp; f])],'YLim',[min([fp; f]) max([fp; f])])\naxis square\nylabel('Actual Firing rate (Hz)','FontSize',20)\nxlabel('Linear Predictionf Firing rate (Hz)','FontSize',20)\n[fall ~] = fit(fp(filter_length+2:end),f(filter_length+2:end),'Poly1');\nplot(fall(min(f):1:max(f)),min(f):1:max(f),'k','LineWidth',2)\ntitle('PID > f','FontSize',font_size)\n\nsubplot(1,2,2), hold on\nplot(fp_valve,f,'.','MarkerSize',marker_size)\nset(gca,'LineWidth',2,'FontSize',20,'box','on')\nset(gca,'XLim',[min([fp_valve; f]) max([fp_valve; f])],'YLim',[min([fp_valve; f]) max([fp_valve; f])])\naxis square\nxlabel('Linear Prediction Firing rate (Hz)','FontSize',20)\n[fall2 ~] = fit(fp_valve(filter_length+2:end),f(filter_length+2:end),'Poly1');\nplot(fall2(min(f):1:max(f)),min(f):1:max(f),'k','LineWidth',2)\ntitle('Valve > f','FontSize',font_size)\n\n%% \n% The line is a best fit to all the data. The slope of the best fit line for the prediction from PID is: \ndisp(fall.p1)\n\n%% \n% The line is a best fit to all the data. The slope of the best fit line for the prediction from the valve is: \ndisp(fall2.p1)\n\n\n%% Analysis of Linear Prediction - Response to High and Low Stimuli\n% How does the response of the ORN differ for high and low stimuli? Specifically, does the neuron display the characteristics of fast adaptation to this flickering stimulus? \n\n%%\n% To look at this, we calculate the mean average stimulus over some window history length for every time point _t_, for various different window history lengths. The effect of this operation is shown in the figure below, where the legend refers to the history window in ms. \nhistory_lengths = [30 102 150 201 300 402 501 600 801 1002];\nhl = history_lengths/3; % history lengths better be divisible by 3!\nshat = NaN(length(hl),length(PID));\nfor i = 1:length(hl)\n	shat(i,:) = filter(ones(1,hl(i))/hl(i),1,PID);\n	shat(i,1:hl(i)) = NaN;\nend\nfigure('outerposition',[10 10 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on\nplot(time,PID,'k','LineWidth',2)\nplot(time,shat(1,:),'r','LineWidth',2)\nplot(time,shat(5,:),'b','LineWidth',3)\nplot(time,shat(10,:),'g','LineWidth',4)\nset(gca,'XLim',[mean(time)-2 mean(time)+2],'LineWidth',2,'box','on','FontSize',font_size)\nlegend 0ms 30ms 300ms 1002ms \nxlabel('Time (s)','FontSize',font_size)\nylabel('PID (a.u.)','FontSize',font_size)\n%%\n% Now, we separate neuron responses and linear prediction at times when the mean average stimulus is in the lowest 10% or the highest 10%. These points are marked either green (lowest 10%) or red (or highest 10%) in the figures below, while all the data is plotted in grey. Lines are fit to each of these clouds of points, and the slopes (representing the instantaneous gain) is calculated from these lines. The _y_ axis is the actual firing rate, while the _x_ axis is the predicted firing rate. In this analysis the prediction from the PID is used.\n\n% make data vectors\nlow_slopes = NaN*history_lengths;\nlow_slopes_err = NaN*history_lengths;\nhigh_slopes = NaN*history_lengths;\nhigh_slopes_err = NaN*history_lengths;\nlow_gof = NaN*history_lengths;\nhigh_gof = NaN*history_lengths;\n\n% calculate the slopes for all points\n[fall gof] = fit(fp(filter_length+2:end),f(filter_length+2:end),'Poly1');\nall_gof = gof.rsquare;\ner = confint(fall);\nall_slopes_err=fall.p1-er(1,1);\nall_slopes = fall.p1;\noutput_data.all_slopes = all_slopes;\n\nf3= figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on\nfor i = 1:length(history_lengths)\n\n	figure(f3), hold on\n	subplot(2,5,i), hold on\n\n	this_shat = shat(i,:);\n	this_shat(1:hl(i)) = Inf; % the initial segment where we can't estimate shat is excluded\n	[sorted_shat idx] = sort(this_shat,'ascend');\n	f_low = f(idx(1:floor(length(PID)/10)));\n	fp_low = fp(idx(1:floor(length(PID)/10)));\n\n	this_shat(1:hl(i)) = -Inf;\n	[sorted_shat idx] = sort(this_shat,'descend');\n	f_high = f(idx(1:floor(length(PID)/10)));\n	fp_high = fp(idx(1:floor(length(PID)/10)));\n\n	plot(fp,f,'.','MarkerSize',marker_size,'MarkerFaceColor',[0.7 0.7 0.7],'MarkerEdgeColor',[0.7 0.7 0.7])\n	plot(fp_low,f_low,'.','MarkerSize',marker_size,'MarkerFaceColor',[0.5 1 0.5],'MarkerEdgeColor',[0.5 1 0.5])\n	plot(fp_high,f_high,'.','MarkerSize',marker_size,'MarkerFaceColor',[1 0.5 0.5],'MarkerEdgeColor',[1 0.5 0.5])\n	set(gca,'LineWidth',2,'box','on','FontSize',font_size)\n	set(gca,'XLim',[min(f)-10,max(f)+10],'YLim',[min(f)-10,max(f)+10])\n	axis square\n	title(strcat(mat2str(history_lengths(i)),'ms'))\n\n	if i == 6\n		xlabel('Linear Prediction (Hz)','FontSize',16)\n		ylabel('Neuron Response (Hz)','FontSize',16)\n	end\n\n\n	% remove NaN values\n	f_high(isnan(fp_high)) = [];\n	fp_high(isnan(fp_high)) = [];\n	f_low(isnan(fp_low)) = [];\n	fp_low(isnan(fp_low)) = [];\n\n	% fit lines\n	[flow gof] = fit(fp_low,f_low,'Poly1');\n	low_gof(i) = gof.rsquare;\n	er = confint(flow);\n	low_slopes_err(i)=flow.p1-er(1,1);\n	low_slopes(i) = flow.p1;\n\n	[fhigh gof] = fit(fp_high,f_high,'Poly1');\n	high_gof(i) =  gof.rsquare;\n	er = confint(fhigh);\n	high_slopes_err(i)=fhigh.p1-er(1,1);\n	high_slopes(i) = fhigh.p1;\n\n\n	% plot the best fit lines\n	plot(min(f):max(f),fall(min(f):max(f)),'Color',[0.5 0.5 0.5],'LineWidth',2)\n	plot(min(f_low):max(f_low),flow(min(f_low):max(f_low)),'g','LineWidth',2)\n	plot(min(f_high):max(f_high),fhigh(min(f_high):max(f_high)),'r','LineWidth',2)\n\n\nend\n\n\n\n%%\n% The following plot shows how the slope of the lines of best fit, or the instantaneous gains, varies with the history length. The plot on the right shows the goodness of fit for each fit, indicating the regions where the fit is meaningful.\n\n% plot to summary figure\nfigure('outerposition',[10 10 1000 500],'PaperUnits','points','PaperSize',[1000 700]); hold on\nsubplot(1,2,1), hold on\nplot(history_lengths,all_slopes*ones(1,length(history_lengths)),'k','LineWidth',2), hold on\nerrorbar(history_lengths,low_slopes,low_slopes_err,'g','LineWidth',2), hold on\nerrorbar(history_lengths,high_slopes,high_slopes_err,'r','LineWidth',2)\nset(gca,'LineWidth',2,'FontSize',20,'box','on','XLim',[0 max(history_lengths)])\nxlabel('History Length (ms)','FontSize',20)\nylabel('Slope data/prediction (gain)','FontSize',20)\n\nsubplot(1,2,2), hold on\nplot(history_lengths,low_gof,'g','LineWidth',2),hold on\nplot(history_lengths,high_gof,'r','LineWidth',2)\nxlabel('History Length (ms)','FontSize',20)\nylabel('Goodness of Fit, rsquare','FontSize',20)\nset(gca,'LineWidth',2,'FontSize',20,'box','on','YLim',[0 1.1],'XLim',[0 max(history_lengths)])\n\noutput_data.high_slopes = high_slopes;\noutput_data.high_slopes_err = high_slopes_err;\noutput_data.low_slopes = low_slopes;\noutput_data.low_slopes_err = low_slopes_err;\noutput_data.low_gof = low_gof;\noutput_data.high_gof = high_gof;\n\n%% Analysis of Linear Prediction - Filter Variation (to be done)\n% We have segmented the entire data set based on when the stimulus, averaged in some way over the past, into high and low. Here, I will calculate filters for each of these subsets. \n\n%% Analysis of Linear Prediction - Does adding another linear filter improve prediction?\n% An ideal linear filter should capture all the linear variation in the data. This means that if one were to construct a vector of residuals, a linear filter would be unable to predict the residuals from the data, and would lead to no improvement on the original filter. Is this true? \n\n%%\n% First, we construct a vector of residuals by subtracting the linear prediction from the data.\nres = f - fp;\nfigure('outerposition',[0 0 800 350],'PaperUnits','points','PaperSize',[800 350]); hold on\nsubplot(2,1,1), hold on\nplot(time,res,'k','LineWidth',2)\nset(gca,'XLim',[mean(time)-1 mean(time)+2],'FontSize',font_size,'LineWidth',2,'box','on')\nylabel('Residuals','FontSize',font_size)\nsubplot(2,1,2), hold on\nplot(time,PID,'k','LineWidth',2)\nylabel('PID','FontSize',font_size)\nset(gca,'XLim',[mean(time)-1 mean(time)+2],'FontSize',font_size,'LineWidth',2,'box','on')\nxlabel('Time (s)','FontSize',font_size)\n\n%%\n% we then construct a filter from the PID to these residuals to try to predict the residuals.\n[Kres ,diagnostics_res] = FindBestFilter(PID(filter_length+2:end),res(filter_length+2:end),filter_length);\n\nfigure('outerposition',[0 0 400 400],'PaperUnits','points','PaperSize',[800 400]); hold on\nplot(filtertime,Kres,'LineWidth',2)\nset(gca,'box','on','LineWidth',2,'FontSize',font_size)\nxlabel('Lag (s)','FontSize',20)\nylabel('Filter Amplitude','FontSize',font_size)\ntitle('Filter: PID > residuals','FontSize',20)\n\n%%\n% and use this filter to predict the residuals from the stimulus. \nresp = filter(Kres,1,PID-mean(PID)) + mean2(res);\nfigure('outerposition',[10 10 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on\nplot(time,res,'k','LineWidth',2)\nplot(time,resp,'b','LineWidth',2)\nset(gca,'XLim',[mean(time)-1 mean(time)+2],'box','on','LineWidth',2,'FontSize',18)\nxlabel('Time','FontSize',20)\nylabel('Residuals','FontSize',font_size)\nlegend Residuals 'Predicted Residuals'\n\n%%\n% Does adding this back to the prediction improve the prediction? The following plot shows the data (black), the linear prediction (red), and the linear prediction corrected by the prediciton of the residual (green).\nfpr = fp + resp;\nfigure('outerposition',[10 10 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on\nplot(time,f,'k','LineWidth',2)\nplot(time,fp,'r','LineWidth',2)\nplot(time,fpr,'g','LineWidth',2)\nset(gca,'XLim',[mean(time)-1 mean(time)+2],'box','on','LineWidth',2,'FontSize',18)\nxlabel('Time','FontSize',20)\nylabel('Residuals','FontSize',font_size)\nlegend Data 'Linear Prediction' 'Residual Corrected'\n\n%%\n% The r-square of the corrected prediction is\ndisp(rsquare(f(filter_length+2:end),fpr(filter_length+2:end)))\n\n%% \n% and the r-square of the simple linear prediction is\ndisp(rsquare(f(filter_length+2:end),fp(filter_length+2:end)))\n\n%%\n% How does this make any sense? If this is true, then simply adding the filters together will yield a better filter, which we should have computed in the very beginning. The filter, the second filter computed from residuals, and their sum is shown in the panel on the left. On the right is a filter with lower regularisation. \n\nfigure('outerposition',[0 0 800 350],'PaperUnits','points','PaperSize',[800 350]); hold on\nsubplot(1,2,1), hold on\nplot(filtertime,K,'k','LineWidth',2)\nplot(filtertime,Kres,'r','LineWidth',2)\nplot(filtertime,Kres+K,'g','LineWidth',2)\nlegend Filter ResidualFilter Sum\nset(gca,'FontSize',font_size,'LineWidth',2,'box','on')\nylabel('Filter Amplitude (Hz)','FontSize',font_size)\n\nK_lowreg = FitFilter2Data(PID,f,'reg=1e-1;');\nsubplot(1,2,2), hold on\nplot(filtertime,K_lowreg,'k','LineWidth',2)\ntitle('Filter with low regularisation','FontSize',font_size)\nset(gca,'FontSize',font_size,'LineWidth',2,'box','on')\nxlabel('Time (s)','FontSize',font_size)\n\n%%\n% So what we are doing is simply undoing the work we did in regularising the filter. \n\n%% Analysis of Gain: Instantaneous Gain and Fitted Gain\n% There is a mismatch between the linear prediction and the actual firing rate. Moreover, the instantaneous gain seems to be modulated by something that depends on the past history of the stimulus (see analysis in the previous section). We also know that we cannot predict with a simple linear filter any linear errors that the filter makes. However, there is the possibility of fitting a linear filter to the gain, which is a non-linear function of the filter output. But how do we compute this gain? Here, in the figure below, the instantaneous gain, i.e., the ratio of the actual firing rate to the predicted firing rate, is plotted along with the stimulus. \n\ng = f./fp;\nfigure('outerposition',[0 0 800 350],'PaperUnits','points','PaperSize',[800 350]); hold on\nsubplot(2,1,1), hold on\nplot(time,g,'k','LineWidth',2)\nset(gca,'XLim',[mean(time)-2 mean(time)+2],'FontSize',font_size,'LineWidth',2,'box','on','YLim',[0 2])\nylabel('Gain','FontSize',font_size)\nsubplot(2,1,2), hold on\nplot(time,PID,'k','LineWidth',2)\nylabel('PID','FontSize',font_size)\nset(gca,'XLim',[mean(time)-1 mean(time)+2],'FontSize',font_size,'LineWidth',2,'box','on')\nxlabel('Time (s)','FontSize',font_size)\n\n%%\n% We can also calculate the moving gain by fitting lines to the data and the prediction collected in bins of size _w_. The following plots show the gain computed in this way for a few different _w_. We want to do this because the raw instantaneous gain is very noisy, and predicting it from PID is hard. \n\n% WARNING. THIS CODE IS SUPER SLOW. FITTING THOUSANDS OF LINES. \n% we're going to cheat and pre-load data\nws = [5 10 30 100];\nif ~(exist('gain') == 1)\n	% gain = f./fp;\n	% gain = repmat(gain,1,length(ws)+1);\n	% for i = 1:length(ws)\n	% 	disp(i)\n	% 	starthere = filter_length+2+ws(i);\n	% 	for j = starthere:1:length(f)\n	% 		j\n	% 		fitmetrics = fit(fp(thesepoints),f(thesepoints),'Poly1');\n	% 		gain(j,i+1) = fitmetrics.p1;\n	% 	end\n	% end\n	load('gain.mat')\nend\n\nws = [1 ws];\nfigure('outerposition',[10 10 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold all\nlegendtext = {};\nfor i = 1:size(gain,2)\n	plot(time,gain(:,i))\n	legendtext{i} = strcat('Window size:',mat2str(ws(i)*3),'ms');\nend\nset(gca,'XLim',[mean(time)-2 mean(time)+2],'LineWidth',2,'box','on','FontSize',font_size)\nlegend(legendtext)\nxlabel('Time (s)','FontSize',font_size)\nylabel('Gain (f/fp)','FontSize',font_size)\n\n%%\n% Of these different gain vectors, which fixes the prediction the best? The following plot shows the r-square values of corrected linear prediction, corrected by the gain computed in different ways (lines fit to windows of different lengths). On the y-axis is the r-square, and the x-axis is the window over which the lines are fit.  The first point has a r-square of 1, indicating a perfect fit (this is by definition, since the first point is the instantaneous gain). Note that none of the other points exceed the line, which indicates the r-square of the simple linear prediction. \nfpg = f;\nfpg = repmat(fpg,1,length(ws));\nfor i = 1:length(ws)\n	fpg(:,i) = fp.*gain(:,i);\nend\n\nrvalues = NaN(1,length(ws));\nfor i = 1:length(ws)\n	rvalues(i) = rsquare(f(filter_length+2:end),fpg(filter_length+2:end,i));\nend\n\nfigure('outerposition',[10 10 400 400],'PaperUnits','points','PaperSize',[1000 400]); hold on\nplot(ws*3,rvalues,'.','MarkerSize',marker_size2)\nxlabel('Window over which slope is fitted (ms)','FontSize',font_size)\nylabel('r-square of corrected fit','FontSize',font_size)\nline([1 max(ws)*3],[rsquare(f(filter_length+2:end),fp(filter_length+2:end)) rsquare(f(filter_length+2:end),fp(filter_length+2:end))],'LineWidth',2)\nset(gca,'LineWidth',2,'FontSize',font_size)\n\n%%\n% We conclude that this method of finding the gain is not helpful in improving the prediction. \n\n%% Analysis of Gain: Smoothed gain. \n% Instead of calculating the instantaneous point-by-point gain, we can also smooth the instantaneous gain over some small window size _w_. The following plot shows the effect of smoothing for a few window sizes _w_. \ngain2 = f./fp;\nws = [1 5 10 25 50 100];\ngain2 = repmat(gain2,1,length(ws));\nfor i = 1:length(ws)\n	gain2(:,i)=smooth(gain2(:,i),ws(i));	\nend\n\nfigure('outerposition',[10 10 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold all\nlegendtext = {};\nfor i = 1:size(gain2,2)\n	plot(time,gain2(:,i),'LineWidth',2)\n	legendtext{i} = strcat('Window size:',mat2str(ws(i)*3),'ms');\nend\nset(gca,'XLim',[mean(time)-2 mean(time)+2],'LineWidth',2,'box','on','FontSize',font_size)\nlegend(legendtext)\nxlabel('Time (s)','FontSize',font_size)\nylabel('Gain (f/fp)','FontSize',font_size)\n\n%%\n% How does smoothing the gain affect our ability to correct the linear prediction? The following plot shows how the r-square of the corrected linear prediction varies with smoothing the gain. Also shown is the line which indicates the linear prediction of the uncorrected simple linear prediction. \n\nfpg = f;\nfpg = repmat(fpg,1,length(ws));\nfor i = 1:length(ws)\n	fpg(:,i) = fp.*gain2(:,i);\nend\n\nrvalues = NaN(1,length(ws));\nfor i = 1:length(ws)\n	rvalues(i) = rsquare(f(filter_length+2:end),fpg(filter_length+2:end,i));\nend\n\nfigure('outerposition',[10 10 400 400],'PaperUnits','points','PaperSize',[1000 400]); hold on\nplot(ws*3,rvalues,'.','MarkerSize',marker_size2)\nxlabel('Smoothing window (ms)','FontSize',font_size)\nylabel('r-square of corrected fit','FontSize',font_size)\nline([1 max(ws)*3],[rsquare(f(filter_length+2:end),fp(filter_length+2:end)) rsquare(f(filter_length+2:end),fp(filter_length+2:end))],'LineWidth',2)\nset(gca,'LineWidth',2,'FontSize',font_size)\n\n%%\n% From this analysis of the gain, it is clear that if we do want to improve the linear prediction, the best way to do it (apart from the instantaneous gain, which would lead to a perfect prediction), is smoothing the gain in some way. In the next section, we will try to estimate the smoothed gain.\n\n%% Gain Analysis - Estimating the gain \n% In the above analysis, we have considered how a boxcar average over the stimulus immediately preceding the current time affects gain. Now, we want to find some optimal way of averaging the past stimulus history to predict the instantaneous gain: by doing so, we can then predict gain, and thus get a better predictor of the actual firing rate.\n\n%%\n% In effect, we can calculate a new filter, $K_g$ such that \n% \n% $$ K_g=\\hat{C}\\setminus(s'*g) $$\n%\n% where _g_ is the smoothed gain and _s_ is the stimulus. \n\n%%\n% For with various smoothing of the instantaneous gain, we find the best filter for each and plot it below:\n\nif ~(exist('Kg_smooth') == 1)\n	Kg_smooth = zeros(filter_length+1,size(gain2,2));\n	for i = 1:size(gain2,2)\n		Kg_smooth(:,i) = FindBestFilter(PID(filter_length+2:end),gain2(filter_length+2:end,i),filter_length);\n	end\n\nend\n\n\nfigure('outerposition',[10 10 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on\nplot(filtertime,Kg_smooth,'LineWidth',2)\nxlabel('Filter Lag','FontSize',font_size)\nylabel('Filter Amplitude','FontSize',font_size)\nset(gca,'LineWidth',2,'FontSize',font_size,'box','on')\nlegend(legendtext)\n\n%%\n% How well can we predict the smoothed gain vectors using these filters and the stimulus? The following plot shows the r-square between prediction of the smoothed gain and the smoothed gain for various smoothing windows. \n\ngain2p = gain2;\nfor i = 1:length(ws)\n	gain2p(:,i) = filter(Kg_smooth(:,i),1,PID-mean(PID)) + mean2(gain2(filter_length+2:end,i));\nend\n\nrvalues = NaN(1,length(ws));\nfor i = 1:length(ws)\n	rvalues(i) = rsquare(gain2p(filter_length+2:end,i),gain2(filter_length+2:end,i));\nend\n\nfigure('outerposition',[10 10 400 400],'PaperUnits','points','PaperSize',[1000 400]); hold on\nplot(ws*3,rvalues,'.','MarkerSize',marker_size2)\nxlabel('Smoothing window (ms)','FontSize',font_size)\nylabel('r-square','FontSize',font_size)\nset(gca,'LineWidth',2,'FontSize',font_size)\n\n%%\n% Well, that sucks. Maybe even this horrible estimation of the gain can improve the linear prediction of the firing rate in some way? Here, I plot the r-square of the gain-corrected linear prediction (corrected by the prediction of the gain), as a function of gain smoothing (in blue). Also plotted is the r-square of the gain-corrected linear prediction, corrected now with actual gain (in black).\n\n\nfpg = f;\nfpg = repmat(fpg,1,length(ws));\nfor i = 1:length(ws)\n	fpg(:,i) = fp.*gain2(:,i);\nend\n\nrvalues = NaN(1,length(ws));\nfor i = 1:length(ws)\n	rvalues(i) = rsquare(f(filter_length+2:end),fpg(filter_length+2:end,i));\nend\n\n\nfpg = f;\nfpg = repmat(fpg,1,length(ws));\nfor i = 1:length(ws)\n	fpg(:,i) = fp.*gain2p(:,i);\nend\n\nrvalues2 = NaN(1,length(ws));\nfor i = 1:length(ws)\n	rvalues2(i) = rsquare(f(filter_length+2:end),fpg(filter_length+2:end,i));\nend\n\n\nfigure('outerposition',[10 10 400 400],'PaperUnits','points','PaperSize',[1000 400]); hold on\nplot(ws*3,rvalues,'b.','MarkerSize',marker_size2), hold on\nplot(ws*3,rvalues2,'k.','MarkerSize',marker_size2)\nxlabel('Smoothing window (ms)','FontSize',font_size)\nylabel('r-square of corrected fit','FontSize',font_size)\nline([1 max(ws)*3],[rsquare(f(filter_length+2:end),fp(filter_length+2:end)) rsquare(f(filter_length+2:end),fp(filter_length+2:end))],'LineWidth',2)\nset(gca,'LineWidth',2,'FontSize',font_size)\n\n\n\n%% Next Steps\n% \n% # Calculate filters for high and low stimulus zones. \n% # Calculate filters after using elastic net regularisation. \n% # Check if someone has looked at Weber's law in olfaction/ORNs\n% # shuffle data to check validity?\n% # fit Dynamical Adaptation model to data?\n\n%% Docs\n% This document was generated by MATLAB's publish function. All files needed to generate this document are on a git repository on https://bitbucket.org/srinivasgs/da\n\n% close all to remove all extraneous figures, since we are publishing to a document anyway\nclose all",
 			"file": "Analysis_January.m",
-			"file_size": 27381,
-			"file_write_time": 1390833854000000,
 			"settings":
 			{
-				"buffer_size": 27354,
+				"buffer_size": 30192,
 				"line_ending": "Unix",
 				"name": "%% Dynamical Adaptation in ORNs"
+			}
+		},
+		{
+			"file": "Analysis_February.m",
+			"settings":
+			{
+				"buffer_size": 30420,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "ORN_Weber_Analysis.m",
+			"settings":
+			{
+				"buffer_size": 30,
+				"line_ending": "Unix"
 			}
 		},
 		{
 			"file": "FindBestFilter.m",
 			"settings":
 			{
-				"buffer_size": 4095,
+				"buffer_size": 4177,
 				"line_ending": "Unix",
 				"name": "function [K Kdamon] = FindBestFilter(PID,f,filter_"
 			}
@@ -172,7 +189,7 @@
 			"file": "FitFilter2Data.m",
 			"settings":
 			{
-				"buffer_size": 2822,
+				"buffer_size": 3089,
 				"line_ending": "Unix"
 			}
 		},
@@ -205,9 +222,33 @@
 	"build_system": "",
 	"command_palette":
 	{
-		"height": 287.0,
+		"height": 375.0,
 		"selected_items":
 		[
+			[
+				"Packa",
+				"Package Control: Install Package"
+			],
+			[
+				"package",
+				"Package Control: Install Package"
+			],
+			[
+				"Package",
+				"Package Control: Install Package"
+			],
+			[
+				"packa",
+				"Package Control: Install Package"
+			],
+			[
+				"packag",
+				"Package Control: List Packages"
+			],
+			[
+				"Pack",
+				"Package Control: Install Package"
+			],
 			[
 				"Package Control: ",
 				"Package Control: List Packages"
@@ -218,10 +259,6 @@
 			],
 			[
 				"disable",
-				"Package Control: Disable Package"
-			],
-			[
-				"packa",
 				"Package Control: Disable Package"
 			],
 			[
@@ -265,7 +302,7 @@
 				"Snippet: error"
 			]
 		],
-		"width": 449.0
+		"width": 830.0
 	},
 	"console":
 	{
@@ -282,6 +319,10 @@
 	},
 	"file_history":
 	[
+		"/Users/sigbhu/Dropbox/code/DA/MinL1Solution.m",
+		"/Users/sigbhu/Dropbox/code/Kontroller/Kontroller.m",
+		"/Users/sigbhu/Library/Application Support/Sublime Text 2/Packages/SideBarEnhancements/messages/11.13.2012.1305.0.txt",
+		"/Users/sigbhu/Library/Application Support/Sublime Text 2/Packages/User/Preferences.sublime-settings",
 		"/Users/sigbhu/Dropbox/code/core/multiplot.m",
 		"/Users/sigbhu/Dropbox/code/core/std2.m",
 		"/Users/sigbhu/Dropbox/code/core/mean2.m",
@@ -302,7 +343,6 @@
 		"/Users/sigbhu/file",
 		"/Users/sigbhu/Dropbox/code/DA/srinivas.xsl",
 		"/Users/sigbhu/Dropbox/code/DA/analysis_old_data.m",
-		"/Users/sigbhu/Library/Application Support/Sublime Text 2/Packages/User/Preferences.sublime-settings",
 		"/Users/sigbhu/Dropbox/code/DA/temp.m",
 		"/Users/sigbhu/Dropbox/code/DA/2012_05_23_analysis_old_data.m",
 		"/Users/sigbhu/Dropbox/code/DA/FitFilter2Data.m",
@@ -406,10 +446,7 @@
 		"/web/articles/children-of-men/index.html",
 		"/web/articles/books/index.html",
 		"/web/articles/books/css/base.css",
-		"/web/articles/books/css/skeleton.css",
-		"/web/articles/books/css/docs.css",
-		"/web/articles/books/css/layout.css",
-		"/labweb/pages/publications.html"
+		"/web/articles/books/css/skeleton.css"
 	],
 	"find":
 	{
@@ -431,6 +468,12 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"s",
+			"daq",
+			"FitFilter2Data",
+			"FindBestFilter",
+			"FitFilter2Data",
+			"FindBestFilter",
 			"gain",
 			"r-s",
 			"r-square",
@@ -552,13 +595,7 @@
 			"wbfylim",
 			"thrustylim",
 			"wbfylim",
-			"TrialPlot",
-			"Trial",
-			"fly",
-			"fit",
-			"Airspeed",
-			"Maximum",
-			"Airspeed"
+			"TrialPlot"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -599,7 +636,7 @@
 		"reverse": false,
 		"show_context": true,
 		"use_buffer2": true,
-		"whole_word": false,
+		"whole_word": true,
 		"wrap": true
 	},
 	"groups":
@@ -613,48 +650,135 @@
 					"file": "Analysis_January.m",
 					"settings":
 					{
-						"buffer_size": 27354,
+						"buffer_size": 30192,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								19379,
-								19379
+								29317,
+								29317
 							]
 						],
 						"settings":
 						{
+							"BracketHighlighterBusy": false,
 							"auto_name": "%% Dynamical Adaptation in ORNs",
+							"bh_regions":
+							[
+								"bh_regex",
+								"bh_regex_center",
+								"bh_regex_open",
+								"bh_regex_close",
+								"bh_double_quote",
+								"bh_double_quote_center",
+								"bh_double_quote_open",
+								"bh_double_quote_close",
+								"bh_square",
+								"bh_square_center",
+								"bh_square_open",
+								"bh_square_close",
+								"bh_angle",
+								"bh_angle_center",
+								"bh_angle_open",
+								"bh_angle_close",
+								"bh_curly",
+								"bh_curly_center",
+								"bh_curly_open",
+								"bh_curly_close",
+								"bh_default",
+								"bh_default_center",
+								"bh_default_open",
+								"bh_default_close",
+								"bh_unmatched",
+								"bh_unmatched_center",
+								"bh_unmatched_open",
+								"bh_unmatched_close",
+								"bh_round",
+								"bh_round_center",
+								"bh_round_open",
+								"bh_round_close",
+								"bh_tag",
+								"bh_tag_center",
+								"bh_tag_open",
+								"bh_tag_close",
+								"bh_single_quote",
+								"bh_single_quote_center",
+								"bh_single_quote_open",
+								"bh_single_quote_close"
+							],
 							"syntax": "Packages/Matlab/Matlab.tmLanguage",
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 7984.0,
+						"translation.y": 12399.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
 					"buffer": 1,
-					"file": "FindBestFilter.m",
+					"file": "Analysis_February.m",
 					"settings":
 					{
-						"buffer_size": 4095,
+						"buffer_size": 30420,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								2083,
-								2085
+								599,
+								0
 							]
 						],
 						"settings":
 						{
-							"auto_name": "function [K Kdamon] = FindBestFilter(PID,f,filter_",
+							"BracketHighlighterBusy": false,
+							"bh_regions":
+							[
+								"bh_regex",
+								"bh_regex_center",
+								"bh_regex_open",
+								"bh_regex_close",
+								"bh_double_quote",
+								"bh_double_quote_center",
+								"bh_double_quote_open",
+								"bh_double_quote_close",
+								"bh_square",
+								"bh_square_center",
+								"bh_square_open",
+								"bh_square_close",
+								"bh_angle",
+								"bh_angle_center",
+								"bh_angle_open",
+								"bh_angle_close",
+								"bh_curly",
+								"bh_curly_center",
+								"bh_curly_open",
+								"bh_curly_close",
+								"bh_default",
+								"bh_default_center",
+								"bh_default_open",
+								"bh_default_close",
+								"bh_unmatched",
+								"bh_unmatched_center",
+								"bh_unmatched_open",
+								"bh_unmatched_close",
+								"bh_round",
+								"bh_round_center",
+								"bh_round_open",
+								"bh_round_close",
+								"bh_tag",
+								"bh_tag_center",
+								"bh_tag_open",
+								"bh_tag_close",
+								"bh_single_quote",
+								"bh_single_quote_center",
+								"bh_single_quote_open",
+								"bh_single_quote_close"
+							],
 							"syntax": "Packages/Matlab/Matlab.tmLanguage",
 							"translate_tabs_to_spaces": false
 						},
@@ -666,33 +790,219 @@
 				},
 				{
 					"buffer": 2,
-					"file": "FitFilter2Data.m",
+					"file": "ORN_Weber_Analysis.m",
 					"settings":
 					{
-						"buffer_size": 2822,
+						"buffer_size": 30,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								2332,
-								2332
+								27,
+								27
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/Matlab/Matlab.tmLanguage",
-							"translate_tabs_to_spaces": false
+							"BracketHighlighterBusy": false,
+							"bh_regions":
+							[
+								"bh_regex",
+								"bh_regex_center",
+								"bh_regex_open",
+								"bh_regex_close",
+								"bh_double_quote",
+								"bh_double_quote_center",
+								"bh_double_quote_open",
+								"bh_double_quote_close",
+								"bh_square",
+								"bh_square_center",
+								"bh_square_open",
+								"bh_square_close",
+								"bh_angle",
+								"bh_angle_center",
+								"bh_angle_open",
+								"bh_angle_close",
+								"bh_curly",
+								"bh_curly_center",
+								"bh_curly_open",
+								"bh_curly_close",
+								"bh_default",
+								"bh_default_center",
+								"bh_default_open",
+								"bh_default_close",
+								"bh_unmatched",
+								"bh_unmatched_center",
+								"bh_unmatched_open",
+								"bh_unmatched_close",
+								"bh_round",
+								"bh_round_center",
+								"bh_round_open",
+								"bh_round_close",
+								"bh_tag",
+								"bh_tag_center",
+								"bh_tag_open",
+								"bh_tag_close",
+								"bh_single_quote",
+								"bh_single_quote_center",
+								"bh_single_quote_open",
+								"bh_single_quote_close"
+							],
+							"syntax": "Packages/Matlab/Matlab.tmLanguage"
 						},
 						"translation.x": 0.0,
-						"translation.y": 1008.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
 				},
 				{
 					"buffer": 3,
+					"file": "FindBestFilter.m",
+					"settings":
+					{
+						"buffer_size": 4177,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								551,
+								551
+							]
+						],
+						"settings":
+						{
+							"BracketHighlighterBusy": false,
+							"auto_name": "function [K Kdamon] = FindBestFilter(PID,f,filter_",
+							"bh_regions":
+							[
+								"bh_regex",
+								"bh_regex_center",
+								"bh_regex_open",
+								"bh_regex_close",
+								"bh_double_quote",
+								"bh_double_quote_center",
+								"bh_double_quote_open",
+								"bh_double_quote_close",
+								"bh_square",
+								"bh_square_center",
+								"bh_square_open",
+								"bh_square_close",
+								"bh_angle",
+								"bh_angle_center",
+								"bh_angle_open",
+								"bh_angle_close",
+								"bh_curly",
+								"bh_curly_center",
+								"bh_curly_open",
+								"bh_curly_close",
+								"bh_default",
+								"bh_default_center",
+								"bh_default_open",
+								"bh_default_close",
+								"bh_unmatched",
+								"bh_unmatched_center",
+								"bh_unmatched_open",
+								"bh_unmatched_close",
+								"bh_round",
+								"bh_round_center",
+								"bh_round_open",
+								"bh_round_close",
+								"bh_tag",
+								"bh_tag_center",
+								"bh_tag_open",
+								"bh_tag_close",
+								"bh_single_quote",
+								"bh_single_quote_center",
+								"bh_single_quote_open",
+								"bh_single_quote_close"
+							],
+							"syntax": "Packages/Matlab/Matlab.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "FitFilter2Data.m",
+					"settings":
+					{
+						"buffer_size": 3089,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"BracketHighlighterBusy": false,
+							"bh_regions":
+							[
+								"bh_regex",
+								"bh_regex_center",
+								"bh_regex_open",
+								"bh_regex_close",
+								"bh_double_quote",
+								"bh_double_quote_center",
+								"bh_double_quote_open",
+								"bh_double_quote_close",
+								"bh_square",
+								"bh_square_center",
+								"bh_square_open",
+								"bh_square_close",
+								"bh_angle",
+								"bh_angle_center",
+								"bh_angle_open",
+								"bh_angle_close",
+								"bh_curly",
+								"bh_curly_center",
+								"bh_curly_open",
+								"bh_curly_close",
+								"bh_default",
+								"bh_default_center",
+								"bh_default_open",
+								"bh_default_close",
+								"bh_unmatched",
+								"bh_unmatched_center",
+								"bh_unmatched_open",
+								"bh_unmatched_close",
+								"bh_round",
+								"bh_round_center",
+								"bh_round_open",
+								"bh_round_close",
+								"bh_tag",
+								"bh_tag_center",
+								"bh_tag_open",
+								"bh_tag_close",
+								"bh_single_quote",
+								"bh_single_quote_center",
+								"bh_single_quote_open",
+								"bh_single_quote_close"
+							],
+							"syntax": "Packages/Matlab/Matlab.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 5,
 					"file": "FilterEstimation.m",
 					"settings":
 					{
@@ -719,7 +1029,7 @@
 					"type": "text"
 				},
 				{
-					"buffer": 4,
+					"buffer": 6,
 					"file": "PlotFilterDiagnostics2.m",
 					"settings":
 					{
@@ -745,7 +1055,7 @@
 					"type": "text"
 				},
 				{
-					"buffer": 5,
+					"buffer": 7,
 					"file": "Analysis_January_unused.m",
 					"settings":
 					{

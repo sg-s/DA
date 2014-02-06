@@ -39,6 +39,9 @@ Do ORNs exhibit fast adaptation to a flickering stimulus? Can a simple dynamical
    \item Analysis of Gain: Instantaneous Gain and Fitted Gain
    \item Analysis of Gain: Smoothed gain.
    \item Gain Analysis - Estimating the gain
+   \item Re-evaluating filter performance after filtering ORN responses
+   \item Estimating the gain at points where the stimulus is far from the mean.
+   \item A note on elastic net regularisation
    \item Next Steps
    \item Docs
 \end{itemize}
@@ -138,16 +141,19 @@ How does the response of the ORN differ for high and low stimuli? Specifically, 
 \begin{par}
 To look at this, we calculate the mean average stimulus over some window history length for every time point \textit{t}, for various different window history lengths. The effect of this operation is shown in the figure below, where the legend refers to the history window in ms.
 \end{par} \vspace{1em}
+\begin{par}
+To calcualte the mean average stimulus, I use the \textit{filtfilt} function, which is a zero-phase digital filter that works by passing it through once in the forward direction, and once again in the reverse direction. I previously used the simple \textit{filter} function, but the results are substantially different: now, the separation of gains extends for larger history window lengths.
+\end{par} \vspace{1em}
 
 \includegraphics [width=\textwidth]{Analysis_January_07.pdf}
 \begin{par}
 Now, we separate neuron responses and linear prediction at times when the mean average stimulus is in the lowest 10\% or the highest 10\%. These points are marked either green (lowest 10\%) or red (or highest 10\%) in the figures below, while all the data is plotted in grey. Lines are fit to each of these clouds of points, and the slopes (representing the instantaneous gain) is calculated from these lines. The \textit{y} axis is the actual firing rate, while the \textit{x} axis is the predicted firing rate. In this analysis the prediction from the PID is used.
 \end{par} \vspace{1em}
+\begin{par}
+The subsequent plot shows how the slope of the lines of best fit, or the instantaneous gains, varies with the history length. The plot on the right shows the goodness of fit for each fit, indicating the regions where the fit is meaningful.
+\end{par} \vspace{1em}
 
 \includegraphics [width=\textwidth]{Analysis_January_08.pdf}
-\begin{par}
-The following plot shows how the slope of the lines of best fit, or the instantaneous gains, varies with the history length. The plot on the right shows the goodness of fit for each fit, indicating the regions where the fit is meaningful.
-\end{par} \vspace{1em}
 
 \includegraphics [width=\textwidth]{Analysis_January_09.pdf}
 
@@ -164,6 +170,11 @@ We can also plot the height of the filter \textit{vs.} the history window size:
 \end{par} \vspace{1em}
 
 \includegraphics [width=\textwidth]{Analysis_January_11.pdf}
+\begin{par}
+We also expect the low stimulus (high gain) filter to be slower than the high stimulus (low gain) filter. Is this so in the data? Here, I plot the time of peak of each filter \textit{vs.} the history window size.
+\end{par} \vspace{1em}
+
+\includegraphics [width=\textwidth]{Analysis_January_12.pdf}
 
 
 \subsection*{Analysis of Linear Prediction - Does adding another linear filter improve prediction?}
@@ -175,27 +186,27 @@ An ideal linear filter should capture all the linear variation in the data. This
 First, we construct a vector of residuals by subtracting the linear prediction from the data.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_12.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_13.pdf}
 \begin{par}
 we then construct a filter from the PID to these residuals to try to predict the residuals.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_13.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_14.pdf}
 \begin{par}
 and use this filter to predict the residuals from the stimulus.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_14.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_15.pdf}
 \begin{par}
 Does adding this back to the prediction improve the prediction? The following plot shows the data (black), the linear prediction (red), and the linear prediction corrected by the prediciton of the residual (green).
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_15.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_16.pdf}
 \begin{par}
 The r-square of the corrected prediction is
 \end{par} \vspace{1em}
 
-        \color{lightgray} \begin{verbatim}    0.9282
+        \color{lightgray} \begin{verbatim}    0.9393
 
 \end{verbatim} \color{black}
     \begin{par}
@@ -209,7 +220,7 @@ and the r-square of the simple linear prediction is
 How does this make any sense? If this is true, then simply adding the filters together will yield a better filter, which we should have computed in the very beginning. The filter, the second filter computed from residuals, and their sum is shown in the panel on the left. On the right is a filter with lower regularisation.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_16.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_17.pdf}
 \begin{par}
 So what we are doing is simply undoing the work we did in regularising the filter.
 \end{par} \vspace{1em}
@@ -221,17 +232,17 @@ So what we are doing is simply undoing the work we did in regularising the filte
 There is a mismatch between the linear prediction and the actual firing rate. Moreover, the instantaneous gain seems to be modulated by something that depends on the past history of the stimulus (see analysis in the previous section). We also know that we cannot predict with a simple linear filter any linear errors that the filter makes. However, there is the possibility of fitting a linear filter to the gain, which is a non-linear function of the filter output. But how do we compute this gain? Here, in the figure below, the instantaneous gain, i.e., the ratio of the actual firing rate to the predicted firing rate, is plotted along with the stimulus.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_17.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_18.pdf}
 \begin{par}
 We can also calculate the moving gain by fitting lines to the data and the prediction collected in bins of size \textit{w}. The following plots show the gain computed in this way for a few different \textit{w}. We want to do this because the raw instantaneous gain is very noisy, and predicting it from PID is hard.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_18.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_19.pdf}
 \begin{par}
 Of these different gain vectors, which fixes the prediction the best? The following plot shows the r-square values of corrected linear prediction, corrected by the gain computed in different ways (lines fit to windows of different lengths). On the y-axis is the r-square, and the x-axis is the window over which the lines are fit.  The first point has a r-square of 1, indicating a perfect fit (this is by definition, since the first point is the instantaneous gain). Note that none of the other points exceed the line, which indicates the r-square of the simple linear prediction.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_19.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_20.pdf}
 \begin{par}
 We conclude that this method of finding the gain is not helpful in improving the prediction.
 \end{par} \vspace{1em}
@@ -243,12 +254,12 @@ We conclude that this method of finding the gain is not helpful in improving the
 Instead of calculating the instantaneous point-by-point gain, we can also smooth the instantaneous gain over some small window size \textit{w}. The following plot shows the effect of smoothing for a few window sizes \textit{w}.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_20.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_21.pdf}
 \begin{par}
 How does smoothing the gain affect our ability to correct the linear prediction? The following plot shows how the r-square of the corrected linear prediction varies with smoothing the gain. Also shown is the line which indicates the linear prediction of the uncorrected simple linear prediction.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_21.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_22.pdf}
 \begin{par}
 From this analysis of the gain, it is clear that if we do want to improve the linear prediction, the best way to do it (apart from the instantaneous gain, which would lead to a perfect prediction), is smoothing the gain in some way. In the next section, we will try to estimate the smoothed gain.
 \end{par} \vspace{1em}
@@ -272,31 +283,68 @@ where \textit{g} is the smoothed gain and \textit{s} is the stimulus.
 For with various smoothing of the instantaneous gain, we find the best filter for each and plot it below:
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_22.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_23.pdf}
 \begin{par}
 How well can we predict the smoothed gain vectors using these filters and the stimulus? The following plot shows the r-square between prediction of the smoothed gain and the smoothed gain for various smoothing windows.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_23.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_24.pdf}
 \begin{par}
 Well, that sucks. Maybe even this horrible estimation of the gain can improve the linear prediction of the firing rate in some way? Here, I plot the r-square of the gain-corrected linear prediction (corrected by the prediction of the gain), as a function of gain smoothing (in blue). Also plotted is the r-square of the gain-corrected linear prediction, corrected now with actual gain (in black).
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Analysis_January_24.pdf}
+\includegraphics [width=\textwidth]{Analysis_January_25.pdf}
+
+
+\subsection*{Re-evaluating filter performance after filtering ORN responses}
+
+\begin{par}
+The ORN firing rate traces are quite noisy, and it is possible that this is screwing up our estimation of the gain. It is also possible that the linear filter is doing a really good job and can't really be improved, and all the gain residuals are just noise. To check for these possibilities, I will filter the ORN response with a small sliding window, and then recalculate everything.
+\end{par} \vspace{1em}
+
+\includegraphics [width=\textwidth]{Analysis_January_26.pdf}
+\begin{par}
+The r-square of the smoothed ORN response to the actual data is
+\end{par} \vspace{1em}
+
+        \color{lightgray} \begin{verbatim}    0.9714
+
+\end{verbatim} \color{black}
+    \begin{par}
+and the r-square of the smoothed ORN response to the predicted smoothed data is
+\end{par} \vspace{1em}
+
+        \color{lightgray} \begin{verbatim}    0.9663
+
+\end{verbatim} \color{black}
+    \begin{par}
+Does the smoothing operation interfere with the gain modulation we observe?
+\end{par} \vspace{1em}
+
+\includegraphics [width=\textwidth]{Analysis_January_27.pdf}
+
+\includegraphics [width=\textwidth]{Analysis_January_28.pdf}
+
+
+\subsection*{Estimating the gain at points where the stimulus is far from the mean.}
+
+
+
+\subsection*{A note on elastic net regularisation}
+
+\begin{par}
+Carlotta says in her paper that she uses elastic net regularisation (using some unknown, third party code) to minimise the L-1 and L-2 norms of the covariance matrix. However, her code shows that she uses simply L-2 minimisation as discussed previously. I talked to her, and she said that she arbitrarily chose parameters for regularisation anyway, and it is possible that she was using simple L-2 regularisation.
+\end{par} \vspace{1em}
 
 
 \subsection*{Next Steps}
 
 \begin{enumerate}
 \setlength{\itemsep}{-1ex}
-   \item Compute gain filters only at points where the stimulus is significantly away form the mean
-   \item Check if Weber's Law is being followed using Carlotta's step reponses data
+   \item Check if Weber's Law is being followed using Carlotta's step responses data
+   \item Run analysis on all data files.
    \item Fit DA model to data with tau set to zero
-   \item Use filtfilt instead of filter to filter signals
-   \item Filter ORN firing rates with a 30ms box to remove wiggles that are just noise
    \item Compute ORN firing rates using code that is not Carlotta's
-   \item Calculate filters after using elastic net regularisation.
-   \item Check if someone has looked at Weber's law in olfaction/ORNs
 \end{enumerate}
 
 
@@ -306,6 +354,13 @@ Well, that sucks. Maybe even this horrible estimation of the gain can improve th
 This document was generated by MATLAB's publish function. All files needed to generate this document are on a git repository. To clone onto your machine, use:
 \end{par} \vspace{1em}
 \begin{verbatim}git clone https://srinivasgs@bitbucket.com/srinivasgs/da.git\end{verbatim}
+\begin{par}
+You will also need a bunch of functions that this depends on, which are also on git. Use
+\end{par} \vspace{1em}
+\begin{verbatim}git clone https://srinivasgs@bitbucket.com/srinivasgs/core.git\end{verbatim}
+\begin{par}
+to get these.
+\end{par} \vspace{1em}
 
 
 

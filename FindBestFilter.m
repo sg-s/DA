@@ -60,7 +60,7 @@ if algo == 1
 		err(i) = rsquare(fp(filter_length+2:end),response(filter_length+2:end));
 
 		% find other metrics
-		filter_height(i) = max(K);
+		filter_height(i) = max(abs(K));
 
 		% filter_sum(i) = sum(abs(K));
 		filter_sum(i) = sum(abs(diff(K)));
@@ -103,6 +103,9 @@ if algo == 1
 	end
 	K = FitFilter2Data(stim,response,OnlyThesePoints,flstr,regstr,regtype);
 	diagnostics.bestfilter = id;
+
+	% ensure unit gain
+	K = K*diagnostics.slope(diagnostics.bestfilter);
 
 else
 

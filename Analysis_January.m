@@ -84,12 +84,10 @@ filtertime = filtertime - shift_input*(mean(diff(time))); % correct for shifted 
 
 if ~(exist('K') == 1)
 	[K diagnostics] = FindBestFilter(PID,f);
-	K = K*diagnostics.slope(diagnostics.bestfilter);
 end
 
 if ~(exist('K_Valve') == 1)
 	[K_Valve diagnostics_valve] = FindBestFilter(Valve,f);
-	K_Valve = K_Valve*diagnostics_valve.slope(diagnostics_valve.bestfilter);
 end
 
 % plot
@@ -183,12 +181,9 @@ plot(fall2(min(f):1:max(f)),min(f):1:max(f),'k','LineWidth',2)
 title('Valve > f','FontSize',font_size)
 
 %% 
-% The line is a best fit to all the data. The slope of the best fit line for the prediction from PID is: 
+% The lines are best fits to all the data. The slopes of these lines should be exactly 1 as the "best filters" are supposed to be unit gain. The slope, in fact is:
 disp(fall.p1)
 
-%% 
-% The line is a best fit to all the data. The slope of the best fit line for the prediction from the valve is: 
-disp(fall2.p1)
 
 
 %% Analysis of Linear Prediction - Response to High and Low Stimuli
@@ -196,11 +191,15 @@ disp(fall2.p1)
 
 %%
 % To look at this, we calculate the mean average stimulus over some window history length for every time point _t_, for various different window history lengths. The effect of this operation is shown in the figure below, where the legend refers to the history window in ms. 
+
+%%
+% To calcualte the mean average stimulus, I use the _filtfilt_ function, which is a zero-phase digital filter that works by passing it through once in the forward direction, and once again in the reverse direction. I previously used the simple _filter_ function, but the results are substantially different: now, the separation of gains extends for larger history window lengths. 
+
 history_lengths = [30 102 150 201 300 402 501 600 801 1002];
 hl = history_lengths/3; % history lengths better be divisible by 3!
 shat = NaN(length(hl),length(PID));
 for i = 1:length(hl)
-	shat(i,:) = filter(ones(1,hl(i))/hl(i),1,PID);
+	shat(i,:) = filtfilt(ones(1,hl(i))/hl(i),1,PID);
 	shat(i,1:hl(i)) = NaN;
 end
 figure('outerposition',[10 10 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
@@ -215,109 +214,11 @@ ylabel('PID (a.u.)','FontSize',font_size)
 %%
 % Now, we separate neuron responses and linear prediction at times when the mean average stimulus is in the lowest 10% or the highest 10%. These points are marked either green (lowest 10%) or red (or highest 10%) in the figures below, while all the data is plotted in grey. Lines are fit to each of these clouds of points, and the slopes (representing the instantaneous gain) is calculated from these lines. The _y_ axis is the actual firing rate, while the _x_ axis is the predicted firing rate. In this analysis the prediction from the PID is used.
 
-% make data vectors
-low_slopes = NaN*history_lengths;
-low_slopes_err = NaN*history_lengths;
-high_slopes = NaN*history_lengths;
-high_slopes_err = NaN*history_lengths;
-low_gof = NaN*history_lengths;
-high_gof = NaN*history_lengths;
-
-% calculate the slopes for all points
-[fall gof] = fit(fp(filter_length+2:end),f(filter_length+2:end),'Poly1');
-all_gof = gof.rsquare;
-er = confint(fall);
-all_slopes_err=fall.p1-er(1,1);
-all_slopes = fall.p1;
-output_data.all_slopes = all_slopes;
-
-f3= figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-for i = 1:length(history_lengths)
-
-	figure(f3), hold on
-	subplot(2,5,i), hold on
-
-	this_shat = shat(i,:);
-	this_shat(1:hl(i)) = Inf; % the initial segment where we can't estimate shat is excluded
-	[sorted_shat idx] = sort(this_shat,'ascend');
-	f_low = f(idx(1:floor(length(PID)/10)));
-	fp_low = fp(idx(1:floor(length(PID)/10)));
-
-	this_shat(1:hl(i)) = -Inf;
-	[sorted_shat idx] = sort(this_shat,'descend');
-	f_high = f(idx(1:floor(length(PID)/10)));
-	fp_high = fp(idx(1:floor(length(PID)/10)));
-
-	plot(fp,f,'.','MarkerSize',marker_size,'MarkerFaceColor',[0.7 0.7 0.7],'MarkerEdgeColor',[0.7 0.7 0.7])
-	plot(fp_low,f_low,'.','MarkerSize',marker_size,'MarkerFaceColor',[0.5 1 0.5],'MarkerEdgeColor',[0.5 1 0.5])
-	plot(fp_high,f_high,'.','MarkerSize',marker_size,'MarkerFaceColor',[1 0.5 0.5],'MarkerEdgeColor',[1 0.5 0.5])
-	set(gca,'LineWidth',2,'box','on','FontSize',font_size)
-	set(gca,'XLim',[min(f)-10,max(f)+10],'YLim',[min(f)-10,max(f)+10])
-	axis square
-	title(strcat(mat2str(history_lengths(i)),'ms'))
-
-	if i == 6
-		xlabel('Linear Prediction (Hz)','FontSize',16)
-		ylabel('Neuron Response (Hz)','FontSize',16)
-	end
-
-
-	% remove NaN values
-	f_high(isnan(fp_high)) = [];
-	fp_high(isnan(fp_high)) = [];
-	f_low(isnan(fp_low)) = [];
-	fp_low(isnan(fp_low)) = [];
-
-	% fit lines
-	[flow gof] = fit(fp_low,f_low,'Poly1');
-	low_gof(i) = gof.rsquare;
-	er = confint(flow);
-	low_slopes_err(i)=flow.p1-er(1,1);
-	low_slopes(i) = flow.p1;
-
-	[fhigh gof] = fit(fp_high,f_high,'Poly1');
-	high_gof(i) =  gof.rsquare;
-	er = confint(fhigh);
-	high_slopes_err(i)=fhigh.p1-er(1,1);
-	high_slopes(i) = fhigh.p1;
-
-
-	% plot the best fit lines
-	plot(min(f):max(f),fall(min(f):max(f)),'Color',[0.5 0.5 0.5],'LineWidth',2)
-	plot(min(f_low):max(f_low),flow(min(f_low):max(f_low)),'g','LineWidth',2)
-	plot(min(f_high):max(f_high),fhigh(min(f_high):max(f_high)),'r','LineWidth',2)
-
-
-end
-
-
 
 %%
-% The following plot shows how the slope of the lines of best fit, or the instantaneous gains, varies with the history length. The plot on the right shows the goodness of fit for each fit, indicating the regions where the fit is meaningful.
+% The subsequent plot shows how the slope of the lines of best fit, or the instantaneous gains, varies with the history length. The plot on the right shows the goodness of fit for each fit, indicating the regions where the fit is meaningful.
 
-% plot to summary figure
-figure('outerposition',[10 10 1000 500],'PaperUnits','points','PaperSize',[1000 700]); hold on
-subplot(1,2,1), hold on
-plot(history_lengths,all_slopes*ones(1,length(history_lengths)),'k','LineWidth',2), hold on
-errorbar(history_lengths,low_slopes,low_slopes_err,'g','LineWidth',2), hold on
-errorbar(history_lengths,high_slopes,high_slopes_err,'r','LineWidth',2)
-set(gca,'LineWidth',2,'FontSize',20,'box','on','XLim',[0 max(history_lengths)])
-xlabel('History Length (ms)','FontSize',20)
-ylabel('Slope data/prediction (gain)','FontSize',20)
-
-subplot(1,2,2), hold on
-plot(history_lengths,low_gof,'g','LineWidth',2),hold on
-plot(history_lengths,high_gof,'r','LineWidth',2)
-xlabel('History Length (ms)','FontSize',20)
-ylabel('Goodness of Fit, rsquare','FontSize',20)
-set(gca,'LineWidth',2,'FontSize',20,'box','on','YLim',[0 1.1],'XLim',[0 max(history_lengths)])
-
-output_data.high_slopes = high_slopes;
-output_data.high_slopes_err = high_slopes_err;
-output_data.low_slopes = low_slopes;
-output_data.low_slopes_err = low_slopes_err;
-output_data.low_gof = low_gof;
-output_data.high_gof = high_gof;
+[output_data] = GainAnalysis(f,fp,PID,shat,history_lengths,hl,filter_length,marker_size,marker_size2,font_size);
 
 %% Analysis of Linear Prediction - Filter Variation 
 % We have segmented the entire data set based on when the stimulus, averaged in some way over the past, into high and low. The following plots show how the filter shape for low, high and middle 10% of the stimuli changes with the history window size. In these plots, only 10% of the data, either the lowest 10% (green), the highest 10% (red) of the middle 10% (black), based on the window smoothing is used to compute each of the filters.
@@ -376,7 +277,7 @@ plot(history_lengths,max(Kmiddle'),'k','LineWidth',2)
 plot(history_lengths,max(Klow'),'g','LineWidth',2)
 plot(history_lengths,max(Khigh'),'r','LineWidth',2)
 set(gca,'FontSize',font_size,'LineWidth',2,'YLim',[0 max(max(Klow))+5],'box','on')
-xlabel('History Length (s) ','FontSize',font_size)
+xlabel('History Length (ms) ','FontSize',font_size)
 ylabel('Filter Height (Hz)','FontSize',font_size)
 
 %%
@@ -389,7 +290,7 @@ plot(history_lengths,tmax,'g','LineWidth',2)
 [~,tmax]=max(Khigh'); tmax = tmax*mean(diff(time)) - shift_input*mean(diff(time));
 plot(history_lengths,tmax,'r','LineWidth',2)
 set(gca,'FontSize',font_size,'LineWidth',2,'YLim',[0 2*max(max(tmax))],'box','on')
-xlabel('History Length (s) ','FontSize',font_size)
+xlabel('History Length (ms) ','FontSize',font_size)
 ylabel('Time of filter peak (s)','FontSize',font_size)
 
 
@@ -672,7 +573,76 @@ ylabel('r-square of corrected fit','FontSize',font_size)
 line([1 max(ws)*3],[rsquare(f(filter_length+2:end),fp(filter_length+2:end)) rsquare(f(filter_length+2:end),fp(filter_length+2:end))],'LineWidth',2)
 set(gca,'LineWidth',2,'FontSize',font_size)
 
+
+
 %% Re-evaluating filter performance after filtering ORN responses
+% The ORN firing rate traces are quite noisy, and it is possible that this is screwing up our estimation of the gain. It is also possible that the linear filter is doing a really good job and can't really be improved, and all the gain residuals are just noise. To check for these possibilities, I will filter the ORN response with a small sliding window, and then recalculate everything. 
+fsmooth = filtfilt(ones(1,10)/10,1,f);
+
+% find best filter from PID > smooth f
+Kfsmooth = FindBestFilter(PID,fsmooth);
+fpsmooth = filter(Kfsmooth,1,PID-mean(PID))+mean(f);
+fpsmooth(1:filter_length) = NaN;
+
+figure('outerposition',[10 10 800 400],'PaperUnits','points','PaperSize',[1000 400]); hold on
+plot(time,f,'k','LineWidth',1.5)
+plot(time,fsmooth,'r','LineWidth',1.5)
+plot(time,fpsmooth,'g','LineWidth',1.5)
+set(gca,'XLim',[20 22],'FontSize',font_size,'LineWidth',2)
+legend Data SmoothedData Prediction
+
+%%
+% The r-square of the smoothed ORN response to the actual data is
+disp(rsquare(f,fsmooth))
+
+%%
+% and the r-square of the smoothed ORN response to the predicted smoothed data is
+disp(rsquare(fpsmooth,fsmooth))
+
+%%
+% The smoothing operation should not interfere with the gain modulation we observe. Here, we repeat the gain analysis, but this time with the smoothed data and the smoothed prediction. 
+
+[output_data] = GainAnalysis(fsmooth,fpsmooth,PID,shat,history_lengths,hl,filter_length,marker_size,marker_size2,font_size);
+
+%%
+% Once again, we can estimate the instantaneous gain and construct a filter from the PID to the instantaneous gain. This filter looks like
+
+figure('outerposition',[10 10 400 400],'PaperUnits','points','PaperSize',[1000 400]); hold on
+gs = fpsmooth./fsmooth;
+Kgsmooth = FindBestFilter(PID,gs);
+plot(filtertime,Kgsmooth,'k','LineWidth',2)
+title('PID > Instantaneous gain','FontSize',font_size)
+xlabel('Filter Lag (s)','FontSize',font_size)
+ylabel('Filter Amplitude','FontSize',font_size)
+set(gca,'LineWidth',2,'FontSize',font_size,'box','on','XLim',[min(filtertime) max(filtertime)])
+
+% now predict
+gsp = filter(Kgsmooth,1,PID-mean(PID)) + mean(gs);
+fpg = gsp.*fsmooth;
+
+%%
+% Now, we can compare the gain-corrected prediction to the _original unfiltered firing rate_ and see if is better than the simple linear prediction. 
+
+figure('outerposition',[10 10 800 400],'PaperUnits','points','PaperSize',[1000 400]); hold on
+plot(time,f,'k','LineWidth',1.5)
+plot(time,fp,'b','LineWidth',1.5)
+plot(time,fpg,'r','LineWidth',1.5)
+set(gca,'XLim',[20 22],'FontSize',font_size,'LineWidth',2)
+legend({'Data','Linear Prediction','Gain Corrected'})
+xlabel('Time (s)','FontSize',font_size)
+ylabel('Firing Rate (Hz)','FontSize',font_size)
+
+%%
+% The r-square of the gain-corrected prediction to the data is 
+disp(rsquare(fpg,f))
+
+%% 
+% _cf._ the  r-square of the simple linear prediction to the data which is 
+disp(rsquare(fp,f))
+
+%% 
+% OK, that seems like an improvement. Do we now correct for the fast gain adaptation? 
+
 
 %% Estimating the gain at points where the stimulus is far from the mean. 
 
@@ -681,6 +651,7 @@ set(gca,'LineWidth',2,'FontSize',font_size)
 
 %% Next Steps
 % 
+% # Don't rely on Carlotta's code to estimate firing rates--write own code
 % # Check if Weber's Law is being followed using Carlotta's step responses data
 % # Run analysis on all data files. 
 % # Fit DA model to data with tau set to zero
@@ -696,6 +667,12 @@ set(gca,'LineWidth',2,'FontSize',font_size)
 %   git clone https://srinivasgs@bitbucket.com/srinivasgs/core.git
 % 
 % to get these. 
+% 
+% Once you have everything, run these command to generate this document: 
+%
+%   options = struct('showCode',false,'format','latex','imageFormat',...
+%   'pdf','figureSnapMethod','print','stylesheet','srinivas_latex.xsl');
+%	publish2('Analysis_January.m',options);
 
 % close all to remove all extraneous figures, since we are publishing to a document anyway
 close all

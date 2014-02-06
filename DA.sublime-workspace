@@ -4,6 +4,14 @@
 		"selected_items":
 		[
 			[
+				"filter",
+				"filtertime"
+			],
+			[
+				"shift",
+				"shift_input"
+			],
+			[
 				"hi",
 				"history_lengths"
 			],
@@ -18,10 +26,6 @@
 			[
 				"diag",
 				"diagnostics2"
-			],
-			[
-				"filter",
-				"filter_length"
 			],
 			[
 				"marker",
@@ -155,7 +159,7 @@
 			"file": "Analysis_January.m",
 			"settings":
 			{
-				"buffer_size": 30192,
+				"buffer_size": 31647,
 				"line_ending": "Unix",
 				"name": "%% Dynamical Adaptation in ORNs"
 			}
@@ -319,6 +323,7 @@
 	},
 	"file_history":
 	[
+		"/usr/local/etc/prosody/prosody.cfg.lua",
 		"/Users/sigbhu/Dropbox/code/DA/MinL1Solution.m",
 		"/Users/sigbhu/Dropbox/code/Kontroller/Kontroller.m",
 		"/Users/sigbhu/Library/Application Support/Sublime Text 2/Packages/SideBarEnhancements/messages/11.13.2012.1305.0.txt",
@@ -445,8 +450,7 @@
 		"/web/articles/children-of-men/css/base.css",
 		"/web/articles/children-of-men/index.html",
 		"/web/articles/books/index.html",
-		"/web/articles/books/css/base.css",
-		"/web/articles/books/css/skeleton.css"
+		"/web/articles/books/css/base.css"
 	],
 	"find":
 	{
@@ -468,6 +472,8 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"return",
+			"plot(filtertime",
 			"s",
 			"daq",
 			"FitFilter2Data",
@@ -593,9 +599,7 @@
 			"dt",
 			"title",
 			"wbfylim",
-			"thrustylim",
-			"wbfylim",
-			"TrialPlot"
+			"thrustylim"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -650,15 +654,15 @@
 					"file": "Analysis_January.m",
 					"settings":
 					{
-						"buffer_size": 30192,
+						"buffer_size": 31647,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								29317,
-								29317
+								30452,
+								30452
 							]
 						],
 						"settings":
@@ -712,7 +716,7 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 12399.0,
+						"translation.y": 12629.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
@@ -729,8 +733,8 @@
 						"selection":
 						[
 							[
-								599,
-								0
+								711,
+								711
 							]
 						],
 						"settings":

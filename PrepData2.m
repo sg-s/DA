@@ -10,7 +10,6 @@ deltat = 10^(-4); % sampling rate of data
 win = 0.03;
 sliding = 0.003;
 memory = round(1/sliding); % confusingly, memory will be the time step in the processed data
-shift_input = round(0.1/sliding);
 
 % bin and average
 [time PIDs sr f fs] = bin_traces(PID, stA, deltat, win, sliding);

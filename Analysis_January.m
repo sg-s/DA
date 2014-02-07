@@ -16,49 +16,80 @@ filename = '/data/random-stim/final_2011_06_14_ab3A_1o3ol3X-3_20ml_30sec_30ms_ra
 disp(filename)
 
 %%
-% Here, data from simultaneous measurements of the stimulus and from the ORN is shown. The top row shows the valve command signal (a binary signal, high means valve is open). The middle row shows the simultaneous measurement of the odour stimulus with a PID, and the bottom row shows the instantaneous firing rate of the ORN recorded from. 
+% Here, data from simultaneous measurements of the stimulus and from the ORN is shown. The top row shows the valve command signal (a binary signal, high means valve is open). The middle row shows the simultaneous measurement of the odour stimulus with a PID, and the bottom row shows the instantaneous firing rate of the ORN recorded from. In blue is the data computed using Carlotta's code from the raw data. In red is the data computed using my code. Notably different is the firing rate curve, which is much smoother and loses all the high-frequency wiggles. This is because I use a Gaussian smoothing window to do this, while Carlotta uses a boxcar window. 
 
 crop_traces = 0;
 % grab data
 if ~(exist('PID') == 1)
 	crop_traces = 1;
-	[PID time f fs Valve ntrials] = PrepData2(filename);
+	[PID1,time, f1, ~, Valve] = PrepData2(filename);
+	[PID2, time2, f2, Valve2] = PrepData3(filename);
 
 	% make all vectors consistent
-	PID = PID(:);
+	PID1 = PID1(:);
 	time = time(:);
-	f = f(:);
-	fs = fs(:);
+	f1 = f1(:);
 	Valve = Valve(:);
+	PID2 = PID2(:);
+	time2 = time2(:);
+	f2 = f2(:);
+	Valve2 = Valve2(:);
+
+	% correct offset
+	PID2 = PID2-min(PID2);
+	PID2 = PID2/max(PID2);
+	PID2 = PID2+min(PID1);
+	PID2 = PID2/max(PID2);
+	PID2 = PID2*max(PID1);
+
+
+
 
 	% detrend PID
-	ptrend = fit(time,PID,'Poly1'); 
-	PID = PID - (ptrend(time) - mean(ptrend(time)));
+	ptrend = fit(time,PID1,'Poly1'); 
+	PID1 = PID1 - (ptrend(time) - mean(ptrend(time)));
 
 	% detrend f
-	ptrend = fit(time,f,'Poly1'); 
-	f = f - (ptrend(time) - mean(ptrend(time)));
+	ptrend = fit(time,f1,'Poly1'); 
+	f1 = f1 - (ptrend(time) - mean(ptrend(time)));
+
+	ptrend = fit(time,PID2,'Poly1'); 
+	PID2 = PID2 - (ptrend(time) - mean(ptrend(time)));
+
+	% detrend f
+	ptrend = fit(time,f2,'Poly1'); 
+	f2 = f2 - (ptrend(time) - mean(ptrend(time)));
 
 	clear ptrend
 end
+
+
 
 % plot the data
 figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
 subplot(3,1,1), hold on
 plot(time,Valve,'LineWidth',2)
-set(gca,'box','on','LineWidth',2,'XLim',[18 22],'YLim',[-0.1 1.1])
+set(gca,'box','on','LineWidth',2,'XLim',[18 20],'YLim',[-0.1 1.1])
 ylabel('stimulus')
 
 subplot(3,1,2), hold on
-plot(time,PID,'LineWidth',2)
-set(gca,'box','on','LineWidth',2,'XLim',[18 22])
+plot(time,PID1,'b','LineWidth',1.5)
+plot(time,PID2,'r','LineWidth',1.5)
+set(gca,'box','on','LineWidth',2,'XLim',[18 20])
 ylabel('PID (a.u.)')
 
 subplot(3,1,3), hold on
-plot(time,f,'LineWidth',2)
-set(gca,'box','on','LineWidth',2,'XLim',[18 22])
+plot(time,f1,'b','LineWidth',1.5)
+plot(time,f2,'r','LineWidth',1.5)
+set(gca,'box','on','LineWidth',2,'XLim',[18 20])
 xlabel('Time (s)')
 ylabel('Firing Rate (Hz)')
+
+% use my estimates
+PID = PID2;
+f = f2;
+
+
 
 %% 
 % The odour used, the neuron recorded from and the correlation time of the flickering stimulus are in the file name displayed above the plot.
@@ -73,7 +104,6 @@ if crop_traces
 	Valve = Valve(1:end-shift_input+1);
 	PID = PID(shift_input:end);
 	f = f(1:end-shift_input+1);
-	fs = fs(1:end-shift_input+1);
 end
 
 
@@ -214,11 +244,11 @@ ylabel('PID (a.u.)','FontSize',font_size)
 %%
 % Now, we separate neuron responses and linear prediction at times when the mean average stimulus is in the lowest 10% or the highest 10%. These points are marked either green (lowest 10%) or red (or highest 10%) in the figures below, while all the data is plotted in grey. Lines are fit to each of these clouds of points, and the slopes (representing the instantaneous gain) is calculated from these lines. The _y_ axis is the actual firing rate, while the _x_ axis is the predicted firing rate. In this analysis the prediction from the PID is used.
 
-
+[output_data] = GainAnalysis(f,fp,PID,shat,history_lengths,hl,filter_length,marker_size,marker_size2,font_size,1);
 %%
-% The subsequent plot shows how the slope of the lines of best fit, or the instantaneous gains, varies with the history length. The plot on the right shows the goodness of fit for each fit, indicating the regions where the fit is meaningful.
+% The following plot shows how the slope of the lines of best fit, or the instantaneous gains, varies with the history length. The plot on the right shows the goodness of fit for each fit, indicating the regions where the fit is meaningful.
 
-[output_data] = GainAnalysis(f,fp,PID,shat,history_lengths,hl,filter_length,marker_size,marker_size2,font_size);
+[output_data] = GainAnalysis(f,fp,PID,shat,history_lengths,hl,filter_length,marker_size,marker_size2,font_size,[2 3]);
 
 %% Analysis of Linear Prediction - Filter Variation 
 % We have segmented the entire data set based on when the stimulus, averaged in some way over the past, into high and low. The following plots show how the filter shape for low, high and middle 10% of the stimuli changes with the history window size. In these plots, only 10% of the data, either the lowest 10% (green), the highest 10% (red) of the middle 10% (black), based on the window smoothing is used to compute each of the filters.
@@ -272,7 +302,7 @@ end
 %%
 % We can also plot the height of the filter _vs._ the history window size:
 
-figure('outerposition',[10 10 1000 500],'PaperUnits','points','PaperSize',[1000 700]); hold on
+figure('outerposition',[10 10 800 400],'PaperUnits','points','PaperSize',[1000 400]); hold on
 plot(history_lengths,max(Kmiddle'),'k','LineWidth',2)
 plot(history_lengths,max(Klow'),'g','LineWidth',2)
 plot(history_lengths,max(Khigh'),'r','LineWidth',2)
@@ -282,7 +312,7 @@ ylabel('Filter Height (Hz)','FontSize',font_size)
 
 %%
 % We also expect the low stimulus (high gain) filter to be slower than the high stimulus (low gain) filter. Is this so in the data? Here, I plot the time of peak of each filter _vs._ the history window size. 
-figure('outerposition',[10 10 1000 500],'PaperUnits','points','PaperSize',[1000 700]); hold on
+figure('outerposition',[10 10 800 400],'PaperUnits','points','PaperSize',[1000 400]); hold on
 [~,tmax]=max(Kmiddle'); tmax = tmax*mean(diff(time)) - shift_input*mean(diff(time));
 plot(history_lengths,tmax,'k','LineWidth',2)
 [~,tmax]=max(Klow'); tmax = tmax*mean(diff(time)) - shift_input*mean(diff(time));
@@ -293,87 +323,6 @@ set(gca,'FontSize',font_size,'LineWidth',2,'YLim',[0 2*max(max(tmax))],'box','on
 xlabel('History Length (ms) ','FontSize',font_size)
 ylabel('Time of filter peak (s)','FontSize',font_size)
 
-
-%% Analysis of Linear Prediction - Does adding another linear filter improve prediction?
-% An ideal linear filter should capture all the linear variation in the data. This means that if one were to construct a vector of residuals, a linear filter would be unable to predict the residuals from the data, and would lead to no improvement on the original filter. Is this true? 
-
-%%
-% First, we construct a vector of residuals by subtracting the linear prediction from the data.
-res = f - fp;
-figure('outerposition',[0 0 800 350],'PaperUnits','points','PaperSize',[800 350]); hold on
-subplot(2,1,1), hold on
-plot(time,res,'k','LineWidth',2)
-set(gca,'XLim',[mean(time)-1 mean(time)+2],'FontSize',font_size,'LineWidth',2,'box','on')
-ylabel('Residuals','FontSize',font_size)
-subplot(2,1,2), hold on
-plot(time,PID,'k','LineWidth',2)
-ylabel('PID','FontSize',font_size)
-set(gca,'XLim',[mean(time)-1 mean(time)+2],'FontSize',font_size,'LineWidth',2,'box','on')
-xlabel('Time (s)','FontSize',font_size)
-
-%%
-% we then construct a filter from the PID to these residuals to try to predict the residuals.
-[Kres ,diagnostics_res] = FindBestFilter(PID(filter_length+2:end),res(filter_length+2:end));
-
-figure('outerposition',[0 0 400 400],'PaperUnits','points','PaperSize',[800 400]); hold on
-plot(filtertime,Kres,'LineWidth',2)
-set(gca,'box','on','LineWidth',2,'FontSize',font_size,'XLim',[min(filtertime) max(filtertime)])
-xlabel('Lag (s)','FontSize',20)
-ylabel('Filter Amplitude','FontSize',font_size)
-title('Filter: PID > residuals','FontSize',20)
-
-%%
-% and use this filter to predict the residuals from the stimulus. 
-resp = filter(Kres,1,PID-mean(PID)) + mean2(res);
-figure('outerposition',[10 10 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-plot(time,res,'k','LineWidth',2)
-plot(time,resp,'b','LineWidth',2)
-set(gca,'XLim',[mean(time)-1 mean(time)+2],'box','on','LineWidth',2,'FontSize',18)
-xlabel('Time','FontSize',20)
-ylabel('Residuals','FontSize',font_size)
-legend Residuals 'Predicted Residuals'
-
-%%
-% Does adding this back to the prediction improve the prediction? The following plot shows the data (black), the linear prediction (red), and the linear prediction corrected by the prediciton of the residual (green).
-fpr = fp + resp;
-figure('outerposition',[10 10 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-plot(time,f,'k','LineWidth',2)
-plot(time,fp,'r','LineWidth',2)
-plot(time,fpr,'g','LineWidth',2)
-set(gca,'XLim',[mean(time)-1 mean(time)+2],'box','on','LineWidth',2,'FontSize',18)
-xlabel('Time','FontSize',20)
-ylabel('Residuals','FontSize',font_size)
-legend Data 'Linear Prediction' 'Residual Corrected'
-
-%%
-% The r-square of the corrected prediction is
-disp(rsquare(f(filter_length+2:end),fpr(filter_length+2:end)))
-
-%% 
-% and the r-square of the simple linear prediction is
-disp(rsquare(f(filter_length+2:end),fp(filter_length+2:end)))
-
-%%
-% How does this make any sense? If this is true, then simply adding the filters together will yield a better filter, which we should have computed in the very beginning. The filter, the second filter computed from residuals, and their sum is shown in the panel on the left. On the right is a filter with lower regularisation. 
-
-figure('outerposition',[0 0 800 350],'PaperUnits','points','PaperSize',[800 350]); hold on
-subplot(1,2,1), hold on
-plot(filtertime,K,'k','LineWidth',2)
-plot(filtertime,Kres,'r','LineWidth',2)
-plot(filtertime,Kres+K,'g','LineWidth',2)
-legend Filter ResidualFilter Sum
-set(gca,'FontSize',font_size,'LineWidth',2,'box','on','XLim',[min(filtertime) max(filtertime)])
-ylabel('Filter Amplitude (Hz)','FontSize',font_size)
-
-K_lowreg = FitFilter2Data(PID,f,[],'reg=1e-1;');
-subplot(1,2,2), hold on
-plot(filtertime,K_lowreg,'k','LineWidth',2)
-title('Filter with low regularisation','FontSize',font_size)
-set(gca,'FontSize',font_size,'LineWidth',2,'box','on','XLim',[min(filtertime) max(filtertime)])
-xlabel('Time (s)','FontSize',font_size)
-
-%%
-% So what we are doing is simply undoing the work we did in regularising the filter. 
 
 %% Analysis of Gain: Instantaneous Gain and Fitted Gain
 % There is a mismatch between the linear prediction and the actual firing rate. Moreover, the instantaneous gain seems to be modulated by something that depends on the past history of the stimulus (see analysis in the previous section). We also know that we cannot predict with a simple linear filter any linear errors that the filter makes. However, there is the possibility of fitting a linear filter to the gain, which is a non-linear function of the filter output. But how do we compute this gain? Here, in the figure below, the instantaneous gain, i.e., the ratio of the actual firing rate to the predicted firing rate, is plotted along with the stimulus. 
@@ -602,14 +551,14 @@ disp(rsquare(fpsmooth,fsmooth))
 %%
 % The smoothing operation should not interfere with the gain modulation we observe. Here, we repeat the gain analysis, but this time with the smoothed data and the smoothed prediction. 
 
-[output_data] = GainAnalysis(fsmooth,fpsmooth,PID,shat,history_lengths,hl,filter_length,marker_size,marker_size2,font_size);
+[output_data] = GainAnalysis(fsmooth,fpsmooth,PID,shat,history_lengths,hl,filter_length,marker_size,marker_size2,font_size,2);
 
 %%
 % Once again, we can estimate the instantaneous gain and construct a filter from the PID to the instantaneous gain. This filter looks like
 
 figure('outerposition',[10 10 400 400],'PaperUnits','points','PaperSize',[1000 400]); hold on
 gs = fpsmooth./fsmooth;
-Kgsmooth = FindBestFilter(PID,gs);
+Kgsmooth = FindBestFilter(PID(filter_length+2:end),gs(filter_length+2:end));
 plot(filtertime,Kgsmooth,'k','LineWidth',2)
 title('PID > Instantaneous gain','FontSize',font_size)
 xlabel('Filter Lag (s)','FontSize',font_size)
@@ -617,11 +566,11 @@ ylabel('Filter Amplitude','FontSize',font_size)
 set(gca,'LineWidth',2,'FontSize',font_size,'box','on','XLim',[min(filtertime) max(filtertime)])
 
 % now predict
-gsp = filter(Kgsmooth,1,PID-mean(PID)) + mean(gs);
-fpg = gsp.*fsmooth;
+gsp = filter(Kgsmooth,1,PID-mean(PID)) + 1;
+fpg = gsp.*fp;
 
 %%
-% Now, we can compare the gain-corrected prediction to the _original unfiltered firing rate_ and see if is better than the simple linear prediction. 
+% This filter can be used to correct the simple linear prediction from the original data. Now, we can compare the gain-corrected prediction to the _original unfiltered firing rate_ and see if is better than the simple linear prediction. 
 
 figure('outerposition',[10 10 800 400],'PaperUnits','points','PaperSize',[1000 400]); hold on
 plot(time,f,'k','LineWidth',1.5)
@@ -641,24 +590,29 @@ disp(rsquare(fpg,f))
 disp(rsquare(fp,f))
 
 %% 
-% OK, that seems like an improvement. Do we now correct for the fast gain adaptation? 
+% Does this gain correction make the gains to low and high stimuli the same? In the following plot, we plot the best-fit lines of corrected prediction to data for different history lengths, and also show an example scatter plot for the gain corrected prediction. 
+[output_data] = GainAnalysis(f,fpg,PID,shat,history_lengths,hl,filter_length,marker_size,marker_size2,font_size,2);
+
+h=subplot(1,2,2);
 
 
-%% Estimating the gain at points where the stimulus is far from the mean. 
+[output_data] = GainAnalysis(f,fpg,PID,shat(history_lengths == 501,:),501,501/3,filter_length,marker_size,marker_size2,font_size,1,h);
+xlabel('ORN firing rate (Hz)','FontSize',font_size)
+ylabel('Gain corrected prediction (Hz)','FontSize',font_size)
+
 
 %% A note on elastic net regularisation 
-% Carlotta says in her paper that she uses elastic net regularisation (using some unknown, third party code) to minimise the L-1 and L-2 norms of the covariance matrix. However, her code shows that she uses simply L-2 minimisation as discussed previously. I talked to her, and she said that she arbitrarily chose parameters for regularisation anyway, and it is possible that she was using simple L-2 regularisation. 
+% Carlotta says in her paper that she uses elastic net regularisation (using some unknown, third party code) to minimise the L-1 and L-2 norms of the covariance matrix. However, her code shows that she uses simply L-2 minimisation as discussed previously. I talked to her, and she said that she arbitrarily chose parameters for regularisation anyway, and it is possible that she was using simple L-2 regularisation, as this is a subcase of the elastic net regularisation. 
 
 %% Next Steps
 % 
-% # Don't rely on Carlotta's code to estimate firing rates--write own code
 % # Check if Weber's Law is being followed using Carlotta's step responses data
 % # Run analysis on all data files. 
 % # Fit DA model to data with tau set to zero
-% # Compute ORN firing rates using code that is not Carlotta's
+
 
 %% Docs
-% This document was generated by MATLAB's publish function. All files needed to generate this document are on a git repository. To clone onto your machine, use:
+% This document was generated by MATLAB's _publish_ function. All files needed to generate this document are on a git repository. To clone onto your machine, use:
 %
 %   git clone https://srinivasgs@bitbucket.com/srinivasgs/da.git
 % 
@@ -668,11 +622,13 @@ disp(rsquare(fp,f))
 % 
 % to get these. 
 % 
-% Once you have everything, run these command to generate this document: 
-%
+% Once you have everything, run these commands to generate this document: 
+% 
 %   options = struct('showCode',false,'format','latex','imageFormat',...
 %   'pdf','figureSnapMethod','print','stylesheet','srinivas_latex.xsl');
-%	publish2('Analysis_January.m',options);
+%
+%   publish2('Analysis_January.m',options);
+% 
 
 % close all to remove all extraneous figures, since we are publishing to a document anyway
 close all

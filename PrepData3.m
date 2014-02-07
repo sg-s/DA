@@ -1,0 +1,43 @@
+% PrepData3.m
+% PrepData loads the selected file, and prepares the data so that it is useful
+% PrepData3 is built from my own code, as opposed to PrepData2, which uses Carlotta's code. Specifically, the firing rate computation is significantly different. 
+function [PID time f Valve] = PrepData3(filename)
+% load file
+load(filename)
+
+% some parameters
+deltat = 10^(-4); % sampling rate of data
+win = 0.03;
+sliding = 0.003;
+memory = round(1/sliding); % confusingly, memory will be the time step in the processed data
+
+% extract f
+time=deltat:deltat:length(PID)*deltat;
+f = mean(spiketimes2f(squeeze(stA),time,0.01,sliding));
+
+% build time vector
+time = sliding:sliding:sliding*length(f);
+
+% filter PID
+PID = mean(squeeze(PID(1,:,:)), 1); 
+PID = filtfilt(ones(1,sliding/deltat)/(sliding/deltat),1,PID);     
+% subsample
+s = round(sliding/deltat);
+PID = PID(s:s:end);
+
+% process stim_signal
+stim_signal = mean(squeeze(stim_signal));
+Valve = stim_signal(s:s:end);
+Valve(Valve <= 0.5) = 0;
+Valve(Valve>0) = 1;
+
+% find out when the trace starts and stops
+
+t_start=find(Valve,1,'first') + 5*memory; % we will throw away data before this; i.e, 5 seconds after stimulus starts
+t_end=find(Valve,1,'last') - 5*memory; % we will throw away data after this; i.e, 5 seconds before stimulus ends
+
+% crop traces
+time = time(t_start:t_end);   
+PID = PID(t_start:t_end);    
+f = f(t_start:t_end);
+Valve = Valve(t_start:t_end);

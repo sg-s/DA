@@ -261,4 +261,85 @@ disp(rsquare(f,fp))
 disp(max(diagnostics2r.err))
 
 
+%% Analysis of Linear Prediction - Does adding another linear filter improve prediction?
+% An ideal linear filter should capture all the linear variation in the data. This means that if one were to construct a vector of residuals, a linear filter would be unable to predict the residuals from the data, and would lead to no improvement on the original filter. Is this true? 
+
+%%
+% First, we construct a vector of residuals by subtracting the linear prediction from the data.
+res = f - fp;
+figure('outerposition',[0 0 800 350],'PaperUnits','points','PaperSize',[800 350]); hold on
+subplot(2,1,1), hold on
+plot(time,res,'k','LineWidth',2)
+set(gca,'XLim',[mean(time)-1 mean(time)+2],'FontSize',font_size,'LineWidth',2,'box','on')
+ylabel('Residuals','FontSize',font_size)
+subplot(2,1,2), hold on
+plot(time,PID,'k','LineWidth',2)
+ylabel('PID','FontSize',font_size)
+set(gca,'XLim',[mean(time)-1 mean(time)+2],'FontSize',font_size,'LineWidth',2,'box','on')
+xlabel('Time (s)','FontSize',font_size)
+
+%%
+% we then construct a filter from the PID to these residuals to try to predict the residuals.
+[Kres ,diagnostics_res] = FindBestFilter(PID(filter_length+2:end),res(filter_length+2:end));
+
+figure('outerposition',[0 0 400 400],'PaperUnits','points','PaperSize',[800 400]); hold on
+plot(filtertime,Kres,'LineWidth',2)
+set(gca,'box','on','LineWidth',2,'FontSize',font_size,'XLim',[min(filtertime) max(filtertime)])
+xlabel('Lag (s)','FontSize',20)
+ylabel('Filter Amplitude','FontSize',font_size)
+title('Filter: PID > residuals','FontSize',20)
+
+%%
+% and use this filter to predict the residuals from the stimulus. 
+resp = filter(Kres,1,PID-mean(PID)) + mean2(res);
+figure('outerposition',[10 10 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+plot(time,res,'k','LineWidth',2)
+plot(time,resp,'b','LineWidth',2)
+set(gca,'XLim',[mean(time)-1 mean(time)+2],'box','on','LineWidth',2,'FontSize',18)
+xlabel('Time','FontSize',20)
+ylabel('Residuals','FontSize',font_size)
+legend Residuals 'Predicted Residuals'
+
+%%
+% Does adding this back to the prediction improve the prediction? The following plot shows the data (black), the linear prediction (red), and the linear prediction corrected by the prediciton of the residual (green).
+fpr = fp + resp;
+figure('outerposition',[10 10 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+plot(time,f,'k','LineWidth',2)
+plot(time,fp,'r','LineWidth',2)
+plot(time,fpr,'g','LineWidth',2)
+set(gca,'XLim',[mean(time)-1 mean(time)+2],'box','on','LineWidth',2,'FontSize',18)
+xlabel('Time','FontSize',20)
+ylabel('Residuals','FontSize',font_size)
+legend Data 'Linear Prediction' 'Residual Corrected'
+
+%%
+% The r-square of the corrected prediction is
+disp(rsquare(f(filter_length+2:end),fpr(filter_length+2:end)))
+
+%% 
+% and the r-square of the simple linear prediction is
+disp(rsquare(f(filter_length+2:end),fp(filter_length+2:end)))
+
+%%
+% How does this make any sense? If this is true, then simply adding the filters together will yield a better filter, which we should have computed in the very beginning. The filter, the second filter computed from residuals, and their sum is shown in the panel on the left. On the right is a filter with lower regularisation. 
+
+figure('outerposition',[0 0 800 350],'PaperUnits','points','PaperSize',[800 350]); hold on
+subplot(1,2,1), hold on
+plot(filtertime,K,'k','LineWidth',2)
+plot(filtertime,Kres,'r','LineWidth',2)
+plot(filtertime,Kres+K,'g','LineWidth',2)
+legend Filter ResidualFilter Sum
+set(gca,'FontSize',font_size,'LineWidth',2,'box','on','XLim',[min(filtertime) max(filtertime)])
+ylabel('Filter Amplitude (Hz)','FontSize',font_size)
+
+K_lowreg = FitFilter2Data(PID,f,[],'reg=1e-1;');
+subplot(1,2,2), hold on
+plot(filtertime,K_lowreg,'k','LineWidth',2)
+title('Filter with low regularisation','FontSize',font_size)
+set(gca,'FontSize',font_size,'LineWidth',2,'box','on','XLim',[min(filtertime) max(filtertime)])
+xlabel('Time (s)','FontSize',font_size)
+
+%%
+% So what we are doing is simply undoing the work we did in regularising the filter. 
+
 

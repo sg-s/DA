@@ -43,8 +43,6 @@ if ~(exist('PID') == 1)
 	PID2 = PID2*max(PID1);
 
 
-
-
 	% detrend PID
 	ptrend = fit(time1,PID1,'Poly1'); 
 	PID1 = PID1 - (ptrend(time1) - mean(ptrend(time1)));
@@ -98,7 +96,7 @@ time = time1;
 %% Filter Extraction 
 % Details about the filter extraction, regularisation methods, and validation with synthetic and real data is listed in (FilterExtraction.pdf). Here, we calculate the best filter (scaled to ensure that gain = 1) using techniques described in that document from the PID (left) and from the Valve (right).
 
-% shift input, black magic. why are we shifting input? no clue. but this is what Carlotta does. is there a lag between the to traces? why is it this? 
+% shift input, so we can calculate the acausal part of the filter too. this is a horrible fudge. remember to correct for this in reporting filter shape, or re-filtering the data.
 shift_input = 33;
 if crop_traces
 	time = time(1:end-shift_input+1);

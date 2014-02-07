@@ -26,7 +26,11 @@ s = round(sliding/deltat);
 PID = PID(s:s:end);
 
 % process stim_signal
-stim_signal = mean(squeeze(stim_signal));
+stim_signal = squeeze(stim_signal);
+if isvector(stim_signal)
+else
+	stim_signal = mean(stim_signal);
+end
 Valve = stim_signal(s:s:end);
 Valve(Valve <= 0.5) = 0;
 Valve(Valve>0) = 1;
@@ -41,3 +45,8 @@ time = time(t_start:t_end);
 PID = PID(t_start:t_end);    
 f = f(t_start:t_end);
 Valve = Valve(t_start:t_end);
+
+if isempty(PID)
+	disp('no data? whats going on?')
+	keyboard
+end

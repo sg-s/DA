@@ -22,12 +22,12 @@ crop_traces = 0;
 % grab data
 if ~(exist('PID') == 1)
 	crop_traces = 1;
-	[PID1,time, f1, ~, Valve] = PrepData2(filename);
+	[PID1,time1, f1, ~, Valve] = PrepData2(filename);
 	[PID2, time2, f2, Valve2] = PrepData3(filename);
 
 	% make all vectors consistent
 	PID1 = PID1(:);
-	time = time(:);
+	time1 = time1(:);
 	f1 = f1(:);
 	Valve = Valve(:);
 	PID2 = PID2(:);
@@ -46,19 +46,19 @@ if ~(exist('PID') == 1)
 
 
 	% detrend PID
-	ptrend = fit(time,PID1,'Poly1'); 
-	PID1 = PID1 - (ptrend(time) - mean(ptrend(time)));
+	ptrend = fit(time1,PID1,'Poly1'); 
+	PID1 = PID1 - (ptrend(time1) - mean(ptrend(time1)));
 
 	% detrend f
-	ptrend = fit(time,f1,'Poly1'); 
-	f1 = f1 - (ptrend(time) - mean(ptrend(time)));
+	ptrend = fit(time1,f1,'Poly1'); 
+	f1 = f1 - (ptrend(time1) - mean(ptrend(time1)));
 
-	ptrend = fit(time,PID2,'Poly1'); 
-	PID2 = PID2 - (ptrend(time) - mean(ptrend(time)));
+	ptrend = fit(time2,PID2,'Poly1'); 
+	PID2 = PID2 - (ptrend(time2) - mean(ptrend(time2)));
 
 	% detrend f
-	ptrend = fit(time,f2,'Poly1'); 
-	f2 = f2 - (ptrend(time) - mean(ptrend(time)));
+	ptrend = fit(time2,f2,'Poly1'); 
+	f2 = f2 - (ptrend(time2) - mean(ptrend(time2)));
 
 	clear ptrend
 end
@@ -68,19 +68,19 @@ end
 % plot the data
 figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
 subplot(3,1,1), hold on
-plot(time,Valve,'LineWidth',2)
+plot(time1,Valve,'LineWidth',2)
 set(gca,'box','on','LineWidth',2,'XLim',[18 20],'YLim',[-0.1 1.1])
 ylabel('stimulus')
 
 subplot(3,1,2), hold on
-plot(time,PID1,'b','LineWidth',1.5)
-plot(time,PID2,'r','LineWidth',1.5)
+plot(time1,PID1,'b','LineWidth',1.5)
+plot(time2,PID2,'r','LineWidth',1.5)
 set(gca,'box','on','LineWidth',2,'XLim',[18 20])
 ylabel('PID (a.u.)')
 
 subplot(3,1,3), hold on
-plot(time,f1,'b','LineWidth',1.5)
-plot(time,f2,'r','LineWidth',1.5)
+plot(time1,f1,'b','LineWidth',1.5)
+plot(time2,f2,'r','LineWidth',1.5)
 set(gca,'box','on','LineWidth',2,'XLim',[18 20])
 xlabel('Time (s)')
 ylabel('Firing Rate (Hz)')
@@ -88,6 +88,7 @@ ylabel('Firing Rate (Hz)')
 % use my estimates
 PID = PID2;
 f = f2;
+time = time1;
 
 
 

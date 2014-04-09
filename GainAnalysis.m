@@ -13,6 +13,8 @@ high_gof = NaN*history_lengths;
 
 % calculate the slopes for all points
 
+f = f(:);
+fp = fp(:);
 [fall gof] = fit(fp(filter_length+2:end),f(filter_length+2:end),'Poly1');
 all_gof = gof.rsquare;
 er = confint(fall);

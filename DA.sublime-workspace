@@ -4,8 +4,52 @@
 		"selected_items":
 		[
 			[
+				"DA_",
+				"DA_integrate"
+			],
+			[
+				"ensemble",
+				"ensemblep"
+			],
+			[
 				"filter",
-				"filtertime"
+				"filter_length"
+			],
+			[
+				"Cost",
+				"CostFunctionHandle"
+			],
+			[
+				"axes",
+				"axesHandles"
+			],
+			[
+				"font",
+				"font_size"
+			],
+			[
+				"fon",
+				"font_size"
+			],
+			[
+				"low",
+				"low_gof"
+			],
+			[
+				"Gain",
+				"GainAnalysisData"
+			],
+			[
+				"filt",
+				"filter_length"
+			],
+			[
+				"mar",
+				"marker_size2"
+			],
+			[
+				"marker",
+				"marker_size"
 			],
 			[
 				"shift",
@@ -26,10 +70,6 @@
 			[
 				"diag",
 				"diagnostics2"
-			],
-			[
-				"marker",
-				"marker_size2"
 			],
 			[
 				"filter_",
@@ -156,69 +196,78 @@
 	"buffers":
 	[
 		{
-			"file": "Analysis_January.m",
+			"file": "FittingDAModel.m",
 			"settings":
 			{
-				"buffer_size": 31647,
+				"buffer_size": 8523,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "DA_model_script.m",
+			"settings":
+			{
+				"buffer_size": 938,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/sigbhu/Dropbox/code/core/srinivas.gs_mtools/Manipulate.m",
+			"settings":
+			{
+				"buffer_size": 2996,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "DA_integrate.m",
+			"settings":
+			{
+				"buffer_size": 2553,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/code/Kontroller/Kontroller.m",
+			"settings":
+			{
+				"buffer_size": 62241,
+				"line_ending": "Windows"
+			}
+		},
+		{
+			"file": "/Users/sigbhu/Dropbox/code/b/TFAViewer2.m",
+			"settings":
+			{
+				"buffer_size": 21553,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "% created by Srinivas Gorur-Shandilya at 11:48 on 04-April-2014. Contact me at http://srinivas.gs/\n% Dynamical Gain Model\nfunction [r] = dgm(time,x,p)\n\nx = x(:) - mean(x);\ndt = mean(diff(time));\n\n% make filters\nK1 = zeros(1,)\n\n% convolve stimulus with first gamma filter\ny = filter();",
+			"file": "dgm.m",
+			"file_size": 275,
+			"file_write_time": 130411004950000000,
+			"settings":
+			{
+				"buffer_size": 284,
 				"line_ending": "Unix",
-				"name": "%% Dynamical Adaptation in ORNs"
+				"name": "% created by Srinivas Gorur-Shandilya at 11:48 on"
 			}
 		},
 		{
-			"file": "Analysis_February.m",
+			"file": "DynamicalAdaptation.m",
 			"settings":
 			{
-				"buffer_size": 30420,
+				"buffer_size": 16697,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "ORN_Weber_Analysis.m",
+			"file": "FindDAModelParameters.m",
 			"settings":
 			{
-				"buffer_size": 30,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "FindBestFilter.m",
-			"settings":
-			{
-				"buffer_size": 4177,
-				"line_ending": "Unix",
-				"name": "function [K Kdamon] = FindBestFilter(PID,f,filter_"
-			}
-		},
-		{
-			"file": "FitFilter2Data.m",
-			"settings":
-			{
-				"buffer_size": 3089,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "FilterEstimation.m",
-			"settings":
-			{
-				"buffer_size": 10966,
-				"line_ending": "Unix",
-				"name": "%% Filter Estimation"
-			}
-		},
-		{
-			"file": "PlotFilterDiagnostics2.m",
-			"settings":
-			{
-				"buffer_size": 2331,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "Analysis_January_unused.m",
-			"settings":
-			{
-				"buffer_size": 7669,
+				"buffer_size": 765,
 				"line_ending": "Unix"
 			}
 		}
@@ -229,6 +278,10 @@
 		"height": 375.0,
 		"selected_items":
 		[
+			[
+				"lint",
+				"SublimeLinter: Lint This View"
+			],
 			[
 				"Packa",
 				"Package Control: Install Package"
@@ -306,11 +359,15 @@
 				"Snippet: error"
 			]
 		],
-		"width": 830.0
+		"width": 633.0
 	},
 	"console":
 	{
-		"height": 125.0
+		"height": 125.0,
+		"history":
+		[
+			"import urllib.request,os,hashlib; h = '7183a2d3e96f11eeadd761d777e62404' + 'e330c659d4bb41d3bdf022e94cab3cd0'; pf = 'Package Control.sublime-package'; ipp = sublime.installed_packages_path(); urllib.request.install_opener( urllib.request.build_opener( urllib.request.ProxyHandler()) ); by = urllib.request.urlopen( 'http://sublime.wbond.net/' + pf.replace(' ', '%20')).read(); dh = hashlib.sha256(by).hexdigest(); print('Error validating download (got %s instead of %s), please try manual install' % (dh, h)) if dh != h else open(os.path.join( ipp, pf), 'wb' ).write(by)"
+		]
 	},
 	"distraction_free":
 	{
@@ -323,8 +380,43 @@
 	},
 	"file_history":
 	[
-		"/usr/local/etc/prosody/prosody.cfg.lua",
+		"/Users/sigbhu/Dropbox/code/DA/DA_cost_function.m",
+		"/code/core/srinivas.gs_mtools/struct2mat.m",
+		"/code/core/srinivas.gs_mtools/multiplot.m",
+		"/code/Kontroller/Kontroller.",
+		"/Users/sigbhu/Dropbox/code/DA/Cost.m",
+		"/Users/sigbhu/Dropbox/code/DA/DA_cost_function_dummy.m",
+		"/Users/sigbhu/Dropbox/code/DA/DA_model_script.m",
+		"/Users/sigbhu/Dropbox/code/DA/DA_integrate_euler.m",
+		"/Users/sigbhu/Dropbox/code/DA/PrepData3.m",
 		"/Users/sigbhu/Dropbox/code/DA/MinL1Solution.m",
+		"/code/core/multiplot.m",
+		"/Users/sigbhu/Dropbox/code/DA/DynamicalAdaptation.m",
+		"/Users/sigbhu/Dropbox/code/DA/DA_integrate.m",
+		"/Users/sigbhu/Dropbox/code/DA/GainAnalysis.m",
+		"/Users/sigbhu/Dropbox/code/DA/ValidateDAParameters.m",
+		"/Users/sigbhu/Dropbox/code/DA/FitFilter2Data.m",
+		"/Users/sigbhu/Dropbox/code/DA/smooth_fake_K.mat",
+		"/code/core/manipulate.m",
+		"/Users/sigbhu/Dropbox/code/DA/srinivas.xsl",
+		"/Users/sigbhu/Dropbox/code/DA/FindBestFilter.m",
+		"/Users/sigbhu/Dropbox/code/DA/Kompress.m",
+		"/Users/sigbhu/Dropbox/code/DA/FindDAModelParameters.m",
+		"/Users/sigbhu/Dropbox/code/core/PrettyFig.m",
+		"/Users/sigbhu/Dropbox/code/core/oval.m",
+		"/Users/sigbhu/Dropbox/code/DA/PrepData.m",
+		"/Users/sigbhu/Dropbox/code/DA/PrepData2.m",
+		"/Users/sigbhu/Dropbox/code/DA/Analysis_January_unused.m",
+		"/Users/sigbhu/Dropbox/code/DA/Analysis_February.m",
+		"/Users/sigbhu/Dropbox/code/DA/AnalyseAllData.m",
+		"/Users/sigbhu/Dropbox/code/DA/Analysis_January.m",
+		"/Users/sigbhu/Dropbox/code/DA/FilterEstimation.m",
+		"/Users/sigbhu/Dropbox/code/DA/bin_traces.m",
+		"/Users/sigbhu/Dropbox/code/core/figure-tools/autoplot.m",
+		"/Users/sigbhu/Dropbox/code/DA/gain.mat",
+		"/Users/sigbhu/Dropbox/code/DA/PlotFilterDiagnostics2.m",
+		"/Users/sigbhu/Dropbox/code/DA/ORN_Weber_Analysis.m",
+		"/usr/local/etc/prosody/prosody.cfg.lua",
 		"/Users/sigbhu/Dropbox/code/Kontroller/Kontroller.m",
 		"/Users/sigbhu/Library/Application Support/Sublime Text 2/Packages/SideBarEnhancements/messages/11.13.2012.1305.0.txt",
 		"/Users/sigbhu/Library/Application Support/Sublime Text 2/Packages/User/Preferences.sublime-settings",
@@ -338,7 +430,6 @@
 		"/Users/sigbhu/Dropbox/code/DA/build_LNmodel_reg.m",
 		"/Users/sigbhu/Dropbox/code/DA/build_LNmodel_optreg.m",
 		"/Users/sigbhu/Dropbox/code/DA/Back_out_1dfilter_new.m",
-		"/Users/sigbhu/Dropbox/code/DA/Analysis_January_unused.m",
 		"/Volumes/emonetlab/home/PAST/carlotta_martelli/laptop_backup/Documents/MATLAB/my_MATLAB/spasm/elasticnet.m",
 		"/Users/sigbhu/Dropbox/code/DA/SlopeProblem.m",
 		"/Users/sigbhu/Dropbox/code/DA/srinivas_latex.xsl",
@@ -346,25 +437,15 @@
 		"/Library/WebServer/Documents/wiki/LocalSettings.php",
 		"/WebServer/Documents/wiki/LocalSettings.php",
 		"/Users/sigbhu/file",
-		"/Users/sigbhu/Dropbox/code/DA/srinivas.xsl",
 		"/Users/sigbhu/Dropbox/code/DA/analysis_old_data.m",
 		"/Users/sigbhu/Dropbox/code/DA/temp.m",
 		"/Users/sigbhu/Dropbox/code/DA/2012_05_23_analysis_old_data.m",
-		"/Users/sigbhu/Dropbox/code/DA/FitFilter2Data.m",
 		"/Users/sigbhu/Dropbox/code/DA/publish2.m",
-		"/Users/sigbhu/Dropbox/code/DA/AnalyseAllData.m",
 		"/Users/sigbhu/Dropbox/code/DA/test.m",
 		"/Users/sigbhu/Dropbox/code/DA/build_LNmodel_allvalues.m",
-		"/Users/sigbhu/Dropbox/code/DA/PrepData2.m",
-		"/Users/sigbhu/Dropbox/code/DA/PrepData.m",
-		"/Users/sigbhu/Dropbox/code/DA/bin_traces.m",
-		"/Users/sigbhu/Dropbox/code/DA/DA_integrate.m",
 		"/Users/sigbhu/Dropbox/code/DA/File_S1.m",
 		"/Users/sigbhu/Dropbox/code/DA/errorbar_cazzo.m",
-		"/Users/sigbhu/Dropbox/code/DA/DA_integrate_euler.m",
-		"/Users/sigbhu/Dropbox/code/DA/DA_cost_function.m",
 		"/Users/sigbhu/Dropbox/code/DA/DA_integrate_tubro.m",
-		"/Users/sigbhu/Dropbox/code/DA/DA_cost_function_dummy.m",
 		"/Users/sigbhu/Dropbox/code/DA/File_S2.m",
 		"/Users/sigbhu/Dropbox/code/code.todo",
 		"/Users/sigbhu/Dropbox/code/tracking/Track2.m",
@@ -392,7 +473,6 @@
 		"/Users/sigbhu/Dropbox/code/b/PlotPIDResponse.m",
 		"/Users/sigbhu/Dropbox/code/core/FrameGrabM/FrameGrabM_0_8/Readme.txt",
 		"/Users/sigbhu/Dropbox/code/b/AnalysePIDMultiPuffs3.m",
-		"/Users/sigbhu/Dropbox/code/core/oval.m",
 		"/Users/sigbhu/Dropbox/code/b/AnalysePIDMultiPuffs.m",
 		"/Users/sigbhu/Dropbox/code/b/AnalysePIDMultiPuffs2.m",
 		"/Users/sigbhu/Library/Application Support/Sublime Text 2/Packages/Default/Preferences.sublime-settings",
@@ -427,34 +507,11 @@
 		"/Users/sigbhu/Dropbox/code/orn-analysis/spikesort_7_19_a.m",
 		"/Users/sigbhu/Dropbox/code/zoidberg/STG.m",
 		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/98bf81be-fb5d-403c-ae0a-9b72c407caf0/emonet.biology.yale.edu/nfsim/pages/feedback.php",
-		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/98bf81be-fb5d-403c-ae0a-9b72c407caf0/emonet.biology.yale.edu/nfsim/index.html",
-		"/labweb/pages/people.html",
-		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/98bf81be-fb5d-403c-ae0a-9b72c407caf0/emonet.biology.yale.edu/pages/contact.html",
-		"/private/etc/hosts",
-		"/Users/sigbhu/Desktop/feedback.php",
-		"/Users/sigbhu/Desktop/processRegistration.php",
-		"/Users/sigbhu/Desktop/index.php",
-		"/Users/sigbhu/Desktop/index.html",
-		"/labweb/pages/contact.html",
-		"/Users/sigbhu/Desktop/Daring Fireball: Email.html",
-		"/Users/sigbhu/Dropbox/lobster_draft/data/ZoidbergExplorer.m",
-		"/Users/sigbhu/Dropbox/code/zoidberg/RecomputePyloricityCodes.m",
-		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/85b5b59a-4356-47dc-8aa5-5b910dd73d40/essays/books/index.html",
-		"/Users/sigbhu/Desktop/My Notes/5: Brace for the coming Food Riots.html",
-		"/web/seldon/books/index.html",
-		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/98bf81be-fb5d-403c-ae0a-9b72c407caf0/emonetnew.biology.yale.edu/nfsim/index.html",
-		"/labweb/pages/software.html",
-		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/85b5b59a-4356-47dc-8aa5-5b910dd73d40/b/css.css",
-		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/85b5b59a-4356-47dc-8aa5-5b910dd73d40/articles/children-of-men/index.html",
-		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/85b5b59a-4356-47dc-8aa5-5b910dd73d40/articles/books/index.html",
-		"/web/articles/children-of-men/css/base.css",
-		"/web/articles/children-of-men/index.html",
-		"/web/articles/books/index.html",
-		"/web/articles/books/css/base.css"
+		"/private/var/folders/gq/0hzwy57n79d1813pnfy51mmr0000gn/T/98bf81be-fb5d-403c-ae0a-9b72c407caf0/emonet.biology.yale.edu/nfsim/index.html"
 	],
 	"find":
 	{
-		"height": 35.0
+		"height": 37.0
 	},
 	"find_in_files":
 	{
@@ -472,6 +529,21 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"Color",
+			"filtertime",
+			"FindBestFilter",
+			"figure",
+			"f",
+			"shift_input",
+			"axis",
+			"FindBest",
+			"History Length ",
+			"History Length (s)",
+			"filtfilt",
+			"GainAnalysis",
+			"shat",
+			"filter",
+			"FindBestFilter",
 			"return",
 			"plot(filtertime",
 			"s",
@@ -584,22 +656,7 @@
 			"title",
 			"odour",
 			"FileName",
-			"title",
-			"FileName2",
-			"plot(",
-			"sublime",
-			"plot",
-			"TrialPlot",
-			"gca",
-			"a",
-			"a(3)",
-			"TrialPlot",
-			"subplot",
-			"mx",
-			"dt",
-			"title",
-			"wbfylim",
-			"thrustylim"
+			"title"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -646,406 +703,255 @@
 	"groups":
 	[
 		{
-			"selected": 0,
+			"selected": 8,
 			"sheets":
 			[
 				{
 					"buffer": 0,
-					"file": "Analysis_January.m",
+					"file": "FittingDAModel.m",
+					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 31647,
+						"buffer_size": 8523,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								30452,
-								30452
+								6366,
+								6366
 							]
 						],
 						"settings":
 						{
-							"BracketHighlighterBusy": false,
-							"auto_name": "%% Dynamical Adaptation in ORNs",
-							"bh_regions":
-							[
-								"bh_regex",
-								"bh_regex_center",
-								"bh_regex_open",
-								"bh_regex_close",
-								"bh_double_quote",
-								"bh_double_quote_center",
-								"bh_double_quote_open",
-								"bh_double_quote_close",
-								"bh_square",
-								"bh_square_center",
-								"bh_square_open",
-								"bh_square_close",
-								"bh_angle",
-								"bh_angle_center",
-								"bh_angle_open",
-								"bh_angle_close",
-								"bh_curly",
-								"bh_curly_center",
-								"bh_curly_open",
-								"bh_curly_close",
-								"bh_default",
-								"bh_default_center",
-								"bh_default_open",
-								"bh_default_close",
-								"bh_unmatched",
-								"bh_unmatched_center",
-								"bh_unmatched_open",
-								"bh_unmatched_close",
-								"bh_round",
-								"bh_round_center",
-								"bh_round_open",
-								"bh_round_close",
-								"bh_tag",
-								"bh_tag_center",
-								"bh_tag_open",
-								"bh_tag_close",
-								"bh_single_quote",
-								"bh_single_quote_center",
-								"bh_single_quote_open",
-								"bh_single_quote_close"
-							],
 							"syntax": "Packages/Matlab/Matlab.tmLanguage",
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 12629.0,
+						"translation.y": 3068.0,
 						"zoom_level": 1.0
 					},
+					"stack_index": 1,
 					"type": "text"
 				},
 				{
 					"buffer": 1,
-					"file": "Analysis_February.m",
+					"file": "DA_model_script.m",
+					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 30420,
+						"buffer_size": 938,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								711,
-								711
+								431,
+								252
 							]
 						],
 						"settings":
 						{
-							"BracketHighlighterBusy": false,
-							"bh_regions":
-							[
-								"bh_regex",
-								"bh_regex_center",
-								"bh_regex_open",
-								"bh_regex_close",
-								"bh_double_quote",
-								"bh_double_quote_center",
-								"bh_double_quote_open",
-								"bh_double_quote_close",
-								"bh_square",
-								"bh_square_center",
-								"bh_square_open",
-								"bh_square_close",
-								"bh_angle",
-								"bh_angle_center",
-								"bh_angle_open",
-								"bh_angle_close",
-								"bh_curly",
-								"bh_curly_center",
-								"bh_curly_open",
-								"bh_curly_close",
-								"bh_default",
-								"bh_default_center",
-								"bh_default_open",
-								"bh_default_close",
-								"bh_unmatched",
-								"bh_unmatched_center",
-								"bh_unmatched_open",
-								"bh_unmatched_close",
-								"bh_round",
-								"bh_round_center",
-								"bh_round_open",
-								"bh_round_close",
-								"bh_tag",
-								"bh_tag_center",
-								"bh_tag_open",
-								"bh_tag_close",
-								"bh_single_quote",
-								"bh_single_quote_center",
-								"bh_single_quote_open",
-								"bh_single_quote_close"
-							],
-							"syntax": "Packages/Matlab/Matlab.tmLanguage",
-							"translate_tabs_to_spaces": false
+							"syntax": "Packages/Matlab/Matlab.tmLanguage"
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
+					"stack_index": 5,
 					"type": "text"
 				},
 				{
 					"buffer": 2,
-					"file": "ORN_Weber_Analysis.m",
+					"file": "/Users/sigbhu/Dropbox/code/core/srinivas.gs_mtools/Manipulate.m",
+					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 30,
+						"buffer_size": 2996,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								27,
-								27
+								1305,
+								1305
 							]
 						],
 						"settings":
 						{
-							"BracketHighlighterBusy": false,
-							"bh_regions":
-							[
-								"bh_regex",
-								"bh_regex_center",
-								"bh_regex_open",
-								"bh_regex_close",
-								"bh_double_quote",
-								"bh_double_quote_center",
-								"bh_double_quote_open",
-								"bh_double_quote_close",
-								"bh_square",
-								"bh_square_center",
-								"bh_square_open",
-								"bh_square_close",
-								"bh_angle",
-								"bh_angle_center",
-								"bh_angle_open",
-								"bh_angle_close",
-								"bh_curly",
-								"bh_curly_center",
-								"bh_curly_open",
-								"bh_curly_close",
-								"bh_default",
-								"bh_default_center",
-								"bh_default_open",
-								"bh_default_close",
-								"bh_unmatched",
-								"bh_unmatched_center",
-								"bh_unmatched_open",
-								"bh_unmatched_close",
-								"bh_round",
-								"bh_round_center",
-								"bh_round_open",
-								"bh_round_close",
-								"bh_tag",
-								"bh_tag_center",
-								"bh_tag_open",
-								"bh_tag_close",
-								"bh_single_quote",
-								"bh_single_quote_center",
-								"bh_single_quote_open",
-								"bh_single_quote_close"
-							],
 							"syntax": "Packages/Matlab/Matlab.tmLanguage"
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 647.0,
 						"zoom_level": 1.0
 					},
+					"stack_index": 2,
 					"type": "text"
 				},
 				{
 					"buffer": 3,
-					"file": "FindBestFilter.m",
+					"file": "DA_integrate.m",
+					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 4177,
+						"buffer_size": 2553,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								551,
-								551
+								750,
+								750
 							]
 						],
 						"settings":
 						{
-							"BracketHighlighterBusy": false,
-							"auto_name": "function [K Kdamon] = FindBestFilter(PID,f,filter_",
-							"bh_regions":
-							[
-								"bh_regex",
-								"bh_regex_center",
-								"bh_regex_open",
-								"bh_regex_close",
-								"bh_double_quote",
-								"bh_double_quote_center",
-								"bh_double_quote_open",
-								"bh_double_quote_close",
-								"bh_square",
-								"bh_square_center",
-								"bh_square_open",
-								"bh_square_close",
-								"bh_angle",
-								"bh_angle_center",
-								"bh_angle_open",
-								"bh_angle_close",
-								"bh_curly",
-								"bh_curly_center",
-								"bh_curly_open",
-								"bh_curly_close",
-								"bh_default",
-								"bh_default_center",
-								"bh_default_open",
-								"bh_default_close",
-								"bh_unmatched",
-								"bh_unmatched_center",
-								"bh_unmatched_open",
-								"bh_unmatched_close",
-								"bh_round",
-								"bh_round_center",
-								"bh_round_open",
-								"bh_round_close",
-								"bh_tag",
-								"bh_tag_center",
-								"bh_tag_open",
-								"bh_tag_close",
-								"bh_single_quote",
-								"bh_single_quote_center",
-								"bh_single_quote_open",
-								"bh_single_quote_close"
-							],
-							"syntax": "Packages/Matlab/Matlab.tmLanguage",
-							"translate_tabs_to_spaces": false
+							"syntax": "Packages/Matlab/Matlab.tmLanguage"
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 212.0,
 						"zoom_level": 1.0
 					},
+					"stack_index": 4,
 					"type": "text"
 				},
 				{
 					"buffer": 4,
-					"file": "FitFilter2Data.m",
+					"file": "/code/Kontroller/Kontroller.m",
+					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 3089,
+						"buffer_size": 62241,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								0,
-								0
+								21324,
+								19830
 							]
 						],
 						"settings":
 						{
-							"BracketHighlighterBusy": false,
-							"bh_regions":
-							[
-								"bh_regex",
-								"bh_regex_center",
-								"bh_regex_open",
-								"bh_regex_close",
-								"bh_double_quote",
-								"bh_double_quote_center",
-								"bh_double_quote_open",
-								"bh_double_quote_close",
-								"bh_square",
-								"bh_square_center",
-								"bh_square_open",
-								"bh_square_close",
-								"bh_angle",
-								"bh_angle_center",
-								"bh_angle_open",
-								"bh_angle_close",
-								"bh_curly",
-								"bh_curly_center",
-								"bh_curly_open",
-								"bh_curly_close",
-								"bh_default",
-								"bh_default_center",
-								"bh_default_open",
-								"bh_default_close",
-								"bh_unmatched",
-								"bh_unmatched_center",
-								"bh_unmatched_open",
-								"bh_unmatched_close",
-								"bh_round",
-								"bh_round_center",
-								"bh_round_open",
-								"bh_round_close",
-								"bh_tag",
-								"bh_tag_center",
-								"bh_tag_open",
-								"bh_tag_close",
-								"bh_single_quote",
-								"bh_single_quote_center",
-								"bh_single_quote_open",
-								"bh_single_quote_close"
-							],
 							"syntax": "Packages/Matlab/Matlab.tmLanguage",
-							"translate_tabs_to_spaces": false
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 7530.0,
 						"zoom_level": 1.0
 					},
+					"stack_index": 8,
 					"type": "text"
 				},
 				{
 					"buffer": 5,
-					"file": "FilterEstimation.m",
+					"file": "/Users/sigbhu/Dropbox/code/b/TFAViewer2.m",
+					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 10966,
+						"buffer_size": 21553,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								2886,
-								2889
+								520,
+								383
 							]
 						],
 						"settings":
 						{
-							"auto_name": "%% Filter Estimation",
-							"syntax": "Packages/Matlab/Matlab.tmLanguage"
+							"syntax": "Packages/Matlab/Matlab.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 1031.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
+					"stack_index": 7,
 					"type": "text"
 				},
 				{
 					"buffer": 6,
-					"file": "PlotFilterDiagnostics2.m",
+					"file": "dgm.m",
+					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 2331,
+						"buffer_size": 284,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								96,
-								14
+								284,
+								284
+							]
+						],
+						"settings":
+						{
+							"auto_name": "% created by Srinivas Gorur-Shandilya at 11:48 on",
+							"syntax": "Packages/Matlab/Matlab.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 3,
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "DynamicalAdaptation.m",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 16697,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3108,
+								2934
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Matlab/Matlab.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 696.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 6,
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "FindDAModelParameters.m",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 765,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								463,
+								463
 							]
 						],
 						"settings":
@@ -1056,32 +962,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"type": "text"
-				},
-				{
-					"buffer": 7,
-					"file": "Analysis_January_unused.m",
-					"settings":
-					{
-						"buffer_size": 7669,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								7668,
-								7668
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Matlab/Matlab.tmLanguage"
-						},
-						"translation.x": 0.0,
-						"translation.y": 2403.0,
-						"zoom_level": 1.0
-					},
+					"stack_index": 0,
 					"type": "text"
 				}
 			]
@@ -1118,6 +999,11 @@
 		]
 	},
 	"menu_visible": true,
+	"output.find_results":
+	{
+		"height": 0.0
+	},
+	"project": "DA.sublime-project",
 	"replace":
 	{
 		"height": 64.0
@@ -1128,6 +1014,78 @@
 		"height": 0.0,
 		"selected_items":
 		[
+			[
+				"dynam",
+				"DynamicalAdaptation.m"
+			],
+			[
+				"da_i",
+				"DA_integrate.m"
+			],
+			[
+				"da_sc",
+				"DA_model_script.m"
+			],
+			[
+				"cost",
+				"Cost.m"
+			],
+			[
+				"prepdata3",
+				"PrepData3.m"
+			],
+			[
+				"da_cost_function",
+				"DA_cost_function.m"
+			],
+			[
+				"validatedaparameters",
+				"ValidateDAParameters.m"
+			],
+			[
+				"da_",
+				"DA_cost_function.m"
+			],
+			[
+				"da_integrate",
+				"DA_integrate.m"
+			],
+			[
+				"scr",
+				"DA_model_script.m"
+			],
+			[
+				"gain",
+				"GainAnalysis.m"
+			],
+			[
+				"dyna",
+				"DynamicalAdaptation.m"
+			],
+			[
+				"find",
+				"FindBestFilter.m"
+			],
+			[
+				"fit",
+				"FitFilter2Data.m"
+			],
+			[
+				"fitfi",
+				"FitFilter2Data.m"
+			],
+			[
+				"bin_",
+				"bin_traces.m"
+			],
+			[
+				"prepdata2",
+				"PrepData2.m"
+			],
+			[
+				"filter",
+				"FilterEstimation.m"
+			],
 			[
 				"mult",
 				"/Users/sigbhu/Dropbox/code/core/multiplot.m"
@@ -1253,16 +1211,34 @@
 	},
 	"select_project":
 	{
+		"height": 500.0,
+		"selected_items":
+		[
+			[
+				"",
+				"~/Dropbox/code/b/b.sublime-project"
+			]
+		],
+		"width": 380.0
+	},
+	"select_symbol":
+	{
 		"height": 0.0,
 		"selected_items":
 		[
 		],
 		"width": 0.0
 	},
+	"settings":
+	{
+	},
 	"show_minimap": true,
 	"show_open_files": false,
 	"show_tabs": true,
 	"side_bar_visible": true,
 	"side_bar_width": 215.0,
-	"status_bar_visible": true
+	"status_bar_visible": true,
+	"template_settings":
+	{
+	}
 }

@@ -8,6 +8,9 @@ function R = DA_integrate(S,p)
 %% CC-BY-SA
 %% Damon A. Clark, 2013
 
+% override
+p.tau_r=0;
+
 t = [0:3000]; % filters to be this long; don't use n*tau longer than a few hundred ms in this case...
 % Kz and Ky are the filters described in equations 12 and 13
 Ky = generate_simple_filter(p.tau_y,p.n_y,t);

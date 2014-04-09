@@ -1,9 +1,15 @@
 % PrepData3.m
 % PrepData loads the selected file, and prepares the data so that it is useful
 % PrepData3 is built from my own code, as opposed to PrepData2, which uses Carlotta's code. Specifically, the firing rate computation is significantly different. 
-function [PID time f Valve] = PrepData3(filename)
+function [PID time f Valve] = PrepData3(filename,varargin)
 % load file
 load(filename)
+
+full_trace = 0;
+if nargin  == 2
+	full_trace = varargin{1};
+end
+
 
 % some parameters
 deltat = 10^(-4); % sampling rate of data
@@ -36,17 +42,16 @@ Valve(Valve <= 0.5) = 0;
 Valve(Valve>0) = 1;
 
 % find out when the trace starts and stops
-
-t_start=find(Valve,1,'first') + 5*memory; % we will throw away data before this; i.e, 5 seconds after stimulus starts
-t_end=find(Valve,1,'last') - 5*memory; % we will throw away data after this; i.e, 5 seconds before stimulus ends
+if ~full_trace
+	t_start=find(Valve,1,'first') + 5*memory; % we will throw away data before this; i.e, 5 seconds after stimulus starts
+	t_end=find(Valve,1,'last') - 5*memory; % we will throw away data after this; i.e, 5 seconds before stimulus ends
+else
+	t_start = 1;
+	t_end = length(Valve);
+end
 
 % crop traces
 time = time(t_start:t_end);   
 PID = PID(t_start:t_end);    
 f = f(t_start:t_end);
 Valve = Valve(t_start:t_end);
-
-if isempty(PID)
-	disp('no data? whats going on?')
-	keyboard
-end

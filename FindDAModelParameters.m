@@ -22,9 +22,9 @@ foptions = optimset('Display','iter');
 [PID, time, f] = PrepData3(filename);
 
 % make all vectors consistent
-PID = PID(:);
+PID = PID(:)*100;
 time = time(:);
-f = f(:);
+f = f(:)/100;
 
 
 % run fminsearch on the cost function 

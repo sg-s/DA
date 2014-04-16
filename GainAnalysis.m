@@ -1,3 +1,11 @@
+% GainAnalysis.m
+% 
+% 
+% created by Srinivas Gorur-Shandilya at 10:20 , 09 April 2014. Contact me at http://srinivas.gs/contact/
+% 
+% This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
+% To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
+% performs a gain analysis and makes some plots
 function [output_data] = GainAnalysis(f,fp,PID,shat,history_lengths,hl,filter_length,marker_size,marker_size2,font_size,plotid,plothere)
 
 if nargin < 12
@@ -46,11 +54,11 @@ for i = 1:length(history_lengths)
 	fp_high = fp(idx(1:floor(length(PID)/10)));
 
 	if ismember(1,plotid)
-		plot(fp,f,'.','MarkerSize',marker_size,'MarkerFaceColor',[0.7 0.7 0.7],'MarkerEdgeColor',[0.7 0.7 0.7])
+		plot(fp,f,'.','MarkerSize',marker_size,'MarkerFaceColor',[0.9 0.9 0.9],'MarkerEdgeColor',[0.9 0.9 0.9])
 		plot(fp_low,f_low,'.','MarkerSize',marker_size,'MarkerFaceColor',[0.5 1 0.5],'MarkerEdgeColor',[0.5 1 0.5])
 		plot(fp_high,f_high,'.','MarkerSize',marker_size,'MarkerFaceColor',[1 0.5 0.5],'MarkerEdgeColor',[1 0.5 0.5])
 		set(gca,'LineWidth',2,'box','on','FontSize',font_size)
-		set(gca,'XLim',[min(f)-10,max(f)+10],'YLim',[min(f)-10,max(f)+10])
+		set(gca,'XLim',[min(f)-1,max(f)+1],'YLim',[min(f)-1,max(f)+1])
 		axis square
 		title(strcat(mat2str(history_lengths(i)),'ms'))
 
@@ -82,9 +90,9 @@ for i = 1:length(history_lengths)
 	if ismember(1,plotid)
 
 		% plot the best fit lines
-		plot(min(f):max(f),fall(min(f):max(f)),'Color',[0.5 0.5 0.5],'LineWidth',2)
-		plot(min(f_low):max(f_low),flow(min(f_low):max(f_low)),'g','LineWidth',2)
-		plot(min(f_high):max(f_high),fhigh(min(f_high):max(f_high)),'r','LineWidth',2)
+		plot(min(f):max(f),fall(min(f):max(f)),'Color',[0.5 0.5 0.5],'LineWidth',3)
+		plot(min(f_low):max(f_low),flow(min(f_low):max(f_low)),'g','LineWidth',3)
+		plot(min(f_high):max(f_high),fhigh(min(f_high):max(f_high)),'r','LineWidth',3)
 	end
 
 end
@@ -93,8 +101,7 @@ end
 
 if ismember(2,plotid)
 	% plot to summary figure
-	figure('outerposition',[10 10 1000 500],'PaperUnits','points','PaperSize',[1000 700]); hold on
-	subplot(1,2,1), hold on
+	subplot(plothere)
 
 	
 	plot(history_lengths,all_slopes*ones(1,length(history_lengths)),'k','LineWidth',2), hold on

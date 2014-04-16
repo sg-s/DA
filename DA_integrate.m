@@ -57,7 +57,6 @@ R = interp1(tout,xout,[1:length(z)],'linear');
 
 
 function f = generate_simple_filter(tau,n,t)
-
 f = t.^n.*exp(-t/tau); % functional form in paper
 f = f/tau^(n+1)/gamma(n+1); % normalize appropriately
 

@@ -12,6 +12,7 @@ regmax = 100;
 regmin = 1e-5;
 algo = 1;
 filter_length = 333;
+min_cutoff = -Inf;
 
 if nargin < 3
 	OnlyThesePoints = [];
@@ -19,9 +20,10 @@ end
 
 
 % evaluate optional inputs
-for i = 1:nargin-4
+for i = 1:nargin-3
 	eval(varargin{i})
 end
+
 
 if algo == 1
 	%% Chichilnisky's method. 
@@ -51,6 +53,9 @@ if algo == 1
 
 		% make the prediction 
 		fp = filter(K,1,stim-mean(stim)) + mean(response);
+
+		% apply the cutoff
+		fp(fp<min_cutoff) = min_cutoff;
 
 		% censor initial prediction 
 		fp(1:filter_length+1) = NaN;

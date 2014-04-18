@@ -4,6 +4,18 @@
 		"selected_items":
 		[
 			[
+				"min",
+				"min_cutoff"
+			],
+			[
+				"DA",
+				"DAFit"
+			],
+			[
+				"Lin",
+				"LinearFit"
+			],
+			[
 				"ploth",
 				"plotthese"
 			],
@@ -227,7 +239,7 @@
 			"file": "FittingDAModel.m",
 			"settings":
 			{
-				"buffer_size": 11875,
+				"buffer_size": 17951,
 				"line_ending": "Unix"
 			}
 		},
@@ -235,31 +247,7 @@
 			"file": "GainAnalysis.m",
 			"settings":
 			{
-				"buffer_size": 4432,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "DynamicalAdaptation.m",
-			"settings":
-			{
-				"buffer_size": 16697,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "FindBestFilter.m",
-			"settings":
-			{
-				"buffer_size": 4253,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "Cost.m",
-			"settings":
-			{
-				"buffer_size": 417,
+				"buffer_size": 4356,
 				"line_ending": "Unix"
 			}
 		},
@@ -267,7 +255,23 @@
 			"file": "DA_cost_function.m",
 			"settings":
 			{
-				"buffer_size": 753,
+				"buffer_size": 813,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "Cost.m",
+			"settings":
+			{
+				"buffer_size": 448,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "DA_integrate.m",
+			"settings":
+			{
+				"buffer_size": 2552,
 				"line_ending": "Unix"
 			}
 		},
@@ -388,16 +392,18 @@
 	},
 	"file_history":
 	[
+		"/Users/sigbhu/code/DA/FindBestFilter.m",
+		"/Users/sigbhu/code/DA/FitFilter2Data.m",
+		"/code/srinivas.gs_mtools/multiplot.m",
+		"/Users/sigbhu/code/DA/MinL1Solution.m",
+		"/Users/sigbhu/code/DA/Cost.m",
+		"/Users/sigbhu/code/DA/DynamicalAdaptation.m",
+		"/var/db/receipts/com.apple.pkg.DeveloperToolsCLI.plist",
 		"/Users/sigbhu/code/srinivas.gs_mtools/multiplot.m",
 		"/Users/sigbhu/Library/Application Support/Sublime Text 3/Packages/User/Preferences.sublime-settings",
 		"/Users/sigbhu/code/DA/PlotFilterDiagnostics.m",
 		"/Users/sigbhu/code/DA/PrepData3.m",
-		"/code/srinivas.gs_mtools/multiplot.m",
-		"/Users/sigbhu/code/DA/MinL1Solution.m",
-		"/Users/sigbhu/code/DA/FitFilter2Data.m",
-		"/Users/sigbhu/code/DA/Cost.m",
 		"/Users/sigbhu/code/DA/DA_integrate.m",
-		"/Users/sigbhu/code/DA/DynamicalAdaptation.m",
 		"/Users/sigbhu/code/DA/ValidateDAParameters.m",
 		"/Users/sigbhu/code/DA/GammaDist.m",
 		"/Users/sigbhu/code/DA/dgm.m",
@@ -440,6 +446,14 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"low_slopes",
+			"all_slopes",
+			"fit",
+			"PID",
+			"ga",
+			"plotid",
+			"return",
+			"DAfit",
 			"a",
 			"plot",
 			"figure",
@@ -559,15 +573,7 @@
 			"sem",
 			"line",
 			"equalise",
-			"figure",
-			"thesetrials",
-			"thesetrials =",
-			"thesetrials",
-			"TrialPlot",
-			"plottrials",
-			"plotthis",
-			"plot",
-			"/dt"
+			"figure"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -608,7 +614,7 @@
 		"reverse": false,
 		"show_context": true,
 		"use_buffer2": true,
-		"whole_word": false,
+		"whole_word": true,
 		"wrap": true
 	},
 	"groups":
@@ -623,15 +629,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 11875,
+						"buffer_size": 17951,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								7948,
-								7159
+								13070,
+								13070
 							]
 						],
 						"settings":
@@ -640,7 +646,7 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 3805.0,
+						"translation.y": 6654.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 0,
@@ -652,107 +658,21 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 4432,
+						"buffer_size": 4356,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								3232,
-								3232
+								3262,
+								3262
 							]
 						],
 						"settings":
 						{
 							"syntax": "Packages/Matlab/Matlab.tmLanguage",
 							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 1389.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 1,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
-					"file": "DynamicalAdaptation.m",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 16697,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								7574,
-								7191
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Matlab/Matlab.tmLanguage",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 3539.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 2,
-					"type": "text"
-				},
-				{
-					"buffer": 3,
-					"file": "FindBestFilter.m",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 4253,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								0,
-								0
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Matlab/Matlab.tmLanguage",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 5,
-					"type": "text"
-				},
-				{
-					"buffer": 4,
-					"file": "Cost.m",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 417,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								320,
-								300
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Matlab/Matlab.tmLanguage"
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
@@ -762,20 +682,20 @@
 					"type": "text"
 				},
 				{
-					"buffer": 5,
+					"buffer": 2,
 					"file": "DA_cost_function.m",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 753,
+						"buffer_size": 813,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								750,
-								750
+								670,
+								670
 							]
 						],
 						"settings":
@@ -786,11 +706,67 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "Cost.m",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 448,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								212,
+								212
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Matlab/Matlab.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "DA_integrate.m",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2552,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								749,
+								729
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Matlab/Matlab.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 1.0,
+						"zoom_level": 1.0
+					},
 					"stack_index": 4,
 					"type": "text"
 				},
 				{
-					"buffer": 6,
+					"buffer": 5,
 					"file": "FindDAModelParameters.m",
 					"semi_transient": false,
 					"settings":
@@ -815,7 +791,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 6,
+					"stack_index": 5,
 					"type": "text"
 				}
 			]
@@ -868,6 +844,22 @@
 		"selected_items":
 		[
 			[
+				"fitfilter2data",
+				"FitFilter2Data.m"
+			],
+			[
+				"findbestfilter",
+				"FindBestFilter.m"
+			],
+			[
+				"cost",
+				"Cost.m"
+			],
+			[
+				"da_in",
+				"DA_integrate.m"
+			],
+			[
 				"gainanalysis",
 				"GainAnalysis.m"
 			],
@@ -878,10 +870,6 @@
 			[
 				"find",
 				"FindBestFilter.m"
-			],
-			[
-				"cost",
-				"Cost.m"
 			],
 			[
 				"da_cost_function",

@@ -20,5 +20,7 @@ Rguess = DA_integrate(PID,p);
 
 f = f(:);
 Rguess = Rguess(:);
+Rguess = Rguess - mean(Rguess(500:end));
+Rguess(Rguess<min(f)) = min(f);
 
-cost = CostFunctionHandle(f,Rguess-mean(Rguess));
+cost = CostFunctionHandle(f,Rguess);

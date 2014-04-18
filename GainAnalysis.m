@@ -90,11 +90,12 @@ for i = 1:length(history_lengths)
 	if ismember(1,plotid)
 
 		% plot the best fit lines
-		plot(min(f):max(f),fall(min(f):max(f)),'Color',[0.5 0.5 0.5],'LineWidth',3)
-		plot(min(f_low):max(f_low),flow(min(f_low):max(f_low)),'g','LineWidth',3)
-		plot(min(f_high):max(f_high),fhigh(min(f_high):max(f_high)),'r','LineWidth',3)
+		plot([min(fp) max(fp)],fall([min(fp) max(fp)]),'Color',[0.5 0.5 0.5],'LineWidth',3)
+		plot([min(fp_low) max(fp_low)],flow([min(fp_low) max(fp_low)]),'g','LineWidth',3)
+		plot([min(fp_high) max(fp_high)],fhigh([min(fp_high) max(fp_high)]),'r','LineWidth',3)
 	end
 
+	
 end
 
 

@@ -6,15 +6,15 @@ function [c] = Cost(a,b)
 a = a(:);
 b = b(:);
 
-a = a(2000:end);
-b = b(2000:end);
+a = a(500:end);
+b = b(500:end);
 
 % penalise vectors that just aim for the mean or for very low values 
 
 c1 = sqrt(sum((a-b).^2)); % distance to solution
 
 
-m = mean(a); 
-c2 = sqrt(sum((m-b).^2));  % distance to mean
+% m = mean(a); 
+% c2 = sqrt(sum((m-b).^2));  % distance to mean
 
-c = c1/c2;
+c = c1; % just use distance to solution

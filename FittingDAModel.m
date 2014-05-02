@@ -280,25 +280,33 @@ disp(l2(f(s:end),DAFit(s:end)))
 % We can perform a similar gain analysis like we did on the synthetic data on the real data from the ORN. The plot on the left compares the ORN response data (on the Y-axis) to the linear fit, while the plot on the right compares the data to the DA model fit. 
 s = 300; % when we start for the gain analysis
 z = length(f); % where we end
-history_lengths = [600];
-hl = history_lengths/3; % history lengths better be divisible by 3!
-shat = NaN(length(hl),length(PID(s:z)));
-for i = 1:length(hl)
-	shat(i,:) = filtfilt(ones(1,hl(i))/hl(i),1,PID(s:z));
-	shat(i,1:hl(i)) = NaN;
-end
+history_lengths = [0.6];
+% hl = history_lengths/3; % history lengths better be divisible by 3!
+% shat = NaN(length(hl),length(PID(s:z)));
+% for i = 1:length(hl)
+% 	shat(i,:) = filtfilt(ones(1,hl(i))/hl(i),1,PID(s:z));
+% 	shat(i,1:hl(i)) = NaN;
+% end
 
+x.data = f(s:z);
+x.prediction = LinearFit(s:z);
+x.stimulus = PID(s:z);
+x.time = time(s:z);
 
-figure('outerposition',[0 0 900 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 % make gain analysis plot for synthetic data and linear model
-plot_here=subplot(1,2,1); hold on
-[output_data] = GainAnalysis(f(s:z),LinearFit(s:z),PID(s:z),shat,history_lengths,hl,filter_length,marker_size,marker_size2,font_size,1,plot_here);
+figure('outerposition',[0 0 900 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plothere=subplot(1,2,1); hold on
+GainAnalysis2(x,history_lengths,filter_length,'plotid',1,'plothere',plothere);
 xlabel('Linear Prediction','FontSize',font_size)
 ylabel('ORN response (a.u.)','FontSize',font_size)
 
 % make gain analysis plot for synthetic data and DA model
+x.data = f(s:z);
+x.prediction = DAFit(s:z);
+x.stimulus = PID(s:z);
+x.time = time(s:z);
 plot_here=subplot(1,2,2); hold on
-[output_data] = GainAnalysis(f(s:z),DAFit(s:z),PID(s:z),shat,history_lengths,hl,filter_length,marker_size,marker_size2,font_size,1,plot_here);
+GainAnalysis2(x,history_lengths,filter_length,'plotid',1,'plothere',plothere);
 xlabel('DA Prediction','FontSize',font_size)
 legend('Location',[0.7674    0.2927    0.21    0.1370],{'all data','bottom 10%','top 10%'})
 
@@ -311,34 +319,30 @@ legend('Location',[0.7674    0.2927    0.21    0.1370],{'all data','bottom 10%',
 % And we can do the same thing for the ORN response data.
 
 s = 300; % when we start for the gain analysis
-history_lengths = [30 102 150 300 600 1002 1500 2001];
-hl = history_lengths/3; % history lengths better be divisible by 3!
-shat = NaN(length(hl),length(PID(s:end)));
-for i = 1:length(hl)
-	shat(i,:) = filtfilt(ones(1,hl(i))/hl(i),1,PID(s:end));
-	shat(i,1:hl(i)) = NaN;
-end
+history_lengths = [.30 .102 .150 .300 0.600 1.002 1.500 2.001];
+
+x.data = f(s:z);
+x.prediction = LinearFit(s:z);
+x.stimulus = PID(s:z);
+x.time = time(s:z);
 
 
 figure('outerposition',[0 0 900 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 % make gain analysis plot for synthetic data and linear model
-plot_here=subplot(1,2,1); hold on
-[output_data] = GainAnalysis(f(s:end),LinearFit(s:end),PID(s:end),shat,history_lengths,hl,filter_length,marker_size,marker_size2,font_size,2,plot_here);
+plothere=subplot(1,2,1); hold on
+GainAnalysis2(x,history_lengths,filter_length,'plotid',2,'plothere',plothere);
 title('Linear Prediction','FontSize',font_size)
 ylabel('ORN response (a.u.)','FontSize',font_size)
 set(gca,'YLim',[0.7 1.5])
 
-
+x.prediction = DAFit(s:z);
 % make gain analysis plot for synthetic data and DA model
-plot_here=subplot(1,2,2); hold on
-[output_data] = GainAnalysis(f(s:end),DAFit(s:end),PID(s:end),shat,history_lengths,hl,filter_length,marker_size,marker_size2,font_size,2,plot_here);
+plothere=subplot(1,2,2); hold on
+GainAnalysis2(x,history_lengths,filter_length,'plotid',2,'plothere',plothere);
 title('DA Prediction','FontSize',font_size)
+ylabel('ORN response (a.u.)','FontSize',font_size)
 legend('Location',[0.7674    0.5927    0.21    0.1370],{'all data','bottom 10%','top 10%'})
 set(gca,'YLim',[0.7 1.5])
-
-
-
-
 
 
 

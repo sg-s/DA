@@ -31,6 +31,7 @@ PID = filtfilt(ones(1,sliding/deltat)/(sliding/deltat),1,PID);
 s = round(sliding/deltat);
 PID = PID(s:s:end);
 
+
 % process stim_signal
 stim_signal = squeeze(stim_signal);
 if isvector(stim_signal)
@@ -40,6 +41,10 @@ end
 Valve = stim_signal(s:s:end);
 Valve(Valve <= 0.5) = 0;
 Valve(Valve>0) = 1;
+
+% calcualte baseline and remove it form the PID
+baseline=mean(PID(find(Valve>0,1,'first')-100:find(Valve>0,1,'first')));
+PID = PID- baseline;
 
 % find out when the trace starts and stops
 if ~full_trace

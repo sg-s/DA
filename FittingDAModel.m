@@ -174,18 +174,17 @@ set(gca,'YLim',[0.6 1.7])
 
 
 if ~exist('PID','var')
-	filename = '/Volumes/Data/random-stim/final_2011_06_14_ab3A_1o3ol3X-3_20ml_30sec_30ms_rand.mat';
-	[PID, time, f,Valve, uncropped] = PrepData3(filename);
+	filename = '~/Desktop/final_2011_06_14_ab3A_1o3ol3X-3_20ml_30sec_30ms_rand.mat';
+	[PID, time, f,Valve] = PrepData3(filename);
 	PID = PID(:);
 	time = time(:);
 	f = f(:);
 
 	% detrend PID
-	% ptrend = fit(time,PID,'Poly1'); 
-	% PID = PID - (ptrend(time) - mean(ptrend(time)));
+	ptrend = fit(time,PID,'Poly1'); 
+	PID = PID - (ptrend(time) - mean(ptrend(time)));
 
 	% prepare data
-
 	f = f/std(f);
 	f = f(:) - mean(f);
 
@@ -198,8 +197,8 @@ end
 
 
 % build a simple linear model
-K = FindBestFilter(PID,f,[],'min_cutoff=min(response);');
-LinearFit = filter(K,1,PID-mean(PID));
+K = FindBestFilter(PID(500:end),f(500:end),[],'min_cutoff=min(response);');
+LinearFit = filter(K,1,PID-mean(PID))+ mean(f(500:end));
 LinearFit(LinearFit<min(f)) = min(f);
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
@@ -214,9 +213,9 @@ PrettyFig;
 
 % use pattern search to find parameters
 if ~exist('psp.mat','file')
-	x0 = [4200  50   0.2 2.6 1.4   30   0.1];
-	lb = [3500  40   0   0   0     20   0];
-	ub = [5200  60   1   10  5     50   10];
+	x0 = [3557  203   0.35 1.8 1.9   17   1];
+	lb = [1200  30    0    0   1     0    1];
+	ub = [5200  300   1    10  5     30   5];
 	psoptions = psoptimset('UseParallel',true,'CompletePoll', 'on', 'Vectorized', 'off','Display','iter','MaxIter',2000,'MaxFunEvals',10000);
 	x = patternsearch(@(x) DA_cost_function(x,data,@Cost,'ga'),x0,[],[],[],[],lb,ub,psoptions);
 	psp = ValidateDAParameters(x,'ga');
@@ -246,7 +245,6 @@ set(gca,'YTick',[])
 set(gca,'YColor','w')
 PrettyFig;
 
-
 subplot(1,3,3), hold on
 multiplot(time,f,LinearFit,DAFit,mpo);
 set(gca,'XLim',[max(time)-2 max(time)])
@@ -261,6 +259,7 @@ PrettyFig;
 %%
 % The DA model seems to do a pretty good job estimating the ORN output. Is it better than the simple linear prediction? Here, we compare the r-square and the l-2 norm between the data and the fit. For the simple linear model, the r-square is 
 s = 500;
+z = length(f);
 disp(rsquare(f(s:end),LinearFit(s:end)))
 
 %%
@@ -279,9 +278,9 @@ disp(l2(f(s:end),DAFit(s:end)))
 
 %% Real Data: Gain Analysis
 % We can perform a similar gain analysis like we did on the synthetic data on the real data from the ORN. The plot on the left compares the ORN response data (on the Y-axis) to the linear fit, while the plot on the right compares the data to the DA model fit. 
-s = 500; % when we start for the gain analysis
+s = 300; % when we start for the gain analysis
 z = length(f); % where we end
-history_lengths = [102];
+history_lengths = [600];
 hl = history_lengths/3; % history lengths better be divisible by 3!
 shat = NaN(length(hl),length(PID(s:z)));
 for i = 1:length(hl)
@@ -308,12 +307,10 @@ legend('Location',[0.7674    0.2927    0.21    0.1370],{'all data','bottom 10%',
 %%
 % In the analysis above, we have kept the "window history" length fixed at ~100ms. How does varying this window change the separation of slopes of best fit lines for the top 10% and the bottom 10%? 
 
-
-
 %%
 % And we can do the same thing for the ORN response data.
 
-s = 500; % when we start for the gain analysis
+s = 300; % when we start for the gain analysis
 history_lengths = [30 102 150 300 600 1002 1500 2001];
 hl = history_lengths/3; % history lengths better be divisible by 3!
 shat = NaN(length(hl),length(PID(s:end)));
@@ -329,18 +326,197 @@ plot_here=subplot(1,2,1); hold on
 [output_data] = GainAnalysis(f(s:end),LinearFit(s:end),PID(s:end),shat,history_lengths,hl,filter_length,marker_size,marker_size2,font_size,2,plot_here);
 title('Linear Prediction','FontSize',font_size)
 ylabel('ORN response (a.u.)','FontSize',font_size)
-set(gca,'YLim',[0.7 1.3])
+set(gca,'YLim',[0.7 1.5])
 
 
 % make gain analysis plot for synthetic data and DA model
 plot_here=subplot(1,2,2); hold on
 [output_data] = GainAnalysis(f(s:end),DAFit(s:end),PID(s:end),shat,history_lengths,hl,filter_length,marker_size,marker_size2,font_size,2,plot_here);
 title('DA Prediction','FontSize',font_size)
-legend('Location',[0.7674    0.2927    0.21    0.1370],{'all data','bottom 10%','top 10%'})
-set(gca,'YLim',[0.7 1.3])
+legend('Location',[0.7674    0.5927    0.21    0.1370],{'all data','bottom 10%','top 10%'})
+set(gca,'YLim',[0.7 1.5])
+
+
+
+
+
+
+
 
 return
-% unused code
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+% Why are the slopes not the same? One possibility is that the stimulus isn't actually the stimulus that the fly sees. We can check for this effect by filtering the PID, and creating fake neuron outputs using the DA model, and then trying to fit a DA model to the filtered stimulus. 
+
+
+% First, we filter the stimulus to mimic hypothesised low-pass filtering of the actual stimulus by the PID. 
+fPID = filtfilt(ones(1,50)/50,1,PID);
+figure('outerposition',[0 0 900 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+multiplot(time,PID,fPID)
+set(gca,'XLim',[15 20],'FontSize',font_size,'LineWidth',2)
+
+
+% We then generate a synthetic output from the unfiltered stimulus using the DA model, and add some noise to it, and fit the DA model to it to check that the function minimisation works with this stimulus. 
+load('fakeORNp.mat')
+SynData = DA_integrate(PID,fakeORNp);
+SynData(1:100) = mean(SynData(100:end));
+SynData = SynData - mean(SynData);
+SynData = SynData + 0.2*randn(length(SynData),1);
+
+% now fit a DA model to this to check that everything works well
+if ~exist('p2.mat','file')
+	data.PID = PID;
+	data.f = SynData;
+	x0 = [3245 34 0.3 2  2   16 1];
+	lb = [3000 20 0   0  2   0  1 ];
+	ub = [5000 50 1   10 10 100 10];
+	psoptions = psoptimset('UseParallel',true,'CompletePoll', 'on', 'Vectorized', 'off','Display','iter','MaxIter',2000,'MaxFunEvals',10000);
+	x = patternsearch(@(x) DA_cost_function(x,data,@Cost,'ga'),x0,[],[],[],[],lb,ub,psoptions);
+	p2 = ValidateDAParameters(x,'ga');
+	save('p2.mat','p2')
+
+end
+
+load p2.mat
+PredictionFromStim = DA_integrate(PID,p2);
+PredictionFromStim = PredictionFromStim - mean(PredictionFromStim(100:end));
+
+figure('outerposition',[0 0 900 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+multiplot(time,SynData,PredictionFromStim);
+set(gca,'XLim',[15 20],'FontSize',font_size,'LineWidth',2)
+
+
+% When we use the stimulus and the synthetic data from the DA model, we can recover the gain equalisation as before:
+
+s = 300; % when we start for the gain analysis
+z = length(SynData); % where we end
+history_lengths = [102];
+hl = history_lengths/3; % history lengths better be divisible by 3!
+shat = NaN(length(hl),length(PID(s:z)));
+for i = 1:length(hl)
+	shat(i,:) = filtfilt(ones(1,hl(i))/hl(i),1,PID(s:z));
+	shat(i,1:hl(i)) = NaN;
+end
+
+
+figure('outerposition',[0 0 600 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot_here = axis;
+% make gain analysis plot for synthetic data and linear model
+[output_data] = GainAnalysis(SynData(s:z),PredictionFromStim(s:z),PID(s:z),shat,history_lengths,hl,filter_length,marker_size,marker_size2,font_size,1,plot_here);
+xlabel('DA Model fit using stimulus','FontSize',font_size)
+ylabel('Synthetic Data (a.u.)','FontSize',font_size)
+
+
+% Now, we try to fit the DA model to the filtered stimulus, and see that we are close to the solution:
+if ~exist('p3.mat','file')
+	data.PID = fPID;
+	data.f = SynData;
+	x0 = [3245 34 0.3 2  2   16 1];
+	lb = [3000 20 0   0  2   0  1 ];
+	ub = [5000 50 1   10 10 100 10];
+	psoptions = psoptimset('UseParallel',true,'CompletePoll', 'on', 'Vectorized', 'off','Display','iter','MaxIter',2000,'MaxFunEvals',10000);
+	x = patternsearch(@(x) DA_cost_function(x,data,@Cost,'ga'),x0,[],[],[],[],lb,ub,psoptions);
+	p3 = ValidateDAParameters(x,'ga');
+	save('p3.mat','p3')
+
+end
+
+load p3.mat
+PredictionFromFiltStim = DA_integrate(fPID,p3);
+PredictionFromFiltStim = PredictionFromFiltStim - mean(PredictionFromFiltStim(100:end));
+
+figure('outerposition',[0 0 900 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+multiplot(time,SynData,PredictionFromFiltStim,PredictionFromStim);
+set(gca,'XLim',[15 20],'FontSize',font_size,'LineWidth',2)
+
+
+% If we try to fit a DA model to some filtered version of the stimulus instead of the stimulus itself,do we lose the ability to equally predict gains in low and high stimuli areas?
+
+s = 300; % when we start for the gain analysis
+z = length(PredictionFromFiltStim); % where we end
+history_lengths = [102];
+hl = history_lengths/3; % history lengths better be divisible by 3!
+shat = NaN(length(hl),length(fPID(s:z)));
+for i = 1:length(hl)
+	shat(i,:) = filtfilt(ones(1,hl(i))/hl(i),1,fPID(s:z));
+	shat(i,1:hl(i)) = NaN;
+end
+
+figure('outerposition',[0 0 600 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot_here = axis;
+% make gain analysis plot for synthetic data and linear model
+[output_data] = GainAnalysis(SynData(s:z),PredictionFromFiltStim(s:z),fPID(s:z),shat,history_lengths,hl,filter_length,marker_size,marker_size2,font_size,1,plot_here);
+xlabel('Prediction from Filtered Stimulus','FontSize',font_size)
+ylabel('Synthetic Data (a.u.)','FontSize',font_size)
+
+
+% And we can compare it over all history lengths:
+s = 300; % when we start for the gain analysis
+history_lengths = [30 102 150 300 600 1002 1500 2001];
+hl = history_lengths/3; % history lengths better be divisible by 3!
+shat = NaN(length(hl),length(fPID(s:end)));
+for i = 1:length(hl)
+	shat(i,:) = filtfilt(ones(1,hl(i))/hl(i),1,fPID(s:end));
+	shat(i,1:hl(i)) = NaN;
+end
+
+
+figure('outerposition',[0 0 900 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% make gain analysis plot for synthetic data and linear model
+plot_here=subplot(1,2,1); hold on
+[output_data] = GainAnalysis(SynData(s:end),PredictionFromStim(s:end),fPID(s:end),shat,history_lengths,hl,filter_length,marker_size,marker_size2,font_size,2,plot_here);
+title('Prediction from actual stimulus','FontSize',font_size)
+ylabel('ORN response (a.u.)','FontSize',font_size)
+set(gca,'YLim',[0.7 1.5])
+
+
+% make gain analysis plot for synthetic data and DA model
+plot_here=subplot(1,2,2); hold on
+[output_data] = GainAnalysis(SynData(s:end),PredictionFromFiltStim(s:end),fPID(s:end),shat,history_lengths,hl,filter_length,marker_size,marker_size2,font_size,2,plot_here);
+title('Prediction from filtered stimulus','FontSize',font_size)
+legend('Location',[0.7674    0.5927    0.21    0.1370],{'all data','bottom 10%','top 10%'})
+set(gca,'YLim',[0.7 1.5])
+
+
+
+% make gain analysis plot for synthetic data and DA model
+plot_here=subplot(1,2,2); hold on
+[output_data] = GainAnalysis(R(s:z),Rguessf(s:z),fstimulus(s:z),shat,history_lengths,hl,filter_length,marker_size,marker_size2,font_size,1,plot_here);
+xlabel('DA Prediction','FontSize',font_size)
+legend('Location',[0.7674    0.2927    0.21    0.1370],{'all data','bottom 10%','top 10%'})
+
+
+
+
+
 
 % if ~exist('gap.mat','file')
 % 	FitnessFunction = @(x) DA_cost_function(x,data,@Cost,'ga');

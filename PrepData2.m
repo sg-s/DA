@@ -12,7 +12,10 @@ sliding = 0.003;
 memory = round(1/sliding); % confusingly, memory will be the time step in the processed data
 
 % bin and average
+
+
 [time PIDs sr f fs] = bin_traces(PID, stA, deltat, win, sliding);
+
 
 % process PID
 PID = mean(squeeze(PIDs(1,:,:)), 1);      

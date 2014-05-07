@@ -73,6 +73,8 @@ er = confint(fall);
 all_slopes_err=fall.p1-er(1,1);
 all_slopes = fall.p1;
 output_data.all_slopes = all_slopes;
+shuffled_low = zeros(1,length(history_lengths));
+shuffled_high = zeros(1,length(history_lengths));
 
 
 if ismember(1,plotid) && isempty(plothere)
@@ -148,11 +150,13 @@ end
 if ismember(2,plotid)
 	% plot to summary figure
 	subplot(plothere)
-
-	
 	plot(history_lengths,all_slopes*ones(1,length(history_lengths)),'k','LineWidth',2), hold on
 	errorbar(history_lengths,low_slopes,low_slopes_err,'g','LineWidth',2), hold on
 	errorbar(history_lengths,high_slopes,high_slopes_err,'r','LineWidth',2)
+
+	% bootstrap slopes
+	%[low_slopes_min, low_slopes_max, high_slopes_min, high_slopes_max] = BootStrapErrorBars(shat,f,fp,hl,fraction);
+
 	set(gca,'LineWidth',2,'FontSize',20,'box','on','XLim',[0 max(history_lengths)])
 	xlabel('History Length (ms)','FontSize',20)
 	ylabel('Slope data/prediction (gain)','FontSize',20)

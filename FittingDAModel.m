@@ -319,7 +319,7 @@ legend('Location',[0.7674    0.2927    0.21    0.1370],{'all data','bottom 10%',
 % And we can do the same thing for the ORN response data.
 
 s = 300; % when we start for the gain analysis
-history_lengths = [.30 .102 .150 .300 0.600 1.002 1.500 2.001];
+history_lengths = [.030 .102 .150 .300 0.600 1.002 1.500 2.001];
 
 x.data = f(s:z);
 x.prediction = LinearFit(s:z);

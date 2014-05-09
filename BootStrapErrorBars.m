@@ -88,7 +88,7 @@ for i = 1:length(hl) % for each history length
 	sorted_slopes = sort(slopes,'descend');
 	low_slopes.max(i) = mean(sorted_slopes(1:a));
 
-	keyboard
+	
 	
 
 

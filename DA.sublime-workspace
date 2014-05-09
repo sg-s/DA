@@ -4,6 +4,18 @@
 		"selected_items":
 		[
 			[
+				"f_",
+				"f_low"
+			],
+			[
+				"high",
+				"high_slopes_min"
+			],
+			[
+				"low_l",
+				"low_slopes_max"
+			],
+			[
 				"shud",
 				"shuffled_low"
 			],
@@ -156,10 +168,6 @@
 				"LNFitQualityLow"
 			],
 			[
-				"high",
-				"high_slopes"
-			],
-			[
 				"Slope",
 				"SlopeRatios"
 			],
@@ -251,29 +259,34 @@
 			"file": "FittingDAModel.m",
 			"settings":
 			{
-				"buffer_size": 24348,
+				"buffer_size": 24349,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"contents": "% GainAnalysis2.m\n% a better, improved version of GainAnalysis.m\n% \n% created by Srinivas Gorur-Shandilya at 10:20 , 09 April 2014. Contact me at http://srinivas.gs/contact/\n% \n% This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. \n% To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.\n% performs a gain analysis and makes some plots\n% x is a structure with the following fields:\n% x.data -- the actual data\n% x.prediction -- the prediction you want to compare to\n% x.time -- time vector\n% x.stimulus -- the stimulus vector \n%\n\nfunction [output_data] = GainAnalysis2(x,history_lengths,filter_length,varargin)\n\n% set defaults\nmarker_size=10;\nmarker_size2=24;\nfont_size=20;\nplotid=[1 2];\nplothere=[];\n\nif iseven(nargin-3)\n    for i = 1:length(varargin)\n        temp = varargin{i};\n        if ischar(temp)\n            eval(strcat(temp,'=varargin{i+1};'));\n        end\n    end\n    \nelse\n    error('Inputs need to be name value pairs')\nend\n	\n\nf = x.data;\nfp = x.prediction;\nstimulus = x.stimulus;\nt = x.time;\n\n\n% figure out sampling rate\ndt = mean(diff(t));\nhl = round(history_lengths/dt);\n\n\n% compute shat\nshat = NaN(length(hl),length(stimulus));\nfor i = 1:length(hl)\n	shat(i,:) = filtfilt(ones(1,hl(i))/hl(i),1,stimulus);\n	shat(i,1:hl(i)) = NaN;\nend\n\n\n\n% make data vectors\nlow_slopes = NaN*history_lengths;\nlow_slopes_err = NaN*history_lengths;\nhigh_slopes = NaN*history_lengths;\nhigh_slopes_err = NaN*history_lengths;\nlow_gof = NaN*history_lengths;\nhigh_gof = NaN*history_lengths;\n\n% calculate the slopes for all points\n\nf = f(:);\nfp = fp(:);\n[fall gof] = fit(fp(filter_length+2:end),f(filter_length+2:end),'Poly1');\nall_gof = gof.rsquare;\ner = confint(fall);\nall_slopes_err=fall.p1-er(1,1);\nall_slopes = fall.p1;\noutput_data.all_slopes = all_slopes;\nshuffled_low = zeros(1,length(history_lengths));\nshuffled_high = zeros(1,length(history_lengths));\n\n\nif ismember(1,plotid) && isempty(plothere)\n	f3= figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on\nend\nfor i = 1:length(history_lengths)\n\n	if ismember(1,plotid) && isempty(plothere)\n		figure(f3), hold on\n		autoplot(length(hl),i); hold on\n	elseif ismember(1,plotid) \n		axis(plothere); hold on\n	end\n\n	this_shat = shat(i,:);\n	this_shat(1:hl(i)) = Inf; % the initial segment where we can't estimate shat is excluded\n	[sorted_shat idx] = sort(this_shat,'ascend');\n	f_low = f(idx(1:floor(length(stimulus)/10)));\n	fp_low = fp(idx(1:floor(length(stimulus)/10)));\n\n	this_shat(1:hl(i)) = -Inf;\n	[sorted_shat idx] = sort(this_shat,'descend');\n	f_high = f(idx(1:floor(length(stimulus)/10)));\n	fp_high = fp(idx(1:floor(length(stimulus)/10)));\n\n	if ismember(1,plotid)\n		plot(fp,f,'.','MarkerSize',marker_size,'MarkerFaceColor',[0.9 0.9 0.9],'MarkerEdgeColor',[0.9 0.9 0.9])\n		plot(fp_low,f_low,'.','MarkerSize',marker_size,'MarkerFaceColor',[0.5 1 0.5],'MarkerEdgeColor',[0.5 1 0.5])\n		plot(fp_high,f_high,'.','MarkerSize',marker_size,'MarkerFaceColor',[1 0.5 0.5],'MarkerEdgeColor',[1 0.5 0.5])\n		set(gca,'LineWidth',2,'box','on','FontSize',font_size)\n		set(gca,'XLim',[min(f)-1,max(f)+1],'YLim',[min(f)-1,max(f)+1])\n		axis square\n		title(strcat(mat2str(history_lengths(i)),'s'))\n\n		if i == 6\n			xlabel('Linear Prediction (Hz)','FontSize',16)\n			ylabel('Neuron Response (Hz)','FontSize',16)\n		end\n	end\n\n	% remove NaN values\n	f_high(isnan(fp_high)) = [];\n	fp_high(isnan(fp_high)) = [];\n	f_low(isnan(fp_low)) = [];\n	fp_low(isnan(fp_low)) = [];\n\n	% fit lines\n	[flow gof] = fit(fp_low,f_low,'Poly1');\n	low_gof(i) = gof.rsquare;\n	er = confint(flow);\n	low_slopes_err(i)=flow.p1-er(1,1);\n	low_slopes(i) = flow.p1;\n\n	[fhigh gof] = fit(fp_high,f_high,'Poly1');\n	high_gof(i) =  gof.rsquare;\n	er = confint(fhigh);\n	high_slopes_err(i)=fhigh.p1-er(1,1);\n	high_slopes(i) = fhigh.p1;\n\n	if ismember(1,plotid)\n\n		% plot the best fit lines\n		plot([min(fp) max(fp)],fall([min(fp) max(fp)]),'Color',[0.5 0.5 0.5],'LineWidth',3)\n		plot([min(fp_low) max(fp_low)],flow([min(fp_low) max(fp_low)]),'g','LineWidth',3)\n		plot([min(fp_high) max(fp_high)],fhigh([min(fp_high) max(fp_high)]),'r','LineWidth',3)\n	end\n\n	\nend\n\n\n\nif ismember(2,plotid)\n	% plot to summary figure\n	subplot(plothere)\n	plot(history_lengths,all_slopes*ones(1,length(history_lengths)),'k','LineWidth',2), hold on\n	errorbar(history_lengths,low_slopes,low_slopes_err,'g','LineWidth',2), hold on\n	errorbar(history_lengths,high_slopes,high_slopes_err,'r','LineWidth',2)\n\n	% ~~~~~~~ fix this ~~~~~~~~~~\n	[shuffled_high; shuffled_low] = BootStrapErrorBars();\n\n	set(gca,'LineWidth',2,'FontSize',20,'box','on','XLim',[0 max(history_lengths)])\n	xlabel('History Length (ms)','FontSize',20)\n	ylabel('Slope data/prediction (gain)','FontSize',20)\n\n	if ismember(3,plotid)\n		subplot(1,2,2), hold on\n		plot(history_lengths,low_gof,'g','LineWidth',2),hold on\n		plot(history_lengths,high_gof,'r','LineWidth',2)\n		xlabel('History Length (ms)','FontSize',20)\n		ylabel('Goodness of Fit, rsquare','FontSize',20)\n		set(gca,'LineWidth',2,'FontSize',20,'box','on','YLim',[0 1.1],'XLim',[0 max(history_lengths)])\n	end\nend\n\noutput_data.high_slopes = high_slopes;\noutput_data.high_slopes_err = high_slopes_err;\noutput_data.low_slopes = low_slopes;\noutput_data.low_slopes_err = low_slopes_err;\noutput_data.low_gof = low_gof;\noutput_data.high_gof = high_gof;",
 			"file": "GainAnalysis2.m",
-			"file_size": 5263,
-			"file_write_time": 130435297420000000,
 			"settings":
 			{
-				"buffer_size": 5348,
+				"buffer_size": 5396,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"contents": "gain analysis with valve instead of with PID for fast odours. \n\nbootstrap fit slopes\n\nremove quadratic term from PID, but don't remove anything form the firing rates",
-			"file": "todo.markdown",
-			"file_size": 96,
-			"file_write_time": 130435242800000000,
+			"file": "BootStrapErrorBars.m",
 			"settings":
 			{
-				"buffer_size": 165,
+				"buffer_size": 4076,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"contents": "gain analysis with valve instead of with PID for fast odours. \n\nbootstrap fit slopes\n\nremove quadratic term from PID, but don't remove anything form the firing rates\n\nfit DA model to dose-response experiments, concatenate data, build framework to fit single model (either linear model or DA model) to many pieces of data\n\nwrite paper outline \n\n",
+			"file": "todo.markdown",
+			"file_size": 342,
+			"file_write_time": 130439630620000000,
+			"settings":
+			{
+				"buffer_size": 344,
 				"line_ending": "Unix",
 				"name": "gain analysis with stimuli"
 			}
@@ -302,16 +315,16 @@
 		"selected_items":
 		[
 			[
+				"lint",
+				"SublimeLinter: Lint This View"
+			],
+			[
 				"install",
 				"Package Control: Install Package"
 			],
 			[
 				"packa",
 				"Package Control: Install Package"
-			],
-			[
-				"lint",
-				"SublimeLinter: Lint This View"
 			],
 			[
 				"Packa",
@@ -403,6 +416,8 @@
 	},
 	"file_history":
 	[
+		"/Users/sigbhu/code/DA/AnalyseLinearPrediction.m",
+		"/Users/sigbhu/code/DA/larsen.m",
 		"/Users/sigbhu/code/DA/GainAnalysis.m",
 		"/Users/sigbhu/code/DA/srinivas.xsl",
 		"/Users/sigbhu/code/DA/DA_model_script.m",
@@ -463,6 +478,7 @@
 		"case_sensitive": true,
 		"find_history":
 		[
+			"history_lengths",
 			"plot_here",
 			"ms",
 			"filter_length",
@@ -589,8 +605,7 @@
 			"collision",
 			"stats",
 			"nfig",
-			"figure",
-			"Turns"
+			"figure"
 		],
 		"highlight": true,
 		"in_selection": false,
@@ -637,7 +652,7 @@
 	"groups":
 	[
 		{
-			"selected": 1,
+			"selected": 3,
 			"sheets":
 			[
 				{
@@ -646,15 +661,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 24348,
+						"buffer_size": 24349,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								13629,
-								13629
+								13216,
+								12826
 							]
 						],
 						"settings":
@@ -663,7 +678,7 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 6856.0,
+						"translation.y": 6731.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 2,
@@ -675,15 +690,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 5348,
+						"buffer_size": 5396,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								4517,
-								4517
+								1345,
+								1035
 							]
 						],
 						"settings":
@@ -692,27 +707,55 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 2629.0,
+						"translation.y": 408.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 3,
 					"type": "text"
 				},
 				{
 					"buffer": 2,
-					"file": "todo.markdown",
+					"file": "BootStrapErrorBars.m",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 165,
+						"buffer_size": 4076,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								165,
-								165
+								2496,
+								2496
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Matlab/Matlab.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 1314.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "todo.markdown",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 344,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								344,
+								344
 							]
 						],
 						"settings":
@@ -724,11 +767,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 0,
 					"type": "text"
 				},
 				{
-					"buffer": 3,
+					"buffer": 4,
 					"file": "PrepData3.m",
 					"semi_transient": false,
 					"settings":
@@ -752,11 +795,11 @@
 						"translation.y": 562.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 3,
+					"stack_index": 4,
 					"type": "text"
 				},
 				{
-					"buffer": 4,
+					"buffer": 5,
 					"file": "FindDAModelParameters.m",
 					"semi_transient": false,
 					"settings":
@@ -781,7 +824,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 4,
+					"stack_index": 5,
 					"type": "text"
 				}
 			]

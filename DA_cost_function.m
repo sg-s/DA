@@ -11,16 +11,36 @@ else
 end
 
 
-PID = data.PID;
-f = data.f;
+stimulus = data.stimulus;
+response = data.response;
 
 
-% now find the result from the guess
-Rguess = DA_integrate(PID,p);
 
-f = f(:);
-Rguess = Rguess(:);
-Rguess = Rguess - mean(Rguess(500:end));
-Rguess(Rguess<min(f)) = min(f);
+if isvector(stimulus)
+	% just a 1D fitting
+	% now find the result from the guess
+	Rguess = DA_integrate(stimulus,p);
+	Rguess = Rguess(:);
+	response = response(:);
+	stimulus = stimulus(:);
+	Rguess = Rguess - mean(Rguess(500:end));
+	error('need some careful thought about how you calcualte the mean: throw out some initial segment?')
 
-cost = CostFunctionHandle(f,Rguess);
+	cost = CostFunctionHandle(response,Rguess);
+else
+	% we're simultaneously fitting many different things
+	Rguess = 0*response;
+	for i = 1:size(stimulus,1)
+		Rguess(i,:) = DA_integrate(stimulus(i,:),p);
+	end
+	clear i
+	Rguess = Rguess';
+	response = response';
+	Rguess = Rguess(:);
+	response = response(:);
+	cost = CostFunctionHandle(response,Rguess);
+	
+end
+
+
+

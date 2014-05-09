@@ -58,55 +58,122 @@ end
 
 
 % check that stimulus and response are OK
-if ~isvector(stim)
-	error('Stimulus is not a vector')
+
+if isvector(stim) && isvector(response)
+	% stimulus and response are both vectors, so do it the easy way
+
+	% ensure column
+	stim = stim(:);
+	response = response(:);
+
+	% check that there are no NaNs
+	if any(isnan([stim;response]))
+		error('NaN in inputs, cannot continue')
+	end
+
+	% subtract mean in response
+	if n
+		response = response - mean(response);
+		stim = stim - mean(stim);
+	end
+
+
+
+	% throw away parts of the response for which we don't care
+	response = response(OnlyThesePoints);
+
+	% chop up the stimulus into blocks  
+	s = zeros(length(OnlyThesePoints), filter_length+1);
+	for i=1:length(OnlyThesePoints)
+	    s(i,:) = stim(OnlyThesePoints(i):-1:OnlyThesePoints(i)-filter_length);
+	end
+
+	% compute covariance matrix
+	C = s'*s; % this is the covariance matrix, scaled by the size of the C
+	% scale reg by mean of eigenvalues
+	MeanEigenValue = trace(C)/length(C); % cheat; this is the same as mean(eig(C))
+	reg = reg*MeanEigenValue;
+
+
+	switch regtype 
+		case 1
+			C = C + reg*eye(filter_length+1); % Carlotta's reg.
+		case 2
+			C = (C + reg*eye(filter_length+1))*trace(C)/(trace(C) + reg*filter_length);
+	end
+
+
+	K = C\(s'*response);
+
+
+else
+	warning('Stimulus is not a vector, OnlyThesePoints is not supported')
+	sz = size(stim);
+	s = zeros(length(OnlyThesePoints)*sz(1), filter_length+1);
+	add_here = 1;
+
+	for i = 1:sz(1)
+		this_stim = stim(i,:);
+		this_response = response(i,:);
+
+		% check that there are no NaNs
+		if any(isnan([this_stim;this_response]))
+			error('NaN in inputs, cannot continue')
+		end
+
+		% subtract mean in response
+		if n
+			this_response = this_response - mean(this_response);
+			this_stim = this_stim - mean(this_stim);
+		end
+
+		% chop up the stimulus into blocks  
+		for j=1:length(OnlyThesePoints)
+			add_here = add_here + 1;
+		    s(add_here,:) = this_stim(OnlyThesePoints(j):-1:OnlyThesePoints(j)-filter_length);
+		end
+		clear j
+
+	end
+	clear i
+
+	% compute covariance matrix
+	C = s'*s; % this is the covariance matrix, scaled by the size of the C
+	% scale reg by mean of eigenvalues
+	MeanEigenValue = trace(C)/length(C); % cheat; this is the same as mean(eig(C))
+	reg = reg*MeanEigenValue;
+
+
+	switch regtype 
+		case 1
+			C = C + reg*eye(filter_length+1); % Carlotta's reg.
+		case 2
+			C = (C + reg*eye(filter_length+1))*trace(C)/(trace(C) + reg*filter_length);
+	end
+
+	full_response = response(:,filter_length+1:end);
+	full_response = full_response';
+	full_response = full_response(:);
+	% we lost a value somewhere
+	full_response = [mean(full_response);full_response];
+	K = C\(s'*full_response);
+
+
 end
-if ~isvector(response)
-	error('Response is not a vector')
-end
-
-% ensure column
-stim = stim(:);
-response = response(:);
-
-% check that there are no NaNs
-if any(isnan([stim;response]))
-	error('NaN in inputs, cannot continue')
-end
-
-% subtract mean in response
-if n
-	response = response - mean(response);
-	stim = stim - mean(stim);
-end
 
 
-% throw away parts of the response for which we don't care
-response = response(OnlyThesePoints);
-
-% chop up the stimulus into blocks  
-s = zeros(length(OnlyThesePoints), filter_length+1);
-for i=1:length(OnlyThesePoints)
-    s(i,:) = stim(OnlyThesePoints(i):-1:OnlyThesePoints(i)-filter_length);
-end
 
 
-% compute covariance matrix
-C = s'*s; % this is the covariance matrix, scaled by the size of the C
-% scale reg by mean of eigenvalues
-MeanEigenValue = trace(C)/length(C); % cheat; this is the same as mean(eig(C))
-reg = reg*MeanEigenValue;
 
 
-switch regtype 
-	case 1
-		C = C + reg*eye(filter_length+1); % Carlotta's reg.
-	case 2
-		C = (C + reg*eye(filter_length+1))*trace(C)/(trace(C) + reg*filter_length);
-end
 
 
-K = C\(s'*response);
+
+
+
+
+
+
         
 
 

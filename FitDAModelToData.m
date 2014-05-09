@@ -12,7 +12,7 @@
 % .time -- a time vector
 % 
 % stimulus or response can be matrices, where each row represents a different experiment or a different trial. 
-function [p] = FitDAModelToData(data)
+function [p Rguess] = FitDAModelToData(data)
 
 x0 = [1200 16 0.3 0.66 3 6 2];
 lb = [10 0 0 0 2 0 2];
@@ -21,7 +21,7 @@ psoptions = psoptimset('UseParallel',true,'CompletePoll', 'on', 'Vectorized', 'o
 x = patternsearch(@(x) DA_cost_function(x,data,@Cost2,'ga'),x0,[],[],[],[],lb,ub,psoptions);
 p = ValidateDAParameters(x,'ga');
 
-keyboard
+
 % debug
 response = data.response;
 stimulus = data.stimulus;

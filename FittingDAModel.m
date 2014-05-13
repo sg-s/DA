@@ -202,9 +202,9 @@ ylabel(a(1),'Stimulus amplitude (a.u.)')
 plot(a(2),data.time,data.response)
 set(a(2),'XLim',[0.5 2])
 ylabel(a(2),'ORN Response (Hz)')
-plot(a(6),mean_stimulus,peak_response,'k')
+plot(a(6),mean_stimulus,peak_response,'x-k')
 data.rt  = dt*FindPeakResponseTimes(data.response,96);
-plot(a(7),mean_stimulus,data.rt,'k')
+plot(a(7),mean_stimulus,data.rt,'x-k')
 title(a(2),'Data')
 ylim = get(a(2),'YLim');
 set(a(2),'YLim',ylim);
@@ -220,12 +220,21 @@ data.LinearFit = reshape(data.LinearFit,length(data.time),length(data.rt));
 peak_response_linear = max(data.LinearFit);
 plot(a(3),data.time,data.LinearFit)
 set(a(3),'XLim',[0.5 2],'YLim',ylim)
-title(a(3),'Linear Fit')
-plot(a(6),mean_stimulus,peak_response_linear,'b')
+title(a(3),'Linear Fit','Color','b')
+plot(a(6),mean_stimulus,peak_response_linear,'x-b')
 data.rt_linear  = dt*FindPeakResponseTimes(data.LinearFit,96);
-plot(a(7),mean_stimulus,data.rt_linear,'b')
+plot(a(7),mean_stimulus,data.rt_linear,'x-b')
 
 % plot LN model
+LNFit = FitNonLinearity(data.LinearFit(:),data.response(:));
+LNFit = reshape(LNFit,length(data.time),length(data.rt));
+plot(a(4),data.time,LNFit)
+set(a(4),'XLim',[0.5 2],'YLim',ylim)
+title(a(4),'LN Model','Color','g')
+peak_response_LN = max(LNFit);
+data.rt_LN  = dt*FindPeakResponseTimes(LNFit,96);
+plot(a(6),mean_stimulus,peak_response_LN,'x-g')
+plot(a(7),mean_stimulus,data.rt_LN,'g')
 
 % plot DA model
 if isfield(data,'DAFit')
@@ -233,10 +242,10 @@ if isfield(data,'DAFit')
 	plot(a(5),data.time,data.DAFit)
 	set(a(5),'XLim',[0.5 2],'YLim',ylim)
 	peak_response_DA = max(data.DAFit);
-	plot(a(6),mean_stimulus,peak_response_DA,'r')
+	plot(a(6),mean_stimulus,peak_response_DA,'x-r')
 	data.rt_DA  = dt*FindPeakResponseTimes(data.DAFit,96);
-	plot(a(7),mean_stimulus,data.rt_DA,'r')
-	title(a(5),'DA Fit')
+	plot(a(7),mean_stimulus,data.rt_DA,'x-r')
+	title(a(5),'DA Fit','Color','r')
 
 else
 	% fit DA model to data
@@ -246,6 +255,12 @@ else
 
 end
 
+
+% some cosmetic changes
+ylabel(a(6),'Peak Response (Hz)')
+xlabel(a(6),'Mean Stimulus Amplitude (V)')
+ylabel(a(7),'Peak Response Time (s)')
+xlabel(a(7),'Mean Stimulus Amplitude (V)')
 PrettyFig;
 
 

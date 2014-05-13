@@ -16,4 +16,4 @@ end
 clear i
 
 % rt can't be negative
-rt(rt<0)=0;
+rt(rt<0)=NaN;

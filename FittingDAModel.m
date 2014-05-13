@@ -169,6 +169,60 @@ legend('Location',[0.7674    0.2927    0.21    0.1370],{'all data','bottom 10%',
 set(gca,'YLim',[0.6 1.7])
 
 
+%% Real Data 1: Responses to increasing concentration of odor 
+% The simplest stimulus to give to a ORN is a pulse of odor, whose amplitude we can vary. These experiments are routinely done in measuring the dose-response properties of ORNs. The following data is from fig 3 of Carlotta's paper, and shows the firing rate histograms of neuron ab3A in response to increasing pulses of ethyl acetate. 
+
+%%
+% In the following plot, the top row shows, from left to right, the stimulus presented to the ORN, the response of the ORN, and predictions from the linear model, the LN model, and the DA model. 
+
+% grab data
+data=load('/local-data/orn/carlotta-paper/fig3abc.mat');
+dt = data.time(2)-data.time(1);
+mean_stimulus = mean(data.stimulus(120:140,:));
+peak_response = max(data.response);
+
+% make figure
+figure('outerposition',[0 0 1500 850],'PaperUnits','points','PaperSize',[1500 850]); hold on
+for i = 1:5
+	a(i)=subplot(2,5,i);
+	hold on
+end
+clear i
+a(6) = subplot(2,2,3); hold on; % dose response
+set(a(6),'XScale','log');
+a(7) = subplot(2,2,4); hold on; % response time vs amplitude
+set(a(7),'XScale','log');
+
+% plot PID
+plot(a(1),data.time,data.stimulus)
+set(a(1),'XLim',[0.5 2])
+ylabel(a(1),'Stimulus amplitude (a.u.)')
+
+% plot ORN
+plot(a(2),data.time,data.response)
+set(a(2),'XLim',[0.5 2])
+ylabel(a(2),'ORN Response (Hz)')
+plot(a(6),mean_stimulus,peak_response,'k')
+data.rt  = dt*FindResponseTimes(data.response,96);
+plot(a(7),mean_stimulus,data.rt)
+
+
+% plot linear fit 
+OnlyThesePoints = zeros*data.stimulus;
+OnlyThesePoints(50:end,:) = 1;
+K = FitFilter2Data(data.stimulus(:),data.response(:),OnlyThesePoints,'filter_length=50;');
+
+% plot LN model
+
+% plot DA model
+
+
+
+
+
+
+
+return
 %% Fitting DA Model to real data
 % Now that we know that we can fit the model, and that our optimisation algorithm works, we will try to fit real data. The following figure shows the sample data we use. The top panel shows the stimulus as measured by the PID, and the bottom panel shows the firing rate of the ORN. The firing rate has been divided by its standard deviation and has been mean subtracted. Also shown is the linear prediction of the firing rates. 
 

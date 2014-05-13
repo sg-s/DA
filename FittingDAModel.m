@@ -203,20 +203,50 @@ plot(a(2),data.time,data.response)
 set(a(2),'XLim',[0.5 2])
 ylabel(a(2),'ORN Response (Hz)')
 plot(a(6),mean_stimulus,peak_response,'k')
-data.rt  = dt*FindResponseTimes(data.response,96);
-plot(a(7),mean_stimulus,data.rt)
+data.rt  = dt*FindPeakResponseTimes(data.response,96);
+plot(a(7),mean_stimulus,data.rt,'k')
+title(a(2),'Data')
+ylim = get(a(2),'YLim');
+set(a(2),'YLim',ylim);
 
 
 % plot linear fit 
 OnlyThesePoints = zeros*data.stimulus;
 OnlyThesePoints(50:end,:) = 1;
-K = FitFilter2Data(data.stimulus(:),data.response(:),OnlyThesePoints,'filter_length=50;');
+OnlyThesePoints = find(OnlyThesePoints(:));
+K = FindBestFilter(data.stimulus(:),data.response(:),OnlyThesePoints,'filter_length=50;');
+data.LinearFit = filter(K,1,data.stimulus(:)-mean(data.stimulus(:))) + mean(data.response(:));
+data.LinearFit = reshape(data.LinearFit,length(data.time),length(data.rt));
+peak_response_linear = max(data.LinearFit);
+plot(a(3),data.time,data.LinearFit)
+set(a(3),'XLim',[0.5 2],'YLim',ylim)
+title(a(3),'Linear Fit')
+plot(a(6),mean_stimulus,peak_response_linear,'b')
+data.rt_linear  = dt*FindPeakResponseTimes(data.LinearFit,96);
+plot(a(7),mean_stimulus,data.rt_linear,'b')
 
 % plot LN model
 
 % plot DA model
+if isfield(data,'DAFit')
+	% no need to optimise again
+	plot(a(5),data.time,data.DAFit)
+	set(a(5),'XLim',[0.5 2],'YLim',ylim)
+	peak_response_DA = max(data.DAFit);
+	plot(a(6),mean_stimulus,peak_response_DA,'r')
+	data.rt_DA  = dt*FindPeakResponseTimes(data.DAFit,96);
+	plot(a(7),mean_stimulus,data.rt_DA,'r')
+	title(a(5),'DA Fit')
 
+else
+	% fit DA model to data
+	[p, DAFit] = FitDAModelToData(data);
+	% save
+	save('/local-data/orn/carlotta-paper/fig3abc.mat','DAFit','-append');
 
+end
+
+PrettyFig;
 
 
 

@@ -4,6 +4,10 @@
 		"selected_items":
 		[
 			[
+				"peak",
+				"peak_response"
+			],
+			[
 				"f_",
 				"f_low"
 			],
@@ -259,7 +263,7 @@
 			"file": "FittingDAModel.m",
 			"settings":
 			{
-				"buffer_size": 24349,
+				"buffer_size": 26033,
 				"line_ending": "Unix"
 			}
 		},
@@ -272,10 +276,10 @@
 			}
 		},
 		{
-			"file": "DA_integrate.m",
+			"file": "DA_integrate2.m",
 			"settings":
 			{
-				"buffer_size": 2552,
+				"buffer_size": 1129,
 				"line_ending": "Unix"
 			}
 		},
@@ -283,16 +287,24 @@
 			"file": "FitDAModelToData.m",
 			"settings":
 			{
-				"buffer_size": 1337,
+				"buffer_size": 1339,
 				"line_ending": "Unix",
 				"name": "% FitDAModelToData.m"
+			}
+		},
+		{
+			"file": "/Users/sigbhu/Library/Application Support/Sublime Text 3/Packages/User/SublimeLinter.sublime-settings",
+			"settings":
+			{
+				"buffer_size": 1213,
+				"line_ending": "Unix"
 			}
 		},
 		{
 			"file": "FitFilter2Data.m",
 			"settings":
 			{
-				"buffer_size": 4515,
+				"buffer_size": 3259,
 				"line_ending": "Unix"
 			}
 		},
@@ -316,16 +328,32 @@
 	"build_system": "",
 	"command_palette":
 	{
-		"height": 375.0,
+		"height": 115.0,
 		"selected_items":
 		[
 			[
-				"lint",
-				"SublimeLinter: Lint This View"
-			],
-			[
 				"install",
 				"Package Control: Install Package"
+			],
+			[
+				"inst",
+				"Package Control: Install Package"
+			],
+			[
+				"remove",
+				"Package Control: Remove Package"
+			],
+			[
+				"pack",
+				"Package Control: Remove Package"
+			],
+			[
+				"packag",
+				"Package Control: Remove Package"
+			],
+			[
+				"lint",
+				"SublimeLinter: Lint This View"
 			],
 			[
 				"packa",
@@ -342,10 +370,6 @@
 			[
 				"Package",
 				"Package Control: Install Package"
-			],
-			[
-				"packag",
-				"Package Control: List Packages"
 			],
 			[
 				"Pack",
@@ -400,7 +424,7 @@
 				"Snippet: error"
 			]
 		],
-		"width": 633.0
+		"width": 453.0
 	},
 	"console":
 	{
@@ -421,12 +445,16 @@
 	},
 	"file_history":
 	[
+		"/Users/sigbhu/Library/Application Support/Sublime Text 3/Packages/User/SublimeLinter.sublime-settings",
+		"/Users/sigbhu/.bash_profile",
+		"/Users/sigbhu/Library/Application Support/Sublime Text 3/Packages/User/Preferences.sublime-settings",
+		"/Users/sigbhu/code/DA/FindResponseTimes.m",
+		"/Users/sigbhu/code/DA/DA_integrate.m",
 		"/Users/sigbhu/code/auto-bots/make-retina.sh",
 		"/Users/sigbhu/code/auto-bots/papers-sync.sh",
 		"/Users/sigbhu/code/DA/temp.m",
 		"/Users/sigbhu/code/DA/todo.markdown",
 		"/Users/sigbhu/code/DA/DA_integrate_euler.m",
-		"/Users/sigbhu/code/DA/DA_integrate.m",
 		"/Users/sigbhu/code/DA/DA_cost_function_dummy.m",
 		"/Users/sigbhu/code/DA/DA.sublime-project",
 		"/Users/sigbhu/code/DA/Cost2.m",
@@ -466,7 +494,6 @@
 		"/Users/sigbhu/code/DA/DynamicalAdaptation.m",
 		"/var/db/receipts/com.apple.pkg.DeveloperToolsCLI.plist",
 		"/Users/sigbhu/code/srinivas.gs_mtools/multiplot.m",
-		"/Users/sigbhu/Library/Application Support/Sublime Text 3/Packages/User/Preferences.sublime-settings",
 		"/Users/sigbhu/code/DA/PlotFilterDiagnostics.m",
 		"/Users/sigbhu/code/DA/ValidateDAParameters.m",
 		"/Users/sigbhu/code/DA/GammaDist.m",
@@ -677,7 +704,7 @@
 	"groups":
 	[
 		{
-			"selected": 1,
+			"selected": 3,
 			"sheets":
 			[
 				{
@@ -686,15 +713,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 24349,
+						"buffer_size": 26033,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								5680,
-								5680
+								3920,
+								3920
 							]
 						],
 						"settings":
@@ -703,10 +730,10 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 2707.0,
+						"translation.y": 3808.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 2,
 					"type": "text"
 				},
 				{
@@ -722,8 +749,8 @@
 						"selection":
 						[
 							[
-								1100,
-								1100
+								458,
+								458
 							]
 						],
 						"settings":
@@ -734,24 +761,24 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 3,
 					"type": "text"
 				},
 				{
 					"buffer": 2,
-					"file": "DA_integrate.m",
+					"file": "DA_integrate2.m",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 2552,
+						"buffer_size": 1129,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								750,
-								750
+								350,
+								350
 							]
 						],
 						"settings":
@@ -762,7 +789,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 6,
 					"type": "text"
 				},
 				{
@@ -771,15 +798,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1337,
+						"buffer_size": 1339,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								431,
-								431
+								1090,
+								1090
 							]
 						],
 						"settings":
@@ -788,27 +815,57 @@
 							"syntax": "Packages/Matlab/Matlab.tmLanguage"
 						},
 						"translation.x": 0.0,
-						"translation.y": 12.0,
+						"translation.y": 105.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 3,
+					"stack_index": 0,
 					"type": "text"
 				},
 				{
 					"buffer": 4,
-					"file": "FitFilter2Data.m",
+					"file": "/Users/sigbhu/Library/Application Support/Sublime Text 3/Packages/User/SublimeLinter.sublime-settings",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 4515,
+						"buffer_size": 1213,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								3308,
-								3308
+								411,
+								411
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JSON.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "FitFilter2Data.m",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3259,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3223,
+								3223
 							]
 						],
 						"settings":
@@ -817,14 +874,14 @@
 							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
-						"translation.y": 611.0,
+						"translation.y": 311.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 6,
+					"stack_index": 5,
 					"type": "text"
 				},
 				{
-					"buffer": 5,
+					"buffer": 6,
 					"file": "FindBestFilter.m",
 					"semi_transient": false,
 					"settings":
@@ -836,37 +893,8 @@
 						"selection":
 						[
 							[
-								430,
-								430
-							]
-						],
-						"settings":
-						{
-							"syntax": "Packages/Matlab/Matlab.tmLanguage",
-							"translate_tabs_to_spaces": false
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 5,
-					"type": "text"
-				},
-				{
-					"buffer": 6,
-					"file": "DA_cost_function.m",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 1319,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								1176,
-								1067
+								495,
+								495
 							]
 						],
 						"settings":
@@ -879,6 +907,35 @@
 						"zoom_level": 1.0
 					},
 					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "DA_cost_function.m",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 1319,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								495,
+								495
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Matlab/Matlab.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 7,
 					"type": "text"
 				}
 			]
@@ -930,6 +987,10 @@
 		"height": 0.0,
 		"selected_items":
 		[
+			[
+				"findresponsetimes",
+				"FindResponseTimes.m"
+			],
 			[
 				"to",
 				"todo.markdown"
@@ -1168,7 +1229,7 @@
 		[
 			[
 				"",
-				"~/code/auto-bots.sublime-project"
+				"~/code/Kontroller/Kontroller.sublime-project"
 			],
 			[
 				"inc",

@@ -251,7 +251,7 @@ else
 	% fit DA model to data
 	[p, DAFit] = FitDAModelToData(data);
 	% save
-	save('/local-data/orn/carlotta-paper/fig3abc.mat','DAFit','-append');
+	save('/local-data/orn/carlotta-paper/fig3abc.mat','DAFit','p','-append');
 
 end
 
@@ -264,11 +264,35 @@ xlabel(a(7),'Mean Stimulus Amplitude (V)')
 PrettyFig;
 
 
+%%
+% What is the DA model actually doing? 
+[~,y,z] = DA_integrate2(data.stimulus(:),data.p);
+g = 1./(1+data.p.B+z);
+y = reshape(y,1090,10);
+z = reshape(z,1090,10);
+g = reshape(g,1090,10);
 
 
+my = max(y);
+mz = max(z);
+for i = 1:10
+	y(:,i) = y(:,i)/my(i);
+	z(:,i) = z(:,i)/mz(i);
+end
+
+y(:,1:3) = []; z(:,1:3) = [];
+
+figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
+plot(data.time,y,'-.','LineWidth',2)
+plot(data.time,z,'LineWidth',2)
+set(gca,'XLim',[0 3],'YLim',[-0.01 1.1],'LineWidth',2,'FontSize',20)
 
 return
-%% Fitting DA Model to real data
+
+%% ORN response to pulses on top of a background 
+
+
+%% ORN responses to flickering olfactory stimulus. 
 % Now that we know that we can fit the model, and that our optimisation algorithm works, we will try to fit real data. The following figure shows the sample data we use. The top panel shows the stimulus as measured by the PID, and the bottom panel shows the firing rate of the ORN. The firing rate has been divided by its standard deviation and has been mean subtracted. Also shown is the linear prediction of the firing rates. 
 
 

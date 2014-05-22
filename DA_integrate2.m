@@ -1,4 +1,4 @@
-function R = DA_integrate2(S,p)
+function [R,y,z] = DA_integrate2(S,p)
 
 %% function takes argument of stimulus and a parameter set and implements the DA
 %% model as described in Clark et al., 2013

@@ -13,26 +13,59 @@ nu=1/(2*dt); % sampling frequency
 Hd = dfilt.df2t(b,a);     % Direct-form II transposed
 Vf = filter(Hd,V);         %   structure
 
-
-
 % find peaks
 p = localpeaks(Vf,'troughs');
 Vp = Vf(p);
-p(Vp>-3*std(Vf(1:floor(t_on/dt)))) = [];
-Vp(Vp>-3*std(Vf(1:floor(t_on/dt)))) = [];
+
+% throw out all noise peaks
+p(Vp>-2*std(Vf(1:floor(t_on/dt)))) = [];
+Vp(Vp>-2*std(Vf(1:floor(t_on/dt)))) = [];
 
 
 % calculate time to closest spike
 td = diff(p);
 
-% remove spurious spikes
+% remove spurious spikes -- 1: resolve almost co-incident spikes
+resolve_these = find(td<10);
+conflicting_pairs = [resolve_these (resolve_these+1)];
+
+remove_these = [];
+for i = 1:length(conflicting_pairs)
+	if Vf(p(conflicting_pairs(i,1))) > Vf(p(conflicting_pairs(i,2)))
+		remove_these = [remove_these conflicting_pairs(i,1)];
+	else
+		remove_these = [remove_these conflicting_pairs(i,2)];
+	end
+	
+end
+clear i conflicting_pairs resolve_these
+p(remove_these) = [];
+td = diff(p);
+
+% remove spurious spikes -- 2: remove small minima
+remove_these = [];
+for i = 1:length(p)
+	if Vf(p(i)) <  Vf(p(i)-2) && Vf(p(i)+2)
+	else
+		remove_these = [remove_these i];
+	end
+	
+end
+clear i 
+p(remove_these) = [];
+
+plot(Vf), hold on
+scatter(p,Vf(p),'g')
+
+return
+
 p(td<30) = [];
 td = diff(p);
 td = [td(1) ; td];
 
 
 
-% calcualte fractional amplitudes
+% calculate fractional amplitudes
 amplitudes = repmat(Vf(p),1,20);
 s = [-9:-1 1:10];
 for i = 2:20

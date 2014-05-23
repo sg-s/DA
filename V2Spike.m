@@ -42,7 +42,7 @@ clear i conflicting_pairs resolve_these
 p(remove_these) = [];
 td = diff(p);
 
-% remove spurious spikes -- 2: remove small minima
+% remove spurious spikes -- 2: remove shallow minima
 remove_these = [];
 for i = 1:length(p)
 	if Vf(p(i)) <  Vf(p(i)-2) && Vf(p(i)+2)
@@ -54,16 +54,6 @@ end
 clear i 
 p(remove_these) = [];
 
-plot(Vf), hold on
-scatter(p,Vf(p),'g')
-
-return
-
-p(td<30) = [];
-td = diff(p);
-td = [td(1) ; td];
-
-
 
 % calculate fractional amplitudes
 amplitudes = repmat(Vf(p),1,20);
@@ -74,12 +64,28 @@ end
 clear i
 frac_amp=amplitudes(:,1)./min(amplitudes')';
 
-X = [frac_amp Vf(p)];
+% find preceding maxima for each spike
+max_amp = NaN*frac_amp;
+max_amp_loc = NaN*frac_amp;
+for i = 1:length(max_amp)
+	this_snippet = Vf(p(i)-20:p(i));
+	[max_amp(i) max_amp_loc(i)]=max(this_snippet);
+	max_amp_loc(i) = max_amp_loc(i) + p(i) -21;
+end
+clear i
+
+% correct amplitudes
+amplitudes(:,1) = max_amp - amplitudes(:,1);
+
+X = [frac_amp amplitudes(:,1)];
 idx=kmeans(X,2);
 
 plot(Vf), hold on
 scatter(p(idx==2),Vf(p(idx==2)),'g')
 scatter(p(idx==1),Vf(p(idx==1)),'r')
+
+figure, hold on
+scatter(X(:,1),X(:,2),'k.')
 
 return
 

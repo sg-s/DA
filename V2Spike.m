@@ -54,19 +54,14 @@ end
 clear i 
 p(remove_these) = [];
 
+% we can't do spikes in the fast 20 samples
+p(p<21) = [];
 
-% calculate fractional amplitudes
-amplitudes = repmat(Vf(p),1,20);
-s = [-9:-1 1:10];
-for i = 2:20
-	amplitudes(:,i) = circshift(amplitudes(:,i),s(i-1));
-end
-clear i
-frac_amp=amplitudes(:,1)./min(amplitudes')';
 
 % find preceding maxima for each spike
-max_amp = NaN*frac_amp;
-max_amp_loc = NaN*frac_amp;
+amplitudes = repmat(Vf(p),1,20);
+max_amp = NaN*p;
+max_amp_loc = NaN*p;
 for i = 1:length(max_amp)
 	this_snippet = Vf(p(i)-20:p(i));
 	[max_amp(i) max_amp_loc(i)]=max(this_snippet);
@@ -77,6 +72,14 @@ clear i
 % correct amplitudes
 amplitudes(:,1) = max_amp - amplitudes(:,1);
 
+% calculate fractional amplitudes
+s = [-9:-1 1:10];
+for i = 2:20
+	amplitudes(:,i) = circshift(amplitudes(:,i),s(i-1));
+end
+clear i
+frac_amp=amplitudes(:,1)./min(amplitudes')';
+
 X = [frac_amp amplitudes(:,1)];
 idx=kmeans(X,2);
 
@@ -85,7 +88,8 @@ scatter(p(idx==2),Vf(p(idx==2)),'g')
 scatter(p(idx==1),Vf(p(idx==1)),'r')
 
 figure, hold on
-scatter(X(:,1),X(:,2),'k.')
+scatter(X(idx==1,1),X(idx==1,2),'r.')
+scatter(X(idx==2,1),X(idx==2,2),'g.')
 
 return
 

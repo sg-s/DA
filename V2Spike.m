@@ -6,6 +6,9 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 function [A,B] = V2Spike(V,dt,t_on)
+V = V(:);
+
+
 
 % filter V 
 nu=1/(2*dt); % sampling frequency 
@@ -45,9 +48,11 @@ td = diff(p);
 % remove spurious spikes -- 2: remove shallow minima
 remove_these = [];
 for i = 1:length(p)
-	if Vf(p(i)) <  Vf(p(i)-2) && Vf(p(i)+2)
-	else
-		remove_these = [remove_these i];
+	if p(i) > 2 && p(i)+2 < length(Vf) 
+		if Vf(p(i)) <  Vf(p(i)-2) && Vf(p(i)+2)
+		else
+			remove_these = [remove_these i];
+		end
 	end
 	
 end
@@ -68,6 +73,7 @@ for i = 1:length(max_amp)
 	max_amp_loc(i) = max_amp_loc(i) + p(i) -21;
 end
 clear i
+
 
 % % build a density estimate of all spikes
 % d = 0*V;
@@ -124,30 +130,18 @@ cutoff = x(max((find(diff(gmm))+1)));
 p1 = p(frac_amp<cutoff);
 p2 = p(frac_amp>cutoff);
 
-plot(Vf), hold on
-scatter(p1,Vf(p1),'g')
-scatter(p2,Vf(p2),'r')
+% assign to A and B neuron
+if mean(Vf(p1)) < mean(Vf(p2))
+	A = p1; B = p2;
+else
+	A = p2; B = p1;
+end
+
+% plot(Vf), hold on
+% scatter(p1,Vf(p1),'g')
+% scatter(p2,Vf(p2),'r')
+
 return
-
-
-% X = [frac_amp amplitudes(:,1)];
-X = [frac_amp];
-
-idx=kmeans(X,2);
-
-plot(Vf), hold on
-scatter(p(idx==2),Vf(p(idx==2)),'g')
-scatter(p(idx==1),Vf(p(idx==1)),'r')
-
-% % plot amplitudes
-% for i = 1:length(p)
-% 	line([p(i) p(i)],[Vf(p(i)) Vf(p(i))+amplitudes(i)],'Color','k')
-% end
-% clear i
-
-figure, hold on
-scatter(X(idx==1,1),X(idx==1,2),'r.')
-scatter(X(idx==2,1),X(idx==2,2),'g.')
 
 
 

@@ -59,7 +59,7 @@ p(p<21) = [];
 
 
 % find preceding maxima for each spike
-amplitudes = repmat(Vf(p),1,20);
+% amplitudes = repmat(Vf(p),1,20);
 max_amp = NaN*p;
 max_amp_loc = NaN*p;
 for i = 1:length(max_amp)
@@ -69,71 +69,87 @@ for i = 1:length(max_amp)
 end
 clear i
 
-% correct amplitudes
-amplitudes(:,1) = max_amp - amplitudes(:,1);
+% % build a density estimate of all spikes
+% d = 0*V;
+% w = 500;
+% for i = 1:length(p)
+% 	try
+% 		x = p(i)-w:p(i)+w;
+% 		b = p(i);
+% 		c = 500;
+% 		d(p(i)-w:p(i)+w) = d(p(i)-w:p(i)+w)' + exp(-((x-b)/c).^2);
+% 	catch
+% 	end
+% end
 
-% calculate fractional amplitudes
+
+
+% correct amplitudes only if density estimate is above some threshold
+d_thresh = 4;
+amplitudes = max_amp - Vf(p);
+amplitudes = repmat(amplitudes,1,20);
+
+% calculate fractional amplitudes as a fraction of the largest amplitude of spike
 s = [-9:-1 1:10];
+% s = [-19:-1];
 for i = 2:20
 	amplitudes(:,i) = circshift(amplitudes(:,i),s(i-1));
 end
 clear i
-frac_amp=amplitudes(:,1)./min(amplitudes')';
+frac_amp=amplitudes(:,1)./max(amplitudes')';
 
-X = [frac_amp amplitudes(:,1)];
+% for i = 1:length(p)
+% 	% find amplitudes of all spikes in the preceding 1s
+% 	prev_spikes = find((p>(p(i)-10000)).*(p<p(i)));
+% 	if isempty(prev_spikes)
+% 		% ok, let's use all spikes in the next 100ms instead
+% 		prev_spikes = find((p<(p(i)+10000)).*(p>p(i)));
+% 	end
+% 	keyboard
+% end
+
+
+% fit two gaussians
+nh = 40;
+[y,x]=hist(frac_amp,nh);
+ff = fit(x',y','gauss2');
+% discretise and sample all these distributions  
+g1 = ff.a1*exp(-((x-ff.b1)/ff.c1).^2);
+g2 = ff.a2*exp(-((x-ff.b2)/ff.c2).^2);
+g = [g1; g2];
+[~,gmm]=max(g);
+
+% find cutoff point between the two gaussians
+cutoff = x(max((find(diff(gmm))+1)));
+p1 = p(frac_amp<cutoff);
+p2 = p(frac_amp>cutoff);
+
+plot(Vf), hold on
+scatter(p1,Vf(p1),'g')
+scatter(p2,Vf(p2),'r')
+return
+
+
+% X = [frac_amp amplitudes(:,1)];
+X = [frac_amp];
+
 idx=kmeans(X,2);
 
 plot(Vf), hold on
 scatter(p(idx==2),Vf(p(idx==2)),'g')
 scatter(p(idx==1),Vf(p(idx==1)),'r')
 
+% % plot amplitudes
+% for i = 1:length(p)
+% 	line([p(i) p(i)],[Vf(p(i)) Vf(p(i))+amplitudes(i)],'Color','k')
+% end
+% clear i
+
 figure, hold on
 scatter(X(idx==1,1),X(idx==1,2),'r.')
 scatter(X(idx==2,1),X(idx==2,2),'g.')
 
-return
-
-% extract voltage snippets
-V_snip = NaN(100,length(p));
-for i = 1:length(p)
-	V_snip(:,i) = Vf(p(i)-50:p(i)+49);
-end
-clear i
-
-% do pca
-[coeff,scores]=pca(V_snip');
-
-% cluster
-X = scores(:,1:5);
-idx=kmeans(X,2);
-
-keyboard
-
-% cluster the height of these peaks into three clusters
-nh = 60;
-[y,x]=hist(Vp,nh);
-ff = fit(x',y','gauss3');
-% discretise and sample all these distributions  
-g1 = ff.a1*exp(-((x-ff.b1)/ff.c1).^2);
-g2 = ff.a2*exp(-((x-ff.b2)/ff.c2).^2);
-g3 = ff.a3*exp(-((x-ff.b3)/ff.c3).^2);
-g = [g1; g2 ; g3];
-[~,gmm]=max(g);
-
-% find cutoff points
-cp = [x(1) x(find(diff(gmm))+1) x(end)];
-
-% split into 3 clusters
-p1 = p; p1(Vp>cp(2))=[]; 
-temp=logical((Vp > cp(2)).*(Vp<cp(3)));
-p2 = p; p2=p2(temp);
-p3 = p; p3(Vp<cp(3))=[];
 
 
-% debug
-plot(Vf,'k')
-hold on
-scatter(p1,Vf(p1),'r')
-scatter(p2,Vf(p2),'b')
-scatter(p3,Vf(p3),'g')
+
 

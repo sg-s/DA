@@ -7,8 +7,9 @@
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 function [A,B] = V2Spike(V,dt,t_on)
 V = V(:);
+time = dt:dt:dt*length(V);
 
-
+% two spikes cannot be closer than 1.4ms
 
 % filter V 
 nu=1/(2*dt); % sampling frequency 
@@ -16,9 +17,11 @@ nu=1/(2*dt); % sampling frequency
 Hd = dfilt.df2t(b,a);     % Direct-form II transposed
 Vf = filter(Hd,V);         %   structure
 
+
 % find peaks
-p = localpeaks(Vf,'troughs');
+p = find(localpeaks(Vf,'troughs'));
 Vp = Vf(p);
+
 
 % throw out all noise peaks
 p(Vp>-2*std(Vf(1:floor(t_on/dt)))) = [];
@@ -59,18 +62,17 @@ end
 clear i 
 p(remove_these) = [];
 
-% we can't do spikes in the fast 20 samples
-p(p<21) = [];
+% we can't do spikes in the fast 30 samples
+p(p<31) = [];
 
 
 % find preceding maxima for each spike
-% amplitudes = repmat(Vf(p),1,20);
 max_amp = NaN*p;
 max_amp_loc = NaN*p;
 for i = 1:length(max_amp)
-	this_snippet = Vf(p(i)-20:p(i));
+	this_snippet = Vf(p(i)-30:p(i));
 	[max_amp(i) max_amp_loc(i)]=max(this_snippet);
-	max_amp_loc(i) = max_amp_loc(i) + p(i) -21;
+	max_amp_loc(i) = max_amp_loc(i) + p(i) -31;
 end
 clear i
 
@@ -130,6 +132,9 @@ cutoff = x(max((find(diff(gmm))+1)));
 p1 = p(frac_amp<cutoff);
 p2 = p(frac_amp>cutoff);
 
+frac_amp1 = frac_amp(frac_amp<cutoff);
+frac_amp2 = frac_amp(frac_amp>cutoff);
+
 % assign to A and B neuron
 if mean(Vf(p1)) < mean(Vf(p2))
 	A = p1; B = p2;
@@ -137,9 +142,21 @@ else
 	A = p2; B = p1;
 end
 
-% plot(Vf), hold on
-% scatter(p1,Vf(p1),'g')
-% scatter(p2,Vf(p2),'r')
+
+if nargout == 0
+	plot(time,Vf,'k'), hold on
+	scatter(time(p1),Vf(p1),'b')
+	scatter(time(p2),Vf(p2),'r')
+	% for i = 1:length(p1)
+	% 	text(p1(i),Vf(p1(i))-0.01,oval(frac_amp1(i),2),'Color','b')
+	% end
+	% for i = 1:length(p2)
+	% 	text(p2(i),Vf(p2(i))-0.01,oval(frac_amp2(i),2),'Color','r')
+	% end
+
+	scatter(time(max_amp_loc),max_amp,'kx')
+
+end
 
 return
 

@@ -25,8 +25,11 @@ Vp = Vf(p);
 
 % throw out all noise peaks
 p(Vp>-2*std(Vf(1:floor(t_on/dt)))) = [];
-Vp(Vp>-2*std(Vf(1:floor(t_on/dt)))) = [];
+Vp = Vf(p);
 
+% throw out outliers
+p(Vp<10*mean(Vp)) = [];
+Vp = Vf(p);
 
 % calculate time to closest spike
 td = diff(p);
@@ -62,7 +65,7 @@ end
 clear i 
 p(remove_these) = [];
 
-% we can't do spikes in the fast 30 samples
+% we can't do spikes in the first 30 samples
 p(p<31) = [];
 
 
@@ -104,7 +107,9 @@ for i = 2:20
 	amplitudes(:,i) = circshift(amplitudes(:,i),s(i-1));
 end
 clear i
-frac_amp=amplitudes(:,1)./max(amplitudes')';
+frac_amp=amplitudes(:,1)./max(amplitudes(:,2:20)')';
+frac_amp2=amplitudes(:,1)./min(amplitudes(:,2:20)')';
+
 
 % for i = 1:length(p)
 % 	% find amplitudes of all spikes in the preceding 1s

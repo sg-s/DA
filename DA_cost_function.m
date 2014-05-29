@@ -21,9 +21,7 @@ if isvector(stimulus)
 	Rguess = Rguess(:);
 	response = response(:);
 	stimulus = stimulus(:);
-	Rguess = Rguess - mean(Rguess(500:end));
-	error('need some careful thought about how you calculate the mean: throw out some initial segment?')
-
+	
 	cost = CostFunctionHandle(response,Rguess);
 else
 	% we're simultaneously fitting many different things

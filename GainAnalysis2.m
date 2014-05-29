@@ -49,7 +49,7 @@ hl = round(history_lengths/dt);
 % compute shat
 shat = NaN(length(hl),length(stimulus));
 for i = 1:length(hl)
-	shat(i,:) = filtfilt(ones(1,hl(i))/hl(i),1,stimulus);
+	shat(i,:) = filter(ones(1,hl(i))/hl(i),1,stimulus);
 	shat(i,1:hl(i)) = NaN;
 end
 
@@ -94,6 +94,7 @@ for i = 1:length(history_lengths)
 	[sorted_shat idx] = sort(this_shat,'ascend');
 	f_low = f(idx(1:floor(length(stimulus)/10)));
 	fp_low = fp(idx(1:floor(length(stimulus)/10)));
+
 
 	this_shat(1:hl(i)) = -Inf;
 	[sorted_shat idx] = sort(this_shat,'descend');

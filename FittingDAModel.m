@@ -267,8 +267,9 @@ plot(a(7),mean_stimulus,data.rt_linear,'x-b')
 % fit NLN Model
 data2.response = data.response(:);
 data2.stimulus = data.stimulus(:);
-[NLNFit, x] = FitNLNModel(data2);
-
+if ~exist('NLNFit','var')
+	[NLNFit, x] = FitNLNModel(data2);
+end
 
 % plot NLN model
 % LNFit = FitNonLinearity(data.LinearFit(:),data.response(:));
@@ -308,29 +309,29 @@ ylabel(a(7),'Peak Response Time (s)')
 xlabel(a(7),'Mean Stimulus Amplitude (V)')
 PrettyFig;
 
-return
+
 %%
 % What is the DA model actually doing? 
-[~,y,z] = DA_integrate2(data.stimulus(:),data.p);
-g = 1./(1+data.p.B+z);
-y = reshape(y,1090,10);
-z = reshape(z,1090,10);
-g = reshape(g,1090,10);
+% [~,y,z] = DA_integrate2(data.stimulus(:),data.p);
+% g = 1./(1+data.p.B+z);
+% y = reshape(y,1090,10);
+% z = reshape(z,1090,10);
+% g = reshape(g,1090,10);
 
 
-my = max(y);
-mz = max(z);
-for i = 1:10
-	y(:,i) = y(:,i)/my(i);
-	z(:,i) = z(:,i)/mz(i);
-end
+% my = max(y);
+% mz = max(z);
+% for i = 1:10
+% 	y(:,i) = y(:,i)/my(i);
+% 	z(:,i) = z(:,i)/mz(i);
+% end
 
-y(:,1:3) = []; z(:,1:3) = [];
+% y(:,1:3) = []; z(:,1:3) = [];
 
-figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
-plot(data.time,y,'-.','LineWidth',2)
-plot(data.time,z,'LineWidth',2)
-set(gca,'XLim',[0 3],'YLim',[-0.01 1.1],'LineWidth',2,'FontSize',20)
+% figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
+% plot(data.time,y,'-.','LineWidth',2)
+% plot(data.time,z,'LineWidth',2)
+% set(gca,'XLim',[0 3],'YLim',[-0.01 1.1],'LineWidth',2,'FontSize',20)
 
 
 % ##      ## ######## ########  ######## ########  ####  ######  

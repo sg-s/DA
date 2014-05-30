@@ -152,11 +152,18 @@ if ismember(2,plotid)
 	% plot to summary figure
 	subplot(plothere)
 	plot(history_lengths,all_slopes*ones(1,length(history_lengths)),'k','LineWidth',2), hold on
-	errorbar(history_lengths,low_slopes,low_slopes_err,'g','LineWidth',2), hold on
-	errorbar(history_lengths,high_slopes,high_slopes_err,'r','LineWidth',2)
+	% errorbar(history_lengths,low_slopes,low_slopes_err,'g','LineWidth',2), hold on
+	% errorbar(history_lengths,high_slopes,high_slopes_err,'r','LineWidth',2)
 
 	% bootstrap slopes
-	%[low_slopes_min, low_slopes_max, high_slopes_min, high_slopes_max] = BootStrapErrorBars(shat,f,fp,hl,fraction);
+	[low_slopes, high_slopes, p] = BootStrapErrorBars(x,history_lengths,0.1);
+	disp(p)
+
+	plot(history_lengths,low_slopes.data,'g','LineWidth',2), hold on
+	plot(history_lengths,high_slopes.data,'r','LineWidth',2)
+	sig = p<0.05; % these points are significant 
+	scatter(history_lengths(sig),low_slopes.data(sig),1256,'g.')
+	scatter(history_lengths(sig),high_slopes.data(sig),1256,'r.')
 
 	set(gca,'LineWidth',2,'FontSize',20,'box','on','XLim',[0 max(history_lengths)])
 	xlabel('History Length (ms)','FontSize',20)

@@ -11,9 +11,9 @@
 % x.stimulus -- the stimulus
 % x.time -- a time vector (uniformly spaced)
 % all these vectors are equally long
-function [low_slopes, high_slopes] = BootStrapErrorBars(x,history_lengths,fraction)
+function [low_slopes, high_slopes, p] = BootStrapErrorBars(x,history_lengths,fraction)
 
-
+% unpack data
 f = x.data;
 fp = x.prediction;
 stimulus = x.stimulus;
@@ -34,18 +34,19 @@ end
 
 
 % parameters
-nrep = 100; % how many times do we bootstrap the data?
+nrep = 1000; % how many times do we bootstrap the data?
 
 % initialise outputs
-a = floor(nrep/20);
-low_slopes.max = NaN(1,length(hl));
-low_slopes.min = NaN(1,length(hl));
+p = NaN(1,length(hl));  % stores p-values for each history length
+
+low_slopes.boostrap = NaN(nrep,length(hl));
 low_slopes.data = NaN(1,length(hl));
-high_slopes.max= NaN(1,length(hl));
-high_slopes.min= NaN(1,length(hl));
+
+high_slopes.boostrap= NaN(nrep,length(hl));
 high_slopes.data = NaN(1,length(hl));
 
 for i = 1:length(hl) % for each history length
+	textbar(i,length(hl))
 	% do low slopes
 	this_shat = shat(i,:);
 	this_shat(1:hl(i)) = Inf; % the initial segment where we can't estimate shat is excluded
@@ -66,7 +67,7 @@ for i = 1:length(hl) % for each history length
 
 
 	slopes = NaN(1,nrep);
-	shift =  500+ randi(round(length(idx)),nrep,1);
+	shift =  randi(round(length(idx)),nrep,1);
 	for j = 1:nrep  % bootstrap this many times
 		shifted_idx = circshift(idx,[shift(j) 0]);
 		f_low = f(shifted_idx(1:floor(length(this_shat)*fraction)));
@@ -78,18 +79,12 @@ for i = 1:length(hl) % for each history length
 
 		% fit lines
 		flow = fit(fp_low,f_low,'Poly1');
-		slopes(j) = flow.p1;
+		low_slopes.bootstrap(j,i) = flow.p1;
 	end
 	clear j
 
-	% find the lowest 5% and the highest 5% of these slopes
-	sorted_slopes = sort(slopes,'ascend');
-	low_slopes.min(i) = mean(sorted_slopes(1:a));
-	sorted_slopes = sort(slopes,'descend');
-	low_slopes.max(i) = mean(sorted_slopes(1:a));
 
-	
-	
+
 
 
 	% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -124,30 +119,18 @@ for i = 1:length(hl) % for each history length
 
 		% fit lines
 		flow = fit(fp_low,f_low,'Poly1');
-		slopes(j) = flow.p1;
+		high_slopes.bootstrap(j,i) = flow.p1;
 	end
 	clear j
 
-	% find the lowest 5% and the highest 5% of these slopes
-	sorted_slopes = sort(slopes,'ascend');
-	high_slopes.min(i) = mean(sorted_slopes(1:a));
-	sorted_slopes = sort(slopes,'descend');
-	high_slopes.max(i) = mean(sorted_slopes(1:a));
 
+	% find the absolute value of the difference between high and low slopes
+	a = abs(low_slopes.bootstrap(:,i) - high_slopes.bootstrap(:,i));
+	a0 = abs(low_slopes.data(i) - high_slopes.data(i));
 
-
-	
+	% calculate p 
+	p(i) = sum(a>a0)/nrep;
 
 end
 clear i
 
-
-% debug
-figure, hold on
-plot(history_lengths,high_slopes.min,'r')
-plot(history_lengths,high_slopes.max,'r')
-plot(history_lengths,high_slopes.data,'r','LineWidth',3)
-
-plot(history_lengths,low_slopes.min,'g')
-plot(history_lengths,low_slopes.max,'g')
-plot(history_lengths,low_slopes.data,'g','LineWidth',3)

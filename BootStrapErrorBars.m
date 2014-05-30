@@ -34,7 +34,7 @@ end
 
 
 % parameters
-nrep = 1000; % how many times do we bootstrap the data?
+nrep = 100; % how many times do we bootstrap the data?
 
 % initialise outputs
 p = NaN(1,length(hl));  % stores p-values for each history length

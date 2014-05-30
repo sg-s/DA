@@ -157,11 +157,10 @@ if ismember(2,plotid)
 
 	% bootstrap slopes
 	[low_slopes, high_slopes, p] = BootStrapErrorBars(x,history_lengths,0.1);
-	disp(p)
 
 	plot(history_lengths,low_slopes.data,'g','LineWidth',2), hold on
 	plot(history_lengths,high_slopes.data,'r','LineWidth',2)
-	sig = p<0.05; % these points are significant 
+	sig = p<(0.05/length(p)); % these points are significant, Bonferroni corrected
 	scatter(history_lengths(sig),low_slopes.data(sig),1256,'g.')
 	scatter(history_lengths(sig),high_slopes.data(sig),1256,'r.')
 

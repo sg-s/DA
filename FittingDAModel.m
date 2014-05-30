@@ -561,14 +561,12 @@ figure('outerposition',[0 0 900 500],'PaperUnits','points','PaperSize',[1000 500
 plothere=subplot(1,2,1); hold on
 GainAnalysis2(x,history_lengths,filter_length,'plotid',2,'plothere',plothere);
 title('Linear Prediction','FontSize',font_size)
-ylabel('ORN response (a.u.)','FontSize',font_size)
 set(gca,'YLim',[0.7 1.5])
 
 x.prediction = DAFit(s:z);
 % make gain analysis plot for synthetic data and DA model
 plothere=subplot(1,2,2); hold on
 GainAnalysis2(x,history_lengths,filter_length,'plotid',2,'plothere',plothere);
-title('DA Prediction','FontSize',font_size)
 ylabel('ORN response (a.u.)','FontSize',font_size)
 legend('Location',[0.7674    0.5927    0.21    0.1370],{'all data','bottom 10%','top 10%'})
 set(gca,'YLim',[0.7 1.5])

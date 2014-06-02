@@ -1,5 +1,11 @@
 % V2f.m
 % accepts a matrix that is a set of raw voltage trace from ORN recordings, and outputs a firing rate. 
+% usage:
+% [fA,fB] = V2f(V,dt,t_on,gw,sliding_step)
+% where V is a vector or matrix of firing rates (if it is a matrix, each row is a different trial)
+% t_on is when the first odour pulse turns on (this is used to calculate the resting state of the ORN)
+% gw is the width of the gaussian smoothing 
+% sliding_step is the timestep of the output you want.
 % 
 % created by Srinivas Gorur-Shandilya at 10:20 , 09 April 2014. Contact me at http://srinivas.gs/contact/
 % 

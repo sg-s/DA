@@ -361,14 +361,15 @@ p = data.p; % use parameters from dose-response fit
 % make stimuli
 dt = 0.003; % 3ms, same as dose-response data
 t = dt:dt:19;
-background_conc =  [0 0.001 0.01 0.1 0.25 0.5 1 1.5 2 2.5 3 5 7 9];
+background_conc =  [0 0.001 0.01 0.1 0.25 0.5 1 1.5 2 3 10 20];
+foreground_conc = 1;
 stim = zeros(length(t),length(background_conc));
 for i = 1:length(background_conc)
 	% add background 
 	stim(floor(3/dt):floor(16/dt),i) = background_conc(i);
 
 	% add foreground
-	stim(floor(13/dt):floor(13.5/dt),i) = background_conc(i)+ 10;
+	stim(floor(13/dt):floor(13.01/dt),i) = background_conc(i)+ foreground_conc;
 end
 
 % calculate DA model predictions 
@@ -376,13 +377,64 @@ resp = NaN*stim;
 for i = 1:length(background_conc)
 	resp(:,i) = DA_integrate2(stim(:,i),p);
 end
+clear i
 
 % calculate sensitivity
-max_resp = max(resp(4000:5000,:));
-%max_resp  = max_resp - mean(resp(4000:4200,:));
-sensitivity = max_resp/max_resp(1);
-plot(max(stim(1:1000,:)),sensitivity,'r.-')
+max_resp = max(resp(floor(12/dt):floor(13.4/dt),:));
+sensitivity = max_resp./max(stim);
+% normalise the sensitivity 
+norm_sensitivity = sensitivity./sensitivity(1);
+figure, hold on
+loglog(max(stim(1:1000,:)),norm_sensitivity,'r.-')
+
+% find peak response times
+rt = NaN*max_resp;
+for i = 1:length(background_conc)
+	rt(i) = dt*find(resp(floor(13/dt):end,i) == max_resp(i),1,'first');
+end
+clear i
+
+% now we try to simulate data to match carlotta's figure 4. basically do a dose-response on top of each background, but stick to realistic backgrounds and foregrounds. 
+
+dt = 0.003; % 3ms, same as dose-response data
+t = dt:dt:9;
+background_conc =  [0 1e-4 1e-3 1e-2 1e-1 1 10];
+foreground_conc = [exp(log(1e-2):0.5:log(1e2))]; % which is on top of background
+ti = 1;
+peak_response = zeros(length(background_conc),length(foreground_conc));
+resp = zeros(length(t),length(background_conc),length(foreground_conc));
+for i = 1:length(background_conc)
+	for j = 1:length(foreground_conc)
+		% make the stim vector 
+		stim = zeros(length(t),1);
+
+		% add the background
+		stim(floor(1/dt):end)  = stim(floor(1/dt):end) + background_conc(i);
+
+		% add the foreground
+		stim(floor(8/dt):end)  = stim(floor(8/dt):end) + foreground_conc(j);
+		
+
+		% simulate
+		this_resp = DA_integrate2(stim,p);
+
+		peak_response(i,j)=max(this_resp(floor(8/dt):end));
+
+		% save 
+		resp(:,i,j) = this_resp;
+
+	end
+	clear j
+end
+clear i
+
+figure, hold on
+plot(foreground_conc,peak_response');
 set(gca,'XScale','log')
+
+
+
+
 
 
 % ########     ###    ##    ## ########  

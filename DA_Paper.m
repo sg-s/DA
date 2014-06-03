@@ -1,3 +1,12 @@
+% DA_Paper.m
+% How this is organised:
+% all the data (every single bit in every figure), is in a structure called "data"
+% data(1) is response of ab3A to a flickering pulse sequence of 1-octen-3-ol 
+
+
+
+
+
 
 %  ######         ###       ####    ##    ##                   
 % ##    ##       ## ##       ##     ###   ##                   
@@ -46,6 +55,7 @@ end
 
 % build a simple linear model
 [K,~,filtertime] = FindBestFilter(PID(500:end),f(500:end),[],'filter_length=201;');
+data(1).K = K;
 LinearFit = filter(K,1,PID-mean(PID))+ mean(f(500:end));
 LinearFit(LinearFit<min(f)) = min(f);
 % correct for offset
@@ -57,106 +67,43 @@ LinearFit = [LinearFit; NaN(offset,1)];
 data(1).LinearFit = LinearFit;
 
 figure('outerposition',[0 0 1500 1000],'PaperUnits','points','PaperSize',[1000 500]); hold on
-a1 = subplot(3,6,2:6);
-a2 = subplot(3,6,8:12);
-a3 = subplot(3,6,13);
-a4 = subplot(3,6,14:18); hold on
+fig(1).a(1) = subplot(3,6,2:6);
+fig(1).a(2) = subplot(3,6,8:12);
+fig(1).a(3) = subplot(3,6,13);
+fig(1).a(4) = subplot(3,6,14:18); hold on
 
 filtertime = filtertime*mean(diff(time));
 offset = offset*mean(diff(time));
 
-plot(a1,time,Valve);
-plot(a2,time,PID);
-plot(a3,filtertime,K);
-plot(a4,time,f,'k'); 
-plot(a4,time,LinearFit,'r')
-set(a4,'XLim',[20 25])
-set(a1,'XLim',[20 25])
-set(a2,'XLim',[20 25])
-set(a3,'XLim',[min(filtertime-offset) max(filtertime)+offset])
-PrettyFig;
-
-return
-
-
-%%
-% Now, we fit the DA model to the data using a pattern search optimisation (the type of optimisation doesn't matter. Pattern search is faster and converges to local minima faster than GA). $\gamma$ is constrained to $[0,1]$
-
-% use pattern search to find parameters
-if ~exist('psp.mat','file')
-	x0 = [3557  203   0.35 1.8 1.9   17   1];
-	lb = [1200  30    0    0   1     0    1];
-	ub = [5200  300   1    10  5     30   5];
-	psoptions = psoptimset('UseParallel',true,'CompletePoll', 'on', 'Vectorized', 'off','Display','iter','MaxIter',2000,'MaxFunEvals',10000);
-	x = patternsearch(@(x) DA_cost_function(x,data,@Cost,'ga'),x0,[],[],[],[],lb,ub,psoptions);
-	psp = ValidateDAParameters(x,'ga');
-	save('psp.mat','psp')
-end
-
-load psp.mat
-figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
-DAFit = DA_integrate(PID,psp);
-DAFit = DAFit - mean(DAFit(500:end));
-DAFit(DAFit<min(f))=min(f);
-
-mpo = [];
-mpo.legend = 1;
-
-subplot(1,2,1), hold on
-multiplot(time,f,LinearFit,DAFit,mpo);
-set(gca,'XLim',[min(time)+1 min(time)+3])
-PrettyFig;
-
-mpo.legend = 0;
-
-subplot(1,2,2),  hold on
-multiplot(time,f,LinearFit,DAFit,mpo);
-set(gca,'XLim',[mean(time)-1 mean(time)+1])
-set(gca,'YTick',[])
-set(gca,'YColor','w')
+plot(fig(1).a(1),time,Valve);
+plot(fig(1).a(2),time,PID);
+plot(fig(1).a(3),filtertime,K);
+plot(fig(1).a(4),time,f,'k'); 
+plot(fig(1).a(4),time,LinearFit,'r')
+set(fig(1).a(4),'XLim',[20 25])
+set(fig(1).a(1),'XLim',[20 25],'YLim',[-0.1 1.1])
+set(fig(1).a(2),'XLim',[20 25])
+set(fig(1).a(3),'XLim',[min(filtertime-offset) max(filtertime)+offset])
 PrettyFig;
 
 
-
-
-
-
-%%
-% The DA model seems to do a pretty good job estimating the ORN output. Is it better than the simple linear prediction? Here, we compare the r-square and the l-2 norm between the data and the fit. For the simple linear model, the r-square is 
-s = 500;
-z = length(f);
-disp(rsquare(f(s:end),LinearFit(s:end)))
-
-%%
-% cf. for the DA model fit, the rsquare is 
-disp(rsquare(f(s:end),DAFit(s:end)))
-
-%% 
-% The l-2 norm of the linear fit is
-disp(l2(f(s:end),LinearFit(s:end)))
-
-%% 
-% cf. l-2 norm of the DA fit is
-disp(l2(f(s:end),DAFit(s:end)))
-
-
-
-%% Real Data: Gain Analysis
+% Real Data: Gain Analysis
 % We can perform a similar gain analysis like we did on the synthetic data on the real data from the ORN. The plot on the left compares the ORN response data (on the Y-axis) to the linear fit, while the plot on the right compares the data to the DA model fit. 
 s = 300; % when we start for the gain analysis
 z = length(f); % where we end
-history_lengths = [0.102];
-% hl = history_lengths/3; % history lengths better be divisible by 3!
-% shat = NaN(length(hl),length(PID(s:z)));
-% for i = 1:length(hl)
-% 	shat(i,:) = filtfilt(ones(1,hl(i))/hl(i),1,PID(s:z));
-% 	shat(i,1:hl(i)) = NaN;
-% end
+example_history_length = [0.09];
+history_lengths = [.030:0.06:1.002];
 
-x.data = f(s:z);
+x.response = f(s:z);
 x.prediction = LinearFit(s:z);
 x.stimulus = PID(s:z);
 x.time = time(s:z);
+x.filter_length = 201;
+
+GainAnalysis3(x,history_lengths,example_history_length);
+
+
+return
 
 % make gain analysis plot for synthetic data and linear model
 figure('outerposition',[0 0 900 500],'PaperUnits','points','PaperSize',[1000 500]); hold on

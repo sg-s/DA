@@ -1,7 +1,7 @@
 % FindBestFilter.m
 % created by Srinivas Gorur-Shandilya at 17:31 , 15 January 2014. Contact me at http://srinivas.gs/contact/
 % finds the best filter, searching through the space of the free parameter in my and damon's filter estimation functions
-function [K diagnostics] = FindBestFilter(stim,response,OnlyThesePoints,varargin)
+function [K diagnostics filtertime] = FindBestFilter(stim,response,OnlyThesePoints,varargin)
 
 % ensure inputs OK
 stim = stim(:);
@@ -14,6 +14,7 @@ algo = 1;
 filter_length = 333;
 min_cutoff = -Inf;
 
+
 if nargin < 3
 	OnlyThesePoints = [];
 end
@@ -24,6 +25,12 @@ for i = 1:nargin-3
 	eval(varargin{i})
 end
 
+
+% offset the stimulus and response a little bit to account for acausal filters (I know, weird)
+offset = floor(filter_length/10);
+stim = stim(offset:end);
+response = response(1:end-offset+1);
+filtertime = [-offset:filter_length-offset];
 
 if algo == 1
 	%% Chichilnisky's method. 

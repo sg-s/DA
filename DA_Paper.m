@@ -18,12 +18,14 @@
 
 %%
 % Do ORNs rapidly modulate gain?
+% Pseudo-white-noise analysis of ORN responses involves presenting binary flickering pulses of odor to the ORN and recording their response. If ORNs rapidly modulate gain on the timescale of response, then responses to pulses of odor in the sequence where the stimulus is locally low will be different from responses to pulses of odor in the sequence where the stimulus is locally high. 
 
-% Now that we know that we can fit the model, and that our optimisation algorithm works, we will try to fit real data. The following figure shows the sample data we use. The top panel shows the stimulus as measured by the PID, and the bottom panel shows the firing rate of the ORN. The firing rate has been divided by its standard deviation and has been mean subtracted. Also shown is the linear prediction of the firing rates. 
+%%
+% The data looks like this. The following figure shows the valve state, the odor concentration, and the neuron response. The neuron is ab3A, and the odor presented is 1-octen-3-ol diluted to 3x10^-^3 in Paraffin Oil. The correlation time in the valve position is 30ms. 
 
 
 if ~exist('PID','var')
-	filename = '~/Desktop/final_2011_06_14_ab3A_1o3ol3X-3_20ml_30sec_30ms_rand.mat';
+	filename = '/local-data/DA-paper/fig1/final_2011_06_14_ab3A_1o3ol3X-3_20ml_30sec_30ms_rand.mat';
 	[PID, time, f,Valve,uncropped] = PrepData3(filename);
 	PID = PID(:);
 	time = time(:);
@@ -33,15 +35,12 @@ if ~exist('PID','var')
 	ptrend = fit(time,PID,'Poly1'); 
 	PID = PID - (ptrend(time) - mean(ptrend(time)));
 
-	% prepare data
-	f = f/std(f);
-	f = f(:) - mean(f);
-
 
 	% assemble into a data structure
-	data.PID = PID;
-	data.f = f;
-	data.Valve = Valve;
+	data(1).stimulus = PID;
+	data(1).response = f;
+	data(1).Valve = Valve;
+	data(1).time = time;
 end
 
 
@@ -55,6 +54,8 @@ a=multiplot(time,PID,f,LinearFit);
 title(a(1),'Figure 2: ORN data, and linear model prediction')
 set(gca,'XLim',[20 25])
 PrettyFig;
+
+return
 
 
 %%

@@ -45,14 +45,35 @@ end
 
 
 % build a simple linear model
-K = FindBestFilter(PID(500:end),f(500:end),[],'min_cutoff=min(response);');
+[K,~,filtertime] = FindBestFilter(PID(500:end),f(500:end),[],'filter_length=201;');
 LinearFit = filter(K,1,PID-mean(PID))+ mean(f(500:end));
 LinearFit(LinearFit<min(f)) = min(f);
+% correct for offset
+offset = abs(min(filtertime));
+LinearFit(1:offset) = [];
+LinearFit = [LinearFit; NaN(offset,1)];
 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-a=multiplot(time,PID,f,LinearFit);
-title(a(1),'Figure 2: ORN data, and linear model prediction')
-set(gca,'XLim',[20 25])
+% add it to the data
+data(1).LinearFit = LinearFit;
+
+figure('outerposition',[0 0 1500 1000],'PaperUnits','points','PaperSize',[1000 500]); hold on
+a1 = subplot(3,6,2:6);
+a2 = subplot(3,6,8:12);
+a3 = subplot(3,6,13);
+a4 = subplot(3,6,14:18); hold on
+
+filtertime = filtertime*mean(diff(time));
+offset = offset*mean(diff(time));
+
+plot(a1,time,Valve);
+plot(a2,time,PID);
+plot(a3,filtertime,K);
+plot(a4,time,f,'k'); 
+plot(a4,time,LinearFit,'r')
+set(a4,'XLim',[20 25])
+set(a1,'XLim',[20 25])
+set(a2,'XLim',[20 25])
+set(a3,'XLim',[min(filtertime-offset) max(filtertime)+offset])
 PrettyFig;
 
 return

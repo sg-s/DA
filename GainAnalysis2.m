@@ -152,11 +152,13 @@ if ismember(2,plotid)
 	% plot to summary figure
 	subplot(plothere)
 	plot(history_lengths,all_slopes*ones(1,length(history_lengths)),'k','LineWidth',2), hold on
-	% errorbar(history_lengths,low_slopes,low_slopes_err,'g','LineWidth',2), hold on
-	% errorbar(history_lengths,high_slopes,high_slopes_err,'r','LineWidth',2)
+	errorbar(history_lengths,low_slopes,low_slopes_err,'g','LineWidth',2), hold on
+	errorbar(history_lengths,high_slopes,high_slopes_err,'r','LineWidth',2)
 
+	keyboard
+	
 	% bootstrap slopes
-	[low_slopes, high_slopes, p] = BootStrapErrorBars(x,history_lengths,0.1);
+	% [low_slopes, high_slopes, p] = BootStrapErrorBars(x,history_lengths,0.1);
 
 	plot(history_lengths,low_slopes.data,'g','LineWidth',2), hold on
 	plot(history_lengths,high_slopes.data,'r','LineWidth',2)

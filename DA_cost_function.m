@@ -2,7 +2,7 @@
 % DA_cost_function is a function that evaluates the response predicted by the DA model
 % to the stimulus and and compares it to the actual response. it calcualtes the absolute
 % error of the prediction, so has a minimum of 0 when the prediction is perfect. 
-function [cost]  = DA_cost_function(x,data,CostFunctionHandle)
+function [cost]  = DA_cost_function(x,data,CostFunctionHandle,IgnoreInitial,RemoveMean)
 % convert the inputs into the parameter array that DA_integrate needs
 if ~isstruct(x)
 	p= ValidateDAParameters2(x);
@@ -12,6 +12,13 @@ end
 stimulus = data.stimulus;
 response = data.response;
 
+if nargin < 4
+	IgnoreInitial = 1;
+end
+
+if nargin < 5
+	RemoveMean = 0;
+end
 
 
 if isvector(stimulus)
@@ -20,9 +27,11 @@ if isvector(stimulus)
 	Rguess = DA_integrate2(stimulus,p);
 	Rguess = Rguess(:);
 	response = response(:);
-	stimulus = stimulus(:);
-	
-	cost = CostFunctionHandle(response,Rguess);
+	if RemoveMean
+		Rguess = Rguess- mean(Rguess(IgnoreInitial:end));
+	end
+
+	cost = CostFunctionHandle(response(IgnoreInitial:end),Rguess(IgnoreInitial:end));
 else
 	% we're simultaneously fitting many different things
 	% WARNIGN!!! NEED TO CODE ONLY_THESE_POINTS TO HANDLE DISPARATE DATA SETS

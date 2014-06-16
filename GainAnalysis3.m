@@ -115,7 +115,6 @@ for i = 1:length(history_lengths)
 	high_slopes(i) = fhigh.p1;
 
 	if history_lengths(i) == example_history_length
-		disp(example_history_length)
 
 		% plot the stimulus and the smoothed stimulus
 		plot(plothere(1),t,stimulus,'k','LineWidth',2), hold on
@@ -131,8 +130,8 @@ for i = 1:length(history_lengths)
 		scatter(plothere(1),t(idx(1:tp)),shat(i,idx(1:tp)),'r','fill')
 		scatter(plothere(1),t(idx(end-tp:end)),shat(i,idx(end-tp:end)),'g','fill')
 		% scatter(plothere(2),t(idx(1:tp)),f(idx(1:tp)),'r','fill')
-		scatter(plothere(2),t(idx(1:tp)),fp(idx(1:tp)),'r','fill')
-		scatter(plothere(2),t(idx(end-tp:end)),fp(idx(end-tp:end)),'g','fill')
+		% scatter(plothere(2),t(idx(1:tp)),fp(idx(1:tp)),'r','fill')
+		% scatter(plothere(2),t(idx(end-tp:end)),fp(idx(end-tp:end)),'g','fill')
 		% scatter(plothere(2),t(idx(end-tp:end)),f(idx(end-tp:end)),'g','fill')
 
 		% plot these on the scatter plot
@@ -167,25 +166,6 @@ errorbar(plothere(4),history_lengths,high_slopes,high_slopes_err,'r','LineWidth'
 % scatter(history_lengths(sig),low_slopes.data(sig),1256,'g.')
 % scatter(history_lengths(sig),high_slopes.data(sig),1256,'r.')
 
-return
-
-	set(gca,'LineWidth',2,'FontSize',20,'box','on','XLim',[0 max(history_lengths)])
-	xlabel('History Length (ms)','FontSize',20)
-	ylabel('Slope data/prediction (gain)','FontSize',20)
-
-	if ismember(3,plotid)
-		subplot(1,2,2), hold on
-		plot(history_lengths,low_gof,'g','LineWidth',2),hold on
-		plot(history_lengths,high_gof,'r','LineWidth',2)
-		xlabel('History Length (ms)','FontSize',20)
-		ylabel('Goodness of Fit, rsquare','FontSize',20)
-		set(gca,'LineWidth',2,'FontSize',20,'box','on','YLim',[0 1.1],'XLim',[0 max(history_lengths)])
-	end
-
-
-output_data.high_slopes = high_slopes;
-output_data.high_slopes_err = high_slopes_err;
-output_data.low_slopes = low_slopes;
-output_data.low_slopes_err = low_slopes_err;
-output_data.low_gof = low_gof;
-output_data.high_gof = high_gof;
+set(plothere(4),'LineWidth',2,'FontSize',20,'box','on','XLim',[0 max(history_lengths)])
+xlabel(plothere(4),'History Length (s)','FontSize',20)
+ylabel(plothere(4),'Slope data/prediction (gain)','FontSize',20)

@@ -43,7 +43,7 @@ Valve(Valve <= 0.5) = 0;
 Valve(Valve>0) = 1;
 
 % calcualte baseline and remove it form the PID
-baseline=mean(PID(find(Valve>0,1,'first')-100:find(Valve>0,1,'first')));
+baseline=mean(PID(1:find(Valve>0,1,'first')));
 PID = PID- baseline;
 
 % find out when the trace starts and stops

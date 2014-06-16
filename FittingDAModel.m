@@ -494,7 +494,6 @@ title(a(1),'Figure 2: ORN data, and linear model prediction')
 set(gca,'XLim',[20 25])
 PrettyFig;
 
-
 %%
 % Now, we fit the DA model to the data using a pattern search optimisation (the type of optimisation doesn't matter. Pattern search is faster and converges to local minima faster than GA). $\gamma$ is constrained to $[0,1]$
 

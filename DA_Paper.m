@@ -19,9 +19,6 @@
 % 		fit liner filter (+recitfier) to all other data sets
 % 		repeat gain analysis + Bootstrap statistics 
 
-% 1.3) Do ORNs modulate gain in turbulent air stream experiment? 
-% 		fit linear model to all data 
-% 		do gain analysis + bootstrap statistics for all data
 
 
 % 2) Can we explain fast gain adaptation? 
@@ -35,6 +32,11 @@
 % 		fit DA model to all data (flickering, turbulent plume)
 % 		build a table of parameters for all data
 % 		gain analysis vs DA model + bootstrap statistics 
+% 
+% 3) How relevant is gain adaptation? Do ORNs modulate gain in turbulent air stream experiment? 
+% 		fit linear model to all data 
+% 		do gain analysis + bootstrap statistics for all data
+
 %
 %
 % How this is organised:
@@ -106,12 +108,10 @@ data(1).LinearFit = mean(data(1).response) + convolve(data(1).time,data(1).stimu
 return
 
 
-
 figure('outerposition',[0 0 1500 1000],'PaperUnits','points','PaperSize',[1000 500]); hold on
 fig(1).a(1) = subplot(2,1,1);
 fig(1).a(2) = subplot(2,1,2);
-fig(1).a(3) = subplot(3,6,13);
-fig(1).a(4) = subplot(3,6,14:18); hold on
+
 
 filtertime = filtertime*mean(diff(time));
 offset = offset*mean(diff(time));

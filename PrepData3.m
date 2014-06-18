@@ -1,13 +1,13 @@
 % PrepData3.m
 % PrepData loads the selected file, and prepares the data so that it is useful
 % PrepData3 is built from my own code, as opposed to PrepData2, which uses Carlotta's code. Specifically, the firing rate computation is significantly different. 
-function [PID time f Valve uncropped] = PrepData3(filename,varargin)
+function [PID, time, f, Valve, uncropped] = PrepData3(filename)
 % load file
 load(filename)
 
 full_trace = 0;
-if nargin  == 2
-	full_trace = varargin{1};
+if nargout  == 4
+	full_trace = 1;
 end
 
 

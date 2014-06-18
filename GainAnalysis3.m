@@ -19,7 +19,7 @@
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 % performs a gain analysis and makes some plots
 
-function [] = GainAnalysis3(x,history_lengths,example_history_length,plothere)
+function [p] = GainAnalysis3(x,history_lengths,example_history_length,plothere,p)
 
 % set defaults
 marker_size=10;
@@ -27,7 +27,7 @@ marker_size2=24;
 font_size=20;
 plotid=[1 2];
 
-if nargin < 4
+if isempty(plothere)
 	figure, hold on; 
 	plothere(1) = subplot(2,1,1); hold on;
 	plothere(2) = subplot(2,1,2); hold on;
@@ -159,12 +159,21 @@ errorbar(plothere(4),history_lengths,low_slopes,low_slopes_err,'g','LineWidth',2
 errorbar(plothere(4),history_lengths,high_slopes,high_slopes_err,'r','LineWidth',2)
 	
 % bootstrap slopes
-% [low_slopes, high_slopes, p] = BootStrapErrorBars(x,history_lengths,0.1);
-% plot(history_lengths,low_slopes.data,'g','LineWidth',2), hold on
-% plot(history_lengths,high_slopes.data,'r','LineWidth',2)
-% sig = p<(0.05/length(p)); % these points are significant, Bonferroni corrected
-% scatter(history_lengths(sig),low_slopes.data(sig),1256,'g.')
-% scatter(history_lengths(sig),high_slopes.data(sig),1256,'r.')
+if nargin == 5
+	low_slopes2.data = low_slopes;
+	high_slopes2.data = high_slopes;
+
+else
+	[low_slopes2, high_slopes2, p] = BootStrapErrorBars(x,history_lengths,0.1);
+end
+
+
+plot(history_lengths,low_slopes2.data,'g','LineWidth',2), hold on
+plot(history_lengths,high_slopes2.data,'r','LineWidth',2)
+p = p*length(p); % Bonferroni correction
+sig = p<(0.05/length(p)); % these points are significant,
+scatter(history_lengths(sig),low_slopes2.data(sig),1256,'g.')
+scatter(history_lengths(sig),high_slopes2.data(sig),1256,'r.')
 
 set(plothere(4),'LineWidth',2,'FontSize',20,'box','on','XLim',[0 max(history_lengths)])
 xlabel(plothere(4),'History Length (s)','FontSize',20)

@@ -32,7 +32,7 @@ for i = 1:length(datasource)
 				% figure out the odor
 				this_odor = [];
 				for k = 1:length(odor_names)
-					if any(strfind('final_2011_05_16_ab3A_5ol3X-3_20ml_30sec_30ms_rand.mat',odor_names{k}))
+					if any(strfind(allfiles(j).name,odor_names{k}))
 						this_odor = odor_names{k};
 					end
 				end
@@ -41,7 +41,7 @@ for i = 1:length(datasource)
 				% figure out the neuron
 				this_neuron = [];
 				for k = 1:length(neuron_names)
-					if any(strfind('final_2011_05_16_ab3A_5ol3X-3_20ml_30sec_30ms_rand.mat',neuron_names{k}))
+					if any(strfind(allfiles(j).name,neuron_names{k}))
 						this_neuron = neuron_names{k};
 					end
 				end

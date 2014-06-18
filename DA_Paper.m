@@ -10,7 +10,7 @@
 % 1) Do ORNs modulate gain?
 
 % 1.1) Do ORNs modulate gain in flickering stimulus (1-octen-3-ol)
-% 		We fit a linear filter
+% 		We fit a linear filter --done
 % 		Perform gain analysis vs. linear filter
 % 		Bootstrap statistical significance 
 % 		We conclude there is gain adaptation in this dataset
@@ -69,6 +69,11 @@
 % ##     ##    ##     ##    ##     ##    ##              ##    
 % ##     ##    ########     ##     ##    ##              ##    
 
+
+
+% load data
+load('/local-data/DA-paper/data.mat')
+
 %%
 % Do ORNs rapidly modulate gain?
 % Pseudo-white-noise analysis of ORN responses involves presenting binary flickering pulses of odor to the ORN and recording their response. If ORNs rapidly modulate gain on the timescale of response, then responses to pulses of odor in the sequence where the stimulus is locally low will be different from responses to pulses of odor in the sequence where the stimulus is locally high. 
@@ -76,73 +81,86 @@
 %%
 % The data looks like this. The following figure shows the valve state, the odor concentration, and the neuron response. The neuron is ab3A, and the odor presented is 1-octen-3-ol diluted to 3x10^-^3 in Paraffin Oil. The correlation time in the valve position is 30ms. 
 
-
-if ~exist('PID','var')
-	filename = '/local-data/DA-paper/fig1/final_2011_06_14_ab3A_1o3ol3X-3_20ml_30sec_30ms_rand.mat';
-	[PID, time, f] = PrepData3(filename);
-	PID = PID(:);
-	time = time(:);
-	f = f(:);
-
-	% detrend PID with a quadratic term
-	ptrend = fit(time,PID,'Poly2'); 
-	PID = PID - (ptrend(time) - mean(ptrend(time)));
-
-
-	% assemble into a data structure
-	data(1).stimulus = PID;
-	data(1).response = f;
-	data(1).time = time;
-	data(1).name = 'final_2011_06_14_ab3A_1o3ol3X-3_20ml_30sec_30ms_rand.mat';
-	clear PID f time
-end
-
+td = 7;
+% detrend PID with a quadratic term
+ptrend = fit(data(td).time(:),data(td).PID(:),'Poly2'); 
+data(td).PID = data(td).PID(:) - (ptrend(data(td).time) - mean(ptrend(data(td).time)));
 
 
 % build a simple linear model
-[K,~,filtertime] = FindBestFilter(data(1).stimulus(500:end),data(1).response(500:end),[],'filter_length=201;');
-data(1).K = K;
-data(1).filtertime = filtertime*mean(diff(data(1).time));
-data(1).LinearFit = mean(data(1).response) + convolve(data(1).time,data(1).stimulus,data(1).K,data(1).filtertime);
-
-return
+[K,~,filtertime] = FindBestFilter(data(td).PID(500:end),data(td).ORN(500:end),[],'filter_length=201;');
+data(td).K = K;
+data(td).filtertime = filtertime*mean(diff(data(td).time));
+data(td).LinearFit = mean(data(td).ORN) + convolve(data(td).time,data(td).PID,data(td).K,data(td).filtertime);
 
 
-figure('outerposition',[0 0 1500 1000],'PaperUnits','points','PaperSize',[1000 500]); hold on
-fig(1).a(1) = subplot(2,1,1);
-fig(1).a(2) = subplot(2,1,2);
 
 
-filtertime = filtertime*mean(diff(time));
-offset = offset*mean(diff(time));
+figure('outerposition',[0 0 1500 1000],'PaperUnits','points','PaperSize',[1500 1000]); hold on
+subplot(2,1,1), hold on
+plot(data(td).time,data(td).PID,'k');
 
-plot(fig(1).a(1),time,Valve);
-plot(fig(1).a(2),time,PID);
-plot(fig(1).a(3),filtertime,K);
-plot(fig(1).a(4),time,f,'k'); 
-plot(fig(1).a(4),time,LinearFit,'r')
-set(fig(1).a(4),'XLim',[20 25])
-set(fig(1).a(1),'XLim',[20 25],'YLim',[-0.1 1.1])
-set(fig(1).a(2),'XLim',[20 25])
-set(fig(1).a(3),'XLim',[min(filtertime-offset) max(filtertime)+offset])
+subplot(2,1,2), hold on
+plot(data(td).time,data(td).ORN,'k');
+plot(data(td).time,data(td).LinearFit,'r');
 PrettyFig;
 
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(data(td).filtertime,data(td).K,'k','LineWidth',2)
+
+
+% plot statistics of the data: histograms and auto-correlation functions
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+p = data(td).PID;
+p = p-min(p); p =p/max(p);
+[y,x] = hist(p,40);
+plot(x,y,'k')
+p = data(td).ORN;
+p = p-min(p); p =p/max(p);
+[y1,x1] = hist(p,40);
+plot(x1,y1,'b')
+
+
+subplot(1,2,2), hold on
+[y,x] = autocorr(data(td).PID,200);
+x=x*mean(diff(data(td).time));
+plot(x,y,'k'), hold on
+
+% find autocorrelation time of PID
+act = x(find(y<0,1,'first'));
+[y,x] = autocorr(data(td).ORN,200);
+x=x*mean(diff(data(td).time));
+plot(x,y,'b'), hold on
+
+PrettyFig;
 
 
 % We can perform a similar gain analysis like we did on the synthetic data on the real data from the ORN. The plot on the left compares the ORN response data (on the Y-axis) to the linear fit, while the plot on the right compares the data to the DA model fit. 
 s = 300; % when we start for the gain analysis
-z = length(f); % where we end
+z = length(data(td).ORN); % where we end
 example_history_length = [0.09];
-history_lengths = [.030:0.06:1.002];
+history_lengths = [.030:0.06:2*act];
 
-x.response = f(s:z);
-x.prediction = LinearFit(s:z);
-x.stimulus = PID(s:z);
-x.time = time(s:z);
+clear x
+x.response = data(td).ORN(s:z);
+x.prediction = data(td).LinearFit(s:z);
+x.stimulus = data(td).PID(s:z);
+x.time = data(td).time(s:z);
 x.filter_length = 201;
 
-GainAnalysis3(x,history_lengths,example_history_length);
+redo_bootstrap = 0;
+if redo_bootstrap
+	data(td).LinearFit_p = GainAnalysis3(x,history_lengths,example_history_length,[]);
+else
+	GainAnalysis3(x,history_lengths,example_history_length,[],data(td).LinearFit_p);
+end
 clear x
+
+% save
+save('/local-data/DA-paper/data.mat','data','-append')
+
+return
 
 
 %Now that we have the filter, fit it to dose-response data

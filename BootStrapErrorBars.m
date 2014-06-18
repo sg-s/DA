@@ -14,10 +14,10 @@
 function [low_slopes, high_slopes, p] = BootStrapErrorBars(x,history_lengths,fraction)
 
 % unpack data
-f = x.data;
-fp = x.prediction;
-stimulus = x.stimulus;
-t = x.time;
+f = x.response(:);
+fp = x.prediction(:);
+stimulus = x.stimulus(:);
+t = x.time(:);
 
 % figure out sampling rate
 dt = mean(diff(t));
@@ -27,7 +27,7 @@ hl = round(history_lengths/dt);
 % compute shat
 shat = NaN(length(hl),length(stimulus));
 for i = 1:length(hl)
-	shat(i,:) = filtfilt(ones(1,hl(i))/hl(i),1,stimulus);
+	shat(i,:) = filter(ones(1,hl(i))/hl(i),1,stimulus);
 	shat(i,1:hl(i)) = NaN;
 end
 
@@ -39,10 +39,10 @@ nrep = 100; % how many times do we bootstrap the data?
 % initialise outputs
 p = NaN(1,length(hl));  % stores p-values for each history length
 
-low_slopes.boostrap = NaN(nrep,length(hl));
+low_slopes.bootstrap = NaN(nrep,length(hl));
 low_slopes.data = NaN(1,length(hl));
 
-high_slopes.boostrap= NaN(nrep,length(hl));
+high_slopes.bootstrap= NaN(nrep,length(hl));
 high_slopes.data = NaN(1,length(hl));
 
 for i = 1:length(hl) % for each history length
@@ -54,8 +54,8 @@ for i = 1:length(hl) % for each history length
 	idx = idx(:);
 
 	% calculate the slopes
-	f_low = f(idx(1:floor(length(this_shat)*fraction)));
-	fp_low = fp(idx(1:floor(length(this_shat)*fraction)));
+	f_low = f(idx(1:floor(length(this_shat)/10)));
+	fp_low = fp(idx(1:floor(length(this_shat)/10)));
 
 	% strip NaN
 	f_low(isnan(fp_low)) = [];

@@ -74,14 +74,18 @@
 % load data
 load('/local-data/DA-paper/data.mat')
 
-%%
-% Do ORNs rapidly modulate gain?
+%% Do ORNs rapidly modulate gain?
 % Pseudo-white-noise analysis of ORN responses involves presenting binary flickering pulses of odor to the ORN and recording their response. If ORNs rapidly modulate gain on the timescale of response, then responses to pulses of odor in the sequence where the stimulus is locally low will be different from responses to pulses of odor in the sequence where the stimulus is locally high. 
 
 %%
-% The data looks like this. The following figure shows the valve state, the odor concentration, and the neuron response. The neuron is ab3A, and the odor presented is 1-octen-3-ol diluted to 3x10^-^3 in Paraffin Oil. The correlation time in the valve position is 30ms. 
+% The data looks like this. The following figure shows the valve state, the odor concentration, and the neuron response. The neuron is ab3A, and the odor presented is 1-octen-3-ol diluted to 3x $10^{-3}$ in Paraffin Oil. The correlation time in the valve position is 30ms. 
 
+%%
+% This data file is used for the following analysis:
 td = 7;
+
+disp(data(td).original_name)
+
 % detrend PID with a quadratic term
 ptrend = fit(data(td).time(:),data(td).PID(:),'Poly2'); 
 data(td).PID = data(td).PID(:) - (ptrend(data(td).time) - mean(ptrend(data(td).time)));
@@ -96,47 +100,42 @@ data(td).LinearFit = mean(data(td).ORN) + convolve(data(td).time,data(td).PID,da
 
 
 
-figure('outerposition',[0 0 1500 1000],'PaperUnits','points','PaperSize',[1500 1000]); hold on
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 subplot(2,1,1), hold on
 plot(data(td).time,data(td).PID,'k');
+set(gca,'XLim',[min(data(td).time) max(data(td).time)])
+ylabel('PID Voltage (V)')
 
 subplot(2,1,2), hold on
 plot(data(td).time,data(td).ORN,'k');
 plot(data(td).time,data(td).LinearFit,'r');
+set(gca,'XLim',[min(data(td).time) max(data(td).time)])
+ylabel('Firing Rate (Hz)')
+xlabel('Time (s)')
+legend ORN LinearFit
 PrettyFig;
 
-figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+figure('outerposition',[0 0 400 400],'PaperUnits','points','PaperSize',[1000 400]); hold on
 plot(data(td).filtertime,data(td).K,'k','LineWidth',2)
-
-
-% plot statistics of the data: histograms and auto-correlation functions
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-subplot(1,2,1), hold on
-p = data(td).PID;
-p = p-min(p); p =p/max(p);
-[y,x] = hist(p,40);
-plot(x,y,'k')
-p = data(td).ORN;
-p = p-min(p); p =p/max(p);
-[y1,x1] = hist(p,40);
-plot(x1,y1,'b')
-
-
-subplot(1,2,2), hold on
-[y,x] = autocorr(data(td).PID,200);
-x=x*mean(diff(data(td).time));
-plot(x,y,'k'), hold on
-
-% find autocorrelation time of PID
-act = x(find(y<0,1,'first'));
-[y,x] = autocorr(data(td).ORN,200);
-x=x*mean(diff(data(td).time));
-plot(x,y,'b'), hold on
-
+title('Linear Filter for this data')
+xlabel('FitlerLag (s)')
+set(gca,'XLim',[min(data(td).filtertime) max(data(td).filtertime)])
 PrettyFig;
 
 
-% We can perform a similar gain analysis like we did on the synthetic data on the real data from the ORN. The plot on the left compares the ORN response data (on the Y-axis) to the linear fit, while the plot on the right compares the data to the DA model fit. 
+%%
+% The distributions of the input to neuron and the neuron responses are shown below on the left. The autocorrelaiton functions of the input and output are shown on the right. If the ORN modulates its gain on a rapid time-scale, it must do so in this case on a time-scale smaller than the autocorrelation time of the stimulus. 
+
+[act] = PlotDataStatistics(data,td);
+
+
+%%
+% Does the ORN selectively amplify responses to relatively small stimuli and suppress responses to relatively high stimuli?
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
 s = 300; % when we start for the gain analysis
 z = length(data(td).ORN); % where we end
 example_history_length = [0.09];
@@ -151,9 +150,95 @@ x.filter_length = 201;
 
 redo_bootstrap = 0;
 if redo_bootstrap
-	data(td).LinearFit_p = GainAnalysis3(x,history_lengths,example_history_length,[]);
+	data(td).LinearFit_p = GainAnalysis3(x,history_lengths,example_history_length,ph);
 else
-	GainAnalysis3(x,history_lengths,example_history_length,[],data(td).LinearFit_p);
+	GainAnalysis3(x,history_lengths,example_history_length,ph,data(td).LinearFit_p);
+end
+clear x
+
+% save
+save('/local-data/DA-paper/data.mat','data','-append')
+
+%%
+% We now repeat the analysis on a different data set, where the same odor is presented to the same type of neuron, but the flickering stimulus has a longer correlation time. The response of the neuron is now quite different, and sometimes goes to 0 (stops firing entirely). 
+
+td = 9;
+%%
+% This data file is being used for this analysis:
+disp(data(td).original_name)
+
+
+
+% detrend PID with a quadratic term
+ptrend = fit(data(td).time(:),data(td).PID(:),'Poly2'); 
+data(td).PID = data(td).PID(:) - (ptrend(data(td).time) - mean(ptrend(data(td).time)));
+
+
+% build a simple linear model
+[K,~,filtertime] = FindBestFilter(data(td).PID(500:end),data(td).ORN(500:end),[],'filter_length=201;');
+data(td).K = K;
+data(td).filtertime = filtertime*mean(diff(data(td).time));
+data(td).LinearFit = mean(data(td).ORN) + convolve(data(td).time,data(td).PID,data(td).K,data(td).filtertime);
+data(td).LinearFit(data(td).LinearFit <0 ) = 0;
+
+%%
+% How is the filter changed? The following figure shows the filter computed from this dataset compared to previous dataset.
+figure('outerposition',[0 0 400 400],'PaperUnits','points','PaperSize',[1000 400]); hold on
+plot(data(td).filtertime,data(td).K,'r','LineWidth',2), hold on
+plot(data(td).filtertime,data(7).K,'k','LineWidth',2)
+title('Linear Filter for this data')
+xlabel('FitlerLag (s)')
+set(gca,'XLim',[min(data(td).filtertime) max(data(td).filtertime)])
+PrettyFig;
+legend ThisData PreviousData
+
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(2,1,1), hold on
+plot(data(td).time,data(td).PID,'k');
+set(gca,'XLim',[min(data(td).time) max(data(td).time)])
+ylabel('PID Voltage (V)')
+
+subplot(2,1,2), hold on
+plot(data(td).time,data(td).ORN,'k');
+plot(data(td).time,data(td).LinearFit,'r');
+set(gca,'XLim',[min(data(td).time) max(data(td).time)])
+ylabel('Firing Rate (Hz)')
+xlabel('Time (s)')
+legend ORN LinearFit
+PrettyFig;
+
+
+% plot statistics of the data: histograms and auto-correlation functions
+[act] = PlotDataStatistics(data,td);
+
+
+% We can perform a similar gain analysis like we did on the synthetic data on the real data from the ORN. The plot on the left compares the ORN response data (on the Y-axis) to the linear fit, while the plot on the right compares the data to the DA model fit. 
+s = 300; % when we start for the gain analysis
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+z = length(data(td).ORN); % where we end
+example_history_length = [0.3900];
+history_lengths = [.030:0.06:2*act];
+
+clear x
+x.response = data(td).ORN(s:z);
+x.prediction = data(td).LinearFit(s:z);
+x.stimulus = data(td).PID(s:z);
+x.time = data(td).time(s:z);
+x.filter_length = 201;
+
+redo_bootstrap = 0;
+if redo_bootstrap
+	data(td).LinearFit_p = GainAnalysis3(x,history_lengths,example_history_length,ph);
+else
+	if isempty(data(td).LinearFit_p)
+		data(td).LinearFit_p = GainAnalysis3(x,history_lengths,example_history_length,ph);
+	else
+		GainAnalysis3(x,history_lengths,example_history_length,ph,data(td).LinearFit_p);
+	end
 end
 clear x
 
@@ -161,6 +246,10 @@ clear x
 save('/local-data/DA-paper/data.mat','data','-append')
 
 return
+
+
+
+
 
 
 %Now that we have the filter, fit it to dose-response data

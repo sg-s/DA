@@ -28,9 +28,9 @@ font_size=20;
 plotid=[1 2];
 
 if isempty(plothere)
-	figure, hold on; 
-	plothere(1) = subplot(2,1,1); hold on;
-	plothere(2) = subplot(2,1,2); hold on;
+	% figure, hold on; 
+	% plothere(1) = subplot(2,1,1); hold on;
+	% plothere(2) = subplot(2,1,2); hold on;
 	figure, hold on;
 	plothere(3) = gca;
 	figure; hold on;
@@ -116,23 +116,23 @@ for i = 1:length(history_lengths)
 
 	if history_lengths(i) == example_history_length
 
-		% plot the stimulus and the smoothed stimulus
-		plot(plothere(1),t,stimulus,'k','LineWidth',2), hold on
-		plot(plothere(1),t,shat(i,:),'Color',[0.9 0.9 0.9],'LineWidth',4)
+		% % plot the stimulus and the smoothed stimulus
+		% plot(plothere(1),t,stimulus,'k','LineWidth',2), hold on
+		% plot(plothere(1),t,shat(i,:),'Color',[0.9 0.9 0.9],'LineWidth',4)
 
-		% plot the response and the prediction 
-		plot(plothere(2),t,f,'k','LineWidth',2), hold on
-		plot(plothere(2),t,fp,'r','LineWidth',2), hold on
+		% % plot the response and the prediction 
+		% plot(plothere(2),t,f,'k','LineWidth',2), hold on
+		% plot(plothere(2),t,fp,'r','LineWidth',2), hold on
 
 		
-		% indicate regions of lowest and highest 10%
-		tp = floor(length(stimulus)/10);
-		scatter(plothere(1),t(idx(1:tp)),shat(i,idx(1:tp)),'r','fill')
-		scatter(plothere(1),t(idx(end-tp:end)),shat(i,idx(end-tp:end)),'g','fill')
-		% scatter(plothere(2),t(idx(1:tp)),f(idx(1:tp)),'r','fill')
-		% scatter(plothere(2),t(idx(1:tp)),fp(idx(1:tp)),'r','fill')
-		% scatter(plothere(2),t(idx(end-tp:end)),fp(idx(end-tp:end)),'g','fill')
-		% scatter(plothere(2),t(idx(end-tp:end)),f(idx(end-tp:end)),'g','fill')
+		% % indicate regions of lowest and highest 10%
+		% tp = floor(length(stimulus)/10);
+		% scatter(plothere(1),t(idx(1:tp)),shat(i,idx(1:tp)),'r','fill')
+		% scatter(plothere(1),t(idx(end-tp:end)),shat(i,idx(end-tp:end)),'g','fill')
+		% % scatter(plothere(2),t(idx(1:tp)),f(idx(1:tp)),'r','fill')
+		% % scatter(plothere(2),t(idx(1:tp)),fp(idx(1:tp)),'r','fill')
+		% % scatter(plothere(2),t(idx(end-tp:end)),fp(idx(end-tp:end)),'g','fill')
+		% % scatter(plothere(2),t(idx(end-tp:end)),f(idx(end-tp:end)),'g','fill')
 
 		% plot these on the scatter plot
 
@@ -148,6 +148,9 @@ for i = 1:length(history_lengths)
 		plot(plothere(3),[min(fp_low) max(fp_low)],flow([min(fp_low) max(fp_low)]),'g','LineWidth',3)
 		plot(plothere(3),[min(fp_high) max(fp_high)],fhigh([min(fp_high) max(fp_high)]),'r','LineWidth',3)
 
+		xlabel('Prediction')
+		ylabel('Actual neuron response')
+
 	end	
 
 end
@@ -155,8 +158,8 @@ end
 
 % plot to summary figure
 plot(plothere(4),history_lengths,all_slopes*ones(1,length(history_lengths)),'k','LineWidth',2), hold on
-errorbar(plothere(4),history_lengths,low_slopes,low_slopes_err,'g','LineWidth',2), hold on
-errorbar(plothere(4),history_lengths,high_slopes,high_slopes_err,'r','LineWidth',2)
+% errorbar(plothere(4),history_lengths,low_slopes,low_slopes_err,'g','LineWidth',2), hold on
+% errorbar(plothere(4),history_lengths,high_slopes,high_slopes_err,'r','LineWidth',2)
 	
 % bootstrap slopes
 if nargin == 5

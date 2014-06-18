@@ -88,12 +88,14 @@ for i = 1:length(history_lengths)
 	[sorted_shat idx] = sort(this_shat,'ascend');
 	f_low = f(idx(1:floor(length(stimulus)/10)));
 	fp_low = fp(idx(1:floor(length(stimulus)/10)));
+	s_low = stimulus(idx(1:floor(length(stimulus)/10)));
 
 
 	this_shat(1:hl(i)) = -Inf;
 	[sorted_shat idx] = sort(this_shat,'descend');
 	f_high = f(idx(1:floor(length(stimulus)/10)));
 	fp_high = fp(idx(1:floor(length(stimulus)/10)));
+	s_high = stimulus(idx(1:floor(length(stimulus)/10)));
 
 	% remove NaN values
 	f_high(isnan(fp_high)) = [];
@@ -113,6 +115,8 @@ for i = 1:length(history_lengths)
 	er = confint(fhigh);
 	high_slopes_err(i)=fhigh.p1-er(1,1);
 	high_slopes(i) = fhigh.p1;
+
+	
 
 	if history_lengths(i) == example_history_length
 
@@ -148,8 +152,8 @@ for i = 1:length(history_lengths)
 		plot(plothere(3),[min(fp_low) max(fp_low)],flow([min(fp_low) max(fp_low)]),'g','LineWidth',3)
 		plot(plothere(3),[min(fp_high) max(fp_high)],fhigh([min(fp_high) max(fp_high)]),'r','LineWidth',3)
 
-		xlabel('Prediction')
-		ylabel('Actual neuron response')
+		xlabel(plothere(3),'Prediction')
+		ylabel(plothere(3),'Actual neuron response')
 
 	end	
 

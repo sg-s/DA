@@ -53,10 +53,8 @@ if algo == 1
 		% find the filter
 		flstr = strcat('filter_length=',mat2str(filter_length),';');
 		regstr = strcat('reg=',mat2str(reg(i)),';');
-		if nargin < 5
-			regtype = 'regtype=2;';
-		end
-		[K C] = FitFilter2Data(stim,response,OnlyThesePoints,flstr,regstr,regtype);
+
+		[K, C] = FitFilter2Data(stim,response,OnlyThesePoints,flstr,regstr);
 
 		% make the prediction 
 		fp = filter(K,1,stim-mean(stim)) + mean(response);
@@ -110,10 +108,8 @@ if algo == 1
 	% and recalculate the filter
 	flstr = strcat('filter_length=',mat2str(filter_length),';');
 	regstr = strcat('reg=',mat2str(reg(id)),';');
-	if nargin < 6
-		regtype = 'regtype=2;';
-	end
-	K = FitFilter2Data(stim,response,OnlyThesePoints,flstr,regstr,regtype);
+
+	K = FitFilter2Data(stim,response,OnlyThesePoints,flstr,regstr);
 	diagnostics.bestfilter = id;
 
 	% ensure unit gain

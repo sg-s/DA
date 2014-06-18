@@ -175,23 +175,15 @@ data(td).PID = data(td).PID(:) - (ptrend(data(td).time) - mean(ptrend(data(td).t
 
 
 % build a simple linear model
-[K,~,filtertime] = FindBestFilter(data(td).PID(500:end),data(td).ORN(500:end),[],'filter_length=201;');
+[K,~,filtertime] = FindBestFilter(data(td).PID(500:end),data(td).ORN(500:end),[],'filter_length=201;','min_cutoff = 0;');
 data(td).K = K;
 data(td).filtertime = filtertime*mean(diff(data(td).time));
 data(td).LinearFit = mean(data(td).ORN) + convolve(data(td).time,data(td).PID,data(td).K,data(td).filtertime);
 data(td).LinearFit(data(td).LinearFit <0 ) = 0;
 
-%%
-% How is the filter changed? The following figure shows the filter computed from this dataset compared to previous dataset.
-figure('outerposition',[0 0 400 400],'PaperUnits','points','PaperSize',[1000 400]); hold on
-plot(data(td).filtertime,data(td).K,'r','LineWidth',2), hold on
-plot(data(td).filtertime,data(7).K,'k','LineWidth',2)
-title('Linear Filter for this data')
-xlabel('FitlerLag (s)')
-set(gca,'XLim',[min(data(td).filtertime) max(data(td).filtertime)])
-PrettyFig;
-legend ThisData PreviousData
 
+%%
+% This is what the data looks like. The top panel shows the stimulus and the bottom panel shows the neuron response together with the linear fit. 
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 subplot(2,1,1), hold on
@@ -207,6 +199,17 @@ ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')
 legend ORN LinearFit
 PrettyFig;
+
+%%
+% How is the filter changed? The following figure shows the filter computed from this dataset compared to previous dataset.
+figure('outerposition',[0 0 400 400],'PaperUnits','points','PaperSize',[1000 400]); hold on
+plot(data(td).filtertime,data(td).K,'r','LineWidth',2), hold on
+plot(data(td).filtertime,data(7).K,'k','LineWidth',2)
+title('Linear Filter for this data')
+xlabel('FitlerLag (s)')
+set(gca,'XLim',[min(data(td).filtertime) max(data(td).filtertime)])
+PrettyFig;
+legend ThisData PreviousData
 
 
 % plot statistics of the data: histograms and auto-correlation functions

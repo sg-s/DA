@@ -44,32 +44,13 @@
 % data(1) is response of ab3A to a flickering pulse sequence of 1-octen-3-ol 
 
 
-
-
-
-
-%  ######         ###       ####    ##    ##                   
-% ##    ##       ## ##       ##     ###   ##                   
-% ##            ##   ##      ##     ####  ##                   
-% ##   ####    ##     ##     ##     ## ## ##                   
-% ##    ##     #########     ##     ##  ####                   
-% ##    ##     ##     ##     ##     ##   ###                
-%  ######      ##     ##    ####    ##    ##   
-
-
-
-
-
-
-%    ###       ########        ###       ########     ######## 
-%   ## ##      ##     ##      ## ##      ##     ##       ##    
-%  ##   ##     ##     ##     ##   ##     ##     ##       ##    
-% ##     ##    ##     ##    ##     ##    ########        ##    
-% #########    ##     ##    #########    ##              ##    
-% ##     ##    ##     ##    ##     ##    ##              ##    
-% ##     ##    ########     ##     ##    ##              ##    
-
-
+ %   ##                ##   
+ % ####              ####   
+ %   ##                ##   
+ %   ##                ##   
+ %   ##                ##   
+ %   ##      ###       ##   
+ % ######    ###     ###### 
 
 % load data
 load('/local-data/DA-paper/data.mat')
@@ -98,13 +79,12 @@ data(td).filtertime = filtertime*mean(diff(data(td).time));
 data(td).LinearFit = mean(data(td).ORN) + convolve(data(td).time,data(td).PID,data(td).K,data(td).filtertime);
 
 
-
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+fh=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 subplot(2,1,1), hold on
 plot(data(td).time,data(td).PID,'k');
 set(gca,'XLim',[min(data(td).time) max(data(td).time)])
 ylabel('PID Voltage (V)')
+hold off
 
 subplot(2,1,2), hold on
 plot(data(td).time,data(td).ORN,'k');
@@ -114,19 +94,31 @@ ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')
 legend ORN LinearFit
 PrettyFig;
+hold off
 
-figure('outerposition',[0 0 400 400],'PaperUnits','points','PaperSize',[1000 400]); hold on
+snapnow;
+delete(fh);
+
+fh=figure('outerposition',[0 0 400 400],'PaperUnits','points','PaperSize',[1000 400]); hold on
 plot(data(td).filtertime,data(td).K,'k','LineWidth',2)
 title('Linear Filter for this data')
 xlabel('FitlerLag (s)')
 set(gca,'XLim',[min(data(td).filtertime) max(data(td).filtertime)])
 PrettyFig;
+hold off
+
+snapnow;
+delete(fh);
+
 
 
 %%
 % The distributions of the input to neuron and the neuron responses are shown below on the left. The autocorrelaiton functions of the input and output are shown on the right. If the ORN modulates its gain on a rapid time-scale, it must do so in this case on a time-scale smaller than the autocorrelation time of the stimulus. 
 
 [act] = PlotDataStatistics(data,td);
+
+snapnow;
+delete(gcf);
 
 
 %%
@@ -155,6 +147,11 @@ else
 	GainAnalysis3(x,history_lengths,example_history_length,ph,data(td).LinearFit_p);
 end
 clear x
+hold off
+
+
+snapnow;
+delete(gcf);
 
 % save
 save('/local-data/DA-paper/data.mat','data','-append')
@@ -200,6 +197,10 @@ xlabel('Time (s)')
 legend ORN LinearFit
 PrettyFig;
 
+
+snapnow;
+delete(gcf);
+
 %%
 % How is the filter changed? The following figure shows the filter computed from this dataset compared to previous dataset.
 figure('outerposition',[0 0 400 400],'PaperUnits','points','PaperSize',[1000 400]); hold on
@@ -212,8 +213,15 @@ PrettyFig;
 legend ThisData PreviousData
 
 
+snapnow;
+delete(gcf);
+
 % plot statistics of the data: histograms and auto-correlation functions
 [act] = PlotDataStatistics(data,td);
+
+
+snapnow;
+delete(gcf);
 
 
 % We can perform a similar gain analysis like we did on the synthetic data on the real data from the ORN. The plot on the left compares the ORN response data (on the Y-axis) to the linear fit, while the plot on the right compares the data to the DA model fit. 
@@ -245,13 +253,136 @@ else
 end
 clear x
 
+
+snapnow;
+delete(gcf);
+
 % save
 save('/local-data/DA-paper/data.mat','data','-append')
 
-return
+
+
+ %   ##              #######  
+ % ####             ##     ## 
+ %   ##                    ## 
+ %   ##              #######  
+ %   ##             ##        
+ %   ##      ###    ##        
+ % ######    ###    ######### 
+
+ %%
+ % Now that we have shown that there is fast adaptation in one case, we will look at whether other ORNs, in responses to other odors, show the same fast adaptation. 
+
+%% 
+% 
+%
+% <latex>
+% \newpage
+% </latex>
+
+for td = setdiff(2:21,[7 9])
 
 
 
+ 	% detrend PID with a quadratic term
+	ptrend = fit(data(td).time(:),data(td).PID(:),'Poly2'); 
+	data(td).PID = data(td).PID(:) - (ptrend(data(td).time) - mean(ptrend(data(td).time)));
+
+
+	% build a simple linear model
+	[K,~,filtertime] = FindBestFilter(data(td).PID(500:end),data(td).ORN(500:end),[],'filter_length=201;','min_cutoff = 0;');
+	data(td).K = K;
+	data(td).filtertime = filtertime*mean(diff(data(td).time));
+	data(td).LinearFit = mean(data(td).ORN) + convolve(data(td).time,data(td).PID,data(td).K,data(td).filtertime);
+	data(td).LinearFit(data(td).LinearFit < 0) = 0;
+
+
+	figure('outerposition',[0 0 1000 400],'PaperUnits','points','PaperSize',[1000 400]); hold on
+	subplot(2,1,1), hold on
+	plot(data(td).time,data(td).PID,'k');
+	set(gca,'XLim',[mean(data(td).time)-5 mean(data(td).time)+5])
+
+ 	title(data(td).original_name,'interpreter','none')
+	ylabel('PID (V)')
+
+	subplot(2,1,2), hold on
+	plot(data(td).time,data(td).ORN,'k');
+	plot(data(td).time,data(td).LinearFit,'r');
+	set(gca,'XLim',[mean(data(td).time)-5 mean(data(td).time)+5])
+	ylabel('Firing Rate (Hz)')
+	xlabel('Time (s)')
+	legend ORN LinearFit
+	PrettyFig;
+
+	snapnow;
+	delete(gcf);
+
+
+	clear ph
+	figure('outerposition',[0 0 1300 400],'PaperUnits','points','PaperSize',[1300 400]); hold on
+	ph(1)=subplot(1,3,1); hold on
+	ph(2)=subplot(1,3,2); hold on
+	[act] = PlotDataStatistics(data,td,ph);
+
+	subplot(1,3,3), hold on;
+	plot(data(td).filtertime,data(td).K,'k','LineWidth',2)
+	set(gca,'XLim',[min(data(td).filtertime) max(data(td).filtertime)],'box','on')
+	xlabel('Filter Lag (s)')
+	title('Filter')
+	PrettyFig;
+
+	snapnow;
+	delete(gcf);
+
+
+	% do gain analysis
+	figure('outerposition',[0 0 1000 400],'PaperUnits','points','PaperSize',[1300 400]); hold on
+	clear ph
+	ph(3)=subplot(1,2,1); hold on; 	axis square
+	ph(4)=subplot(1,2,2); hold on;	axis square
+	s = 300; % when we start for the gain analysis
+	z = length(data(td).ORN); % where we end
+	step_size = 2*act/10;
+	if step_size < 0.03
+		step_size= 0.03;
+	else
+		step_size = 0.03*floor(step_size/0.03);
+	end
+	history_lengths = [.030:step_size:2*act];
+	example_history_length = history_lengths(3);
+
+	clear x
+	x.response = data(td).ORN(s:z);
+	x.prediction = data(td).LinearFit(s:z);
+	x.stimulus = data(td).PID(s:z);
+	x.time = data(td).time(s:z);
+	x.filter_length = 201;
+
+	redo_bootstrap = 0;
+	if redo_bootstrap
+		data(td).LinearFit_p = GainAnalysis3(x,history_lengths,example_history_length,ph);
+	else
+		if isempty(data(td).LinearFit_p)
+			data(td).LinearFit_p = GainAnalysis3(x,history_lengths,example_history_length,ph);
+		else
+			GainAnalysis3(x,history_lengths,example_history_length,ph,data(td).LinearFit_p);
+		end
+	end
+	clear x
+
+
+
+
+	snapnow;
+	delete(gcf);
+
+
+ end
+ clear td
+
+save('/local-data/DA-paper/data.mat','data','-append')
+
+ return
 
 
 
@@ -283,36 +414,6 @@ plot(data(2).time,data(2).LinearFit)
 subplot(1,4,4), hold on
 plot(data(2).time,data(2).DAFit)
 
-
-
-% ########        ###                                         
-% ##     ##      ## ##                                        
-% ##     ##     ##   ##                                       
-% ##     ##    ##     ##                                      
-% ##     ##    #########                                      
-% ##     ##    ##     ##                                      
-% ########     ##     ##              
-
-
-% ##     ##     #######     ########     ########    ##       
-% ###   ###    ##     ##    ##     ##    ##          ##       
-% #### ####    ##     ##    ##     ##    ##          ##       
-% ## ### ##    ##     ##    ##     ##    ######      ##       
-% ##     ##    ##     ##    ##     ##    ##          ##       
-% ##     ##    ##     ##    ##     ##    ##          ##       
-% ##     ##     #######     ########     ########    ######## 
-
-
-% ########    ####    ########                                
-% ##           ##        ##                                   
-% ##           ##        ##                                   
-% ######       ##        ##                                   
-% ##           ##        ##                                   
-% ##           ##        ##                                   
-% ##          ####       ##    
-
-%% Can the DA Model account for fast adaptation? 
-% Here we fit the DA model to the data. 
 
 
 return
@@ -362,62 +463,4 @@ PrettyFig;
 
 
 
-
-
-
-% ########     ####    ########    ########        
-% ##     ##     ##     ##          ##              
-% ##     ##     ##     ##          ##              
-% ##     ##     ##     ######      ######          
-% ##     ##     ##     ##          ##              
-% ##     ##     ##     ##          ##              
-% ########     ####    ##          ##   
-
-
-%  #######  ########   #######  ########   ######  
-% ##     ## ##     ## ##     ## ##     ## ##    ## 
-% ##     ## ##     ## ##     ## ##     ## ##       
-% ##     ## ##     ## ##     ## ########   ######  
-% ##     ## ##     ## ##     ## ##   ##         ## 
-% ##     ## ##     ## ##     ## ##    ##  ##    ## 
-%  #######  ########   #######  ##     ##  ######     
-
-%%
-% How does fast adaptation depend on odor type?
-
-
-
-
-
-
-%  #######  ########   #######  ##     ## ########        
-% ##     ## ##     ## ##     ## ##     ## ##     ##       
-% ##     ## ##     ## ##     ## ##     ## ##     ##       
-% ##     ## ##     ## ##     ## ##     ## ########        
-% ##     ## ##     ## ##     ## ##     ## ##   ##         
-% ##     ## ##     ## ##     ## ##     ## ##    ##        
-%  #######  ########   #######   #######  ##     ##       
-
-
-% ########  ##     ## ##        ######  ########  ######  
-% ##     ## ##     ## ##       ##    ## ##       ##    ## 
-% ##     ## ##     ## ##       ##       ##       ##       
-% ########  ##     ## ##        ######  ######    ######  
-% ##        ##     ## ##             ## ##             ## 
-% ##        ##     ## ##       ##    ## ##       ##    ## 
-% ##         #######  ########  ######  ########  ######  
-
-%%
-% Can the DA Model account for responses to pulses of odor?
-
-
-
-
-
-% ########     ##          ##     ##    ##     ##    ########     ######  
-% ##     ##    ##          ##     ##    ###   ###    ##          ##    ## 
-% ##     ##    ##          ##     ##    #### ####    ##          ##       
-% ########     ##          ##     ##    ## ### ##    ######       ######  
-% ##           ##          ##     ##    ##     ##    ##                ## 
-% ##           ##          ##     ##    ##     ##    ##          ##    ## 
-% ##           ########     #######     ##     ##    ########     ######                         
+              

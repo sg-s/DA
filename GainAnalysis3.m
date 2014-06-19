@@ -103,6 +103,11 @@ for i = 1:length(history_lengths)
 	f_low(isnan(fp_low)) = [];
 	fp_low(isnan(fp_low)) = [];
 
+	% censor times when f is 0?
+	f_low(f==0) = [];
+	f_hight(f==0) = [];
+	f(f==0) = [];
+
 	% fit lines
 	[flow gof] = fit(fp_low,f_low,'Poly1');
 	low_gof(i) = gof.rsquare;

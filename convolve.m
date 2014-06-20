@@ -42,11 +42,12 @@ if abs(fdt - dt)<eps
 	b = [b; NaN(offset,1)];
 elseif fdt == 1
 	% assume that filtertime is given in vector indices, and it is not time.
-	filtertime = filtertime*dt;
+	
 	b = filter(K,1,stimulus-mean(stimulus));
 	offset = abs(min(filtertime));
 	b(1:offset) = [];
 	b = [b; NaN(offset,1)];
+	filtertime = filtertime*dt;
 else
 	
 	disp('need to re-sample K to match time units of stimulus')

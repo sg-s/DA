@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013) (format=pdflatex 2013.5.30)  18 JUN 2014 16:40
+This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013) (format=pdflatex 2013.5.30)  19 JUN 2014 15:06
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -211,27 +211,27 @@ File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
 (Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 26.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <7> on input line 37.
+(Font)              <7> on input line 36.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <5> on input line 37.
+(Font)              <5> on input line 36.
 
 <DA_Paper_01.pdf, id=1, 1003.75pt x 501.875pt>
 File: DA_Paper_01.pdf Graphic file (type pdf)
  <use DA_Paper_01.pdf>
-Package pdftex.def Info: DA_Paper_01.pdf used on input line 46.
+Package pdftex.def Info: DA_Paper_01.pdf used on input line 45.
 (pdftex.def)             Requested size: 469.75502pt x 234.87808pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 46--47
+Overfull \hbox (10.0pt too wide) in paragraph at lines 45--46
 [][] 
  []
 
 <DA_Paper_02.pdf, id=2, 1003.75pt x 401.5pt>
 File: DA_Paper_02.pdf Graphic file (type pdf)
  <use DA_Paper_02.pdf>
-Package pdftex.def Info: DA_Paper_02.pdf used on input line 48.
+Package pdftex.def Info: DA_Paper_02.pdf used on input line 47.
 (pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 48--49
+Overfull \hbox (10.0pt too wide) in paragraph at lines 47--48
 [][] 
  []
 
@@ -242,20 +242,20 @@ per_01.pdf>] <DA_Paper_03.pdf, id=19, 1003.75pt x 501.875pt>
 File: DA_Paper_03.pdf Graphic file (type pdf)
 
 <use DA_Paper_03.pdf>
-Package pdftex.def Info: DA_Paper_03.pdf used on input line 53.
+Package pdftex.def Info: DA_Paper_03.pdf used on input line 52.
 (pdftex.def)             Requested size: 469.75502pt x 234.87808pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 53--54
+Overfull \hbox (10.0pt too wide) in paragraph at lines 52--53
 [][] 
  []
 
 <DA_Paper_04.pdf, id=20, 1003.75pt x 501.875pt>
 File: DA_Paper_04.pdf Graphic file (type pdf)
  <use DA_Paper_04.pdf>
-Package pdftex.def Info: DA_Paper_04.pdf used on input line 58.
+Package pdftex.def Info: DA_Paper_04.pdf used on input line 57.
 (pdftex.def)             Requested size: 469.75502pt x 234.87808pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 58--59
+Overfull \hbox (10.0pt too wide) in paragraph at lines 57--58
 [][] 
  []
 
@@ -263,20 +263,20 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 58--59
 <DA_Paper_05.pdf, id=32, 1003.75pt x 501.875pt>
 File: DA_Paper_05.pdf Graphic file (type pdf)
  <use DA_Paper_05.pdf>
-Package pdftex.def Info: DA_Paper_05.pdf used on input line 72.
+Package pdftex.def Info: DA_Paper_05.pdf used on input line 71.
 (pdftex.def)             Requested size: 469.75502pt x 234.87808pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 72--73
+Overfull \hbox (10.0pt too wide) in paragraph at lines 71--72
 [][] 
  []
 
 <DA_Paper_06.pdf, id=33, 1003.75pt x 401.5pt>
 File: DA_Paper_06.pdf Graphic file (type pdf)
  <use DA_Paper_06.pdf>
-Package pdftex.def Info: DA_Paper_06.pdf used on input line 77.
+Package pdftex.def Info: DA_Paper_06.pdf used on input line 76.
 (pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 77--78
+Overfull \hbox (10.0pt too wide) in paragraph at lines 76--77
 [][] 
  []
 
@@ -284,30 +284,588 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 77--78
 per_05.pdf>]
 File: DA_Paper_07.pdf Graphic file (type pdf)
  <use DA_Paper_07.pdf>
-Package pdftex.def Info: DA_Paper_07.pdf used on input line 79.
+Package pdftex.def Info: DA_Paper_07.pdf used on input line 78.
 (pdftex.def)             Requested size: 469.75502pt x 234.87808pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 79--80
+Overfull \hbox (10.0pt too wide) in paragraph at lines 78--79
 [][] 
  []
 
 <DA_Paper_08.pdf, id=44, 1003.75pt x 501.875pt>
 File: DA_Paper_08.pdf Graphic file (type pdf)
  <use DA_Paper_08.pdf>
-Package pdftex.def Info: DA_Paper_08.pdf used on input line 81.
+Package pdftex.def Info: DA_Paper_08.pdf used on input line 80.
 (pdftex.def)             Requested size: 469.75502pt x 234.87808pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 81--82
+Overfull \hbox (10.0pt too wide) in paragraph at lines 80--81
 [][] 
  []
 
 [4 <./DA_Paper_06.pdf> <./DA_Paper_07.pdf>] [5 <./DA_Paper_08.pdf>]
+<DA_Paper_09.pdf, id=62, 1003.75pt x 401.5pt>
+File: DA_Paper_09.pdf Graphic file (type pdf)
+ <use DA_Paper_09.pdf>
+Package pdftex.def Info: DA_Paper_09.pdf used on input line 90.
+(pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 90--91
+[][] 
+ []
+
+<DA_Paper_10.pdf, id=63, 1304.875pt x 401.5pt>
+File: DA_Paper_10.pdf Graphic file (type pdf)
+ <use DA_Paper_10.pdf>
+Package pdftex.def Info: DA_Paper_10.pdf used on input line 92.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 92--93
+[][] 
+ []
+
+<DA_Paper_11.pdf, id=64, 1304.875pt x 401.5pt>
+File: DA_Paper_11.pdf Graphic file (type pdf)
+ <use DA_Paper_11.pdf>
+Package pdftex.def Info: DA_Paper_11.pdf used on input line 94.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 94--95
+[][] 
+ []
+
+<DA_Paper_12.pdf, id=65, 1003.75pt x 401.5pt>
+File: DA_Paper_12.pdf Graphic file (type pdf)
+ <use DA_Paper_12.pdf>
+Package pdftex.def Info: DA_Paper_12.pdf used on input line 96.
+(pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 96--97
+[][] 
+ []
+
+<DA_Paper_13.pdf, id=66, 1304.875pt x 401.5pt> [6 <./DA_Paper_09.pdf> <./DA_Pap
+er_10.pdf> <./DA_Paper_11.pdf>]
+File: DA_Paper_13.pdf Graphic file (type pdf)
+ <use DA_Paper_13.pdf>
+Package pdftex.def Info: DA_Paper_13.pdf used on input line 98.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 98--99
+[][] 
+ []
+
+<DA_Paper_14.pdf, id=81, 1304.875pt x 401.5pt>
+File: DA_Paper_14.pdf Graphic file (type pdf)
+ <use DA_Paper_14.pdf>
+Package pdftex.def Info: DA_Paper_14.pdf used on input line 100.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 100--101
+[][] 
+ []
+
+<DA_Paper_15.pdf, id=82, 1003.75pt x 401.5pt>
+File: DA_Paper_15.pdf Graphic file (type pdf)
+ <use DA_Paper_15.pdf>
+Package pdftex.def Info: DA_Paper_15.pdf used on input line 102.
+(pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 102--103
+[][] 
+ []
+
+<DA_Paper_16.pdf, id=83, 1304.875pt x 401.5pt> [7 <./DA_Paper_12.pdf> <./DA_Pap
+er_13.pdf> <./DA_Paper_14.pdf>]
+File: DA_Paper_16.pdf Graphic file (type pdf)
+ <use DA_Paper_16.pdf>
+Package pdftex.def Info: DA_Paper_16.pdf used on input line 104.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 104--105
+[][] 
+ []
+
+<DA_Paper_17.pdf, id=99, 1304.875pt x 401.5pt>
+File: DA_Paper_17.pdf Graphic file (type pdf)
+ <use DA_Paper_17.pdf>
+Package pdftex.def Info: DA_Paper_17.pdf used on input line 106.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 106--107
+[][] 
+ []
+
+<DA_Paper_18.pdf, id=100, 1003.75pt x 401.5pt>
+File: DA_Paper_18.pdf Graphic file (type pdf)
+ <use DA_Paper_18.pdf>
+Package pdftex.def Info: DA_Paper_18.pdf used on input line 108.
+(pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 108--109
+[][] 
+ []
+
+<DA_Paper_19.pdf, id=101, 1304.875pt x 401.5pt> [8 <./DA_Paper_15.pdf> <./DA_Pa
+per_16.pdf> <./DA_Paper_17.pdf>]
+File: DA_Paper_19.pdf Graphic file (type pdf)
+ <use DA_Paper_19.pdf>
+Package pdftex.def Info: DA_Paper_19.pdf used on input line 110.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 110--111
+[][] 
+ []
+
+<DA_Paper_20.pdf, id=116, 1304.875pt x 401.5pt>
+File: DA_Paper_20.pdf Graphic file (type pdf)
+ <use DA_Paper_20.pdf>
+Package pdftex.def Info: DA_Paper_20.pdf used on input line 112.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 112--113
+[][] 
+ []
+
+<DA_Paper_21.pdf, id=117, 1003.75pt x 401.5pt>
+File: DA_Paper_21.pdf Graphic file (type pdf)
+ <use DA_Paper_21.pdf>
+Package pdftex.def Info: DA_Paper_21.pdf used on input line 114.
+(pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 114--115
+[][] 
+ []
+
+<DA_Paper_22.pdf, id=118, 1304.875pt x 401.5pt> [9 <./DA_Paper_18.pdf> <./DA_Pa
+per_19.pdf> <./DA_Paper_20.pdf>]
+File: DA_Paper_22.pdf Graphic file (type pdf)
+ <use DA_Paper_22.pdf>
+Package pdftex.def Info: DA_Paper_22.pdf used on input line 116.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 116--117
+[][] 
+ []
+
+<DA_Paper_23.pdf, id=133, 1304.875pt x 401.5pt>
+File: DA_Paper_23.pdf Graphic file (type pdf)
+ <use DA_Paper_23.pdf>
+Package pdftex.def Info: DA_Paper_23.pdf used on input line 118.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 118--119
+[][] 
+ []
+
+<DA_Paper_24.pdf, id=134, 1003.75pt x 401.5pt>
+File: DA_Paper_24.pdf Graphic file (type pdf)
+ <use DA_Paper_24.pdf>
+Package pdftex.def Info: DA_Paper_24.pdf used on input line 120.
+(pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 120--121
+[][] 
+ []
+
+<DA_Paper_25.pdf, id=135, 1304.875pt x 401.5pt> [10 <./DA_Paper_21.pdf> <./DA_P
+aper_22.pdf> <./DA_Paper_23.pdf>]
+File: DA_Paper_25.pdf Graphic file (type pdf)
+ <use DA_Paper_25.pdf>
+Package pdftex.def Info: DA_Paper_25.pdf used on input line 122.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 122--123
+[][] 
+ []
+
+<DA_Paper_26.pdf, id=151, 1304.875pt x 401.5pt>
+File: DA_Paper_26.pdf Graphic file (type pdf)
+ <use DA_Paper_26.pdf>
+Package pdftex.def Info: DA_Paper_26.pdf used on input line 124.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 124--125
+[][] 
+ []
+
+<DA_Paper_27.pdf, id=152, 1003.75pt x 401.5pt>
+File: DA_Paper_27.pdf Graphic file (type pdf)
+ <use DA_Paper_27.pdf>
+Package pdftex.def Info: DA_Paper_27.pdf used on input line 126.
+(pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 126--127
+[][] 
+ []
+
+<DA_Paper_28.pdf, id=153, 1304.875pt x 401.5pt> [11 <./DA_Paper_24.pdf> <./DA_P
+aper_25.pdf> <./DA_Paper_26.pdf>]
+File: DA_Paper_28.pdf Graphic file (type pdf)
+ <use DA_Paper_28.pdf>
+Package pdftex.def Info: DA_Paper_28.pdf used on input line 128.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 128--129
+[][] 
+ []
+
+<DA_Paper_29.pdf, id=167, 1304.875pt x 401.5pt>
+File: DA_Paper_29.pdf Graphic file (type pdf)
+ <use DA_Paper_29.pdf>
+Package pdftex.def Info: DA_Paper_29.pdf used on input line 130.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 130--131
+[][] 
+ []
+
+<DA_Paper_30.pdf, id=168, 1003.75pt x 401.5pt>
+File: DA_Paper_30.pdf Graphic file (type pdf)
+ <use DA_Paper_30.pdf>
+Package pdftex.def Info: DA_Paper_30.pdf used on input line 132.
+(pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 132--133
+[][] 
+ []
+
+<DA_Paper_31.pdf, id=169, 1304.875pt x 401.5pt> [12 <./DA_Paper_27.pdf> <./DA_P
+aper_28.pdf> <./DA_Paper_29.pdf>]
+File: DA_Paper_31.pdf Graphic file (type pdf)
+ <use DA_Paper_31.pdf>
+Package pdftex.def Info: DA_Paper_31.pdf used on input line 134.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 134--135
+[][] 
+ []
+
+<DA_Paper_32.pdf, id=184, 1304.875pt x 401.5pt>
+File: DA_Paper_32.pdf Graphic file (type pdf)
+ <use DA_Paper_32.pdf>
+Package pdftex.def Info: DA_Paper_32.pdf used on input line 136.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 136--137
+[][] 
+ []
+
+<DA_Paper_33.pdf, id=185, 1003.75pt x 401.5pt>
+File: DA_Paper_33.pdf Graphic file (type pdf)
+ <use DA_Paper_33.pdf>
+Package pdftex.def Info: DA_Paper_33.pdf used on input line 138.
+(pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 138--139
+[][] 
+ []
+
+<DA_Paper_34.pdf, id=186, 1304.875pt x 401.5pt> [13 <./DA_Paper_30.pdf> <./DA_P
+aper_31.pdf> <./DA_Paper_32.pdf>]
+File: DA_Paper_34.pdf Graphic file (type pdf)
+ <use DA_Paper_34.pdf>
+Package pdftex.def Info: DA_Paper_34.pdf used on input line 140.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 140--141
+[][] 
+ []
+
+<DA_Paper_35.pdf, id=202, 1304.875pt x 401.5pt>
+File: DA_Paper_35.pdf Graphic file (type pdf)
+ <use DA_Paper_35.pdf>
+Package pdftex.def Info: DA_Paper_35.pdf used on input line 142.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 142--143
+[][] 
+ []
+
+<DA_Paper_36.pdf, id=203, 1003.75pt x 401.5pt>
+File: DA_Paper_36.pdf Graphic file (type pdf)
+ <use DA_Paper_36.pdf>
+Package pdftex.def Info: DA_Paper_36.pdf used on input line 144.
+(pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 144--145
+[][] 
+ []
+
+<DA_Paper_37.pdf, id=204, 1304.875pt x 401.5pt> [14 <./DA_Paper_33.pdf> <./DA_P
+aper_34.pdf> <./DA_Paper_35.pdf>]
+File: DA_Paper_37.pdf Graphic file (type pdf)
+ <use DA_Paper_37.pdf>
+Package pdftex.def Info: DA_Paper_37.pdf used on input line 146.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 146--147
+[][] 
+ []
+
+<DA_Paper_38.pdf, id=219, 1304.875pt x 401.5pt>
+File: DA_Paper_38.pdf Graphic file (type pdf)
+ <use DA_Paper_38.pdf>
+Package pdftex.def Info: DA_Paper_38.pdf used on input line 148.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 148--149
+[][] 
+ []
+
+<DA_Paper_39.pdf, id=220, 1003.75pt x 401.5pt>
+File: DA_Paper_39.pdf Graphic file (type pdf)
+ <use DA_Paper_39.pdf>
+Package pdftex.def Info: DA_Paper_39.pdf used on input line 150.
+(pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 150--151
+[][] 
+ []
+
+<DA_Paper_40.pdf, id=221, 1304.875pt x 401.5pt> [15 <./DA_Paper_36.pdf> <./DA_P
+aper_37.pdf> <./DA_Paper_38.pdf>]
+File: DA_Paper_40.pdf Graphic file (type pdf)
+ <use DA_Paper_40.pdf>
+Package pdftex.def Info: DA_Paper_40.pdf used on input line 152.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 152--153
+[][] 
+ []
+
+<DA_Paper_41.pdf, id=235, 1304.875pt x 401.5pt>
+File: DA_Paper_41.pdf Graphic file (type pdf)
+ <use DA_Paper_41.pdf>
+Package pdftex.def Info: DA_Paper_41.pdf used on input line 154.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 154--155
+[][] 
+ []
+
+<DA_Paper_42.pdf, id=236, 1003.75pt x 401.5pt>
+File: DA_Paper_42.pdf Graphic file (type pdf)
+ <use DA_Paper_42.pdf>
+Package pdftex.def Info: DA_Paper_42.pdf used on input line 156.
+(pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 156--157
+[][] 
+ []
+
+<DA_Paper_43.pdf, id=237, 1304.875pt x 401.5pt> [16 <./DA_Paper_39.pdf> <./DA_P
+aper_40.pdf> <./DA_Paper_41.pdf>]
+File: DA_Paper_43.pdf Graphic file (type pdf)
+ <use DA_Paper_43.pdf>
+Package pdftex.def Info: DA_Paper_43.pdf used on input line 158.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 158--159
+[][] 
+ []
+
+<DA_Paper_44.pdf, id=251, 1304.875pt x 401.5pt>
+File: DA_Paper_44.pdf Graphic file (type pdf)
+ <use DA_Paper_44.pdf>
+Package pdftex.def Info: DA_Paper_44.pdf used on input line 160.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 160--161
+[][] 
+ []
+
+<DA_Paper_45.pdf, id=252, 1003.75pt x 401.5pt>
+File: DA_Paper_45.pdf Graphic file (type pdf)
+ <use DA_Paper_45.pdf>
+Package pdftex.def Info: DA_Paper_45.pdf used on input line 162.
+(pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 162--163
+[][] 
+ []
+
+<DA_Paper_46.pdf, id=253, 1304.875pt x 401.5pt> [17 <./DA_Paper_42.pdf> <./DA_P
+aper_43.pdf> <./DA_Paper_44.pdf>]
+File: DA_Paper_46.pdf Graphic file (type pdf)
+ <use DA_Paper_46.pdf>
+Package pdftex.def Info: DA_Paper_46.pdf used on input line 164.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 164--165
+[][] 
+ []
+
+<DA_Paper_47.pdf, id=267, 1304.875pt x 401.5pt>
+File: DA_Paper_47.pdf Graphic file (type pdf)
+ <use DA_Paper_47.pdf>
+Package pdftex.def Info: DA_Paper_47.pdf used on input line 166.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 166--167
+[][] 
+ []
+
+<DA_Paper_48.pdf, id=268, 1003.75pt x 401.5pt>
+File: DA_Paper_48.pdf Graphic file (type pdf)
+ <use DA_Paper_48.pdf>
+Package pdftex.def Info: DA_Paper_48.pdf used on input line 168.
+(pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 168--169
+[][] 
+ []
+
+<DA_Paper_49.pdf, id=269, 1304.875pt x 401.5pt> [18 <./DA_Paper_45.pdf> <./DA_P
+aper_46.pdf> <./DA_Paper_47.pdf>]
+File: DA_Paper_49.pdf Graphic file (type pdf)
+ <use DA_Paper_49.pdf>
+Package pdftex.def Info: DA_Paper_49.pdf used on input line 170.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 170--171
+[][] 
+ []
+
+<DA_Paper_50.pdf, id=285, 1304.875pt x 401.5pt>
+File: DA_Paper_50.pdf Graphic file (type pdf)
+ <use DA_Paper_50.pdf>
+Package pdftex.def Info: DA_Paper_50.pdf used on input line 172.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 172--173
+[][] 
+ []
+
+<DA_Paper_51.pdf, id=286, 1003.75pt x 401.5pt>
+File: DA_Paper_51.pdf Graphic file (type pdf)
+ <use DA_Paper_51.pdf>
+Package pdftex.def Info: DA_Paper_51.pdf used on input line 174.
+(pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 174--175
+[][] 
+ []
+
+<DA_Paper_52.pdf, id=287, 1304.875pt x 401.5pt> [19 <./DA_Paper_48.pdf> <./DA_P
+aper_49.pdf> <./DA_Paper_50.pdf>]
+File: DA_Paper_52.pdf Graphic file (type pdf)
+ <use DA_Paper_52.pdf>
+Package pdftex.def Info: DA_Paper_52.pdf used on input line 176.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 176--177
+[][] 
+ []
+
+<DA_Paper_53.pdf, id=303, 1304.875pt x 401.5pt>
+File: DA_Paper_53.pdf Graphic file (type pdf)
+ <use DA_Paper_53.pdf>
+Package pdftex.def Info: DA_Paper_53.pdf used on input line 178.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 178--179
+[][] 
+ []
+
+<DA_Paper_54.pdf, id=304, 1003.75pt x 401.5pt>
+File: DA_Paper_54.pdf Graphic file (type pdf)
+ <use DA_Paper_54.pdf>
+Package pdftex.def Info: DA_Paper_54.pdf used on input line 180.
+(pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 180--181
+[][] 
+ []
+
+<DA_Paper_55.pdf, id=305, 1304.875pt x 401.5pt> [20 <./DA_Paper_51.pdf> <./DA_P
+aper_52.pdf> <./DA_Paper_53.pdf>]
+File: DA_Paper_55.pdf Graphic file (type pdf)
+ <use DA_Paper_55.pdf>
+Package pdftex.def Info: DA_Paper_55.pdf used on input line 182.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 182--183
+[][] 
+ []
+
+<DA_Paper_56.pdf, id=319, 1304.875pt x 401.5pt>
+File: DA_Paper_56.pdf Graphic file (type pdf)
+ <use DA_Paper_56.pdf>
+Package pdftex.def Info: DA_Paper_56.pdf used on input line 184.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 184--185
+[][] 
+ []
+
+<DA_Paper_57.pdf, id=320, 1003.75pt x 401.5pt>
+File: DA_Paper_57.pdf Graphic file (type pdf)
+ <use DA_Paper_57.pdf>
+Package pdftex.def Info: DA_Paper_57.pdf used on input line 186.
+(pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 186--187
+[][] 
+ []
+
+<DA_Paper_58.pdf, id=321, 1304.875pt x 401.5pt> [21 <./DA_Paper_54.pdf> <./DA_P
+aper_55.pdf> <./DA_Paper_56.pdf>]
+File: DA_Paper_58.pdf Graphic file (type pdf)
+ <use DA_Paper_58.pdf>
+Package pdftex.def Info: DA_Paper_58.pdf used on input line 188.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 188--189
+[][] 
+ []
+
+<DA_Paper_59.pdf, id=335, 1304.875pt x 401.5pt>
+File: DA_Paper_59.pdf Graphic file (type pdf)
+ <use DA_Paper_59.pdf>
+Package pdftex.def Info: DA_Paper_59.pdf used on input line 190.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 190--191
+[][] 
+ []
+
+<DA_Paper_60.pdf, id=336, 1003.75pt x 401.5pt>
+File: DA_Paper_60.pdf Graphic file (type pdf)
+ <use DA_Paper_60.pdf>
+Package pdftex.def Info: DA_Paper_60.pdf used on input line 192.
+(pdftex.def)             Requested size: 469.75502pt x 187.90247pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 192--193
+[][] 
+ []
+
+<DA_Paper_61.pdf, id=337, 1304.875pt x 401.5pt> [22 <./DA_Paper_57.pdf> <./DA_P
+aper_58.pdf> <./DA_Paper_59.pdf>]
+File: DA_Paper_61.pdf Graphic file (type pdf)
+ <use DA_Paper_61.pdf>
+Package pdftex.def Info: DA_Paper_61.pdf used on input line 194.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 194--195
+[][] 
+ []
+
+<DA_Paper_62.pdf, id=351, 1304.875pt x 401.5pt>
+File: DA_Paper_62.pdf Graphic file (type pdf)
+ <use DA_Paper_62.pdf>
+Package pdftex.def Info: DA_Paper_62.pdf used on input line 196.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 196--197
+[][] 
+ []
+
+[23 <./DA_Paper_60.pdf> <./DA_Paper_61.pdf> <./DA_Paper_62.pdf>]
 (./DA_Paper.aux) ) 
 Here is how much of TeX's memory you used:
- 2064 strings out of 493315
- 30208 string characters out of 6137904
+ 2334 strings out of 493315
+ 35284 string characters out of 6137904
  93732 words of memory out of 5000000
- 5501 multiletter control sequences out of 15000+600000
+ 5717 multiletter control sequences out of 15000+600000
  7150 words of font info for 26 fonts, out of 8000000 for 9000
  957 hyphenation exceptions out of 8191
  38i,6n,32p,399b,189s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -320,10 +878,10 @@ mr7.pfb></usr/local/texlive/2013/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy
 10.pfb></usr/local/texlive/2013/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7
 .pfb></usr/local/texlive/2013/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.
 pfb>
-Output written on DA_Paper.pdf (5 pages, 1726021 bytes).
+Output written on DA_Paper.pdf (23 pages, 14448990 bytes).
 PDF statistics:
- 88 PDF objects out of 1000 (max. 8388607)
- 64 compressed objects within 1 object stream
+ 392 PDF objects out of 1000 (max. 8388607)
+ 294 compressed objects within 3 object streams
  0 named destinations out of 1000 (max. 500000)
- 41 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 311 words of extra memory for PDF output out of 10000 (max. 10000000)
 

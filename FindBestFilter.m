@@ -34,6 +34,17 @@ filtertime = [-offset:filter_length-offset];
 
 if algo == 1
 	%% Chichilnisky's method. 
+
+
+	if regmax == regmin
+		% just use what's given, don't optimise
+		flstr = strcat('filter_length=',mat2str(filter_length),';');
+		regstr = strcat('reg=',mat2str(regmax),';');
+		[K, C] = FitFilter2Data(stim,response,OnlyThesePoints,flstr,regstr);
+		diagnostics = [];
+		return
+	end
+
 	nsteps = 20;
 	ss = (log(regmax)-log(regmin))/nsteps;
 	reg = log(regmin):ss:log(regmax);

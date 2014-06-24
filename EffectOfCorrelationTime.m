@@ -20,6 +20,7 @@ plot(at,a100,'g')
 set(gca,'XLim',[0 0.3])
 xlabel('lag (s)')
 ylabel('Autocorrelation')
+title('Valve')
 PrettyFig;
 legend 30ms 50ms 100ms
 
@@ -31,6 +32,7 @@ subplot(1,3,2), hold on
 plot(at,a30,'k')
 plot(at,a50,'r')
 plot(at,a100,'g')
+title('PID')
 set(gca,'XLim',[0 0.3])
 legend 30ms 50ms 100ms
 
@@ -43,10 +45,11 @@ plot(at,a30,'k')
 plot(at,a50,'r')
 plot(at,a100,'g')
 set(gca,'XLim',[0 0.3])
+title('ORN')
 PrettyFig;
 legend 30ms 50ms 100ms
 
-%%
+%% Are filters different for different correlations?
 % Now we fit filters to these data sets. In the figure below, the filters on the left are calculated using a fixed regularisation (of 1), and the filters on the right, the regularisation is varied in each case to find the "best" filter, minimising errors, high frequency components, and having a gain as close to unity as possible. In either case, we see the filters are slightly different for the three data sets; the correlation time of the stimulus seems to affect the filter we extract. 
 
 K30=FindBestFilter(data(4).PID, data(4).ORN, [],'min_cutoff =0;','regmax =1;','regmin =1;');
@@ -62,6 +65,7 @@ plot(filtertime,K50/max(K50),'r')
 plot(filtertime,K100/max(K100),'g')
 legend 30ms 50ms 100ms
 set(gca,'XLim',[min(filtertime) max(data(4).filtertime)],'YLim',[-0.5 1.2])
+title('Fixed regularisation')
 xlabel('Filter Lag')
 PrettyFig;
 
@@ -71,6 +75,7 @@ plot(data(3).filtertime,data(3).K/max(data(3).K),'r')
 plot(data(5).filtertime,data(5).K/max(data(5).K),'g')
 legend 30ms 50ms 100ms
 set(gca,'XLim',[min(data(4).filtertime) max(data(4).filtertime)],'YLim',[-0.5 1.2])
+title('"Best" regularisation')
 xlabel('Filter Lag')
 PrettyFig;
 
@@ -112,7 +117,7 @@ legend 30ms 50ms 100ms
 xlabel('ORN Response (Hz)')
 PrettyFig;
 
-%%
+%% Cross-prediction using different filters
 % To disentangle the effects of filter amplitude from possible changes in filter shape, we fit a static non-linearity to the output of each linear filter and use that to predict the output.
 
 this_filter = data(4).K/max(data(4).K);
@@ -133,6 +138,10 @@ x = min(fp):ss:max(fp);
 plot(x,hill(NLN(1,:),x),'k')
 plot(x,hill(NLN(2,:),x),'r')
 plot(x,hill(NLN(3,:),x),'g')
+xlabel('Input to NonLinearity')
+xlabel('Function Output (Hz)')
+legend 30ms 50ms 100ms
+PrettyFig;
 
 
 %%
@@ -179,6 +188,7 @@ set(gca,'XLim',[mean(data(5).time)-3  mean(data(5).time)+2])
 legend 100msData SamePrediction DifferentPrediction
 ylabel('Firing Rate (Hz)')
 PrettyFig;
+
 %%
 % How good are these cross-predictions? For the three data sets we have, we measure how well the filter from each data set predicts the data. In the matrix below, the element in ith row and jth column shows the r-square of linear prediction by the ith filter to jth data set, where the first data set has 30ms correlated stimulus, the second has 50ms correlated stimulus, and the 3rd has 100ms correlated stimulus. 
 
@@ -208,8 +218,8 @@ disp(r)
 %%
 % In particular, predictions using the fastest filter outperform predictions even from filters from the same data set. 
 
-%%
-% What effect does using stimuli with various correlation lengths have on our estimation of the filter? 
+%% Synthetic data: filter and non-linearity estimation
+% What effect does using stimuli with various correlation lengths have on our estimation of the filter? Here we use a "fake" filter to represent the neuron, and pass stimuli with various correlation lengths to it, and then back out the filter from the synthetic data output. 
 
 % make a fake filter
 t=1:202;
@@ -244,10 +254,46 @@ fake_K2=FindBestFilter(data(3).PID, fakeORN2, []);
 fake_K3=FindBestFilter(data(5).PID, fakeORN3, []);
 fake_K4=FindBestFilter(pt, fakeORN4, []);
 
-figure, hold on
-plot(fake_K1/max(fake_K1),'k')
-plot(fake_K2/max(fake_K2),'r')
-plot(fake_K3/max(fake_K3),'g')
-plot(fake_K4/max(fake_K4),'b')
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+filtertime=mean(diff(data(4).time)):mean(diff(data(4).time)):mean(diff(data(4).time))*length(fake_K1);
+filtertime = filtertime - 0.1*max(filtertime);
+plot(filtertime,fake_K1/max(fake_K1),'k')
+plot(filtertime,fake_K2/max(fake_K2),'r')
+plot(filtertime,fake_K3/max(fake_K3),'g')
+plot(filtertime,fake_K4/max(fake_K4),'b')
+legend 30ms 50ms 100ms 200ms 
+title('Reconstructed Filters')
+set(gca,'XLim',[min(filtertime) max(filtertime)])
+xlabel('Filter Lag (s)')
+PrettyFig;
 
+% now back out nonlinearities 
+% fake_K1 = fake_K1/max(fake_K1);
+% fake_K2 = fake_K2/max(fake_K2);
+% fake_K3 = fake_K3/max(fake_K3);
+% fake_K4 = fake_K4/max(fake_K4);
+
+% fp1 = convolve(data(4).time,data(4).PID,fake_K1,filtertime);
+% fp2 = convolve(data(3).time,data(3).PID,fake_K2,filtertime);
+% fp3 = convolve(data(5).time,data(5).PID,fake_K3,filtertime);
+% fp4 = convolve(data(5).time,pt,fake_K4,filtertime);
+
+% clear NLN
+% [~, NLN(1,1), NLN(1,2), NLN(1,3)] = FitNonLinearity(fp1,fakeORN1,'hill');
+% [~, NLN(2,1), NLN(2,2), NLN(2,3)] = FitNonLinearity(fp2,fakeORN2,'hill');
+% [~, NLN(3,1), NLN(3,2), NLN(3,3)] = FitNonLinearity(fp3,fakeORN3,'hill');
+% [~, NLN(4,1), NLN(4,2), NLN(4,3)] = FitNonLinearity(fp4,fakeORN4,'hill');
+
+% subplot(1,2,2), hold on
+% ss = max(fp1)/200;
+% x = min(fp1):ss:max(fp1);
+% plot(x,hill(NLN(1,:),x),'k')
+% plot(x,hill(NLN(2,:),x),'r')
+% plot(x,hill(NLN(3,:),x),'g')
+% plot(x,hill(NLN(4,:),x),'b')
+% xlabel('Input to NonLinearity')
+% xlabel('Function Output (Hz)')
+% legend 30ms 50ms 100ms 200ms
+% PrettyFig;
 

@@ -44,14 +44,19 @@ while isempty(act)
 end
 [y1,x1] = autocorr(data(td).ORN,stop_here);
 x1=x1*mean(diff(data(td).time));
+
+[y2,x2] = autocorr(data(td).Valve,stop_here);
+x2=x2*mean(diff(data(td).time));
+
 if nargin == 2
 	subplot(1,2,2); hold on
 	plot(x,y,'k'), hold on
 	plot(x1,y1,'b'), hold on
+	plot(x2,y2,'r'), hold on
 	title('Autocorrelation')
 	set(gca,'box','on','XLim',[min(x) max(x)])
 	xlabel('Lag (s)')
-	legend Stimulus ORN
+	legend Stimulus ORN Valve
 
 	PrettyFig;
 else

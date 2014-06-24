@@ -96,7 +96,7 @@ else
 end
 clear x
 hold off
-
+set(ph(4),'YLim',[0.7 1.4],'XLim',[-0.01 max(history_lengths)])
 
 snapnow;
 delete(gcf);
@@ -107,7 +107,7 @@ save('/local-data/DA-paper/data.mat','data','-append')
 %%
 % The gain as a function of history length is pretty weird. Why does it not go to 1 when history length is 0? Why is there a mysterious bump around the shortest non-zero history length? 
 
-%%
+%% Sanity check: Linear synthetic data vs. linear gain analysis
 % To figure this out, let's first repeat the gain analysis, but instead of using the ORN response, we use the linear prediction itself. 
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
@@ -121,13 +121,13 @@ example_history_length = 0.09;
 history_lengths = [0:0.03:2*act];
 
 clear x
-x.response = data(td).LinearFit(s:z) + randn(length(data(td).LinearFit(s:z)),1);
+x.response = data(td).LinearFit(s:z);
 x.prediction = data(td).LinearFit(s:z);
 x.stimulus = data(td).PID(s:z);
 x.time = data(td).time(s:z);
 x.filter_length = 201;
 
-redo_bootstrap = 1;
+redo_bootstrap = 0;
 if redo_bootstrap
 	p_linear_ORN = GainAnalysis3(x,history_lengths,example_history_length,ph);
 else
@@ -135,7 +135,152 @@ else
 end
 clear x
 hold off
+set(ph(4),'YLim',[0.7 1.4],'XLim',[-0.01 max(history_lengths)])
+snapnow;
+delete(gcf);
 
+%% Synthetic Data: DA Model vs. Linear Gain Analysis
+% Do we still see the weird behaviour of the slope plots with synthetic data? Here we generate the synthetic neuron data by using a DA model to simulate neuron output, with parameters roughly chosen to somewhat match actual ORN statistics. 
+
+p.n_z = 2;
+p.n_y = 2;
+p.C = 0.3; p.A = 9500; p.B = 25; p.r0 = -80;
+p.tau_y = 4; p.tau_z = 8;
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+s = 300; % when we start for the gain analysis
+z = length(data(td).ORN); % where we end
+example_history_length = 0.111;
+history_lengths = [0:mean(diff(data(td).time)):0.02 0.021:0.03:2*act];
+
+clear x
+% generate fake data
+f=DA_integrate2(data(td).PID,p);
+[K,~,filtertime] = FindBestFilter(data(td).PID,f);
+fp=mean(f(s:z))+convolve(data(td).time,data(td).PID,K,filtertime);
+
+
+x.response = f(s:z);
+x.prediction = fp(s:z);
+x.stimulus = data(td).PID(s:z);
+x.time = data(td).time(s:z);
+x.filter_length = length(K);
+
+redo_bootstrap = 1;
+if redo_bootstrap
+	p_fake_ORN = GainAnalysis3(x,history_lengths,example_history_length,ph);
+else
+	GainAnalysis3(x,history_lengths,example_history_length,ph,p_fake_ORN);
+end
+clear x
+hold off
+set(ph(4),'YLim',[0.7 1.4],'XLim',[-0.01 max(history_lengths)])
+
+snapnow;
+delete(gcf);
+
+
+%% Synthetic Data: DA Model with exp. gaussian inputs vs. Linear Gain Analysis
+% So we still see this weird thing. Maybe it's because of something in the stimulus? Now we use the same model but now feed it with exponentiated Gaussian inputs. 
+
+p.n_z = 2;
+p.n_y = 2;
+p.C = 0.3; p.A = 9500; p.B = 25; p.r0 = -80;
+p.tau_y = 4; p.tau_z = 8;
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+
+example_history_length = 0.111;
+history_lengths = [0:mean(diff(data(td).time)):0.02 0.021:0.03:2*act];
+
+clear x
+% generate fake data
+stim = exp(rand(3000,1));
+t = mean(diff(data(td).time)):mean(diff(data(td).time)):mean(diff(data(td).time))*length(stim);
+f=DA_integrate2(stim,p);
+[K,~,filtertime] = FindBestFilter(stim,f,[],'filter_length=200;');
+
+s = 300; % when we start for the gain analysis
+z = length(stim); % where we end
+fp=mean(f(s:z))+convolve(t,stim,K,filtertime);
+
+x.response = f(s:z);
+x.prediction = fp(s:z);
+x.stimulus = stim(s:z);
+x.time = t(s:z);
+x.filter_length = length(K);
+
+redo_bootstrap = 1;
+if redo_bootstrap
+	p_fake_ORN2 = GainAnalysis3(x,history_lengths,example_history_length,ph);
+else
+	GainAnalysis3(x,history_lengths,example_history_length,ph,p_fake_ORN2);
+end
+clear x
+hold off
+set(ph(4),'YLim',[0.7 1.4],'XLim',[-0.01 max(history_lengths)])
+
+snapnow;
+delete(gcf);
+
+
+%%
+% OK, now the slopes go to unity as the history length goes to 0. What about the stimulus causes the slopes not to go to 1? Perhaps filtering the stimulus makes this effect come back. 
+
+p.n_z = 2;
+p.n_y = 2;
+p.C = 0.3; p.A = 9500; p.B = 25; p.r0 = -80;
+p.tau_y = 4; p.tau_z = 8;
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+
+example_history_length = 0.111;
+history_lengths = [0:mean(diff(data(td).time)):0.02 0.021:0.03:2*act];
+
+clear x
+% generate fake data
+stim_old = exp(rand(3000,1));
+stim = filter(ones(1,40)/40,1,stim_old);
+t = mean(diff(data(td).time)):mean(diff(data(td).time)):mean(diff(data(td).time))*length(stim);
+f=DA_integrate2(stim,p);
+
+f(1:100) = [];
+t(1:100) = [];
+stim(1:100) = [];
+
+[K,~,filtertime] = FindBestFilter(stim,f,[],'filter_length=200;');
+
+s = 300; % when we start for the gain analysis
+z = length(stim); % where we end
+fp=mean(f(s:z))+convolve(t,stim,K,filtertime);
+
+x.response = f(s:z);
+x.prediction = fp(s:z);
+x.stimulus = stim(s:z);
+x.time = t(s:z);
+x.filter_length = length(K);
+
+redo_bootstrap = 0;
+if redo_bootstrap
+	p_fake_ORN2 = GainAnalysis3(x,history_lengths,example_history_length,ph);
+else
+	GainAnalysis3(x,history_lengths,example_history_length,ph,p_fake_ORN2);
+end
+clear x
+hold off
+% set(ph(4),'YLim',[0.7 1.4],'XLim',[-0.01 max(history_lengths)])
 
 snapnow;
 delete(gcf);

@@ -25,13 +25,7 @@ hl = round(history_lengths/dt);
 
 
 % compute shat
-shat = NaN(length(hl),length(stimulus));
-for i = 1:length(hl)
-	shat(i,:) = filter(ones(1,hl(i))/hl(i),1,stimulus);
-	shat(i,1:hl(i)) = NaN;
-end
-
-
+shat = ComputeSmoothedStimulus(stimulus,hl);
 
 % parameters
 nrep = 100; % how many times do we bootstrap the data?

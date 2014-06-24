@@ -60,7 +60,7 @@ subplot(1,2,1), hold on
 plot(filtertime,K30/max(K30),'k')
 plot(filtertime,K50/max(K50),'r')
 plot(filtertime,K100/max(K100),'g')
-
+legend 30ms 50ms 100ms
 set(gca,'XLim',[min(filtertime) max(data(4).filtertime)],'YLim',[-0.5 1.2])
 xlabel('Filter Lag')
 PrettyFig;
@@ -69,23 +69,92 @@ subplot(1,2,2), hold on
 plot(data(4).filtertime,data(4).K/max(data(4).K),'k')
 plot(data(3).filtertime,data(3).K/max(data(3).K),'r')
 plot(data(5).filtertime,data(5).K/max(data(5).K),'g')
-
+legend 30ms 50ms 100ms
 set(gca,'XLim',[min(data(4).filtertime) max(data(4).filtertime)],'YLim',[-0.5 1.2])
 xlabel('Filter Lag')
 PrettyFig;
 
 %%
-% How good are these filters at estimating the data? In the figure we below, we show the two extreme cases (the 30ms and 100ms correlated data) and the predictions from the filters calculated from their own data sets, along with predictions from filters calculated using the others' data. 
+% These filters differ not only in their shape but also their amplitude, which is a simple scaling because the input statistics are different. 
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(data(4).filtertime,data(4).K,'k')
+plot(data(3).filtertime,data(3).K,'r')
+plot(data(5).filtertime,data(5).K,'g')
+legend 30ms 50ms 100ms
+set(gca,'XLim',[min(data(4).filtertime) max(data(4).filtertime)])
+xlabel('Filter Lag (s)')
+PrettyFig;
+
+%%
+% Why does the filter amplitude change so much? let's look at the stimulus and the response histograms:
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+[y,x] = hist(data(4).PID);
+plot(x,y,'k')
+[y,x] = hist(data(3).PID);
+plot(x,y,'r')
+[y,x] = hist(data(5).PID);
+plot(x,y,'g')
+legend 30ms 50ms 100ms
+xlabel('Stimulus Amplitude (PID, V)')
+PrettyFig;
+
+subplot(1,2,2), hold on
+[y,x] = hist(data(4).ORN);
+plot(x,y,'k')
+[y,x] = hist(data(3).ORN);
+plot(x,y,'r')
+[y,x] = hist(data(5).ORN);
+plot(x,y,'g')
+legend 30ms 50ms 100ms
+xlabel('ORN Response (Hz)')
+PrettyFig;
+
+%%
+% To disentangle the effects of filter amplitude from possible changes in filter shape, we fit a static non-linearity to the output of each linear filter and use that to predict the output.
+
+this_filter = data(4).K/max(data(4).K);
+fp = convolve(data(4).time,data(4).PID,this_filter,data(4).filtertime);
+[~, NLN(1,1), NLN(1,2), NLN(1,3)] = FitNonLinearity(fp,data(4).ORN,'hill');
+
+this_filter = data(3).K/max(data(3).K);
+fp = convolve(data(3).time,data(3).PID,this_filter,data(3).filtertime);
+[~, NLN(2,1), NLN(2,2), NLN(2,3)] = FitNonLinearity(fp,data(3).ORN,'hill');
+
+this_filter = data(5).K/max(data(5).K);
+fp = convolve(data(5).time,data(5).PID,this_filter,data(5).filtertime);
+[~, NLN(3,1), NLN(3,2), NLN(3,3)] = FitNonLinearity(fp,data(5).ORN,'hill');
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ss = max(fp)/200;
+x = min(fp):ss:max(fp);
+plot(x,hill(NLN(1,:),x),'k')
+plot(x,hill(NLN(2,:),x),'r')
+plot(x,hill(NLN(3,:),x),'g')
+
+
+%%
+% How good are these filters at estimating the data? In the figure we below, we show the two extreme cases (the 30ms and 100ms correlated data) and the predictions from the filters calculated from their own data sets, along with predictions from filters calculated using the others' data. The cross-prediction filter outputs are then passed through the corresponding static non-linearities, 
 
 
 figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
 subplot(2,1,1), hold on
 plot(data(4).time,data(4).ORN,'k')
-plot(data(4).time,data(4).LinearFit,'g')
+
+% self predict
+this_filter = data(4).K/max(data(4).K);
+fp = convolve(data(4).time,data(4).PID,this_filter,data(4).filtertime);
+fp = FitNonLinearity(fp,data(4).ORN,'hill');
+plot(data(4).time,fp,'g')
+
 % cross predict
-fp = mean(data(4).ORN) + convolve(data(4).time,data(4).PID,data(5).K,data(5).filtertime);
-fp(fp<0)=0;
+this_filter = data(5).K/max(data(5).K);
+fp = convolve(data(4).time,data(4).PID,this_filter,data(5).filtertime);
+fp = FitNonLinearity(fp,data(4).ORN,'hill');
 plot(data(4).time,fp,'r')
+
 set(gca,'XLim',[mean(data(4).time)-3  mean(data(4).time)+2])
 legend 30msData SamePrediction DifferentPrediction
 ylabel('Firing Rate (Hz)')
@@ -93,16 +162,23 @@ PrettyFig;
 
 subplot(2,1,2), hold on
 plot(data(5).time,data(5).ORN,'k')
-plot(data(5).time,data(5).LinearFit,'g')
+
+% self predict
+this_filter = data(5).K/max(data(5).K);
+fp = convolve(data(5).time,data(5).PID,this_filter,data(5).filtertime);
+fp = FitNonLinearity(fp,data(5).ORN,'hill');
+plot(data(5).time,fp,'g')
+
 % cross predict
-fp = mean(data(5).ORN) + convolve(data(5).time,data(5).PID,data(4).K,data(4).filtertime);
-fp(fp<0)=0;
+this_filter = data(4).K/max(data(4).K);
+fp = convolve(data(5).time,data(5).PID,this_filter,data(5).filtertime);
+fp = FitNonLinearity(fp,data(5).ORN,'hill');
 plot(data(5).time,fp,'r')
+
 set(gca,'XLim',[mean(data(5).time)-3  mean(data(5).time)+2])
 legend 100msData SamePrediction DifferentPrediction
 ylabel('Firing Rate (Hz)')
 PrettyFig;
-
 %%
 % How good are these cross-predictions? For the three data sets we have, we measure how well the filter from each data set predicts the data. In the matrix below, the element in ith row and jth column shows the r-square of linear prediction by the ith filter to jth data set, where the first data set has 30ms correlated stimulus, the second has 50ms correlated stimulus, and the 3rd has 100ms correlated stimulus. 
 
@@ -114,7 +190,9 @@ for i = 1:3
 		% use ith filter to predict j data
 		a = this_data(i);
 		b= this_data(j);
-		fp = mean(data(b).ORN) + convolve(data(a).time,data(b).PID,data(a).K,data(a).filtertime);
+		this_filter = data(a).K/max(data(a).K);
+		this_filter = this_filter*max(data(b).K);
+		fp = mean(data(b).ORN) + convolve(data(a).time,data(b).PID,this_filter,data(a).filtertime);
 		fp(fp<0)=0;
 
 		% compute r-square
@@ -129,5 +207,47 @@ disp(r)
 
 %%
 % In particular, predictions using the fastest filter outperform predictions even from filters from the same data set. 
+
+%%
+% What effect does using stimuli with various correlation lengths have on our estimation of the filter? 
+
+% make a fake filter
+t=1:202;
+p.theta=0.2000;
+p.k=100;
+p2.theta=0.400;
+p2.k=100;
+fake_K = (GammaDist(t,p) -  0.7*GammaDist(t,p2));
+fake_K = fake_K/max(fake_K);
+fake_K = fake_K*max(data(4).K);
+clear p
+
+% make fake orn outputs
+fakeORN1 = convolve(data(4).time,data(4).PID,fake_K,data(4).filtertime);
+fakeORN2 = convolve(data(3).time,data(3).PID,fake_K,data(3).filtertime);
+fakeORN3 = convolve(data(5).time,data(5).PID,fake_K,data(5).filtertime);
+p = data(5).PID(1:length(data(5).PID)/2);
+pt = data(5).time(1:2:end);
+pt = interp1(pt,p,data(5).time);
+pt(end) = 0;
+fakeORN4 = convolve(data(5).time,pt,fake_K,data(5).filtertime);
+
+% add noise
+fakeORN1 = fakeORN1 + randn(length(fakeORN1),1);
+fakeORN2 = fakeORN2 + randn(length(fakeORN2),1);
+fakeORN3 = fakeORN3 + randn(length(fakeORN3),1);
+fakeORN4 = fakeORN4 + randn(length(fakeORN4),1);
+
+% back out filters
+fake_K1=FindBestFilter(data(4).PID, fakeORN1, []);
+fake_K2=FindBestFilter(data(3).PID, fakeORN2, []);
+fake_K3=FindBestFilter(data(5).PID, fakeORN3, []);
+fake_K4=FindBestFilter(pt, fakeORN4, []);
+
+figure, hold on
+plot(fake_K1/max(fake_K1),'k')
+plot(fake_K2/max(fake_K2),'r')
+plot(fake_K3/max(fake_K3),'g')
+plot(fake_K4/max(fake_K4),'b')
 
 

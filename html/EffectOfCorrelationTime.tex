@@ -36,17 +36,27 @@ Now we fit filters to these data sets. In the figure below, the filters on the l
 
 \includegraphics [width=\textwidth]{EffectOfCorrelationTime_02.pdf}
 \begin{par}
-How good are these filters at estimating the data? In the figure we below, we show the two extreme cases (the 30ms and 100ms correlated data) and the predictions from the filters calculated from their own data sets, along with predictions from filters calculated using the others' data.
+These filters differ not only in their shape but also their amplitude, which is a simple scaling because the input statistics are different.
 \end{par} \vspace{1em}
 
 \includegraphics [width=\textwidth]{EffectOfCorrelationTime_03.pdf}
 \begin{par}
+Why does the filter amplitude change so much? let's look at the stimulus and the response histograms:
+\end{par} \vspace{1em}
+
+\includegraphics [width=\textwidth]{EffectOfCorrelationTime_04.pdf}
+\begin{par}
+How good are these filters at estimating the data? In the figure we below, we show the two extreme cases (the 30ms and 100ms correlated data) and the predictions from the filters calculated from their own data sets, along with predictions from filters calculated using the others' data. The cross-prediction filters are re-scaled by the amplitude of the self-prediction filters, so all differences in prediction are due to filter \textit{shape} and not due to filter \textit{amplitude}
+\end{par} \vspace{1em}
+
+\includegraphics [width=\textwidth]{EffectOfCorrelationTime_05.pdf}
+\begin{par}
 How good are these cross-predictions? For the three data sets we have, we measure how well the filter from each data set predicts the data. In the matrix below, the element in ith row and jth column shows the r-square of linear prediction by the ith filter to jth data set, where the first data set has 30ms correlated stimulus, the second has 50ms correlated stimulus, and the 3rd has 100ms correlated stimulus.
 \end{par} \vspace{1em}
 
-        \color{lightgray} \begin{verbatim}    0.9344    0.9638    0.9424
-    0.8271    0.9486    0.8788
-    0.8991    0.9601    0.9397
+        \color{lightgray} \begin{verbatim}    0.9344    0.9273    0.9155
+    0.8365    0.9486    0.8939
+    0.9137    0.9363    0.9397
 
 \end{verbatim} \color{black}
     \begin{par}

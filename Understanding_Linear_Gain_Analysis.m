@@ -12,6 +12,7 @@ load('/local-data/DA-paper/data.mat')
 %%
 % This data file is used for the following analysis:
 td = 7;
+redo_bootstrap = 1;
 
 disp(data(td).original_name)
 
@@ -88,11 +89,10 @@ x.stimulus = data(td).PID(s:z);
 x.time = data(td).time(s:z);
 x.filter_length = 201;
 
-redo_bootstrap = 0;
 if redo_bootstrap
 	data(td).LinearFit_p = GainAnalysis3(x,history_lengths,example_history_length,ph);
 else
-	GainAnalysis3(x,history_lengths,example_history_length,ph,data(td).LinearFit_p);
+	GainAnalysis3(x,history_lengths,example_history_length,ph,Inf*history_lengths);
 end
 clear x
 hold off
@@ -105,7 +105,7 @@ delete(gcf);
 save('/local-data/DA-paper/data.mat','data','-append')
 
 %%
-% The gain as a function of history length is pretty weird. Why does it not go to 1 when history length is 0? Why is there a mysterious bump around the shortest non-zero history length? 
+% The gain as a function of history length is pretty weird. Why does it not go to 1 when history length is 0? Why is there a mysterious downward deflection close to 0?
 
 %% Sanity check: Linear synthetic data vs. linear gain analysis
 % To figure this out, let's first repeat the gain analysis, but instead of using the ORN response, we use the linear prediction itself. 
@@ -127,11 +127,10 @@ x.stimulus = data(td).PID(s:z);
 x.time = data(td).time(s:z);
 x.filter_length = 201;
 
-redo_bootstrap = 0;
 if redo_bootstrap
 	p_linear_ORN = GainAnalysis3(x,history_lengths,example_history_length,ph);
 else
-	GainAnalysis3(x,history_lengths,example_history_length,ph,p_linear_ORN);
+	GainAnalysis3(x,history_lengths,example_history_length,ph,Inf*history_lengths);
 end
 clear x
 hold off
@@ -170,11 +169,10 @@ x.stimulus = data(td).PID(s:z);
 x.time = data(td).time(s:z);
 x.filter_length = length(K);
 
-redo_bootstrap = 1;
 if redo_bootstrap
 	p_fake_ORN = GainAnalysis3(x,history_lengths,example_history_length,ph);
 else
-	GainAnalysis3(x,history_lengths,example_history_length,ph,p_fake_ORN);
+	GainAnalysis3(x,history_lengths,example_history_length,ph,Inf*history_lengths);
 end
 clear x
 hold off
@@ -218,11 +216,10 @@ x.stimulus = stim(s:z);
 x.time = t(s:z);
 x.filter_length = length(K);
 
-redo_bootstrap = 1;
 if redo_bootstrap
 	p_fake_ORN2 = GainAnalysis3(x,history_lengths,example_history_length,ph);
 else
-	GainAnalysis3(x,history_lengths,example_history_length,ph,p_fake_ORN2);
+	GainAnalysis3(x,history_lengths,example_history_length,ph,Inf*history_lengths);
 end
 clear x
 hold off
@@ -260,11 +257,13 @@ f(1:100) = [];
 t(1:100) = [];
 stim(1:100) = [];
 
-[K,~,filtertime] = FindBestFilter(stim,f,[],'filter_length=200;');
-
 s = 300; % when we start for the gain analysis
 z = length(stim); % where we end
-fp=mean(f(s:z))+convolve(t,stim,K,filtertime);
+
+[K,~,filtertime] = FindBestFilter(stim(s:z),f(s:z),[],'filter_length=200;');
+fp=mean(f)+convolve(t,stim,K,filtertime);
+
+
 
 x.response = f(s:z);
 x.prediction = fp(s:z);
@@ -272,11 +271,10 @@ x.stimulus = stim(s:z);
 x.time = t(s:z);
 x.filter_length = length(K);
 
-redo_bootstrap = 0;
 if redo_bootstrap
 	p_fake_ORN2 = GainAnalysis3(x,history_lengths,example_history_length,ph);
 else
-	GainAnalysis3(x,history_lengths,example_history_length,ph,p_fake_ORN2);
+	GainAnalysis3(x,history_lengths,example_history_length,ph,Inf*history_lengths);
 end
 clear x
 hold off
@@ -285,3 +283,5 @@ hold off
 snapnow;
 delete(gcf);
 
+%%
+% Why does this happen? Why do the gain slopes not go to zero when the history length is zero? This makes sense when we consider what the history length actually is. For varying history lengths, we choose varying smoothing windows and smooth the stimulus with this. However, when the history length is 0 in this case, this doesn't mean the stimulus is not being smoothed! Technically, it is being smoothed, already, as the stimulus itself has correlations. 

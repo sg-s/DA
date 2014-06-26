@@ -18,7 +18,7 @@
 % 
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
-function [spikes] = XJWNeuronEuler(time,stimulus,p)
+function [V, Ca,spikes] = XJWNeuronEuler(time,stimulus,p)
 
 
 time = time(:);
@@ -44,12 +44,18 @@ for i = 2:length(time)
 
 	V(i) = V(i-1) + dt*f/p.Cm;
 	Ca(i) = Ca(i-1)*(1- dt/p.tau_Ca);
-
+	if Ca(i) < 0
+		Ca(i)=0;
+	end
 	if V(i) > p.Vth
-		V(i-1) = 30; % fake a spike
-		V(i) = p.Vreset;
-		spikes(i)=1;
-		Ca(i) = Ca(i) + p.C;
+		if V(i-1) < 0
+			V(i-1) = 30; % fake a spike
+			V(i) = p.Vreset;
+			spikes(i)=1;
+			Ca(i) = Ca(i) + p.C;
+		else
+			V(i) = p.Vreset;
+		end
 	end
 end
 

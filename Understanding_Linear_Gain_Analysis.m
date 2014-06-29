@@ -98,6 +98,8 @@ clear x
 hold off
 set(ph(4),'YLim',[0.7 1.4],'XLim',[-0.01 max(history_lengths)])
 
+title(ph(4),'ORN response to odor stimulus')
+
 snapnow;
 delete(gcf);
 
@@ -135,16 +137,23 @@ end
 clear x
 hold off
 set(ph(4),'YLim',[0.7 1.4],'XLim',[-0.01 max(history_lengths)])
+title(ph(4),'Linear Model Prediction to odor stimulus')
+ylabel(ph(3),'Linear Model Prediction')
+
 snapnow;
 delete(gcf);
 
 %% Synthetic Data: DA Model vs. Linear Gain Analysis
-% Do we still see the weird behaviour of the slope plots with synthetic data? Here we generate the synthetic neuron data by using a DA model to simulate neuron output, with parameters roughly chosen to somewhat match actual ORN statistics. 
+% Do we still see the weird behaviour of the slope plots with synthetic data? Here we generate the synthetic neuron data by using a DA model to simulate neuron output, with parameters derived from a fit of the DA model to the data. The parameters of the DA model are such that the output fits the data quite well, the r-square to the data is:
 
-p.n_z = 2;
-p.n_y = 2;
-p.C = 0.3; p.A = 9500; p.B = 25; p.r0 = -80;
-p.tau_y = 4; p.tau_z = 8;
+disp(rsquare(Rguess(300:end),data(td).ORN(300:end)))
+
+if ~exist('p')
+	d.stimulus = data(td).PID;
+	d.response = data(td).ORN;
+	[p, f] = FitDAModelToData(d,[2.6422e+04 90 0.03 1.5 2 13 2 -151],[900 50 0 1e-1 1 1e-2 1 -200],[98000 5000 1 20 10 40 10 1],200);
+end
+
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 ph(3) = subplot(1,2,1); hold on 
@@ -158,7 +167,7 @@ history_lengths = [0:mean(diff(data(td).time)):0.02 0.021:0.03:2*act];
 
 clear x
 % generate fake data
-f=DA_integrate2(data(td).PID,p);
+f=DA_integrate2(d.stimulus,p);
 [K,~,filtertime] = FindBestFilter(data(td).PID,f);
 fp=mean(f(s:z))+convolve(data(td).time,data(td).PID,K,filtertime);
 
@@ -177,18 +186,19 @@ end
 clear x
 hold off
 set(ph(4),'YLim',[0.7 1.4],'XLim',[-0.01 max(history_lengths)])
+title(ph(4),'DA Model response to odor stimulus')
+ylabel(ph(3),'DA Model Response')
 
 snapnow;
 delete(gcf);
 
+%%
+% So we see that the DA model also captures, qualitatively, the two interesting things in the real data: 1) the fact that the lines do not go to 1 as the history lengths go to zero and 2) the weird downward deflection close to zero. 
+
 
 %% Synthetic Data: DA Model with exp. gaussian inputs vs. Linear Gain Analysis
-% So we still see this weird thing. Maybe it's because of something in the stimulus? Now we use the same model but now feed it with exponentiated Gaussian inputs. 
+% Maybe it's because of something in the stimulus? Now we use the same DA model but now feed it with exponentiated Gaussian inputs. 
 
-p.n_z = 2;
-p.n_y = 2;
-p.C = 0.3; p.A = 9500; p.B = 25; p.r0 = -80;
-p.tau_y = 4; p.tau_z = 8;
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 ph(3) = subplot(1,2,1); hold on 
@@ -201,7 +211,7 @@ history_lengths = [0:mean(diff(data(td).time)):0.02 0.021:0.03:2*act];
 
 clear x
 % generate fake data
-stim = exp(rand(3000,1));
+stim = exp(rand(3000,1))/50;
 t = mean(diff(data(td).time)):mean(diff(data(td).time)):mean(diff(data(td).time))*length(stim);
 f=DA_integrate2(stim,p);
 [K,~,filtertime] = FindBestFilter(stim,f,[],'filter_length=200;');
@@ -225,17 +235,17 @@ clear x
 hold off
 set(ph(4),'YLim',[0.7 1.4],'XLim',[-0.01 max(history_lengths)])
 
+title(ph(4),'DA Model response to uncorrelated noise')
+ylabel(ph(3),'DA Model Response')
+
 snapnow;
 delete(gcf);
 
 
 %%
-% OK, now the slopes go to unity as the history length goes to 0. What about the stimulus causes the slopes not to go to 1? Perhaps filtering the stimulus makes this effect come back. 
+% OK, now the slopes go to unity as the history length goes to 0. What about the stimulus causes the slopes not to go to 1? Here we present a different stimulus to the DA model to see how the gain analysis reports the gain at short time scales. The stimulus presented is the actual PID trace, shuffled, and rescaled so that the magnitudes of ORN responses are approximately the same. 
 
-p.n_z = 2;
-p.n_y = 2;
-p.C = 0.3; p.A = 9500; p.B = 25; p.r0 = -80;
-p.tau_y = 4; p.tau_z = 8;
+
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 ph(3) = subplot(1,2,1); hold on 
@@ -248,8 +258,9 @@ history_lengths = [0:mean(diff(data(td).time)):0.02 0.021:0.03:2*act];
 
 clear x
 % generate fake data
-stim_old = exp(rand(3000,1));
-stim = filter(ones(1,40)/40,1,stim_old);
+stim=d.stimulus(randperm(length(d.stimulus)));
+stim = stim-min(stim)/2;
+stim = stim*2;
 t = mean(diff(data(td).time)):mean(diff(data(td).time)):mean(diff(data(td).time))*length(stim);
 f=DA_integrate2(stim,p);
 
@@ -278,10 +289,88 @@ else
 end
 clear x
 hold off
-% set(ph(4),'YLim',[0.7 1.4],'XLim',[-0.01 max(history_lengths)])
+set(ph(4),'YLim',[0.7 1.4],'XLim',[-0.01 max(history_lengths)])
+title(ph(4),'DA Model response to shuffed odor')
+ylabel(ph(3),'DA Model Response')
 
 snapnow;
 delete(gcf);
 
 %%
-% Why does this happen? Why do the gain slopes not go to zero when the history length is zero? This makes sense when we consider what the history length actually is. For varying history lengths, we choose varying smoothing windows and smooth the stimulus with this. However, when the history length is 0 in this case, this doesn't mean the stimulus is not being smoothed! Technically, it is being smoothed, already, as the stimulus itself has correlations. 
+% OK, the gain analysis still reports that the gains go to 1 as the history length goes to zero. What manipulation can break this, and recapitulate the effect we see with the real data? Perhaps filtering will do the trick. In the following plots, the stimulus being presented to the DA model is the actual PID trace, shuffled, and filtered, and then rescaled so that it matches the real PID closely in both amplitude and temporal structure. 
+
+
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1); hold on 
+stim=d.stimulus(randperm(length(d.stimulus)));
+stim = filter(ones(100,1)/100,1,stim-mean(stim))+mean(stim);
+stim = stim-mean(stim);
+stim = stim*10;
+stim = stim+mean(d.stimulus);
+plot(d.stimulus,'k'), hold on
+plot(stim,'r')
+set(gca,'XLim',[2000 4000])
+xlabel('Time (a.u.)')
+ylabel('Stimulus (a.u.)')
+legend PID ShuffledFilteredPID
+PrettyFig;
+
+subplot(1,2,2); hold on 
+[y] = autocorr(d.stimulus,150);
+atime = 0:mean(diff(data(td).time)):mean(diff(data(td).time))*150;
+plot(atime,y,'k')
+[y] = autocorr(stim,150);
+atime = 0:mean(diff(data(td).time)):mean(diff(data(td).time))*150;
+plot(atime,y,'r')
+legend PID ShuffledFilteredPID
+set(gca,'XLim',[0 0.5])
+xlabel('Lag (s)')
+ylabel('Autocorrelation')
+PrettyFig;
+
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+
+example_history_length = 0.111;
+history_lengths = [0:mean(diff(data(td).time)):0.02 0.021:0.03:2*act];
+
+clear x
+t = mean(diff(data(td).time)):mean(diff(data(td).time)):mean(diff(data(td).time))*length(stim);
+f=DA_integrate2(stim,p);
+
+f(1:100) = [];
+t(1:100) = [];
+stim(1:100) = [];
+
+s = 300; % when we start for the gain analysis
+z = length(stim); % where we end
+
+[K,~,filtertime] = FindBestFilter(stim(s:z),f(s:z),[],'filter_length=200;');
+fp=mean(f)+convolve(t,stim,K,filtertime);
+
+
+
+x.response = f(s:z);
+x.prediction = fp(s:z);
+x.stimulus = stim(s:z);
+x.time = t(s:z);
+x.filter_length = length(K);
+
+if redo_bootstrap
+	p_fake_ORN2 = GainAnalysis3(x,history_lengths,example_history_length,ph);
+else
+	GainAnalysis3(x,history_lengths,example_history_length,ph,Inf*history_lengths);
+end
+clear x
+hold off
+set(ph(4),'YLim',[0.7 1.4],'XLim',[-0.01 max(history_lengths)])
+title(ph(4),'DA Model response to shuffled, filtered odor stimulus')
+ylabel(ph(3),'DA Model Response')
+
+snapnow;
+delete(gcf);

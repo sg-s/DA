@@ -45,18 +45,27 @@ end
 [y1,x1] = autocorr(data(td).ORN,stop_here);
 x1=x1*mean(diff(data(td).time));
 
-[y2,x2] = autocorr(data(td).Valve,stop_here);
-x2=x2*mean(diff(data(td).time));
+if isfield(data,'Valve')
+	[y2,x2] = autocorr(data(td).Valve,stop_here);
+	x2=x2*mean(diff(data(td).time));
+end
 
 if nargin == 2
+
 	subplot(1,2,2); hold on
 	plot(x,y,'k'), hold on
 	plot(x1,y1,'b'), hold on
-	plot(x2,y2,'r'), hold on
+	if isfield(data,'Valve')
+		plot(x2,y2,'r'), hold on
+	end
 	title('Autocorrelation')
 	set(gca,'box','on','XLim',[min(x) max(x)])
 	xlabel('Lag (s)')
-	legend Stimulus ORN Valve
+	if isfield(data,'Valve')
+		legend Stimulus ORN Valve
+	else
+		legend Stimulus ORN
+	end
 
 	PrettyFig;
 else

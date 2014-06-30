@@ -28,19 +28,22 @@ V = 0*time;
 Ca = 1*time;
 
 % initial conditions
-V(1) = p.Vrest;
+temp1 = min([p.Vrest p.Vreset]);
+temp2 = max([p.Vrest p.Vreset]);
+V(1) = temp1 + rand*(temp2-temp1);
 
 
 for i = 2:length(time)
+	dt = (time(i) - time(i-1));
 
 	% calculate derivative
 	f1 = -p.gL*(V(i-1) - p.Vreset);
-	f2 = p.Cm*p.A*stimulus(i-1);
+	f2 = p.Cm*(p.A)*stimulus(i-1);
 	f3 = -p.gAHP*(Ca(i-1))*(V(i-1) - p.Vk);
 
 	f = f1+f2+f3;
 
-	dt = (time(i) - time(i-1));
+	
 
 	V(i) = V(i-1) + dt*f/p.Cm;
 	Ca(i) = Ca(i-1)*(1- dt/p.tau_Ca);

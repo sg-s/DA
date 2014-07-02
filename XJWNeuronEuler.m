@@ -38,7 +38,7 @@ for i = 2:length(time)
 
 	% calculate derivative
 	f1 = -p.gL*(V(i-1) - p.Vreset);
-	f2 = p.Cm*(p.A)*stimulus(i-1);
+	f2 = p.Cm*(p.A)*(stimulus(i-1)-p.B);
 	f3 = -p.gAHP*(Ca(i-1))*(V(i-1) - p.Vk);
 
 	f = f1+f2+f3;

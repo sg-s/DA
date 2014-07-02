@@ -1,5 +1,8 @@
 %% Effect of Correlation Time on Linear Filters
-% What is the effect of correlation time of the stimulus on the ORN response, and the filter that we calculate from this data? 
+% What is the effect of correlation time of the stimulus on the ORN response, and the filter that we calculate from this data? We have data where the same class of ORN responds to flickering stimuli with different correlation lengths: 30ms, 50ms and 100ms. The filters extracted from these datasets are slightly different, and fitted output non-linearities seem to have slopes that decrease with increasing correlation time. 
+
+%%
+% Is this a real phenomenon? Why does this happen?
 
 load('/local-data/DA-paper/data.mat')
 
@@ -139,9 +142,12 @@ plot(x,hill(NLN(1,:),x),'k')
 plot(x,hill(NLN(2,:),x),'r')
 plot(x,hill(NLN(3,:),x),'g')
 xlabel('Input to NonLinearity')
-xlabel('Function Output (Hz)')
+ylabel('Function Output (Hz)')
 legend 30ms 50ms 100ms
 PrettyFig;
+
+%%
+% No monotonic relationship is observed between correlation length and slope of fitted non-linearity. 
 
 
 %%
@@ -200,8 +206,9 @@ for i = 1:3
 		% use ith filter to predict j data
 		a = this_data(i);
 		b= this_data(j);
-		this_filter = data(a).K/max(data(a).K);
-		this_filter = this_filter*max(data(b).K);
+		% this_filter = data(a).K/max(data(a).K);
+		% this_filter = this_filter*max(data(b).K);
+		this_filter = data(a).K;
 		fp = mean(data(b).ORN) + convolve(data(a).time,data(b).PID,this_filter,data(a).filtertime);
 		fp(fp<0)=0;
 
@@ -214,14 +221,14 @@ clear i
 
 disp(r)
 
-
 %%
-% In particular, predictions using the fastest filter outperform predictions even from filters from the same data set. 
+% In particular, the 30ms filter outperforms all other filters, even the "native" fitlers of the 50ms and 100ms data. 
 
 %% Synthetic data: filter and non-linearity estimation
 % What effect does using stimuli with various correlation lengths have on our estimation of the filter? Here we use a "fake" filter to represent the neuron, and pass stimuli with various correlation lengths to it, and then back out the filter from the synthetic data output. 
 
 % make a fake filter
+clear p t
 t=1:202;
 p.theta=0.2000;
 p.k=100;
@@ -267,6 +274,10 @@ title('Reconstructed Filters')
 set(gca,'XLim',[min(filtertime) max(filtertime)])
 xlabel('Filter Lag (s)')
 PrettyFig;
+
+
+%%
+% We see that the estimated filter gets wider for longer correlation lengths, even though we know that the actual filter is constant. Thus, trying to estimate filters of neurons with longer correlation times can back out longer-than-actual timescales in the filter. This is because the response of the system to fast time scales isn't being probed at all, or there is something wrong with the way I regularise. 
 
 % now back out nonlinearities 
 % fake_K1 = fake_K1/max(fake_K1);

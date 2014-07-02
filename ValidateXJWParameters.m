@@ -1,6 +1,6 @@
 % valdiates parameters for XJW model (v2)
 function p = ValidateXJWParameters(x)
-if length(x) ~= 10
+if length(x) ~= 11
 	error('Cannot validate parameters for the XJW model correctly')
 end
 
@@ -21,5 +21,5 @@ p.Vk = x(9);
 
 % stimulus
 p.A = x(10);
-
+p.B = x(11);
 

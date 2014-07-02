@@ -28,7 +28,7 @@ xdata(rm_this) = [];
 ydata(rm_this) = [];
 
 x0 = [10; 1; 2];
-options = optimoptions('lsqcurvefit','MaxFunEvals',10000,'MaxIter',1000);
+options = optimoptions('lsqcurvefit','MaxFunEvals',10000,'MaxIter',1000,'display','none');
 switch model
 	case 'hill'
 		x = lsqcurvefit(@hill,x0,xdata,ydata,[0 0 1],[],options);

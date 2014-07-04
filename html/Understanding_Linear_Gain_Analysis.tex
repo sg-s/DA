@@ -75,27 +75,38 @@ To figure this out, let's first repeat the gain analysis, but instead of using t
 \subsection*{Synthetic Data: DA Model vs. Linear Gain Analysis}
 
 \begin{par}
-Do we still see the weird behaviour of the slope plots with synthetic data? Here we generate the synthetic neuron data by using a DA model to simulate neuron output, with parameters roughly chosen to somewhat match actual ORN statistics.
+Do we still see the weird behaviour of the slope plots with synthetic data? Here we generate the synthetic neuron data by using a DA model to simulate neuron output, with parameters derived from a fit of the DA model to the data. The parameters of the DA model are such that the output fits the data quite well, the r-square to the data is:
 \end{par} \vspace{1em}
 
+        \color{lightgray} \begin{verbatim}    0.9517
+
+\end{verbatim} \color{black}
+    
 \includegraphics [width=\textwidth]{Understanding_Linear_Gain_Analysis_06.pdf}
+\begin{par}
+So we see that the DA model also captures, qualitatively, the two interesting things in the real data: 1) the fact that the lines do not go to 1 as the history lengths go to zero and 2) the weird downward deflection close to zero.
+\end{par} \vspace{1em}
 
 
 \subsection*{Synthetic Data: DA Model with exp. gaussian inputs vs. Linear Gain Analysis}
 
 \begin{par}
-So we still see this weird thing. Maybe it's because of something in the stimulus? Now we use the same model but now feed it with exponentiated Gaussian inputs.
+Maybe it's because of something in the stimulus? Now we use the same DA model but now feed it with exponentiated Gaussian inputs.
 \end{par} \vspace{1em}
 
 \includegraphics [width=\textwidth]{Understanding_Linear_Gain_Analysis_07.pdf}
 \begin{par}
-OK, now the slopes go to unity as the history length goes to 0. What about the stimulus causes the slopes not to go to 1? Perhaps filtering the stimulus makes this effect come back.
+OK, now the slopes go to unity as the history length goes to 0. What about the stimulus causes the slopes not to go to 1? Here we present a different stimulus to the DA model to see how the gain analysis reports the gain at short time scales. The stimulus presented is the actual PID trace, shuffled, and rescaled so that the magnitudes of ORN responses are approximately the same.
 \end{par} \vspace{1em}
 
 \includegraphics [width=\textwidth]{Understanding_Linear_Gain_Analysis_08.pdf}
 \begin{par}
-Why does this happen? Why do the gain slopes not go to zero when the history length is zero? This makes sense when we consider what the history length actually is. For varying history lengths, we choose varying smoothing windows and smooth the stimulus with this. However, when the history length is 0 in this case, this doesn't mean the stimulus is not being smoothed! Technically, it is being smoothed, already, as the stimulus itself has correlations.
+OK, the gain analysis still reports that the gains go to 1 as the history length goes to zero. What manipulation can break this, and recapitulate the effect we see with the real data? Perhaps filtering will do the trick. In the following plots, the stimulus being presented to the DA model is the actual PID trace, shuffled, and filtered, and then rescaled so that it matches the real PID closely in both amplitude and temporal structure.
 \end{par} \vspace{1em}
+
+\includegraphics [width=\textwidth]{Understanding_Linear_Gain_Analysis_09.pdf}
+
+\includegraphics [width=\textwidth]{Understanding_Linear_Gain_Analysis_10.pdf}
 
 
 

@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013) (format=pdflatex 2013.5.30)  25 JUN 2014 09:43
+This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013) (format=pdflatex 2013.5.30)  1 JUL 2014 09:01
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -91,7 +91,7 @@ Package: ifxetex 2010/09/12 v0.6 Provides ifxetex conditional
 \Gm@layoutvoffset=\dimen112
 \Gm@dimlist=\toks15
 )
-(./Understanding_Linear_Gain_Analysis.aux)
+No file Understanding_Linear_Gain_Analysis.aux.
 \openout1 = `Understanding_Linear_Gain_Analysis.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 14.
@@ -106,7 +106,6 @@ LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 14.
 LaTeX Font Info:    ... okay on input line 14.
 LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 14.
 LaTeX Font Info:    ... okay on input line 14.
-
 (/usr/local/texlive/2013/texmf-dist/tex/context/base/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count91
@@ -281,69 +280,94 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 72--73
 [][] 
  []
 
-<Understanding_Linear_Gain_Analysis_06.pdf, id=33, 1003.75pt x 501.875pt>
+[3 <./Understanding_Linear_Gain_Analysis_04.pdf> <./Understanding_Linear_Gain_A
+nalysis_05.pdf>]
+<Understanding_Linear_Gain_Analysis_06.pdf, id=42, 1003.75pt x 501.875pt>
 File: Understanding_Linear_Gain_Analysis_06.pdf Graphic file (type pdf)
 
 <use Understanding_Linear_Gain_Analysis_06.pdf>
 Package pdftex.def Info: Understanding_Linear_Gain_Analysis_06.pdf used on inpu
-t line 81.
+t line 85.
 (pdftex.def)             Requested size: 469.75502pt x 234.87808pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 81--82
+Overfull \hbox (10.0pt too wide) in paragraph at lines 85--86
 [][] 
  []
 
-[3 <./Understanding_Linear_Gain_Analysis_04.pdf> <./Understanding_Linear_Gain_A
-nalysis_05.pdf>]
 <Understanding_Linear_Gain_Analysis_07.pdf, id=43, 1003.75pt x 501.875pt>
 File: Understanding_Linear_Gain_Analysis_07.pdf Graphic file (type pdf)
 
 <use Understanding_Linear_Gain_Analysis_07.pdf>
 Package pdftex.def Info: Understanding_Linear_Gain_Analysis_07.pdf used on inpu
-t line 90.
+t line 97.
 (pdftex.def)             Requested size: 469.75502pt x 234.87808pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 90--91
+Overfull \hbox (10.0pt too wide) in paragraph at lines 97--98
 [][] 
  []
 
-<Understanding_Linear_Gain_Analysis_08.pdf, id=44, 1003.75pt x 501.875pt>
+[4 <./Understanding_Linear_Gain_Analysis_06.pdf>]
+<Understanding_Linear_Gain_Analysis_08.pdf, id=50, 1003.75pt x 501.875pt>
 File: Understanding_Linear_Gain_Analysis_08.pdf Graphic file (type pdf)
 
 <use Understanding_Linear_Gain_Analysis_08.pdf>
 Package pdftex.def Info: Understanding_Linear_Gain_Analysis_08.pdf used on inpu
-t line 95.
+t line 102.
 (pdftex.def)             Requested size: 469.75502pt x 234.87808pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 95--96
+Overfull \hbox (10.0pt too wide) in paragraph at lines 102--103
 [][] 
  []
 
-[4 <./Understanding_Linear_Gain_Analysis_06.pdf> <./Understanding_Linear_Gain_A
-nalysis_07.pdf>] [5 <./Understanding_Linear_Gain_Analysis_08.pdf>]
-(./Understanding_Linear_Gain_Analysis.aux) ) 
+<Understanding_Linear_Gain_Analysis_09.pdf, id=51, 1003.75pt x 501.875pt>
+File: Understanding_Linear_Gain_Analysis_09.pdf Graphic file (type pdf)
+
+<use Understanding_Linear_Gain_Analysis_09.pdf>
+Package pdftex.def Info: Understanding_Linear_Gain_Analysis_09.pdf used on inpu
+t line 107.
+(pdftex.def)             Requested size: 469.75502pt x 234.87808pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 107--108
+[][] 
+ []
+
+<Understanding_Linear_Gain_Analysis_10.pdf, id=52, 1003.75pt x 501.875pt>
+[5 <./Understanding_Linear_Gain_Analysis_07.pdf> <./Understanding_Linear_Gain_A
+nalysis_08.pdf>]
+File: Understanding_Linear_Gain_Analysis_10.pdf Graphic file (type pdf)
+ <use Understanding_Linear_Gain_Analysis_10.pdf>
+Package pdftex.def Info: Understanding_Linear_Gain_Analysis_10.pdf used on inpu
+t line 109.
+(pdftex.def)             Requested size: 469.75502pt x 234.87808pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 109--110
+[][] 
+ []
+
+[6 <./Understanding_Linear_Gain_Analysis_09.pdf> <./Understanding_Linear_Gain_A
+nalysis_10.pdf>] (./Understanding_Linear_Gain_Analysis.aux) ) 
 Here is how much of TeX's memory you used:
- 2064 strings out of 493315
- 31482 string characters out of 6137904
+ 2072 strings out of 493315
+ 31852 string characters out of 6137904
  94732 words of memory out of 5000000
- 5501 multiletter control sequences out of 15000+600000
+ 5509 multiletter control sequences out of 15000+600000
  7150 words of font info for 26 fonts, out of 8000000 for 9000
  957 hyphenation exceptions out of 8191
- 38i,6n,32p,510b,189s stack positions out of 5000i,500n,10000p,200000b,80000s
-</usr/local/texlive/2013/texmf-dist
-/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2013/texmf-dist/
-fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2013/texmf-dist/fo
-nts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2013/texmf-dist/font
-s/type1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/2013/texmf-dist/fonts/
-type1/public/amsfonts/cm/cmr7.pfb></usr/local/texlive/2013/texmf-dist/fonts/typ
-e1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2013/texmf-dist/fonts/type
-1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2013/texmf-dist/fonts/type1/
-public/amsfonts/cm/cmtt10.pfb>
-Output written on Understanding_Linear_Gain_Analysis.pdf (5 pages, 1772441 byte
+ 38i,6n,32p,479b,189s stack positions out of 5000i,500n,10000p,200000b,80000s
+</usr/local/texliv
+e/2013/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive
+/2013/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2
+013/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/201
+3/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/2013/
+texmf-dist/fonts/type1/public/amsfonts/cm/cmr7.pfb></usr/local/texlive/2013/tex
+mf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2013/texm
+f-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/local/texlive/2013/texmf-
+dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
+Output written on Understanding_Linear_Gain_Analysis.pdf (6 pages, 2460372 byte
 s).
 PDF statistics:
- 86 PDF objects out of 1000 (max. 8388607)
- 62 compressed objects within 1 object stream
+ 98 PDF objects out of 1000 (max. 8388607)
+ 71 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
- 41 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 51 words of extra memory for PDF output out of 10000 (max. 10000000)
 

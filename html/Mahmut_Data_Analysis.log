@@ -1,10 +1,10 @@
-This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013) (format=pdflatex 2013.5.30)  29 JUN 2014 18:01
+This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013) (format=pdflatex 2013.5.30)  2 JUL 2014 08:32
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
  %&-line parsing enabled.
-**SpikeFreqAdaptation.tex
-(./SpikeFreqAdaptation.tex
+**Mahmut_Data_Analysis.tex
+(./Mahmut_Data_Analysis.tex
 LaTeX2e <2011/06/27>
 Babel <3.9f> and hyphenation patterns for 78 languages loaded.
 (/usr/local/texlive/2013/texmf-dist/tex/latex/base/article.cls
@@ -91,8 +91,8 @@ Package: ifxetex 2010/09/12 v0.6 Provides ifxetex conditional
 \Gm@layoutvoffset=\dimen112
 \Gm@dimlist=\toks15
 )
-(./SpikeFreqAdaptation.aux)
-\openout1 = `SpikeFreqAdaptation.aux'.
+(./Mahmut_Data_Analysis.aux)
+\openout1 = `Mahmut_Data_Analysis.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 14.
 LaTeX Font Info:    ... okay on input line 14.
@@ -204,70 +204,110 @@ LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <8> on input line 18.
 LaTeX Font Info:    External font `cmex10' loaded for size
 (Font)              <6> on input line 18.
-LaTeX Font Info:    Try loading font information for OMS+cmr on input line 32.
+LaTeX Font Info:    Try loading font information for OMS+cmr on input line 26.
 (/usr/local/texlive/2013/texmf-dist/tex/latex/base/omscmr.fd
 File: omscmr.fd 1999/05/25 v2.5h Standard LaTeX font definitions
 )
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
-(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 32.
+(Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 26.
 
-<SpikeFreqAdaptation_01.pdf, id=1, 1003.75pt x 501.875pt>
-File: SpikeFreqAdaptation_01.pdf Graphic file (type pdf)
+<Mahmut_Data_Analysis_01.pdf, id=1, 1003.75pt x 602.25pt>
+File: Mahmut_Data_Analysis_01.pdf Graphic file (type pdf)
 
-<use SpikeFreqAdaptation_01.pdf>
-Package pdftex.def Info: SpikeFreqAdaptation_01.pdf used on input line 60.
-(pdftex.def)             Requested size: 469.75502pt x 234.87808pt.
+<use Mahmut_Data_Analysis_01.pdf>
+Package pdftex.def Info: Mahmut_Data_Analysis_01.pdf used on input line 41.
+(pdftex.def)             Requested size: 469.75502pt x 281.8537pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 60--61
+Overfull \hbox (10.0pt too wide) in paragraph at lines 41--42
+[][] 
+ []
+
+<Mahmut_Data_Analysis_02.pdf, id=2, 1304.875pt x 401.5pt>
+File: Mahmut_Data_Analysis_02.pdf Graphic file (type pdf)
+
+<use Mahmut_Data_Analysis_02.pdf>
+Package pdftex.def Info: Mahmut_Data_Analysis_02.pdf used on input line 50.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 50--51
 [][] 
  []
 
 [1
 
-{/usr/local/texlive/2013/texmf-var/fonts/map/pdftex/updmap/pdftex.map}]
-<SpikeFreqAdaptation_02.pdf, id=13, 1003.75pt x 501.875pt>
-File: SpikeFreqAdaptation_02.pdf Graphic file (type pdf)
+{/usr/local/texlive/2013/texmf-var/fonts/map/pdftex/updmap/pdftex.map} <./Mahmu
+t_Data_Analysis_01.pdf>]
+<Mahmut_Data_Analysis_03.pdf, id=16, 1003.75pt x 602.25pt>
+File: Mahmut_Data_Analysis_03.pdf Graphic file (type pdf)
 
-<use SpikeFreqAdaptation_02.pdf>
-Package pdftex.def Info: SpikeFreqAdaptation_02.pdf used on input line 69.
-(pdftex.def)             Requested size: 469.75502pt x 234.87808pt.
+<use Mahmut_Data_Analysis_03.pdf>
+Package pdftex.def Info: Mahmut_Data_Analysis_03.pdf used on input line 59.
+(pdftex.def)             Requested size: 469.75502pt x 281.8537pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 69--70
+Overfull \hbox (10.0pt too wide) in paragraph at lines 59--60
 [][] 
  []
 
-<SpikeFreqAdaptation_03.pdf, id=14, 1003.75pt x 501.875pt>
-File: SpikeFreqAdaptation_03.pdf Graphic file (type pdf)
+<Mahmut_Data_Analysis_04.pdf, id=17, 1003.75pt x 501.875pt>
+File: Mahmut_Data_Analysis_04.pdf Graphic file (type pdf)
 
-<use SpikeFreqAdaptation_03.pdf>
-Package pdftex.def Info: SpikeFreqAdaptation_03.pdf used on input line 78.
+<use Mahmut_Data_Analysis_04.pdf>
+Package pdftex.def Info: Mahmut_Data_Analysis_04.pdf used on input line 64.
 (pdftex.def)             Requested size: 469.75502pt x 234.87808pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 78--79
+Overfull \hbox (10.0pt too wide) in paragraph at lines 64--65
 [][] 
  []
 
-[2 <./SpikeFreqAdaptation_01.pdf> <./SpikeFreqAdaptation_02.pdf>] [3 <./SpikeFr
-eqAdaptation_03.pdf>] (./SpikeFreqAdaptation.aux) ) 
+[2 <./Mahmut_Data_Analysis_02.pdf> <./Mahmut_Data_Analysis_03.pdf>]
+<Mahmut_Data_Analysis_05.pdf, id=28, 1003.75pt x 602.25pt>
+File: Mahmut_Data_Analysis_05.pdf Graphic file (type pdf)
+
+<use Mahmut_Data_Analysis_05.pdf>
+Package pdftex.def Info: Mahmut_Data_Analysis_05.pdf used on input line 76.
+(pdftex.def)             Requested size: 469.75502pt x 281.8537pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 76--77
+[][] 
+ []
+
+[3 <./Mahmut_Data_Analysis_04.pdf> <./Mahmut_Data_Analysis_05.pdf>]
+<Mahmut_Data_Analysis_06.pdf, id=39, 1003.75pt x 501.875pt>
+File: Mahmut_Data_Analysis_06.pdf Graphic file (type pdf)
+
+<use Mahmut_Data_Analysis_06.pdf>
+Package pdftex.def Info: Mahmut_Data_Analysis_06.pdf used on input line 81.
+(pdftex.def)             Requested size: 469.75502pt x 234.87808pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 81--82
+[][] 
+ []
+
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <7> on input line 90.
+LaTeX Font Info:    External font `cmex10' loaded for size
+(Font)              <5> on input line 90.
+[4 <./Mahmut_Data_Analysis_06.pdf>] (./Mahmut_Data_Analysis.aux) ) 
 Here is how much of TeX's memory you used:
- 2039 strings out of 493315
- 30007 string characters out of 6137904
- 94732 words of memory out of 5000000
- 5481 multiletter control sequences out of 15000+600000
- 7755 words of font info for 28 fonts, out of 8000000 for 9000
+ 2054 strings out of 493315
+ 30488 string characters out of 6137904
+ 93732 words of memory out of 5000000
+ 5493 multiletter control sequences out of 15000+600000
+ 7150 words of font info for 26 fonts, out of 8000000 for 9000
  957 hyphenation exceptions out of 8191
- 38i,6n,32p,313b,189s stack positions out of 5000i,500n,10000p,200000b,80000s
-</usr/local/texlive/2013/tex
-mf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2013/texm
-f-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texlive/2013/texmf-
-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive/2013/texmf-di
-st/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/2013/texmf-dist
-/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/2013/texmf-dist/
-fonts/type1/public/amsfonts/cm/cmtt10.pfb>
-Output written on SpikeFreqAdaptation.pdf (3 pages, 689952 bytes).
+ 38i,6n,32p,519b,189s stack positions out of 5000i,500n,10000p,200000b,80000s
+</usr/local/t
+exlive/2013/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/local/te
+xlive/2013/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/local/tex
+live/2013/texmf-dist/fonts/type1/public/amsfonts/cm/cmr10.pfb></usr/local/texli
+ve/2013/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb></usr/local/texlive
+/2013/texmf-dist/fonts/type1/public/amsfonts/cm/cmr17.pfb></usr/local/texlive/2
+013/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr/local/texlive/20
+13/texmf-dist/fonts/type1/public/amsfonts/cm/cmtt10.pfb>
+Output written on Mahmut_Data_Analysis.pdf (4 pages, 1143034 bytes).
 PDF statistics:
- 50 PDF objects out of 1000 (max. 8388607)
- 35 compressed objects within 1 object stream
+ 70 PDF objects out of 1000 (max. 8388607)
+ 50 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
- 16 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 31 words of extra memory for PDF output out of 10000 (max. 10000000)
 

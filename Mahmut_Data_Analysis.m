@@ -24,16 +24,21 @@ data(td).PID = data(td).PID - mean(data(td).PID(1:3000));
 data(td).PID(data(td).PID < 0) = 0;
 
 figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-subplot(2,1,1), hold on
+subplot(3,1,1), hold on
 plot(data(td).time,data(td).PID,'k');
 ylabel('PID (V)')
 title('ab3A response to ethyl acetate')
 set(gca,'YLim',[-0.1 3.1])
 
-subplot(2,1,2), hold on
+subplot(3,1,2), hold on
+raster2(data(1).spiketimes)
+
+subplot(3,1,3), hold on
 plot(data(td).time,data(td).ORN,'k');
 ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')
+
+
 
 PrettyFig;
 
@@ -67,24 +72,32 @@ delete(gcf);
 % The most intereesting thing about this dataset is that sometimes, for some whiffs, the ORN responds, but for others, it does not. The following figure shows a close-up of the data to illustrate this point. On the left, the traces show that ORNs respond only to some pulses, but not to others. It's not clear why. On the right, the plots show that ORN response to two almost identical pulses is very different, with the response to the second pulse much smaller than the response to the first. 
 
 
-figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-subplot(2,2,1), hold on
+figure('outerposition',[0 0 1000 1000],'PaperUnits','points','PaperSize',[1000 1000]); hold on
+subplot(3,2,1), hold on
 plot(data(td).time,data(td).PID,'k');
 ylabel('PID (V)')
 set(gca,'YLim',[-0.1 3.1],'XLim',[25 35])
 
-subplot(2,2,2), hold on
+subplot(3,2,2), hold on
 plot(data(td).time,data(td).PID,'k');
 ylabel('PID (V)')
 set(gca,'YLim',[-0.1 3.1],'XLim',[38 48])
 
-subplot(2,2,3), hold on
+subplot(3,2,3), hold on
+raster2(data(1).spiketimes)
+set(gca,'XLim',[25 35])
+
+subplot(3,2,4), hold on
+raster2(data(1).spiketimes)
+set(gca,'XLim',[38 48])
+
+subplot(3,2,5), hold on
 plot(data(td).time,data(td).ORN,'k');
 ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')
 set(gca,'XLim',[25 35])
 
-subplot(2,2,4), hold on
+subplot(3,2,6), hold on
 plot(data(td).time,data(td).ORN,'k');
 ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')

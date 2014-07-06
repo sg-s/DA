@@ -19,9 +19,9 @@ switch nargin
 		help FitDAModelToData
 		return
 	case 1
-		x0 = [40000 734  0.3 0.66 2  42    2  7.5];
-		lb = [20000 0    0   0    2  1     2  0  ];
-		ub = [60000 900  1   10   2  1000  2  10 ];
+		x0 = [6040  212  0.1 0.1  2   28    40   2.5];
+		lb = [200   0    0   0    1   1     1   -100  ];
+		ub = [60000 900  1   10   9   1000  99   100 ];
 		IgnoreInitial = 1;
 	case 2
 		lb = x0/2;
@@ -36,7 +36,7 @@ end
 
 
 
-psoptions = psoptimset('UseParallel',true,'CompletePoll', 'on', 'Vectorized', 'off','Display','iter','MaxIter',700,'MaxFunEvals',10000);
+psoptions = psoptimset('UseParallel',true,'CompletePoll', 'on', 'Vectorized', 'off','Display','iter','MaxIter',400,'MaxFunEvals',10000);
 x = patternsearch(@(x) DA_cost_function(x,data,@Cost2,IgnoreInitial),x0,[],[],[],[],lb,ub,psoptions);
 p = ValidateDAParameters2(x);
 

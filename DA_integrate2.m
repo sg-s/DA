@@ -1,16 +1,20 @@
 function [R,y,z] = DA_integrate2(S,p)
-
-%% function takes argument of stimulus and a parameter set and implements the DA
-%% model as described in Clark et al., 2013
-%% the parameter set is as described in DA_model_script.m
-
-%% This work is licensed under a Creative Commons Attribution-ShareAlike 3.0 Unported License.
-%% CC-BY-SA
-%% Damon A. Clark, 2013
+%% function [R,y,z] = DA_integrate2(S,p)
+% function takes argument of stimulus and a parameter set and implements the DA
+% model as described in Clark et al., 2013
+% the parameter set is as described in DA_model_script.m
+%
+% This work is licensed under a Creative Commons Attribution-ShareAlike 3.0 Unported License.
+% CC-BY-SA
+% Damon A. Clark, 2013
 % 
 % modified by Srinivas Gorur-Shandilya
 % here we throw away tau_r as we never use it and instead introduce a new parameter, r0, which we add on top to the response at the end. 
 
+if ~nargin
+	help DA_integrate2
+	return
+end
 
 t = [0:3000]; % filters to be this long; don't use n*tau longer than a few hundred ms in this case...
 % Kz and Ky are the filters described in equations 12 and 13

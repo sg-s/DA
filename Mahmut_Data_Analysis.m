@@ -161,6 +161,43 @@ disp(rsquare(whiff_stim_sum,whiff_resp_sum));
 %%
 % The examination of the raw data strongly suggests that the response of the ORN seems to depend on the previous stimulus. (e.g., response to pulse at $t=44s$ is half that of a very similar pulse at $t=39s$)
 
+%% DA Model fit to Data
+% Can we fit a DA Model to this data? Does it explain the observed variability? The following figure shows the ORN firing rates and the best-fit DA Model. 
+
+data(1).DAFit=DA_integrate2(data(1).PID,data(1).DAFitParam);
+
+figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+subplot(2,2,1), hold on
+plot(data(td).time,data(td).PID,'k');
+ylabel('PID (V)')
+set(gca,'YLim',[-0.1 3.1],'XLim',[25 35])
+
+subplot(2,2,2), hold on
+plot(data(td).time,data(td).PID,'k');
+ylabel('PID (V)')
+set(gca,'YLim',[-0.1 3.1],'XLim',[38 48])
+
+subplot(2,2,3), hold on
+plot(data(td).time,data(td).ORN,'k');
+plot(data(1).time,data(1).DAFit,'r')
+ylabel('Firing Rate (Hz)')
+xlabel('Time (s)')
+set(gca,'XLim',[25 35])
+
+subplot(2,2,4), hold on
+plot(data(td).time,data(td).ORN,'k');
+plot(data(1).time,data(1).DAFit,'r')
+ylabel('Firing Rate (Hz)')
+xlabel('Time (s)')
+set(gca,'XLim',[38 48])
+PrettyFig;
+legend Data DAFit
+
+%%
+% The r-square of the fit is:
+
+disp(rsquare(data(1).ORN,data(1).DAFit))
+
 return
 	
 

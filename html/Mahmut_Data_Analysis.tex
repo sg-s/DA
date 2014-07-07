@@ -26,6 +26,7 @@
    \item Stimulus Characteristics
    \item Stimulus and Response Statistics
    \item Variable Response
+   \item DA Model fit to Data
 \end{itemize}
 \begin{par}
 How do ORNs respond to non-Gaussian inputs? Real odor stimuli are characterised by long tails and non-gaussian statisitcs, with large whiffs of odor that occur in periods of relatively low signal. Such a stimulus has been generated here, and the responses of ORNs to these signals is analysed in this figure.
@@ -83,13 +84,29 @@ Now we break up the trace so that we can perform a whiff-by-whiff analysis of th
 The sum total of the odor delivered/whiff seems to correlate well with the number of spikes elicited in that whiff. The r-square of this is:
 \end{par} \vspace{1em}
 
-        \color{lightgray} \begin{verbatim}    0.8390
+        \color{lightgray} \begin{verbatim}    0.8349
 
 \end{verbatim} \color{black}
     \begin{par}
 The examination of the raw data strongly suggests that the response of the ORN seems to depend on the previous stimulus. (e.g., response to pulse at $t=44s$ is half that of a very similar pulse at $t=39s$)
 \end{par} \vspace{1em}
 
+
+\subsection*{DA Model fit to Data}
+
+\begin{par}
+Can we fit a DA Model to this data? Does it explain the observed variability? The following figure shows the ORN firing rates and the best-fit DA Model.
+\end{par} \vspace{1em}
+
+\includegraphics [width=\textwidth]{Mahmut_Data_Analysis_07.pdf}
+\begin{par}
+The r-square of the fit is:
+\end{par} \vspace{1em}
+
+        \color{lightgray} \begin{verbatim}    0.4704
+
+\end{verbatim} \color{black}
+    
 
 
 \end{document}

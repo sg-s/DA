@@ -19,24 +19,24 @@ switch nargin
 		help FitDAModelToData
 		return
 	case 1
-		x0 = [6040  212  0.1 0.1  2   28    40   2.5];
-		lb = [200   0    0   0    1   1     1   -100  ];
-		ub = [60000 900  1   10   9   1000  99   100 ];
-		IgnoreInitial = 1;
+		x0 = [400   20   0.1 0.85  2   75    2   -9];
+		lb = [200   0    0   0     2   1     2   -20];
+		ub = [60000 900  1   10    2   100   2   10];
+		IgnoreInitial = 300;
 	case 2
 		lb = x0/2;
 		ub = x0*10;
-		IgnoreInitial = 1;
+		IgnoreInitial = 300;
 	case 3
 		ub = x0*10;
-		IgnoreInitial = 1;
+		IgnoreInitial = 300;
 	case 4
-		IgnoreInitial = 1;
+		IgnoreInitial = 300;
 end
 
 
 
-psoptions = psoptimset('UseParallel',true,'CompletePoll', 'on', 'Vectorized', 'off','Display','iter','MaxIter',400,'MaxFunEvals',10000);
+psoptions = psoptimset('UseParallel',true,'CompletePoll', 'on', 'Vectorized', 'off','Display','iter','MaxIter',300,'MaxFunEvals',10000);
 x = patternsearch(@(x) DA_cost_function(x,data,@Cost2,IgnoreInitial),x0,[],[],[],[],lb,ub,psoptions);
 p = ValidateDAParameters2(x);
 
@@ -52,3 +52,5 @@ else
 	end
 	clear i
 end
+
+Rguess = abs(Rguess);

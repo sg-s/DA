@@ -5,8 +5,11 @@ if nargin == 2
 	subplot(1,2,1), hold on
 end
 p = data(td).PID;
+if ~isvector(p)
+	p = mean2(p);
+end
 p = p-min(p); p =p/max(p);
-[y,x] = hist(p,40);
+[y,x] = hist(p,50);
 y  = y/max(y);
 if nargin == 3
 	plot(plothere(1),x,y,'k')
@@ -15,8 +18,11 @@ else
 end
 
 p = data(td).ORN;
+if ~isvector(p)
+	p = mean2(p);
+end
 p = p-min(p); p =p/max(p);
-[y1,x1] = hist(p,40);
+[y1,x1] = hist(p,50);
 y1  = y1/max(y1);
 if nargin == 3
 	plot(plothere(1),x1,y1,'b');
@@ -34,15 +40,23 @@ end
 
 act = [];
 stop_here = 100;
+p = data(td).PID;
+if ~isvector(p)
+	p = mean2(p);
+end
 while isempty(act)
 	stop_here = stop_here*2;
-	[y,x] = autocorr(data(td).PID,stop_here);
+	[y,x] = autocorr(p,stop_here);
 	x=x*mean(diff(data(td).time));
 	% find autocorrelation time of PID
 	act = x(find(y<0,1,'first'));
 
 end
-[y1,x1] = autocorr(data(td).ORN,stop_here);
+p = data(td).ORN;
+if ~isvector(p)
+	p = mean2(p);
+end
+[y1,x1] = autocorr(p,stop_here);
 x1=x1*mean(diff(data(td).time));
 
 if isfield(data,'Valve')

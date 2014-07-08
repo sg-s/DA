@@ -13,11 +13,12 @@ regmin = 1e-5;
 algo = 1;
 filter_length = 333;
 min_cutoff = -Inf;
-
+offset = floor(filter_length/10);
 
 if nargin < 3
 	OnlyThesePoints = [];
 end
+
 
 
 % evaluate optional inputs
@@ -27,7 +28,6 @@ end
 
 
 % offset the stimulus and response a little bit to account for acausal filters (I know, weird)
-offset = floor(filter_length/10);
 stim = stim(offset:end);
 response = response(1:end-offset+1);
 filtertime = [-offset:filter_length-offset];

@@ -14,42 +14,212 @@ load('/local-data/DA-paper/mahmut_data.mat')
 
 redo_bootstrap = 0;
 
-td = 1;
+td = 4;
 
-%% Stimulus Characteristics 
-% The following figure shows what the stimulus and the neuron's looks like. 
+%% Rough Overview of Data
+% The following figure shows what the stimulus and the neuron's response looks like. 
 
 % first, remove the baseline from the PID
-data(td).PID = data(td).PID - mean(data(td).PID(1:3000));
-data(td).PID(data(td).PID < 0) = 0;
+if isvector(data(td).PID)
+	data(td).PID = data(td).PID - mean(data(td).PID(1:3000));
+	data(td).PID(data(td).PID < 0) = 0;
+else
+	% we have many PID trials
+	for i = 1:width(data(td).PID)
+		data(td).PID(:,i) = data(td).PID(:,i) - mean(data(td).PID(1:3000,i));
+		data(td).PID(data(td).PID(:,i) < 0,i) = 0;
+	end
+end
+
 
 figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
 subplot(3,1,1), hold on
-plot(data(td).time,data(td).PID,'k');
+if isvector(data(td).PID)
+	plot(data(td).time,data(td).PID,'k');
+else
+	plot(data(td).time,mean2(data(td).PID),'k');
+end
 ylabel('PID (V)')
-title('ab3A response to ethyl acetate')
-set(gca,'YLim',[-0.1 3.1])
+titlestr = strkat(data(td).neuron,' response to ',data(td).odor);
+title(titlestr)
+set(gca,'XLim',[min(data(td).time) max(data(td).time)])
+set(gca,'YLim',[-.1 1.1*max(max(data(td).PID))])
 
 subplot(3,1,2), hold on
-raster2(data(1).spiketimes)
+if isempty(data(td).spiketimeB)
+	raster2(data(td).spiketimes)
+else
+	raster2(data(td).spiketimeB,data(td).spiketimes)
+end
+set(gca,'XLim',[min(data(td).time) max(data(td).time)])
 
 subplot(3,1,3), hold on
-plot(data(td).time,data(td).ORN,'k');
+if isvector(data(td).ORN)
+	plot(data(td).time,data(td).ORN,'k');
+else
+	plot(data(td).time,mean2(data(td).ORN),'k');
+end
 ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')
-
-
+set(gca,'XLim',[min(data(td).time) max(data(td).time)])
+set(gca,'YLim',[0 1.1*max(max(data(td).ORN))])
 
 PrettyFig;
 
-%% Stimulus and Response Statistics 
+
+%% Trial to Trial variability
+% How variable is the response and the stimulus from trial to trial? The following figure shows individual traces of the stimulus and the neuron's response for each trial. 
+
+
+figure('outerposition',[0 0 1000 1000],'PaperUnits','points','PaperSize',[1000 1000]); hold on
+subplot(3,2,1), hold on
+plot(data(td).time,data(td).PID);
+ylabel('PID (V)')
+set(gca,'XLim',[25 35])
+set(gca,'YLim',[-.1 1.1*max(max(data(td).PID))])
+
+subplot(3,2,2), hold on
+plot(data(td).time,data(td).PID);
+ylabel('PID (V)')
+set(gca,'XLim',[38 48])
+set(gca,'YLim',[-0.1 1.1*max(max(data(td).PID))])
+
+subplot(3,2,3), hold on
+raster2(data(td).spiketimes)
+set(gca,'XLim',[25 35])
+
+subplot(3,2,4), hold on
+raster2(data(td).spiketimes)
+set(gca,'XLim',[38 48])
+
+subplot(3,2,5), hold on
+plot(data(td).time,data(td).ORN);
+ylabel('Firing Rate (Hz)')
+xlabel('Time (s)')
+set(gca,'XLim',[25 35])
+set(gca,'YLim',[0 1.1*max(max(data(td).ORN))])
+
+subplot(3,2,6), hold on
+plot(data(td).time,data(td).ORN);
+ylabel('Firing Rate (Hz)')
+xlabel('Time (s)')
+set(gca,'XLim',[38 48])
+set(gca,'YLim',[0 1.1*max(max(data(td).ORN))])
+PrettyFig;
+snapnow;
+delete(gcf);
+
+
+
+%%
+% It looks like the amplitude of the signal is dropping every trial, but that the response amplitude isn't changing much (see the whiff at $t=39s$). 
+
+%%
+% To quantify this, let's attempt to find all the times when the stimulus is high, i.e., ten standard deviations above the baseline. This threshold ensures that we pick up all the whiffs, but ignore the blanks in between, as shown in the figure below. 
+
+figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+plot(data(td).time, data(td).PID(:,1),'k'), hold on
+
+hs = data(td).PID(:,1) > 10*std(data(td).PID(1:3000,1));
+plot(data(td).time(hs), data(td).PID(hs,1),'.r','MarkerSize',24), hold on
+set(gca,'XLim',[28 36])
+xlabel('Time (s)')
+ylabel('Stimulus (V)')
+title('Whiff identification')
+set(gca,'YScale','log')
+PrettyFig;
+snapnow;
+delete(gcf);
+
+
+
+%%
+% Now we break up the trace so that we can perform a whiff-by-whiff analysis of the stimulus and the response, for each trial. The following figure shows how the whiff amplitude and response amplitude drop as a function of trial number.
+
+[whiff_ons,whiff_offs] = ComputeOnsOffs(hs);
+
+whiff_durations = whiff_offs - whiff_ons;
+whiff_ons(whiff_durations <20) = [];
+whiff_offs(whiff_durations <20) = [];
+whiff_durations = whiff_offs - whiff_ons;
+
+whiff_stim_max  = NaN(width(data(td).PID),length(whiff_ons));
+whiff_resp_max  = NaN(width(data(td).PID),length(whiff_ons));
+
+
+for j = 1:width(data(td).PID)
+	for i = 1:length(whiff_ons)
+		whiff_stim_max(j,i) = max(data(td).PID(whiff_ons(i):whiff_offs(i),j));
+		whiff_resp_max(j,i) = max(data(td).ORN(whiff_ons(i):whiff_offs(i),j));
+	end
+	clear i
+
+end
+clear j
+
+for i = 1:length(whiff_ons)
+	% normalise
+	whiff_stim_max(:,i) = whiff_stim_max(:,i)/(whiff_stim_max(1,i));
+	whiff_resp_max(:,i) = whiff_resp_max(:,i)/(whiff_resp_max(1,i));
+end
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+plot(whiff_stim_max)
+xlabel('Trial Number')
+ylabel('Whiff Peak (norm)')
+set(gca,'YLim',[0 2])
+
+subplot(1,2,2), hold on
+plot(whiff_resp_max)
+xlabel('Trial Number')
+ylabel('Max Whiff Response (norm)')
+set(gca,'YLim',[0 2])
+
+PrettyFig;
+snapnow;
+delete(gcf);
+
+
+%%
+% This captures what we see before, that even though the stimulus drops precipitously fro trial to trial, the neuron response seems relatively unchanged.
+
+
+
+% figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% for i = 1:length(whiff_ons)
+% 	% calculate stim decay slopes
+% 	f1 = fit((1:width(data(td).PID))',whiff_stim_max(:,i),'poly1');
+% 	f2 = fit((1:width(data(td).ORN))',whiff_resp_max(:,i),'poly1');
+% 	p1 = f1.p1/max(whiff_stim_max(:,i));
+% 	p2 = f2.p1/max(whiff_resp_max(:,i));
+% 	plot(p1,p2,'.k','MarkerSize',24)
+
+% end
+
+
+
+
+%% Data Statistics and Linear Fit
 % The following figure describes the statistics of the stimulus and the response. Left panel: Histograms of stimulus and response. Middle panel: Autocorrelation functions of the stimulus and the response. Right: Linear filter extracted from this dataset. 
 
 % build a simple linear model
-[K,~,filtertime] = FindBestFilter(data(td).PID(500:end),data(td).ORN(500:end),[],'filter_length=201;','min_cutoff = 0;');
+if isvector(data(td).PID)
+	[K,~,filtertime] = FindBestFilter(data(td).PID,data(td).ORN,[],'filter_length=201;','min_cutoff = 0;');
+else
+	pid = mean(data(td).PID,2);
+	orn = mean(data(td).ORN,2);
+	[K,~,filtertime] = FindBestFilter(pid,orn,[],'filter_length=201;','min_cutoff = 0;','offset=40;');
+end
 data(td).K = K;
 data(td).filtertime = filtertime*mean(diff(data(td).time));
-data(td).LinearFit = mean(data(td).ORN) + convolve(data(td).time,data(td).PID,data(td).K,data(td).filtertime);
+if isvector(data(td).PID)
+	data(td).LinearFit = mean(data(td).ORN) + convolve(data(td).time,data(td).PID,data(td).K,data(td).filtertime);
+else
+	pid = mean(data(td).PID,2);
+	orn = mean(data(td).ORN,2);
+	data(td).LinearFit = mean(orn) + convolve(data(td).time,pid,data(td).K,data(td).filtertime);
+end
 data(td).LinearFit(data(td).LinearFit < 0) = 0;
 
 clear ph
@@ -57,6 +227,9 @@ figure('outerposition',[0 0 1300 400],'PaperUnits','points','PaperSize',[1300 40
 ph(1)=subplot(1,3,1); hold on
 ph(2)=subplot(1,3,2); hold on
 [act] = PlotDataStatistics(data,td,ph);
+
+set(ph(1),'XScale','log','YScale','log')
+set(ph(1),'XMinorTick','on','YMinorTick','on')
 
 subplot(1,3,3), hold on;
 plot(data(td).filtertime,data(td).K,'k','LineWidth',2)
@@ -68,206 +241,243 @@ PrettyFig;
 snapnow;
 delete(gcf);
 
-%% Variable Response
-% The most intereesting thing about this dataset is that sometimes, for some whiffs, the ORN responds, but for others, it does not. The following figure shows a close-up of the data to illustrate this point. On the left, the traces show that ORNs respond only to some pulses, but not to others. It's not clear why. On the right, the plots show that ORN response to two almost identical pulses is very different, with the response to the second pulse much smaller than the response to the first. 
 
-
-figure('outerposition',[0 0 1000 1000],'PaperUnits','points','PaperSize',[1000 1000]); hold on
-subplot(3,2,1), hold on
-plot(data(td).time,data(td).PID,'k');
-ylabel('PID (V)')
-set(gca,'YLim',[-0.1 3.1],'XLim',[25 35])
-
-subplot(3,2,2), hold on
-plot(data(td).time,data(td).PID,'k');
-ylabel('PID (V)')
-set(gca,'YLim',[-0.1 3.1],'XLim',[38 48])
-
-subplot(3,2,3), hold on
-raster2(data(1).spiketimes)
-set(gca,'XLim',[25 35])
-
-subplot(3,2,4), hold on
-raster2(data(1).spiketimes)
-set(gca,'XLim',[38 48])
-
-subplot(3,2,5), hold on
-plot(data(td).time,data(td).ORN,'k');
-ylabel('Firing Rate (Hz)')
-xlabel('Time (s)')
-set(gca,'XLim',[25 35])
-
-subplot(3,2,6), hold on
-plot(data(td).time,data(td).ORN,'k');
-ylabel('Firing Rate (Hz)')
-xlabel('Time (s)')
-set(gca,'XLim',[38 48])
-PrettyFig;
 
 %%
-% Why is there so much variability in the response? The following figure shows a scatter plot of the stimulus and the response. 
-figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(data(td).PID,data(td).ORN,'.k','MarkerSize',24)
-ylabel('Firing Rate (Hz)')
-xlabel('Stimulus (V)')
-PrettyFig;
-
-%%
-% There is surprisingly little correlation between the input and the output. In particular, trajectories seem to cover all the space, instead of being confined to one curve. The r-square between the stimulus and the response is:
-
-disp(rsquare(data(td).PID,data(td).ORN))
-
-%%
-% Let's attempt to find all the times when the stimulus is high, i.e., ten standard deviations above the baseline. This threshold ensures that we pick up all the whiffs, but ignore the blanks in between, as shown in the figure below. 
-
-figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-plot(data(td).time, data(td).PID,'k'), hold on
-
-hs = data(td).PID > 10*std(data(td).PID(1:3000));
-plot(data(td).time(hs), data(td).PID(hs),'.r','MarkerSize',24), hold on
-set(gca,'XLim',[28 36],'YLim',[-0.1 3.1])
-xlabel('Time (s)')
-ylabel('Stimulus (V)')
-PrettyFig;
-
-%%
-% Now we break up the trace so that we can perform a whiff-by-whiff analysis of the response. The following figure shows the relationship between response and stimulus on a whiff-by-whiff basis. 
-
-[whiff_ons,whiff_offs] = ComputeOnsOffs(hs);
-
-whiff_durations = whiff_offs - whiff_ons;
-whiff_ons(whiff_durations <20) = [];
-whiff_offs(whiff_durations <20) = [];
-whiff_durations = whiff_offs - whiff_ons;
-
-whiff_stim_max  = NaN(1,length(whiff_ons));
-whiff_resp_max  = NaN(1,length(whiff_ons));
-whiff_stim_sum  = NaN(1,length(whiff_ons));
-whiff_resp_sum  = NaN(1,length(whiff_ons));
-
-for i = 1:length(whiff_ons)
-	whiff_stim_sum(i) = sum(data(td).PID(whiff_ons(i):whiff_offs(i)));
-	whiff_stim_max(i) = max(data(td).PID(whiff_ons(i):whiff_offs(i)));
-	whiff_resp_sum(i) = sum(data(td).ORN(whiff_ons(i):whiff_offs(i)))*mean(diff(data(td).time));
-	whiff_resp_max(i) = max(data(td).ORN(whiff_ons(i):whiff_offs(i)));
-end
-clear i
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-subplot(1,2,1), hold on
-plot(whiff_stim_sum, whiff_resp_sum,'.r','MarkerSize',24), hold on
-xlabel('Sum Whiff Stimulus (V s)')
-ylabel('Sum ORN response (spikes)')
-
-subplot(1,2,2), hold on
-plot(whiff_stim_max, whiff_resp_max,'.r','MarkerSize',24), hold on
-xlabel('Max Whiff Stimulus (V)')
-ylabel('Max ORN response (Hz)')
-
-PrettyFig;
-
-%%
-% The sum total of the odor delivered/whiff seems to correlate well with the number of spikes elicited in that whiff. The r-square of this is:
-
-disp(rsquare(whiff_stim_sum,whiff_resp_sum));
-
-%%
-% The examination of the raw data strongly suggests that the response of the ORN seems to depend on the previous stimulus. (e.g., response to pulse at $t=44s$ is half that of a very similar pulse at $t=39s$)
-
-%% DA Model fit to Data
-% Can we fit a DA Model to this data? Does it explain the observed variability? The following figure shows the ORN firing rates and the best-fit DA Model. 
-
-data(1).DAFit=DA_integrate2(data(1).PID,data(1).DAFitParam);
+% The weird shape of the linear filter doesn't bode well for the quality of the linear prediction. The following figure shows the linear fit compared to the data. 
 
 figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
 subplot(2,2,1), hold on
-plot(data(td).time,data(td).PID,'k');
+if isvector(data(td).PID)
+	plot(data(td).time,data(td).PID,'k');
+else
+	plot(data(td).time,mean2(data(td).PID),'k');
+end
 ylabel('PID (V)')
-set(gca,'YLim',[-0.1 3.1],'XLim',[25 35])
+set(gca,'XLim',[25 35])
+set(gca,'YLim',[-0.1 1.1*max(max(data(td).PID))])
 
 subplot(2,2,2), hold on
-plot(data(td).time,data(td).PID,'k');
+if isvector(data(td).PID)
+	plot(data(td).time,data(td).PID,'k');
+else
+	plot(data(td).time,mean2(data(td).PID),'k');
+end
 ylabel('PID (V)')
-set(gca,'YLim',[-0.1 3.1],'XLim',[38 48])
+set(gca,'XLim',[38 48])
+set(gca,'YLim',[-0.1 1.1*max(max(data(td).PID))])
 
 subplot(2,2,3), hold on
-plot(data(td).time,data(td).ORN,'k');
-plot(data(1).time,data(1).DAFit,'r')
+if isvector(data(td).ORN)
+	plot(data(td).time,data(td).ORN,'k');
+else
+	plot(data(td).time,mean2(data(td).ORN),'k');
+end
+plot(data(td).time,data(td).LinearFit,'r')
 ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')
 set(gca,'XLim',[25 35])
 
 subplot(2,2,4), hold on
-plot(data(td).time,data(td).ORN,'k');
-plot(data(1).time,data(1).DAFit,'r')
+if isvector(data(td).ORN)
+	plot(data(td).time,data(td).ORN,'k');
+else
+	plot(data(td).time,mean2(data(td).ORN),'k');
+end
+plot(data(td).time,data(td).LinearFit,'r')
 ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')
 set(gca,'XLim',[38 48])
+legend Data LinearFit
 PrettyFig;
-legend Data DAFit
+
+
+snapnow;
+delete(gcf);
+
 
 %%
-% The r-square of the fit is:
+% The rsquare of the linear fit is:
 
-disp(rsquare(data(1).ORN,data(1).DAFit))
+if isvector(data(td).ORN)
+	disp(rsquare(data(td).LinearFit,data(td).ORN))
+else
+	disp(rsquare(data(td).LinearFit,mean2(data(td).ORN)))
+end
 
-return
-	
+%% Gain Analysis: Comparison to Linear Model
+% Even though the linear model does a pretty bad job estimating the response, can we compare the response to the linear model output to see if there is a systematic variation of gain? 
 
+figure('outerposition',[0 0 1000 400],'PaperUnits','points','PaperSize',[1300 400]); hold on
+clear ph
+ph(3)=subplot(1,2,1); hold on; 	axis square
+ph(4)=subplot(1,2,2); hold on;	axis square
+s = 1; % when we start for the gain analysis
+z = length(data(td).ORN); % where we end
+step_size = 2*act/10;
+if step_size < 0.03
+	step_size= 0.03;
+else
+	step_size = 0.03*floor(step_size/0.03);
+end
+history_lengths = [0:step_size:2*act];
+example_history_length = history_lengths(3);
 
-	
-
-	
-
-
-	% do gain analysis
-	figure('outerposition',[0 0 1000 400],'PaperUnits','points','PaperSize',[1300 400]); hold on
-	clear ph
-	ph(3)=subplot(1,2,1); hold on; 	axis square
-	ph(4)=subplot(1,2,2); hold on;	axis square
-	s = 300; % when we start for the gain analysis
-	z = length(data(td).ORN); % where we end
-	step_size = 2*act/10;
-	if step_size < 0.03
-		step_size= 0.03;
-	else
-		step_size = 0.03*floor(step_size/0.03);
-	end
-	history_lengths = [0:step_size:2*act];
-	example_history_length = history_lengths(3);
-
-	clear x
+clear x
+if isvector(data(td).ORN)
 	x.response = data(td).ORN(s:z);
-	x.prediction = data(td).LinearFit(s:z);
+else
+	x.response = mean(data(td).ORN(s:z,:),2);
+end
+x.prediction = data(td).LinearFit(s:z);
+if isvector(data(td).PID)
 	x.stimulus = data(td).PID(s:z);
-	x.time = data(td).time(s:z);
-	x.filter_length = 201;
+else
+	x.stimulus = mean(data(td).PID(s:z,:),2);
+end
+x.time = data(td).time(s:z);
+x.filter_length = 201;
+
+redo_bootstrap = 0;
+if redo_bootstrap
+	data(td).LinearFit_p = GainAnalysis3(x,history_lengths,example_history_length,ph);
+else
+	GainAnalysis3(x,history_lengths,example_history_length,ph,NaN*history_lengths);
+end
+clear x
+set(ph(4),'YScale','log')
 
 
-	if redo_bootstrap
-		data(td).LinearFit_p = GainAnalysis3(x,history_lengths,example_history_length,ph);
-	else
-		GainAnalysis3(x,history_lengths,example_history_length,ph,NaN*history_lengths);
-	end
-	clear x
+snapnow;
+delete(gcf);
 
 
-	snapnow;
-	delete(gcf);
+%%
+% Because the fit is so poor, it's hard to fit lines to these clouds of points. We see the general effect where responses to times where the stimulus is low (green) are systematically under-estimated by the linear model, and the responses to times where the stimulus is high (red) are systematically over-estimated by the linear model. However, perhaps this an artefact of the very poor fit?
 
 
- clear td
+%% Fitting a DA Model
+% Can a DA Model explain the responses of this neuron in this dataset? The following figure shows the ORN firing rates and the best-fit DA Model. 
 
-save('/local-data/DA-paper/mahmut_data.mat','data','-append')
+if isvector(data(td).PID)
+	data(td).DAFit=DA_integrate2(data(td).PID,data(td).DAFitParam);
+else
+	data(td).DAFit=DA_integrate2(mean2(data(td).PID),data(td).DAFitParam);
+end
 
 
+figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+subplot(2,2,1), hold on
+if isvector(data(td).PID)
+	plot(data(td).time,data(td).PID,'k');
+else
+	plot(data(td).time,mean2(data(td).PID),'k');
+end
+ylabel('PID (V)')
+set(gca,'XLim',[25 35])
+set(gca,'YLim',[0 1.1*max(max(data(td).PID))])
 
-figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1300 600]); hold on
-ORN =data(1).ORN;
-LinearFit=data(1).LinearFit;
-PID = data(1).PID;
+subplot(2,2,2), hold on
+if isvector(data(td).PID)
+	plot(data(td).time,data(td).PID,'k');
+else
+	plot(data(td).time,mean2(data(td).PID),'k');
+end
+ylabel('PID (V)')
+set(gca,'XLim',[38 48])
+set(gca,'YLim',[0 1.1*max(max(data(td).PID))])
 
-multiplot(data(1).time,ORN,PID,LinearFit);
-set(gca,'XLim',[26 39])
+subplot(2,2,3), hold on
+if isvector(data(td).ORN)
+	plot(data(td).time,data(td).ORN,'k');
+else
+	plot(data(td).time,mean2(data(td).ORN),'k');
+end
+plot(data(td).time,data(td).DAFit,'r')
+ylabel('Firing Rate (Hz)')
+xlabel('Time (s)')
+set(gca,'XLim',[25 35])
 
+subplot(2,2,4), hold on
+if isvector(data(td).PID)
+	plot(data(td).time,data(td).ORN,'k');
+else
+	plot(data(td).time,mean2(data(td).ORN),'k');
+end
+plot(data(td).time,data(td).DAFit,'r')
+ylabel('Firing Rate (Hz)')
+xlabel('Time (s)')
+set(gca,'XLim',[38 48])
+legend Data DAFit
 PrettyFig;
+
+
+
+snapnow;
+delete(gcf);
+
+
+%%
+% The r-square of the DA model fit is:
+
+if isvector(data(td).ORN)
+	disp(rsquare(data(td).DAFit,data(td).ORN))
+else
+	disp(rsquare(data(td).DAFit,mean2(data(td).ORN)))
+end
+
+%%
+% and the parameters of the model are:
+
+disp(data(td).DAFitParam)
+
+
+%% Gain Analysis: Comparison to DA Model
+% Does the DA model also show systematic variation of gain for high and low stimuli? 
+
+figure('outerposition',[0 0 1000 400],'PaperUnits','points','PaperSize',[1300 400]); hold on
+clear ph
+ph(3)=subplot(1,2,1); hold on; 	axis square
+ph(4)=subplot(1,2,2); hold on;	axis square
+s = 1; % when we start for the gain analysis
+z = length(data(td).ORN); % where we end
+step_size = 2*act/10;
+if step_size < 0.03
+	step_size= 0.03;
+else
+	step_size = 0.03*floor(step_size/0.03);
+end
+history_lengths = 0:step_size:2*act;
+example_history_length = history_lengths(3);
+
+clear x
+if isvector(data(td).ORN)
+	x.response = data(td).ORN(s:z);
+else
+	x.response = mean(data(td).ORN(s:z,:),2);
+end
+x.prediction = data(td).DAFit(s:z);
+if isvector(data(td).PID)
+	x.stimulus = data(td).PID(s:z);
+else
+	x.stimulus = mean(data(td).PID(s:z,:),2);
+end
+x.time = data(td).time(s:z);
+x.filter_length = 201;
+
+redo_bootstrap = 0;
+if redo_bootstrap
+	data(td).LinearFit_p = GainAnalysis3(x,history_lengths,example_history_length,ph);
+else
+	GainAnalysis3(x,history_lengths,example_history_length,ph,NaN*history_lengths);
+end
+clear x
+
+
+snapnow;
+delete(gcf);
+
+
+
+
+	

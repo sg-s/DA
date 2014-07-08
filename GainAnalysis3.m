@@ -72,6 +72,7 @@ all_slopes_err=fall.p1-er(1,1);
 all_slopes = fall.p1;
 output_data.all_slopes = all_slopes;
 
+n = floor(sum(~isnan(stimulus))/10);
 
 
 for i = 1:length(history_lengths)
@@ -80,16 +81,16 @@ for i = 1:length(history_lengths)
 	this_shat = shat(i,:);
 	this_shat(1:hl(i)) = Inf; % the initial segment where we can't estimate shat is excluded
 	[sorted_shat idx] = sort(this_shat,'ascend');
-	f_low = f(idx(1:floor(length(stimulus)/10)));
-	fp_low = fp(idx(1:floor(length(stimulus)/10)));
-	s_low = stimulus(idx(1:floor(length(stimulus)/10)));
+	f_low = f(idx(1:n));
+	fp_low = fp(idx(1:n));
+	s_low = stimulus(idx(1:n));
 
 
 	this_shat(1:hl(i)) = -Inf;
 	[sorted_shat idx] = sort(this_shat,'descend');
-	f_high = f(idx(1:floor(length(stimulus)/10)));
-	fp_high = fp(idx(1:floor(length(stimulus)/10)));
-	s_high = stimulus(idx(1:floor(length(stimulus)/10)));
+	f_high = f(idx(1:n));
+	fp_high = fp(idx(1:n));
+	s_high = stimulus(idx(1:n));
 
 	% remove NaN values
 	f_high(isnan(fp_high)) = [];

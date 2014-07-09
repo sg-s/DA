@@ -26,8 +26,8 @@ switch nargin
 end
 
 
-psoptions = psoptimset('UseParallel',true,'CompletePoll', 'on', 'Vectorized', 'off','Display','iter','MaxIter',200,'MaxFunEvals',10000);
+psoptions = psoptimset('UseParallel',true,'CompletePoll', 'on', 'Vectorized', 'off','Display','iter','MaxIter',500,'MaxFunEvals',10000);
 x = patternsearch(@(x) NLNCostFunction(x,data,@Cost2),x0,[],[],[],[],lb,ub,psoptions);	
 
 % get the final output
-NLNFit = SolveNLNModel(x,data);
+NLNFit = SolveNLNModel(x,data.stimulus);

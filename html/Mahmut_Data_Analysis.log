@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013) (format=pdflatex 2013.5.30)  9 JUL 2014 09:08
+This is pdfTeX, Version 3.1415926-2.5-1.40.14 (TeX Live 2013) (format=pdflatex 2013.5.30)  9 JUL 2014 13:52
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -215,10 +215,10 @@ LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10> not available
 File: Mahmut_Data_Analysis_01.pdf Graphic file (type pdf)
 
 <use Mahmut_Data_Analysis_01.pdf>
-Package pdftex.def Info: Mahmut_Data_Analysis_01.pdf used on input line 44.
+Package pdftex.def Info: Mahmut_Data_Analysis_01.pdf used on input line 45.
 (pdftex.def)             Requested size: 469.75502pt x 375.80495pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 44--45
+Overfull \hbox (10.0pt too wide) in paragraph at lines 45--46
 [][] 
  []
 
@@ -229,27 +229,27 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 44--45
 File: Mahmut_Data_Analysis_02.pdf Graphic file (type pdf)
 
 <use Mahmut_Data_Analysis_02.pdf>
-Package pdftex.def Info: Mahmut_Data_Analysis_02.pdf used on input line 53.
+Package pdftex.def Info: Mahmut_Data_Analysis_02.pdf used on input line 54.
 (pdftex.def)             Requested size: 469.75502pt x 469.75618pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 53--54
+Overfull \hbox (10.0pt too wide) in paragraph at lines 54--55
 [][] 
  []
 
 [2 <./Mahmut_Data_Analysis_01.pdf>]
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <7> on input line 55.
+(Font)              <7> on input line 56.
 LaTeX Font Info:    External font `cmex10' loaded for size
-(Font)              <5> on input line 55.
+(Font)              <5> on input line 56.
 
 <Mahmut_Data_Analysis_03.pdf, id=19, 1003.75pt x 602.25pt>
 File: Mahmut_Data_Analysis_03.pdf Graphic file (type pdf)
 
 <use Mahmut_Data_Analysis_03.pdf>
-Package pdftex.def Info: Mahmut_Data_Analysis_03.pdf used on input line 61.
+Package pdftex.def Info: Mahmut_Data_Analysis_03.pdf used on input line 62.
 (pdftex.def)             Requested size: 469.75502pt x 281.8537pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 61--62
+Overfull \hbox (10.0pt too wide) in paragraph at lines 62--63
 [][] 
  []
 
@@ -258,10 +258,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 61--62
 File: Mahmut_Data_Analysis_04.pdf Graphic file (type pdf)
 
 <use Mahmut_Data_Analysis_04.pdf>
-Package pdftex.def Info: Mahmut_Data_Analysis_04.pdf used on input line 66.
+Package pdftex.def Info: Mahmut_Data_Analysis_04.pdf used on input line 67.
 (pdftex.def)             Requested size: 469.75502pt x 234.87808pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 66--67
+Overfull \hbox (10.0pt too wide) in paragraph at lines 67--68
 [][] 
  []
 
@@ -270,10 +270,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 66--67
 File: Mahmut_Data_Analysis_05.pdf Graphic file (type pdf)
 
 <use Mahmut_Data_Analysis_05.pdf>
-Package pdftex.def Info: Mahmut_Data_Analysis_05.pdf used on input line 78.
+Package pdftex.def Info: Mahmut_Data_Analysis_05.pdf used on input line 79.
 (pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 78--79
+Overfull \hbox (10.0pt too wide) in paragraph at lines 79--80
 [][] 
  []
 
@@ -281,10 +281,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 78--79
 File: Mahmut_Data_Analysis_06.pdf Graphic file (type pdf)
 
 <use Mahmut_Data_Analysis_06.pdf>
-Package pdftex.def Info: Mahmut_Data_Analysis_06.pdf used on input line 83.
+Package pdftex.def Info: Mahmut_Data_Analysis_06.pdf used on input line 84.
 (pdftex.def)             Requested size: 469.75502pt x 281.8537pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 83--84
+Overfull \hbox (10.0pt too wide) in paragraph at lines 84--85
 [][] 
  []
 
@@ -292,10 +292,10 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 83--84
 File: Mahmut_Data_Analysis_07.pdf Graphic file (type pdf)
 
 <use Mahmut_Data_Analysis_07.pdf>
-Package pdftex.def Info: Mahmut_Data_Analysis_07.pdf used on input line 99.
+Package pdftex.def Info: Mahmut_Data_Analysis_07.pdf used on input line 100.
 (pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 99--100
+Overfull \hbox (10.0pt too wide) in paragraph at lines 100--101
 [][] 
  []
 
@@ -304,58 +304,104 @@ Overfull \hbox (10.0pt too wide) in paragraph at lines 99--100
 File: Mahmut_Data_Analysis_08.pdf Graphic file (type pdf)
 
 <use Mahmut_Data_Analysis_08.pdf>
-Package pdftex.def Info: Mahmut_Data_Analysis_08.pdf used on input line 107.
+Package pdftex.def Info: Mahmut_Data_Analysis_08.pdf used on input line 108.
 (pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 107--108
+Overfull \hbox (10.0pt too wide) in paragraph at lines 108--109
 [][] 
  []
 
-<Mahmut_Data_Analysis_09.pdf, id=53, 1003.75pt x 602.25pt>
+<Mahmut_Data_Analysis_09.pdf, id=53, 1304.875pt x 401.5pt>
 File: Mahmut_Data_Analysis_09.pdf Graphic file (type pdf)
 
 <use Mahmut_Data_Analysis_09.pdf>
-Package pdftex.def Info: Mahmut_Data_Analysis_09.pdf used on input line 116.
-(pdftex.def)             Requested size: 469.75502pt x 281.8537pt.
+Package pdftex.def Info: Mahmut_Data_Analysis_09.pdf used on input line 120.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 116--117
+Overfull \hbox (10.0pt too wide) in paragraph at lines 120--121
 [][] 
  []
 
-[6 <./Mahmut_Data_Analysis_07.pdf> <./Mahmut_Data_Analysis_08.pdf>]
-<Mahmut_Data_Analysis_10.pdf, id=64, 1304.875pt x 401.5pt>
+<Mahmut_Data_Analysis_10.pdf, id=54, 1003.75pt x 602.25pt>
 File: Mahmut_Data_Analysis_10.pdf Graphic file (type pdf)
 
 <use Mahmut_Data_Analysis_10.pdf>
-Package pdftex.def Info: Mahmut_Data_Analysis_10.pdf used on input line 146.
-(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+Package pdftex.def Info: Mahmut_Data_Analysis_10.pdf used on input line 125.
+(pdftex.def)             Requested size: 469.75502pt x 281.8537pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 146--147
+Overfull \hbox (10.0pt too wide) in paragraph at lines 125--126
 [][] 
  []
 
-[7 <./Mahmut_Data_Analysis_09.pdf>]
-<Mahmut_Data_Analysis_11.pdf, id=72, 1304.875pt x 401.5pt>
+[6 <./Mahmut_Data_Analysis_07.pdf> <./Mahmut_Data_Analysis_08.pdf> <./Mahmut_Da
+ta_Analysis_09.pdf>]
+<Mahmut_Data_Analysis_11.pdf, id=70, 1304.875pt x 401.5pt>
 File: Mahmut_Data_Analysis_11.pdf Graphic file (type pdf)
 
 <use Mahmut_Data_Analysis_11.pdf>
-Package pdftex.def Info: Mahmut_Data_Analysis_11.pdf used on input line 151.
+Package pdftex.def Info: Mahmut_Data_Analysis_11.pdf used on input line 134.
 (pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
 
-Overfull \hbox (10.0pt too wide) in paragraph at lines 151--152
+Overfull \hbox (10.0pt too wide) in paragraph at lines 134--135
 [][] 
  []
 
-[8 <./Mahmut_Data_Analysis_10.pdf> <./Mahmut_Data_Analysis_11.pdf>]
+<Mahmut_Data_Analysis_12.pdf, id=71, 1304.875pt x 401.5pt>
+File: Mahmut_Data_Analysis_12.pdf Graphic file (type pdf)
+
+<use Mahmut_Data_Analysis_12.pdf>
+Package pdftex.def Info: Mahmut_Data_Analysis_12.pdf used on input line 139.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 139--140
+[][] 
+ []
+
+[7 <./Mahmut_Data_Analysis_10.pdf> <./Mahmut_Data_Analysis_11.pdf>]
+<Mahmut_Data_Analysis_13.pdf, id=83, 1003.75pt x 602.25pt>
+File: Mahmut_Data_Analysis_13.pdf Graphic file (type pdf)
+
+<use Mahmut_Data_Analysis_13.pdf>
+Package pdftex.def Info: Mahmut_Data_Analysis_13.pdf used on input line 148.
+(pdftex.def)             Requested size: 469.75502pt x 281.8537pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 148--149
+[][] 
+ []
+
+[8 <./Mahmut_Data_Analysis_12.pdf> <./Mahmut_Data_Analysis_13.pdf>]
+<Mahmut_Data_Analysis_14.pdf, id=94, 1304.875pt x 401.5pt>
+File: Mahmut_Data_Analysis_14.pdf Graphic file (type pdf)
+
+<use Mahmut_Data_Analysis_14.pdf>
+Package pdftex.def Info: Mahmut_Data_Analysis_14.pdf used on input line 178.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 178--179
+[][] 
+ []
+
+<Mahmut_Data_Analysis_15.pdf, id=95, 1304.875pt x 401.5pt>
+File: Mahmut_Data_Analysis_15.pdf Graphic file (type pdf)
+
+<use Mahmut_Data_Analysis_15.pdf>
+Package pdftex.def Info: Mahmut_Data_Analysis_15.pdf used on input line 183.
+(pdftex.def)             Requested size: 469.75502pt x 144.53989pt.
+
+Overfull \hbox (10.0pt too wide) in paragraph at lines 183--184
+[][] 
+ []
+
+[9 <./Mahmut_Data_Analysis_14.pdf> <./Mahmut_Data_Analysis_15.pdf>]
 (./Mahmut_Data_Analysis.aux) ) 
 Here is how much of TeX's memory you used:
- 2079 strings out of 493315
- 31258 string characters out of 6137904
+ 2099 strings out of 493315
+ 31874 string characters out of 6137904
  93732 words of memory out of 5000000
- 5513 multiletter control sequences out of 15000+600000
+ 5529 multiletter control sequences out of 15000+600000
  7150 words of font info for 26 fonts, out of 8000000 for 9000
  957 hyphenation exceptions out of 8191
- 38i,6n,32p,431b,189s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 38i,6n,32p,431b,243s stack positions out of 5000i,500n,10000p,200000b,80000s
 </usr/local/texlive/2013/texmf-dist/fonts/type1/p
 ublic/amsfonts/cm/cmbx12.pfb></usr/local/texlive/2013/texmf-dist/fonts/type1/pu
 blic/amsfonts/cm/cmmi10.pfb></usr/local/texlive/2013/texmf-dist/fonts/type1/pub
@@ -364,10 +410,10 @@ c/amsfonts/cm/cmr12.pfb></usr/local/texlive/2013/texmf-dist/fonts/type1/public/
 amsfonts/cm/cmr17.pfb></usr/local/texlive/2013/texmf-dist/fonts/type1/public/am
 sfonts/cm/cmsy10.pfb></usr/local/texlive/2013/texmf-dist/fonts/type1/public/ams
 fonts/cm/cmtt10.pfb>
-Output written on Mahmut_Data_Analysis.pdf (8 pages, 4270659 bytes).
+Output written on Mahmut_Data_Analysis.pdf (9 pages, 6559982 bytes).
 PDF statistics:
- 107 PDF objects out of 1000 (max. 8388607)
- 78 compressed objects within 1 object stream
+ 130 PDF objects out of 1000 (max. 8388607)
+ 96 compressed objects within 1 object stream
  0 named destinations out of 1000 (max. 500000)
- 56 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 76 words of extra memory for PDF output out of 10000 (max. 10000000)
 

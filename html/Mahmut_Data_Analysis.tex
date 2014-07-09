@@ -27,6 +27,7 @@
    \item Trial to Trial variability
    \item Data Statistics and Linear Fit
    \item Gain Analysis: Comparison to Linear Model
+   \item Fitting a NLN model
    \item Fitting a DA Model
    \item Gain Analysis: Comparison to DA Model
 \end{itemize}
@@ -57,13 +58,9 @@ It looks like the amplitude of the signal is dropping every trial, but that the 
 \begin{par}
 To quantify this, let's attempt to find all the times when the stimulus is high, i.e., ten standard deviations above the baseline. This threshold ensures that we pick up all the whiffs, but ignore the blanks in between, as shown in the figure below.
 \end{par} \vspace{1em}
-
-\includegraphics [width=\textwidth]{Mahmut_Data_Analysis_03.pdf}
 \begin{par}
 Now we break up the trace so that we can perform a whiff-by-whiff analysis of the stimulus and the response, for each trial. The following figure shows how the whiff amplitude and response amplitude drop as a function of trial number.
 \end{par} \vspace{1em}
-
-\includegraphics [width=\textwidth]{Mahmut_Data_Analysis_04.pdf}
 \begin{par}
 This captures what we see before, that even though the stimulus drops precipitously from trial to trial, the neuron response seems relatively unchanged.
 \end{par} \vspace{1em}
@@ -75,17 +72,17 @@ This captures what we see before, that even though the stimulus drops precipitou
 The following figure describes the statistics of the stimulus and the response. Left panel: Histograms of stimulus and response. Middle panel: Autocorrelation functions of the stimulus and the response. Right: Linear filter extracted from this dataset.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Mahmut_Data_Analysis_05.pdf}
+\includegraphics [width=\textwidth]{Mahmut_Data_Analysis_03.pdf}
 \begin{par}
 The weird shape of the linear filter doesn't bode well for the quality of the linear prediction. The following figure shows the linear fit compared to the data.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Mahmut_Data_Analysis_06.pdf}
+\includegraphics [width=\textwidth]{Mahmut_Data_Analysis_04.pdf}
 \begin{par}
 The rsquare of the linear fit is:
 \end{par} \vspace{1em}
 
-        \color{lightgray} \begin{verbatim}    0.8761
+        \color{lightgray} \begin{verbatim}    0.6465
 
 \end{verbatim} \color{black}
     
@@ -96,7 +93,7 @@ The rsquare of the linear fit is:
 Even though the linear model does a pretty bad job estimating the response, can we compare the response to the linear model output to see if there is a systematic variation of gain?
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Mahmut_Data_Analysis_07.pdf}
+\includegraphics [width=\textwidth]{Mahmut_Data_Analysis_05.pdf}
 \begin{par}
 Because the fit is so poor, it's hard to fit lines to these clouds of points. We see the general effect where responses to times where the stimulus is low (green) are systematically under-estimated by the linear model, and the responses to times where the stimulus is high (red) are systematically over-estimated by the linear model. However, perhaps this an artefact of the very poor fit?
 \end{par} \vspace{1em}
@@ -104,7 +101,30 @@ Because the fit is so poor, it's hard to fit lines to these clouds of points. We
 In the following analysis we redo the gain analysis, but restrict the analysis only to the whiffs.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Mahmut_Data_Analysis_08.pdf}
+
+\subsection*{Fitting a NLN model}
+
+\begin{par}
+In this section we attempt to explain the data by fitting a Nonlinear-Linear-Nonlinear model. This model consists of a static input non-linearity, a parametric bi-lobed filter, and a static output non-linearity. The static non-linearities are Hill functions.
+\end{par} \vspace{1em}
+\begin{par}
+The following figure shows the components of the model.
+\end{par} \vspace{1em}
+
+        \color{lightgray} \begin{verbatim}Reference to non-existent field 'NLNFitParam'.
+
+Error in Mahmut_Data_Analysis (line 514)
+y = hill(data(td).NLNFitParam(1:3),x);
+\end{verbatim} \color{black}
+    \begin{par}
+The following figure compares the neuron's response (black) to the NLN prediction (red).
+\end{par} \vspace{1em}
+\begin{par}
+The r-square of the NLN model fit is:
+\end{par} \vspace{1em}
+\begin{par}
+Again, we repeat the gain analysis but restrict the analysis only to the whiffs, ignoring the blanks inbetween.
+\end{par} \vspace{1em}
 
 
 \subsection*{Fitting a DA Model}
@@ -112,43 +132,22 @@ In the following analysis we redo the gain analysis, but restrict the analysis o
 \begin{par}
 Can a DA Model explain the responses of this neuron in this dataset? The following figure shows the ORN firing rates and the best-fit DA Model.
 \end{par} \vspace{1em}
-
-\includegraphics [width=\textwidth]{Mahmut_Data_Analysis_09.pdf}
 \begin{par}
 The r-square of the DA model fit is:
 \end{par} \vspace{1em}
-
-        \color{lightgray} \begin{verbatim}    0.7079
-
-\end{verbatim} \color{black}
-    \begin{par}
+\begin{par}
 and the parameters of the model are:
 \end{par} \vspace{1em}
 
-        \color{lightgray} \begin{verbatim}        A: 1.6003e+04
-        B: 636.9062
-        C: 0.1000
-    tau_y: 0.9344
-      n_y: 2
-    tau_z: 92.2188
-      n_z: 2
-       r0: 4.1985
-
-\end{verbatim} \color{black}
-    
 
 \subsection*{Gain Analysis: Comparison to DA Model}
 
 \begin{par}
 Does the DA model also show systematic variation of gain for high and low stimuli?
 \end{par} \vspace{1em}
-
-\includegraphics [width=\textwidth]{Mahmut_Data_Analysis_10.pdf}
 \begin{par}
 Again, we repeat the gain analysis but restrict the analysis only to the whiffs, ignoring the blanks inbetween.
 \end{par} \vspace{1em}
-
-\includegraphics [width=\textwidth]{Mahmut_Data_Analysis_11.pdf}
 
 
 

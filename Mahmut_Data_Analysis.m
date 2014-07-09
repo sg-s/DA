@@ -32,8 +32,8 @@ else
 end
 
 
-figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-subplot(3,1,1), hold on
+figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
+subplot(4,1,1), hold on
 if isvector(data(td).PID)
 	plot(data(td).time,data(td).PID,'k');
 else
@@ -43,9 +43,23 @@ ylabel('PID (V)')
 titlestr = strkat(data(td).neuron,' response to ',data(td).odor);
 title(titlestr)
 set(gca,'XLim',[min(data(td).time) max(data(td).time)])
-set(gca,'YLim',[-.1 1.1*max(max(data(td).PID))])
+set(gca,'YLim',[-0.1 1.1*max(max(data(td).PID))])
 
-subplot(3,1,2), hold on
+subplot(4,1,2), hold on
+if isvector(data(td).PID)
+	plot(data(td).time,data(td).PID,'k');
+else
+	plot(data(td).time,mean2(data(td).PID),'k');
+end
+ylabel('PID (V)')
+set(gca,'XLim',[min(data(td).time) max(data(td).time)])
+set(gca,'YLim',[0 1.1*max(max(data(td).PID))])
+a = min(nonzeros(data(td).PID(:)));
+z = 1.1*max((data(td).PID(:)));
+set(gca,'YTick',logspace(log10(a),log10(z),4));
+set(gca,'YScale','log','YMinorTick','on')
+
+subplot(4,1,3), hold on
 if isempty(data(td).spiketimeB)
 	raster2(data(td).spiketimes)
 else
@@ -53,7 +67,7 @@ else
 end
 set(gca,'XLim',[min(data(td).time) max(data(td).time)])
 
-subplot(3,1,3), hold on
+subplot(4,1,4), hold on
 if isvector(data(td).ORN)
 	plot(data(td).time,data(td).ORN,'k');
 else
@@ -66,23 +80,27 @@ set(gca,'YLim',[0 1.1*max(max(data(td).ORN))])
 
 PrettyFig;
 
+snapnow;
+delete(gcf);
 
 %% Trial to Trial variability
 % How variable is the response and the stimulus from trial to trial? The following figure shows individual traces of the stimulus and the neuron's response for each trial. 
 
 
 figure('outerposition',[0 0 1000 1000],'PaperUnits','points','PaperSize',[1000 1000]); hold on
+set(gcf,'DefaultAxesColorOrder',jet(width(data(td).PID)))
 subplot(3,2,1), hold on
 plot(data(td).time,data(td).PID);
 ylabel('PID (V)')
 set(gca,'XLim',[25 35])
-set(gca,'YLim',[-.1 1.1*max(max(data(td).PID))])
+set(gca,'YLim',[0 1.1*max(max(data(td).PID))])
 
 subplot(3,2,2), hold on
 plot(data(td).time,data(td).PID);
 ylabel('PID (V)')
 set(gca,'XLim',[38 48])
-set(gca,'YLim',[-0.1 1.1*max(max(data(td).PID))])
+set(gca,'YLim',[0 1.1*max(max(data(td).PID))])
+
 
 subplot(3,2,3), hold on
 raster2(data(td).spiketimes)
@@ -106,6 +124,7 @@ xlabel('Time (s)')
 set(gca,'XLim',[38 48])
 set(gca,'YLim',[0 1.1*max(max(data(td).ORN))])
 PrettyFig;
+
 snapnow;
 delete(gcf);
 
@@ -164,6 +183,7 @@ for i = 1:length(whiff_ons)
 end
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+set(gcf,'DefaultAxesColorOrder',jet(length(whiff_ons)))
 subplot(1,2,1), hold on
 plot(whiff_stim_max)
 xlabel('Trial Number')
@@ -182,7 +202,7 @@ delete(gcf);
 
 
 %%
-% This captures what we see before, that even though the stimulus drops precipitously fro trial to trial, the neuron response seems relatively unchanged.
+% This captures what we see before, that even though the stimulus drops precipitously from trial to trial, the neuron response seems relatively unchanged.
 
 
 
@@ -229,7 +249,7 @@ ph(2)=subplot(1,3,2); hold on
 [act] = PlotDataStatistics(data,td,ph);
 
 set(ph(1),'XScale','log','YScale','log')
-set(ph(1),'XMinorTick','on','YMinorTick','on')
+set(ph(1),'XMinorTick','on','YTick',[0.01 0.1 0.5 1])
 
 subplot(1,3,3), hold on;
 plot(data(td).filtertime,data(td).K,'k','LineWidth',2)
@@ -320,7 +340,7 @@ if step_size < 0.03
 else
 	step_size = 0.03*floor(step_size/0.03);
 end
-history_lengths = [0:step_size:2*act];
+history_lengths = 0:step_size:2*act;
 example_history_length = history_lengths(3);
 
 clear x
@@ -354,6 +374,58 @@ delete(gcf);
 
 %%
 % Because the fit is so poor, it's hard to fit lines to these clouds of points. We see the general effect where responses to times where the stimulus is low (green) are systematically under-estimated by the linear model, and the responses to times where the stimulus is high (red) are systematically over-estimated by the linear model. However, perhaps this an artefact of the very poor fit?
+
+%%
+% In the following analysis we redo the gain analysis, but restrict the analysis only to the whiffs. 
+
+
+figure('outerposition',[0 0 1000 400],'PaperUnits','points','PaperSize',[1300 400]); hold on
+clear ph
+ph(3)=subplot(1,2,1); hold on; 	axis square
+ph(4)=subplot(1,2,2); hold on;	axis square
+s = 1; % when we start for the gain analysis
+z = length(data(td).ORN); % where we end
+step_size = 2*act/10;
+if step_size < 0.03
+	step_size= 0.03;
+else
+	step_size = 0.03*floor(step_size/0.03);
+end
+history_lengths = [0:step_size:2*act];
+example_history_length = history_lengths(3);
+
+clear x
+if isvector(data(td).ORN)
+	x.response = data(td).ORN(s:z);
+else
+	x.response = mean(data(td).ORN(s:z,:),2);
+end
+x.prediction = data(td).LinearFit(s:z);
+if isvector(data(td).PID)
+	x.stimulus = data(td).PID(s:z);
+else
+	x.stimulus = mean(data(td).PID(s:z,:),2);
+end
+
+% restrict to whiffs
+x.stimulus(~hs) = NaN;
+
+x.time = data(td).time(s:z);
+x.filter_length = 201;
+
+redo_bootstrap = 0;
+if redo_bootstrap
+	data(td).LinearFit_p = GainAnalysis3(x,history_lengths,example_history_length,ph);
+else
+	GainAnalysis3(x,history_lengths,example_history_length,ph,NaN*history_lengths);
+end
+clear x
+
+
+
+snapnow;
+delete(gcf);
+
 
 
 %% Fitting a DA Model
@@ -476,6 +548,58 @@ clear x
 
 snapnow;
 delete(gcf);
+
+%%
+% Again, we repeat the gain analysis but restrict the analysis only to the whiffs, ignoring the blanks inbetween. 
+
+
+figure('outerposition',[0 0 1000 400],'PaperUnits','points','PaperSize',[1300 400]); hold on
+clear ph
+ph(3)=subplot(1,2,1); hold on; 	axis square
+ph(4)=subplot(1,2,2); hold on;	axis square
+s = 1; % when we start for the gain analysis
+z = length(data(td).ORN); % where we end
+step_size = 2*act/10;
+if step_size < 0.03
+	step_size= 0.03;
+else
+	step_size = 0.03*floor(step_size/0.03);
+end
+history_lengths = [0:step_size:2*act];
+example_history_length = history_lengths(3);
+
+clear x
+if isvector(data(td).ORN)
+	x.response = data(td).ORN(s:z);
+else
+	x.response = mean(data(td).ORN(s:z,:),2);
+end
+x.prediction = data(td).DAFit(s:z);
+if isvector(data(td).PID)
+	x.stimulus = data(td).PID(s:z);
+else
+	x.stimulus = mean(data(td).PID(s:z,:),2);
+end
+
+% restrict to whiffs
+x.stimulus(~hs) = NaN;
+
+x.time = data(td).time(s:z);
+x.filter_length = 201;
+
+redo_bootstrap = 0;
+if redo_bootstrap
+	data(td).LinearFit_p = GainAnalysis3(x,history_lengths,example_history_length,ph);
+else
+	GainAnalysis3(x,history_lengths,example_history_length,ph,NaN*history_lengths);
+end
+clear x
+
+
+
+snapnow;
+delete(gcf);
+
 
 
 

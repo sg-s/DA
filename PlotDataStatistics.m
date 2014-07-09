@@ -6,7 +6,8 @@ if nargin == 2
 end
 p = data(td).PID;
 if ~isvector(p)
-	p = mean2(p);
+	% p = mean2(p);
+	p = p(:);
 end
 p = p-min(p); p =p/max(p);
 [y,x] = hist(p,50);
@@ -19,7 +20,8 @@ end
 
 p = data(td).ORN;
 if ~isvector(p)
-	p = mean2(p);
+	% p = mean2(p);
+	p = p(:);
 end
 p = p-min(p); p =p/max(p);
 [y1,x1] = hist(p,50);
@@ -42,7 +44,8 @@ act = [];
 stop_here = 100;
 p = data(td).PID;
 if ~isvector(p)
-	p = mean2(p);
+	% p = mean2(p);
+	p = p(:);
 end
 while isempty(act)
 	stop_here = stop_here*2;
@@ -54,7 +57,8 @@ while isempty(act)
 end
 p = data(td).ORN;
 if ~isvector(p)
-	p = mean2(p);
+	% p = mean2(p);
+	p =p(:);
 end
 [y1,x1] = autocorr(p,stop_here);
 x1=x1*mean(diff(data(td).time));

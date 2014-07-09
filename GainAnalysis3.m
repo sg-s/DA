@@ -65,7 +65,7 @@ high_gof = NaN*history_lengths;
 
 
 % calculate the slopes for all points
-[fall gof] = fit(fp(filter_length+2:end-filter_length),f(filter_length+2:end-filter_length),'Poly1');
+[fall, gof] = fit(fp(filter_length+2:end-filter_length),f(filter_length+2:end-filter_length),'Poly1');
 all_gof = gof.rsquare;
 er = confint(fall);
 all_slopes_err=fall.p1-er(1,1);
@@ -77,40 +77,49 @@ n = floor(sum(~isnan(stimulus))/10);
 
 for i = 1:length(history_lengths)
 
-	% find lowest and highest 10%
+	f = x.response(:);
+
+	% find lowest 10%
 	this_shat = shat(i,:);
+
+	% assign undesirables to Inf
 	this_shat(1:hl(i)) = Inf; % the initial segment where we can't estimate shat is excluded
-	[sorted_shat idx] = sort(this_shat,'ascend');
+	this_shat(isnan(this_shat)) = Inf;
+	[~, idx] = sort(this_shat,'ascend');
 	f_low = f(idx(1:n));
 	fp_low = fp(idx(1:n));
-	s_low = stimulus(idx(1:n));
 
+	% find highest 10%
+	this_shat = shat(i,:);
 
+	% assign undesirables to -Inf
 	this_shat(1:hl(i)) = -Inf;
-	[sorted_shat idx] = sort(this_shat,'descend');
+	this_shat(isnan(this_shat)) = -Inf;
+	[~, idx] = sort(this_shat,'descend');
 	f_high = f(idx(1:n));
 	fp_high = fp(idx(1:n));
-	s_high = stimulus(idx(1:n));
 
 	% remove NaN values
-	f_high(isnan(fp_high)) = [];
-	fp_high(isnan(fp_high)) = [];
-	f_low(isnan(fp_low)) = [];
-	fp_low(isnan(fp_low)) = [];
+	censor_these = find(isnan(fp_high) + isnan(fp_low) + isnan(f_low) + isnan(f_high));
+	f_high(censor_these) = [];
+	fp_high(censor_these) = [];
+	f_low(censor_these) = [];
+	fp_low(censor_these) = [];
+
 
 	% censor times when f is 0?
 	f_low(f==0) = [];
-	f_hight(f==0) = [];
+	f_high(f==0) = [];
 	f(f==0) = [];
 
 	% fit lines
-	[flow gof] = fit(fp_low,f_low,'Poly1');
+	[flow, gof] = fit(fp_low,f_low,'Poly1');
 	low_gof(i) = gof.rsquare;
 	er = confint(flow);
 	low_slopes_err(i)=flow.p1-er(1,1);
 	low_slopes(i) = flow.p1;
 
-	[fhigh gof] = fit(fp_high,f_high,'Poly1');
+	[fhigh, gof] = fit(fp_high,f_high,'Poly1');
 	high_gof(i) =  gof.rsquare;
 	er = confint(fhigh);
 	high_slopes_err(i)=fhigh.p1-er(1,1);

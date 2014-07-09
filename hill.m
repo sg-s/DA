@@ -1,4 +1,4 @@
-function [r] = hill(x,xdata)
+function r = hill(x,xdata)
 xdata = xdata - min(xdata);
 A = x(1);
 K = x(2);

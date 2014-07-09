@@ -23,90 +23,133 @@
 
 \begin{itemize}
 \setlength{\itemsep}{-1ex}
-   \item Stimulus Characteristics
-   \item Stimulus and Response Statistics
-   \item Variable Response
-   \item DA Model fit to Data
+   \item Rough Overview of Data
+   \item Trial to Trial variability
+   \item Data Statistics and Linear Fit
+   \item Gain Analysis: Comparison to Linear Model
+   \item Fitting a DA Model
+   \item Gain Analysis: Comparison to DA Model
 \end{itemize}
 \begin{par}
 How do ORNs respond to non-Gaussian inputs? Real odor stimuli are characterised by long tails and non-gaussian statisitcs, with large whiffs of odor that occur in periods of relatively low signal. Such a stimulus has been generated here, and the responses of ORNs to these signals is analysed in this figure.
 \end{par} \vspace{1em}
 
 
-\subsection*{Stimulus Characteristics}
+\subsection*{Rough Overview of Data}
 
 \begin{par}
-The following figure shows what the stimulus and the neuron's looks like.
+The following figure shows what the stimulus and the neuron's response looks like.
 \end{par} \vspace{1em}
 
 \includegraphics [width=\textwidth]{Mahmut_Data_Analysis_01.pdf}
 
 
-\subsection*{Stimulus and Response Statistics}
+\subsection*{Trial to Trial variability}
+
+\begin{par}
+How variable is the response and the stimulus from trial to trial? The following figure shows individual traces of the stimulus and the neuron's response for each trial.
+\end{par} \vspace{1em}
+
+\includegraphics [width=\textwidth]{Mahmut_Data_Analysis_02.pdf}
+\begin{par}
+It looks like the amplitude of the signal is dropping every trial, but that the response amplitude isn't changing much (see the whiff at $t=39s$).
+\end{par} \vspace{1em}
+\begin{par}
+To quantify this, let's attempt to find all the times when the stimulus is high, i.e., ten standard deviations above the baseline. This threshold ensures that we pick up all the whiffs, but ignore the blanks in between, as shown in the figure below.
+\end{par} \vspace{1em}
+
+\includegraphics [width=\textwidth]{Mahmut_Data_Analysis_03.pdf}
+\begin{par}
+Now we break up the trace so that we can perform a whiff-by-whiff analysis of the stimulus and the response, for each trial. The following figure shows how the whiff amplitude and response amplitude drop as a function of trial number.
+\end{par} \vspace{1em}
+
+\includegraphics [width=\textwidth]{Mahmut_Data_Analysis_04.pdf}
+\begin{par}
+This captures what we see before, that even though the stimulus drops precipitously from trial to trial, the neuron response seems relatively unchanged.
+\end{par} \vspace{1em}
+
+
+\subsection*{Data Statistics and Linear Fit}
 
 \begin{par}
 The following figure describes the statistics of the stimulus and the response. Left panel: Histograms of stimulus and response. Middle panel: Autocorrelation functions of the stimulus and the response. Right: Linear filter extracted from this dataset.
 \end{par} \vspace{1em}
 
-\includegraphics [width=\textwidth]{Mahmut_Data_Analysis_02.pdf}
-
-
-\subsection*{Variable Response}
-
-\begin{par}
-The most intereesting thing about this dataset is that sometimes, for some whiffs, the ORN responds, but for others, it does not. The following figure shows a close-up of the data to illustrate this point. On the left, the traces show that ORNs respond only to some pulses, but not to others. It's not clear why. On the right, the plots show that ORN response to two almost identical pulses is very different, with the response to the second pulse much smaller than the response to the first.
-\end{par} \vspace{1em}
-
-\includegraphics [width=\textwidth]{Mahmut_Data_Analysis_03.pdf}
-\begin{par}
-Why is there so much variability in the response? The following figure shows a scatter plot of the stimulus and the response.
-\end{par} \vspace{1em}
-
-\includegraphics [width=\textwidth]{Mahmut_Data_Analysis_04.pdf}
-\begin{par}
-There is surprisingly little correlation between the input and the output. In particular, trajectories seem to cover all the space, instead of being confined to one curve. The r-square between the stimulus and the response is:
-\end{par} \vspace{1em}
-
-        \color{lightgray} \begin{verbatim}    0.3994
-
-\end{verbatim} \color{black}
-    \begin{par}
-Let's attempt to find all the times when the stimulus is high, i.e., ten standard deviations above the baseline. This threshold ensures that we pick up all the whiffs, but ignore the blanks in between, as shown in the figure below.
-\end{par} \vspace{1em}
-
 \includegraphics [width=\textwidth]{Mahmut_Data_Analysis_05.pdf}
 \begin{par}
-Now we break up the trace so that we can perform a whiff-by-whiff analysis of the response. The following figure shows the relationship between response and stimulus on a whiff-by-whiff basis.
+The weird shape of the linear filter doesn't bode well for the quality of the linear prediction. The following figure shows the linear fit compared to the data.
 \end{par} \vspace{1em}
 
 \includegraphics [width=\textwidth]{Mahmut_Data_Analysis_06.pdf}
 \begin{par}
-The sum total of the odor delivered/whiff seems to correlate well with the number of spikes elicited in that whiff. The r-square of this is:
+The rsquare of the linear fit is:
 \end{par} \vspace{1em}
 
-        \color{lightgray} \begin{verbatim}    0.8349
+        \color{lightgray} \begin{verbatim}    0.8761
 
 \end{verbatim} \color{black}
-    \begin{par}
-The examination of the raw data strongly suggests that the response of the ORN seems to depend on the previous stimulus. (e.g., response to pulse at $t=44s$ is half that of a very similar pulse at $t=39s$)
-\end{par} \vspace{1em}
+    
 
-
-\subsection*{DA Model fit to Data}
+\subsection*{Gain Analysis: Comparison to Linear Model}
 
 \begin{par}
-Can we fit a DA Model to this data? Does it explain the observed variability? The following figure shows the ORN firing rates and the best-fit DA Model.
+Even though the linear model does a pretty bad job estimating the response, can we compare the response to the linear model output to see if there is a systematic variation of gain?
 \end{par} \vspace{1em}
 
 \includegraphics [width=\textwidth]{Mahmut_Data_Analysis_07.pdf}
 \begin{par}
-The r-square of the fit is:
+Because the fit is so poor, it's hard to fit lines to these clouds of points. We see the general effect where responses to times where the stimulus is low (green) are systematically under-estimated by the linear model, and the responses to times where the stimulus is high (red) are systematically over-estimated by the linear model. However, perhaps this an artefact of the very poor fit?
+\end{par} \vspace{1em}
+\begin{par}
+In the following analysis we redo the gain analysis, but restrict the analysis only to the whiffs.
 \end{par} \vspace{1em}
 
-        \color{lightgray} \begin{verbatim}    0.4704
+\includegraphics [width=\textwidth]{Mahmut_Data_Analysis_08.pdf}
+
+
+\subsection*{Fitting a DA Model}
+
+\begin{par}
+Can a DA Model explain the responses of this neuron in this dataset? The following figure shows the ORN firing rates and the best-fit DA Model.
+\end{par} \vspace{1em}
+
+\includegraphics [width=\textwidth]{Mahmut_Data_Analysis_09.pdf}
+\begin{par}
+The r-square of the DA model fit is:
+\end{par} \vspace{1em}
+
+        \color{lightgray} \begin{verbatim}    0.7079
+
+\end{verbatim} \color{black}
+    \begin{par}
+and the parameters of the model are:
+\end{par} \vspace{1em}
+
+        \color{lightgray} \begin{verbatim}        A: 1.6003e+04
+        B: 636.9062
+        C: 0.1000
+    tau_y: 0.9344
+      n_y: 2
+    tau_z: 92.2188
+      n_z: 2
+       r0: 4.1985
 
 \end{verbatim} \color{black}
     
+
+\subsection*{Gain Analysis: Comparison to DA Model}
+
+\begin{par}
+Does the DA model also show systematic variation of gain for high and low stimuli?
+\end{par} \vspace{1em}
+
+\includegraphics [width=\textwidth]{Mahmut_Data_Analysis_10.pdf}
+\begin{par}
+Again, we repeat the gain analysis but restrict the analysis only to the whiffs, ignoring the blanks inbetween.
+\end{par} \vspace{1em}
+
+\includegraphics [width=\textwidth]{Mahmut_Data_Analysis_11.pdf}
+
 
 
 \end{document}

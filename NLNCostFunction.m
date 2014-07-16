@@ -1,7 +1,8 @@
-function [cost] = NLNCostFunction(x,data,CostFunctionHandle)
+function [cost] = NLNCostFunction(x,data)
 % unpack data
 response = data.response(:);
 
 Rguess = SolveNLNModel(x,data.stimulus);
+
 % calculate the cost
-cost = CostFunctionHandle(response(300:end),Rguess(300:end));
+cost = Cost2(response(300:end),Rguess(300:end));

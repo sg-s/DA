@@ -9,7 +9,7 @@
 % specify which data to look at
 clearvars -except options
 load('/local-data/DA-paper/mahmut_data.mat')
-td = 1;
+td = 3;
 redo_bootstrap = 0;
 whiff_anal = 0;
 
@@ -435,6 +435,38 @@ if isvector(data(td).ORN)
 else
 	disp(rsquare(data(td).LinearFit,mean2(data(td).ORN)))
 end
+
+
+%% 
+% Clearly, the linear prediction isn't doing a very good job. Why? Can we improve the prediction by inserting an input non-linearity into the model? 
+
+
+%           #### ##    ## ########  ##     ## ########      ##    ## ##       
+%            ##  ###   ## ##     ## ##     ##    ##         ###   ## ##       
+%            ##  ####  ## ##     ## ##     ##    ##         ####  ## ##       
+%            ##  ## ## ## ########  ##     ##    ##         ## ## ## ##       
+%            ##  ##  #### ##        ##     ##    ##         ##  #### ##       
+%            ##  ##   ### ##        ##     ##    ##         ##   ### ##       
+%           #### ##    ## ##         #######     ##         ##    ## ######## 
+return
+
+clear d
+if isvector(data(td).ORN)
+	d.response = data(td).ORN;
+else
+	d.response = mean2(data(td).ORN);
+end
+
+if isvector(data(td).PID)
+	d.stimulus = data(td).PID;
+else
+	d.stimulus = mean2(data(td).PID);
+end
+
+
+
+
+
 
 %        ######      ###    #### ##    ##          ###    ##    ##    ###    ##       
 %       ##    ##    ## ##    ##  ###   ##         ## ##   ###   ##   ## ##   ##       

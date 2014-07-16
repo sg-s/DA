@@ -8,8 +8,8 @@
 
 % specify which data to look at
 clearvars -except options
-load('/local-data/DA-paper/data.mat')
-td = 7;
+load('/local-data/DA-paper/mahmut_data.mat')
+td = 1;
 redo_bootstrap = 0;
 whiff_anal = 0;
 
@@ -315,6 +315,63 @@ delete(gcf);
 %     ##        ##  ##  #### ##       ######### ##   ##          ##        ##     ##    
 %     ##        ##  ##   ### ##       ##     ## ##    ##         ##        ##     ##    
 %     ######## #### ##    ## ######## ##     ## ##     ##        ##       ####    ##    
+
+
+%% 
+% Is the linear filter being calculated correctly? To check, we pass the stimulus through a known filter and then back out the filter from the synthetic data and compare the estimated filter to the known filter. 
+
+% make a fake filter
+t = 1:201;
+fakeK = 200*make_bilobe_filter(10,2,20,2,t);
+
+% generate fake response
+if isvector(data(td).PID)
+	PID = data(td).PID;
+	ORN = data(td).ORN;
+else
+	PID = mean2(data(td).PID);
+	ORN = mean2(data(td).ORN);
+end
+
+
+fakeORN = filter(fakeK,1,PID - mean(PID)) + mean(ORN);
+fakeORN(fakeORN<0)=0;
+
+% extract  filter 
+[Kprime,~,ft] = FindBestFilter(PID,fakeORN,[],'filter_length=201;','min_cutoff = 0;');
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(t,fakeK/max(fakeK))
+plot(ft,Kprime/max(Kprime),'r')
+legend KnownFilter ReconstructedFilter
+set(gca,'XLim',[min(filtertime) max(filtertime)])
+
+PrettyFig;
+snapnow;
+delete(gcf);
+
+%%
+% The reconstructed filter is approximately correct but not exact. Why is it not exact? Probably because the stimulus is sparse. Here, we back out the known filter using random noise as an input. 
+
+PID = (randn(length(PID),1));
+fakeORN = filter(fakeK,1,PID - mean(PID)) + mean(ORN);
+
+
+% extract  filter 
+[Kprime,~,ft] = FindBestFilter(PID,fakeORN,[],'filter_length=201;','min_cutoff = 0;');
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(t,fakeK/max(fakeK))
+plot(ft,Kprime/max(Kprime),'r')
+legend KnownFilter ReconstructedFilter
+set(gca,'XLim',[min(filtertime) max(filtertime)])
+
+PrettyFig;
+snapnow;
+delete(gcf);
+
+%%
+% So our filter estimation techniques work well. The reason the filter is so bad in the real data is probably because of very sparse data, and the fact that the ORN response can't fully be explained by a linear filter. 
 
 
 %%

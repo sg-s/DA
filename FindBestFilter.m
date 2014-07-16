@@ -30,7 +30,7 @@ end
 % offset the stimulus and response a little bit to account for acausal filters (I know, weird)
 stim = stim(offset:end);
 response = response(1:end-offset+1);
-filtertime = [-offset:filter_length-offset];
+filtertime = [-offset+1:filter_length-offset+1];
 
 if algo == 1
 	%% Chichilnisky's method. 

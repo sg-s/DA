@@ -16,9 +16,9 @@ switch nargin
 		help FitNLModel
 		return
 	case 1
-		x0 = [40   5    1200];
-		lb = [5    -20    800  ];
-		ub = [200   30   2000 ];
+		x0 = [0.1  1];
+		lb = [ 0   0 ];
+		ub = [30   20];
 
 	case 2
 		lb = x0/10;
@@ -30,9 +30,11 @@ psoptions = psoptimset('UseParallel',true,'CompletePoll', 'on', 'Vectorized', 'o
 x = patternsearch(@(x) NLCostFunction(x,data),x0,[],[],[],[],lb,ub,psoptions);	
 
 % get the final output
-NLFit = SolveNLModel(x,data.stimulus,data.response);
+[NLFit,K] = SolveNLModel(x,data.stimulus,data.response);
 
 % debug
 figure, hold on
 plot(data.response), hold on
 plot(NLFit,'r')
+
+figure, plot(K)

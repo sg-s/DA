@@ -3,7 +3,9 @@
 % Usage:
 % 1) generate output given a filter and a nonlinearity:
 % [Rguess,K] = SolveNLModel(x,stimulus,R);
-% where x is a 3-element vector specifying the shape of the logistic input nonlinearity 
+% where x is a 2-element vector specifying the shape of the hill input nonlinearity 
+% the first element of x is the location of the inflection point
+% and the second is the steepness
 % stimulus is a long vector
 % and R is a shorter vector that is the filter, in the same time units as stimulus. 
 %
@@ -20,11 +22,11 @@ if ~nargin
 end
 
 % pass stimulus through input non-linearity
-a = logistic(x,stimulus);
+a = hill2(x,stimulus);
 
 if length(R) == length(stimulus)
 	% fit filter.
-	K = FitFilter2Data(a,R,[],'reg=1;');
+	K = FitFilter2Data(a,R,[],'reg=0.1;');
 
 else
 	% use provided filter. 

@@ -436,11 +436,6 @@ else
 	disp(rsquare(data(td).LinearFit,mean2(data(td).ORN)))
 end
 
-
-%% 
-% Clearly, the linear prediction isn't doing a very good job. Why? Can we improve the prediction by inserting an input non-linearity into the model? 
-
-
 %           #### ##    ## ########  ##     ## ########      ##    ## ##       
 %            ##  ###   ## ##     ## ##     ##    ##         ###   ## ##       
 %            ##  ####  ## ##     ## ##     ##    ##         ####  ## ##       
@@ -448,9 +443,13 @@ end
 %            ##  ##  #### ##        ##     ##    ##         ##  #### ##       
 %            ##  ##   ### ##        ##     ##    ##         ##   ### ##       
 %           #### ##    ## ##         #######     ##         ##    ## ######## 
-return
 
-clear d
+
+
+%% 
+% Clearly, the linear prediction isn't doing a very good job. Why? Can we improve the prediction by inserting an input non-linearity into the model? The following figure shows the result of fitting an input non-linearity (top left) and a linear filter (top right) to the data. The lower panel shows the response of the neuron compared to this prediction. 
+
+
 if isvector(data(td).ORN)
 	d.response = data(td).ORN;
 else
@@ -464,8 +463,35 @@ else
 end
 
 
+[NLFit, K] = SolveNLModel(data(td).NLFitParam,d.stimulus,d.response);
+return
+
+%%
+% The rsquare of this NL fit is:
+
+if isvector(data(td).ORN)
+	disp(rsquare(NLFit,data(td).ORN))
+else
+	disp(rsquare(data(td).LinearFit,mean2(data(td).ORN)))
+end
 
 
+
+
+
+clear d
+
+
+
+
+
+%      #######  ##     ## ######## ########  ##     ## ########         ##    ## ##       
+%     ##     ## ##     ##    ##    ##     ## ##     ##    ##            ###   ## ##       
+%     ##     ## ##     ##    ##    ##     ## ##     ##    ##            ####  ## ##       
+%     ##     ## ##     ##    ##    ########  ##     ##    ##            ## ## ## ##       
+%     ##     ## ##     ##    ##    ##        ##     ##    ##            ##  #### ##       
+%     ##     ## ##     ##    ##    ##        ##     ##    ##            ##   ### ##       
+%      #######   #######     ##    ##         #######     ##            ##    ## ######## 
 
 
 %        ######      ###    #### ##    ##          ###    ##    ##    ###    ##       

@@ -275,7 +275,7 @@ if isvector(data(td).PID)
 else
 	pid = mean(data(td).PID,2);
 	orn = mean(data(td).ORN,2);
-	[K,~,filtertime] = FindBestFilter(pid,orn,[],'filter_length=201;','min_cutoff = 0;','offset=40;');
+	[K,~,filtertime] = FindBestFilter(pid,orn,[],'filter_length=201;','min_cutoff = 0;','offset=20;');
 end
 data(td).K = K;
 data(td).filtertime = filtertime*mean(diff(data(td).time));
@@ -286,7 +286,7 @@ else
 	orn = mean(data(td).ORN,2);
 	data(td).LinearFit = mean(orn) + convolve(data(td).time,pid,data(td).K,data(td).filtertime);
 end
-data(td).LinearFit(data(td).LinearFit < 0) = 0;
+
 
 clear ph
 figure('outerposition',[0 0 1300 400],'PaperUnits','points','PaperSize',[1300 400]); hold on
@@ -464,7 +464,35 @@ end
 
 
 [NLFit, K] = SolveNLModel(data(td).NLFitParam,d.stimulus,d.response);
-return
+figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+subplot(2,2,1), hold on
+scatter(d.stimulus,hill2(data(td).NLFitParam,d.stimulus),'k')
+xlabel('Stimulus (V)')
+ylabel('Function Output (V)')
+
+set(gca,'XLim',[0 max(d.stimulus)],'YLim',[0 max(d.stimulus)])
+
+
+subplot(2,2,2), hold on
+ft = mean(diff(data(td).time))*(1:length(K));
+plot(ft,K)
+set(gca,'XLim',[0 max(ft)])
+xlabel('Filter Lag (s)')
+ylabel('Filter Amplitude (Hz)')
+
+
+subplot(2,2,3:4), hold on
+if isvector(data(td).ORN)
+	plot(data(td).time,data(td).ORN,'k');
+else
+	plot(data(td).time,mean2(data(td).ORN),'k');
+end
+plot(data(td).time,data(td).LinearFit,'b')
+plot(data(td).time,NLFit,'r')
+set(gca,'XLim',[38 48])
+legend({'Data','Linear Fit','NL Fit'},'Location','EastOutside')
+
+PrettyFig
 
 %%
 % The rsquare of this NL fit is:
@@ -472,14 +500,14 @@ return
 if isvector(data(td).ORN)
 	disp(rsquare(NLFit,data(td).ORN))
 else
-	disp(rsquare(data(td).LinearFit,mean2(data(td).ORN)))
+	disp(rsquare(NLFit,mean2(data(td).ORN)))
 end
 
 
 
 
+return
 
-clear d
 
 
 

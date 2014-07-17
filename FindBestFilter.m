@@ -11,6 +11,7 @@ response = response(:);
 regmax = 100;
 regmin = 1e-5;
 algo = 1;
+reg = [];
 filter_length = 333;
 min_cutoff = -Inf;
 offset = floor(filter_length/10);
@@ -25,7 +26,6 @@ end
 for i = 1:nargin-3
 	eval(varargin{i})
 end
-
 
 % offset the stimulus and response a little bit to account for acausal filters (I know, weird)
 stim = stim(offset:end);

@@ -12,6 +12,7 @@ regmax = 100;
 regmin = 1e-5;
 algo = 1;
 reg = [];
+regtype=2;
 filter_length = 333;
 min_cutoff = -Inf;
 offset = floor(filter_length/10);
@@ -27,6 +28,7 @@ for i = 1:nargin-3
 	eval(varargin{i})
 end
 
+
 % offset the stimulus and response a little bit to account for acausal filters (I know, weird)
 stim = stim(offset:end);
 response = response(1:end-offset+1);
@@ -40,7 +42,8 @@ if algo == 1
 		% just use what's given, don't optimise
 		flstr = strcat('filter_length=',mat2str(filter_length),';');
 		regstr = strcat('reg=',mat2str(regmax),';');
-		[K, C] = FitFilter2Data(stim,response,OnlyThesePoints,flstr,regstr);
+		regstr2 = strcat('regtype=',mat2str(regtype),';');
+		[K, C] = FitFilter2Data(stim,response,OnlyThesePoints,flstr,regstr,regstr2);
 		diagnostics = [];
 		return
 	end
@@ -64,11 +67,11 @@ if algo == 1
 		% find the filter
 		flstr = strcat('filter_length=',mat2str(filter_length),';');
 		regstr = strcat('reg=',mat2str(reg(i)),';');
-
-		[K, C] = FitFilter2Data(stim,response,OnlyThesePoints,flstr,regstr);
+		regstr2 = strcat('regtype=',mat2str(regtype),';');
+		[K, C] = FitFilter2Data(stim,response,OnlyThesePoints,flstr,regstr,regstr2);
 
 		% make the prediction 
-		fp = filter(K,1,stim-mean(stim)) + mean(response);
+		fp = filter(K,1,stim-mean(stim)); % + mean(response);
 
 		% apply the cutoff
 		fp(fp<min_cutoff) = min_cutoff;
@@ -119,8 +122,8 @@ if algo == 1
 	% and recalculate the filter
 	flstr = strcat('filter_length=',mat2str(filter_length),';');
 	regstr = strcat('reg=',mat2str(reg(id)),';');
-
-	K = FitFilter2Data(stim,response,OnlyThesePoints,flstr,regstr);
+	regstr2 = strcat('regtype=',mat2str(regtype),';');
+	K = FitFilter2Data(stim,response,OnlyThesePoints,flstr,regstr,regstr2);
 	diagnostics.bestfilter = id;
 
 	% ensure unit gain

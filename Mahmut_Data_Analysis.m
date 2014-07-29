@@ -9,9 +9,12 @@
 % specify which data to look at
 clearvars -except options
 load('/local-data/DA-paper/mahmut_data.mat')
-td = 3;
+td = 5;
 redo_bootstrap = 0;
 whiff_anal = 0;
+
+roi1 = [20 30];
+roi2 = [55 65];
 
 %% 
 % How do ORNs respond to non-Gaussian inputs? Real odor stimuli are characterised by long tails and non-gaussian statisitcs, with large whiffs of odor that occur in periods of relatively low signal. Such a stimulus has been generated here, and the responses of ORNs to these signals is analysed in this figure.
@@ -31,17 +34,7 @@ whiff_anal = 0;
 %% Rough Overview of Data
 % The following figure shows what the stimulus and the neuron's response looks like. 
 
-% first, remove the baseline from the PID
-if isvector(data(td).PID)
-	data(td).PID = data(td).PID - mean(data(td).PID(1:3000));
-	data(td).PID(data(td).PID < 0) = 0;
-else
-	% we have many PID trials
-	for i = 1:width(data(td).PID)
-		data(td).PID(:,i) = data(td).PID(:,i) - mean(data(td).PID(1:3000,i));
-		data(td).PID(data(td).PID(:,i) < 0,i) = 0;
-	end
-end
+% assuming baseline has already been removed...
 
 
 figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
@@ -67,6 +60,7 @@ ylabel('PID (V)')
 set(gca,'XLim',[min(data(td).time) max(data(td).time)])
 set(gca,'YLim',[0 1.1*max(max(data(td).PID))])
 a = min(nonzeros(data(td).PID(:)));
+a = max([a 0]);
 z = 1.1*max((data(td).PID(:)));
 set(gca,'YTick',logspace(log10(a),log10(z),4));
 set(gca,'YScale','log','YMinorTick','on')
@@ -115,38 +109,38 @@ set(gcf,'DefaultAxesColorOrder',jet(width(data(td).PID)))
 subplot(3,2,1), hold on
 plot(data(td).time,data(td).PID);
 ylabel('PID (V)')
-set(gca,'XLim',[25 35])
+set(gca,'XLim',roi1)
 set(gca,'YLim',[0 1.1*max(max(data(td).PID))])
 
 subplot(3,2,2), hold on
 plot(data(td).time,data(td).PID);
 ylabel('PID (V)')
-set(gca,'XLim',[38 48])
+set(gca,'XLim',roi2)
 set(gca,'YLim',[0 1.1*max(max(data(td).PID))])
 
 if isfield(data,'spiketimes') && isfield(data,'spiketimeB')
 	subplot(3,2,3), hold on
 	raster2(data(td).spiketimes)
-	set(gca,'XLim',[25 35])
+	set(gca,'XLim',roi1)
 
 
 	subplot(3,2,4), hold on
 	raster2(data(td).spiketimes)
-	set(gca,'XLim',[38 48])
+	set(gca,'XLim',roi2)
 end
 
 subplot(3,2,5), hold on
 plot(data(td).time,data(td).ORN);
 ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')
-set(gca,'XLim',[25 35])
+set(gca,'XLim',roi1)
 set(gca,'YLim',[0 1.1*max(max(data(td).ORN))])
 
 subplot(3,2,6), hold on
 plot(data(td).time,data(td).ORN);
 ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')
-set(gca,'XLim',[38 48])
+set(gca,'XLim',roi2)
 set(gca,'YLim',[0 1.1*max(max(data(td).ORN))])
 PrettyFig;
 
@@ -174,7 +168,7 @@ if whiff_anal
 
 	hs = data(td).PID(:,1) > 10*std(data(td).PID(1:3000,1));
 	plot(data(td).time(hs), data(td).PID(hs,1),'.r','MarkerSize',24), hold on
-	set(gca,'XLim',[28 36])
+	set(gca,'XLim',roi1)
 	xlabel('Time (s)')
 	ylabel('Stimulus (V)')
 	title('Whiff identification')
@@ -280,11 +274,11 @@ end
 data(td).K = K;
 data(td).filtertime = filtertime*mean(diff(data(td).time));
 if isvector(data(td).PID)
-	data(td).LinearFit = mean(data(td).ORN) + convolve(data(td).time,data(td).PID,data(td).K,data(td).filtertime);
+	data(td).LinearFit = 0*mean(data(td).ORN) + convolve(data(td).time,data(td).PID,data(td).K,data(td).filtertime);
 else
 	pid = mean(data(td).PID,2);
 	orn = mean(data(td).ORN,2);
-	data(td).LinearFit = mean(orn) + convolve(data(td).time,pid,data(td).K,data(td).filtertime);
+	data(td).LinearFit = 0*mean(orn) + convolve(data(td).time,pid,data(td).K,data(td).filtertime);
 end
 
 
@@ -385,7 +379,7 @@ else
 	plot(data(td).time,mean2(data(td).PID),'k');
 end
 ylabel('PID (V)')
-set(gca,'XLim',[25 35])
+set(gca,'XLim',roi1)
 set(gca,'YLim',[-0.1 1.1*max(max(data(td).PID))])
 
 subplot(2,2,2), hold on
@@ -395,7 +389,7 @@ else
 	plot(data(td).time,mean2(data(td).PID),'k');
 end
 ylabel('PID (V)')
-set(gca,'XLim',[38 48])
+set(gca,'XLim',roi2)
 set(gca,'YLim',[-0.1 1.1*max(max(data(td).PID))])
 
 subplot(2,2,3), hold on
@@ -407,7 +401,7 @@ end
 plot(data(td).time,data(td).LinearFit,'r')
 ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')
-set(gca,'XLim',[25 35])
+set(gca,'XLim',roi1)
 
 subplot(2,2,4), hold on
 if isvector(data(td).ORN)
@@ -418,7 +412,7 @@ end
 plot(data(td).time,data(td).LinearFit,'r')
 ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')
-set(gca,'XLim',[38 48])
+set(gca,'XLim',roi2)
 legend Data LinearFit
 PrettyFig;
 
@@ -436,6 +430,13 @@ else
 	disp(rsquare(data(td).LinearFit,mean2(data(td).ORN)))
 end
 
+%%
+% Perhaps the reason the filter looks weird is because the stimulus actually is dropping from trial to trial, and that averaging the data over trials is not reasonable. In the following section, we combine all the data in one long vector and then calcualte the filter from this using a fixed regularisation. 
+
+s = data(td).PID(:);
+f = data(td).ORN(:);
+K = FindBestFilter(s,f);
+
 %           #### ##    ## ########  ##     ## ########      ##    ## ##       
 %            ##  ###   ## ##     ## ##     ##    ##         ###   ## ##       
 %            ##  ####  ## ##     ## ##     ##    ##         ####  ## ##       
@@ -446,7 +447,7 @@ end
 
 
 
-%% 
+%% Fitting the Data with an Input Nonlinearity
 % Clearly, the linear prediction isn't doing a very good job. Why? Can we improve the prediction by inserting an input non-linearity into the model? The following figure shows the result of fitting an input non-linearity (top left) and a linear filter (top right) to the data. The lower panel shows the response of the neuron compared to this prediction. 
 
 

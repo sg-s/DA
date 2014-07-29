@@ -31,6 +31,8 @@ if nargin == 3
 	set(plothere(1),'box','on','YLim',[0 1.5]);
 	title(plothere(1),'Stimulus and Response Dist.')
 	legend(plothere(1),{'Stimulus','ORN'});
+	xlabel(plothere(1),'Normalised Value')
+	ylabel(plothere(1),'Normalised Density')
 else
 	plot(x1,y1,'b')
 	set(gca,'box','on','YLim',[0 1.5])
@@ -92,5 +94,6 @@ else
 	set(plothere(2),'box','on','XLim',[min(x) max(x)])
 	title(plothere(2),'autocorrelation.')
 	legend(plothere(2),{'Stimulus','ORN'});
+	xlabel(plothere(2),'Lag (s)')
 end
 

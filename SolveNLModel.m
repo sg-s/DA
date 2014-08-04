@@ -26,7 +26,7 @@ a = hill2(x,stimulus);
 
 if length(R) == length(stimulus)
 	% fit filter.
-	K = FitFilter2Data(a,R,[],'reg=0.1;');
+	K = FitFilter2Data(a,R,[],'reg=0.1;','filter_length=201;');
 
 else
 	% use provided filter. 
@@ -35,9 +35,6 @@ else
 end
 
 Rguess = filter(K,1,a);
-
-% rectify it
-Rguess(Rguess<0)=0;
 
 
 

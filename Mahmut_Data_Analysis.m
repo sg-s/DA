@@ -338,24 +338,24 @@ else
 	disp(rsquare(data(td).LinearFit,mean2(data(td).ORN)))
 end
 
-%%
-% Perhaps the reason the filter looks weird is because the stimulus actually is dropping from trial to trial, and that averaging the data over trials is not reasonable. In the following section, we combine all the data in one long vector and then calculate the filter from this using a fixed regularisation. 
 
-s = data(td).PID(:);
-f = data(td).ORN(:);
-[K,d] = FindBestFilter(s,f,[],'filter_length=201;');
+% % Perhaps the reason the filter looks weird is because the stimulus actually is dropping from trial to trial, and that averaging the data over trials is not reasonable. In the following section, we combine all the data in one long vector and then calculate the filter from this using a fixed regularisation. 
 
-figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(data(td).filtertime,K,'r')
-set(gca,'XLim',[min(data(td).filtertime) max(data(td).filtertime)])
-xlabel('Lag (a.u.)')
-ylabel('Filter height (Hz)')
+% s = data(td).PID(:);
+% f = data(td).ORN(:);
+% [K,d] = FindBestFilter(s,f,[],'filter_length=201;');
 
-fp = convolve(data(td).time,s,K,data(td).filtertime);
+% figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% plot(data(td).filtertime,K,'r')
+% set(gca,'XLim',[min(data(td).filtertime) max(data(td).filtertime)])
+% xlabel('Lag (a.u.)')
+% ylabel('Filter height (Hz)')
 
-% The r-square of this prediction is:
+% fp = convolve(data(td).time,s,K,data(td).filtertime);
 
-disp(rsquare(f,fp))
+% % The r-square of this prediction is:
+
+% disp(rsquare(f,fp))
 
 %           #### ##    ## ########  ##     ## ########      ##    ## ##       
 %            ##  ###   ## ##     ## ##     ##    ##         ###   ## ##       
@@ -378,9 +378,37 @@ end
 
 if isvector(data(td).PID)
 	d.stimulus = data(td).PID;
+
 else
 	d.stimulus = mean2(data(td).PID);
 end
+
+d.stimulus = d.stimulus - min(d.stimulus);
+NFit = hill(data(td).NFit,d.stimulus);
+
+figure('outerposition',[0 0 1200 500],'PaperUnits','points','PaperSize',[1200 500]); hold on
+subplot(1,3,1), hold on
+plot(d.stimulus,hill(data(td).NFit,d.stimulus),'k+')
+xlabel('Stimulus (V)')
+ylabel('Firing rate (Hz)')
+title('Nonlinear Function')
+
+subplot(1,3,2:3), hold on
+plot(data(td).time,d.response,'k')
+hold on
+plot(data(td).time,NFit,'r')
+legend({'Data','Prediction'})
+set(gca,'XLim',[min(data(td).time) max(data(td).time)])
+title('Nonlinear Function Output')
+
+PrettyFig;
+snapnow;
+delete(gcf);
+
+
+%%
+% The r-square of the prediction is:
+disp(rsquare(NFit,d.response))
 
 
 
@@ -409,6 +437,7 @@ else
 	d.stimulus = mean2(data(td).PID);
 end
 
+d.stimulus = abs(d.stimulus);
 
 [NLFit, K] = SolveNLModel(data(td).NLFitParam,d.stimulus,d.response);
 figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
@@ -434,12 +463,14 @@ if isvector(data(td).ORN)
 else
 	plot(data(td).time,mean2(data(td).ORN),'k');
 end
-plot(data(td).time,data(td).LinearFit,'b')
-plot(data(td).time,NLFit,'r')
-set(gca,'XLim',[38 48])
-legend({'Data','Linear Fit','NL Fit'},'Location','EastOutside')
+plot(data(td).time,NFit,'g')
+plot(data(td).time,NLFit,'b')
+set(gca,'XLim',[20 40])
+legend({'Data','Nonlinear Fit','NL Fit'},'Location','EastOutside')
 
 PrettyFig
+snapnow;
+delete(gcf);
 
 %%
 % The rsquare of this NL fit is:

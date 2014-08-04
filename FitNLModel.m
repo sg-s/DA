@@ -38,3 +38,5 @@ plot(data.response), hold on
 plot(NLFit,'r')
 
 figure, plot(K)
+
+disp(rsquare(NLFit,data.response))

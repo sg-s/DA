@@ -79,7 +79,7 @@ if nargin == 2
 		plot(x2,y2,'r'), hold on
 	end
 	title('Autocorrelation')
-	set(gca,'box','on','XLim',[min(x) max(x)])
+	set(gca,'box','on','XLim',[min(x) max(x)],'XScale','log')
 	xlabel('Lag (s)')
 	if isfield(data,'Valve')
 		legend Stimulus ORN Valve
@@ -91,7 +91,7 @@ if nargin == 2
 else
 	plot(plothere(2),x,y,'k');
 	plot(plothere(2),x1,y1,'b');
-	set(plothere(2),'box','on','XLim',[min(x) max(x)])
+	set(plothere(2),'box','on','XLim',[min(x) max(x)],'XScale','log')
 	title(plothere(2),'autocorrelation.')
 	legend(plothere(2),{'Stimulus','ORN'});
 	xlabel(plothere(2),'Lag (s)')

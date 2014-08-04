@@ -43,7 +43,7 @@ if algo == 1
 		flstr = strcat('filter_length=',mat2str(filter_length),';');
 		regstr = strcat('reg=',mat2str(regmax),';');
 		regstr2 = strcat('regtype=',mat2str(regtype),';');
-		[K, C] = FitFilter2Data(stim,response,OnlyThesePoints,flstr,regstr,regstr2);
+		K = FitFilter2Data(stim,response,OnlyThesePoints,flstr,regstr,regstr2);
 		diagnostics = [];
 		return
 	end
@@ -80,13 +80,10 @@ if algo == 1
 		fp(1:filter_length+1) = NaN;
 
 		% find the error--in r square
-		% err(i) = sqrt(sum(((fp(filter_length+2:end)-response(filter_length+2:end)).^2)));
 		err(i) = rsquare(fp(filter_length+2:end),response(filter_length+2:end));
 
 		% find other metrics
 		filter_height(i) = max(abs(K));
-
-		% filter_sum(i) = sum(abs(K));
 		filter_sum(i) = sum(abs(diff(K)));
 		fall= fit(fp(filter_length+2:end),response(filter_length+2:end),'Poly1');
 

@@ -60,7 +60,7 @@ ylabel('PID (V)')
 set(gca,'XLim',[min(data(td).time) max(data(td).time)])
 set(gca,'YLim',[0 1.1*max(max(data(td).PID))])
 a = min(nonzeros(data(td).PID(:)));
-a = max([a 0]);
+a = max([a 1e-6]);
 z = 1.1*max((data(td).PID(:)));
 set(gca,'YTick',logspace(log10(a),log10(z),4));
 set(gca,'YScale','log','YMinorTick','on')
@@ -147,109 +147,10 @@ PrettyFig;
 snapnow;
 delete(gcf);
 
-%    ##      ## ##     ## #### ######## ########          ###    ##    ##    ###    ##       
-%    ##  ##  ## ##     ##  ##  ##       ##               ## ##   ###   ##   ## ##   ##       
-%    ##  ##  ## ##     ##  ##  ##       ##              ##   ##  ####  ##  ##   ##  ##       
-%    ##  ##  ## #########  ##  ######   ######         ##     ## ## ## ## ##     ## ##       
-%    ##  ##  ## ##     ##  ##  ##       ##             ######### ##  #### ######### ##       
-%    ##  ##  ## ##     ##  ##  ##       ##             ##     ## ##   ### ##     ## ##       
-%     ###  ###  ##     ## #### ##       ##             ##     ## ##    ## ##     ## ######## 
-
 %%
-% It looks like the amplitude of the signal is dropping every trial, but that the response amplitude isn't changing much (see the whiff at $t=39s$). 
-
-%%
-% To quantify this, let's attempt to find all the times when the stimulus is high, i.e., ten standard deviations above the baseline. This threshold ensures that we pick up all the whiffs, but ignore the blanks in between, as shown in the figure below. 
-
-if whiff_anal
-
-	figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-	plot(data(td).time, data(td).PID(:,1),'k'), hold on
-
-	hs = data(td).PID(:,1) > 10*std(data(td).PID(1:3000,1));
-	plot(data(td).time(hs), data(td).PID(hs,1),'.r','MarkerSize',24), hold on
-	set(gca,'XLim',roi1)
-	xlabel('Time (s)')
-	ylabel('Stimulus (V)')
-	title('Whiff identification')
-	set(gca,'YScale','log')
-	PrettyFig;
-	snapnow;
-	delete(gcf);
-
-end
+% It looks like the amplitude of the signal is dropping every trial. It's still not clear why this is the case. 
 
 
-
-%%
-% Now we break up the trace so that we can perform a whiff-by-whiff analysis of the stimulus and the response, for each trial. The following figure shows how the whiff amplitude and response amplitude drop as a function of trial number.
-
-
-if whiff_anal
-
-	[whiff_ons,whiff_offs] = ComputeOnsOffs(hs);
-
-	whiff_durations = whiff_offs - whiff_ons;
-	whiff_ons(whiff_durations <20) = [];
-	whiff_offs(whiff_durations <20) = [];
-	whiff_durations = whiff_offs - whiff_ons;
-
-	whiff_stim_max  = NaN(width(data(td).PID),length(whiff_ons));
-	whiff_resp_max  = NaN(width(data(td).PID),length(whiff_ons));
-
-
-	for j = 1:width(data(td).PID)
-		for i = 1:length(whiff_ons)
-			whiff_stim_max(j,i) = max(data(td).PID(whiff_ons(i):whiff_offs(i),j));
-			whiff_resp_max(j,i) = max(data(td).ORN(whiff_ons(i):whiff_offs(i),j));
-		end
-		clear i
-
-	end
-	clear j
-
-	for i = 1:length(whiff_ons)
-		% normalise
-		whiff_stim_max(:,i) = whiff_stim_max(:,i)/(whiff_stim_max(1,i));
-		whiff_resp_max(:,i) = whiff_resp_max(:,i)/(whiff_resp_max(1,i));
-	end
-
-	figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-	set(gcf,'DefaultAxesColorOrder',jet(length(whiff_ons)))
-	subplot(1,2,1), hold on
-	plot(whiff_stim_max)
-	xlabel('Trial Number')
-	ylabel('Whiff Peak (norm)')
-	set(gca,'YLim',[0 2])
-
-	subplot(1,2,2), hold on
-	plot(whiff_resp_max)
-	xlabel('Trial Number')
-	ylabel('Max Whiff Response (norm)')
-	set(gca,'YLim',[0 2])
-
-	PrettyFig;
-	snapnow;
-	delete(gcf);
-
-end
-
-
-%%
-% This captures what we see before, that even though the stimulus drops precipitously from trial to trial, the neuron response seems relatively unchanged.
-
-
-
-% figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-% for i = 1:length(whiff_ons)
-% 	% calculate stim decay slopes
-% 	f1 = fit((1:width(data(td).PID))',whiff_stim_max(:,i),'poly1');
-% 	f2 = fit((1:width(data(td).ORN))',whiff_resp_max(:,i),'poly1');
-% 	p1 = f1.p1/max(whiff_stim_max(:,i));
-% 	p2 = f2.p1/max(whiff_resp_max(:,i));
-% 	plot(p1,p2,'.k','MarkerSize',24)
-
-% end
 
 
 %        ######  ########    ###    ######## ####  ######  ######## ####  ######   ######  
@@ -269,7 +170,7 @@ if isvector(data(td).PID)
 else
 	pid = mean(data(td).PID,2);
 	orn = mean(data(td).ORN,2);
-	[K,~,filtertime] = FindBestFilter(pid,orn,[],'filter_length=201;','min_cutoff = 0;','offset=20;');
+	[K,~,filtertime] = FindBestFilter(pid,orn,[],'filter_length=201;','min_cutoff = 0;');
 end
 data(td).K = K;
 data(td).filtertime = filtertime*mean(diff(data(td).time));
@@ -286,7 +187,7 @@ clear ph
 figure('outerposition',[0 0 1300 400],'PaperUnits','points','PaperSize',[1300 400]); hold on
 ph(1)=subplot(1,3,1); hold on
 ph(2)=subplot(1,3,2); hold on
-[act] = PlotDataStatistics(data,td,ph);
+act = PlotDataStatistics(data,td,ph);
 
 set(ph(1),'XScale','log','YScale','log')
 set(ph(1),'XMinorTick','on','YTick',[0.01 0.1 0.5 1])
@@ -311,7 +212,9 @@ delete(gcf);
 %     ######## #### ##    ## ######## ##     ## ##     ##        ##       ####    ##    
 
 
-%% 
+%% Linear Fit
+% The linear filter calculated and shown above is a "best" filter that simultaneously tries to maximise the predictive power of the model while suppressing high frequency components and having a unit gain. 
+
 % Is the linear filter being calculated correctly? To check, we pass the stimulus through a known filter and then back out the filter from the synthetic data and compare the estimated filter to the known filter. 
 
 % make a fake filter
@@ -328,44 +231,49 @@ else
 end
 
 
-fakeORN = filter(fakeK,1,PID - mean(PID)) + mean(ORN);
+fakeORN = filter(fakeK,1,PID - mean(PID));
 fakeORN(fakeORN<0)=0;
 
 % extract  filter 
-[Kprime,~,ft] = FindBestFilter(PID,fakeORN,[],'filter_length=201;','min_cutoff = 0;');
+[Kprime,~,ft] = FindBestFilter(PID,fakeORN,[],'filter_length=201;');
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(t,fakeK/max(fakeK))
-plot(ft,Kprime/max(Kprime),'r')
+plot(t,fakeK)
+plot(ft,Kprime,'r')
 legend KnownFilter ReconstructedFilter
 set(gca,'XLim',[min(filtertime) max(filtertime)])
+xlabel('Lag (a.u.)')
+ylabel('Filter height (a.u.)')
 
 PrettyFig;
 snapnow;
 delete(gcf);
 
 %%
-% The reconstructed filter is approximately correct but not exact. Why is it not exact? Probably because the stimulus is sparse. Here, we back out the known filter using random noise as an input. 
+% The reconstructed filter is approximately correct but not exact. Note that both the temporal shape and the raw amplitude of the known filter are backed out correctly by the filter estimation. Why is it not exact? Probably because the stimulus is sparse. Here, we back out the known filter using random noise as an input. 
 
 PID = (randn(length(PID),1));
-fakeORN = filter(fakeK,1,PID - mean(PID)) + mean(ORN);
+fakeORN = filter(fakeK,1,PID - mean(PID));
 
 
 % extract  filter 
-[Kprime,~,ft] = FindBestFilter(PID,fakeORN,[],'filter_length=201;','min_cutoff = 0;');
+[Kprime,~,ft] = FindBestFilter(PID,fakeORN,[],'filter_length=201;');
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(t,fakeK/max(fakeK))
-plot(ft,Kprime/max(Kprime),'r')
+plot(t,fakeK)
+plot(ft,Kprime,'r')
 legend KnownFilter ReconstructedFilter
 set(gca,'XLim',[min(filtertime) max(filtertime)])
+xlabel('Lag (a.u.)')
+ylabel('Filter height (a.u.)')
+
 
 PrettyFig;
 snapnow;
 delete(gcf);
 
 %%
-% So our filter estimation techniques work well. The reason the filter is so bad in the real data is probably because of very sparse data, and the fact that the ORN response can't fully be explained by a linear filter. 
+% So now we can exactly match both the amplitude and the temporal structure of the known filter. So our filter estimation techniques work well. The reason the filter is so bad in the real data is probably because of very sparse data, and the fact that the ORN response can't fully be explained by a linear filter. 
 
 
 %%
@@ -431,11 +339,23 @@ else
 end
 
 %%
-% Perhaps the reason the filter looks weird is because the stimulus actually is dropping from trial to trial, and that averaging the data over trials is not reasonable. In the following section, we combine all the data in one long vector and then calcualte the filter from this using a fixed regularisation. 
+% Perhaps the reason the filter looks weird is because the stimulus actually is dropping from trial to trial, and that averaging the data over trials is not reasonable. In the following section, we combine all the data in one long vector and then calculate the filter from this using a fixed regularisation. 
 
 s = data(td).PID(:);
 f = data(td).ORN(:);
-K = FindBestFilter(s,f);
+[K,d] = FindBestFilter(s,f,[],'filter_length=201;');
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(data(td).filtertime,K,'r')
+set(gca,'XLim',[min(data(td).filtertime) max(data(td).filtertime)])
+xlabel('Lag (a.u.)')
+ylabel('Filter height (Hz)')
+
+fp = convolve(data(td).time,s,K,data(td).filtertime);
+
+% The r-square of this prediction is:
+
+disp(rsquare(f,fp))
 
 %           #### ##    ## ########  ##     ## ########      ##    ## ##       
 %            ##  ###   ## ##     ## ##     ##    ##         ###   ## ##       
@@ -448,6 +368,32 @@ K = FindBestFilter(s,f);
 
 
 %% Fitting the Data with an Input Nonlinearity
+% The filter doesn't seem to have any obvious shape. Can we fit the data with just a nonlinear transformation of the input? 
+
+if isvector(data(td).ORN)
+	d.response = data(td).ORN;
+else
+	d.response = mean2(data(td).ORN);
+end
+
+if isvector(data(td).PID)
+	d.stimulus = data(td).PID;
+else
+	d.stimulus = mean2(data(td).PID);
+end
+
+
+
+%             ##    ## ##          ##     ##  #######  ########  ######## ##       
+%             ###   ## ##          ###   ### ##     ## ##     ## ##       ##       
+%             ####  ## ##          #### #### ##     ## ##     ## ##       ##       
+%             ## ## ## ##          ## ### ## ##     ## ##     ## ######   ##       
+%             ##  #### ##          ##     ## ##     ## ##     ## ##       ##       
+%             ##   ### ##          ##     ## ##     ## ##     ## ##       ##       
+%             ##    ## ########    ##     ##  #######  ########  ######## ######## 
+
+
+%% Fitting Data with a NL model
 % Clearly, the linear prediction isn't doing a very good job. Why? Can we improve the prediction by inserting an input non-linearity into the model? The following figure shows the result of fitting an input non-linearity (top left) and a linear filter (top right) to the data. The lower panel shows the response of the neuron compared to this prediction. 
 
 
@@ -1033,5 +979,96 @@ if whiff_anal
 
 
 end
+
+
+
+%    ##      ## ##     ## #### ######## ########          ###    ##    ##    ###    ##       
+%    ##  ##  ## ##     ##  ##  ##       ##               ## ##   ###   ##   ## ##   ##       
+%    ##  ##  ## ##     ##  ##  ##       ##              ##   ##  ####  ##  ##   ##  ##       
+%    ##  ##  ## #########  ##  ######   ######         ##     ## ## ## ## ##     ## ##       
+%    ##  ##  ## ##     ##  ##  ##       ##             ######### ##  #### ######### ##       
+%    ##  ##  ## ##     ##  ##  ##       ##             ##     ## ##   ### ##     ## ##       
+%     ###  ###  ##     ## #### ##       ##             ##     ## ##    ## ##     ## ######## 
+
+
+
+%% Whiff-based Analysis
+% To quantify this, let's attempt to find all the times when the stimulus is high, i.e., ten standard deviations above the baseline. This threshold ensures that we pick up all the whiffs, but ignore the blanks in between, as shown in the figure below. 
+
+if whiff_anal
+
+	figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+	plot(data(td).time, data(td).PID(:,1),'k'), hold on
+
+	hs = data(td).PID(:,1) > 10*std(data(td).PID(1:3000,1));
+	plot(data(td).time(hs), data(td).PID(hs,1),'.r','MarkerSize',24), hold on
+	set(gca,'XLim',roi1)
+	xlabel('Time (s)')
+	ylabel('Stimulus (V)')
+	title('Whiff identification')
+	set(gca,'YScale','log')
+	PrettyFig;
+	snapnow;
+	delete(gcf);
+
+end
+
+
+
+%%
+% Now we break up the trace so that we can perform a whiff-by-whiff analysis of the stimulus and the response, for each trial. The following figure shows how the whiff amplitude and response amplitude drop as a function of trial number.
+
+
+if whiff_anal
+
+	[whiff_ons,whiff_offs] = ComputeOnsOffs(hs);
+
+	whiff_durations = whiff_offs - whiff_ons;
+	whiff_ons(whiff_durations <20) = [];
+	whiff_offs(whiff_durations <20) = [];
+	whiff_durations = whiff_offs - whiff_ons;
+
+	whiff_stim_max  = NaN(width(data(td).PID),length(whiff_ons));
+	whiff_resp_max  = NaN(width(data(td).PID),length(whiff_ons));
+
+
+	for j = 1:width(data(td).PID)
+		for i = 1:length(whiff_ons)
+			whiff_stim_max(j,i) = max(data(td).PID(whiff_ons(i):whiff_offs(i),j));
+			whiff_resp_max(j,i) = max(data(td).ORN(whiff_ons(i):whiff_offs(i),j));
+		end
+		clear i
+
+	end
+	clear j
+
+	for i = 1:length(whiff_ons)
+		% normalise
+		whiff_stim_max(:,i) = whiff_stim_max(:,i)/(whiff_stim_max(1,i));
+		whiff_resp_max(:,i) = whiff_resp_max(:,i)/(whiff_resp_max(1,i));
+	end
+
+	figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+	set(gcf,'DefaultAxesColorOrder',jet(length(whiff_ons)))
+	subplot(1,2,1), hold on
+	plot(whiff_stim_max)
+	xlabel('Trial Number')
+	ylabel('Whiff Peak (norm)')
+	set(gca,'YLim',[0 2])
+
+	subplot(1,2,2), hold on
+	plot(whiff_resp_max)
+	xlabel('Trial Number')
+	ylabel('Max Whiff Response (norm)')
+	set(gca,'YLim',[0 2])
+
+	PrettyFig;
+	snapnow;
+	delete(gcf);
+
+end
+
+
+
 
 	

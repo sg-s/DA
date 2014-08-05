@@ -357,13 +357,13 @@ end
 
 % disp(rsquare(f,fp))
 
-%           #### ##    ## ########  ##     ## ########      ##    ## ##       
-%            ##  ###   ## ##     ## ##     ##    ##         ###   ## ##       
-%            ##  ####  ## ##     ## ##     ##    ##         ####  ## ##       
-%            ##  ## ## ## ########  ##     ##    ##         ## ## ## ##       
-%            ##  ##  #### ##        ##     ##    ##         ##  #### ##       
-%            ##  ##   ### ##        ##     ##    ##         ##   ### ##       
-%           #### ##    ## ##         #######     ##         ##    ## ######## 
+%              ##    ## ##                  ######## ##     ## ##    ##  ######  
+%              ###   ## ##                  ##       ##     ## ###   ## ##    ## 
+%              ####  ## ##                  ##       ##     ## ####  ## ##       
+%              ## ## ## ##                  ######   ##     ## ## ## ## ##       
+%              ##  #### ##                  ##       ##     ## ##  #### ##       
+%              ##   ### ##                  ##       ##     ## ##   ### ##    ## 
+%              ##    ## ########            ##        #######  ##    ##  ######  
 
 
 
@@ -412,13 +412,14 @@ disp(rsquare(NFit,d.response))
 
 
 
-%             ##    ## ##          ##     ##  #######  ########  ######## ##       
-%             ###   ## ##          ###   ### ##     ## ##     ## ##       ##       
-%             ####  ## ##          #### #### ##     ## ##     ## ##       ##       
-%             ## ## ## ##          ## ### ## ##     ## ##     ## ######   ##       
-%             ##  #### ##          ##     ## ##     ## ##     ## ##       ##       
-%             ##   ### ##          ##     ## ##     ## ##     ## ##       ##       
-%             ##    ## ########    ##     ##  #######  ########  ######## ######## 
+%           ##    ## ##          ##     ##  #######  ########  ######## ##       
+%           ###   ## ##          ###   ### ##     ## ##     ## ##       ##       
+%           ####  ## ##          #### #### ##     ## ##     ## ##       ##       
+%           ## ## ## ##          ## ### ## ##     ## ##     ## ######   ##       
+%           ##  #### ##          ##     ## ##     ## ##     ## ##       ##       
+%           ##   ### ##          ##     ## ##     ## ##     ## ##       ##       
+%           ##    ## ########    ##     ##  #######  ########  ######## ######## 
+
 
 
 %% Fitting Data with a NL model
@@ -482,22 +483,83 @@ else
 end
 
 
+%               ##       ##    ##        ##     ##  #######  ########  ######## ##       
+%               ##       ###   ##        ###   ### ##     ## ##     ## ##       ##       
+%               ##       ####  ##        #### #### ##     ## ##     ## ##       ##       
+%               ##       ## ## ##        ## ### ## ##     ## ##     ## ######   ##       
+%               ##       ##  ####        ##     ## ##     ## ##     ## ##       ##       
+%               ##       ##   ###        ##     ## ##     ## ##     ## ##       ##       
+%               ######## ##    ##        ##     ##  #######  ########  ######## ######## 
+
+
+
+
+%% LN Model
+% Does putting the static non-linearity at the output of a linear filter improve the prediction? In the following section we find a best-fit NL model, where the linear filter and the static non-linearity are fit simultaneously by a iterative fitting procedure. 
+
+%%
+% We use a Hill function for the static non-linearity here (as we do so in the previous cases). Because the Hill function is not defined for negative values, this model actually has a rectifier between the linear output and the output non-linearity: only positive values from the linear block are considered as valid inputs to the non-linearity. 
+
+if isvector(data(td).ORN)
+	d.response = data(td).ORN;
+else
+	d.response = mean2(data(td).ORN);
+end
+
+if isvector(data(td).PID)
+	d.stimulus = data(td).PID;
+else
+	d.stimulus = mean2(data(td).PID);
+end
+
+
+[LNFit, K] = SolveLNModel(data(td).LNFitParam,d.stimulus,d.response);
+figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+subplot(2,2,2), hold on
+scatter(ihill2(data(td).LNFitParam,d.response),d.response,'k')
+xlabel('Filter Output (a.u.)')
+ylabel('Neuron Response (Hz)')
+
+set(gca,'XLim',[0 max(d.response)],'YLim',[0 max(d.response)])
+
+
+subplot(2,2,1), hold on
+ft = mean(diff(data(td).time))*(1:length(K));
+plot(ft,K)
+set(gca,'XLim',[0 max(ft)])
+xlabel('Filter Lag (s)')
+ylabel('Filter Amplitude (Hz)')
+
+
+subplot(2,2,3:4), hold on
+if isvector(data(td).ORN)
+	plot(data(td).time,data(td).ORN,'k');
+else
+	plot(data(td).time,mean2(data(td).ORN),'k');
+end
+plot(data(td).time,NFit,'g')
+plot(data(td).time,NLFit,'b')
+plot(data(td).time,LNFit,'r')
+set(gca,'XLim',[20 40])
+legend({'Data','Nonlinear Fit','NL Fit','LN Fit'},'Location','EastOutside')
+
+PrettyFig
+snapnow;
+delete(gcf);
+
+%%
+% The rsquare of this LN fit is:
+
+if isvector(data(td).ORN)
+	disp(rsquare(LNFit,data(td).ORN))
+else
+	disp(rsquare(LNFit,mean2(data(td).ORN)))
+end
 
 
 return
 
 
-
-
-
-
-%      #######  ##     ## ######## ########  ##     ## ########         ##    ## ##       
-%     ##     ## ##     ##    ##    ##     ## ##     ##    ##            ###   ## ##       
-%     ##     ## ##     ##    ##    ##     ## ##     ##    ##            ####  ## ##       
-%     ##     ## ##     ##    ##    ########  ##     ##    ##            ## ## ## ##       
-%     ##     ## ##     ##    ##    ##        ##     ##    ##            ##  #### ##       
-%     ##     ## ##     ##    ##    ##        ##     ##    ##            ##   ### ##       
-%      #######   #######     ##    ##         #######     ##            ##    ## ######## 
 
 
 %        ######      ###    #### ##    ##          ###    ##    ##    ###    ##       

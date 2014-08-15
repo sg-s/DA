@@ -399,6 +399,8 @@ hold on
 plot(data(td).time,NFit,'r')
 legend({'Data','Prediction'})
 set(gca,'XLim',[min(data(td).time) max(data(td).time)])
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
 title('Nonlinear Function Output')
 
 PrettyFig;
@@ -468,6 +470,9 @@ plot(data(td).time,NFit,'g')
 plot(data(td).time,NLFit,'b')
 set(gca,'XLim',[20 40])
 legend({'Data','Nonlinear Fit','NL Fit'},'Location','EastOutside')
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+
 
 PrettyFig
 snapnow;
@@ -541,6 +546,8 @@ plot(data(td).time,NFit,'g')
 plot(data(td).time,NLFit,'b')
 plot(data(td).time,LNFit,'r')
 set(gca,'XLim',[20 40])
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
 legend({'Data','Nonlinear Fit','NL Fit','LN Fit'},'Location','EastOutside')
 
 PrettyFig

@@ -14,8 +14,17 @@ This document shows demonstrates the validtiy of the algorithms I use to reconst
 * Real Data 2: effect of regularisation (fast odor flickering stimulus data)
 * Real Data 3: effect of regularisation ("Natural stimulus" data)
 
-## 2. Analysis of 1-octen-3-ol flickering stimulus
+The following figure shows that we can reconstruct the filter well:
+
+![Alt text](html/fig-1.png "Reconstruction of the target exponential filter using the two regularisation methods")
+
+
+## 2. Gain Analysis of 1-octen-3-ol flickering stimulus
+
+In this document, we take one particular dataset (Carlotta's measuremnet of response of ab3 to 1-octen-3-ol) and check if a linear gain analysis can tell us if the neuron is adapting gain on a fast time scale. 
 
 ## 3. Analysis of "naturalistic stimulus"
 
 ## 4. Analysis of all of Carlotta's data
+
+## 5. Spike Frequency Adaptation Models

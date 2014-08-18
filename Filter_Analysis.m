@@ -480,6 +480,15 @@ delete(gcf);
 %%
 % So what we are doing is simply undoing the work we did in regularising the filter. 
 
+
+%       ########    ###     ######  ########     #######  ########   #######  ########  
+%       ##         ## ##   ##    ##    ##       ##     ## ##     ## ##     ## ##     ## 
+%       ##        ##   ##  ##          ##       ##     ## ##     ## ##     ## ##     ## 
+%       ######   ##     ##  ######     ##       ##     ## ##     ## ##     ## ########  
+%       ##       #########       ##    ##       ##     ## ##     ## ##     ## ##   ##   
+%       ##       ##     ## ##    ##    ##       ##     ## ##     ## ##     ## ##    ##  
+%       ##       ##     ##  ######     ##        #######  ########   #######  ##     ## 
+
 %% Real Data 2: Flickering stimulus for a fast odor 
 % We now attempt to back out a filter from a different data set, where the statistics of the stimulus are more tightly correlated, and where the neuron's response goes to zero frequently. This is what the data looks like: 
 
@@ -514,6 +523,7 @@ filtertime = filtertime*3e-3;
 plot(filtertime,K2real,'k')
 xlabel('Filter Lag (s)')
 ylabel('Filter Amplitude (Hz)')
+set(gca,'XLim',[min(filtertime) max(filtertime)])
 
 PrettyFig;
 snapnow;
@@ -566,4 +576,65 @@ delete(gcf);
 
 %%
 % There are some times when the prediction of firing rates goes below 0, which has no physical meaning. 
+
+
+% ##    ##    ###    ######## ##     ## ########     ###    ##        ######  ######## #### ##     ## 
+% ###   ##   ## ##      ##    ##     ## ##     ##   ## ##   ##       ##    ##    ##     ##  ###   ### 
+% ####  ##  ##   ##     ##    ##     ## ##     ##  ##   ##  ##       ##          ##     ##  #### #### 
+% ## ## ## ##     ##    ##    ##     ## ########  ##     ## ##        ######     ##     ##  ## ### ## 
+% ##  #### #########    ##    ##     ## ##   ##   ######### ##             ##    ##     ##  ##     ## 
+% ##   ### ##     ##    ##    ##     ## ##    ##  ##     ## ##       ##    ##    ##     ##  ##     ## 
+% ##    ## ##     ##    ##     #######  ##     ## ##     ## ########  ######     ##    #### ##     ## 
+
+%% Real Data 3: "Natual Stimuli" Responses 
+% Now we try our filter estimation algorithms on a different dataset, where the neuron is driven by a very sparse, broadly fluctuating stimulus, as shown below: 
+
+load('/local-data/DA-paper/mahmut_data.mat')
+
+time = data(5).time;
+PID = mean2(data(5).PID);
+f = mean2(data(5).ORN);
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(2,1,1), hold on
+plot(time,PID,'k','LineWidth',2)
+set(gca,'box','on','LineWidth',2,'XLim',[10 22])
+ylabel('PID (a.u.)')
+
+subplot(2,1,2), hold on
+plot(time,f,'k','LineWidth',2)
+set(gca,'box','on','LineWidth',2,'XLim',[10 22])
+ylabel('Firing rate (Hz)')
+xlabel('Time (s)')
+
+PrettyFig;
+
+snapnow;
+delete(gcf);
+
+%%
+% We now attempt to fit a filter to this data. The following figure shows the best reconstructed filter for this dataset:
+
+[K2real,  diagnostics2r, filtertime] = FindBestFilter(PID,f,[],'regtype=2;');
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+filtertime = filtertime*3e-3;
+plot(filtertime,K2real,'k')
+xlabel('Filter Lag (s)')
+ylabel('Filter Amplitude (Hz)')
+set(gca,'XLim',[min(filtertime) max(filtertime)])
+
+PrettyFig;
+
+snapnow;
+delete(gcf);
+
+%%
+% The following figure shows how the choice of regularisation parameter affects the quality of prediction:
+
+PlotFilterDiagnostics2(diagnostics2r,marker_size,marker_size2,font_size,'Method 2')
+
+snapnow;
+delete(gcf);
+
 

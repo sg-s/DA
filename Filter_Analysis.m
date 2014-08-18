@@ -13,7 +13,7 @@ marker_size2 = 20;
 
 
 %% Overview of different regularisation methods. 
-% The filter _K_ is given by 
+% Given some input stimulus _S_ and some output response _f_, the linear filter _K_ that best describes the data is given by 
 %
 % $$ \hat{C}*K=s'*f $$
 % 
@@ -41,15 +41,28 @@ marker_size2 = 20;
 % $$ K=C\setminus(s'*f) $$
 
 %% Synthetic Data with No regularisation 
-% Synthetic data is prepared using Gaussian random inputs and an exponential filter, and the output is the convolution of the input with the exponential filter, with 10% noise. The stimulus is zero mean, as is the response, by construction. 
+% Synthetic data is prepared using Gaussian random inputs and an exponential filter, and the output is the convolution of the input with the exponential filter, with 10% Gaussian Random noise. The stimulus is zero mean, as is the response, by construction. 
 a = randn(1,10000);
 filtertime = 0:3e-3:3e-3*333;
 filter_length = 333;
 Kexp = exp(-10*filtertime);
-b = filter(Kexp,1,a) + 0.1*randn(1,10000);
+b = filter(Kexp,1,a) + 0.1*randn(1,10000); % adding noise to make the reconstruction harder
+
+figure('outerposition',[0 0 800 450],'PaperUnits','points','PaperSize',[800 450]); hold on
+subplot(2,1,1), hold on
+plot(a)
+title('Synthetic Stimulus')
+subplot(2,1,2), hold on
+plot(b)
+title('Output of filter')
+
+PrettyFig;
+snapnow;
+delete(gcf);
+
 
 %%
-% The following figure shows filters estimated using the three methods shown above, with zero regularisation. The actual filter is in black, and each method is coloured differently. 
+% The following figure shows filters estimated using the two methods shown above, with zero regularisation. The actual filter is in black, and each method is coloured differently. As you can see, for zero regularisation, these method are almost perfect. 
 
 figure('outerposition',[0 0 800 350],'PaperUnits','points','PaperSize',[800 350]); hold on
 subplot(1,2,1), hold on
@@ -58,6 +71,8 @@ plot(filtertime,Kexp,'k','LineWidth',2)
 plot(filtertime,K1,'r','LineWidth',2)
 title('Reg method 1 (r=0)','FontSize',font_size)
 set(gca,'LineWidth',2,'FontSize',font_size,'box','on')
+xlabel('Time')
+ylabel('Filter amplitude')
 
 subplot(1,2,2), hold on
 K2 = FitFilter2Data(a,b,[],'reg=0;','regtype=2;');
@@ -65,6 +80,8 @@ plot(filtertime,Kexp,'k','LineWidth',2)
 plot(filtertime,K2,'b','LineWidth',2)
 title('Reg method 2 (r=0)','FontSize',font_size)
 set(gca,'LineWidth',2,'FontSize',font_size,'box','on')
+xlabel('Time')
+ylabel('Filter amplitude')
 
 snapnow;
 delete(gcf);
@@ -111,11 +128,15 @@ subplot(1,2,1), hold on
 plot(filtertime,K1best,'r','LineWidth',2)
 title('Reg method 1','FontSize',font_size)
 set(gca,'LineWidth',2,'FontSize',font_size,'box','on','XLim',[min(filtertime) max(filtertime)])
+xlabel('Time')
+ylabel('Filter amplitude')
 
 subplot(1,2,2), hold on
 plot(filtertime,K2best,'b','LineWidth',2)
 title('Reg method 2','FontSize',font_size)
 set(gca,'LineWidth',2,'FontSize',font_size,'box','on','XLim',[min(filtertime) max(filtertime)])
+xlabel('Time')
+ylabel('Filter amplitude')
 
 
 
@@ -128,6 +149,19 @@ delete(gcf);
 % We now create a new synthetic dataset, identical to the old one, except we filter the white noise input with some boxcar filter to remove high frequency components from the input. We find the best filters as before, and look at how regularisation parameter affects the choice of filter. 
 a2 = filter(ones(1,10),1,a)/sqrt(10);
 b2 = filter(Kexp,1,a2);
+
+figure('outerposition',[0 0 800 450],'PaperUnits','points','PaperSize',[800 450]); hold on
+subplot(2,1,1), hold on
+plot(a2)
+title('Synthetic Stimulus 2')
+subplot(2,1,2), hold on
+plot(b2)
+title('Output of filter')
+
+PrettyFig;
+snapnow;
+delete(gcf);
+
 
 
 if ~(exist('K1best_f') == 1)
@@ -145,11 +179,19 @@ subplot(1,2,1), hold on
 plot(filtertime,K1best_f,'r','LineWidth',2)
 title('Reg method 1','FontSize',font_size)
 set(gca,'LineWidth',2,'FontSize',font_size,'box','on','XLim',[min(filtertime) max(filtertime)])
+xlabel('Time')
+ylabel('Filter amplitude')
 
 subplot(1,2,2), hold on
 plot(filtertime,K2best_f,'b','LineWidth',2)
 title('Reg method 2','FontSize',font_size)
 set(gca,'LineWidth',2,'FontSize',font_size,'box','on','XLim',[min(filtertime) max(filtertime)])
+xlabel('Time')
+ylabel('Filter amplitude')
+
+
+snapnow;
+delete(gcf);
 
 %%
 % the figure below shows how varying _r_ affects reg method 1:
@@ -165,10 +207,16 @@ PlotFilterDiagnostics2(diagnostics2f,marker_size,marker_size2,font_size,'method 
 snapnow;
 delete(gcf);
 
+%    ########  ########    ###    ##          ########     ###    ########    ###          ##   
+%    ##     ## ##         ## ##   ##          ##     ##   ## ##      ##      ## ##       ####   
+%    ##     ## ##        ##   ##  ##          ##     ##  ##   ##     ##     ##   ##        ##   
+%    ########  ######   ##     ## ##          ##     ## ##     ##    ##    ##     ##       ##   
+%    ##   ##   ##       ######### ##          ##     ## #########    ##    #########       ##   
+%    ##    ##  ##       ##     ## ##          ##     ## ##     ##    ##    ##     ##       ##   
+%    ##     ## ######## ##     ## ########    ########  ##     ##    ##    ##     ##     ###### 
 
-
-%% Real Data: effect of regularisation 
-% We use PID traces as the input, and the firing rate of a ORN as the output. The data looks like this:
+%% Real Data 1: 1-octen-3-ol flickering stimulus
+% We use actual PID traces as the input, and the firing rate of a ORN as the output. The data looks like this:
 
 % plot the data
 load /local-data/DA-paper/data.mat
@@ -292,9 +340,10 @@ snapnow;
 delete(gcf);
 
 %%
-% This filter now has gain of exactly 1. The prediction is pretty good: 
+% This filter now has gain of exactly 1. Here is a figure of the prediction vs the actual data:
 figure('outerposition',[0 0 800 500],'PaperUnits','points','PaperSize',[800 500]); hold on
-fp = convolve(time,PID,K2real_scaled,filtertime) + mean(f);
+fp = convolve(time,PID,K2real,filtertime);
+
 % censor initial prediction
 fp(1:filter_length+1)=NaN;
 plot(time,f,'k','LineWidth',2)
@@ -306,6 +355,22 @@ legend Data ScaledPrediction
 
 snapnow;
 delete(gcf);
+
+%%
+% It seems to be following the trends of the data, but is off by a constant. That constant is the mean of the response, that we can add back to the prediction: 
+
+figure('outerposition',[0 0 800 500],'PaperUnits','points','PaperSize',[800 500]); hold on
+fp = fp + mean(f);
+plot(time,f,'k','LineWidth',2)
+plot(time,fp,'r','LineWidth',2)
+set(gca,'XLim',[mean(time)-2 mean(time)+2],'box','on','LineWidth',2,'FontSize',font_size)
+xlabel('Time (s)','FontSize',20)
+ylabel('Firing Rate (Hz)','FontSize',font_size)
+legend({'Data','Scaled Prediction + mean(response)'});
+
+snapnow;
+delete(gcf);
+
 
 %%
 % The r-square of this prediction is 
@@ -415,4 +480,90 @@ delete(gcf);
 %%
 % So what we are doing is simply undoing the work we did in regularising the filter. 
 
+%% Real Data 2: Flickering stimulus for a fast odor 
+% We now attempt to back out a filter from a different data set, where the statistics of the stimulus are more tightly correlated, and where the neuron's response goes to zero frequently. This is what the data looks like: 
+
+
+time = data(5).time;
+PID = data(5).PID;
+f = data(5).ORN;
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(2,1,1), hold on
+plot(time,PID,'k','LineWidth',2)
+set(gca,'box','on','LineWidth',2,'XLim',[18 22])
+ylabel('PID (a.u.)')
+
+subplot(2,1,2), hold on
+plot(time,f,'k','LineWidth',2)
+set(gca,'box','on','LineWidth',2,'XLim',[18 22])
+ylabel('Firing rate (Hz)')
+
+PrettyFig;
+
+snapnow;
+delete(gcf);
+
+%% 
+% We now back out the filter using the methods described above and get: 
+
+[K2real,  diagnostics2r, filtertime] = FindBestFilter(PID,f,[],'regtype=2;');
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+filtertime = filtertime*3e-3;
+plot(filtertime,K2real,'k')
+xlabel('Filter Lag (s)')
+ylabel('Filter Amplitude (Hz)')
+
+PrettyFig;
+snapnow;
+delete(gcf);
+
+%%
+% The following figure shows how the choice of regularisation parameter affects the quality of prediction:
+
+PlotFilterDiagnostics2(diagnostics2r,marker_size,marker_size2,font_size,'Method 2')
+
+snapnow;
+delete(gcf);
+
+%%
+% And now we can compare the prediction to the actual response: 
+figure('outerposition',[0 0 800 500],'PaperUnits','points','PaperSize',[800 500]); hold on
+fp = convolve(time,PID,K2real,filtertime);
+
+% censor initial prediction
+fp(1:filter_length+1)=NaN;
+plot(time,f,'k','LineWidth',2)
+plot(time,fp,'r','LineWidth',2)
+set(gca,'XLim',[mean(time)-2 mean(time)+2],'box','on','LineWidth',2,'FontSize',font_size)
+xlabel('Time (s)','FontSize',20)
+ylabel('Firing Rate (Hz)','FontSize',font_size)
+legend Data ScaledPrediction
+
+PrettyFig;
+
+snapnow;
+delete(gcf);
+
+%%
+% Once again, the linear prediction cannot account for a response with a non-zero mean. Adding the mean of the response back to the data, we get: 
+
+fp = fp + mean(f);
+
+figure('outerposition',[0 0 800 500],'PaperUnits','points','PaperSize',[800 500]); hold on
+plot(time,f,'k','LineWidth',2)
+plot(time,fp,'r','LineWidth',2)
+set(gca,'XLim',[mean(time)-2 mean(time)+2],'box','on','LineWidth',2,'FontSize',font_size)
+xlabel('Time (s)','FontSize',20)
+ylabel('Firing Rate (Hz)','FontSize',font_size)
+legend Data ScaledPrediction
+
+PrettyFig;
+
+snapnow;
+delete(gcf);
+
+%%
+% There are some times when the prediction of firing rates goes below 0, which has no physical meaning. 
 

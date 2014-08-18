@@ -637,4 +637,43 @@ PlotFilterDiagnostics2(diagnostics2r,marker_size,marker_size2,font_size,'Method 
 snapnow;
 delete(gcf);
 
+%%
+% And now we can compare the prediction to the actual response: 
+figure('outerposition',[0 0 800 500],'PaperUnits','points','PaperSize',[800 500]); hold on
+fp = convolve(time,PID,K2real,filtertime);
+
+% censor initial prediction
+fp(1:filter_length+1)=NaN;
+plot(time,f,'k','LineWidth',2)
+plot(time,fp,'r','LineWidth',2)
+set(gca,'XLim',[mean(time)-10 mean(time)+10],'box','on','LineWidth',2,'FontSize',font_size)
+xlabel('Time (s)','FontSize',20)
+ylabel('Firing Rate (Hz)','FontSize',font_size)
+legend Data ScaledPrediction
+
+PrettyFig;
+
+snapnow;
+delete(gcf);
+
+%%
+% Once again, the linear prediction cannot account for a response with a non-zero mean. Adding the mean of the response back to the data, we get: 
+
+fp = fp + mean(f);
+
+figure('outerposition',[0 0 800 500],'PaperUnits','points','PaperSize',[800 500]); hold on
+plot(time,f,'k','LineWidth',2)
+plot(time,fp,'r','LineWidth',2)
+set(gca,'XLim',[mean(time)-10 mean(time)+10],'box','on','LineWidth',2,'FontSize',font_size)
+xlabel('Time (s)','FontSize',20)
+ylabel('Firing Rate (Hz)','FontSize',font_size)
+legend Data ScaledPrediction
+
+PrettyFig;
+
+snapnow;
+delete(gcf);
+
+%%
+% There are some times when the prediction of firing rates goes below 0, which has no physical meaning. 
 

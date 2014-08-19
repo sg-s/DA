@@ -295,3 +295,162 @@ snapnow;
 delete(gcf);
 
 
+
+%% Understanding features of Linear Model Gain Analysis
+% There are some features of the gain analysis that are interesting, especially when compared to the gain analysis of the NL model: 
+% 
+% * The slopes of the linear model gain analysis do not go to 1 even when the history lengths go to 0
+% * The LN model does not behave this way: it behaves as expected, and the slopes go to zero as the history length go to 0
+% * The green and the red curves are not mirror images of each other. Why not? What makes them different? 
+
+%% 
+% In the following figure, we use a DA model to generate synthetic responses to the actual stimulus and then fit a linear filter to this data, and then perform the gain analysis as above on this synthetic dataset. 
+
+%% 
+% The parameters of the DA model are chosen to be a best fit to the actual experimental data, so the DA model chosen best represents the actual neuron's response. 
+
+if ~exist('p')
+	d.stimulus = data(td).PID;
+	d.response = data(td).ORN;
+	[p, f] = FitDAModelToData(d,[25576 85 0.03 1.5 2 13 2 -151],[900 50 0 1e-1 2 1e-2 2 -200],[98000 5000 1 20 2 40 2 1],200);
+end
+
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+s = 300; % when we start for the gain analysis
+z = length(data(td).ORN); % where we end
+example_history_length = 0.12;
+history_lengths = [0:0.06:2*act];
+
+clear x
+% generate fake data
+f=DA_integrate2(d.stimulus,p);
+[K,~,filtertime] = FindBestFilter(data(td).PID,f);
+fp=mean(f(s:z))+convolve(data(td).time,data(td).PID,K,filtertime);
+
+
+x.response = f(s:z);
+x.prediction = fp(s:z);
+x.stimulus = data(td).PID(s:z);
+x.time = data(td).time(s:z);
+x.filter_length = length(K);
+
+if redo_bootstrap
+	p_fake_ORN = GainAnalysis3(x,history_lengths,example_history_length,ph);
+else
+	GainAnalysis3(x,history_lengths,example_history_length,ph,p_fake_ORN);
+end
+clear x
+hold off
+set(ph(4),'YLim',[0.7 1.4],'XLim',[-0.01 max(history_lengths)])
+title(ph(4),'DA Model response to odor stimulus')
+ylabel(ph(3),'DA Model Response')
+
+snapnow;
+delete(gcf);
+
+%%
+% The slopes still don't go to 1, and now there is a weird deflection at low history lengths. What if we shuffle the stimulus? 
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+s = 300; % when we start for the gain analysis
+z = length(data(td).ORN); % where we end
+example_history_length = 0.12;
+history_lengths = [0:0.06:2*act];
+
+clear x
+% generate fake data
+f=DA_integrate2(d.stimulus,p);
+[K,~,filtertime] = FindBestFilter(data(td).PID,f);
+fp=mean(f(s:z))+convolve(data(td).time,data(td).PID,K,filtertime);
+
+
+
+x.response = f(s:z);
+x.prediction = fp(s:z);
+x.stimulus = data(td).PID(s:z);
+x.stimulus=x.stimulus(randperm(length(x.stimulus)));
+x.time = data(td).time(s:z);
+x.filter_length = length(K);
+
+if redo_bootstrap
+	p_fake_ORN2 = GainAnalysis3(x,history_lengths,example_history_length,ph);
+else
+	GainAnalysis3(x,history_lengths,example_history_length,ph,p_fake_ORN2);
+end
+clear x
+hold off
+set(ph(4),'YLim',[0.7 1.4],'XLim',[-0.01 max(history_lengths)])
+title(ph(4),'DA Model response to shuffled stimulus')
+ylabel(ph(3),'DA Model Response')
+
+snapnow;
+delete(gcf);
+
+%%
+% Now, the slopes go to 1, but then, the slopes are always 1 no matter what the history length. We want to create a condition where the slopes. What if we shuffle, then filter the odor stimulus? Perhaps correlation times in the stimulus affect this slope behaviour? The following figure shows the effect of shuffling and filtering the stimulus:
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+stim=d.stimulus(randperm(length(d.stimulus)));
+stim = filter(ones(100,1)/100,1,stim-mean(stim))+mean(stim);
+stim = stim-mean(stim);
+stim = stim*10;
+stim = stim+mean(d.stimulus);
+plot(d.stimulus,'k'), hold on
+plot(stim,'r')
+set(gca,'XLim',[2000 4000])
+xlabel('Time (a.u.)')
+ylabel('Stimulus (a.u.)')
+legend PID ShuffledFilteredPID
+PrettyFig;
+
+
+%%
+% We now repeat the gain analysis on this new synthetic dataset. 
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+s = 300; % when we start for the gain analysis
+z = length(data(td).ORN); % where we end
+example_history_length = 0.12;
+history_lengths = [0:0.06:2*act];
+
+clear x
+% generate fake data
+f=DA_integrate2(d.stimulus,p);
+[K,~,filtertime] = FindBestFilter(data(td).PID,f);
+fp=mean(f(s:z))+convolve(data(td).time,data(td).PID,K,filtertime);
+
+
+
+
+x.response = f(s:z);
+x.prediction = fp(s:z);
+x.stimulus = stim(s:z);
+x.time = data(td).time(s:z);
+x.filter_length = length(K);
+
+if redo_bootstrap
+	p_fake_ORN3 = GainAnalysis3(x,history_lengths,example_history_length,ph);
+else
+	GainAnalysis3(x,history_lengths,example_history_length,ph,p_fake_ORN3);
+end
+clear x
+hold off
+set(ph(4),'YLim',[0.7 1.4],'XLim',[-0.01 max(history_lengths)])
+title(ph(4),'Response to shuffled filtered stimulus')
+ylabel(ph(3),'DA Model Response')
+
+snapnow;
+delete(gcf);

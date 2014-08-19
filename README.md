@@ -35,18 +35,21 @@ In this document, we take one particular dataset (Carlotta's measuremnet of resp
 * Statistics of the Stimulus and the Response
 * Linear Fit to the Data
 * Adding a output nonlinearity post-hoc
-* Linear Model Gain Analysis: Fixed History Length
-* Linear Model Gain Analysis: Varying History Length
-* LN Model Gain Analysis: Fixed History Length
-* LN Model Gain Analysis: Varying History Length
-
-
-
-
-## 3. Analysis of "naturalistic stimulus"
+* Linear Model Gain Analysis
+* LN Model Gain Analysis
+* Understanding Linear Model Gain Analysis `can't really answer all the questions here` 
 
 ## 4. Analysis of all of Carlotta's data
+`Question: How general is fast gain control? Which odor-neuron combinations show this?`
+
+	script to run: GainAnalysisAllData.m
 
 For most of Carlotta's data, the ORN is compeltely silent for most of the time, and the normal methods of gain analysis won't work so well. here we try to use other methods. 
 
-## 5. Spike Frequency Adaptation Models
+
+
+## 5. Analysis of "naturalistic stimulus"
+
+
+
+## 6. Spike Frequency Adaptation Models

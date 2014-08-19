@@ -210,6 +210,9 @@ PrettyFig;
 snapnow;
 delete(gcf);
 
+% save this for later
+LNpred = hill(x,data(td).LinearFit);
+
 %%
 % They look almost identical. The r-square of the LN prediction is: 
 
@@ -253,5 +256,42 @@ clear x
 snapnow;
 delete(gcf);
 
+
+
+%% LN Model Gain Analysis
+% In the previous section, we saw that the simple linear model fails to account for this fast adaptation of the ORNs. Specifically, the gain of the neuron w.r.t to the model is significantly differnet for times when the stimulus is high and the when the stimulus is low.
+
+%%
+% In this section, we want to know if the LN model (adding a non-linear function post-hoc) corrects for this misprediction of gain. Here, we repeat the gain analysis as in the previous section, but this time, using the LN prediction instead of the linear prediction. 
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+s = 300; % when we start for the gain analysis
+z = length(data(td).ORN) - 33; % where we end
+example_history_length = 0.12;
+history_lengths = [0:0.06:2*act];
+
+clear x
+
+x.response = data(td).ORN(s:z);
+x.prediction = LNpred(s:z);
+x.stimulus = data(td).PID(s:z);
+x.time = data(td).time(s:z);
+x.filter_length = 201;
+
+
+if redo_bootstrap
+	ptemp2 = GainAnalysis3(x,history_lengths,example_history_length,ph);
+else
+	GainAnalysis3(x,history_lengths,example_history_length,ph,ptemp2);
+end
+clear x
+
+
+snapnow;
+delete(gcf);
 
 

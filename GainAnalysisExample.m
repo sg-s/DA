@@ -6,13 +6,12 @@
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
 
-% clear vars
-clearvars -except options
-
 % some parameters
 font_size = 20;
 marker_size = 10;
 marker_size2 = 20;
+
+redo_bootstrap = 0;
 
 % load data
 load('/local-data/DA-paper/data.mat')
@@ -220,6 +219,39 @@ disp(rsquare(hill(x,data(td).LinearFit),data(td).ORN))
 % And the raw Euclidian Distance between the prediction and the data is: 
 
 disp(Cost2(hill(x,data(td).LinearFit(205:end-33)),data(td).ORN(205:end-33)))
+
+
+%% Linear Model Gain Analysis
+% In this section, we perform a gain analysis on the linear prediction first for an arbitrarily chosen history length of 120ms (panel on the left) and then for various history lengths (panel on the right). The history lengths where the slopes are significantly different (p<0.05) are indicated by dots. Significance is determined by bootstrapping the data 100 times. History lengths up to twice the autocorrelation length of the stimulus are investigated. 
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+s = 300; % when we start for the gain analysis
+z = length(data(td).ORN) - 33; % where we end
+example_history_length = 0.12;
+history_lengths = [0:0.06:2*act];
+
+clear x
+x.response = data(td).ORN(s:z);
+x.prediction = data(td).LinearFit(s:z);
+x.stimulus = data(td).PID(s:z);
+x.time = data(td).time(s:z);
+x.filter_length = 201;
+
+
+if redo_bootstrap
+	ptemp = GainAnalysis3(x,history_lengths,example_history_length,ph);
+else
+	GainAnalysis3(x,history_lengths,example_history_length,ph,ptemp);
+end
+clear x
+
+
+snapnow;
+delete(gcf);
 
 
 

@@ -14,7 +14,7 @@ marker_size2 = 20;
 % which data set to use?
 td = 3;
 
-redo_bootstrap = 1;
+redo_bootstrap = 0;
 
 % load data
 load('/local-data/DA-paper/data.mat')
@@ -340,46 +340,29 @@ disp(rsquare(ValveOffDurations,PIDPeaks))
 %%
 % The plots above show that the longer the low stimulus period is preceding the current pulse, the large is the response of the neuron, given a constant pulse height. The duration of the preceding blank is really a proxy for what we are really interested in, which is the mean stimulus delivered to the neuron. In the following figure, we plot the gain (peak response/stimulus amplitude) as a function of the mean stimulus in the preceding 500ms.
 
-[ons,offs] = ComputeOnsOffs(data(td).Valve);
-ORNPeaks = NaN(1,length(ons));
-PIDPeaks = NaN(1,length(ons));
-Gain =  NaN(1,length(ons));
-MeanStimulus = NaN(1,length(ons));
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(1) = subplot(1,2,1); hold on 
+axis square
+ph(2) = subplot(1,2,2); hold on
 
-w = floor(0.5/3e-3);
-s = find(ons>w,1,'first')+1;
+s = 1; % when we start for the gain analysis
+z = length(data(td).ORN); % where we end
+example_history_length = 0.5;
+history_lengths = [0:0.06:2];
 
-for i = s:length(ons)
-	ORNPeaks(i)=max(data(td).ORN(ons(i):offs(i)));
-	PIDPeaks(i)=max(data(td).PID(ons(i):offs(i)));
-	MeanStimulus(i) = mean(data(td).PID(ons(i)-w:ons(i)));
-end
+clear x
+x.response = data(td).ORN(s:z);
+x.stimulus = data(td).PID(s:z);
+x.time = data(td).time(s:z);
+x.valve = data(td).Valve(s:z);
 
-Gain = ORNPeaks./PIDPeaks;
-ORNPeaks(1:s-1) = [];
-PIDPeaks(1:s-1) = [];
-Gain(1:s-1) = [];
-MeanStimulus(1:s-1) = [];
-
-% fit a line
-[ffit, gof] = fit(MeanStimulus(:),ORNPeaks(:),'Poly1');
-x = sort(unique(MeanStimulus));
-y = ffit(x);
-
-
-figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(MeanStimulus,ORNPeaks,'k.','MarkerSize',24)
-plot(x,y,'r')
-ylabel('Peak response (Hz)')
-xlabel('Mean Stimulus in past 500ms')
+[m,fitq]=PulsePeakAnalysis(x,history_lengths,example_history_length,ph);
 
 
 PrettyFig;
 
 snapnow;
-delete(gcf);
-
-
+delete(gcf);	
 
 return
 

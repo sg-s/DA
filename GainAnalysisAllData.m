@@ -268,8 +268,8 @@ ph(4) = subplot(1,2,2); hold on
 
 s = 300; % when we start for the gain analysis
 z = length(data(td).ORN) - 33; % where we end
-example_history_length = 0.12;
-history_lengths = [0:0.12:2];
+example_history_length = 0.96;
+history_lengths = [0:0.12:5];
 
 clear x
 x.response = data(td).ORN(s:z);
@@ -351,6 +351,8 @@ delete(f1);
 
 snapnow;
 delete(f2);
+
+return
 
 %%
 % There are many things different between A) the example 1-octen-3-ol dataset and B) the current dataset.
@@ -518,6 +520,10 @@ x.valve = data(td).Valve(s:z);
 PulsePeakAnalysis(x,history_lengths,example_history_length,ph);
 
 PrettyFig;
+
+
+snapnow;
+delete(gcf);
 
 
 return

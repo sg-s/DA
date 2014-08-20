@@ -11,7 +11,9 @@ font_size = 20;
 marker_size = 10;
 marker_size2 = 20;
 
-redo_bootstrap = 0;
+% define this to either recompute everything, or set to zero if you're ready to publish
+% this is commented out so that you have to explicitly specify it so you know what you're doing.
+% redo_bootstrap = 1;
 
 % load data
 load('/local-data/DA-paper/data.mat')
@@ -127,8 +129,10 @@ xlabel('Time (s)')
 
 PrettyFig;
 
-snapnow;
-delete(fh);
+if ~redo_bootstrap
+	snapnow;
+	delete(fh);
+end
 
 %%
 % Once again, we need to correct the linear prediction by adding back the mean of the response: 
@@ -144,8 +148,10 @@ xlabel('Time (s)')
 
 PrettyFig;
 
-snapnow;
-delete(fh);
+if ~redo_bootstrap
+	snapnow;
+	delete(fh);
+end
 
 
 %%
@@ -190,8 +196,10 @@ ylabel('Nonlinearity Output (Hz)')
 
 PrettyFig;
 
-snapnow;
-delete(gcf);
+if ~redo_bootstrap
+	snapnow;
+	delete(gcf);
+end
 
 %%
 % That is almost linear. How does the output nonlinearity change the prediciton? In the following figure, the data is shown in black, the linear prediciton is shown in red, and the LN prediction is shown in green. 
@@ -207,8 +215,10 @@ ylabel('Firing rate (Hz)')
 
 PrettyFig;
 
-snapnow;
-delete(gcf);
+if ~redo_bootstrap
+	snapnow;
+	delete(gcf);
+end
 
 % save this for later
 LNpred = hill(x,data(td).LinearFit);
@@ -224,18 +234,34 @@ disp(rsquare(hill(x,data(td).LinearFit),data(td).ORN))
 disp(Cost2(hill(x,data(td).LinearFit(205:end-33)),data(td).ORN(205:end-33)))
 
 
+%         ######      ###    #### ##    ##             ###    ##    ##    ###    ##       
+%        ##    ##    ## ##    ##  ###   ##            ## ##   ###   ##   ## ##   ##       
+%        ##         ##   ##   ##  ####  ##           ##   ##  ####  ##  ##   ##  ##       
+%        ##   #### ##     ##  ##  ## ## ##          ##     ## ## ## ## ##     ## ##       
+%        ##    ##  #########  ##  ##  ####          ######### ##  #### ######### ##       
+%        ##    ##  ##     ##  ##  ##   ###          ##     ## ##   ### ##     ## ##       
+%         ######   ##     ## #### ##    ##          ##     ## ##    ## ##     ## ######## 
+      
 %% Linear Model Gain Analysis
 % In this section, we perform a gain analysis on the linear prediction first for an arbitrarily chosen history length of 120ms (panel on the left) and then for various history lengths (panel on the right). The history lengths where the slopes are significantly different (p<0.05) are indicated by dots. Significance is determined by bootstrapping the data 100 times. History lengths up to twice the autocorrelation length of the stimulus are investigated. 
 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+f1=figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+ph(1) = subplot(2,1,1); hold on 
+ph(2) = subplot(2,1,2); hold on
+
+title(ph(1),strrep(data(td).original_name,'_','-'),'FontSize',20);
+
+f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 ph(3) = subplot(1,2,1); hold on 
 axis square
 ph(4) = subplot(1,2,2); hold on
 
+
+
 s = 300; % when we start for the gain analysis
 z = length(data(td).ORN) - 33; % where we end
 example_history_length = 0.12;
-history_lengths = [0:0.06:2*act];
+history_lengths = 0:0.06:2;
 
 clear x
 x.response = data(td).ORN(s:z);
@@ -250,32 +276,49 @@ if redo_bootstrap
 else
 	GainAnalysis3(x,history_lengths,example_history_length,ph,ptemp);
 end
-clear x
 
+if ~redo_bootstrap
+	snapnow;
+	delete(f1);
 
-snapnow;
-delete(gcf);
+	snapnow;
+	delete(f2);
+end
 
+%  ######      ###    #### ##    ##       ###    ##    ##    ###    ##          ##       ##    ## 
+% ##    ##    ## ##    ##  ###   ##      ## ##   ###   ##   ## ##   ##          ##       ###   ## 
+% ##         ##   ##   ##  ####  ##     ##   ##  ####  ##  ##   ##  ##          ##       ####  ## 
+% ##   #### ##     ##  ##  ## ## ##    ##     ## ## ## ## ##     ## ##          ##       ## ## ## 
+% ##    ##  #########  ##  ##  ####    ######### ##  #### ######### ##          ##       ##  #### 
+% ##    ##  ##     ##  ##  ##   ###    ##     ## ##   ### ##     ## ##          ##       ##   ### 
+%  ######   ##     ## #### ##    ##    ##     ## ##    ## ##     ## ########    ######## ##    ## 
 
 
 %% LN Model Gain Analysis
-% In the previous section, we saw that the simple linear model fails to account for this fast adaptation of the ORNs. Specifically, the gain of the neuron w.r.t to the model is significantly differnet for times when the stimulus is high and the when the stimulus is low.
+% In the previous section, we saw that the simple linear model fails to account for this fast adaptation of the ORNs. Specifically, the gain of the neuron _w.r.t_ to the model is significantly different for times when the stimulus is high and the when the stimulus is low.
 
 %%
-% In this section, we want to know if the LN model (adding a non-linear function post-hoc) corrects for this misprediction of gain. Here, we repeat the gain analysis as in the previous section, but this time, using the LN prediction instead of the linear prediction. 
+% In this section, we want to know if the LN model (adding a non-linear function post-hoc) corrects for this mis-prediction of gain. Here, we repeat the gain analysis as in the previous section, but this time, using the LN prediction instead of the linear prediction. 
 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+f1=figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+ph(1) = subplot(2,1,1); hold on 
+ph(2) = subplot(2,1,2); hold on
+
+title(ph(1),strrep(data(td).original_name,'_','-'),'FontSize',20);
+
+f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 ph(3) = subplot(1,2,1); hold on 
 axis square
 ph(4) = subplot(1,2,2); hold on
 
+
+
 s = 300; % when we start for the gain analysis
 z = length(data(td).ORN) - 33; % where we end
 example_history_length = 0.12;
-history_lengths = [0:0.06:2*act];
+history_lengths = 0:0.06:2;
 
 clear x
-
 x.response = data(td).ORN(s:z);
 x.prediction = LNpred(s:z);
 x.stimulus = data(td).PID(s:z);
@@ -288,12 +331,30 @@ if redo_bootstrap
 else
 	GainAnalysis3(x,history_lengths,example_history_length,ph,ptemp2);
 end
-clear x
 
+if ~redo_bootstrap
+	snapnow;
+	delete(f1);
 
-snapnow;
-delete(gcf);
+	snapnow;
+	delete(f2);
+end
 
+%        ######      ###    #### ##    ##       ###    ##    ##    ###    ##       
+%       ##    ##    ## ##    ##  ###   ##      ## ##   ###   ##   ## ##   ##       
+%       ##         ##   ##   ##  ####  ##     ##   ##  ####  ##  ##   ##  ##       
+%       ##   #### ##     ##  ##  ## ## ##    ##     ## ## ## ## ##     ## ##       
+%       ##    ##  #########  ##  ##  ####    ######### ##  #### ######### ##       
+%       ##    ##  ##     ##  ##  ##   ###    ##     ## ##   ### ##     ## ##       
+%        ######   ##     ## #### ##    ##    ##     ## ##    ## ##     ## ######## 
+      
+%        ########  ######## ########    ###    #### ##        ######  
+%       ##     ## ##          ##      ## ##    ##  ##       ##    ## 
+%       ##     ## ##          ##     ##   ##   ##  ##       ##       
+%       ##     ## ######      ##    ##     ##  ##  ##        ######  
+%       ##     ## ##          ##    #########  ##  ##             ## 
+%       ##     ## ##          ##    ##     ##  ##  ##       ##    ## 
+%       ########  ########    ##    ##     ## #### ########  ######  
 
 
 %% Understanding features of Linear Model Gain Analysis
@@ -307,7 +368,8 @@ delete(gcf);
 % In the following figure, we use a DA model to generate synthetic responses to the actual stimulus and then fit a linear filter to this data, and then perform the gain analysis as above on this synthetic dataset. 
 
 %% 
-% The parameters of the DA model are chosen to be a best fit to the actual experimental data, so the DA model chosen best represents the actual neuron's response. 
+% The parameters of the DA model are chosen to be a best fit to the actual experimental data, so the DA model chosen best represents the actual neuron's response. The following figure shows the response of the neuron and the best-fit DA Model prediction. 
+
 
 if ~exist('p')
 	d.stimulus = data(td).PID;
@@ -316,87 +378,84 @@ if ~exist('p')
 end
 
 
+
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-ph(3) = subplot(1,2,1); hold on 
-axis square
-ph(4) = subplot(1,2,2); hold on
-
-s = 300; % when we start for the gain analysis
-z = length(data(td).ORN); % where we end
-example_history_length = 0.12;
-history_lengths = [0:0.06:2*act];
-
-clear x
-% generate fake data
 f=DA_integrate2(d.stimulus,p);
-[K,~,filtertime] = FindBestFilter(data(td).PID,f);
-fp=mean(f(s:z))+convolve(data(td).time,data(td).PID,K,filtertime);
+plot(data(td).time,data(td).ORN,'k')
+hold on
+plot(data(td).time,f,'r')
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+legend({'Data','DA Model'})
+set(gca,'XLim',[18 22])
 
+PrettyFig;
 
-x.response = f(s:z);
-x.prediction = fp(s:z);
-x.stimulus = data(td).PID(s:z);
-x.time = data(td).time(s:z);
-x.filter_length = length(K);
-
-if redo_bootstrap
-	p_fake_ORN = GainAnalysis3(x,history_lengths,example_history_length,ph);
-else
-	GainAnalysis3(x,history_lengths,example_history_length,ph,p_fake_ORN);
+if ~redo_bootstrap
+	snapnow;
+	delete(gcf)
 end
-clear x
-hold off
-set(ph(4),'YLim',[0.7 1.4],'XLim',[-0.01 max(history_lengths)])
-title(ph(4),'DA Model response to odor stimulus')
-ylabel(ph(3),'DA Model Response')
-
-snapnow;
-delete(gcf);
 
 %%
-% The slopes still don't go to 1, and now there is a weird deflection at low history lengths. What if we shuffle the stimulus? 
+% The r-square of the DA Model fit is:
+disp(rsquare(data(td).ORN(300:end),f(300:end)))
 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-ph(3) = subplot(1,2,1); hold on 
-axis square
-ph(4) = subplot(1,2,2); hold on
+%% 
+% Now, we use the DA model as a "fake" neuron and use it to generate a synthetic ORN output, and then perform a linear gain analysis on this dataset. 
 
+% back out a filter
 s = 300; % when we start for the gain analysis
-z = length(data(td).ORN); % where we end
-example_history_length = 0.12;
-history_lengths = [0:0.06:2*act];
-
-clear x
-% generate fake data
-f=DA_integrate2(d.stimulus,p);
+z = length(data(td).ORN)-33; % where we end
 [K,~,filtertime] = FindBestFilter(data(td).PID,f);
 fp=mean(f(s:z))+convolve(data(td).time,data(td).PID,K,filtertime);
 
 
 
+f1=figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+ph(1) = subplot(2,1,1); hold on 
+ph(2) = subplot(2,1,2); hold on
+
+title(ph(1),strrep(data(td).original_name,'_','-'),'FontSize',20);
+
+f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+s = 300; % when we start for the gain analysis
+z = length(data(td).ORN) - 33; % where we end
+example_history_length = 0.12;
+history_lengths = 0:0.06:2;
+
+clear x
 x.response = f(s:z);
 x.prediction = fp(s:z);
 x.stimulus = data(td).PID(s:z);
-x.stimulus=x.stimulus(randperm(length(x.stimulus)));
 x.time = data(td).time(s:z);
-x.filter_length = length(K);
+x.filter_length = 201;
+
 
 if redo_bootstrap
-	p_fake_ORN2 = GainAnalysis3(x,history_lengths,example_history_length,ph);
+	ptemp3 = GainAnalysis3(x,history_lengths,example_history_length,ph);
 else
-	GainAnalysis3(x,history_lengths,example_history_length,ph,p_fake_ORN2);
+	GainAnalysis3(x,history_lengths,example_history_length,ph,ptemp3);
 end
-clear x
-hold off
-set(ph(4),'YLim',[0.7 1.4],'XLim',[-0.01 max(history_lengths)])
-title(ph(4),'DA Model response to shuffled stimulus')
-ylabel(ph(3),'DA Model Response')
 
-snapnow;
-delete(gcf);
+ylabel(ph(3),'DA Model Response (Hz)')
+
+if ~redo_bootstrap
+	snapnow;
+	delete(f1);
+
+	snapnow;
+	delete(f2);
+end
+
+
+
 
 %%
-% Now, the slopes go to 1, but then, the slopes are always 1 no matter what the history length. We want to create a condition where the slopes. What if we shuffle, then filter the odor stimulus? Perhaps correlation times in the stimulus affect this slope behaviour? The following figure shows the effect of shuffling and filtering the stimulus:
+% What if we shuffle, then filter the odor stimulus? Perhaps correlation times in the stimulus affect this slope behaviour? The following figure shows the effect of shuffling and filtering the stimulus:
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 stim=d.stimulus(randperm(length(d.stimulus)));
@@ -412,45 +471,63 @@ ylabel('Stimulus (a.u.)')
 legend PID ShuffledFilteredPID
 PrettyFig;
 
+if ~redo_bootstrap
+	snapnow;
+	delete(gcf)
+end
+
 
 %%
 % We now repeat the gain analysis on this new synthetic dataset. 
 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+s = 300; % when we start for the gain analysis
+z = length(data(td).ORN) - 33; % where we end
+
+
+% make the DA model output
+f=DA_integrate2(stim,p);
+
+% make the linear prediction
+[K,~,filtertime] = FindBestFilter(stim,f);
+fp=mean(f(s:z))+convolve(data(td).time,stim,K,filtertime);
+
+f1=figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+ph(1) = subplot(2,1,1); hold on 
+ph(2) = subplot(2,1,2); hold on
+
+title(ph(1),strrep(data(td).original_name,'_','-'),'FontSize',20);
+
+f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 ph(3) = subplot(1,2,1); hold on 
 axis square
 ph(4) = subplot(1,2,2); hold on
-
-s = 300; % when we start for the gain analysis
-z = length(data(td).ORN); % where we end
 example_history_length = 0.12;
-history_lengths = [0:0.06:2*act];
+history_lengths = 0:0.06:2;
 
 clear x
-% generate fake data
-f=DA_integrate2(d.stimulus,p);
-[K,~,filtertime] = FindBestFilter(data(td).PID,f);
-fp=mean(f(s:z))+convolve(data(td).time,data(td).PID,K,filtertime);
-
-
-
-
 x.response = f(s:z);
 x.prediction = fp(s:z);
 x.stimulus = stim(s:z);
 x.time = data(td).time(s:z);
-x.filter_length = length(K);
+x.filter_length = 201;
+
 
 if redo_bootstrap
-	p_fake_ORN3 = GainAnalysis3(x,history_lengths,example_history_length,ph);
+	ptemp4 = GainAnalysis3(x,history_lengths,example_history_length,ph);
 else
-	GainAnalysis3(x,history_lengths,example_history_length,ph,p_fake_ORN3);
+	GainAnalysis3(x,history_lengths,example_history_length,ph,ptemp4);
 end
-clear x
-hold off
-set(ph(4),'YLim',[0.7 1.4],'XLim',[-0.01 max(history_lengths)])
-title(ph(4),'Response to shuffled filtered stimulus')
-ylabel(ph(3),'DA Model Response')
 
-snapnow;
-delete(gcf);
+ylabel(ph(3),'DA Model Response (Hz)')
+
+if ~redo_bootstrap
+	snapnow;
+	delete(f1);
+
+	snapnow;
+	delete(f2);
+end
+
+
+%%
+% So we can recapitulate the effect where the slopes don't go to zero even with a DA model. This means that this effect is because of some detail of how we make the linear prediction, and is not a feature of either the stimulus (because in this example we shuffle the stimulus and still see it) nor is it because of some neuron-intrinsic effect (because we use a DA model here). 

@@ -214,7 +214,7 @@ figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 50
 plot(data(td).time,data(td).ORN,'k')
 plot(data(td).time,data(td).LinearFit,'r')
 plot(data(td).time,hill(x,LNpred),'g')
-set(gca,'XLim',[18 22])
+set(gca,'XLim',[19 23])
 xlabel('Time (s)')
 ylabel('Firing rate (Hz)')
 
@@ -269,7 +269,7 @@ ph(4) = subplot(1,2,2); hold on
 s = 300; % when we start for the gain analysis
 z = length(data(td).ORN) - 33; % where we end
 example_history_length = 0.12;
-history_lengths = [0:0.06:2*act];
+history_lengths = [0:0.12:2];
 
 clear x
 x.response = data(td).ORN(s:z);
@@ -322,7 +322,7 @@ ph(4) = subplot(1,2,2); hold on
 s = 300; % when we start for the gain analysis
 z = length(data(7).ORN) - 33; % where we end
 example_history_length = 0.12;
-history_lengths = [0:0.06:2*act];
+history_lengths = [0:0.12:2];
 
 % build a simple linear model
 [K,~,filtertime] = FindBestFilter(data(7).PID(500:end),data(7).ORN(500:end),[],'filter_length=201;');
@@ -361,54 +361,6 @@ delete(f2);
 % * In A, ORN firing rates with the stimulus in the highest 10% is close to the maximum. In B, it is far from the maximum, as the neuron has adapted to the onset of the pulse. 
 % * In B, the gain of the filter is not exactly 1 as the filter makes negative predictions, which we set to 0 as negative firing rates don't make sense. 
 
-%% Does performing gain analysis on the derivative of the stimulus show signs of gain control? 
-% One of the problems with this analysis is that the times when the stimulus is very high or very low are boring: when the stimulus is very high, the neuron has fully adapted, and is not close to its maximum firing rate. When the stimulus is very low, the neuron is not firing at all, so we can't see anything. 
-
-%%
-% To get around this, we pick points not where the stimulus is highest or lowest, but where the derivative of the stimulus is highest or lowest, as follows: 
-
-f1=figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-ph(1) = subplot(2,1,1); hold on 
-ph(2) = subplot(2,1,2); hold on
-
-title(ph(1),strrep(data(td).original_name,'_','-'),'FontSize',20);
-
-f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-ph(3) = subplot(1,2,1); hold on 
-axis square
-ph(4) = subplot(1,2,2); hold on
-
-
-
-s = 300; % when we start for the gain analysis
-z = length(data(td).ORN) - 33; % where we end
-example_history_length = 0.12;
-history_lengths = [0:0.06:2*act];
-
-clear x
-x.response = data(td).ORN(s:z);
-x.prediction = data(td).LinearFit(s:z);
-x.stimulus = [0; diff(data(td).PID(s:z))];
-x.time = data(td).time(s:z);
-x.filter_length = 201;
-
-
-if redo_bootstrap
-	ptemp3 = GainAnalysis3(x,history_lengths,example_history_length,ph);
-else
-	GainAnalysis3(x,history_lengths,example_history_length,ph,ptemp3);
-end
-
-snapnow;
-delete(f1);
-
-snapnow;
-delete(f2);
-
-%%
-% So this doesn't work that well. 
-
-return
 
 %       ########  ##     ## ##        ######  ########       ###    ##     ## ########  
 %       ##     ## ##     ## ##       ##    ## ##            ## ##   ###   ### ##     ## 
@@ -593,7 +545,7 @@ ph(4) = subplot(1,2,2); hold on
 s = 300; % when we start for the gain analysis
 z = length(data(td).ORN) - 33; % where we end
 example_history_length = 0.12;
-history_lengths = [0:0.06:2*act];
+history_lengths = 0:0.12:2;
 
 clear x
 
@@ -645,7 +597,7 @@ ph(4) = subplot(1,2,2); hold on
 s = 300; % when we start for the gain analysis
 z = length(data(td).ORN); % where we end
 example_history_length = 0.12;
-history_lengths = [0:0.06:2*act];
+history_lengths = 0:.12:2;
 
 clear x
 % generate fake data
@@ -732,6 +684,8 @@ xlabel('Time (a.u.)')
 ylabel('Stimulus (a.u.)')
 legend PID ShuffledFilteredPID
 PrettyFig;
+
+
 
 
 %%

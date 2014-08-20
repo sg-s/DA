@@ -5,6 +5,8 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
+%%
+% The purpose of this document is to determine if ORNs show the characteristic features of fast gain control in flickering stimuli experiments with fast odors, and with other receptors. We want to answer the question of how general the phenomenon of fast gain control that we saw with ab3A and 1-octen-3-ol is. 
 
 % some parameters
 font_size = 20;
@@ -243,12 +245,26 @@ disp(Cost2(LNpred(205:end-33),data(td).ORN(205:end-33)))
 %         ######   ##     ## #### ##    ##    ##     ## ##    ## ##     ## ######## 
 
 %% Linear Model Gain Analysis
-% In this section, we perform a gain analysis on the linear prediction first for an arbitrarily chosen history length of 120ms (panel on the left) and then for various history lengths (panel on the right). The history lengths where the slopes are significantly different (p<0.05) are indicated by dots. Significance is determined by bootstrapping the data 100 times. History lengths up to twice the autocorrelation length of the stimulus are investigated. 
+% In this section, we perform a gain analysis on the linear prediction. 
 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+%%
+% First figure: The top panel shows the stimulus (black), and the smoothed stimulus smoothed over the history window (used in the example in the second figure). The top10% of the smoothed stimulus are highlighted in red, and the bottom 10% are highlighted in green. For these time points, the data (black, bottom panel) and the the prediction (red, bottom panel) are compared. 
+
+%%
+% Second figure: In the left panel, these the prediction and the data at these chosen time points are plotted, along with all the data in gray, together with best fit linear functions. The panel on the right shows the same analysis for all history lengths, with dots indicating points where the slopes between the red and green clouds are significantly different (p<0.05, data bootstrapped a 100 times). 
+
+f1=figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+ph(1) = subplot(2,1,1); hold on 
+ph(2) = subplot(2,1,2); hold on
+
+title(ph(1),strrep(data(td).original_name,'_','-'),'FontSize',20);
+
+f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 ph(3) = subplot(1,2,1); hold on 
 axis square
 ph(4) = subplot(1,2,2); hold on
+
+
 
 s = 300; % when we start for the gain analysis
 z = length(data(td).ORN) - 33; % where we end
@@ -268,11 +284,83 @@ if redo_bootstrap
 else
 	GainAnalysis3(x,history_lengths,example_history_length,ph,ptemp);
 end
+
+snapnow;
+delete(f1);
+
+snapnow;
+delete(f2);
+
+
+
+
+ %       ##    #######   ######  ########     ######   #######  ##     ## ########  
+ %     ####   ##     ## ##    ##    ##       ##    ## ##     ## ###   ### ##     ## 
+ %       ##   ##     ## ##          ##       ##       ##     ## #### #### ##     ## 
+ %       ##   ##     ## ##          ##       ##       ##     ## ## ### ## ########  
+ %       ##   ##     ## ##          ##       ##       ##     ## ##     ## ##        
+ %       ##   ##     ## ##    ##    ##       ##    ## ##     ## ##     ## ##        
+ %     ######  #######   ######     ##        ######   #######  ##     ## ##        
+
+%%
+% This is pretty horrible. There are many things wrong with this. cf. the identical gain analysis for a different data set, i.e., ab3A with 1-octen-3-ol: 
+
+
+f1=figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+ph(1) = subplot(2,1,1); hold on 
+ph(2) = subplot(2,1,2); hold on
+
+title(ph(1),strrep(data(7).original_name,'_','-'),'FontSize',20)
+
+f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+
+
+s = 300; % when we start for the gain analysis
+z = length(data(7).ORN) - 33; % where we end
+example_history_length = 0.12;
+history_lengths = [0:0.06:2*act];
+
+% build a simple linear model
+[K,~,filtertime] = FindBestFilter(data(7).PID(500:end),data(7).ORN(500:end),[],'filter_length=201;');
+data(td).K = K;
+data(td).filtertime = filtertime*mean(diff(data(7).time));
+data(td).LinearFit = mean(data(7).ORN)+ convolve(data(7).time,data(7).PID,data(7).K,data(7).filtertime);
+
+
 clear x
+x.response = data(7).ORN(s:z);
+x.prediction = data(7).LinearFit(s:z);
+x.stimulus = data(7).PID(s:z);
+x.time = data(7).time(s:z);
+x.filter_length = 201;
+
+
+if redo_bootstrap
+	ptemp2 = GainAnalysis3(x,history_lengths,example_history_length,ph);
+else
+	GainAnalysis3(x,history_lengths,example_history_length,ph,ptemp2);
+end
 
 
 snapnow;
-delete(gcf);
+delete(f1);
+
+snapnow;
+delete(f2);
+
+%%
+% There are many things different between A) the example 1-octen-3-ol dataset and B) the current dataset.
+% 
+% * In A, ORN firing rates never go to 0. In B, they do.
+% * In A, ORN firing rates when the stimulus is in lowest 10% is strictly > 0. Not so in B.
+% * The stimulus distribution is unimodal in A, with fluctuations around a non-zero mean. In B, the stimulus distribution is sharply bimodal, with the stimulus either being zero or close to the maximum. 
+% * In A, ORN firing rates with the stimulus in the highest 10% is close to the maximum. In B, it is far from the maximum, as the neuron has adapted to the onset of the pulse. 
+
+return
 
 %       ########  ##     ## ##        ######  ########       ###    ##     ## ########  
 %       ##     ## ##     ## ##       ##    ## ##            ## ##   ###   ### ##     ## 
@@ -356,13 +444,81 @@ x.stimulus = data(td).PID(s:z);
 x.time = data(td).time(s:z);
 x.valve = data(td).Valve(s:z);
 
-[m,fitq]=PulsePeakAnalysis(x,history_lengths,example_history_length,ph);
+PulsePeakAnalysis(x,history_lengths,example_history_length,ph);
 
 
 PrettyFig;
 
 snapnow;
 delete(gcf);	
+
+%     ##       #### ##    ## ########    ###    ########        ########  ########     ###    
+%     ##        ##  ###   ## ##         ## ##   ##     ##       ##     ## ##     ##   ## ##   
+%     ##        ##  ####  ## ##        ##   ##  ##     ##       ##     ## ##     ##  ##   ##  
+%     ##        ##  ## ## ## ######   ##     ## ########        ########  ########  ##     ## 
+%     ##        ##  ##  #### ##       ######### ##   ##         ##        ##        ######### 
+%     ##        ##  ##   ### ##       ##     ## ##    ##        ##        ##        ##     ## 
+%     ######## #### ##    ## ######## ##     ## ##     ##       ##        ##        ##     ## 
+
+%% Pulse-Peak Analysis of Linear Model
+% Does the linear model show this pulse-peak amplitude modulation? In this section we repeat the pulse-peak analysis and compare the results to that of the real data. 
+
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(1) = subplot(1,2,1); hold on 
+axis square
+ph(2) = subplot(1,2,2); hold on
+
+s = 1; % when we start for the gain analysis
+z = length(data(td).ORN); % where we end
+example_history_length = 0.5;
+history_lengths = [0:0.06:2];
+
+clear x
+x.response = data(td).LinearFit(s:z);
+x.stimulus = data(td).PID(s:z);
+x.time = data(td).time(s:z);
+x.valve = data(td).Valve(s:z);
+
+PulsePeakAnalysis(x,history_lengths,example_history_length,ph);
+
+PrettyFig;
+
+snapnow;
+delete(gcf);	
+
+
+%##       ##    ##    ##     ##  #######  ########  ######## ##          ########  ########     ##    
+%##       ###   ##    ###   ### ##     ## ##     ## ##       ##          ##     ## ##     ##   ## #   
+%##       ####  ##    #### #### ##     ## ##     ## ##       ##          ##     ## ##     ##  ##   #  
+%##       ## ## ##    ## ### ## ##     ## ##     ## ######   ##          ########  ########  ##     # 
+%##       ##  ####    ##     ## ##     ## ##     ## ##       ##          ##        ##        ######## 
+%##       ##   ###    ##     ## ##     ## ##     ## ##       ##          ##        ##        ##     # 
+%######## ##    ##    ##     ##  #######  ########  ######## ########    ##        ##        ##     ## 
+
+%% Pulse Peak Analysis of LN Model
+% In this section, we repeat the Peak-Pulse Analysis for the LN model prediction. 
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(1) = subplot(1,2,1); hold on 
+axis square
+ph(2) = subplot(1,2,2); hold on
+
+s = 1; % when we start for the gain analysis
+z = length(data(td).ORN); % where we end
+example_history_length = 0.5;
+history_lengths = [0:0.06:2];
+
+clear x
+x.response = LNpred(s:z);
+x.stimulus = data(td).PID(s:z);
+x.time = data(td).time(s:z);
+x.valve = data(td).Valve(s:z);
+
+PulsePeakAnalysis(x,history_lengths,example_history_length,ph);
+
+PrettyFig;
+
 
 return
 

@@ -39,6 +39,16 @@ hl = round(history_lengths/dt);
 
 
 [ons,offs] = ComputeOnsOffs(valve);
+
+% throw out ons and offs where we don't have data
+z = find(~isnan(f),1,'last');
+offs(offs>z) = [];
+ons(ons>z) = [];
+
+if length(ons) > length(offs)
+	ons(end) = [];
+end
+
 ORNPeaks = NaN(1,length(ons));
 PIDPeaks = NaN(1,length(ons));
 Gain =  NaN(1,length(ons));
@@ -53,11 +63,17 @@ for i = s:length(ons)
 	MeanStimulus(i) = mean(stimulus(ons(i)-w:ons(i)));
 end
 
+
+ORNPeaks = ORNPeaks/max(f);
+PIDPeaks = PIDPeaks/max(stimulus);
+MeanStimulus = MeanStimulus/max(stimulus);
+
 Gain = ORNPeaks./PIDPeaks;
 ORNPeaks(1:s-1) = [];
 PIDPeaks(1:s-1) = [];
 Gain(1:s-1) = [];
 MeanStimulus(1:s-1) = [];
+
 
 % fit a line
 [ffit, gof] = fit(MeanStimulus(:),Gain(:),'Poly1');
@@ -87,6 +103,11 @@ for j = 1:length(history_lengths)
 		PIDPeaks(i)=max(stimulus(ons(i):offs(i)));
 		MeanStimulus(i) = mean(stimulus(ons(i)-w:ons(i)));
 	end
+
+	% normalise
+	ORNPeaks = ORNPeaks/max(f);
+	PIDPeaks = PIDPeaks/max(stimulus);
+	MeanStimulus = MeanStimulus/max(stimulus);
 
 	Gain = ORNPeaks./PIDPeaks;
 	ORNPeaks(1:s-1) = [];

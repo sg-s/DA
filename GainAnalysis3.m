@@ -27,15 +27,20 @@ marker_size2=24;
 font_size=20;
 plotid=[1 2];
 
+debug = 0;
+
 if isempty(plothere)
-	% figure, hold on; 
-	% plothere(1) = subplot(2,1,1); hold on;
-	% plothere(2) = subplot(2,1,2); hold on;
+	if debug
+		figure, hold on; 
+		plothere(1) = subplot(2,1,1); hold on;
+		plothere(2) = subplot(2,1,2); hold on;
+	end
 	figure, hold on;
 	plothere(3) = gca;
 	figure; hold on;
 	plothere(4) = gca;
 end
+
 
 % unpack data
 f = x.response(:);
@@ -129,23 +134,34 @@ for i = 1:length(history_lengths)
 
 	if history_lengths(i) == example_history_length
 
-		% % plot the stimulus and the smoothed stimulus
-		% plot(plothere(1),t,stimulus,'k','LineWidth',2), hold on
-		% plot(plothere(1),t,shat(i,:),'Color',[0.9 0.9 0.9],'LineWidth',4)
+		if debug || ~isempty(plothere(1))
+			% % plot the stimulus and the smoothed stimulus
+			plot(plothere(1),t,stimulus,'k','LineWidth',2), hold on
+			plot(plothere(1),t,shat(i,:),'Color',[0.9 0.9 0.9],'LineWidth',4)
 
-		% % plot the response and the prediction 
-		% plot(plothere(2),t,f,'k','LineWidth',2), hold on
-		% plot(plothere(2),t,fp,'r','LineWidth',2), hold on
+			% plot the response and the prediction 
+			plot(plothere(2),t,f,'k','LineWidth',2), hold on
+			plot(plothere(2),t,fp,'r','LineWidth',2), hold on
 
-		
-		% % indicate regions of lowest and highest 10%
-		% tp = floor(length(stimulus)/10);
-		% scatter(plothere(1),t(idx(1:tp)),shat(i,idx(1:tp)),'r','fill')
-		% scatter(plothere(1),t(idx(end-tp:end)),shat(i,idx(end-tp:end)),'g','fill')
-		% % scatter(plothere(2),t(idx(1:tp)),f(idx(1:tp)),'r','fill')
-		% % scatter(plothere(2),t(idx(1:tp)),fp(idx(1:tp)),'r','fill')
-		% % scatter(plothere(2),t(idx(end-tp:end)),fp(idx(end-tp:end)),'g','fill')
-		% % scatter(plothere(2),t(idx(end-tp:end)),f(idx(end-tp:end)),'g','fill')
+			xlabel(plothere(2),'Time (s)','FontSize',20)
+			xlabel(plothere(1),'Time (s)','FontSize',20)
+
+			ylabel(plothere(2),'Firing rate (Hz)','FontSize',20)
+			ylabel(plothere(1),'Stimulus (a.u.)','FontSize',20)
+			
+			% indicate regions of lowest and highest 10%
+			tp = floor(length(stimulus)/10);
+			plot(plothere(1),t(idx(1:tp)),shat(i,idx(1:tp)),'r.')
+			plot(plothere(1),t(idx(end-tp:end)),shat(i,idx(end-tp:end)),'g.')
+			% scatter(plothere(2),t(idx(1:tp)),f(idx(1:tp)),'r','fill')
+			% scatter(plothere(2),t(idx(1:tp)),fp(idx(1:tp)),'r','fill')
+			% scatter(plothere(2),t(idx(end-tp:end)),fp(idx(end-tp:end)),'g','fill')
+			% scatter(plothere(2),t(idx(end-tp:end)),f(idx(end-tp:end)),'g','fill')
+
+			set(plothere(1),'LineWidth',2,'FontSize',20)
+			set(plothere(2),'LineWidth',2,'FontSize',20)
+
+		end
 
 		% plot these on the scatter plot
 
@@ -184,12 +200,12 @@ else
 end
 
 
-plot(history_lengths,low_slopes2.data,'g','LineWidth',2), hold on
-plot(history_lengths,high_slopes2.data,'r','LineWidth',2)
+plot(plothere(4),history_lengths,low_slopes2.data,'g','LineWidth',2), hold on
+plot(plothere(4),history_lengths,high_slopes2.data,'r','LineWidth',2)
 p = p*length(p); % Bonferroni correction
 sig = p<(0.05/length(p)); % these points are significant,
-scatter(history_lengths(sig),low_slopes2.data(sig),1256,'g.')
-scatter(history_lengths(sig),high_slopes2.data(sig),1256,'r.')
+scatter(plothere(4),history_lengths(sig),low_slopes2.data(sig),1256,'g.')
+scatter(plothere(4),history_lengths(sig),high_slopes2.data(sig),1256,'r.')
 
 set(plothere(4),'LineWidth',2,'FontSize',20,'box','on','XLim',[0 max(history_lengths)])
 xlabel(plothere(4),'History Length (s)','FontSize',20)

@@ -19,17 +19,32 @@
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 % performs a gain analysis and makes some plots
 
-function [p] = GainAnalysis3(x,history_lengths,example_history_length,plothere,p)
+function [p,low_slopes,high_slopes] = GainAnalysis3(x,history_lengths,example_history_length,plothere,p)
+
 
 % set defaults
 marker_size=10;
 marker_size2=24;
 font_size=20;
-plotid=[1 2];
-
+plotid=[1 2 3 4];
 debug = 0;
 
-if isempty(plothere)
+switch nargin 
+case 1
+	error('Need to specify which history lengths to analyse')
+case 2
+	% don't plot anything
+	plotid = [];
+	plothere = [];
+	example_history_length = [];
+case 3
+case 4
+end
+
+
+
+
+if isempty(plothere) && ~isempty(plotid)
 	if debug
 		figure, hold on; 
 		plothere(1) = subplot(2,1,1); hold on;
@@ -153,10 +168,7 @@ for i = 1:length(history_lengths)
 			tp = floor(length(stimulus)/10);
 			plot(plothere(1),t(idx(1:tp)),shat(i,idx(1:tp)),'r.')
 			plot(plothere(1),t(idx(end-tp:end)),shat(i,idx(end-tp:end)),'g.')
-			% scatter(plothere(2),t(idx(1:tp)),f(idx(1:tp)),'r','fill')
-			% scatter(plothere(2),t(idx(1:tp)),fp(idx(1:tp)),'r','fill')
-			% scatter(plothere(2),t(idx(end-tp:end)),fp(idx(end-tp:end)),'g','fill')
-			% scatter(plothere(2),t(idx(end-tp:end)),f(idx(end-tp:end)),'g','fill')
+
 
 			set(plothere(1),'LineWidth',2,'FontSize',20)
 			set(plothere(2),'LineWidth',2,'FontSize',20)
@@ -184,11 +196,11 @@ for i = 1:length(history_lengths)
 
 end
 
+if length(plothere) == 4
+	% plot to summary figure
+	plot(plothere(4),history_lengths,all_slopes*ones(1,length(history_lengths)),'k','LineWidth',2), hold on
+end
 
-% plot to summary figure
-plot(plothere(4),history_lengths,all_slopes*ones(1,length(history_lengths)),'k','LineWidth',2), hold on
-% errorbar(plothere(4),history_lengths,low_slopes,low_slopes_err,'g','LineWidth',2), hold on
-% errorbar(plothere(4),history_lengths,high_slopes,high_slopes_err,'r','LineWidth',2)
 	
 % bootstrap slopes
 if nargin == 5
@@ -199,14 +211,20 @@ else
 	[low_slopes2, high_slopes2, p] = BootStrapErrorBars(x,history_lengths,0.1);
 end
 
+if length(plothere) == 4
+	plot(plothere(4),history_lengths,low_slopes2.data,'g','LineWidth',2), hold on
+	plot(plothere(4),history_lengths,high_slopes2.data,'r','LineWidth',2)
+	p = p*length(p); % Bonferroni correction
+	sig = p<0.05; % these points are significant,
+	scatter(plothere(4),history_lengths(sig),low_slopes2.data(sig),1256,'g.')
+	scatter(plothere(4),history_lengths(sig),high_slopes2.data(sig),1256,'r.')
 
-plot(plothere(4),history_lengths,low_slopes2.data,'g','LineWidth',2), hold on
-plot(plothere(4),history_lengths,high_slopes2.data,'r','LineWidth',2)
-p = p*length(p); % Bonferroni correction
-sig = p<(0.05/length(p)); % these points are significant,
-scatter(plothere(4),history_lengths(sig),low_slopes2.data(sig),1256,'g.')
-scatter(plothere(4),history_lengths(sig),high_slopes2.data(sig),1256,'r.')
+	set(plothere(4),'LineWidth',2,'FontSize',20,'box','on','XLim',[0 max(history_lengths)])
+	xlabel(plothere(4),'History Length (s)','FontSize',20)
+	ylabel(plothere(4),'Slope data/prediction (gain)','FontSize',20)
+end
 
-set(plothere(4),'LineWidth',2,'FontSize',20,'box','on','XLim',[0 max(history_lengths)])
-xlabel(plothere(4),'History Length (s)','FontSize',20)
-ylabel(plothere(4),'Slope data/prediction (gain)','FontSize',20)
+
+% clean up slopes to send out
+low_slopes = low_slopes2.data;
+high_slopes = high_slopes2.data;

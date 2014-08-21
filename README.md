@@ -44,6 +44,10 @@ In this document, we take one particular dataset (Carlotta's measuremnet of resp
 
 	script to run: GainAnalysisAllData.m
 	vary the parameter which determines which dataset to use. 
+	
+To make a summary report on all of Carlotta's data, use:
+
+	HowGeneralIsGainAdaptation.m
 
 For most of Carlotta's data, the ORN is compeltely silent for most of the time, and the normal methods of gain analysis won't work so well. here we try to use other methods. 
 
@@ -51,7 +55,7 @@ For most of Carlotta's data, the ORN is compeltely silent for most of the time, 
 * Statistics of the Stimulus and the Response
 * Linear Fit to the Data
 * Adding a output nonlinearity post-hoc
-* Linear Model Gain Analysis
+* LN Model Gain Analysis
 * Pulse Peak Analysis
 
 

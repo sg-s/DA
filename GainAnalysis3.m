@@ -19,7 +19,7 @@
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 % performs a gain analysis and makes some plots
 
-function [p,low_slopes,high_slopes] = GainAnalysis3(x,history_lengths,example_history_length,plothere,p)
+function [p,low_slopes,high_slopes,low_gof,high_gof] = GainAnalysis3(x,history_lengths,example_history_length,plothere,p)
 
 
 % set defaults

@@ -26,6 +26,8 @@ if ~exist('HowGeneralIsGainAdaptation.mat','file')
 	% initialise a matrix that stores all the slopes (and p-values) we calculate from the Gain Analysis
 	low_slopes  = NaN(length(history_lengths),n);
 	high_slopes = NaN(length(history_lengths),n);
+	low_gof  = NaN(length(history_lengths),n);
+	high_gof = NaN(length(history_lengths),n);
 	p_values = NaN(length(history_lengths),n);
 
 	% initialise a matrix that stores the r-square of the LN fit
@@ -60,7 +62,7 @@ if ~exist('HowGeneralIsGainAdaptation.mat','file')
 		HillFit(:,i) = x;
 
 		LNFitQuality(i) = rsquare(LNFit,data(td).ORN);
-		if LNFitQuality(i) < 0.9
+		if LNFitQuality(i) < 0.8
 			disp('Poor fit')
 			beep
 			keyboard
@@ -76,13 +78,13 @@ if ~exist('HowGeneralIsGainAdaptation.mat','file')
 		x.time = data(td).time(s:z);
 		x.filter_length = 200;
 
-		[p_values(:,i),low_slopes(:,i),high_slopes(:,i)] = GainAnalysis3(x,history_lengths);
+		[p_values(:,i),low_slopes(:,i),high_slopes(:,i),low_gof(:,i),high_gof(:,i)] = GainAnalysis3(x,history_lengths);
 		
 	end
 
 	% cache locally for use later
 	filtertime = filtertime*mean(diff(data(td).time));
-	save('HowGeneralIsGainAdaptation.mat','Filters','HillFit','LNFitQuality','high_slopes','low_slopes','p_values','filtertime','history_lengths')
+	save('HowGeneralIsGainAdaptation.mat','Filters','HillFit','LNFitQuality','high_slopes','low_slopes','p_values','filtertime','history_lengths','low_gof','high_gof')
 else
 	load('HowGeneralIsGainAdaptation.mat')
 end
@@ -116,6 +118,7 @@ xlabel('Lag (s)')
 ylabel('Filter Amplitude (norm)')
 set(gca,'XLim',[min(filtertime)-0.01 max(filtertime)+0.01])
 set(gca,'YLim',[-0.9 1.2])
+title('Variance in filter shape')
 
 PrettyFig;
 
@@ -145,7 +148,7 @@ plot(x,y)
 xlabel('Linear Output (Hz)')
 ylabel('Nonlinearity Output (Hz)')
 set(gca,'XLim',[0 255])
-
+title('Variance in Nonlinearity shape')
 
 PrettyFig;
 
@@ -183,6 +186,63 @@ ylabel('Relative Gain')
 PrettyFig;
 snapnow;
 delete(gcf);
+
+%%
+% However, in some cases, the fits to the clouds of points in the gain analysis may not be very good. The following plot shows the distribution of r-square values of the fits that are used to determine the gain in each of these cases, for the entire dataset:
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+[y,x]=hist(low_gof(:),30);
+plot(x,y,'g')
+[y,x]=hist(high_gof(:),30);
+plot(x,y,'r')
+legend({'Low Slopes','High Slopes'})
+xlabel('r-square of fit')
+ylabel('Count')
+title('Some fits are very poor')
+
+PrettyFig;
+
+snapnow;
+delete(gcf);
+
+%%
+% If we retain only the points where the r-square of the fit is >0.8, we end up retaining the following percent of the low slopes:
+
+disp(100*length(low_gof(low_gof>0.8))/(length(low_gof(:))))
+
+%%
+% and the following percent of the high-slopes data:
+
+disp(100*length(high_gof(high_gof>0.8))/(length(high_gof(:))))
+
+%%
+% In the following plot, we only retain this data:
+
+low_slopes(low_gof<0.8) = NaN;
+high_slopes(high_gof<0.8) = NaN;
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(history_lengths,low_slopes,'.-','Color',[0.5 1 0.5])
+plot(history_lengths,high_slopes,'.-','Color',[1 0.5 0.5])
+set(gca,'XScale','log')
+
+xlabel('History Length (s)')
+ylabel('Relative Gain')
+
+% now plot the dots where significant
+for i = 1:length(HillFit)
+	sig = p_values(:,i);
+	sig = (sig<0.05);
+
+	scatter(history_lengths(sig),low_slopes(sig,i),500,'g.')
+	scatter(history_lengths(sig),high_slopes(sig,i),500,'r.')
+end
+
+PrettyFig;
+
+snapnow;
+delete(gcf);
+
 
 
 return

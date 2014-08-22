@@ -82,7 +82,7 @@ if ~exist('HowGeneralIsGainAdaptation.mat','file')
 
 	% cache locally for use later
 	filtertime = filtertime*mean(diff(data(td).time));
-	save('HowGeneralIsGainAdaptation.mat','Filters','HillFit','LNFitQuality','high_slopes','low_slopes','p_values','filtertime')
+	save('HowGeneralIsGainAdaptation.mat','Filters','HillFit','LNFitQuality','high_slopes','low_slopes','p_values','filtertime','history_lengths')
 else
 	load('HowGeneralIsGainAdaptation.mat')
 end
@@ -122,7 +122,15 @@ PrettyFig;
 snapnow;
 delete(gcf);
 
-%% Variance of Output Nonlinearities 
+%       ##     ## #### ##       ##          ######## ##     ## ##    ##  ######  
+%       ##     ##  ##  ##       ##          ##       ##     ## ###   ## ##    ## 
+%       ##     ##  ##  ##       ##          ##       ##     ## ####  ## ##       
+%       #########  ##  ##       ##          ######   ##     ## ## ## ## ##       
+%       ##     ##  ##  ##       ##          ##       ##     ## ##  #### ##       
+%       ##     ##  ##  ##       ##          ##       ##     ## ##   ### ##    ## 
+%       ##     ## #### ######## ########    ##        #######  ##    ##  ######  
+
+%% Variance of Output Non-linearities 
 % In each data set, after backing out the filters, we then fit a 3-parameter hill function to the residuals. The following function shows the shape of all the Hill functions. Each curve is the best fit for one data set. 
 
 x = 0:250;
@@ -141,7 +149,46 @@ set(gca,'XLim',[0 255])
 
 PrettyFig;
 
-%% Summary of Gain Analysis in all data
-
 snapnow;
 delete(gcf);
+
+%        ###    ##       ##          ########     ###    ########    ###    
+%       ## ##   ##       ##          ##     ##   ## ##      ##      ## ##   
+%      ##   ##  ##       ##          ##     ##  ##   ##     ##     ##   ##  
+%     ##     ## ##       ##          ##     ## ##     ##    ##    ##     ## 
+%     ######### ##       ##          ##     ## #########    ##    ######### 
+%     ##     ## ##       ##          ##     ## ##     ##    ##    ##     ## 
+%     ##     ## ######## ########    ########  ##     ##    ##    ##     ## 
+
+%% Summary of Gain Analysis in all data
+% The following figure shows the results of performing a gain analysis using the LN model's prediction for all the data. In the following figure, each pair of red/green curve comes from one data set. Dots indicate points where the slopes are significantly different. 
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(history_lengths,low_slopes,'Color',[0.5 1 0.5])
+plot(history_lengths,high_slopes,'Color',[1 0.5 0.5])
+set(gca,'XScale','log')
+
+% now plot the dots where significant
+for i = 1:length(HillFit)
+	sig = p_values(:,i);
+	sig = (sig<0.05);
+
+	scatter(history_lengths(sig),low_slopes(sig,i),500,'g.')
+	scatter(history_lengths(sig),high_slopes(sig,i),500,'r.')
+end
+
+xlabel('History Length (s)')
+ylabel('Relative Gain')
+
+PrettyFig;
+snapnow;
+delete(gcf);
+
+
+return
+% find the history length where the slopes are most different
+p_values(p_values<0.05) = 0;
+p_values(p_values>0) = 1;
+temp=sum(p_values');
+
+

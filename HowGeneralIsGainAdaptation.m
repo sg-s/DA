@@ -89,6 +89,8 @@ else
 	load('HowGeneralIsGainAdaptation.mat')
 end
 
+% corrects for points where the p-value is reported as 0 by the bootstrap. it can't be, it's just too small to measure. 
+p_values(p_values==0) = min(nonzeros(p_values(:)));
 
 %% How General is Gain Adaptation?
 % This document summaries a gain analysis of all of the binary flickering stimuli we have from Carlotta's experiments. 
@@ -243,7 +245,30 @@ PrettyFig;
 snapnow;
 delete(gcf);
 
+%%
+% In general, are the green slopes (gain following low stimuli) signifcanlty higher than the red slopes (gain follwing high stimuli)? To determine this, we plot, for each pair of points corresponding to a single history length and a single dataset, the difference between the low slopes and the high slopes _vs._ the p-value of the difference between that pair (Bonferroni corrected). 
 
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+d = low_slopes(:) - high_slopes(:);
+plot(p_values(:),d,'k.') 
+set(gca,'XScale','log')
+
+% plot a reference line for equal gain
+plot([.01 1],[0 0 ],'k--')
+
+% plot a reference line for p = 0.05
+plot([.05 .05],[min(d)*2 max(d)*2 ],'k--')
+
+set(gca,'XLim',[min(p_values(:))/2 1.1],'YLim',[-0.5 0.6])
+
+
+ylabel('Low Slopes - High Slopes')
+xlabel('p-value (Bonferroni corr.)')
+
+PrettyFig;
+
+%% 
+% The reference horizontal line indicates equal slope (equal gain for low and high stimuli) and the reference vertical line indicates a p-value of _p=0.05_. Of the statistically significant differences in gain (left half-plane), there are far more points in the top-left quadrant (gain enhancement to low stimuli) than there are in the bottom-left quadrant (gain suppression to low stimuli). 
 
 return
 % find the history length where the slopes are most different

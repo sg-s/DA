@@ -283,6 +283,15 @@ lowest_p = min(p_values);
 
 disp(data(1+find(lowest_p>0.05)).original_name)
 
+
+%     ########  ######## ########          ######  ##     ## ########  ######  ##    ## 
+%     ##     ## ##       ##     ##        ##    ## ##     ## ##       ##    ## ##   ##  
+%     ##     ## ##       ##     ##        ##       ##     ## ##       ##       ##  ##   
+%     ########  ######   ########         ##       ######### ######   ##       #####    
+%     ##   ##   ##       ##               ##       ##     ## ##       ##       ##  ##   
+%     ##    ##  ##       ##        ###    ##    ## ##     ## ##       ##    ## ##   ##  
+%     ##     ## ######## ##        ###     ######  ##     ## ########  ######  ##    ## 
+
 %% Reliability and Reproducibility 
 % How reprdocicable is the data in this dataset and how reliable is this analysis?  To check this, we compare the following six pieces of data, obtained on different dates with different neurons: 
 
@@ -357,6 +366,47 @@ disp(r2)
 
 %%
 % So at this point it is unclear if the observed variability in stimulus is due to actual variability in stimulus amplitude,and the neuron adapts to this, or if the stimulus is actually identical, and the PID sensitivities are simply different from day to day. 
+
+%%
+% The following figure shows the results of backing the filters out of these supposedly identical datasets: 
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(filtertime,NormFilters(:,plothese))
+xlabel('Lag (s)')
+ylabel('Filter Amplitude (norm)')
+set(gca,'XLim',[min(filtertime)-0.01 max(filtertime)+0.01])
+set(gca,'YLim',[-0.9 1.2])
+title('Variance in filter shape')
+
+PrettyFig;
+
+snapnow;
+delete(gcf);
+
+%%
+% The following figure shows the results of the gain analysis on these supposedly identical datasets: 
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(history_lengths,low_slopes(:,plothese-1),'.-','Color',[0.5 1 0.5])
+plot(history_lengths,high_slopes(:,plothese-1),'.-','Color',[1 0.5 0.5])
+set(gca,'XScale','log')
+
+xlabel('History Length (s)')
+ylabel('Relative Gain')
+
+% now plot the dots where significant
+for i = (plothese-1)
+	sig = p_values(:,i);
+	sig = (sig<0.05);
+
+	scatter(history_lengths(sig),low_slopes(sig,i),500,'g.')
+	scatter(history_lengths(sig),high_slopes(sig,i),500,'r.')
+end
+
+PrettyFig;
+
+snapnow;
+delete(gcf);
 
 
 

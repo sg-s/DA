@@ -413,6 +413,81 @@ snapnow;
 delete(gcf);
 
 
+%  ######   #######  ########  ########     ##       ######## ##    ##  ######   ######## ##     ## 
+% ##    ## ##     ## ##     ## ##     ##    ##       ##       ###   ## ##    ##     ##    ##     ## 
+% ##       ##     ## ##     ## ##     ##    ##       ##       ####  ## ##           ##    ##     ## 
+% ##       ##     ## ########  ########     ##       ######   ## ## ## ##   ####    ##    ######### 
+% ##       ##     ## ##   ##   ##   ##      ##       ##       ##  #### ##    ##     ##    ##     ## 
+% ##    ## ##     ## ##    ##  ##    ##     ##       ##       ##   ### ##    ##     ##    ##     ## 
+%  ######   #######  ##     ## ##     ##    ######## ######## ##    ##  ######      ##    ##     ## 
+
+%% Effect of correlation length
+% What is the effect of the correlation length of the stimulus on the estimation of the degree of gain control? The following subset of the data is analysed, where the same odor is presented to the same type of neuron, but with different correlation lengths. All the data was recorded on the same day:
+
+
+plothese = [3     4   5];
+tau_c	 = [100   30 50];
+tau_c_text = {'100ms','30ms','50ms'};
+for i = 1:length(plothese)
+	disp(data(plothese(i)).original_name)
+end
+
+%%
+% The following figure shows that the autocorrelation times of the stimulus are indeed different:
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+t = 0:3e-3:3e-1;
+a = NaN(length(t),length(plothese));
+ti=1;
+for i = plothese
+	a(:,ti)=autocorr(data(i).PID,100);
+	ti = ti+1;
+end
+plot(t,a)
+legend(tau_c_text)
+xlabel('Lag (s)')
+ylabel('Autocorrelation')
+
+PrettyFig;
+snapnow;
+delete(gcf);
+
+
+%%
+% The following figure shows the results of the gain analysis on these datasets: 
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(history_lengths,low_slopes(:,plothese(1)),'.-','Color',[0 1.0 0])
+plot(history_lengths,low_slopes(:,plothese(2)),'.-','Color',[0 0.4 0])
+plot(history_lengths,low_slopes(:,plothese(3)),'.-','Color',[0 0.7 0])
+
+plot(history_lengths,high_slopes(:,plothese(1)),'.-','Color',[1.0 0 0])
+plot(history_lengths,high_slopes(:,plothese(2)),'.-','Color',[0.4 0 0])
+plot(history_lengths,high_slopes(:,plothese(3)),'.-','Color',[0.7 0 0])
+set(gca,'XScale','log')
+
+xlabel('History Length (s)')
+ylabel('Relative Gain')
+
+% now plot the dots where significant
+for i = plothese
+	sig = p_values(:,i);
+	sig = (sig<0.05);
+
+	scatter(history_lengths(sig),low_slopes(sig,i),500,'g.')
+	scatter(history_lengths(sig),high_slopes(sig,i),500,'r.')
+end
+
+legend(tau_c_text)
+
+PrettyFig;
+
+
+
+snapnow;
+delete(gcf);
+
+
 
 
 return

@@ -482,10 +482,103 @@ legend(tau_c_text)
 
 PrettyFig;
 
+snapnow;
+delete(gcf);
 
+%%
+% So it looks like the peak of the green curves (gain in response to low stimuli) grows smaller, the smaller the correlation length of the stimulus. 
+
+%   ########  #### ######## ########    ##    ## ######## ##     ## ########   #######  ##    ## 
+%   ##     ##  ##  ##       ##          ###   ## ##       ##     ## ##     ## ##     ## ###   ## 
+%   ##     ##  ##  ##       ##          ####  ## ##       ##     ## ##     ## ##     ## ####  ## 
+%   ##     ##  ##  ######   ######      ## ## ## ######   ##     ## ########  ##     ## ## ## ## 
+%   ##     ##  ##  ##       ##          ##  #### ##       ##     ## ##   ##   ##     ## ##  #### 
+%   ##     ##  ##  ##       ##          ##   ### ##       ##     ## ##    ##  ##     ## ##   ### 
+%   ########  #### ##       ##          ##    ## ########  #######  ##     ##  #######  ##    ## 
+
+%% Effect of receptor/ORN
+% In the following section, we analyse a subset of the data where the same odor is presented in the same manner, but to two different neurons: ab3A and pb1A. The data used is:
+
+plothese = [18 12];
+neuron	 = {'ab3A','pb1A'};
+for i = 1:length(plothese)
+	disp(data(plothese(i)).original_name)
+end
+
+
+
+%%
+% The following figure shows the two stimulus in these two cases:
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(data(plothese(1)).time,data(plothese(1)).PID,'k')
+plot(data(plothese(2)).time,data(plothese(2)).PID,'r')
+set(gca,'XLim',[10 20])
+xlabel('Time (s)')
+ylabel('Odor concentration (V)')
+legend(neuron);
+PrettyFig;
 
 snapnow;
 delete(gcf);
+
+%%
+% It looks like one stimulus is massively bigger than the other. Normalising by the mean, we get:
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(data(plothese(1)).time,data(plothese(1)).PID/mean(data(plothese(1)).PID),'k')
+plot(data(plothese(2)).time,data(plothese(2)).PID/mean(data(plothese(2)).PID),'r')
+set(gca,'XLim',[10 20])
+xlabel('Time (s)')
+ylabel('Odor concentration (V)')
+legend(neuron);
+PrettyFig;
+
+snapnow;
+delete(gcf);
+
+%%
+% The responses of the two different neurons to this temporally identical stimulus are:
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(data(plothese(1)).time,data(plothese(1)).ORN,'k')
+plot(data(plothese(2)).time,data(plothese(2)).ORN,'r')
+set(gca,'XLim',[10 20])
+xlabel('Time (s)')
+ylabel('Neuron Response (Hz)')
+legend(neuron);
+PrettyFig;
+
+snapnow;
+delete(gcf);
+
+
+%%
+% The following figure shows how the gain analysis of these two datasets differ:
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(history_lengths,low_slopes(:,plothese(1)),'.-','Color',[0 1.0 0])
+plot(history_lengths,low_slopes(:,plothese(2)),'.-','Color',[0 0.4 0])
+
+plot(history_lengths,high_slopes(:,plothese(1)),'.-','Color',[1.0 0 0])
+plot(history_lengths,high_slopes(:,plothese(2)),'.-','Color',[0.4 0 0])
+
+set(gca,'XScale','log')
+
+xlabel('History Length (s)')
+ylabel('Relative Gain')
+
+% now plot the dots where significant
+for i = plothese
+	sig = p_values(:,i);
+	sig = (sig<0.05);
+
+	scatter(history_lengths(sig),low_slopes(sig,i),500,'g.')
+	scatter(history_lengths(sig),high_slopes(sig,i),500,'r.')
+end
+
+legend(neuron)
+
+PrettyFig;
 
 
 

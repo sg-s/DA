@@ -314,8 +314,8 @@ for i = plothese
 		allresp(:,i)=data(i).ORN(:)';
 	catch
 		% pad with zeros
-		allstim(:,i)=[0 data(i).PID(:)'];
-		allresp(:,i)=[0 data(i).ORN(:)'];
+		allstim(:,i)=[data(i).PID(:)' 0];
+		allresp(:,i)=[data(i).ORN(:)' 0];
 		time = [NaN data(i).time];
 	end
 end
@@ -386,6 +386,7 @@ PrettyFig;
 
 snapnow;
 delete(gcf);
+
 
 %%
 % The following figure shows the results of the gain analysis on these supposedly identical datasets: 
@@ -529,7 +530,7 @@ plot(data(plothese(1)).time,data(plothese(1)).PID/mean(data(plothese(1)).PID),'k
 plot(data(plothese(2)).time,data(plothese(2)).PID/mean(data(plothese(2)).PID),'r')
 set(gca,'XLim',[10 20])
 xlabel('Time (s)')
-ylabel('Odor concentration (V)')
+ylabel('Odor concentration (norm)')
 legend(neuron);
 PrettyFig;
 
@@ -580,44 +581,136 @@ legend(neuron)
 
 PrettyFig;
 
+snapnow;
+delete(gcf);
+
+
+%       ########  #### ######## ########         #######  ########   #######  ########  
+%       ##     ##  ##  ##       ##              ##     ## ##     ## ##     ## ##     ## 
+%       ##     ##  ##  ##       ##              ##     ## ##     ## ##     ## ##     ## 
+%       ##     ##  ##  ######   ######          ##     ## ##     ## ##     ## ########  
+%       ##     ##  ##  ##       ##              ##     ## ##     ## ##     ## ##   ##   
+%       ##     ##  ##  ##       ##       ###    ##     ## ##     ## ##     ## ##    ##  
+%       ########  #### ##       ##       ###     #######  ########   #######  ##     ## 
+
+%% Effect of odor 
+% In this section, we investigate the effect of varying the odor type, while keeping the temporal structure and the type of neuron it is presented to fixed. We use the following datasets, where the valve is switched with the same temporal pattern, and the stimulus is presented to ab3A neurons:
+
+plothese = [2 4 7];
+odor = {data(plothese).odor};
+
+for i = 1:length(plothese)
+	disp(data(plothese(i)).original_name)
+end
+
+%%
+% The following figure shows the stimulus from these datasets, normalised by the mean:
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(data(plothese(1)).time,data(plothese(1)).PID/mean(data(plothese(1)).PID),'b')
+plot(data(plothese(2)).time,data(plothese(2)).PID/mean(data(plothese(2)).PID),'g')
+plot(data(plothese(3)).time,data(plothese(3)).PID/mean(data(plothese(3)).PID),'r')
+set(gca,'XLim',[10 20])
+xlabel('Time (s)')
+ylabel('Odor concentration (norm)')
+legend(odor);
+PrettyFig;
+
+snapnow;
+delete(gcf);
+
+%%
+% The responses of ab3A to these three different odors looks like. The panel on the left shows the actual responses, and the panel on the right shows the normalised histogram of the responses of the neurons.
+
+figure('outerposition',[0 0 1200 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,5,1:4), hold on
+plot(data(plothese(1)).time,data(plothese(1)).ORN,'Color','b')
+plot(data(plothese(2)).time,data(plothese(2)).ORN,'Color','g')
+plot(data(plothese(3)).time,data(plothese(3)).ORN,'Color','r')
+set(gca,'XLim',[10 20])
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+legend(odor);
+
+subplot(1,5,5), hold on
+[x,y] = hist(data(plothese(1)).ORN,30); plot(x/max(x),y,'b')
+[x,y] = hist(data(plothese(2)).ORN,30); plot(x/max(x),y,'g')
+[x,y] = hist(data(plothese(3)).ORN,30); plot(x/max(x),y,'r')
+
+PrettyFig;
+
+snapnow;
+delete(gcf);
+
+%%
+% We now look at how the gain analysis of these datasets differs: 
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(history_lengths,low_slopes(:,plothese(1)),'.-','Color',[0 1.0 0])
+plot(history_lengths,low_slopes(:,plothese(2)),'.-','Color',[0 0.7 0])
+plot(history_lengths,low_slopes(:,plothese(3)),'.-','Color',[0 0.4 0])
+
+plot(history_lengths,high_slopes(:,plothese(1)),'.-','Color',[1.0 0 0])
+plot(history_lengths,high_slopes(:,plothese(2)),'.-','Color',[0.7 0 0])
+plot(history_lengths,high_slopes(:,plothese(3)),'.-','Color',[0.4 0 0])
+
+set(gca,'XScale','log','XLim',[1e-1 5])
+
+xlabel('History Length (s)')
+ylabel('Relative Gain')
+
+% now plot the dots where significant
+for i = plothese
+	sig = p_values(:,i);
+	sig = (sig<0.05);
+
+	scatter(history_lengths(sig),low_slopes(sig,i),500,'g.')
+	scatter(history_lengths(sig),high_slopes(sig,i),500,'r.')
+end
+
+legend(odor)
+
+PrettyFig;
+
+snapnow;
+delete(gcf);
 
 
 
-return
 
-%% 
+%% Gain Analysis Examples
 % In the following plots, the response of the ORN is plotted against the best-fit LN model for an example history length. 
 
-show_these = find(lowest_p < 0.05);
-for i = 1:length(show_these)
-
-	td = do_these(show_these(i));
+for i = do_these
 
 	figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 	ph(3) = subplot(1,1,1);
 
 	s = 300; % when we start for the gain analysis
-	z = length(data(td).ORN) - 33; % where we end
+	z = length(data(i).ORN) - 33; % where we end
 
 	% compute the LNpred
 
-	LinearFit = mean(data(td).ORN)+convolve(data(td).time,data(td).PID,Filters(:,show_these(i)),filtertime);
+	LinearFit = mean(data(i).ORN)+convolve(data(i).time,data(i).PID,Filters(:,i),filtertime);
 	LinearFit(LinearFit<0)=0;
-	LNpred = hill(HillFit(:,show_these(i)),LinearFit);
+	LNpred = hill(HillFit(:,i),LinearFit);
 
 	clear x
-	x.response = data(td).ORN(s:z);
+	x.response = data(i).ORN(s:z);
 	x.prediction = LNpred(s:z);
-	x.stimulus = data(td).PID(s:z);
-	x.time = data(td).time(s:z);
+	x.stimulus = data(i).PID(s:z);
+	x.time = data(i).time(s:z);
 	x.filter_length = 201;
 
-	[~,loc]=min(p_values(:,show_these(i)));
+
+	r = low_slopes(:,i) - high_slopes(:,i);
+	r(p_values(:,i)>0.05) = 0;
+	[~,loc]=max(r);
 	example_history_length = history_lengths(loc);
 
 	GainAnalysis3(x,history_lengths,example_history_length,ph,NaN*history_lengths);
 
-	title(strcat(data(td).neuron,'-',data(td).odor,'-\tau_H=',mat2str(example_history_length),'s' ))
+	title(strcat(data(i).neuron,'-',data(i).odor,'-\tau_H=',mat2str(example_history_length),'s' ))
 
 	snapnow;
 	delete(gcf);

@@ -39,9 +39,8 @@ case 2
 	example_history_length = [];
 case 3
 case 4
+
 end
-
-
 
 
 if isempty(plothere) && ~isempty(plotid)
@@ -149,7 +148,8 @@ for i = 1:length(history_lengths)
 
 	if history_lengths(i) == example_history_length
 
-		if debug || ~isempty(plothere(1))
+
+		if debug || plothere(1)
 			% % plot the stimulus and the smoothed stimulus
 			plot(plothere(1),t,stimulus,'k','LineWidth',2), hold on
 			plot(plothere(1),t,shat(i,:),'Color',[0.9 0.9 0.9],'LineWidth',4)
@@ -176,7 +176,6 @@ for i = 1:length(history_lengths)
 		end
 
 		% plot these on the scatter plot
-
 		plot(plothere(3),fp,f,'.','MarkerSize',marker_size,'MarkerFaceColor',[0.9 0.9 0.9],'MarkerEdgeColor',[0.9 0.9 0.9])
 		plot(plothere(3),fp_low,f_low,'.','MarkerSize',marker_size,'MarkerFaceColor',[0.5 1 0.5],'MarkerEdgeColor',[0.5 1 0.5])
 		plot(plothere(3),fp_high,f_high,'.','MarkerSize',marker_size,'MarkerFaceColor',[1 0.5 0.5],'MarkerEdgeColor',[1 0.5 0.5])

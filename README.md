@@ -43,13 +43,8 @@ In this document, we take one particular dataset (Carlotta's measuremnet of resp
 `Question: How general is fast gain control? Which odor-neuron combinations show this?`
 
 	script to run: GainAnalysisAllData.m
-	vary the parameter which determines which dataset to use. 
-	
-To make a summary report on all of Carlotta's data, use:
+	vary the parameter which determines which dataset to use.
 
-	HowGeneralIsGainAdaptation.m
-
-For most of Carlotta's data, the ORN is compeltely silent for most of the time, and the normal methods of gain analysis won't work so well. here we try to use other methods. 
 
 * Overview of the Data
 * Statistics of the Stimulus and the Response
@@ -57,6 +52,13 @@ For most of Carlotta's data, the ORN is compeltely silent for most of the time, 
 * Adding a output nonlinearity post-hoc
 * LN Model Gain Analysis
 * Pulse Peak Analysis
+
+To make a summary report on all of Carlotta's data, use:
+
+	HowGeneralIsGainAdaptation.m
+	
+	
+
 
 
 ## 5. Analysis of "naturalistic stimulus"

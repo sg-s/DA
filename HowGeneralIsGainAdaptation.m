@@ -9,9 +9,10 @@
 
 % the following section pre-computes the processor-heavy parts and caches them for later use by publish()
 load('/local-data/DA-paper/data.mat')
+do_these = 2:21;
 
 if ~exist('HowGeneralIsGainAdaptation.mat','file')
-	do_these = 2:21;
+	
 	n = length(do_these);
 
 	% initialise history lengths to run the analysis on.
@@ -41,7 +42,7 @@ if ~exist('HowGeneralIsGainAdaptation.mat','file')
 		[K,~,filtertime] = FindBestFilter(data(td).PID,data(td).ORN,[],'filter_length=199;');
 		Filters(:,i) = K;
 
-		LinearFit = mean(data(td).ORN)+convolve(data(td).time,data(td).PID,data(td).K,data(td).filtertime);
+		LinearFit = mean(data(td).ORN)+convolve(data(td).time,data(td).PID,K,data(td).filtertime);
 		LinearFit(LinearFit<0)=0;
 
 
@@ -267,13 +268,140 @@ xlabel('p-value (Bonferroni corr.)')
 
 PrettyFig;
 
+snapnow;
+delete(gcf);
+
 %% 
 % The reference horizontal line indicates equal slope (equal gain for low and high stimuli) and the reference vertical line indicates a p-value of _p=0.05_. Of the statistically significant differences in gain (left half-plane), there are far more points in the top-left quadrant (gain enhancement to low stimuli) than there are in the bottom-left quadrant (gain suppression to low stimuli). 
 
+p_values(high_gof<0.8) = Inf;
+p_values(low_gof<0.8) = Inf;
+lowest_p = min(p_values);
+
+%%
+% Of all the data analysed, only this dataset did not show significant gain control:
+
+disp(data(1+find(lowest_p>0.05)).original_name)
+
+%% Reliability and Reproducibility 
+% How reprdocicable is the data in this dataset and how reliable is this analysis?  To check this, we compare the following six pieces of data, obtained on different dates with different neurons: 
+
+plothese = [8 10 14 16 17];
+for i = 1:length(plothese)
+	disp(data(plothese(i)).original_name)
+end
+
+%%
+% but which all use the same odor, presented in the same pattern, and the neuron measured from is of the same type (ab3A). In the following figure, we plot all the stimuli recorded on all these differnet days, plotted on on top of another: 
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+allstim = zeros(length(data(plothese(1)).PID),length(plothese));
+allresp = zeros(length(data(plothese(1)).PID),length(plothese));
+for i = 1:length(plothese)
+	try
+		allstim(:,i)=data(plothese(i)).PID(:)';
+		allresp(:,i)=data(plothese(i)).ORN(:)';
+	catch
+		% pad with zeros
+		allstim(:,i)=[0 data(plothese(i)).PID(:)'];
+		allresp(:,i)=[0 data(plothese(i)).ORN(:)'];
+		time = [NaN data(plothese(i)).time];
+	end
+end
+
+plot(time,allstim)
+set(gca,'XLim',[10 20])
+xlabel('Time (s)')
+ylabel('Odor concentration (V)')
+title('Variability in stimulus presented in identical datasets')
+
+PrettyFig;
+
+snapnow;
+delete(gcf);
+
+%%
+% The amplitude of the signal seems to vary significantly from dataset to dataset. However, the stimulus is well correlated: the following matrix shows the pairwise r-square between each piece of the data above:
+
+r = NaN(length(plothese));
+r2 = NaN(length(plothese));
+for i = 1:length(r)-1
+	for j = i+1:length(r)
+		r(i,j) = rsquare(allstim(:,i),allstim(:,j));
+		r2(i,j) = rsquare(allresp(:,i),allresp(:,j));
+	end
+end
+disp(r)
+
+%%
+% How variable is the response of the neuron? The following plot shows the response to the neuron in these different datasets: 
+
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(time,allresp)
+set(gca,'XLim',[10 20])
+xlabel('Time (s)')
+ylabel('Firing Rate (Hz)')
+title('Variability in response presented in identical datasets')
+
+PrettyFig;
+
+snapnow;
+delete(gcf);
+
+
+%%
+% The following matrix shows the pairwise r-square between each piece of the data above:
+
+disp(r2)
+
+%%
+% So at this point it is unclear if the observed variability in stimulus is due to actual variability in stimulus amplitude,and the neuron adapts to this, or if the stimulus is actually identical, and the PID sensitivities are simply different from day to day. 
+
+
+
+
 return
-% find the history length where the slopes are most different
-p_values(p_values<0.05) = 0;
-p_values(p_values>0) = 1;
-temp=sum(p_values');
+
+%% 
+% In the following plots, the response of the ORN is plotted against the best-fit LN model for an example history length. 
+
+show_these = find(lowest_p < 0.05);
+for i = 1:length(show_these)
+
+	td = do_these(show_these(i));
+
+	figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+	ph(3) = subplot(1,1,1);
+
+	s = 300; % when we start for the gain analysis
+	z = length(data(td).ORN) - 33; % where we end
+
+	% compute the LNpred
+
+	LinearFit = mean(data(td).ORN)+convolve(data(td).time,data(td).PID,Filters(:,show_these(i)),filtertime);
+	LinearFit(LinearFit<0)=0;
+	LNpred = hill(HillFit(:,show_these(i)),LinearFit);
+
+	clear x
+	x.response = data(td).ORN(s:z);
+	x.prediction = LNpred(s:z);
+	x.stimulus = data(td).PID(s:z);
+	x.time = data(td).time(s:z);
+	x.filter_length = 201;
+
+	[~,loc]=min(p_values(:,show_these(i)));
+	example_history_length = history_lengths(loc);
+
+	GainAnalysis3(x,history_lengths,example_history_length,ph,NaN*history_lengths);
+
+	title(strcat(data(td).neuron,'-',data(td).odor,'-\tau_H=',mat2str(example_history_length),'s' ))
+
+	snapnow;
+	delete(gcf);
+
+end
+
+
 
 

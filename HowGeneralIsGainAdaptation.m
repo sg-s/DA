@@ -10,6 +10,7 @@
 % the following section pre-computes the processor-heavy parts and caches them for later use by publish()
 load('/local-data/DA-paper/data.mat')
 do_these = 2:21;
+N = length(data);
 
 if ~exist('HowGeneralIsGainAdaptation.mat','file')
 	
@@ -19,30 +20,31 @@ if ~exist('HowGeneralIsGainAdaptation.mat','file')
 	history_lengths=[0:0.03:0.3 0.36:0.06:1 1.2:1.2:5];
 
 	% initialise a matrix for all the linear filters
-	Filters = NaN(200,n);
+	Filters = NaN(200,N);
 
 	% initialise a matrix for the parameters of all the non-linear functions
-	HillFit = NaN(3,n);
+	HillFit = NaN(3,N);
 
 	% initialise a matrix that stores all the slopes (and p-values) we calculate from the Gain Analysis
-	low_slopes  = NaN(length(history_lengths),n);
-	high_slopes = NaN(length(history_lengths),n);
-	low_gof  = NaN(length(history_lengths),n);
-	high_gof = NaN(length(history_lengths),n);
-	p_values = NaN(length(history_lengths),n);
+	low_slopes  = NaN(length(history_lengths),N);
+	high_slopes = NaN(length(history_lengths),N);
+	low_gof  = NaN(length(history_lengths),N);
+	high_gof = NaN(length(history_lengths),N);
+	p_values = NaN(length(history_lengths),N);
 
 	% initialise a matrix that stores the r-square of the LN fit
-	LNFitQuality = NaN(1,n);
+	LNFitQuality = NaN(1,N);
 
 	for i = 1:n
 
 		td = do_these(i);
+		disp(data(td).original_name)
 
 		% fit a linear filter to data
 		[K,~,filtertime] = FindBestFilter(data(td).PID,data(td).ORN,[],'filter_length=199;');
-		Filters(:,i) = K;
+		Filters(:,td) = K;
 
-		LinearFit = mean(data(td).ORN)+convolve(data(td).time,data(td).PID,K,data(td).filtertime);
+		LinearFit = mean(data(td).ORN)+convolve(data(td).time,data(td).PID,K,filtertime);
 		LinearFit(LinearFit<0)=0;
 
 
@@ -58,15 +60,16 @@ if ~exist('HowGeneralIsGainAdaptation.mat','file')
 		ydata = ydata(:);
 
 		fo=optimset('MaxFunEvals',2000,'Display','none');
-		x = lsqcurvefit(@hill,[50 2 2],xdata,ydata,[],[],fo);
+		x = lsqcurvefit(@hill,[max(ydata) 2 2],xdata,ydata,[max(ydata) 2 1],[max(ydata)+1 max(ydata) 10],fo);
 		LNFit = hill(x,LinearFit);
-		HillFit(:,i) = x;
+		HillFit(:,td) = x;
 
-		LNFitQuality(i) = rsquare(LNFit,data(td).ORN);
-		if LNFitQuality(i) < 0.8
-			disp('Poor fit')
+		LNFitQuality(td) = rsquare(LNFit,data(td).ORN);
+		if LNFitQuality(td) < rsquare(data(td).ORN,LinearFit)
+			disp('WARNING: looks like the hill function fit failed')
 			beep
 			keyboard
+
 		end
 
 		% perform gain analysis
@@ -79,7 +82,7 @@ if ~exist('HowGeneralIsGainAdaptation.mat','file')
 		x.time = data(td).time(s:z);
 		x.filter_length = 200;
 
-		[p_values(:,i),low_slopes(:,i),high_slopes(:,i),low_gof(:,i),high_gof(:,i)] = GainAnalysis3(x,history_lengths);
+		[p_values(:,td),low_slopes(:,td),high_slopes(:,td),low_gof(:,td),high_gof(:,td)] = GainAnalysis3(x,history_lengths);
 		
 	end
 
@@ -89,6 +92,7 @@ if ~exist('HowGeneralIsGainAdaptation.mat','file')
 else
 	load('HowGeneralIsGainAdaptation.mat')
 end
+
 
 % corrects for points where the p-value is reported as 0 by the bootstrap. it can't be, it's just too small to measure. 
 p_values(p_values==0) = min(nonzeros(p_values(:)));
@@ -175,7 +179,7 @@ plot(history_lengths,high_slopes,'Color',[1 0.5 0.5])
 set(gca,'XScale','log')
 
 % now plot the dots where significant
-for i = 1:length(HillFit)
+for i = do_these
 	sig = p_values(:,i);
 	sig = (sig<0.05);
 
@@ -233,7 +237,7 @@ xlabel('History Length (s)')
 ylabel('Relative Gain')
 
 % now plot the dots where significant
-for i = 1:length(HillFit)
+for i = do_these
 	sig = p_values(:,i);
 	sig = (sig<0.05);
 
@@ -278,11 +282,9 @@ p_values(high_gof<0.8) = Inf;
 p_values(low_gof<0.8) = Inf;
 lowest_p = min(p_values);
 
+
 %%
-% Of all the data analysed, only this dataset did not show significant gain control:
-
-disp(data(1+find(lowest_p>0.05)).original_name)
-
+% Every data set tested showed statistically significant gain control at some timescale. 
 
 %     ########  ######## ########          ######  ##     ## ########  ######  ##    ## 
 %     ##     ## ##       ##     ##        ##    ## ##     ## ##       ##    ## ##   ##  
@@ -304,17 +306,17 @@ end
 % but which all use the same odor, presented in the same pattern, and the neuron measured from is of the same type (ab3A). In the following figure, we plot all the stimuli recorded on all these differnet days, plotted on on top of another: 
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-allstim = zeros(length(data(plothese(1)).PID),length(plothese));
-allresp = zeros(length(data(plothese(1)).PID),length(plothese));
-for i = 1:length(plothese)
+allstim = zeros(length(data(plothese(1)).PID),N);
+allresp = zeros(length(data(plothese(1)).PID),N);
+for i = plothese
 	try
-		allstim(:,i)=data(plothese(i)).PID(:)';
-		allresp(:,i)=data(plothese(i)).ORN(:)';
+		allstim(:,i)=data(i).PID(:)';
+		allresp(:,i)=data(i).ORN(:)';
 	catch
 		% pad with zeros
-		allstim(:,i)=[0 data(plothese(i)).PID(:)'];
-		allresp(:,i)=[0 data(plothese(i)).ORN(:)'];
-		time = [NaN data(plothese(i)).time];
+		allstim(:,i)=[0 data(i).PID(:)'];
+		allresp(:,i)=[0 data(i).ORN(:)'];
+		time = [NaN data(i).time];
 	end
 end
 
@@ -335,9 +337,11 @@ delete(gcf);
 r = NaN(length(plothese));
 r2 = NaN(length(plothese));
 for i = 1:length(r)-1
+	a = plothese(i);
 	for j = i+1:length(r)
-		r(i,j) = rsquare(allstim(:,i),allstim(:,j));
-		r2(i,j) = rsquare(allresp(:,i),allresp(:,j));
+		b = plothese(j);
+		r(i,j) = rsquare(allstim(:,a),allstim(:,b));
+		r2(i,j) = rsquare(allresp(:,a),allresp(:,b));
 	end
 end
 disp(r)
@@ -387,15 +391,15 @@ delete(gcf);
 % The following figure shows the results of the gain analysis on these supposedly identical datasets: 
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(history_lengths,low_slopes(:,plothese-1),'.-','Color',[0.5 1 0.5])
-plot(history_lengths,high_slopes(:,plothese-1),'.-','Color',[1 0.5 0.5])
+plot(history_lengths,low_slopes(:,plothese),'.-','Color',[0.5 1 0.5])
+plot(history_lengths,high_slopes(:,plothese),'.-','Color',[1 0.5 0.5])
 set(gca,'XScale','log')
 
 xlabel('History Length (s)')
 ylabel('Relative Gain')
 
 % now plot the dots where significant
-for i = (plothese-1)
+for i = plothese
 	sig = p_values(:,i);
 	sig = (sig<0.05);
 

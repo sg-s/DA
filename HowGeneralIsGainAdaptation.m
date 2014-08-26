@@ -60,7 +60,7 @@ if ~exist('HowGeneralIsGainAdaptation.mat','file')
 		ydata = ydata(:);
 
 		fo=optimset('MaxFunEvals',2000,'Display','none');
-		x = lsqcurvefit(@hill,[max(ydata) 2 2],xdata,ydata,[max(ydata) 2 1],[max(ydata)+1 max(ydata) 10],fo);
+		x = lsqcurvefit(@hill,[max(ydata) 2 2],xdata,ydata,[max(ydata)/2 2 1],[2*max(ydata) max(ydata) 10],fo);
 		LNFit = hill(x,LinearFit);
 		HillFit(:,td) = x;
 

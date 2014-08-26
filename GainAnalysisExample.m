@@ -37,8 +37,8 @@ td = 7;
 disp(data(td).original_name)
 
 % detrend PID with a quadratic term
-ptrend = fit(data(td).time(:),data(td).PID(:),'Poly2'); 
-data(td).PID = data(td).PID(:) - (ptrend(data(td).time) - mean(ptrend(data(td).time)));
+% ptrend = fit(data(td).time(:),data(td).PID(:),'Poly2'); 
+% data(td).PID = data(td).PID(:) - (ptrend(data(td).time) - mean(ptrend(data(td).time)));
 
 
 fh=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
@@ -187,7 +187,7 @@ xdata = xdata(:);
 ydata = ydata(:);
 
 fo=optimset('MaxFunEvals',1000,'Display','none');
-x = lsqcurvefit(@hill,[50 2 2],xdata,ydata,[],[],fo);
+x = lsqcurvefit(@hill,[max(ydata) 2 2],xdata,ydata,[max(ydata)/2 2 1],[2*max(ydata) max(ydata) 10],fo);
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 plot(xdata,hill(x,xdata),'k')
@@ -226,12 +226,12 @@ LNpred = hill(x,data(td).LinearFit);
 %%
 % They look almost identical. The r-square of the LN prediction is: 
 
-disp(rsquare(hill(x,data(td).LinearFit),data(td).ORN))
+disp(rsquare(LNpred,data(td).ORN))
 
 %%
-% And the raw Euclidian Distance between the prediction and the data is: 
+% And the raw Euclidean Distance between the prediction and the data is: 
 
-disp(Cost2(hill(x,data(td).LinearFit(205:end-33)),data(td).ORN(205:end-33)))
+disp(Cost2(LNpred(205:end-33),data(td).ORN(205:end-33)))
 
 
 %         ######      ###    #### ##    ##             ###    ##    ##    ###    ##       
@@ -276,6 +276,8 @@ if redo_bootstrap
 else
 	GainAnalysis3(x,history_lengths,example_history_length,ph,ptemp);
 end
+
+xlabel(ph(3),'Linear Prediction (Hz)')
 
 if ~redo_bootstrap
 	snapnow;
@@ -332,6 +334,8 @@ else
 	GainAnalysis3(x,history_lengths,example_history_length,ph,ptemp2);
 end
 
+xlabel(ph(3),'LN Prediction (Hz)')
+
 if ~redo_bootstrap
 	snapnow;
 	delete(f1);
@@ -374,13 +378,13 @@ end
 if ~exist('p')
 	d.stimulus = data(td).PID;
 	d.response = data(td).ORN;
-	[p, f] = FitDAModelToData(d,[25576 85 0.03 1.5 2 13 2 -151],[900 50 0 1e-1 2 1e-2 2 -200],[98000 5000 1 20 2 40 2 1],200);
+	p = FitDAModelToData(d,[25576 85 0.03 1.5 2 13 2 -151],[900 50 0 1e-1 2 1e-2 2 -200],[98000 5000 1 20 2 40 2 1],200);
 end
 
 
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-f=DA_integrate2(d.stimulus,p);
+f=DA_integrate2(data(td).PID,p);
 plot(data(td).time,data(td).ORN,'k')
 hold on
 plot(data(td).time,f,'r')
@@ -415,7 +419,7 @@ f1=figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000
 ph(1) = subplot(2,1,1); hold on 
 ph(2) = subplot(2,1,2); hold on
 
-title(ph(1),strrep(data(td).original_name,'_','-'),'FontSize',20);
+title(ph(1),'Original Stimulus + DA Model Response','FontSize',20);
 
 f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 ph(3) = subplot(1,2,1); hold on 
@@ -441,7 +445,9 @@ else
 	GainAnalysis3(x,history_lengths,example_history_length,ph,ptemp3);
 end
 
+legend(ph(2),{'DA Response','Linear Prediction'})
 ylabel(ph(3),'DA Model Response (Hz)')
+xlabel(ph(3),'Linear Prediction (Hz)')
 
 if ~redo_bootstrap
 	snapnow;
@@ -451,83 +457,5 @@ if ~redo_bootstrap
 	delete(f2);
 end
 
-
-
-
 %%
-% What if we shuffle, then filter the odor stimulus? Perhaps correlation times in the stimulus affect this slope behaviour? The following figure shows the effect of shuffling and filtering the stimulus:
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-stim=d.stimulus(randperm(length(d.stimulus)));
-stim = filter(ones(100,1)/100,1,stim-mean(stim))+mean(stim);
-stim = stim-mean(stim);
-stim = stim*10;
-stim = stim+mean(d.stimulus);
-plot(d.stimulus,'k'), hold on
-plot(stim,'r')
-set(gca,'XLim',[2000 4000])
-xlabel('Time (a.u.)')
-ylabel('Stimulus (a.u.)')
-legend PID ShuffledFilteredPID
-PrettyFig;
-
-if ~redo_bootstrap
-	snapnow;
-	delete(gcf)
-end
-
-
-%%
-% We now repeat the gain analysis on this new synthetic dataset. 
-
-s = 300; % when we start for the gain analysis
-z = length(data(td).ORN) - 33; % where we end
-
-
-% make the DA model output
-f=DA_integrate2(stim,p);
-
-% make the linear prediction
-[K,~,filtertime] = FindBestFilter(stim,f);
-fp=mean(f(s:z))+convolve(data(td).time,stim,K,filtertime);
-
-f1=figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-ph(1) = subplot(2,1,1); hold on 
-ph(2) = subplot(2,1,2); hold on
-
-title(ph(1),strrep(data(td).original_name,'_','-'),'FontSize',20);
-
-f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-ph(3) = subplot(1,2,1); hold on 
-axis square
-ph(4) = subplot(1,2,2); hold on
-example_history_length = 0.12;
-history_lengths = 0:0.06:2;
-
-clear x
-x.response = f(s:z);
-x.prediction = fp(s:z);
-x.stimulus = stim(s:z);
-x.time = data(td).time(s:z);
-x.filter_length = 201;
-
-
-if redo_bootstrap
-	ptemp4 = GainAnalysis3(x,history_lengths,example_history_length,ph);
-else
-	GainAnalysis3(x,history_lengths,example_history_length,ph,ptemp4);
-end
-
-ylabel(ph(3),'DA Model Response (Hz)')
-
-if ~redo_bootstrap
-	snapnow;
-	delete(f1);
-
-	snapnow;
-	delete(f2);
-end
-
-
-%%
-% So we can recapitulate the effect where the slopes don't go to zero even with a DA model. This means that this effect is because of some detail of how we make the linear prediction, and is not a feature of either the stimulus (because in this example we shuffle the stimulus and still see it) nor is it because of some neuron-intrinsic effect (because we use a DA model here). 
+% So even the DA model can recapitulate the effect we see, where the slopes don't approach 1 as the history length goes to 0. So there's something about the way the linear prediction is made. 

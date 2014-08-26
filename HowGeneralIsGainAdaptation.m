@@ -143,11 +143,14 @@ delete(gcf);
 %% Variance of Output Non-linearities 
 % In each data set, after backing out the filters, we then fit a 3-parameter hill function to the residuals. The following function shows the shape of all the Hill functions. Each curve is the best fit for one data set. 
 
-x = 0:250;
-y = NaN(251,length(HillFit));
+y = NaN(251,N);
+x = NaN(251,N);
 
-for i = 1:length(HillFit)
-	y(:,i) = hill(HillFit(:,i),x);
+for i = 2:10
+	xx = 0:1:max(data(i).ORN);
+	xx = [NaN(1,length(y)-length(xx)) xx];
+	y(:,i) = hill(HillFit(:,i),xx);
+	x(:,i) = xx;
 end
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
@@ -158,6 +161,7 @@ set(gca,'XLim',[0 255])
 title('Variance in Nonlinearity shape')
 
 PrettyFig;
+
 
 snapnow;
 delete(gcf);

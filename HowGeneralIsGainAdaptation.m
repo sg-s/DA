@@ -251,7 +251,7 @@ snapnow;
 delete(gcf);
 
 %%
-% In general, are the green slopes (gain following low stimuli) signifcanlty higher than the red slopes (gain follwing high stimuli)? To determine this, we plot, for each pair of points corresponding to a single history length and a single dataset, the difference between the low slopes and the high slopes _vs._ the p-value of the difference between that pair (Bonferroni corrected). 
+% In general, are the green slopes (gain following low stimuli) significantly higher than the red slopes (gain following high stimuli)? To determine this, we plot, for each pair of points corresponding to a single history length and a single dataset, the difference between the low slopes and the high slopes _vs._ the p-value of the difference between that pair (Bonferroni corrected). 
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 d = low_slopes(:) - high_slopes(:);
@@ -274,6 +274,16 @@ PrettyFig;
 
 snapnow;
 delete(gcf);
+
+%%
+% The number of statistically significant data points showing gain enhancement following low stimuli is:
+
+disp(sum((d>0).*(p_values(:)<0.05)))
+
+%%
+% cf. the number of statistically significant data points showing gain _supression_ following low stimuli is:
+
+disp(sum((d<0).*(p_values(:)<0.05)))
 
 %% 
 % The reference horizontal line indicates equal slope (equal gain for low and high stimuli) and the reference vertical line indicates a p-value of _p=0.05_. Of the statistically significant differences in gain (left half-plane), there are far more points in the top-left quadrant (gain enhancement to low stimuli) than there are in the bottom-left quadrant (gain suppression to low stimuli). 

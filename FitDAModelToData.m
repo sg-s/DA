@@ -12,7 +12,7 @@
 % .time -- a time vector
 % 
 % stimulus or response can be matrices, where each row represents a different experiment or a different trial. 
-function [p, Rguess] = FitDAModelToData(data,x0,lb,ub,IgnoreInitial)
+function [p, Rguess,x ] = FitDAModelToData(data,x0,lb,ub,IgnoreInitial)
 
 switch nargin 
 	case 0
@@ -36,7 +36,7 @@ end
 
 
 
-psoptions = psoptimset('UseParallel',true,'CompletePoll', 'on', 'Vectorized', 'off','Display','iter','MaxIter',100,'MaxFunEvals',10000);
+psoptions = psoptimset('UseParallel',true, 'Vectorized', 'off','Display','final','MaxIter',1000,'MaxFunEvals',10000);
 x = patternsearch(@(x) DA_cost_function(x,data,@Cost2,IgnoreInitial),x0,[],[],[],[],lb,ub,psoptions);
 p = ValidateDAParameters2(x);
 

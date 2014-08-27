@@ -36,10 +36,6 @@ td = 7;
 
 disp(data(td).original_name)
 
-% detrend PID with a quadratic term
-% ptrend = fit(data(td).time(:),data(td).PID(:),'Poly2'); 
-% data(td).PID = data(td).PID(:) - (ptrend(data(td).time) - mean(ptrend(data(td).time)));
-
 
 fh=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 subplot(2,1,1), hold on

@@ -71,6 +71,9 @@ To make a summary report on all of Carlotta's data, use:
 ## 5. Explaining Fast Gain Control
 `In the previous section, we presented evidence for fast gain control in a broad set of data. In this section, we try to develop models that can account for this fast gain control`
 
+	script to run: ExplainingFastGainControl.m
+
+
 * Fitting a DA model to 1-octen-3-ol data
 * Fitting a DA model to all of Carlotta's data
 

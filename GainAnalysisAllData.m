@@ -436,3 +436,13 @@ PrettyFig;
 snapnow;
 delete(gcf);
 
+
+
+%% Version Info
+% The file that generated this document is called:
+disp(mfilename)
+
+%%
+% and its md5 hash is:
+Opt.Input = 'file';
+disp(DataHash(strcat(mfilename,'.m'),Opt))

@@ -459,3 +459,14 @@ end
 
 %%
 % So even the DA model can recapitulate the effect we see, where the slopes don't approach 1 as the history length goes to 0. So there's something about the way the linear prediction is made. 
+
+
+
+%% Version Info
+% The file that generated this document is called:
+disp(mfilename)
+
+%%
+% and its md5 hash is:
+Opt.Input = 'file';
+disp(DataHash(strcat(mfilename,'.m'),Opt))

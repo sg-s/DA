@@ -158,9 +158,11 @@ GainAnalysis3(x,history_lengths,example_history_length,ph,NaN*history_lengths);
 xlabel('DA Prediction (Hz)')
 ylabel('')
 
+
+
 %%
 % Are these slopes significant? Over what history lengths are they significantly different? 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+figure('outerposition',[0 0 1200 500],'PaperUnits','points','PaperSize',[1200 500]); hold on
 example_history_length = 0.12;
 s = 300; % when we start for the gain analysis
 z = length(data(td).ORN) - 33; % where we end
@@ -174,7 +176,7 @@ x.time = data(td).time(s:z);
 x.filter_length = 201;
 GainAnalysis3(x,history_lengths,example_history_length,ph,p_values(:,td));
 set(gca,'XScale','log')
-xlabel('\tau_H (s)')
+xlabel('History Length (s)')
 title('LN Model')
 
 
@@ -185,12 +187,59 @@ if ~exist('p_DA')
 else
 	p_DA=GainAnalysis3(x,history_lengths,example_history_length,ph,p_DA);
 end
-xlabel('\tau_H (s)')
+xlabel('History Length (s)')
 ylabel('')
 set(gca,'XScale','log')
 title('DA Model')
 
 PrettyFig;
+
+snapnow;
+delete(gcf)
+
+
+%% The DA Model cannot fit the data if $r_{0}$ >0
+% The $r_{0}$ parameter is a fudge factor added to fit some supposed offset which corresponds to the basal firing of the ORN. However, in this case, a negative value is chosen, which makes no sense. If we constrain this to positive values, the best fit is horrible: 
+
+% fit model to data
+if ~exist('p2')
+
+	% choose model
+	global DA_Model_Func
+	global DA_Model_Validate_Param_Func
+	global nsteps
+	nsteps = 200;
+	DA_Model_Func = @DA_integrate2;
+	DA_Model_Validate_Param_Func = @ValidateDAParameters2;
+
+	clear d
+	d.stimulus = data(td).PID;
+	d.response = data(td).ORN;
+	[p2,~,x] = FitDAModelToData(d,[7631 105 .003 0.4 7 4.5 10 1],[1 1 0 1e-1 2 0 2 0],[1e5 1e3 1 20 10 24 15 100]);
+	clear d
+	DApred=DA_Model_Func(data(td).PID,p2);
+	multiplot(data(td).time,data(td).ORN,DApred)
+end
+
+DApred=DA_integrate2(data(td).PID,p2);
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(2,1,1), hold on
+plot(data(td).time,data(td).PID,'k');
+set(gca,'XLim',[min(data(td).time)-2 max(data(td).time)+2])
+ylabel('PID Voltage (V)')
+hold off
+
+
+subplot(2,1,2), hold on
+plot(data(td).time,data(td).ORN,'k');
+plot(data(td).time,DApred,'r')
+set(gca,'XLim',[min(data(td).time)-2 max(data(td).time)+2])
+ylabel('Firing Rate (Hz)')
+xlabel('Time (s)')
+legend({'Data','DA Fit'})
+PrettyFig;
+hold off
 
 
 

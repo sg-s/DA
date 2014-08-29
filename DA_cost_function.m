@@ -3,9 +3,18 @@
 % to the stimulus and and compares it to the actual response. it calcualtes the absolute
 % error of the prediction, so has a minimum of 0 when the prediction is perfect. 
 function [cost]  = DA_cost_function(x,data,CostFunctionHandle,IgnoreInitial,RemoveMean)
+
+global DA_Model_Func
+global DA_Model_Validate_Param_Func	
+
+
+if isempty(DA_Model_Validate_Param_Func)
+	DA_Model_Validate_Param_Func = @ValidateDAParameters2;
+end
+	
 % convert the inputs into the parameter array that DA_integrate needs
 if ~isstruct(x)
-	p= ValidateDAParameters2(x);
+	p= DA_Model_Validate_Param_Func(x);
 end
 
 % unpack data
@@ -20,12 +29,15 @@ if nargin < 5
 	RemoveMean = 0;
 end
 
+if isempty(DA_Model_Func)
+	DA_Model_Func = @DA_integrate2;
+end
 
 if isvector(stimulus)
 	% just a 1D fitting
 	% now find the result from the guess
-	Rguess = DA_integrate2(stimulus,p);
-	Rguess = Rguess(:);
+	Rguess = DA_Model_Func(stimulus,p);
+	Rguess = (Rguess(:)); % absolute value?
 	response = response(:);
 	if RemoveMean
 		Rguess = Rguess- mean(Rguess(IgnoreInitial:end));
@@ -37,7 +49,7 @@ else
 	% WARNIGN!!! NEED TO CODE ONLY_THESE_POINTS TO HANDLE DISPARATE DATA SETS
 	Rguess = 0*response;
 	for i = 1:size(stimulus,2)
-		Rguess(:,i) = DA_integrate2(stimulus(:,i),p);
+		Rguess(:,i) = DA_Model_Func(stimulus(:,i),p);
 	end
 	clear i
 	Rguess = Rguess(:);

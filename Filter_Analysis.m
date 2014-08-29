@@ -677,3 +677,13 @@ delete(gcf);
 %%
 % There are some times when the prediction of firing rates goes below 0, which has no physical meaning. 
 
+
+
+%% Version Info
+% The file that generated this document is called:
+disp(mfilename)
+
+%%
+% and its md5 hash is:
+Opt.Input = 'file';
+disp(DataHash(strcat(mfilename,'.m'),Opt))

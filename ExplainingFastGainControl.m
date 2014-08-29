@@ -28,11 +28,22 @@ disp(data(td).original_name)
 
 % fit model to data
 if ~exist('p')
+
+	% choose model
+	global DA_Model_Func
+	global DA_Model_Validate_Param_Func
+	global nsteps
+	nsteps = 800;
+	DA_Model_Func = @DA_integrate2;
+	DA_Model_Validate_Param_Func = @ValidateDAParameters2;
+
 	clear d
 	d.stimulus = data(td).PID;
 	d.response = data(td).ORN;
-	[p,~,x] = FitDAModelToData(d,[3.0114e+04 104 0.03 1.4 2 13 2 -150],[9000 50 0 1e-1 2 1e-2 2 -200],[98000 500 1 20 2 40 2 200]);
+	[p,~,x] = FitDAModelToData(d,[1.8187e+04 56 5e-4 0.7 5 4.5 7 -140],[1 1 0 1e-1 2 0 2 -1e3],[1e5 1e3 1 20 10 24 15 1]);
 	clear d
+	DApred=DA_Model_Func(data(td).PID,p);
+	multiplot(data(td).time,data(td).ORN,DApred)
 end
 
 DApred=DA_integrate2(data(td).PID,p);

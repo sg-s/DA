@@ -12,17 +12,22 @@
 % .time -- a time vector
 % 
 % stimulus or response can be matrices, where each row represents a different experiment or a different trial. 
+% You can also specify which flavour of the DA model to use by specifying a global variable called DA_Model_Func which contains a function handle to the DA model you want to use. By default, DA_Model_Func is "@DA_integrate2"
+%
+% You also have to specify a corresponding Validate Param function handle in DA_Model_Validate_Param_Func
 function [p, Rguess,x ] = FitDAModelToData(data,x0,lb,ub,IgnoreInitial)
+
+global DA_Model_Func
+global DA_Model_Validate_Param_Func	
+global nsteps
+
 
 switch nargin 
 	case 0
 		help FitDAModelToData
 		return
 	case 1
-		x0 = [16000 636  0.1 0.95  2   92    2   mean(data.response(1:300))];
-		lb = [200   0    0   0     2   1     2   mean(data.response(1:300))];
-		ub = [60000 900  1   10    2   100   2   mean(data.response(1:300))];
-		IgnoreInitial = 300;
+		error('Need more inputs. ')
 	case 2
 		lb = x0/2;
 		ub = x0*10;
@@ -35,20 +40,38 @@ switch nargin
 end
 
 
+if isempty(nsteps)
+	nsteps = 100;
+end
 
-psoptions = psoptimset('UseParallel',true, 'Vectorized', 'off','Display','final','MaxIter',1000,'MaxFunEvals',10000);
+psoptions = psoptimset('UseParallel',true, 'Vectorized', 'off','Cache','on','CompletePoll','on','Display','iter','MaxIter',nsteps,'MaxFunEvals',20000);
+
 x = patternsearch(@(x) DA_cost_function(x,data,@Cost2,IgnoreInitial),x0,[],[],[],[],lb,ub,psoptions);
-p = ValidateDAParameters2(x);
+
+
+%psoptions = psoptimset('Display','iter','MaxIter',nsteps,'MaxFunEvals',20000);
+%x = fminsearch(@(x) DA_cost_function(x,data,@Cost2,IgnoreInitial),x0,psoptions);
+
+
+if isempty(DA_Model_Validate_Param_Func)
+	DA_Model_Validate_Param_Func = @ValidateDAParameters2;
+end
+
+p = DA_Model_Validate_Param_Func(x);
 
 
 stimulus = data.stimulus;
 Rguess = 0*stimulus;
 
+if isempty(DA_Model_Func)
+	DA_Model_Func = @DA_integrate2;
+end
+
 if isvector(stimulus)
-	Rguess = DA_integrate2(stimulus,p);
+	Rguess = DA_Model_Func(stimulus,p);
 else
 	for i = 1:size(stimulus,2)
-		Rguess(:,i) = DA_integrate2(stimulus(:,i),p);
+		Rguess(:,i) = DA_Model_Func(stimulus(:,i),p);
 	end
 	clear i
 end

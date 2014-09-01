@@ -196,7 +196,12 @@ for i = 1:length(history_lengths)
 			plot(plothere(3),fp_high,f_high,'.','MarkerSize',marker_size,'MarkerFaceColor',[1 0.5 0.5],'MarkerEdgeColor',[1 0.5 0.5])
 			set(plothere(3),'LineWidth',2,'box','on','FontSize',font_size)
 			set(plothere(3),'XLim',[min(f)-1,max(f)+1],'YLim',[min(f)-1,max(f)+1])
-			title(plothere(3),strcat(mat2str(history_lengths(i)),'s'))
+
+			titlestr = strcat('\tau_h=',mat2str(history_lengths(i)),'s  gof:');
+			titlestr = strcat(titlestr, '{\color{green}',oval(low_gof(i),2),'},');
+			titlestr = strcat(titlestr, '{\color{red}',oval(high_gof(i),2),'}');
+
+			title(plothere(3),titlestr);
 
 			% plot the best fit lines
 			plot(plothere(3),[min(fp) max(fp)],fall([min(fp) max(fp)]),'Color',[0.5 0.5 0.5],'LineWidth',3)

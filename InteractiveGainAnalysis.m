@@ -31,7 +31,7 @@ x.time = data.time;
 x.filter_length = 201; 
 
 % make the figure
-figure('outerposition',[0 0 1000 900],'PaperUnits','points','PaperSize',[1000 900]); hold on
+figure('outerposition',[0 0 1000 900]); hold on
 ph = [];
 ph(1) = subplot(4,1,1); hold on
 set(ph(1),'XLim',[min(data.time) max(data.time)])
@@ -47,5 +47,5 @@ set(ph(4),'XScale','log')
 % use Manipulate to plot everything
 x.history_lengths=[0:0.03:0.3 0.36:0.06:1 1.2:1.2:5];
 p.t_h = 0.12;
+p.t = mean(data.time);
 Manipulate('InteractiveGainAnalysisEngine',p,x,[],[],ph);
-

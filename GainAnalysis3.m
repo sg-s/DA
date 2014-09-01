@@ -19,7 +19,7 @@
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 % performs a gain analysis and makes some plots
 
-function [p,low_slopes,high_slopes,low_gof,high_gof] = GainAnalysis3(x,history_lengths,example_history_length,plothere,p)
+function [p,low_slopes,high_slopes,low_gof,high_gof,example_plot] = GainAnalysis3(x,history_lengths,example_history_length,plothere,p)
 
 
 % set defaults
@@ -171,6 +171,14 @@ for i = 1:length(history_lengths)
 			plot(plothere(2),t_high,fp_high,'r.','LineWidth',2), hold on
 			plot(plothere(2),t_low,f_low,'k.','LineWidth',2), hold on
 			plot(plothere(2),t_low,fp_low,'r.','LineWidth',2), hold on
+
+			% save these for later
+			example_plot.t_low = t_low;
+			example_plot.f_low = f_low;
+			example_plot.fp_low = fp_low;
+			example_plot.t_high= t_high;
+			example_plot.f_high= f_high;
+			example_plot.fp_high = fp_high;
 
 			xlabel(plothere(2),'Time (s)','FontSize',20)
 			xlabel(plothere(1),'Time (s)','FontSize',20)

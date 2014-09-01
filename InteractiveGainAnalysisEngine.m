@@ -20,8 +20,33 @@ if ~ismember(example_history_length,history_lengths)
 end
 
 
-GainAnalysis3(data,history_lengths,example_history_length,plothere,NaN*history_lengths);
+[~,~,~,~,~,example_plot]=GainAnalysis3(data,history_lengths,example_history_length,plothere,NaN*history_lengths);
 
 % draw a line to indicate where we are on the history length plot
 yy = get(plothere(4),'YLim');
 plot(plothere(4),[example_history_length example_history_length],yy,'k.-')
+set(plothere(4),'XLim',[3e-3 max(history_lengths)]);
+
+% get the time we are looking at in the time series
+t = p.t;
+yy = get(plothere(1),'YLim');
+plot(plothere(1),[t t],yy,'b-')
+
+yy = get(plothere(2),'YLim');
+plot(plothere(2),[t t],yy,'b-')
+
+% find the points in the example plot closest to the point of time we are at. 
+fp_high = example_plot.fp_high;
+fp_low = example_plot.fp_low;
+f_high = example_plot.f_high;
+f_low = example_plot.f_low;
+
+if min(abs(example_plot.t_low - t)) > min(abs(example_plot.t_high - t))
+	% the closest point is a high stimulus point
+	[~,loc]=min(abs(example_plot.t_high - t));
+	scatter(plothere(3),fp_high(loc),f_high(loc),64,'filled');
+else
+	% the closest point is a low stimulus point
+	[~,loc]=min(abs(example_plot.t_low - t));
+	scatter(plothere(3),fp_high(loc),f_high(loc),64,'filled');
+end

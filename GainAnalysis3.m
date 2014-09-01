@@ -107,6 +107,9 @@ for i = 1:length(history_lengths)
 	[~, idx] = sort(this_shat,'ascend');
 	f_low = f(idx(1:n));
 	fp_low = fp(idx(1:n));
+	t_low = t(idx(1:n));
+	
+		
 
 	% find highest 10%
 	this_shat = shat(i,:);
@@ -117,6 +120,7 @@ for i = 1:length(history_lengths)
 	[~, idx] = sort(this_shat,'descend');
 	f_high = f(idx(1:n));
 	fp_high = fp(idx(1:n));
+	t_high = t(idx(1:n));
 
 	% remove NaN values
 	censor_these = find(isnan(fp_high) + isnan(fp_low) + isnan(f_low) + isnan(f_high));
@@ -124,12 +128,16 @@ for i = 1:length(history_lengths)
 	fp_high(censor_these) = [];
 	f_low(censor_these) = [];
 	fp_low(censor_these) = [];
+	t_low(censor_these) = [];
+	t_high(censor_these) = [];
 
 
 	% censor times when f is 0?
 	f_low(f==0) = [];
 	f_high(f==0) = [];
 	f(f==0) = [];
+	t_low(f==0) = [];
+	t_high(f==0) = [];
 
 	% fit lines
 	[flow, gof] = fit(fp_low,f_low,'Poly1');
@@ -155,8 +163,14 @@ for i = 1:length(history_lengths)
 			plot(plothere(1),t,shat(i,:),'Color',[0.9 0.9 0.9],'LineWidth',4)
 
 			% plot the response and the prediction 
-			plot(plothere(2),t,f,'k','LineWidth',2), hold on
-			plot(plothere(2),t,fp,'r','LineWidth',2), hold on
+			plot(plothere(2),t,f,'k','LineWidth',1), hold on
+			plot(plothere(2),t,fp,'r','LineWidth',1), hold on
+
+			% highlight the sections we use for the analysis
+			plot(plothere(2),t_high,f_high,'k.','LineWidth',2), hold on
+			plot(plothere(2),t_high,fp_high,'r.','LineWidth',2), hold on
+			plot(plothere(2),t_low,f_low,'k.','LineWidth',2), hold on
+			plot(plothere(2),t_low,fp_low,'r.','LineWidth',2), hold on
 
 			xlabel(plothere(2),'Time (s)','FontSize',20)
 			xlabel(plothere(1),'Time (s)','FontSize',20)

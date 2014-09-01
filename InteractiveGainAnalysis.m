@@ -39,8 +39,10 @@ titlestr = strrep(data.original_name,'_','-');
 title(ph(1),titlestr)
 ph(2) = subplot(4,1,2); hold on
 set(ph(2),'XLim',[min(data.time) max(data.time)])
+linkaxes([ph(1) ph(2)],'x');
 ph(3) = subplot(2,2,3); hold on; axis square
-ph(4) = subplot(2,2,4); hold on; axis square
+ph(4) = subplot(2,2,4); hold on;
+set(ph(4),'XScale','log')
 
 % use Manipulate to plot everything
 x.history_lengths=[0:0.03:0.3 0.36:0.06:1 1.2:1.2:5];

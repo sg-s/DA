@@ -21,3 +21,7 @@ end
 
 
 GainAnalysis3(data,history_lengths,example_history_length,plothere,NaN*history_lengths);
+
+% draw a line to indicate where we are on the history length plot
+yy = get(plothere(4),'YLim');
+plot(plothere(4),[example_history_length example_history_length],yy,'k.-')

@@ -11,6 +11,15 @@ font_size = 20;
 marker_size = 10;
 marker_size2 = 20;
 
+% internal housekeeping: determine if being called by publish or not
+calling_func = dbstack;
+being_published = 0;
+if ~isempty(calling_func)
+	if find(strcmp('publish',{calling_func.name}))
+		being_published = 1;
+	end
+end
+
 % define this to either recompute everything, or set to zero if you're ready to publish
 % this is commented out so that you have to explicitly specify it so you know what you're doing.
 % redo_bootstrap = 1;
@@ -52,8 +61,10 @@ xlabel('Time (s)')
 PrettyFig;
 hold off
 
-snapnow;
-delete(fh);
+if being_published
+	snapnow;
+	delete(fh);
+end
 
 
 %      ######  ########    ###    ######## ####  ######  ######## ####  ######   ######  
@@ -77,8 +88,10 @@ set(ph(2),'XScale','linear')
 
 PrettyFig;
 
-snapnow;
-delete(gcf);
+if being_published
+	snapnow;
+	delete(gcf);
+end
 
 
 %      ##       #### ##    ## ########    ###    ########           ######## #### ######## 
@@ -110,8 +123,10 @@ set(gca,'XLim',[min(data(td).filtertime) max(data(td).filtertime)])
 
 PrettyFig;
 
-snapnow;
-delete(fh);
+if being_published
+	snapnow;
+	delete(gcf);
+end
 
 %%
 % What does the prediction of this filter look like? The following figure shows the data (black) and the linear prediction (red) superimposed on it. 
@@ -125,9 +140,9 @@ xlabel('Time (s)')
 
 PrettyFig;
 
-if ~redo_bootstrap
+if being_published
 	snapnow;
-	delete(fh);
+	delete(gcf);
 end
 
 %%
@@ -144,9 +159,9 @@ xlabel('Time (s)')
 
 PrettyFig;
 
-if ~redo_bootstrap
+if being_published
 	snapnow;
-	delete(fh);
+	delete(gcf);
 end
 
 
@@ -192,7 +207,7 @@ ylabel('Nonlinearity Output (Hz)')
 
 PrettyFig;
 
-if ~redo_bootstrap
+if being_published
 	snapnow;
 	delete(gcf);
 end
@@ -211,7 +226,7 @@ ylabel('Firing rate (Hz)')
 
 PrettyFig;
 
-if ~redo_bootstrap
+if being_published
 	snapnow;
 	delete(gcf);
 end
@@ -275,7 +290,7 @@ end
 
 xlabel(ph(3),'Linear Prediction (Hz)')
 
-if ~redo_bootstrap
+if being_published
 	snapnow;
 	delete(f1);
 
@@ -332,7 +347,7 @@ end
 
 xlabel(ph(3),'LN Prediction (Hz)')
 
-if ~redo_bootstrap
+if being_published
 	snapnow;
 	delete(f1);
 
@@ -391,7 +406,7 @@ set(gca,'XLim',[18 22])
 
 PrettyFig;
 
-if ~redo_bootstrap
+if being_published
 	snapnow;
 	delete(gcf)
 end
@@ -445,7 +460,7 @@ legend(ph(2),{'DA Response','Linear Prediction'})
 ylabel(ph(3),'DA Model Response (Hz)')
 xlabel(ph(3),'Linear Prediction (Hz)')
 
-if ~redo_bootstrap
+if being_published
 	snapnow;
 	delete(f1);
 

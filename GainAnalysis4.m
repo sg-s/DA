@@ -18,16 +18,16 @@
 % 
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
-% performs a gain analysis and makes some plots
 
-function [p,low_slopes,high_slopes,low_gof,high_gof,example_plot] = GainAnalysis4(x,history_lengths,example_history_length,plothere,p)
+function [p,low_slopes,high_slopes,low_gof,high_gof,example_plot,extra_variables] = GainAnalysis4(x,history_lengths,example_history_length,plothere,p)
 
 
 % set defaults
+example_plot = [];
 marker_size=10;
 marker_size2=24;
 font_size=20;
-plotid=[1 2 3 4];
+plotid=[1 2 3 4]; %specify which plot you want
 debug = 0;
 
 switch nargin 
@@ -86,6 +86,11 @@ high_slopes_err = NaN*history_lengths;
 low_gof = NaN*history_lengths;
 high_gof = NaN*history_lengths;
 
+% some extra data vectors
+low_min = NaN*history_lengths;
+low_max = NaN*history_lengths;
+high_min = NaN*history_lengths;
+high_max = NaN*history_lengths;
 
 
 % calculate the slopes for all points
@@ -135,6 +140,12 @@ for i = 1:length(history_lengths)
 	fp_low(censor_these) = [];
 	t_low(censor_these) = [];
 	t_high(censor_these) = [];
+
+	% determine range of this subset of data
+	low_min(i) = min(f_low);
+	low_max(i) = max(f_low);
+	high_min(i) = min(f_high);
+	high_max(i) = max(f_high);
 
 	% fit lines
 	[flow, gof] = fit(fp_low,f_low,'Poly1');
@@ -272,3 +283,11 @@ high_slopes = high_slopes2.data;
 
 % package p for backwards compatibility
 p = [p_low p_high];
+
+% package some extra variables that may be requested
+extra_variables.data_min = min(x.response)*ones(length(history_lengths),1);
+extra_variables.data_max = max(x.response)*ones(length(history_lengths),1);
+extra_variables.low_min = low_min;
+extra_variables.low_max = low_max;
+extra_variables.high_min = high_min;
+extra_variables.high_max = high_max;

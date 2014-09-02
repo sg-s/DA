@@ -12,12 +12,22 @@ load('/local-data/DA-paper/data.mat')
 do_these = 2:21;
 N = length(data);
 
+% internal housekeeping: determine if being called by publish or not
+calling_func = dbstack;
+being_published = 0;
+if ~isempty(calling_func)
+	if find(strcmp('publish',{calling_func.name}))
+		being_published = 1;
+	end
+end
+
 if ~exist('HowGeneralIsGainAdaptation.mat','file')
 	
 	n = length(do_these);
 
 	% initialise history lengths to run the analysis on.
-	history_lengths=[0:0.03:0.3 0.36:0.06:1 1.2:1.2:5];
+	% history_lengths=[0:0.03:0.3 0.36:0.06:1 1.2:1.2:5];
+	history_lengths=[0:3e-3:3e-2 0.036:3e-2:1 1.2:1.2:5];
 
 	% initialise a matrix for all the linear filters
 	Filters = NaN(200,N);
@@ -30,7 +40,15 @@ if ~exist('HowGeneralIsGainAdaptation.mat','file')
 	high_slopes = NaN(length(history_lengths),N);
 	low_gof  = NaN(length(history_lengths),N);
 	high_gof = NaN(length(history_lengths),N);
-	p_values = NaN(length(history_lengths),N);
+	p_values_low = NaN(length(history_lengths),N);
+	p_values_high = NaN(length(history_lengths),N);
+	all_slopes = NaN(length(history_lengths),N);
+	data_min = NaN(length(history_lengths),N);
+	data_max = NaN(length(history_lengths),N);
+	low_min = NaN(length(history_lengths),N);
+	low_max = NaN(length(history_lengths),N);
+	high_min = NaN(length(history_lengths),N);
+	high_max = NaN(length(history_lengths),N);
 
 	% initialise a matrix that stores the r-square of the LN fit
 	LNFitQuality = NaN(1,N);
@@ -82,20 +100,30 @@ if ~exist('HowGeneralIsGainAdaptation.mat','file')
 		x.time = data(td).time(s:z);
 		x.filter_length = 200;
 
-		[p_values(:,td),low_slopes(:,td),high_slopes(:,td),low_gof(:,td),high_gof(:,td)] = GainAnalysis3(x,history_lengths);
+		[p,low_slopes(:,td),high_slopes(:,td),low_gof(:,td),high_gof(:,td),~,extra_variables] = GainAnalysis4(x,history_lengths);
+		p_values_low(:,td) = p(:,1);
+		p_values_high(:,td) = p(:,2);
+		data_min(:,td) = extra_variables.data_min(:);
+		data_max(:,td) = extra_variables.data_max(:);
+		low_min(:,td) = extra_variables.low_min(:);
+		low_max(:,td) = extra_variables.low_max(:);
+		high_min(:,td) = extra_variables.high_min(:);
+		high_max(:,td) = extra_variables.high_max(:);
+
 		
 	end
 
 	% cache locally for use later
 	filtertime = filtertime*mean(diff(data(td).time));
-	save('HowGeneralIsGainAdaptation.mat','Filters','HillFit','LNFitQuality','high_slopes','low_slopes','p_values','filtertime','history_lengths','low_gof','high_gof')
+	save('HowGeneralIsGainAdaptation.mat','Filters','HillFit','LNFitQuality','high_slopes','low_slopes','p_values_low','p_values_high','filtertime','history_lengths','low_gof','high_gof','all_slopes','data_min','data_max','low_min','low_max','high_min','high_max')
 else
 	load('HowGeneralIsGainAdaptation.mat')
 end
 
 
 % corrects for points where the p-value is reported as 0 by the bootstrap. it can't be, it's just too small to measure. 
-p_values(p_values==0) = min(nonzeros(p_values(:)));
+p_values_low(p_values_low==0) = min(nonzeros(p_values_low(:)));
+p_values_high(p_values_high==0) = min(nonzeros(p_values_high(:)));
 
 %% How General is Gain Adaptation?
 % This document summaries a gain analysis of all of the binary flickering stimuli we have from Carlotta's experiments. 
@@ -129,8 +157,11 @@ title('Variance in filter shape')
 
 PrettyFig;
 
-snapnow;
-delete(gcf);
+if being_published
+	snapnow;
+	delete(gcf);
+end
+
 
 %       ##     ## #### ##       ##          ######## ##     ## ##    ##  ######  
 %       ##     ##  ##  ##       ##          ##       ##     ## ###   ## ##    ## 
@@ -146,7 +177,7 @@ delete(gcf);
 y = NaN(251,N);
 x = NaN(251,N);
 
-for i = 2:10
+for i = do_these
 	xx = 0:1:max(data(i).ORN);
 	xx = [NaN(1,length(y)-length(xx)) xx];
 	y(:,i) = hill(HillFit(:,i),xx);
@@ -163,8 +194,11 @@ title('Variance in Nonlinearity shape')
 PrettyFig;
 
 
-snapnow;
-delete(gcf);
+if being_published
+	snapnow;
+	delete(gcf);
+end
+
 
 %        ###    ##       ##          ########     ###    ########    ###    
 %       ## ##   ##       ##          ##     ##   ## ##      ##      ## ##   
@@ -184,19 +218,26 @@ set(gca,'XScale','log')
 
 % now plot the dots where significant
 for i = do_these
-	sig = p_values(:,i);
-	sig = (sig<0.05);
+	sig_low = p_values_low(:,i);
+	sig_high = p_values_high(:,i);
+	sig_low = (sig_low<0.05);
+	sig_high = (sig_high<0.05);
 
-	scatter(history_lengths(sig),low_slopes(sig,i),500,'g.')
-	scatter(history_lengths(sig),high_slopes(sig,i),500,'r.')
+	scatter(history_lengths(sig_low),low_slopes(sig_low,i),500,'g.')
+	scatter(history_lengths(sig_high),high_slopes(sig_high,i),500,'r.')
 end
 
 xlabel('History Length (s)')
 ylabel('Relative Gain')
-
 PrettyFig;
-snapnow;
-delete(gcf);
+
+set(gca,'XLim',[min(nonzeros(history_lengths))/2 2*max(history_lengths)])
+if being_published
+	snapnow;
+	delete(gcf);
+end
+
+
 
 %%
 % However, in some cases, the fits to the clouds of points in the gain analysis may not be very good. The following plot shows the distribution of r-square values of the fits that are used to determine the gain in each of these cases, for the entire dataset:
@@ -213,8 +254,11 @@ title('Some fits are very poor')
 
 PrettyFig;
 
-snapnow;
-delete(gcf);
+if being_published
+	snapnow;
+	delete(gcf);
+end
+
 
 %%
 % If we retain only the points where the r-square of the fit is >0.8, we end up retaining the following percent of the low slopes:
@@ -242,17 +286,24 @@ ylabel('Relative Gain')
 
 % now plot the dots where significant
 for i = do_these
-	sig = p_values(:,i);
-	sig = (sig<0.05);
+	sig_low = p_values_low(:,i);
+	sig_high = p_values_high(:,i);
+	sig_low = (sig_low<0.05);
+	sig_high = (sig_high<0.05);
 
-	scatter(history_lengths(sig),low_slopes(sig,i),500,'g.')
-	scatter(history_lengths(sig),high_slopes(sig,i),500,'r.')
+	scatter(history_lengths(sig_low),low_slopes(sig_low,i),500,'g.')
+	scatter(history_lengths(sig_high),high_slopes(sig_high,i),500,'r.')
 end
+
 
 PrettyFig;
 
-snapnow;
-delete(gcf);
+if being_published
+	snapnow;
+	delete(gcf);
+end
+
+return
 
 %%
 % In general, are the green slopes (gain following low stimuli) significantly higher than the red slopes (gain following high stimuli)? To determine this, we plot, for each pair of points corresponding to a single history length and a single dataset, the difference between the low slopes and the high slopes _vs._ the p-value of the difference between that pair (Bonferroni corrected). 
@@ -276,8 +327,10 @@ xlabel('p-value (Bonferroni corr.)')
 
 PrettyFig;
 
-snapnow;
-delete(gcf);
+if being_published
+	snapnow;
+	delete(gcf);
+end
 
 %%
 % The number of statistically significant data points showing gain enhancement following low stimuli is:
@@ -342,8 +395,10 @@ title('Variability in stimulus presented in identical datasets')
 
 PrettyFig;
 
-snapnow;
-delete(gcf);
+if being_published
+	snapnow;
+	delete(gcf);
+end
 
 %%
 % The amplitude of the signal seems to vary significantly from dataset to dataset. However, the stimulus is well correlated: the following matrix shows the pairwise r-square between each piece of the data above:
@@ -373,8 +428,10 @@ title('Variability in response presented in identical datasets')
 
 PrettyFig;
 
-snapnow;
-delete(gcf);
+if being_published
+	snapnow;
+	delete(gcf);
+end
 
 
 %%
@@ -398,8 +455,10 @@ title('Variance in filter shape')
 
 PrettyFig;
 
-snapnow;
-delete(gcf);
+if being_published
+	snapnow;
+	delete(gcf);
+end
 
 
 %%
@@ -424,8 +483,10 @@ end
 
 PrettyFig;
 
-snapnow;
-delete(gcf);
+if being_published
+	snapnow;
+	delete(gcf);
+end
 
 
 %  ######   #######  ########  ########     ##       ######## ##    ##  ######   ######## ##     ## 
@@ -464,8 +525,12 @@ xlabel('Lag (s)')
 ylabel('Autocorrelation')
 
 PrettyFig;
-snapnow;
-delete(gcf);
+
+if being_published
+	snapnow;
+	delete(gcf);
+end
+
 
 
 %%
@@ -497,8 +562,10 @@ legend(tau_c_text)
 
 PrettyFig;
 
-snapnow;
-delete(gcf);
+if being_published
+	snapnow;
+	delete(gcf);
+end
 
 %%
 % So it looks like the peak of the green curves (gain in response to low stimuli) grows smaller, the smaller the correlation length of the stimulus. 
@@ -534,8 +601,10 @@ ylabel('Odor concentration (V)')
 legend(neuron);
 PrettyFig;
 
-snapnow;
-delete(gcf);
+if being_published
+	snapnow;
+	delete(gcf);
+end
 
 %%
 % It looks like one stimulus is massively bigger than the other. Normalising by the mean, we get:
@@ -548,8 +617,10 @@ ylabel('Odor concentration (norm)')
 legend(neuron);
 PrettyFig;
 
-snapnow;
-delete(gcf);
+if being_published
+	snapnow;
+	delete(gcf);
+end
 
 %%
 % The responses of the two different neurons to this temporally identical stimulus are:

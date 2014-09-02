@@ -268,9 +268,9 @@ x.filter_length = 201;
 
 
 if redo_bootstrap
-	ptemp = GainAnalysis3(x,history_lengths,example_history_length,ph);
+	ptemp = GainAnalysis4(x,history_lengths,example_history_length,ph);
 else
-	GainAnalysis3(x,history_lengths,example_history_length,ph,ptemp);
+	GainAnalysis4(x,history_lengths,example_history_length,ph,ptemp);
 end
 
 xlabel(ph(3),'Linear Prediction (Hz)')
@@ -325,9 +325,9 @@ x.filter_length = 201;
 
 
 if redo_bootstrap
-	ptemp2 = GainAnalysis3(x,history_lengths,example_history_length,ph);
+	ptemp2 = GainAnalysis4(x,history_lengths,example_history_length,ph);
 else
-	GainAnalysis3(x,history_lengths,example_history_length,ph,ptemp2);
+	GainAnalysis4(x,history_lengths,example_history_length,ph,ptemp2);
 end
 
 xlabel(ph(3),'LN Prediction (Hz)')
@@ -436,9 +436,9 @@ x.filter_length = 201;
 
 
 if redo_bootstrap
-	ptemp3 = GainAnalysis3(x,history_lengths,example_history_length,ph);
+	ptemp3 = GainAnalysis4(x,history_lengths,example_history_length,ph);
 else
-	GainAnalysis3(x,history_lengths,example_history_length,ph,ptemp3);
+	GainAnalysis4(x,history_lengths,example_history_length,ph,ptemp3);
 end
 
 legend(ph(2),{'DA Response','Linear Prediction'})

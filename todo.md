@@ -6,7 +6,6 @@ plot against stimulus
 
 figure out how to quantify loopiness: update amtrix: eigenvalues of x(t+1) = Ax(t)
 
-r0 is not justified in the DA model. use an offset instead. scaling the stimulus has no effect. 
 
 construct a stimulus that is mahmut's flickering stimulus + background, figure out how to vary the height of the background
 

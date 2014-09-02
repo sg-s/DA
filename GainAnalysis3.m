@@ -132,12 +132,12 @@ for i = 1:length(history_lengths)
 	t_high(censor_these) = [];
 
 
-	% censor times when f is 0?
-	f_low(f==0) = [];
-	f_high(f==0) = [];
-	f(f==0) = [];
-	t_low(f==0) = [];
-	t_high(f==0) = [];
+	% censor times when f is 0?  -- what is the justification for this?
+	% f_low(f==0) = [];
+	% f_high(f==0) = [];
+	% f(f==0) = [];
+	% t_low(f==0) = [];
+	% t_high(f==0) = [];
 
 	% fit lines
 	[flow, gof] = fit(fp_low,f_low,'Poly1');

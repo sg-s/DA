@@ -16,7 +16,9 @@ if ~ismember(example_history_length,history_lengths)
 	% pick the closest multiple of 3ms
 	example_history_length= (floor(example_history_length/(3e-3))*3e-3);
 	history_lengths = sort([history_lengths example_history_length]);
-
+else
+	% prevent this from growing out of control
+	history_lengths = data.history_lengths;
 end
 
 
@@ -48,5 +50,5 @@ if min(abs(example_plot.t_low - t)) > min(abs(example_plot.t_high - t))
 else
 	% the closest point is a low stimulus point
 	[~,loc]=min(abs(example_plot.t_low - t));
-	scatter(plothere(3),fp_high(loc),f_high(loc),64,'filled');
+	scatter(plothere(3),fp_low(loc),f_low(loc),64,'filled');
 end

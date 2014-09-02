@@ -9,7 +9,7 @@
 function [] = InteractiveGainAnalysis(data)
 
 % fit a LN model
-[K,~,filtertime] = FindBestFilter(data.PID,data.ORN,[],'filter_length=201;');
+[K,~,filtertime] = FindBestFilter(data.PID,data.ORN,[],'filter_length=199;');
 LinearFit = convolve(data.time,data.PID,K,filtertime) + mean(data.ORN);
 LinearFit(LinearFit<0) =0;
 xdata = data.LinearFit;
@@ -19,16 +19,19 @@ ydata(isnan(xdata)) = [];
 xdata(isnan(xdata)) = [];
 xdata = xdata(:);
 ydata = ydata(:);
-fo=optimset('MaxFunEvals',1000,'Display','none');
+fo=optimset('MaxFunEvals',2000,'Display','none');
 x = lsqcurvefit(@hill,[max(ydata) 2 2],xdata,ydata,[max(ydata)/2 2 1],[2*max(ydata) max(ydata) 10],fo);
-LNFit = hill(x,LinearFit); clear x
+LNFit = hill(x,LinearFit);
+clear x
 
 % assemble data
-x.response = data.ORN;
-x.prediction = LNFit;
-x.stimulus = data.PID;
-x.time = data.time;
-x.filter_length = 201; 
+s = 300; % when we start for the gain analysis
+z = length(data.ORN) - 33; % where we end 
+x.response = data.ORN(s:z);
+x.prediction = LNFit(s:z);
+x.stimulus = data.PID(s:z);
+x.time = data.time(s:z);
+x.filter_length = 200; 
 
 % make the figure
 figure('outerposition',[0 0 1000 900]); hold on
@@ -45,7 +48,8 @@ ph(4) = subplot(2,2,4); hold on;
 set(ph(4),'XScale','log')
 
 % use Manipulate to plot everything
-x.history_lengths=[0:0.03:0.3 0.36:0.06:1 1.2:1.2:5];
+x.history_lengths=[0:3e-3:3e-2 0.036:3e-2:1 1.2:1.2:5];
 p.t_h = 0.12;
 p.t = mean(data.time);
 Manipulate('InteractiveGainAnalysisEngine',p,x,[],[],ph);
+

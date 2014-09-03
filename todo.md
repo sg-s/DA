@@ -5,7 +5,7 @@ update matrix:
 plot against stimulus
 
 figure out how to quantify loopiness: update amtrix: eigenvalues of x(t+1) = Ax(t)
-
+ 
 
 construct a stimulus that is mahmut's flickering stimulus + background, figure out how to vary the height of the background
 

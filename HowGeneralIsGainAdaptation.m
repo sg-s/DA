@@ -239,6 +239,9 @@ end
 
 
 
+
+
+
 %%
 % However, in some cases, the fits to the clouds of points in the gain analysis may not be very good. The following plot shows the distribution of r-square values of the fits that are used to determine the gain in each of these cases, for the entire dataset:
 

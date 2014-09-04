@@ -840,9 +840,9 @@ for i = do_these
 
 		example_history_length = history_lengths(loc);
 
-		GainAnalysis3(x,history_lengths,example_history_length,ph,NaN*history_lengths);
+		GainAnalysis4(x,history_lengths,example_history_length,ph,NaN*history_lengths);
 
-		title(strcat(data(i).neuron,'-',data(i).odor,'-\tau_H=',mat2str(example_history_length),'s' ))
+		title(strcat(mat2str(i),'-',data(i).neuron,'-',data(i).odor,'-\tau_H=',mat2str(example_history_length),'s' ))
 
 		if being_published
 			snapnow;

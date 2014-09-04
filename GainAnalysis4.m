@@ -19,7 +19,7 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [p,low_slopes,high_slopes,low_gof,high_gof,example_plot,extra_variables] = GainAnalysis4(x,history_lengths,example_history_length,plothere,p)
+function [p,low_slopes,high_slopes,low_gof,high_gof,example_plot,extra_variables] = GainAnalysis4(x,history_lengths,example_history_length,plothere,p,frac)
 
 
 % set defaults
@@ -44,13 +44,17 @@ case 5
 	% split p into p_low and p_high
 	p_low = p(:,1);
 	p_high = p(:,2);
+case 6
+	% split p into p_low and p_high
+	p_low = p(:,1);
+	p_high = p(:,2);
 
 end
 
 
 if isempty(plothere) && ~isempty(plotid)
 	if debug
-		figure, hold on; 
+		figure; hold on; 
 		plothere(1) = subplot(2,1,1); hold on;
 		plothere(2) = subplot(2,1,2); hold on;
 	end
@@ -101,7 +105,11 @@ all_slopes_err=fall.p1-er(1,1);
 all_slopes = fall.p1;
 output_data.all_slopes = all_slopes;
 
-n = floor(sum(~isnan(stimulus))/10);
+if nargin < 6
+	frac=  0.1;
+end
+
+n = floor(frac*sum(~isnan(stimulus)));
 
 
 for i = 1:length(history_lengths)
@@ -195,7 +203,7 @@ for i = 1:length(history_lengths)
 			ylabel(plothere(1),'Stimulus (a.u.)','FontSize',20)
 			
 			% indicate regions of lowest and highest 10%
-			tp = floor(length(stimulus)/10);
+			tp = floor(frac*length(stimulus));
 			plot(plothere(1),t(idx(1:tp)),shat(i,idx(1:tp)),'r.')
 			plot(plothere(1),t(idx(end-tp:end)),shat(i,idx(end-tp:end)),'g.')
 
@@ -239,7 +247,7 @@ end
 
 	
 % bootstrap slopes
-if nargin == 5
+if nargin > 4 % we specify the p-values
 	low_slopes2.data = low_slopes;
 	high_slopes2.data = high_slopes;
 

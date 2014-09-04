@@ -51,5 +51,6 @@ set(ph(4),'XScale','log')
 x.history_lengths=[0:3e-3:3e-2 0.036:3e-2:1 1.2:1.2:5];
 p.t_h = 0.12;
 p.t = mean(data.time);
+p.frac=  0.1;
 Manipulate('InteractiveGainAnalysisEngine',p,x,[],[],ph);
 

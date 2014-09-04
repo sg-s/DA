@@ -11,6 +11,7 @@
 load('/local-data/DA-paper/data.mat')
 do_these = 2:21;
 N = length(data);
+marker_size = 15;
 
 % internal housekeeping: determine if being called by publish or not
 calling_func = dbstack;
@@ -109,6 +110,7 @@ if ~exist('HowGeneralIsGainAdaptation.mat','file')
 		low_max(:,td) = extra_variables.low_max(:);
 		high_min(:,td) = extra_variables.high_min(:);
 		high_max(:,td) = extra_variables.high_max(:);
+		all_slopes(:,td) = extra_variables.all_slopes(:);
 
 		
 	end
@@ -238,22 +240,14 @@ if being_published
 end
 
 
-
-
-
-
 %%
-% However, in some cases, the fits to the clouds of points in the gain analysis may not be very good. The following plot shows the distribution of r-square values of the fits that are used to determine the gain in each of these cases, for the entire dataset:
+% However, when we go to very short history lengths, we end up sampling only points in time when the neuron is not firing at all. These are pathological points and cause wildly inaccurate estimates of gain for the low stimuli. To see what we are talking about, the following figure shows the maximum of the subset of the data sampled, normalised by the maximum of the data, as a function of history length for the various data sets analysed here. 
 
-figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-[y,x]=hist(low_gof(:),30);
-plot(x,y,'g')
-[y,x]=hist(high_gof(:),30);
-plot(x,y,'r')
-legend({'Low Slopes','High Slopes'})
-xlabel('r-square of fit')
-ylabel('Count')
-title('Some fits are very poor')
+figure('outerposition',[0 0 700 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(history_lengths,low_max./data_max)
+set(gca,'XScale','log','YLim',[-0.1 1.1])
+xlabel('History Length (s)')
+ylabel('Max of "Low" Response Data')
 
 PrettyFig;
 
@@ -262,22 +256,49 @@ if being_published
 	delete(gcf);
 end
 
-
 %%
-% If we retain only the points where the r-square of the fit is >0.8, we end up retaining the following percent of the low slopes:
+% We arbitrarily decide to throw out all data where the sampled subset is less than half the full data set. 
 
-disp(100*length(low_gof(low_gof>0.8))/(length(low_gof(:))))
+low_slopes((low_max./data_max)<0.5) = NaN;
+p_values_low((low_max./data_max)<0.5) = NaN;
 
-%%
-% and the following percent of the high-slopes data:
 
-disp(100*length(high_gof(high_gof>0.8))/(length(high_gof(:))))
+% %%
+% % However, in some cases, the fits to the clouds of points in the gain analysis may not be very good. The following plot shows the distribution of r-square values of the fits that are used to determine the gain in each of these cases, for the entire dataset:
+
+% figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% [y,x]=hist(low_gof(:),30);
+% plot(x,y,'g')
+% [y,x]=hist(high_gof(:),30);
+% plot(x,y,'r')
+% legend({'Low Slopes','High Slopes'})
+% xlabel('r-square of fit')
+% ylabel('Count')
+% title('Some fits are very poor')
+
+% PrettyFig;
+
+% if being_published
+% 	snapnow;
+% 	delete(gcf);
+% end
+
+
+% %%
+% % If we retain only the points where the r-square of the fit is >0.8, we end up retaining the following percent of the low slopes:
+
+% disp(100*length(low_gof(low_gof>0.8))/(length(low_gof(:))))
+
+% %%
+% % and the following percent of the high-slopes data:
+
+% disp(100*length(high_gof(high_gof>0.8))/(length(high_gof(:))))
 
 %%
 % In the following plot, we only retain this data:
 
-low_slopes(low_gof<0.8) = NaN;
-high_slopes(high_gof<0.8) = NaN;
+% low_slopes(low_gof<0.8) = NaN;
+% high_slopes(high_gof<0.8) = NaN;
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 plot(history_lengths,low_slopes,'.-','Color',[0.5 1 0.5])
@@ -298,6 +319,7 @@ for i = do_these
 	scatter(history_lengths(sig_high),high_slopes(sig_high,i),500,'r.')
 end
 
+set(gca,'XLim',[1e-3 6])
 
 PrettyFig;
 
@@ -306,27 +328,34 @@ if being_published
 	delete(gcf);
 end
 
-return
 
 %%
-% In general, are the green slopes (gain following low stimuli) significantly higher than the red slopes (gain following high stimuli)? To determine this, we plot, for each pair of points corresponding to a single history length and a single dataset, the difference between the low slopes and the high slopes _vs._ the p-value of the difference between that pair (Bonferroni corrected). 
+% In general, are the green slopes (gain following low stimuli) significantly higher than the red slopes (gain following high stimuli)? To determine this, we plot the slope of the best fit line vs. the p value of that fit. 
 
-figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-d = low_slopes(:) - high_slopes(:);
-plot(p_values(:),d,'k.') 
+figure('outerposition',[0 0 1100 600],'PaperUnits','points','PaperSize',[1100 600]); hold on
+subplot(1,2,1), hold on
+d = low_slopes(:)./all_slopes(:); %  - high_slopes(:);
+plot(p_values_low(:),d,'g.','MarkerSize',marker_size) 
 set(gca,'XScale','log')
-
 % plot a reference line for equal gain
-plot([.01 1],[0 0 ],'k--')
-
+plot([.01 1],[1 1 ],'k--')
 % plot a reference line for p = 0.05
-plot([.05 .05],[min(d)*2 max(d)*2 ],'k--')
+plot([.05 .05],[min(d)/2 max(d)*2 ],'k--')
+set(gca,'XLim',[min(p_values_low(:))/2 1.1],'YLim',[min(d)/2 max(d)*1.1])
+ylabel('Relative Gain (low stimuli)')
+xlabel('p-value')
 
-set(gca,'XLim',[min(p_values(:))/2 1.1],'YLim',[-0.5 0.6])
-
-
-ylabel('Low Slopes - High Slopes')
-xlabel('p-value (Bonferroni corr.)')
+subplot(1,2,2), hold on
+d = high_slopes(:)./all_slopes(:); %  - high_slopes(:);
+plot(p_values_high(:),d,'r.','MarkerSize',marker_size) 
+set(gca,'XScale','log')
+% plot a reference line for equal gain
+plot([.01 1],[1 1 ],'k--')
+% plot a reference line for p = 0.05
+plot([.05 .05],[min(d)/2 max(d)*2 ],'k--')
+set(gca,'XLim',[min(p_values_high(:))/2 1.1],'YLim',[min(d)/2 max(d)*1.1])
+ylabel('Relative Gain (high stimuli)')
+xlabel('p-value')
 
 PrettyFig;
 
@@ -335,22 +364,11 @@ if being_published
 	delete(gcf);
 end
 
-%%
-% The number of statistically significant data points showing gain enhancement following low stimuli is:
 
-disp(sum((d>0).*(p_values(:)<0.05)))
-
-%%
-% cf. the number of statistically significant data points showing gain _supression_ following low stimuli is:
-
-disp(sum((d<0).*(p_values(:)<0.05)))
 
 %% 
 % The reference horizontal line indicates equal slope (equal gain for low and high stimuli) and the reference vertical line indicates a p-value of _p=0.05_. Of the statistically significant differences in gain (left half-plane), there are far more points in the top-left quadrant (gain enhancement to low stimuli) than there are in the bottom-left quadrant (gain suppression to low stimuli). 
 
-p_values(high_gof<0.8) = Inf;
-p_values(low_gof<0.8) = Inf;
-lowest_p = min(p_values);
 
 
 %%
@@ -402,6 +420,7 @@ if being_published
 	snapnow;
 	delete(gcf);
 end
+
 
 %%
 % The amplitude of the signal seems to vary significantly from dataset to dataset. However, the stimulus is well correlated: the following matrix shows the pairwise r-square between each piece of the data above:
@@ -463,7 +482,6 @@ if being_published
 	delete(gcf);
 end
 
-
 %%
 % The following figure shows the results of the gain analysis on these supposedly identical datasets: 
 
@@ -477,19 +495,23 @@ ylabel('Relative Gain')
 
 % now plot the dots where significant
 for i = plothese
-	sig = p_values(:,i);
-	sig = (sig<0.05);
+	sig_low = p_values_low(:,i);
+	sig_low = (sig_low<0.05);
+	sig_high = p_values_high(:,i);
+	sig_high = (sig_high<0.05);
 
-	scatter(history_lengths(sig),low_slopes(sig,i),500,'g.')
-	scatter(history_lengths(sig),high_slopes(sig,i),500,'r.')
+	scatter(history_lengths(sig_low),low_slopes(sig_low,i),500,'g.')
+	scatter(history_lengths(sig_high),high_slopes(sig_high,i),500,'r.')
 end
 
+set(gca,'XLim',[min(nonzeros(history_lengths))/2 max(history_lengths)*2])
 PrettyFig;
 
 if being_published
 	snapnow;
 	delete(gcf);
 end
+
 
 
 %  ######   #######  ########  ########     ##       ######## ##    ##  ######   ######## ##     ## 
@@ -553,14 +575,18 @@ xlabel('History Length (s)')
 ylabel('Relative Gain')
 
 % now plot the dots where significant
+% now plot the dots where significant
 for i = plothese
-	sig = p_values(:,i);
-	sig = (sig<0.05);
+	sig_low = p_values_low(:,i);
+	sig_low = (sig_low<0.05);
+	sig_high = p_values_high(:,i);
+	sig_high = (sig_high<0.05);
 
-	scatter(history_lengths(sig),low_slopes(sig,i),500,'g.')
-	scatter(history_lengths(sig),high_slopes(sig,i),500,'r.')
+	scatter(history_lengths(sig_low),low_slopes(sig_low,i),500,'g.')
+	scatter(history_lengths(sig_high),high_slopes(sig_high,i),500,'r.')
 end
 
+set(gca,'XLim',[min(nonzeros(history_lengths))/2 max(history_lengths)*2])
 legend(tau_c_text)
 
 PrettyFig;
@@ -569,6 +595,7 @@ if being_published
 	snapnow;
 	delete(gcf);
 end
+
 
 %%
 % So it looks like the peak of the green curves (gain in response to low stimuli) grows smaller, the smaller the correlation length of the stimulus. 
@@ -635,6 +662,7 @@ set(gca,'XLim',[10 20])
 xlabel('Time (s)')
 ylabel('Neuron Response (Hz)')
 legend(neuron);
+
 PrettyFig;
 
 snapnow;
@@ -658,19 +686,24 @@ ylabel('Relative Gain')
 
 % now plot the dots where significant
 for i = plothese
-	sig = p_values(:,i);
-	sig = (sig<0.05);
+	sig_low = p_values_low(:,i);
+	sig_low = (sig_low<0.05);
+	sig_high = p_values_high(:,i);
+	sig_high = (sig_high<0.05);
 
-	scatter(history_lengths(sig),low_slopes(sig,i),500,'g.')
-	scatter(history_lengths(sig),high_slopes(sig,i),500,'r.')
+	scatter(history_lengths(sig_low),low_slopes(sig_low,i),500,'g.')
+	scatter(history_lengths(sig_high),high_slopes(sig_high,i),500,'r.')
 end
 
 legend(neuron)
-
+set(gca,'XLim',[min(nonzeros(history_lengths))/2 max(history_lengths)*2])
 PrettyFig;
 
-snapnow;
-delete(gcf);
+if being_published
+	snapnow;
+	delete(gcf);
+end
+
 
 
 %       ########  #### ######## ########         #######  ########   #######  ########  
@@ -681,89 +714,95 @@ delete(gcf);
 %       ##     ##  ##  ##       ##       ###    ##     ## ##     ## ##     ## ##    ##  
 %       ########  #### ##       ##       ###     #######  ########   #######  ##     ## 
 
-%% Effect of odor 
+% %% Effect of odor 
 % In this section, we investigate the effect of varying the odor type, while keeping the temporal structure and the type of neuron it is presented to fixed. We use the following datasets, where the valve is switched with the same temporal pattern, and the stimulus is presented to ab3A neurons:
 
-plothese = [2 4 7];
-odor = {data(plothese).odor};
+% plothese = [2 4 7];
+% odor = {data(plothese).odor};
 
-for i = 1:length(plothese)
-	disp(data(plothese(i)).original_name)
-end
+% for i = 1:length(plothese)
+% 	disp(data(plothese(i)).original_name)
+% end
 
-%%
-% The following figure shows the stimulus from these datasets, normalised by the mean:
+% %%
+% % The following figure shows the stimulus from these datasets, normalised by the mean:
 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(data(plothese(1)).time,data(plothese(1)).PID/mean(data(plothese(1)).PID),'b')
-plot(data(plothese(2)).time,data(plothese(2)).PID/mean(data(plothese(2)).PID),'g')
-plot(data(plothese(3)).time,data(plothese(3)).PID/mean(data(plothese(3)).PID),'r')
-set(gca,'XLim',[10 20])
-xlabel('Time (s)')
-ylabel('Odor concentration (norm)')
-legend(odor);
-PrettyFig;
+% figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% plot(data(plothese(1)).time,data(plothese(1)).PID/mean(data(plothese(1)).PID),'b')
+% plot(data(plothese(2)).time,data(plothese(2)).PID/mean(data(plothese(2)).PID),'g')
+% plot(data(plothese(3)).time,data(plothese(3)).PID/mean(data(plothese(3)).PID),'r')
+% set(gca,'XLim',[10 20])
+% xlabel('Time (s)')
+% ylabel('Odor concentration (norm)')
+% legend(odor);
+% PrettyFig;
 
-snapnow;
-delete(gcf);
+% if being_published
+% 	snapnow;
+% 	delete(gcf);
+% end
 
-%%
-% The responses of ab3A to these three different odors looks like. The panel on the left shows the actual responses, and the panel on the right shows the normalised histogram of the responses of the neurons.
+% %%
+% % The responses of ab3A to these three different odors looks like. The panel on the left shows the actual responses, and the panel on the right shows the normalised histogram of the responses of the neurons.
 
-figure('outerposition',[0 0 1200 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-subplot(1,5,1:4), hold on
-plot(data(plothese(1)).time,data(plothese(1)).ORN,'Color','b')
-plot(data(plothese(2)).time,data(plothese(2)).ORN,'Color','g')
-plot(data(plothese(3)).time,data(plothese(3)).ORN,'Color','r')
-set(gca,'XLim',[10 20])
-xlabel('Time (s)')
-ylabel('Firing rate (Hz)')
-legend(odor);
+% figure('outerposition',[0 0 1200 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% subplot(1,5,1:4), hold on
+% plot(data(plothese(1)).time,data(plothese(1)).ORN,'Color','b')
+% plot(data(plothese(2)).time,data(plothese(2)).ORN,'Color','g')
+% plot(data(plothese(3)).time,data(plothese(3)).ORN,'Color','r')
+% set(gca,'XLim',[10 20])
+% xlabel('Time (s)')
+% ylabel('Firing rate (Hz)')
+% legend(odor);
 
-subplot(1,5,5), hold on
-[x,y] = hist(data(plothese(1)).ORN,30); plot(x/max(x),y,'b')
-[x,y] = hist(data(plothese(2)).ORN,30); plot(x/max(x),y,'g')
-[x,y] = hist(data(plothese(3)).ORN,30); plot(x/max(x),y,'r')
+% subplot(1,5,5), hold on
+% [x,y] = hist(data(plothese(1)).ORN,30); plot(x/max(x),y,'b')
+% [x,y] = hist(data(plothese(2)).ORN,30); plot(x/max(x),y,'g')
+% [x,y] = hist(data(plothese(3)).ORN,30); plot(x/max(x),y,'r')
 
-PrettyFig;
+% PrettyFig;
 
-snapnow;
-delete(gcf);
+% if being_published
+% 	snapnow;
+% 	delete(gcf);
+% end
 
-%%
-% We now look at how the gain analysis of these datasets differs: 
+% %%
+% % We now look at how the gain analysis of these datasets differs: 
 
-figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(history_lengths,low_slopes(:,plothese(1)),'.-','Color',[0 1.0 0])
-plot(history_lengths,low_slopes(:,plothese(2)),'.-','Color',[0 0.7 0])
-plot(history_lengths,low_slopes(:,plothese(3)),'.-','Color',[0 0.4 0])
+% figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% plot(history_lengths,low_slopes(:,plothese(1)),'.-','Color',[0 1.0 0])
+% plot(history_lengths,low_slopes(:,plothese(2)),'.-','Color',[0 0.7 0])
+% plot(history_lengths,low_slopes(:,plothese(3)),'.-','Color',[0 0.4 0])
 
-plot(history_lengths,high_slopes(:,plothese(1)),'.-','Color',[1.0 0 0])
-plot(history_lengths,high_slopes(:,plothese(2)),'.-','Color',[0.7 0 0])
-plot(history_lengths,high_slopes(:,plothese(3)),'.-','Color',[0.4 0 0])
+% plot(history_lengths,high_slopes(:,plothese(1)),'.-','Color',[1.0 0 0])
+% plot(history_lengths,high_slopes(:,plothese(2)),'.-','Color',[0.7 0 0])
+% plot(history_lengths,high_slopes(:,plothese(3)),'.-','Color',[0.4 0 0])
 
-set(gca,'XScale','log','XLim',[1e-1 5])
+% set(gca,'XScale','log','XLim',[1e-3 5])
 
-xlabel('History Length (s)')
-ylabel('Relative Gain')
+% xlabel('History Length (s)')
+% ylabel('Relative Gain')
 
-% now plot the dots where significant
-for i = plothese
-	sig = p_values(:,i);
-	sig = (sig<0.05);
+% % now plot the dots where significant
+% for i = plothese
+% 	sig_low = p_values_low(:,i);
+% 	sig_low = (sig_low<0.05);
+% 	sig_high = p_values_high(:,i);
+% 	sig_high = (sig_high<0.05);
 
-	scatter(history_lengths(sig),low_slopes(sig,i),500,'g.')
-	scatter(history_lengths(sig),high_slopes(sig,i),500,'r.')
-end
+% 	scatter(history_lengths(sig_low),low_slopes(sig_low,i),500,'g.')
+% 	scatter(history_lengths(sig_high),high_slopes(sig_high,i),500,'r.')
+% end
 
-legend(odor)
+% legend(odor)
 
-PrettyFig;
+% PrettyFig;
 
-snapnow;
-delete(gcf);
-
-
+% if being_published
+% 	snapnow;
+% 	delete(gcf);
+% end
 
 
 %% Gain Analysis Examples
@@ -771,14 +810,12 @@ delete(gcf);
 
 for i = do_these
 
-	figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-	ph(3) = subplot(1,1,1);
+
 
 	s = 300; % when we start for the gain analysis
 	z = length(data(i).ORN) - 33; % where we end
 
 	% compute the LNpred
-
 	LinearFit = mean(data(i).ORN)+convolve(data(i).time,data(i).PID,Filters(:,i),filtertime);
 	LinearFit(LinearFit<0)=0;
 	LNpred = hill(HillFit(:,i),LinearFit);
@@ -792,16 +829,31 @@ for i = do_these
 
 
 	r = low_slopes(:,i) - high_slopes(:,i);
-	r(p_values(:,i)>0.05) = 0;
+	r(p_values_low(:,i)>0.05) = 0;
+	r(p_values_high(:,i)>0.05) = 0;
 	[~,loc]=max(r);
-	example_history_length = history_lengths(loc);
 
-	GainAnalysis3(x,history_lengths,example_history_length,ph,NaN*history_lengths);
+	if max(r) > 0
+		% ok, we can show this
+		figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+		ph(3) = subplot(1,1,1);
 
-	title(strcat(data(i).neuron,'-',data(i).odor,'-\tau_H=',mat2str(example_history_length),'s' ))
+		example_history_length = history_lengths(loc);
 
-	snapnow;
-	delete(gcf);
+		GainAnalysis3(x,history_lengths,example_history_length,ph,NaN*history_lengths);
+
+		title(strcat(data(i).neuron,'-',data(i).odor,'-\tau_H=',mat2str(example_history_length),'s' ))
+
+		if being_published
+			snapnow;
+			delete(gcf);
+		end
+
+	else
+		% can't show this
+
+	end
+
 
 end
 

@@ -291,3 +291,5 @@ extra_variables.low_min = low_min;
 extra_variables.low_max = low_max;
 extra_variables.high_min = high_min;
 extra_variables.high_max = high_max;
+
+extra_variables.all_slopes = fall.p1*ones(length(history_lengths),1);

@@ -106,7 +106,7 @@ all_slopes = fall.p1;
 output_data.all_slopes = all_slopes;
 
 if nargin < 6
-	frac=  0.1;
+	frac=  0.5;
 end
 
 n = floor(frac*sum(~isnan(stimulus)));

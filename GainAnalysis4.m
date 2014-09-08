@@ -42,12 +42,12 @@ case 3
 case 4
 case 5
 	% split p into p_low and p_high
-	p_low = p(:,1);
-	p_high = p(:,2);
+	p_low = p(1,:);
+	p_high = p(2,:);
 case 6
 	% split p into p_low and p_high
-	p_low = p(:,1);
-	p_high = p(:,2);
+	p_low = p(1,:);
+	p_high = p(2,:);
 
 end
 
@@ -57,11 +57,12 @@ if isempty(plothere) && ~isempty(plotid)
 		figure; hold on; 
 		plothere(1) = subplot(2,1,1); hold on;
 		plothere(2) = subplot(2,1,2); hold on;
+		figure, hold on;
+		plothere(3) = gca;
+		figure; hold on;
+		plothere(4) = gca;
 	end
-	figure, hold on;
-	plothere(3) = gca;
-	figure; hold on;
-	plothere(4) = gca;
+	
 end
 
 
@@ -99,46 +100,42 @@ high_max = NaN*history_lengths;
 
 % calculate the slopes for all points
 [fall, gof] = fit(fp(filter_length+2:end-filter_length),f(filter_length+2:end-filter_length),'Poly1');
-all_gof = gof.rsquare;
-er = confint(fall);
-all_slopes_err=fall.p1-er(1,1);
 all_slopes = fall.p1;
-output_data.all_slopes = all_slopes;
+
 
 if nargin < 6
-	frac=  0.5;
+	frac=  0.33;
 end
 
-n = floor(frac*sum(~isnan(stimulus)));
 
+n = floor(frac*length(shat));
 
 for i = 1:length(history_lengths)
 
-	f = x.response(:);
-
-	% find lowest 10%
 	this_shat = shat(i,:);
 
-	% assign undesirables to Inf
+
+	% find times when smoothed stim (this_shat) is in lowest 10%
 	this_shat(1:hl(i)) = Inf; % the initial segment where we can't estimate shat is excluded
 	this_shat(isnan(this_shat)) = Inf;
-	[~, idx] = sort(this_shat,'ascend');
-	f_low = f(idx(1:n));
-	fp_low = fp(idx(1:n));
-	t_low = t(idx(1:n));
-	
-		
+	[~, t_low] = sort(this_shat,'ascend');
+	t_low = t_low(1:n); % this is an index
+	f_low = f(t_low);
+	fp_low = fp(t_low);
+	s_low = this_shat(t_low);
+	t_low = t(t_low); % t_low is now a time. 
+	 
 
-	% find highest 10%
-	this_shat = shat(i,:);
-
-	% assign undesirables to -Inf
+	% find times when smoothed stim is highest 10%
 	this_shat(1:hl(i)) = -Inf;
-	this_shat(isnan(this_shat)) = -Inf;
-	[~, idx] = sort(this_shat,'descend');
-	f_high = f(idx(1:n));
-	fp_high = fp(idx(1:n));
-	t_high = t(idx(1:n));
+	this_shat(isinf(this_shat)) = -Inf;
+	[~, t_high] = sort(this_shat,'descend');
+	t_high = t_high(1:n);
+	f_high = f(t_high);
+	fp_high = fp(t_high);
+	s_high = this_shat(t_high);
+	t_high  = t(t_high);
+
 
 	% remove NaN values
 	censor_these = find(isnan(fp_high) + isnan(fp_low) + isnan(f_low) + isnan(f_high));
@@ -148,6 +145,7 @@ for i = 1:length(history_lengths)
 	fp_low(censor_these) = [];
 	t_low(censor_these) = [];
 	t_high(censor_these) = [];
+
 
 	% determine range of this subset of data
 	low_min(i) = min(f_low);
@@ -204,8 +202,8 @@ for i = 1:length(history_lengths)
 			
 			% indicate regions of lowest and highest 10%
 			tp = floor(frac*length(stimulus));
-			plot(plothere(1),t(idx(1:tp)),shat(i,idx(1:tp)),'r.')
-			plot(plothere(1),t(idx(end-tp:end)),shat(i,idx(end-tp:end)),'g.')
+			plot(plothere(1),t_high,s_high,'r.')
+			plot(plothere(1),t_low,s_low,'g.')
 
 
 			set(plothere(1),'LineWidth',2,'FontSize',20)
@@ -214,10 +212,19 @@ for i = 1:length(history_lengths)
 		end
 
 		if plothere(3)
+
+			% axes(plothere(3))
+			% o = .3; % opacity
+			% dotsize = 5e-1; 
+			% transparentScatter(fp,f,'k',.05,dotsize);
+			% transparentScatter(fp_low,f_low,'g',o,dotsize);
+			% transparentScatter(fp_high,f_high,'r',o,dotsize);
+
 			% plot these on the scatter plot
-			plot(plothere(3),fp,f,'.','MarkerSize',marker_size,'MarkerFaceColor',[0.9 0.9 0.9],'MarkerEdgeColor',[0.9 0.9 0.9])
-			plot(plothere(3),fp_low,f_low,'.','MarkerSize',marker_size,'MarkerFaceColor',[0.5 1 0.5],'MarkerEdgeColor',[0.5 1 0.5])
-			plot(plothere(3),fp_high,f_high,'.','MarkerSize',marker_size,'MarkerFaceColor',[1 0.5 0.5],'MarkerEdgeColor',[1 0.5 0.5])
+			ss = floor(length(fp_low)/1000); % plot only a 1000 points
+			plot(plothere(3),fp(1:ss:end),f(1:ss:end),'.','MarkerSize',marker_size,'MarkerFaceColor',[0.9 0.9 0.9],'MarkerEdgeColor',[0.9 0.9 0.9])
+			plot(plothere(3),fp_low(1:ss:end),f_low(1:ss:end),'.','MarkerSize',marker_size,'MarkerFaceColor',[0.5 1 0.5],'MarkerEdgeColor',[0.5 1 0.5])
+			plot(plothere(3),fp_high(1:ss:end),f_high(1:ss:end),'.','MarkerSize',marker_size,'MarkerFaceColor',[1 0.5 0.5],'MarkerEdgeColor',[1 0.5 0.5])
 			set(plothere(3),'LineWidth',2,'box','on','FontSize',font_size)
 			set(plothere(3),'XLim',[min(f)-1,max(f)+1],'YLim',[min(f)-1,max(f)+1])
 
@@ -250,22 +257,25 @@ end
 if nargin > 4 % we specify the p-values
 	low_slopes2.data = low_slopes;
 	high_slopes2.data = high_slopes;
+	
 
 else
-	[low_slopes2, high_slopes2] = BootStrapErrorBars(x,history_lengths,0.1);
+	[low_slopes2, high_slopes2,p] = BootStrapErrorBars(x,history_lengths,frac);
+
+	p_low = p; p_high = p;
 
 	% calculate p-values for each cloud 
-	p_low  = ones(length(history_lengths),1);
-	p_high = ones(length(history_lengths),1);
-	for i = 1:length(history_lengths)
-		a = abs(low_slopes2.bootstrap(:,i) - all_slopes);
-		a0 = abs(low_slopes2.data(i) - all_slopes);
-		p_low(i) = sum(a>a0)/length(low_slopes2.bootstrap);
+	% p_low  = ones(length(history_lengths),1);
+	% p_high = ones(length(history_lengths),1);
+	% for i = 1:length(history_lengths)
+	% 	a = abs(low_slopes2.bootstrap(:,i) - all_slopes);
+	% 	a0 = abs(low_slopes2.data(i) - all_slopes);
+	% 	p_low(i) = sum(a>a0)/length(low_slopes2.bootstrap);
 
-		a = abs(high_slopes2.bootstrap(:,i) - all_slopes);
-		a0 = abs(high_slopes2.data(i) - all_slopes);
-		p_high(i) = sum(a>a0)/length(high_slopes2.bootstrap);
-	end
+	% 	a = abs(high_slopes2.bootstrap(:,i) - all_slopes);
+	% 	a0 = abs(high_slopes2.data(i) - all_slopes);
+	% 	p_high(i) = sum(a>a0)/length(high_slopes2.bootstrap);
+	% end
 
 end
 
@@ -285,12 +295,9 @@ if length(plothere) == 4
 end
 
 
-% clean up slopes to send out
-low_slopes = low_slopes2.data;
-high_slopes = high_slopes2.data;
 
 % package p for backwards compatibility
-p = [p_low p_high];
+p = [p_low; p_high];
 
 % package some extra variables that may be requested
 extra_variables.data_min = min(x.response)*ones(length(history_lengths),1);

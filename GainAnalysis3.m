@@ -19,7 +19,7 @@
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 % performs a gain analysis and makes some plots
 
-function [p,low_slopes,high_slopes,low_gof,high_gof,example_plot] = GainAnalysis3(x,history_lengths,example_history_length,plothere,p)
+function [p,low_slopes,high_slopes,low_gof,high_gof,example_plot] = GainAnalysis3(x,history_lengths,example_history_length,plothere,p,frac)
 
 
 % set defaults
@@ -231,12 +231,12 @@ end
 
 	
 % bootstrap slopes
-if nargin == 5
+if nargin < 4
+	[low_slopes2, high_slopes2, p] = BootStrapErrorBars(x,history_lengths,0.1);
+else
+
 	low_slopes2.data = low_slopes;
 	high_slopes2.data = high_slopes;
-
-else
-	[low_slopes2, high_slopes2, p] = BootStrapErrorBars(x,history_lengths,0.1);
 end
 
 if length(plothere) == 4

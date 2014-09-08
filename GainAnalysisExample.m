@@ -20,6 +20,7 @@ if ~isempty(calling_func)
 	end
 end
 
+
 % define this to either recompute everything, or set to zero if you're ready to publish
 % this is commented out so that you have to explicitly specify it so you know what you're doing.
 % redo_bootstrap = 1;
@@ -271,8 +272,8 @@ ph(4) = subplot(1,2,2); hold on
 
 s = 300; % when we start for the gain analysis
 z = length(data(td).ORN) - 33; % where we end
-example_history_length = 0.12;
-history_lengths = 0:0.06:2;
+example_history_length = 0.135;
+history_lengths = (3*floor(1000*logspace(-2,1,30)/3))/1e3;
 
 clear x
 x.response = data(td).ORN(s:z);
@@ -289,6 +290,7 @@ else
 end
 
 xlabel(ph(3),'Linear Prediction (Hz)')
+set(ph(4),'XScale','log')
 
 if being_published
 	snapnow;
@@ -297,6 +299,7 @@ if being_published
 	snapnow;
 	delete(f2);
 end
+
 
 %  ######      ###    #### ##    ##       ###    ##    ##    ###    ##          ##       ##    ## 
 % ##    ##    ## ##    ##  ###   ##      ## ##   ###   ##   ## ##   ##          ##       ###   ## 
@@ -328,8 +331,6 @@ ph(4) = subplot(1,2,2); hold on
 
 s = 300; % when we start for the gain analysis
 z = length(data(td).ORN) - 33; % where we end
-example_history_length = 0.12;
-history_lengths = 0:0.06:2;
 
 clear x
 x.response = data(td).ORN(s:z);
@@ -346,6 +347,7 @@ else
 end
 
 xlabel(ph(3),'LN Prediction (Hz)')
+set(ph(4),'XScale','log')
 
 if being_published
 	snapnow;
@@ -439,8 +441,6 @@ ph(4) = subplot(1,2,2); hold on
 
 s = 300; % when we start for the gain analysis
 z = length(data(td).ORN) - 33; % where we end
-example_history_length = 0.12;
-history_lengths = 0:0.06:2;
 
 clear x
 x.response = f(s:z);
@@ -459,6 +459,7 @@ end
 legend(ph(2),{'DA Response','Linear Prediction'})
 ylabel(ph(3),'DA Model Response (Hz)')
 xlabel(ph(3),'Linear Prediction (Hz)')
+set(ph(4),'XScale','log')
 
 if being_published
 	snapnow;

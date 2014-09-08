@@ -12,7 +12,8 @@ function [] = InteractiveGainAnalysis(data)
 [K,~,filtertime] = FindBestFilter(data.PID,data.ORN,[],'filter_length=199;');
 LinearFit = convolve(data.time,data.PID,K,filtertime) + mean(data.ORN);
 LinearFit(LinearFit<0) =0;
-xdata = data.LinearFit;
+
+xdata = LinearFit;
 ydata = data.ORN;
 % crop it to lose NaNs
 ydata(isnan(xdata)) = [];
@@ -48,9 +49,9 @@ ph(4) = subplot(2,2,4); hold on;
 set(ph(4),'XScale','log')
 
 % use Manipulate to plot everything
-x.history_lengths=[0:3e-3:3e-2 0.036:3e-2:1 1.2:1.2:5];
+x.history_lengths= (3*floor(1000*logspace(-2,1,30)/3))/1e3;
 p.t_h = 0.12;
 p.t = mean(data.time);
-p.frac=  0.1;
+p.frac=  0.33;
 Manipulate('InteractiveGainAnalysisEngine',p,x,[],[],ph);
 

@@ -125,7 +125,7 @@ else
 	load('HowGeneralIsGainAdaptation.mat')
 end
 
-return
+
 
 % corrects for points where the p-value is reported as 0 by the bootstrap. it can't be, it's just too small to measure. 
 p_values_low(p_values_low==0) = min(nonzeros(p_values_low(:)));
@@ -247,30 +247,35 @@ if being_published
 	delete(gcf);
 end
 
-
 % %%
 % % However, when we go to very short history lengths, we end up sampling only points in time when the neuron is not firing at all. These are pathological points and cause wildly inaccurate estimates of gain for the low stimuli. To see what we are talking about, the following figure shows the maximum of the subset of the data sampled, normalised by the maximum of the data, as a function of history length for the various data sets analysed here. 
 
-% figure('outerposition',[0 0 700 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-% plot(history_lengths,low_max./data_max)
-% set(gca,'YLim',[-0.1 1.1])
-% xlabel('History Length (s)')
-% ylabel('Max of "Low" Response Data')
+figure('outerposition',[0 0 700 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(history_lengths,(low_max - low_min)./(data_max-data_min),'g')
+plot(history_lengths,(high_max - high_min)./(data_max-data_min),'r')
+set(gca,'YLim',[-0.1 1.1])
+xlabel('History Length (s)')
+ylabel('Range of data subset (norm)')
 
-% PrettyFig;
+PrettyFig;
 
-% if being_published
-% 	snapnow;
-% 	delete(gcf);
-% end
+set(gca,'XScale','log','XLim',[5e-3 11])
+
+
+if being_published
+	snapnow;
+	delete(gcf);
+end
 
 %%
-% We arbitrarily decide to throw out all data where the sampled subset is less than 80% the full data set. 
+% We arbitrarily decide to throw out all data where the sampled subset is less than 50% the full data set. 
 
 
 
-% low_slopes((low_max./data_max)<0.8) = NaN;
-% p_values_low((low_max./data_max)<0.8) = NaN;
+low_slopes((low_max - low_min)./(data_max-data_min)<0.5) = NaN;
+p_values_low((low_max - low_min)./(data_max-data_min)<0.5) = NaN;
+high_slopes((high_max - high_min)./(data_max-data_min)<0.5) = NaN;
+p_values_high((high_max - high_min)./(data_max-data_min)<0.5) = NaN;
 
 
 
@@ -311,33 +316,34 @@ end
 % low_slopes(low_gof<0.8) = NaN;
 % high_slopes(high_gof<0.8) = NaN;
 
-% figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-% plot(history_lengths,low_slopes,'.-','Color',[0.5 1 0.5])
-% plot(history_lengths,high_slopes,'.-','Color',[1 0.5 0.5])
-% set(gca,'XScale','log')
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(history_lengths,low_slopes,'.-','Color',[0.5 1 0.5])
+plot(history_lengths,high_slopes,'.-','Color',[1 0.5 0.5])
+set(gca,'XScale','log')
 
-% xlabel('History Length (s)')
-% ylabel('Relative Gain')
+xlabel('History Length (s)')
+ylabel('Relative Gain')
 
-% % now plot the dots where significant
-% for i = do_these
-% 	sig_low = p_values_low(:,i);
-% 	sig_high = p_values_high(:,i);
-% 	sig_low = (sig_low<0.05);
-% 	sig_high = (sig_high<0.05);
+% now plot the dots where significant
+for i = do_these
+	sig_low = p_values_low(:,i);
+	sig_high = p_values_high(:,i);
+	sig_low = (sig_low<0.05);
+	sig_high = (sig_high<0.05);
 
-% 	scatter(history_lengths(sig_low),low_slopes(sig_low,i),500,'g.')
-% 	scatter(history_lengths(sig_high),high_slopes(sig_high,i),500,'r.')
-% end
+	scatter(history_lengths(sig_low),low_slopes(sig_low,i),500,'g.')
+	scatter(history_lengths(sig_high),high_slopes(sig_high,i),500,'r.')
+end
 
-% set(gca,'XLim',[1e-3 6])
+set(gca,'XScale','log','XLim',[5e-3 11])
 
-% PrettyFig;
+PrettyFig;
 
-% if being_published
-% 	snapnow;
-% 	delete(gcf);
-% end
+if being_published
+	snapnow;
+	delete(gcf);
+end
+
 
 
 
@@ -375,6 +381,7 @@ if being_published
 	snapnow;
 	delete(gcf);
 end
+
 
 %%
 % The number of statistically significant data points showing gain enhancement following low stimuli, or gain supression following high stimuli is:
@@ -540,7 +547,7 @@ if being_published
 end
 
 
-return
+
 
 %  ######   #######  ########  ########     ##       ######## ##    ##  ######   ######## ##     ## 
 % ##    ## ##     ## ##     ## ##     ##    ##       ##       ###   ## ##    ##     ##    ##     ## 
@@ -614,7 +621,7 @@ for i = plothese
 	scatter(history_lengths(sig_high),high_slopes(sig_high,i),500,'r.')
 end
 
-set(gca,'XLim',[min(nonzeros(history_lengths))/2 max(history_lengths)*2])
+set(gca,'XLim',[min(nonzeros(history_lengths))/2 max(history_lengths)*2],'XScale','log')
 legend(tau_c_text)
 
 PrettyFig;
@@ -724,13 +731,14 @@ for i = plothese
 end
 
 legend(neuron)
-set(gca,'XLim',[min(nonzeros(history_lengths))/2 max(history_lengths)*2])
+set(gca,'XLim',[min(nonzeros(history_lengths))/2 max(history_lengths)*2],'XScale','log')
 PrettyFig;
 
 if being_published
 	snapnow;
 	delete(gcf);
 end
+
 
 
 
@@ -742,94 +750,95 @@ end
 %       ##     ##  ##  ##       ##       ###    ##     ## ##     ## ##     ## ##    ##  
 %       ########  #### ##       ##       ###     #######  ########   #######  ##     ## 
 
-%% Effect of odor 
-% In this section, we investigate the effect of varying the odor type, while keeping the temporal structure and the type of neuron it is presented to fixed. We use the following datasets, where the valve is switched with the same temporal pattern, and the stimulus is presented to ab3A neurons:
+% %% Effect of odor 
+% % In this section, we investigate the effect of varying the odor type, while keeping the temporal structure and the type of neuron it is presented to fixed. We use the following datasets, where the valve is switched with the same temporal pattern, and the stimulus is presented to ab3A neurons:
 
-plothese = [2 4 7];
-odor = {data(plothese).odor};
+% plothese = [2 4 7];
+% odor = {data(plothese).odor};
 
-for i = 1:length(plothese)
-	disp(data(plothese(i)).original_name)
-end
+% for i = 1:length(plothese)
+% 	disp(data(plothese(i)).original_name)
+% end
 
-%%
-% The following figure shows the stimulus from these datasets, normalised by the mean:
+% %%
+% % The following figure shows the stimulus from these datasets, normalised by the mean:
 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(data(plothese(1)).time,data(plothese(1)).PID/mean(data(plothese(1)).PID),'b')
-plot(data(plothese(2)).time,data(plothese(2)).PID/mean(data(plothese(2)).PID),'g')
-plot(data(plothese(3)).time,data(plothese(3)).PID/mean(data(plothese(3)).PID),'r')
-set(gca,'XLim',[10 20])
-xlabel('Time (s)')
-ylabel('Odor concentration (norm)')
-legend(odor);
-PrettyFig;
+% figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% plot(data(plothese(1)).time,data(plothese(1)).PID/mean(data(plothese(1)).PID),'b')
+% plot(data(plothese(2)).time,data(plothese(2)).PID/mean(data(plothese(2)).PID),'g')
+% plot(data(plothese(3)).time,data(plothese(3)).PID/mean(data(plothese(3)).PID),'r')
+% set(gca,'XLim',[10 20])
+% xlabel('Time (s)')
+% ylabel('Odor concentration (norm)')
+% legend(odor);
+% PrettyFig;
 
-if being_published
-	snapnow;
-	delete(gcf);
-end
+% if being_published
+% 	snapnow;
+% 	delete(gcf);
+% end
 
-%%
-% The responses of ab3A to these three different odors looks like. The panel on the left shows the actual responses, and the panel on the right shows the normalised histogram of the responses of the neurons.
+% %%
+% % The responses of ab3A to these three different odors looks like. The panel on the left shows the actual responses, and the panel on the right shows the normalised histogram of the responses of the neurons.
 
-figure('outerposition',[0 0 1200 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-subplot(1,5,1:4), hold on
-plot(data(plothese(1)).time,data(plothese(1)).ORN,'Color','b')
-plot(data(plothese(2)).time,data(plothese(2)).ORN,'Color','g')
-plot(data(plothese(3)).time,data(plothese(3)).ORN,'Color','r')
-set(gca,'XLim',[10 20])
-xlabel('Time (s)')
-ylabel('Firing rate (Hz)')
-legend(odor);
+% figure('outerposition',[0 0 1200 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% subplot(1,5,1:4), hold on
+% plot(data(plothese(1)).time,data(plothese(1)).ORN,'Color','b')
+% plot(data(plothese(2)).time,data(plothese(2)).ORN,'Color','g')
+% plot(data(plothese(3)).time,data(plothese(3)).ORN,'Color','r')
+% set(gca,'XLim',[10 20])
+% xlabel('Time (s)')
+% ylabel('Firing rate (Hz)')
+% legend(odor);
 
-subplot(1,5,5), hold on
-[x,y] = hist(data(plothese(1)).ORN,30); plot(x/max(x),y,'b')
-[x,y] = hist(data(plothese(2)).ORN,30); plot(x/max(x),y,'g')
-[x,y] = hist(data(plothese(3)).ORN,30); plot(x/max(x),y,'r')
+% subplot(1,5,5), hold on
+% [x,y] = hist(data(plothese(1)).ORN,30); plot(x/max(x),y,'b')
+% [x,y] = hist(data(plothese(2)).ORN,30); plot(x/max(x),y,'g')
+% [x,y] = hist(data(plothese(3)).ORN,30); plot(x/max(x),y,'r')
 
-PrettyFig;
+% PrettyFig;
 
-if being_published
-	snapnow;
-	delete(gcf);
-end
+% if being_published
+% 	snapnow;
+% 	delete(gcf);
+% end
 
-%%
-% We now look at how the gain analysis of these datasets differs: 
+% %%
+% % We now look at how the gain analysis of these datasets differs: 
 
-figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(history_lengths,low_slopes(:,plothese(1)),'.-','Color',[0 1.0 0])
-plot(history_lengths,low_slopes(:,plothese(2)),'.-','Color',[0 0.7 0])
-plot(history_lengths,low_slopes(:,plothese(3)),'.-','Color',[0 0.4 0])
+% figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% plot(history_lengths,low_slopes(:,plothese(1)),'.-','Color',[0 1.0 0])
+% plot(history_lengths,low_slopes(:,plothese(2)),'.-','Color',[0 0.7 0])
+% plot(history_lengths,low_slopes(:,plothese(3)),'.-','Color',[0 0.4 0])
 
-plot(history_lengths,high_slopes(:,plothese(1)),'.-','Color',[1.0 0 0])
-plot(history_lengths,high_slopes(:,plothese(2)),'.-','Color',[0.7 0 0])
-plot(history_lengths,high_slopes(:,plothese(3)),'.-','Color',[0.4 0 0])
+% plot(history_lengths,high_slopes(:,plothese(1)),'.-','Color',[1.0 0 0])
+% plot(history_lengths,high_slopes(:,plothese(2)),'.-','Color',[0.7 0 0])
+% plot(history_lengths,high_slopes(:,plothese(3)),'.-','Color',[0.4 0 0])
 
 
-xlabel('History Length (s)')
-ylabel('Relative Gain')
+% xlabel('History Length (s)')
+% ylabel('Relative Gain')
 
-% now plot the dots where significant
-for i = plothese
-	sig_low = p_values_low(:,i);
-	sig_low = (sig_low<0.05);
-	sig_high = p_values_high(:,i);
-	sig_high = (sig_high<0.05);
+% % now plot the dots where significant
+% for i = plothese
+% 	sig_low = p_values_low(:,i);
+% 	sig_low = (sig_low<0.05);
+% 	sig_high = p_values_high(:,i);
+% 	sig_high = (sig_high<0.05);
 
-	scatter(history_lengths(sig_low),low_slopes(sig_low,i),500,'g.')
-	scatter(history_lengths(sig_high),high_slopes(sig_high,i),500,'r.')
-end
+% 	scatter(history_lengths(sig_low),low_slopes(sig_low,i),500,'g.')
+% 	scatter(history_lengths(sig_high),high_slopes(sig_high,i),500,'r.')
+% end
 
-legend(odor)
+% legend(odor)
+% set(gca,'XLim',[min(nonzeros(history_lengths))/2 max(history_lengths)*2],'XScale','log')
+% PrettyFig;
 
-PrettyFig;
+% if being_published
+% 	snapnow;
+% 	delete(gcf);
+% end
 
-if being_published
-	snapnow;
-	delete(gcf);
-end
 
 
 %% Gain Analysis Examples
@@ -867,7 +876,7 @@ for i = do_these
 
 		example_history_length = history_lengths(loc);
 
-		GainAnalysis4(x,history_lengths,example_history_length,ph,NaN*history_lengths);
+		GainAnalysis4(x,history_lengths,example_history_length,ph,NaN(2,length(history_lengths)));
 
 		title(strcat(mat2str(i),'-',data(i).neuron,'-',data(i).odor,'-\tau_H=',mat2str(example_history_length),'s' ))
 

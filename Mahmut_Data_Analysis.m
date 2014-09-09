@@ -7,14 +7,21 @@
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
 % specify which data to look at
-clearvars -except options
 load('/local-data/DA-paper/mahmut_data.mat')
 td = 5;
-redo_bootstrap = 0;
 whiff_anal = 0;
 
 roi1 = [20 30];
 roi2 = [55 65];
+
+% internal housekeeping: determine if being called by publish or not
+calling_func = dbstack;
+being_published = 0;
+if ~isempty(calling_func)
+	if find(strcmp('publish',{calling_func.name}))
+		being_published = 1;
+	end
+end
 
 %% 
 % How do ORNs respond to non-Gaussian inputs? Real odor stimuli are characterised by long tails and non-gaussian statisitcs, with large whiffs of odor that occur in periods of relatively low signal. Such a stimulus has been generated here, and the responses of ORNs to these signals is analysed in this figure.
@@ -88,8 +95,11 @@ set(gca,'YLim',[0 1.1*max(max(data(td).ORN))])
 
 PrettyFig;
 
-snapnow;
-delete(gcf);
+if being_published
+	snapnow;
+	delete(gcf);
+end
+
 
 
 %     ##     ##    ###    ########  ####    ###    ########  ##       #### ######## ##    ## 
@@ -144,63 +154,45 @@ set(gca,'XLim',roi2)
 set(gca,'YLim',[0 1.1*max(max(data(td).ORN))])
 PrettyFig;
 
-snapnow;
-delete(gcf);
+if being_published
+	snapnow;
+	delete(gcf);
+end
+
 
 %%
-% It looks like the amplitude of the signal is dropping every trial. It's still not clear why this is the case. 
+% It looks like the amplitude of the signal is dropping every trial. It's still not clear why this is the case. From here onwards, the variability will be neglected, and all data from all the trials is averaged together. 
 
+data(td).PID = mean2(data(td).PID);
+data(td).ORN = mean2(data(td).ORN);
 
+data(td).PID(data(td).PID<0) = 0;
 
+%      ######  ########    ###    ######## ####  ######  ######## ####  ######   ######  
+%     ##    ##    ##      ## ##      ##     ##  ##    ##    ##     ##  ##    ## ##    ## 
+%     ##          ##     ##   ##     ##     ##  ##          ##     ##  ##       ##       
+%      ######     ##    ##     ##    ##     ##   ######     ##     ##  ##        ######  
+%           ##    ##    #########    ##     ##        ##    ##     ##  ##             ## 
+%     ##    ##    ##    ##     ##    ##     ##  ##    ##    ##     ##  ##    ## ##    ## 
+%      ######     ##    ##     ##    ##    ####  ######     ##    ####  ######   ######  
 
-%        ######  ########    ###    ######## ####  ######  ######## ####  ######   ######  
-%       ##    ##    ##      ## ##      ##     ##  ##    ##    ##     ##  ##    ## ##    ## 
-%       ##          ##     ##   ##     ##     ##  ##          ##     ##  ##       ##       
-%        ######     ##    ##     ##    ##     ##   ######     ##     ##  ##        ######  
-%             ##    ##    #########    ##     ##        ##    ##     ##  ##             ## 
-%       ##    ##    ##    ##     ##    ##     ##  ##    ##    ##     ##  ##    ## ##    ## 
-%        ######     ##    ##     ##    ##    ####  ######     ##    ####  ######   ######  
-
-%% Data Statistics and Linear Fit
-% The following figure describes the statistics of the stimulus and the response. Left panel: Histograms of stimulus and response. Middle panel: Autocorrelation functions of the stimulus and the response. Right: Linear filter extracted from this dataset. 
-
-% build a simple linear model
-if isvector(data(td).PID)
-	[K,~,filtertime] = FindBestFilter(data(td).PID,data(td).ORN,[],'filter_length=201;','min_cutoff = 0;');
-else
-	pid = mean(data(td).PID,2);
-	orn = mean(data(td).ORN,2);
-	[K,~,filtertime] = FindBestFilter(pid,orn,[],'filter_length=201;','min_cutoff = 0;');
-end
-data(td).K = K;
-data(td).filtertime = filtertime*mean(diff(data(td).time));
-if isvector(data(td).PID)
-	data(td).LinearFit = 0*mean(data(td).ORN) + convolve(data(td).time,data(td).PID,data(td).K,data(td).filtertime);
-else
-	pid = mean(data(td).PID,2);
-	orn = mean(data(td).ORN,2);
-	data(td).LinearFit = 0*mean(orn) + convolve(data(td).time,pid,data(td).K,data(td).filtertime);
-end
-
+%% Data Statistics
+% In the following section, we plot some statistical features of the stimulus. In the figure below, the panel on the left shows the distribution (normalised) of the values of the stimulus and the response. The panel on the right shows the autocorrelation function of the stimulus and the response. From the autocorrelation function, we can also estimate the time at which the autocorrelation of the response is zero, which we will use to in future analyses.
 
 clear ph
-figure('outerposition',[0 0 1300 400],'PaperUnits','points','PaperSize',[1300 400]); hold on
-ph(1)=subplot(1,3,1); hold on
-ph(2)=subplot(1,3,2); hold on
+figure('outerposition',[0 0 1100 500],'PaperUnits','points','PaperSize',[1100 500]); hold on
+ph(1)=subplot(1,2,1); hold on
+ph(2)=subplot(1,2,2); hold on
 act = PlotDataStatistics(data,td,ph);
 
-set(ph(1),'XScale','log','YScale','log')
-set(ph(1),'XMinorTick','on','YTick',[0.01 0.1 0.5 1])
+set(ph(2),'XScale','linear')
 
-subplot(1,3,3), hold on;
-plot(data(td).filtertime,data(td).K,'k','LineWidth',2)
-set(gca,'XLim',[min(data(td).filtertime) max(data(td).filtertime)],'box','on')
-xlabel('Filter Lag (s)')
-title('Filter')
 PrettyFig;
 
-snapnow;
-delete(gcf);
+if being_published
+	snapnow;
+	delete(gcf);
+end
 
 
 %     ##       #### ##    ## ########    ###    ########         ######## #### ######## 
@@ -215,65 +207,26 @@ delete(gcf);
 %% Linear Fit
 % The linear filter calculated and shown above is a "best" filter that simultaneously tries to maximise the predictive power of the model while suppressing high frequency components and having a unit gain. 
 
-% Is the linear filter being calculated correctly? To check, we pass the stimulus through a known filter and then back out the filter from the synthetic data and compare the estimated filter to the known filter. 
+% build a simple linear model
+[K,~,filtertime] = FindBestFilter(data(td).PID(500:end),data(td).ORN(500:end),[],'filter_length=201;');
+data(td).K = K;
+data(td).filtertime = filtertime*mean(diff(data(td).time));
+data(td).LinearFit = convolve(data(td).time,data(td).PID,data(td).K,data(td).filtertime);
 
-% make a fake filter
-t = 1:201;
-fakeK = 200*make_bilobe_filter(10,2,20,2,t);
 
-% generate fake response
-if isvector(data(td).PID)
-	PID = data(td).PID;
-	ORN = data(td).ORN;
-else
-	PID = mean2(data(td).PID);
-	ORN = mean2(data(td).ORN);
+fh=figure('outerposition',[0 0 400 400],'PaperUnits','points','PaperSize',[1000 400]); hold on
+plot(data(td).filtertime,data(td).K,'k','LineWidth',2)
+title('Linear Filter for this data')
+xlabel('FitlerLag (s)')
+ylabel('Filter Amplitude (Hz)')
+set(gca,'XLim',[min(data(td).filtertime) max(data(td).filtertime)])
+
+PrettyFig;
+
+if being_published
+	snapnow;
+	delete(gcf);
 end
-
-
-fakeORN = filter(fakeK,1,PID - mean(PID));
-fakeORN(fakeORN<0)=0;
-
-% extract  filter 
-[Kprime,~,ft] = FindBestFilter(PID,fakeORN,[],'filter_length=201;');
-
-figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(t,fakeK)
-plot(ft,Kprime,'r')
-legend KnownFilter ReconstructedFilter
-set(gca,'XLim',[min(filtertime) max(filtertime)])
-xlabel('Lag (a.u.)')
-ylabel('Filter height (a.u.)')
-
-PrettyFig;
-snapnow;
-delete(gcf);
-
-%%
-% The reconstructed filter is approximately correct but not exact. Note that both the temporal shape and the raw amplitude of the known filter are backed out correctly by the filter estimation. Why is it not exact? Probably because the stimulus is sparse. Here, we back out the known filter using random noise as an input. 
-
-PID = (randn(length(PID),1));
-fakeORN = filter(fakeK,1,PID - mean(PID));
-
-
-% extract  filter 
-[Kprime,~,ft] = FindBestFilter(PID,fakeORN,[],'filter_length=201;');
-
-figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(t,fakeK)
-plot(ft,Kprime,'r')
-legend KnownFilter ReconstructedFilter
-set(gca,'XLim',[min(filtertime) max(filtertime)])
-xlabel('Lag (a.u.)')
-ylabel('Filter height (a.u.)')
-
-
-PrettyFig;
-snapnow;
-delete(gcf);
-
-%%
-% So now we can exactly match both the amplitude and the temporal structure of the known filter. So our filter estimation techniques work well. The reason the filter is so bad in the real data is probably because of very sparse data, and the fact that the ORN response can't fully be explained by a linear filter. 
 
 
 %%
@@ -324,9 +277,11 @@ set(gca,'XLim',roi2)
 legend Data LinearFit
 PrettyFig;
 
+if being_published
+	snapnow;
+	delete(fh);
+end
 
-snapnow;
-delete(gcf);
 
 
 %%
@@ -339,23 +294,185 @@ else
 end
 
 
-% % Perhaps the reason the filter looks weird is because the stimulus actually is dropping from trial to trial, and that averaging the data over trials is not reasonable. In the following section, we combine all the data in one long vector and then calculate the filter from this using a fixed regularisation. 
 
-% s = data(td).PID(:);
-% f = data(td).ORN(:);
-% [K,d] = FindBestFilter(s,f,[],'filter_length=201;');
+%         #######  ##     ## ######## ########  ##     ## ########    ##    ## ##       
+%        ##     ## ##     ##    ##    ##     ## ##     ##    ##       ###   ## ##       
+%        ##     ## ##     ##    ##    ##     ## ##     ##    ##       ####  ## ##       
+%        ##     ## ##     ##    ##    ########  ##     ##    ##       ## ## ## ##       
+%        ##     ## ##     ##    ##    ##        ##     ##    ##       ##  #### ##       
+%        ##     ## ##     ##    ##    ##        ##     ##    ##       ##   ### ##       
+%         #######   #######     ##    ##         #######     ##       ##    ## ######## 
 
-% figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-% plot(data(td).filtertime,K,'r')
-% set(gca,'XLim',[min(data(td).filtertime) max(data(td).filtertime)])
-% xlabel('Lag (a.u.)')
-% ylabel('Filter height (Hz)')
+%% Output Non-linearity
+% Does adding an output non-linearity post-hoc improve the linear fit? In the following section, we fit a two-parameter Hill function to the linear prediction and the data, after we have generated the linear prediction. (In other words, the Hill function is fit _after_ the best linear prediction is calculated.) The following figure shows the shape of the best-fit non-linearity:
 
-% fp = convolve(data(td).time,s,K,data(td).filtertime);
+xdata = data(td).LinearFit;
+ydata = data(td).ORN;
 
-% % The r-square of this prediction is:
+% crop it to lose NaNs
+ydata(isnan(xdata)) = [];
+xdata(isnan(xdata)) = [];
 
-% disp(rsquare(f,fp))
+xdata = xdata(:);
+ydata = ydata(:);
+
+fo=optimset('MaxFunEvals',1000,'Display','none');
+x = lsqcurvefit(@hill,[max(ydata) 2 2],xdata,ydata,[max(ydata)/2 2 1],[2*max(ydata) max(ydata) 10],fo);
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(xdata,hill(x,xdata),'k')
+xlabel('Linear Prediction (Hz)')
+ylabel('Nonlinearity Output (Hz)')
+
+PrettyFig;
+
+if being_published
+	snapnow;
+	delete(gcf);
+end
+
+%%
+% That is almost linear. How does the output nonlinearity change the prediciton? In the following figure, the data is shown in black, the linear prediciton is shown in red, and the LN prediction is shown in green. 
+
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(data(td).time,data(td).ORN,'k')
+plot(data(td).time,data(td).LinearFit,'r')
+plot(data(td).time,hill(x,data(td).LinearFit),'g')
+set(gca,'XLim',[20 40])
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+legend({'Data','Linear Fit','LN Fit'})
+
+PrettyFig;
+
+if being_published
+	snapnow;
+	delete(gcf);
+end
+
+% save this for later
+LNpred = hill(x,data(td).LinearFit);
+
+%%
+% They look almost identical. The r-square of the LN prediction is: 
+
+disp(rsquare(LNpred,data(td).ORN))
+
+%%
+% And the raw Euclidean Distance between the prediction and the data is: 
+
+disp(Cost2(LNpred(205:end-33),data(td).ORN(205:end-33)))
+
+
+
+%        ##    ## ##       ##    ##    ##     ##  #######  ########  ######## ##       
+%        ###   ## ##       ###   ##    ###   ### ##     ## ##     ## ##       ##       
+%        ####  ## ##       ####  ##    #### #### ##     ## ##     ## ##       ##       
+%        ## ## ## ##       ## ## ##    ## ### ## ##     ## ##     ## ######   ##       
+%        ##  #### ##       ##  ####    ##     ## ##     ## ##     ## ##       ##       
+%        ##   ### ##       ##   ###    ##     ## ##     ## ##     ## ##       ##       
+%        ##    ## ######## ##    ##    ##     ##  #######  ########  ######## ######## 
+
+
+%% NLN Model
+% In this section we fit the data with a NLN model, where there is a static nonlinear function both at the input and the output of the linear filter. The input and output non-linearities are two-parameter Hill functions. The linear filter is a non-parametric filter computed on-the-fly from the output of the first Hill function and the inverse of the second Hill function. All three parts of the model: the two functions and the filter -- are fitted simultaneously. 
+
+%%
+% The following figure shows the best fit NLN model.
+
+if redo_bootstrap
+	d.stimulus = data(td).PID;
+	d.stimulus(d.stimulus<0) = 0;
+	d.response = data(td).ORN;
+	x0 = [11   .96         30    1.6];
+	[~,x_NLN] = FitNLNModel(d,x0);
+end
+
+% solve the model for the best fit parameters
+[NLNFit, K, a, b] = SolveNLNModel2(x_NLN,data(td).PID,data(td).ORN);
+
+figure('outerposition',[0 0 1300 400],'PaperUnits','points','PaperSize',[1300 400]); hold on
+subplot(1,3,1), hold on
+ms = min(data(td).PID); Ms = max(data(td).PID);
+xx = ms:(Ms-ms)/100:Ms;
+y = hill2(x_NLN(1:2),xx);
+plot(xx,y)
+xlabel('Stimulus (V)')
+ylabel('Input to filter (V)')
+
+subplot(1,3,2), hold on
+t = 1:300;
+tt = 3e-3:3e-3:3e-3*length(K);
+plot(tt,K);
+set(gca,'XLim',[min(tt) max(tt)])
+xlabel('Filter Lag (s)')
+ylabel('Filter Amplitude (Hz)')
+
+b(isinf(b)) = [];
+subplot(1,3,3), hold on
+ms = 0; Ms = 300;
+xx = ms:(Ms-ms)/100:Ms;
+y = hill2(x_NLN(3:4),xx);
+plot(xx,y)
+xlabel('Filter output (Hz)')
+ylabel('Model Output (Hz)')
+
+PrettyFig;
+
+if being_published
+	snapnow;
+	delete(gcf);
+end
+
+%%
+% The following figure compares the NLN Model fit to the data:
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(data(td).time,data(td).ORN,'k')
+plot(data(td).time,NLNFit,'r')
+set(gca,'XLim',[20 40])
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+legend({'Data','NLN Fit'})
+
+PrettyFig;
+
+if being_published
+	snapnow;
+	delete(gcf);
+end
+
+%%
+%  The r-square of the NLN prediction is: 
+
+disp(rsquare(NLNFit,data(td).ORN))
+
+%%
+% And the raw Euclidean Distance between the prediction and the data is: 
+
+disp(Cost2(NLNFit(205:end-33),data(td).ORN(205:end-33)))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+return
+
+
 
 %              ##    ## ##                  ######## ##     ## ##    ##  ######  
 %              ###   ## ##                  ##       ##     ## ###   ## ##    ## 
@@ -1170,5 +1287,13 @@ end
 
 
 
+%% Version Info
+% The file that generated this document is called:
+disp(mfilename)
+
+%%
+% and its md5 hash is:
+Opt.Input = 'file';
+disp(DataHash(strcat(mfilename,'.m'),Opt))
 
 	

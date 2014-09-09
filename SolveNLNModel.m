@@ -12,6 +12,9 @@ t = 1:300;
 K = make_bilobe_filter(tau1,n1,tau2,n2,t);
 a = filter(K,1,a);
 
+% pass it through a rectifier
+a(a<0) = 0;
+
 
 % pass filtered output through output non-linearity
 Rguess = hill(x(8:10),a(:));

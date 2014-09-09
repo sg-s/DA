@@ -246,6 +246,97 @@ disp(rsquare(LNpred,data(td).ORN))
 disp(Cost2(LNpred(205:end-33),data(td).ORN(205:end-33)))
 
 
+%        ##    ## ##       ##    ##    ##     ##  #######  ########  ######## ##       
+%        ###   ## ##       ###   ##    ###   ### ##     ## ##     ## ##       ##       
+%        ####  ## ##       ####  ##    #### #### ##     ## ##     ## ##       ##       
+%        ## ## ## ##       ## ## ##    ## ### ## ##     ## ##     ## ######   ##       
+%        ##  #### ##       ##  ####    ##     ## ##     ## ##     ## ##       ##       
+%        ##   ### ##       ##   ###    ##     ## ##     ## ##     ## ##       ##       
+%        ##    ## ######## ##    ##    ##     ##  #######  ########  ######## ######## 
+
+
+%% NLN Model
+% In this section we fit the data with a NLN model, where there is a static nonlinear function both at the input and the output of the linear filter. The input and output non-linearities are two-parameter Hill functions. The linear filter is a non-parametric filter computed on-the-fly from the output of the first Hill function and the inverse of the second Hill function. All three parts of the model: the two functions and the filter -- are fitted simultaneously. 
+
+%%
+% The following figure shows the best fit NLN model.
+
+
+if redo_bootstrap
+	clear d
+	d.stimulus = data(td).PID;
+	d.response = data(td).ORN;
+	x0 = [.0088    .964          87    14.86];
+	[~,x_NLN] = FitNLNModel(d,x0);
+end
+
+% solve the model for the best fit parameters
+[NLNFit, K, a, b] = SolveNLNModel2(x_NLN,data(td).PID,data(td).ORN);
+
+figure('outerposition',[0 0 1300 400],'PaperUnits','points','PaperSize',[1300 400]); hold on
+subplot(1,3,1), hold on
+ms = min(data(td).PID); Ms = max(data(td).PID);
+xx = ms:(Ms-ms)/100:Ms;
+y = hill2(x_NLN(1:2),xx);
+plot(xx,y)
+xlabel('Stimulus (V)')
+ylabel('Input to filter (V)')
+
+subplot(1,3,2), hold on
+t = 1:300;
+tt = 3e-3:3e-3:3e-3*length(K);
+plot(tt,K);
+set(gca,'XLim',[min(tt) max(tt)])
+xlabel('Filter Lag (s)')
+ylabel('Filter Amplitude (Hz)')
+
+b(isinf(b)) = [];
+subplot(1,3,3), hold on
+ms = 0; Ms = max(b);
+xx = ms:(Ms-ms)/100:Ms;
+y = hill2(x_NLN(3:4),xx);
+plot(xx,y)
+xlabel('Filter output (Hz)')
+ylabel('Model Output (Hz)')
+
+PrettyFig;
+
+if being_published
+	snapnow;
+	delete(gcf);
+end
+
+%%
+% The following figure compares the NLN Model fit to the data:
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(data(td).time,data(td).ORN,'k')
+plot(data(td).time,NLNFit,'r')
+set(gca,'XLim',[18 22])
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+legend({'Data','NLN Fit'})
+
+PrettyFig;
+
+if being_published
+	snapnow;
+	delete(gcf);
+end
+
+%%
+%  The r-square of the NLN prediction is: 
+
+disp(rsquare(NLNFit,data(td).ORN))
+
+%%
+% And the raw Euclidean Distance between the prediction and the data is: 
+
+disp(Cost2(NLNFit(205:end-33),data(td).ORN(205:end-33)))
+
+
+
+
 %         ######      ###    #### ##    ##             ###    ##    ##    ###    ##       
 %        ##    ##    ## ##    ##  ###   ##            ## ##   ###   ##   ## ##   ##       
 %        ##         ##   ##   ##  ####  ##           ##   ##  ####  ##  ##   ##  ##       
@@ -357,6 +448,60 @@ if being_published
 	delete(f2);
 end
 
+% ##    ## ##       ##    ##     ######      ###    #### ##    ##       ###    ##    ##    ###    ##       
+% ###   ## ##       ###   ##    ##    ##    ## ##    ##  ###   ##      ## ##   ###   ##   ## ##   ##       
+% ####  ## ##       ####  ##    ##         ##   ##   ##  ####  ##     ##   ##  ####  ##  ##   ##  ##       
+% ## ## ## ##       ## ## ##    ##   #### ##     ##  ##  ## ## ##    ##     ## ## ## ## ##     ## ##       
+% ##  #### ##       ##  ####    ##    ##  #########  ##  ##  ####    ######### ##  #### ######### ##       
+% ##   ### ##       ##   ###    ##    ##  ##     ##  ##  ##   ###    ##     ## ##   ### ##     ## ##       
+% ##    ## ######## ##    ##     ######   ##     ## #### ##    ##    ##     ## ##    ## ##     ## ######## 
+
+
+%% NLN Model Gain Analysis
+% In this section, we want to know if the NLN model shows the same features of fast gain control as we saw in the previous cases. Here, we repeat the gain analysis as in the previous section, but this time, using the NLN prediction instead of the linear prediction. 
+
+f1=figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+ph(1) = subplot(2,1,1); hold on 
+ph(2) = subplot(2,1,2); hold on
+
+title(ph(1),strrep(data(td).original_name,'_','-'),'FontSize',20);
+
+f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+
+
+s = 300; % when we start for the gain analysis
+z = length(data(td).ORN) - 33; % where we end
+
+clear x
+x.response = data(td).ORN(s:z);
+x.prediction = NLNFit(s:z);
+x.stimulus = data(td).PID(s:z);
+x.time = data(td).time(s:z);
+x.filter_length = 201;
+
+
+if redo_bootstrap
+	ptemp_NLN = GainAnalysis4(x,history_lengths,example_history_length,ph);
+else
+	GainAnalysis4(x,history_lengths,example_history_length,ph,ptemp_NLN);
+end
+
+xlabel(ph(3),'NLN Prediction (Hz)')
+set(ph(4),'XScale','log')
+
+if being_published
+	snapnow;
+	delete(f1);
+
+	snapnow;
+	delete(f2);
+end
+
+
 %        ######      ###    #### ##    ##       ###    ##    ##    ###    ##       
 %       ##    ##    ## ##    ##  ###   ##      ## ##   ###   ##   ## ##   ##       
 %       ##         ##   ##   ##  ####  ##     ##   ##  ####  ##  ##   ##  ##       
@@ -387,6 +532,7 @@ end
 %% 
 % The parameters of the DA model are chosen to be a best fit to the actual experimental data, so the DA model chosen best represents the actual neuron's response. The following figure shows the response of the neuron and the best-fit DA Model prediction. 
 
+return
 
 if ~exist('p')
 	d.stimulus = data(td).PID;

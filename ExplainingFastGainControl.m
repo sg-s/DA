@@ -11,6 +11,15 @@
 %%
 % In the following sections, we try fitting a Dynamical Adaptation (DA) model to the data. 
 
+% internal housekeeping: determine if being called by publish or not
+calling_func = dbstack;
+being_published = 0;
+if ~isempty(calling_func)
+	if find(strcmp('publish',{calling_func.name}))
+		being_published = 1;
+	end
+end
+
 
 % some parameters
 font_size = 20;
@@ -33,23 +42,23 @@ if ~exist('p')
 	global DA_Model_Func
 	global DA_Model_Validate_Param_Func
 	global nsteps
-	nsteps = 800;
+	nsteps = 80;
 	DA_Model_Func = @DA_integrate2;
 	DA_Model_Validate_Param_Func = @ValidateDAParameters2;
 
 	clear d
-	d.stimulus = data(td).PID;
-	d.response = data(td).ORN;
-	[p,~,x] = FitDAModelToData(d,[1.8187e+04 56 5e-4 0.7 5 4.5 7 -140],[1 1 0 1e-1 2 0 2 -1e3],[1e5 1e3 1 20 10 24 15 1]);
-	clear d
-	DApred=DA_Model_Func(data(td).PID,p);
+	d.stimulus = data(td).PID/max(data(td).PID);
+	d.response = data(td).ORN/max(data(td).ORN);
+	[p,~,x] = FitDAModelToData(d,[5.2 6.6 0 .78 11 6.4 6 .557],[1 1 0 1e-1 1 0 1 -1],[10 20 1 20 20 24 10 1]);
+
+	DApred=DA_Model_Func(d.stimulus,p)*max(data(td).ORN);
 	multiplot(data(td).time,data(td).ORN,DApred)
 end
 
 DApred=DA_integrate2(data(td).PID,p);
 
 % fit a LN model (re-use old fits)
-load('HowGeneralIsGainAdaptation.mat','Filters','HillFit','filtertime','history_lengths','p_values')
+load('HowGeneralIsGainAdaptation.mat','Filters','HillFit','filtertime','history_lengths','p_values_low')
 LinearFit = mean(data(td).ORN)+convolve(data(td).time,data(td).PID,Filters(:,td),filtertime);
 LinearFit(LinearFit<0)=0;
 LNpred = hill(HillFit(:,td),LinearFit);
@@ -74,8 +83,11 @@ legend({'Data','LN Fit','DA Fit'})
 PrettyFig;
 hold off
 
-snapnow;
-delete(fh);
+
+if being_published
+	snapnow;
+	delete(fh);
+end
 
 %%
 % The r-square of the LN model prediction is: 
@@ -108,8 +120,10 @@ xlabel('Filter Output (Hz)')
 ylabel('Nonlinearity Output (Hz)')
 PrettyFig;
 
-snapnow;
-delete(gcf);
+if being_published
+	snapnow;
+	delete(fh);
+end
 
 %%
 % The DA model primarily consists of two filters, $K_{z}$ and $K_{y}$, which are shown in the figure below: 
@@ -126,8 +140,10 @@ ylabel('Filter Height')
 
 PrettyFig;
 
-snapnow;
-delete(gcf);
+if being_published
+	snapnow;
+	delete(fh);
+end
 
 %%
 % All the parameters of the best-fit DA model are:
@@ -194,8 +210,10 @@ title('DA Model')
 
 PrettyFig;
 
-snapnow;
-delete(gcf)
+if being_published
+	snapnow;
+	delete(fh);
+end
 
 
 %% The DA Model cannot fit the data if $r_{0}$ >0
@@ -241,6 +259,11 @@ legend({'Data','DA Fit'})
 PrettyFig;
 hold off
 
+
+if being_published
+	snapnow;
+	delete(fh);
+end
 
 
 %% Version Info

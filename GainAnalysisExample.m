@@ -20,6 +20,8 @@ if ~isempty(calling_func)
 	end
 end
 
+example_history_length = 0.135;
+
 
 % define this to either recompute everything, or set to zero if you're ready to publish
 % this is commented out so that you have to explicitly specify it so you know what you're doing.
@@ -42,7 +44,7 @@ load('/local-data/DA-paper/data.mat')
 
 %%
 % This data file is used for the following analysis:
-td = 7;
+td = 4;
 
 disp(data(td).original_name)
 
@@ -266,8 +268,8 @@ if redo_bootstrap
 	clear d
 	d.stimulus = data(td).PID;
 	d.response = data(td).ORN;
-	x0 = [.0088    .964          87    14.86];
-	[~,x_NLN] = FitNLNModel(d,x0);
+	x_NLN = [.0068    2.447          130    4.76];
+	[~,x_NLN] = FitNLNModel(d,x_NLN);
 end
 
 % solve the model for the best fit parameters
@@ -305,6 +307,7 @@ if being_published
 	snapnow;
 	delete(gcf);
 end
+
 
 %%
 % The following figure compares the NLN Model fit to the data:
@@ -348,6 +351,10 @@ disp(Cost2(NLNFit(205:end-33),data(td).ORN(205:end-33)))
 %% Linear Model Gain Analysis
 % In this section, we perform a gain analysis on the linear prediction first for an arbitrarily chosen history length of 120ms (panel on the left) and then for various history lengths (panel on the right). The history lengths where the slopes are significantly different (p<0.05) are indicated by dots. Significance is determined by bootstrapping the data 100 times. History lengths up to twice the autocorrelation length of the stimulus are investigated. 
 
+%%
+% In this case, we pass the linear model output through a rectifier because negative firing rates don't make sense. 
+data(td).LinearFit(data(td).LinearFit<0)=0;
+
 f1=figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
 ph(1) = subplot(2,1,1); hold on 
 ph(2) = subplot(2,1,2); hold on
@@ -359,11 +366,8 @@ ph(3) = subplot(1,2,1); hold on
 axis square
 ph(4) = subplot(1,2,2); hold on
 
-
-
 s = 300; % when we start for the gain analysis
 z = length(data(td).ORN) - 33; % where we end
-example_history_length = 0.135;
 history_lengths = (3*floor(1000*logspace(-2,1,30)/3))/1e3;
 
 clear x
@@ -375,9 +379,13 @@ x.filter_length = 201;
 
 
 if redo_bootstrap
-	ptemp = GainAnalysis4(x,history_lengths,example_history_length,ph);
+	[p_K,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
+	s=abs(l-h);
+	s(p_K(1,:)>0.05)=NaN;
+	[~,loc]=max(s);
+	example_history_length_K = history_lengths(loc);
 else
-	GainAnalysis4(x,history_lengths,example_history_length,ph,ptemp);
+	GainAnalysis4(x,history_lengths,example_history_length_K,ph,p_K);
 end
 
 xlabel(ph(3),'Linear Prediction (Hz)')
@@ -430,11 +438,15 @@ x.stimulus = data(td).PID(s:z);
 x.time = data(td).time(s:z);
 x.filter_length = 201;
 
-
 if redo_bootstrap
-	ptemp2 = GainAnalysis4(x,history_lengths,example_history_length,ph);
+	[p_LN,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
+	s=abs(l-h);
+	s(p_LN(1,:)>0.05)=NaN;
+	[~,loc]=max(s);
+	example_history_length_LN = history_lengths(loc);
+
 else
-	GainAnalysis4(x,history_lengths,example_history_length,ph,ptemp2);
+	GainAnalysis4(x,history_lengths,example_history_length_LN,ph,p_LN);
 end
 
 xlabel(ph(3),'LN Prediction (Hz)')
@@ -485,9 +497,13 @@ x.filter_length = 201;
 
 
 if redo_bootstrap
-	ptemp_NLN = GainAnalysis4(x,history_lengths,example_history_length,ph);
+	[p_NLN,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
+	s=abs(l-h);
+	s(p_NLN(1,:)>0.05)=NaN;
+	[~,loc]=max(s);
+	example_history_length_NLN = history_lengths(loc);
 else
-	GainAnalysis4(x,history_lengths,example_history_length,ph,ptemp_NLN);
+	GainAnalysis4(x,history_lengths,example_history_length_NLN,ph,p_NLN);
 end
 
 xlabel(ph(3),'NLN Prediction (Hz)')
@@ -532,91 +548,91 @@ end
 %% 
 % The parameters of the DA model are chosen to be a best fit to the actual experimental data, so the DA model chosen best represents the actual neuron's response. The following figure shows the response of the neuron and the best-fit DA Model prediction. 
 
-return
-
-if ~exist('p')
-	d.stimulus = data(td).PID;
-	d.response = data(td).ORN;
-	p = FitDAModelToData(d,[25576 85 0.03 1.5 2 13 2 -151],[900 50 0 1e-1 2 1e-2 2 -200],[98000 5000 1 20 2 40 2 1],200);
-end
 
 
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-f=DA_integrate2(data(td).PID,p);
-plot(data(td).time,data(td).ORN,'k')
-hold on
-plot(data(td).time,f,'r')
-xlabel('Time (s)')
-ylabel('Firing rate (Hz)')
-legend({'Data','DA Model'})
-set(gca,'XLim',[18 22])
-
-PrettyFig;
-
-if being_published
-	snapnow;
-	delete(gcf)
-end
-
-%%
-% The r-square of the DA Model fit is:
-disp(rsquare(data(td).ORN(300:end),f(300:end)))
-
-%% 
-% Now, we use the DA model as a "fake" neuron and use it to generate a synthetic ORN output, and then perform a linear gain analysis on this dataset. 
-
-% back out a filter
-s = 300; % when we start for the gain analysis
-z = length(data(td).ORN)-33; % where we end
-[K,~,filtertime] = FindBestFilter(data(td).PID,f);
-fp=mean(f(s:z))+convolve(data(td).time,data(td).PID,K,filtertime);
+% if ~exist('p')
+% 	d.stimulus = data(td).PID;
+% 	d.response = data(td).ORN;
+% 	p = FitDAModelToData(d,[25576 85 0.03 1.5 2 13 2 -151],[900 50 0 1e-1 2 1e-2 2 -200],[98000 5000 1 20 2 40 2 1],200);
+% end
 
 
 
-f1=figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-ph(1) = subplot(2,1,1); hold on 
-ph(2) = subplot(2,1,2); hold on
+% figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% f=DA_integrate2(data(td).PID,p);
+% plot(data(td).time,data(td).ORN,'k')
+% hold on
+% plot(data(td).time,f,'r')
+% xlabel('Time (s)')
+% ylabel('Firing rate (Hz)')
+% legend({'Data','DA Model'})
+% set(gca,'XLim',[18 22])
 
-title(ph(1),'Original Stimulus + DA Model Response','FontSize',20);
+% PrettyFig;
 
-f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-ph(3) = subplot(1,2,1); hold on 
-axis square
-ph(4) = subplot(1,2,2); hold on
+% if being_published
+% 	snapnow;
+% 	delete(gcf)
+% end
 
-s = 300; % when we start for the gain analysis
-z = length(data(td).ORN) - 33; % where we end
+% %%
+% % The r-square of the DA Model fit is:
+% disp(rsquare(data(td).ORN(300:end),f(300:end)))
 
-clear x
-x.response = f(s:z);
-x.prediction = fp(s:z);
-x.stimulus = data(td).PID(s:z);
-x.time = data(td).time(s:z);
-x.filter_length = 201;
+% %% 
+% % Now, we use the DA model as a "fake" neuron and use it to generate a synthetic ORN output, and then perform a linear gain analysis on this dataset. 
+
+% % back out a filter
+% s = 300; % when we start for the gain analysis
+% z = length(data(td).ORN)-33; % where we end
+% [K,~,filtertime] = FindBestFilter(data(td).PID,f);
+% fp=mean(f(s:z))+convolve(data(td).time,data(td).PID,K,filtertime);
 
 
-if redo_bootstrap
-	ptemp3 = GainAnalysis4(x,history_lengths,example_history_length,ph);
-else
-	GainAnalysis4(x,history_lengths,example_history_length,ph,ptemp3);
-end
 
-legend(ph(2),{'DA Response','Linear Prediction'})
-ylabel(ph(3),'DA Model Response (Hz)')
-xlabel(ph(3),'Linear Prediction (Hz)')
-set(ph(4),'XScale','log')
+% f1=figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+% ph(1) = subplot(2,1,1); hold on 
+% ph(2) = subplot(2,1,2); hold on
 
-if being_published
-	snapnow;
-	delete(f1);
+% title(ph(1),'Original Stimulus + DA Model Response','FontSize',20);
 
-	snapnow;
-	delete(f2);
-end
+% f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% ph(3) = subplot(1,2,1); hold on 
+% axis square
+% ph(4) = subplot(1,2,2); hold on
 
-%%
-% So even the DA model can recapitulate the effect we see, where the slopes don't approach 1 as the history length goes to 0. So there's something about the way the linear prediction is made. 
+% s = 300; % when we start for the gain analysis
+% z = length(data(td).ORN) - 33; % where we end
+
+% clear x
+% x.response = f(s:z);
+% x.prediction = fp(s:z);
+% x.stimulus = data(td).PID(s:z);
+% x.time = data(td).time(s:z);
+% x.filter_length = 201;
+
+
+% if redo_bootstrap
+% 	ptemp3 = GainAnalysis4(x,history_lengths,example_history_length,ph);
+% else
+% 	GainAnalysis4(x,history_lengths,example_history_length,ph,ptemp3);
+% end
+
+% legend(ph(2),{'DA Response','Linear Prediction'})
+% ylabel(ph(3),'DA Model Response (Hz)')
+% xlabel(ph(3),'Linear Prediction (Hz)')
+% set(ph(4),'XScale','log')
+
+% if being_published
+% 	snapnow;
+% 	delete(f1);
+
+% 	snapnow;
+% 	delete(f2);
+% end
+
+% %%
+% % So even the DA model can recapitulate the effect we see, where the slopes don't approach 1 as the history length goes to 0. So there's something about the way the linear prediction is made. 
 
 
 

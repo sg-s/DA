@@ -65,6 +65,6 @@ end
 
 
 % % debug
-% figure, hold on
-% plot(data.response,'b')
-% plot(NLNFit,'r')
+figure, hold on
+plot(data.response,'b')
+plot(NLNFit,'r')

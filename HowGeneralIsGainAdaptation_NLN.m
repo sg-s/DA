@@ -365,10 +365,6 @@ disp(temp)
 % The reference horizontal line indicates equal slope (equal gain for low and high stimuli) and the reference vertical line indicates a p-value of _p=0.05_. Of the statistically significant differences in gain (left half-plane), there are far more points in the top-left quadrant (gain enhancement to low stimuli) than there are in the bottom-left quadrant (gain suppression to low stimuli). 
 
 
-
-%%
-% Every data set tested showed statistically significant gain control at some time-scale. 
-
 %     ########  ######## ########          ######  ##     ## ########  ######  ##    ## 
 %     ##     ## ##       ##     ##        ##    ## ##     ## ##       ##    ## ##   ##  
 %     ##     ## ##       ##     ##        ##       ##     ## ##       ##       ##  ##   

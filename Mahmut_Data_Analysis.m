@@ -23,6 +23,8 @@ if ~isempty(calling_func)
 	end
 end
 
+example_history_length = 0.135;
+
 %% 
 % How do ORNs respond to non-Gaussian inputs? Real odor stimuli are characterised by long tails and non-gaussian statisitcs, with large whiffs of odor that occur in periods of relatively low signal. Such a stimulus has been generated here, and the responses of ORNs to these signals is analysed in this figure.
 
@@ -160,13 +162,15 @@ if being_published
 end
 
 
+
 %%
 % It looks like the amplitude of the signal is dropping every trial. It's still not clear why this is the case. From here onwards, the variability will be neglected, and all data from all the trials is averaged together. 
-
 data(td).PID = mean2(data(td).PID);
 data(td).ORN = mean2(data(td).ORN);
 
 data(td).PID(data(td).PID<0) = 0;
+
+
 
 %      ######  ########    ###    ######## ####  ######  ######## ####  ######   ######  
 %     ##    ##    ##      ## ##      ##     ##  ##    ##    ##     ##  ##    ## ##    ## 
@@ -193,6 +197,8 @@ if being_published
 	snapnow;
 	delete(gcf);
 end
+
+
 
 
 %     ##       #### ##    ## ########    ###    ########         ######## #### ######## 
@@ -365,7 +371,6 @@ disp(rsquare(LNpred,data(td).ORN))
 disp(Cost2(LNpred(205:end-33),data(td).ORN(205:end-33)))
 
 
-
 %        ##    ## ##       ##    ##    ##     ##  #######  ########  ######## ##       
 %        ###   ## ##       ###   ##    ###   ### ##     ## ##     ## ##       ##       
 %        ####  ## ##       ####  ##    #### #### ##     ## ##     ## ##       ##       
@@ -453,560 +458,167 @@ disp(rsquare(NLNFit,data(td).ORN))
 
 disp(Cost2(NLNFit(205:end-33),data(td).ORN(205:end-33)))
 
+%     ##        #######   ######       ######  ######## ##    ##  ######  #### ##    ##  ######   
+%     ##       ##     ## ##    ##     ##    ## ##       ###   ## ##    ##  ##  ###   ## ##    ##  
+%     ##       ##     ## ##           ##       ##       ####  ## ##        ##  ####  ## ##        
+%     ##       ##     ## ##   ####     ######  ######   ## ## ##  ######   ##  ## ## ## ##   #### 
+%     ##       ##     ## ##    ##           ## ##       ##  ####       ##  ##  ##  #### ##    ##  
+%     ##       ##     ## ##    ##     ##    ## ##       ##   ### ##    ##  ##  ##   ### ##    ##  
+%     ########  #######   ######       ######  ######## ##    ##  ######  #### ##    ##  ######   
+
+%% Logarithmic Sensing + NLN Model
+% Even the NLN model seems to do a very poor job of predicting the response of the neuron. In this dataset, the stimulus varies wildly (by design), and we know that neurons respond logarithmically to the stimulus (the dose-response curve is log-linear). So perhaps we can predict the response better if we take the _logarithm_ of the stimulus, instead of the stimulus itself. 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-return
-
-
-
-%              ##    ## ##                  ######## ##     ## ##    ##  ######  
-%              ###   ## ##                  ##       ##     ## ###   ## ##    ## 
-%              ####  ## ##                  ##       ##     ## ####  ## ##       
-%              ## ## ## ##                  ######   ##     ## ## ## ## ##       
-%              ##  #### ##                  ##       ##     ## ##  #### ##       
-%              ##   ### ##                  ##       ##     ## ##   ### ##    ## 
-%              ##    ## ########            ##        #######  ##    ##  ######  
-
-
-
-%% Fitting the Data with an Input Nonlinearity
-% The filter doesn't seem to have any obvious shape. Can we fit the data with just a nonlinear transformation of the input? 
-
-if isvector(data(td).ORN)
-	d.response = data(td).ORN;
-else
-	d.response = mean2(data(td).ORN);
-end
-
-if isvector(data(td).PID)
-	d.stimulus = data(td).PID;
-
-else
-	d.stimulus = mean2(data(td).PID);
-end
-
-d.stimulus = d.stimulus - min(d.stimulus);
-NFit = hill(data(td).NFit,d.stimulus);
-
-figure('outerposition',[0 0 1200 500],'PaperUnits','points','PaperSize',[1200 500]); hold on
-subplot(1,3,1), hold on
-plot(d.stimulus,hill(data(td).NFit,d.stimulus),'k+')
-xlabel('Stimulus (V)')
-ylabel('Firing rate (Hz)')
-title('Nonlinear Function')
-
-subplot(1,3,2:3), hold on
-plot(data(td).time,d.response,'k')
-hold on
-plot(data(td).time,NFit,'r')
-legend({'Data','Prediction'})
-set(gca,'XLim',[min(data(td).time) max(data(td).time)])
-xlabel('Time (s)')
-ylabel('Firing rate (Hz)')
-title('Nonlinear Function Output')
-
-PrettyFig;
-snapnow;
-delete(gcf);
-
+% taking log of stimulus
+logPID = log(data(td).PID);
+logPID= logPID - mean2(logPID(1:1000));
+logPID(logPID<0) = 0;
 
 %%
-% The r-square of the prediction is:
-disp(rsquare(NFit,d.response))
+% The following figure shows the best fit NLN model.
 
-
-
-%           ##    ## ##          ##     ##  #######  ########  ######## ##       
-%           ###   ## ##          ###   ### ##     ## ##     ## ##       ##       
-%           ####  ## ##          #### #### ##     ## ##     ## ##       ##       
-%           ## ## ## ##          ## ### ## ##     ## ##     ## ######   ##       
-%           ##  #### ##          ##     ## ##     ## ##     ## ##       ##       
-%           ##   ### ##          ##     ## ##     ## ##     ## ##       ##       
-%           ##    ## ########    ##     ##  #######  ########  ######## ######## 
-
-
-
-%% Fitting Data with a NL model
-% Clearly, the linear prediction isn't doing a very good job. Why? Can we improve the prediction by inserting an input non-linearity into the model? The following figure shows the result of fitting an input non-linearity (top left) and a linear filter (top right) to the data. The lower panel shows the response of the neuron compared to this prediction. 
-
-
-if isvector(data(td).ORN)
-	d.response = data(td).ORN;
-else
-	d.response = mean2(data(td).ORN);
-end
-
-if isvector(data(td).PID)
-	d.stimulus = data(td).PID;
-else
-	d.stimulus = mean2(data(td).PID);
-end
-
-d.stimulus = abs(d.stimulus);
-
-[NLFit, K] = SolveNLModel(data(td).NLFitParam,d.stimulus,d.response);
-figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-subplot(2,2,1), hold on
-scatter(d.stimulus,hill2(data(td).NLFitParam,d.stimulus),'k')
-xlabel('Stimulus (V)')
-ylabel('Function Output (V)')
-
-set(gca,'XLim',[0 max(d.stimulus)],'YLim',[0 max(d.stimulus)])
-
-
-subplot(2,2,2), hold on
-ft = mean(diff(data(td).time))*(1:length(K));
-plot(ft,K)
-set(gca,'XLim',[0 max(ft)])
-xlabel('Filter Lag (s)')
-ylabel('Filter Amplitude (Hz)')
-
-
-subplot(2,2,3:4), hold on
-if isvector(data(td).ORN)
-	plot(data(td).time,data(td).ORN,'k');
-else
-	plot(data(td).time,mean2(data(td).ORN),'k');
-end
-plot(data(td).time,NFit,'g')
-plot(data(td).time,NLFit,'b')
-set(gca,'XLim',[20 40])
-legend({'Data','Nonlinear Fit','NL Fit'},'Location','EastOutside')
-xlabel('Time (s)')
-ylabel('Firing rate (Hz)')
-
-
-PrettyFig
-snapnow;
-delete(gcf);
-
-%%
-% The rsquare of this NL fit is:
-
-if isvector(data(td).ORN)
-	disp(rsquare(NLFit,data(td).ORN))
-else
-	disp(rsquare(NLFit,mean2(data(td).ORN)))
-end
-
-
-%               ##       ##    ##        ##     ##  #######  ########  ######## ##       
-%               ##       ###   ##        ###   ### ##     ## ##     ## ##       ##       
-%               ##       ####  ##        #### #### ##     ## ##     ## ##       ##       
-%               ##       ## ## ##        ## ### ## ##     ## ##     ## ######   ##       
-%               ##       ##  ####        ##     ## ##     ## ##     ## ##       ##       
-%               ##       ##   ###        ##     ## ##     ## ##     ## ##       ##       
-%               ######## ##    ##        ##     ##  #######  ########  ######## ######## 
-
-
-
-
-%% LN Model
-% Does putting the static non-linearity at the output of a linear filter improve the prediction? In the following section we find a best-fit NL model, where the linear filter and the static non-linearity are fit simultaneously by a iterative fitting procedure. 
-
-%%
-% We use a Hill function for the static non-linearity here (as we do so in the previous cases). Because the Hill function is not defined for negative values, this model actually has a rectifier between the linear output and the output non-linearity: only positive values from the linear block are considered as valid inputs to the non-linearity. 
-
-if isvector(data(td).ORN)
-	d.response = data(td).ORN;
-else
-	d.response = mean2(data(td).ORN);
-end
-
-if isvector(data(td).PID)
-	d.stimulus = data(td).PID;
-else
-	d.stimulus = mean2(data(td).PID);
-end
-
-
-[LNFit, K] = SolveLNModel(data(td).LNFitParam,d.stimulus,d.response);
-figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-subplot(2,2,2), hold on
-scatter(ihill2(data(td).LNFitParam,d.response),d.response,'k')
-xlabel('Filter Output (a.u.)')
-ylabel('Neuron Response (Hz)')
-
-set(gca,'XLim',[0 max(d.response)],'YLim',[0 max(d.response)])
-
-
-subplot(2,2,1), hold on
-ft = mean(diff(data(td).time))*(1:length(K));
-plot(ft,K)
-set(gca,'XLim',[0 max(ft)])
-xlabel('Filter Lag (s)')
-ylabel('Filter Amplitude (Hz)')
-
-
-subplot(2,2,3:4), hold on
-if isvector(data(td).ORN)
-	plot(data(td).time,data(td).ORN,'k');
-else
-	plot(data(td).time,mean2(data(td).ORN),'k');
-end
-plot(data(td).time,NFit,'g')
-plot(data(td).time,NLFit,'b')
-plot(data(td).time,LNFit,'r')
-set(gca,'XLim',[20 40])
-xlabel('Time (s)')
-ylabel('Firing rate (Hz)')
-legend({'Data','Nonlinear Fit','NL Fit','LN Fit'},'Location','EastOutside')
-
-PrettyFig
-snapnow;
-delete(gcf);
-
-%%
-% The rsquare of this LN fit is:
-
-if isvector(data(td).ORN)
-	disp(rsquare(LNFit,data(td).ORN))
-else
-	disp(rsquare(LNFit,mean2(data(td).ORN)))
-end
-
-
-return
-
-
-
-
-%        ######      ###    #### ##    ##          ###    ##    ##    ###    ##       
-%       ##    ##    ## ##    ##  ###   ##         ## ##   ###   ##   ## ##   ##       
-%       ##         ##   ##   ##  ####  ##        ##   ##  ####  ##  ##   ##  ##       
-%       ##   #### ##     ##  ##  ## ## ##       ##     ## ## ## ## ##     ## ##       
-%       ##    ##  #########  ##  ##  ####       ######### ##  #### ######### ##       
-%       ##    ##  ##     ##  ##  ##   ###       ##     ## ##   ### ##     ## ##       
-%        ######   ##     ## #### ##    ##       ##     ## ##    ## ##     ## ######## 
-
-
-%% Gain Analysis: Comparison to Linear Model
-% Even though the linear model does a pretty bad job estimating the response, can we compare the response to the linear model output to see if there is a systematic variation of gain? 
-
-figure('outerposition',[0 0 1000 400],'PaperUnits','points','PaperSize',[1300 400]); hold on
-clear ph
-ph(3)=subplot(1,2,1); hold on; 	axis square
-ph(4)=subplot(1,2,2); hold on;	axis square
-s = 1; % when we start for the gain analysis
-z = length(data(td).ORN); % where we end
-step_size = 2*act/10;
-if step_size < 0.03
-	step_size= 0.03;
-else
-	step_size = 0.03*floor(step_size/0.03);
-end
-history_lengths = 0:step_size:2*act;
-example_history_length = history_lengths(3);
-
-clear x
-if isvector(data(td).ORN)
-	x.response = data(td).ORN(s:z);
-else
-	x.response = mean(data(td).ORN(s:z,:),2);
-end
-x.prediction = data(td).LinearFit(s:z);
-if isvector(data(td).PID)
-	x.stimulus = data(td).PID(s:z);
-else
-	x.stimulus = mean(data(td).PID(s:z,:),2);
-end
-x.time = data(td).time(s:z);
-x.filter_length = 201;
-
-redo_bootstrap = 0;
 if redo_bootstrap
-	data(td).LinearFit_p = GainAnalysis3(x,history_lengths,example_history_length,ph);
-else
-	GainAnalysis3(x,history_lengths,example_history_length,ph,NaN*history_lengths);
-end
-clear x
-set(ph(4),'YScale','log')
-
-
-snapnow;
-delete(gcf);
-
-
-%%
-% Because the fit is so poor, it's hard to fit lines to these clouds of points. We see the general effect where responses to times where the stimulus is low (green) are systematically under-estimated by the linear model, and the responses to times where the stimulus is high (red) are systematically over-estimated by the linear model. However, perhaps this an artefact of the very poor fit?
-
-%%
-% In the following analysis we redo the gain analysis, but restrict the analysis only to the whiffs. 
-
-if whiff_anal
-
-	figure('outerposition',[0 0 1000 400],'PaperUnits','points','PaperSize',[1300 400]); hold on
-	clear ph
-	ph(3)=subplot(1,2,1); hold on; 	axis square
-	ph(4)=subplot(1,2,2); hold on;	axis square
-	s = 1; % when we start for the gain analysis
-	z = length(data(td).ORN); % where we end
-	step_size = 2*act/10;
-	if step_size < 0.03
-		step_size= 0.03;
-	else
-		step_size = 0.03*floor(step_size/0.03);
-	end
-	history_lengths = [0:step_size:2*act];
-	example_history_length = history_lengths(3);
-
-	clear x
-	if isvector(data(td).ORN)
-		x.response = data(td).ORN(s:z);
-	else
-		x.response = mean(data(td).ORN(s:z,:),2);
-	end
-	x.prediction = data(td).LinearFit(s:z);
-	if isvector(data(td).PID)
-		x.stimulus = data(td).PID(s:z);
-	else
-		x.stimulus = mean(data(td).PID(s:z,:),2);
-	end
-
-	% restrict to whiffs
-	x.stimulus(~hs) = NaN;
-
-	x.time = data(td).time(s:z);
-	x.filter_length = 201;
-
-	redo_bootstrap = 0;
-	if redo_bootstrap
-		data(td).LinearFit_p = GainAnalysis3(x,history_lengths,example_history_length,ph);
-	else
-		GainAnalysis3(x,history_lengths,example_history_length,ph,NaN*history_lengths);
-	end
-	clear x
-
-
-
-	snapnow;
-	delete(gcf);
-
+	d.stimulus = logPID;
+	d.stimulus(d.stimulus<0) = 0;
+	d.response = data(td).ORN;
+	x0 = [7.38   2.85         135.55    3.15];
+	[~,x_logNLN] = FitNLNModel(d,x0);
 end
 
+% solve the model for the best fit parameters
+[logNLNFit, K, a, b] = SolveNLNModel2(x_logNLN,logPID,data(td).ORN);
 
-%      ##    ## ##       ##    ##       ##     ##  #######  ########  ######## ##       
-%      ###   ## ##       ###   ##       ###   ### ##     ## ##     ## ##       ##       
-%      ####  ## ##       ####  ##       #### #### ##     ## ##     ## ##       ##       
-%      ## ## ## ##       ## ## ##       ## ### ## ##     ## ##     ## ######   ##       
-%      ##  #### ##       ##  ####       ##     ## ##     ## ##     ## ##       ##       
-%      ##   ### ##       ##   ###       ##     ## ##     ## ##     ## ##       ##       
-%      ##    ## ######## ##    ##       ##     ##  #######  ########  ######## ######## 
-
-
-%% Fitting a NLN model
-% In this section we attempt to explain the data by fitting a Nonlinear-Linear-Nonlinear model. This model consists of a static input non-linearity, a parametric bi-lobed filter, and a static output non-linearity. The static non-linearities are Hill functions.  
-
-%%
-% The following figure shows the components of the model.
-
-figure('outerposition',[0 0 1000 400],'PaperUnits','points','PaperSize',[1300 400]); hold on
+figure('outerposition',[0 0 1300 400],'PaperUnits','points','PaperSize',[1300 400]); hold on
 subplot(1,3,1), hold on
-x = 0:1e-3:100;
-y = hill(data(td).NLNFitParam(1:3),x);
-plot(x,y)
-set(gca,'XLim',[0 max(max(data(td).PID))])
+ms = min(logPID); Ms = max(logPID);
+xx = ms:(Ms-ms)/100:Ms;
+y = hill2(x_logNLN(1:2),xx);
+plot(xx,y)
 xlabel('Stimulus (V)')
-ylabel('Function Output (a.u.)')
-title('Input Nonlinearity')
+ylabel('Input to filter (V)')
 
 subplot(1,3,2), hold on
-t = 1:50;
-x = data(td).NLNFitParam;
-y = make_bilobe_filter(x(4),x(5),x(6),x(7),t);
-plot(t*3e-3,y)
-xlabel('Lag (s)')
-ylabel('Filter amplitude (a.u.)')
-title('Filter')
+t = 1:300;
+tt = 3e-3:3e-3:3e-3*length(K);
+plot(tt,K);
+set(gca,'XLim',[min(tt) max(tt)])
+xlabel('Filter Lag (s)')
+ylabel('Filter Amplitude (Hz)')
 
+b(isinf(b)) = [];
 subplot(1,3,3), hold on
-x = 0:1e-3:100;
-y = hill(data(td).NLNFitParam(8:10),x);
-plot(x,y)
-xlabel('Input (a.u.)')
-ylabel('Function Output (Hz)')
-title('Output Nonlinearity')
-
-clear x y t
+ms = 0; Ms = 300;
+xx = ms:(Ms-ms)/100:Ms;
+y = hill2(x_logNLN(3:4),xx);
+plot(xx,y)
+xlabel('Filter output (Hz)')
+ylabel('Model Output (Hz)')
 
 PrettyFig;
 
-
-snapnow;
-delete(gcf);
-
+if being_published
+	snapnow;
+	delete(gcf);
+end
 
 %%
-% The following figure compares the neuron's response (black) to the NLN prediction (red). 
-if isvector(data(td).PID)
-	NLNFit = SolveNLNModel(data(td).NLNFitParam,data(td).PID);
-else
-	NLNFit = SolveNLNModel(data(td).NLNFitParam,mean2(data(td).PID));
-end
+% The following figure compares the log-NLN Model fit to the data:
 
-
-figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-subplot(2,2,1), hold on
-if isvector(data(td).PID)
-	plot(data(td).time,data(td).PID,'k');
-else
-	plot(data(td).time,mean2(data(td).PID),'k');
-end
-ylabel('PID (V)')
-set(gca,'XLim',[25 35])
-set(gca,'YLim',[0 1.1*max(max(data(td).PID))])
-
-subplot(2,2,2), hold on
-if isvector(data(td).PID)
-	plot(data(td).time,data(td).PID,'k');
-else
-	plot(data(td).time,mean2(data(td).PID),'k');
-end
-ylabel('PID (V)')
-set(gca,'XLim',[38 48])
-set(gca,'YLim',[0 1.1*max(max(data(td).PID))])
-
-subplot(2,2,3), hold on
-if isvector(data(td).ORN)
-	plot(data(td).time,data(td).ORN,'k');
-else
-	plot(data(td).time,mean2(data(td).ORN),'k');
-end
-plot(data(td).time,NLNFit,'r')
-ylabel('Firing Rate (Hz)')
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(data(td).time,data(td).ORN,'k')
+plot(data(td).time,logNLNFit,'r')
+set(gca,'XLim',[20 40])
 xlabel('Time (s)')
-set(gca,'XLim',[25 35])
+ylabel('Firing rate (Hz)')
+legend({'Data','log-NLN Fit'})
 
-subplot(2,2,4), hold on
-if isvector(data(td).PID)
-	plot(data(td).time,data(td).ORN,'k');
-else
-	plot(data(td).time,mean2(data(td).ORN),'k');
-end
-plot(data(td).time,NLNFit,'r')
-ylabel('Firing Rate (Hz)')
-xlabel('Time (s)')
-set(gca,'XLim',[38 48])
-legend Data NLNFit
 PrettyFig;
 
+if being_published
+	snapnow;
+	delete(gcf);
+end
 
 %%
-% The r-square of the NLN model fit is:
+%  The r-square of the NLN prediction is: 
 
-if isvector(data(td).ORN)
-	disp(rsquare(NLNFit,data(td).ORN))
-else
-	disp(rsquare(NLNFit,mean2(data(td).ORN)))
-end
+disp(rsquare(logNLNFit,data(td).ORN))
+
+%%
+% And the raw Euclidean Distance between the prediction and the data is: 
+
+disp(Cost2(logNLNFit(205:end-33),data(td).ORN(205:end-33)))
 
 
-figure('outerposition',[0 0 1000 400],'PaperUnits','points','PaperSize',[1300 400]); hold on
-clear ph
-ph(3)=subplot(1,2,1); hold on; 	axis square
-ph(4)=subplot(1,2,2); hold on;	axis square
-s = 1; % when we start for the gain analysis
-z = length(data(td).ORN); % where we end
-step_size = 2*act/10;
-if step_size < 0.03
-	step_size= 0.03;
-else
-	step_size = 0.03*floor(step_size/0.03);
-end
-history_lengths = 0:step_size:2*act;
-example_history_length = history_lengths(3);
+
+%         ######      ###    #### ##    ##             ###    ##    ##    ###    ##       
+%        ##    ##    ## ##    ##  ###   ##            ## ##   ###   ##   ## ##   ##       
+%        ##         ##   ##   ##  ####  ##           ##   ##  ####  ##  ##   ##  ##       
+%        ##   #### ##     ##  ##  ## ## ##          ##     ## ## ## ## ##     ## ##       
+%        ##    ##  #########  ##  ##  ####          ######### ##  #### ######### ##       
+%        ##    ##  ##     ##  ##  ##   ###          ##     ## ##   ### ##     ## ##       
+%         ######   ##     ## #### ##    ##          ##     ## ##    ## ##     ## ######## 
+      
+%% log-NLN Model Gain Analysis
+% In this section, we perform a gain analysis on the log NLN prediction first for an arbitrarily chosen history length of 120ms (panel on the left) and then for various history lengths (panel on the right). The history lengths where the slopes are significantly different (p<0.05) are indicated by dots. Significance is determined by bootstrapping the data 100 times.
+
+
+f1=figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+ph(1) = subplot(2,1,1); hold on 
+ph(2) = subplot(2,1,2); hold on
+
+f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+s = 300; % when we start for the gain analysis
+z = length(data(td).ORN) - 33; % where we end
+history_lengths = (3*floor(1000*logspace(-2,1,30)/3))/1e3;
 
 clear x
-if isvector(data(td).ORN)
-	x.response = data(td).ORN(s:z);
-else
-	x.response = mean(data(td).ORN(s:z,:),2);
-end
-x.prediction = NLNFit(s:z);
-if isvector(data(td).PID)
-	x.stimulus = data(td).PID(s:z);
-else
-	x.stimulus = mean(data(td).PID(s:z,:),2);
-end
+x.response = data(td).ORN(s:z);
+x.prediction = logNLNFit(s:z);
+x.stimulus = logPID(s:z);
 x.time = data(td).time(s:z);
 x.filter_length = 201;
 
-redo_bootstrap = 0;
+
 if redo_bootstrap
-	data(td).LinearFit_p = GainAnalysis3(x,history_lengths,example_history_length,ph);
+	[p_NLN,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
+	s=abs(l-h);
+	s(p_NLN(1,:)>0.05)=NaN;
+	[~,loc]=max(s);
+	example_history_length_NLN = history_lengths(loc);
 else
-	GainAnalysis3(x,history_lengths,example_history_length,ph,NaN*history_lengths);
+	GainAnalysis4(x,history_lengths,example_history_length_NLN,ph,p_NLN);
 end
-clear x
-set(ph(4),'YScale','log')
 
+xlabel(ph(3),'NLN Prediction (Hz)')
+set(ph(4),'XScale','log')
 
-snapnow;
-delete(gcf);
+if being_published
+	snapnow;
+	delete(f1);
 
-%%
-% Again, we repeat the gain analysis but restrict the analysis only to the whiffs, ignoring the blanks inbetween. 
-
-if whiff_anal
-
-	figure('outerposition',[0 0 1000 400],'PaperUnits','points','PaperSize',[1300 400]); hold on
-	clear ph
-	ph(3)=subplot(1,2,1); hold on; 	axis square
-	ph(4)=subplot(1,2,2); hold on;	axis square
-	s = 1; % when we start for the gain analysis
-	z = length(data(td).ORN); % where we end
-	step_size = 2*act/10;
-	if step_size < 0.03
-		step_size= 0.03;
-	else
-		step_size = 0.03*floor(step_size/0.03);
-	end
-	history_lengths = [0:step_size:2*act];
-	example_history_length = history_lengths(3);
-
-	clear x
-	if isvector(data(td).ORN)
-		x.response = data(td).ORN(s:z);
-	else
-		x.response = mean(data(td).ORN(s:z,:),2);
-	end
-	x.prediction = NLNFit(s:z);
-	if isvector(data(td).PID)
-		x.stimulus = data(td).PID(s:z);
-	else
-		x.stimulus = mean(data(td).PID(s:z,:),2);
-	end
-
-	% restrict to whiffs
-	x.stimulus(~hs) = NaN;
-
-	x.time = data(td).time(s:z);
-	x.filter_length = 201;
-
-	redo_bootstrap = 0;
-	if redo_bootstrap
-		data(td).LinearFit_p = GainAnalysis3(x,history_lengths,example_history_length,ph);
-	else
-		GainAnalysis3(x,history_lengths,example_history_length,ph,NaN*history_lengths);
-	end
-	clear x
-
+	snapnow;
+	delete(f2);
 end
+
+
+
+
+
+
+
+
+
+
+
+return
+
+
 
 
 %      ########     ###             ##     ##  #######  ########  ######## ##       

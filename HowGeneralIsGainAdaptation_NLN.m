@@ -311,7 +311,7 @@ end
 %%
 % In general, are the green slopes (gain following low stimuli) significantly higher than the red slopes (gain following high stimuli)? To determine this, we plot the slope of the best fit line vs. the p value of that fit. 
 
-figure('outerposition',[0 0 1100 600],'PaperUnits','points','PaperSize',[1100 600]); hold on
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 subplot(1,2,1), hold on
 d = low_slopes(:); %  - high_slopes(:);
 plot(p_values_low(:),d,'g.','MarkerSize',marker_size) 

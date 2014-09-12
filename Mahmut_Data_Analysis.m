@@ -606,9 +606,96 @@ if being_published
 	delete(f2);
 end
 
+%%
+% It is clear from the diagram that our method of gain analysis is all wrong: we need to constrain our analysis to the whiffs of odor, and perhaps compare large whiffs to small whiffs. 
+
+
+%    ##      ## ##     ## #### ######## ########          ###    ##    ##    ###    ##       
+%    ##  ##  ## ##     ##  ##  ##       ##               ## ##   ###   ##   ## ##   ##       
+%    ##  ##  ## ##     ##  ##  ##       ##              ##   ##  ####  ##  ##   ##  ##       
+%    ##  ##  ## #########  ##  ######   ######         ##     ## ## ## ## ##     ## ##       
+%    ##  ##  ## ##     ##  ##  ##       ##             ######### ##  #### ######### ##       
+%    ##  ##  ## ##     ##  ##  ##       ##             ##     ## ##   ### ##     ## ##       
+%     ###  ###  ##     ## #### ##       ##             ##     ## ##    ## ##     ## ######## 
+
+%% Whiff-based Analysis
+% To quantify this, let's attempt to find all the times when the stimulus is high, i.e., ten standard deviations above the baseline. This threshold ensures that we pick up all the whiffs, but ignore the blanks in between, as shown in the figure below. 
+
+
+figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+plot(data(td).time, data(td).PID(:,1),'k'), hold on
+
+hs = data(td).PID(:,1) > 13*std(data(td).PID(1:1000,1));
+plot(data(td).time(hs), data(td).PID(hs,1),'.r','MarkerSize',24), hold on
+
+xlabel('Time (s)')
+ylabel('Stimulus (V)')
+title('Whiff identification')
+set(gca,'YScale','log')
+
+PrettyFig;
+if being_published
+	snapnow;
+	delete(gcf);
+end
 
 
 
+
+
+
+%%
+% Now we break up the trace so that we can perform a whiff-by-whiff analysis of the stimulus and the response, for each trial. The following figure shows how the whiff amplitude and response amplitude drop as a function of trial number.
+
+
+if whiff_anal
+
+	[whiff_ons,whiff_offs] = ComputeOnsOffs(hs);
+
+	whiff_durations = whiff_offs - whiff_ons;
+	whiff_ons(whiff_durations <20) = [];
+	whiff_offs(whiff_durations <20) = [];
+	whiff_durations = whiff_offs - whiff_ons;
+
+	whiff_stim_max  = NaN(width(data(td).PID),length(whiff_ons));
+	whiff_resp_max  = NaN(width(data(td).PID),length(whiff_ons));
+
+
+	for j = 1:width(data(td).PID)
+		for i = 1:length(whiff_ons)
+			whiff_stim_max(j,i) = max(data(td).PID(whiff_ons(i):whiff_offs(i),j));
+			whiff_resp_max(j,i) = max(data(td).ORN(whiff_ons(i):whiff_offs(i),j));
+		end
+		clear i
+
+	end
+	clear j
+
+	for i = 1:length(whiff_ons)
+		% normalise
+		whiff_stim_max(:,i) = whiff_stim_max(:,i)/(whiff_stim_max(1,i));
+		whiff_resp_max(:,i) = whiff_resp_max(:,i)/(whiff_resp_max(1,i));
+	end
+
+	figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+	set(gcf,'DefaultAxesColorOrder',jet(length(whiff_ons)))
+	subplot(1,2,1), hold on
+	plot(whiff_stim_max)
+	xlabel('Trial Number')
+	ylabel('Whiff Peak (norm)')
+	set(gca,'YLim',[0 2])
+
+	subplot(1,2,2), hold on
+	plot(whiff_resp_max)
+	xlabel('Trial Number')
+	ylabel('Max Whiff Response (norm)')
+	set(gca,'YLim',[0 2])
+
+	PrettyFig;
+	snapnow;
+	delete(gcf);
+
+end
 
 
 
@@ -809,93 +896,6 @@ if whiff_anal
 
 end
 
-
-
-%    ##      ## ##     ## #### ######## ########          ###    ##    ##    ###    ##       
-%    ##  ##  ## ##     ##  ##  ##       ##               ## ##   ###   ##   ## ##   ##       
-%    ##  ##  ## ##     ##  ##  ##       ##              ##   ##  ####  ##  ##   ##  ##       
-%    ##  ##  ## #########  ##  ######   ######         ##     ## ## ## ## ##     ## ##       
-%    ##  ##  ## ##     ##  ##  ##       ##             ######### ##  #### ######### ##       
-%    ##  ##  ## ##     ##  ##  ##       ##             ##     ## ##   ### ##     ## ##       
-%     ###  ###  ##     ## #### ##       ##             ##     ## ##    ## ##     ## ######## 
-
-
-
-%% Whiff-based Analysis
-% To quantify this, let's attempt to find all the times when the stimulus is high, i.e., ten standard deviations above the baseline. This threshold ensures that we pick up all the whiffs, but ignore the blanks in between, as shown in the figure below. 
-
-if whiff_anal
-
-	figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-	plot(data(td).time, data(td).PID(:,1),'k'), hold on
-
-	hs = data(td).PID(:,1) > 10*std(data(td).PID(1:3000,1));
-	plot(data(td).time(hs), data(td).PID(hs,1),'.r','MarkerSize',24), hold on
-	set(gca,'XLim',roi1)
-	xlabel('Time (s)')
-	ylabel('Stimulus (V)')
-	title('Whiff identification')
-	set(gca,'YScale','log')
-	PrettyFig;
-	snapnow;
-	delete(gcf);
-
-end
-
-
-
-%%
-% Now we break up the trace so that we can perform a whiff-by-whiff analysis of the stimulus and the response, for each trial. The following figure shows how the whiff amplitude and response amplitude drop as a function of trial number.
-
-
-if whiff_anal
-
-	[whiff_ons,whiff_offs] = ComputeOnsOffs(hs);
-
-	whiff_durations = whiff_offs - whiff_ons;
-	whiff_ons(whiff_durations <20) = [];
-	whiff_offs(whiff_durations <20) = [];
-	whiff_durations = whiff_offs - whiff_ons;
-
-	whiff_stim_max  = NaN(width(data(td).PID),length(whiff_ons));
-	whiff_resp_max  = NaN(width(data(td).PID),length(whiff_ons));
-
-
-	for j = 1:width(data(td).PID)
-		for i = 1:length(whiff_ons)
-			whiff_stim_max(j,i) = max(data(td).PID(whiff_ons(i):whiff_offs(i),j));
-			whiff_resp_max(j,i) = max(data(td).ORN(whiff_ons(i):whiff_offs(i),j));
-		end
-		clear i
-
-	end
-	clear j
-
-	for i = 1:length(whiff_ons)
-		% normalise
-		whiff_stim_max(:,i) = whiff_stim_max(:,i)/(whiff_stim_max(1,i));
-		whiff_resp_max(:,i) = whiff_resp_max(:,i)/(whiff_resp_max(1,i));
-	end
-
-	figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-	set(gcf,'DefaultAxesColorOrder',jet(length(whiff_ons)))
-	subplot(1,2,1), hold on
-	plot(whiff_stim_max)
-	xlabel('Trial Number')
-	ylabel('Whiff Peak (norm)')
-	set(gca,'YLim',[0 2])
-
-	subplot(1,2,2), hold on
-	plot(whiff_resp_max)
-	xlabel('Trial Number')
-	ylabel('Max Whiff Response (norm)')
-	set(gca,'YLim',[0 2])
-
-	PrettyFig;
-	snapnow;
-	delete(gcf);
-
-end
 
 
 

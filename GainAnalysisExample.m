@@ -20,6 +20,7 @@ if ~isempty(calling_func)
 	end
 end
 
+history_lengths = (3*floor(1000*logspace(-2,1,30)/3))/1e3;
 example_history_length = 0.135;
 
 
@@ -352,52 +353,53 @@ disp(Cost2(NLNFit(205:end-33),data(td).ORN(205:end-33)))
 % In this section, we perform a gain analysis on the linear prediction first for an arbitrarily chosen history length of 120ms (panel on the left) and then for various history lengths (panel on the right). The history lengths where the slopes are significantly different (p<0.05) are indicated by dots. Significance is determined by bootstrapping the data 100 times. History lengths up to twice the autocorrelation length of the stimulus are investigated. 
 
 %%
-% In this case, we pass the linear model output through a rectifier because negative firing rates don't make sense. 
-data(td).LinearFit(data(td).LinearFit<0)=0;
+% We won't do this case because the fit is so bad. 
 
-f1=figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-ph(1) = subplot(2,1,1); hold on 
-ph(2) = subplot(2,1,2); hold on
+% data(td).LinearFit(data(td).LinearFit<0)=0;
 
-title(ph(1),strrep(data(td).original_name,'_','-'),'FontSize',20);
+% f1=figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+% ph(1) = subplot(2,1,1); hold on 
+% ph(2) = subplot(2,1,2); hold on
 
-f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-ph(3) = subplot(1,2,1); hold on 
-axis square
-ph(4) = subplot(1,2,2); hold on
+% title(ph(1),strrep(data(td).original_name,'_','-'),'FontSize',20);
 
-s = 300; % when we start for the gain analysis
-z = length(data(td).ORN) - 33; % where we end
-history_lengths = (3*floor(1000*logspace(-2,1,30)/3))/1e3;
+% f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% ph(3) = subplot(1,2,1); hold on 
+% axis square
+% ph(4) = subplot(1,2,2); hold on
 
-clear x
-x.response = data(td).ORN(s:z);
-x.prediction = data(td).LinearFit(s:z);
-x.stimulus = data(td).PID(s:z);
-x.time = data(td).time(s:z);
-x.filter_length = 201;
+% s = 300; % when we start for the gain analysis
+% z = length(data(td).ORN) - 33; % where we end
 
 
-if redo_bootstrap
-	[p_K,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
-	s=abs(l-h);
-	s(p_K(1,:)>0.05)=NaN;
-	[~,loc]=max(s);
-	example_history_length_K = history_lengths(loc);
-else
-	GainAnalysis4(x,history_lengths,example_history_length_K,ph,p_K);
-end
+% clear x
+% x.response = data(td).ORN(s:z);
+% x.prediction = data(td).LinearFit(s:z);
+% x.stimulus = data(td).PID(s:z);
+% x.time = data(td).time(s:z);
+% x.filter_length = 201;
 
-xlabel(ph(3),'Linear Prediction (Hz)')
-set(ph(4),'XScale','log')
 
-if being_published
-	snapnow;
-	delete(f1);
+% if redo_bootstrap
+% 	[p_K,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
+% 	s=abs(l-h);
+% 	s(p_K(1,:)>0.05)=NaN;
+% 	[~,loc]=max(s);
+% 	example_history_length_K = history_lengths(loc);
+% else
+% 	GainAnalysis4(x,history_lengths,example_history_length_K,ph,p_K);
+% end
 
-	snapnow;
-	delete(f2);
-end
+% xlabel(ph(3),'Linear Prediction (Hz)')
+% set(ph(4),'XScale','log')
+
+% if being_published
+% 	snapnow;
+% 	delete(f1);
+
+% 	snapnow;
+% 	delete(f2);
+% end
 
 
 %  ######      ###    #### ##    ##       ###    ##    ##    ###    ##          ##       ##    ## 

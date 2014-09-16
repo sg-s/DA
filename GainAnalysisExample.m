@@ -249,6 +249,7 @@ disp(rsquare(LNpred,data(td).ORN))
 disp(Cost2(LNpred(205:end-33),data(td).ORN(205:end-33)))
 
 
+
 %        ##    ## ##       ##    ##    ##     ##  #######  ########  ######## ##       
 %        ###   ## ##       ###   ##    ###   ### ##     ## ##     ## ##       ##       
 %        ####  ## ##       ####  ##    #### #### ##     ## ##     ## ##       ##       
@@ -337,7 +338,6 @@ disp(rsquare(NLNFit,data(td).ORN))
 % And the raw Euclidean Distance between the prediction and the data is: 
 
 disp(Cost2(NLNFit(205:end-33),data(td).ORN(205:end-33)))
-
 
 
 

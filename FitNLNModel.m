@@ -4,6 +4,7 @@
 % where data is a structure containing 2 vectors:
 % stimulus
 % response
+% K (optional): if specified, forces model to use this K
 %
 % created by Srinivas Gorur-Shandilya at 10:20 , 09 April 2014. Contact me at http://srinivas.gs/contact/
 % 
@@ -32,6 +33,9 @@ switch nargin
 
 		lb = x0/10;
 		ub = x0*10;
+		if isempty(min_r2)
+			min_r2 = 0;
+		end
 end
 
 psoptions = psoptimset('UseParallel',true,'CompletePoll', 'on', 'Vectorized', 'off','Display','iter','MaxIter',30,'MaxFunEvals',10000);
@@ -60,8 +64,12 @@ else
 end
 
 
-% get the final output
-[NLNFit, K] = SolveNLNModel2(x,data.stimulus,data.response);
+if isfield(data,'K')
+	NLNFit = SolveNLNModel2(x,data.stimulus(:),data.response(:),data.K);
+else
+	[NLNFit,K] = SolveNLNModel2(x,data.stimulus(:),data.response(:));
+end
+
 
 
 % % debug

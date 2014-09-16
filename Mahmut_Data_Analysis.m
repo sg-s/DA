@@ -551,6 +551,99 @@ disp(rsquare(logNLNFit,data(td).ORN))
 disp(Cost2(logNLNFit(205:end-33),data(td).ORN(205:end-33)))
 
 
+%    ######## #### ##     ## ######## ########     ######## #### ##       ######## ######## ########  
+%    ##        ##   ##   ##  ##       ##     ##    ##        ##  ##          ##    ##       ##     ## 
+%    ##        ##    ## ##   ##       ##     ##    ##        ##  ##          ##    ##       ##     ## 
+%    ######    ##     ###    ######   ##     ##    ######    ##  ##          ##    ######   ########  
+%    ##        ##    ## ##   ##       ##     ##    ##        ##  ##          ##    ##       ##   ##   
+%    ##        ##   ##   ##  ##       ##     ##    ##        ##  ##          ##    ##       ##    ##  
+%    ##       #### ##     ## ######## ########     ##       #### ########    ##    ######## ##     ## 
+
+%% Fixing the filters
+% This data set is not ideal for extracting a linear filter from. Specifically, we need some sort of "white noise" like stimuli to correctly estimate a filters. So we are now going to use an "average" filter from the flickering stimulus experiment and fix that in the NLN model.  
+
+load('HowGeneralIsGainAdaptation.mat','Filters','filtertime');
+K = mean2(Filters(:,2:end));
+K(filtertime<0) = [];
+K = K/max(K);
+filtertime(filtertime<0) = [];
+
+if redo_bootstrap
+	d.stimulus = logPID;
+	d.stimulus(d.stimulus<0) = 0;
+	d.response = data(td).ORN;
+	d.K = K;
+	x0 = [0.0219    3.0079   24.8205    4.4793];
+	[~,x_fixedK] = FitNLNModel(d,x0);
+end
+
+
+% solve the model for the best fit parameters
+[fixedKFit, ~, a, b] = SolveNLNModel2(x_fixedK,logPID,data(td).ORN,K);
+
+figure('outerposition',[0 0 1300 400],'PaperUnits','points','PaperSize',[1300 400]); hold on
+subplot(1,3,1), hold on
+ms = min(logPID); Ms = max(logPID);
+xx = ms:(Ms-ms)/100:Ms;
+y = hill2(x_fixedK(1:2),xx);
+plot(xx,y)
+xlabel('Stimulus (V)')
+ylabel('Input to filter (V)')
+
+subplot(1,3,2), hold on
+t = 1:300;
+tt = 3e-3:3e-3:3e-3*length(K);
+plot(tt,K);
+set(gca,'XLim',[min(tt) max(tt)])
+xlabel('Filter Lag (s)')
+ylabel('Filter Amplitude (Hz)')
+
+b(isinf(b)) = [];
+subplot(1,3,3), hold on
+ms = 0; Ms = 300;
+xx = ms:(Ms-ms)/100:Ms;
+y = hill2(x_fixedK(3:4),xx);
+plot(xx,y)
+xlabel('Filter output (Hz)')
+ylabel('Model Output (Hz)')
+
+PrettyFig;
+
+if being_published
+	snapnow;
+	delete(gcf);
+end
+
+%%
+% The following figure compares the log-NLN Model fit to the data:
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(data(td).time,data(td).ORN,'k')
+plot(data(td).time,fixedKFit,'r')
+set(gca,'XLim',[20 40])
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+legend({'Data','fixed-K Fit'})
+
+PrettyFig;
+
+if being_published
+	snapnow;
+	delete(gcf);
+end
+
+%%
+%  The r-square of the NLN prediction is: 
+
+disp(rsquare(fixedKFit,data(td).ORN))
+
+%%
+% And the raw Euclidean Distance between the prediction and the data is: 
+
+disp(Cost2(fixedKFit(205:end-33),data(td).ORN(205:end-33)))
+
+return
+
 
 %         ######      ###    #### ##    ##             ###    ##    ##    ###    ##       
 %        ##    ##    ## ##    ##  ###   ##            ## ##   ###   ##   ## ##   ##       

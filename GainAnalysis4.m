@@ -180,6 +180,9 @@ for i = 1:length(history_lengths)
 			plot(plothere(2),t,f,'k','LineWidth',1), hold on
 			plot(plothere(2),t,fp,'r','LineWidth',1), hold on
 
+			plot(plothere(1),t_high,s_high,'r.')
+			plot(plothere(1),t_low,s_low,'g.')
+
 			% highlight the sections we use for the analysis
 			plot(plothere(2),t_high,f_high,'k.','LineWidth',2), hold on
 			plot(plothere(2),t_high,fp_high,'r.','LineWidth',2), hold on
@@ -202,8 +205,6 @@ for i = 1:length(history_lengths)
 			
 			% indicate regions of lowest and highest 10%
 			tp = floor(frac*length(stimulus));
-			plot(plothere(1),t_high,s_high,'r.')
-			plot(plothere(1),t_low,s_low,'g.')
 
 
 			set(plothere(1),'LineWidth',2,'FontSize',20)

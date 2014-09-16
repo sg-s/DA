@@ -6,7 +6,7 @@
 % 
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
-function [Rguess, K, a, b] = SolveNLNModel2(p,stimulus,response)	
+function [Rguess, K, a, b] = SolveNLNModel2(p,stimulus,response,K)	
 
 % pass stimulus through input non-linearity
 a = hill2(p(1:2),stimulus);
@@ -14,10 +14,14 @@ a = hill2(p(1:2),stimulus);
 % generate b(t) by inverting the output NL function:
 b = ihill2(p(3:4),response);
 
-% fit a filter from a -> b
-K = FitFilter2Data(stimulus,response);
+if nargin == 4
+	% K  specified, no need to work it out.
+else
+	% fit a filter from a -> b
+	K = FitFilter2Data(stimulus,response);
 
-% pass a through filter
+end
+
 bcap = filter(K,1,a-mean(a)) + mean(b(~isinf(b)));
 
 % pass it through a rectifier
@@ -25,4 +29,3 @@ bcap(bcap<0) = 0;
 
 % pass filtered output through output non-linearity
 Rguess = hill2(p(3:4),bcap);
-

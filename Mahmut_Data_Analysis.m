@@ -642,7 +642,7 @@ disp(rsquare(fixedKFit,data(td).ORN))
 
 disp(Cost2(fixedKFit(205:end-33),data(td).ORN(205:end-33)))
 
-return
+
 
 
 %         ######      ###    #### ##    ##             ###    ##    ##    ###    ##       
@@ -699,6 +699,8 @@ if being_published
 	delete(f2);
 end
 
+return
+
 %%
 % It is clear from the diagram that our method of gain analysis is all wrong: we need to constrain our analysis to the whiffs of odor, and perhaps compare large whiffs to small whiffs. 
 
@@ -712,19 +714,84 @@ end
 %     ###  ###  ##     ## #### ##       ##             ##     ## ##    ## ##     ## ######## 
 
 %% Whiff-based Analysis
-% To quantify this, let's attempt to find all the times when the stimulus is high, i.e., ten standard deviations above the baseline. This threshold ensures that we pick up all the whiffs, but ignore the blanks in between, as shown in the figure below. 
+% In this section, we consider the gain of the neuron on a whiff-by-whiff basis. To do so, we must identify the whiffs accurately. In the following figure, the whiff peaks (black), the whiff starts (green) and the whiff ends (red) are indicated. These were calculated automatically. 
 
+
+p = data(td).PID;
 
 figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-plot(data(td).time, data(td).PID(:,1),'k'), hold on
+plot(data(td).time, p,'k'), hold on
 
-hs = data(td).PID(:,1) > 13*std(data(td).PID(1:1000,1));
-plot(data(td).time(hs), data(td).PID(hs,1),'.r','MarkerSize',24), hold on
+% find peaks
+
+m = mean(p(1:2000));
+s = std(p(1:2000));
+[pp,loc] = findpeaks(p,'MinPeakHeight',3*s+m,'MinPeakDistance',30);
+
+% exclude false peaks created by stupid algo
+rm_these = [];
+sf = 1;
+w = 20;
+for i =1:length(loc)
+	if mean(p(loc(i)-w:loc(i)-1)) < sf*pp(i)  && mean(p(loc(i)+1:loc(i)+w)) < sf*pp(i)
+	else
+		rm_these = [i rm_these];
+	end
+
+end
+pp(rm_these)= [];
+loc(rm_these) = [];
+scatter(data(td).time(loc),p(loc),'b','filled');
+
+
+% find whiff starts and stops
+whiff_ons = 0*pp;
+whiff_offs = 0*pp;
+temp  =[]; temp2 = [];
+for i = 1:length(loc)
+	if i > 1
+		a = loc(i-1);
+	else
+		a=1;
+	end
+	temp =  find(p(a:loc(i))<m+3*s,1,'last');
+
+	if isempty(temp)
+		% find the minimum
+		[~,temp2]=min(p(a:loc(i)));
+		whiff_ons(i) = temp2+a;
+	else
+		% all OKi
+		whiff_ons(i)  = temp+a;
+	end
+
+
+end
+for i = 1:length(loc)
+	if i ==length(loc)
+		z = length(p);
+	else
+		z = whiff_ons(i+1);
+	end
+	temp =  find(p(loc(i):z)<m+3*s,1,'first');
+	if isempty(temp)
+		% find the minimum
+		[~,temp2]=min(p(loc(i):z));
+		whiff_offs(i) = temp2+loc(i);
+	else
+		% all OKi
+		whiff_offs(i)  = temp+loc(i);
+	end
+
+end
+clear temp temp2
+scatter(data(td).time(whiff_ons),p(whiff_ons),'g','filled');
+scatter(data(td).time(whiff_offs),p(whiff_offs),'r','filled');
 
 xlabel('Time (s)')
 ylabel('Stimulus (V)')
 title('Whiff identification')
-set(gca,'YScale','log')
+set(gca,'XLim',[57 66])
 
 PrettyFig;
 if being_published

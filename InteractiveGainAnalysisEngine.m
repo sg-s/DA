@@ -21,8 +21,8 @@ else
 	history_lengths = data.history_lengths;
 end
 
-
-[~,~,~,~,~,example_plot]=GainAnalysis4(data,history_lengths,example_history_length,plothere,NaN*history_lengths,p.frac);
+dummy = NaN(length(history_lengths),2);
+[~,~,~,~,~,example_plot]=GainAnalysis4(data,history_lengths,example_history_length,plothere,dummy,p.frac);
 
 % draw a line to indicate where we are on the history length plot
 yy = get(plothere(4),'YLim');

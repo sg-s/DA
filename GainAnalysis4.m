@@ -99,7 +99,11 @@ high_max = NaN*history_lengths;
 
 
 % calculate the slopes for all points
-[fall, gof] = fit(fp(filter_length+2:end-filter_length),f(filter_length+2:end-filter_length),'Poly1');
+all_pred = fp(filter_length+2:end);
+all_resp  = f(filter_length+2:end);
+all_pred(isnan(all_resp)) = [];
+all_resp(isnan(all_resp)) = [];
+[fall, gof] = fit(all_pred,all_resp,'Poly1');
 all_slopes = fall.p1;
 
 
@@ -108,7 +112,7 @@ if nargin < 6
 end
 
 
-n = floor(frac*length(shat));
+n = floor(sum(~isnan(f))*frac);
 
 for i = 1:length(history_lengths)
 
@@ -118,6 +122,7 @@ for i = 1:length(history_lengths)
 	% find times when smoothed stim (this_shat) is in lowest 10%
 	this_shat(1:hl(i)) = Inf; % the initial segment where we can't estimate shat is excluded
 	this_shat(isnan(this_shat)) = Inf;
+	this_shat(isnan(f)) = Inf;
 	[~, t_low] = sort(this_shat,'ascend');
 	t_low = t_low(1:n); % this is an index
 	f_low = f(t_low);
@@ -129,6 +134,7 @@ for i = 1:length(history_lengths)
 	% find times when smoothed stim is highest 10%
 	this_shat(1:hl(i)) = -Inf;
 	this_shat(isinf(this_shat)) = -Inf;
+	this_shat(isnan(f)) = -Inf;
 	[~, t_high] = sort(this_shat,'descend');
 	t_high = t_high(1:n);
 	f_high = f(t_high);
@@ -145,7 +151,6 @@ for i = 1:length(history_lengths)
 	fp_low(censor_these) = [];
 	t_low(censor_these) = [];
 	t_high(censor_these) = [];
-
 
 	% determine range of this subset of data
 	low_min(i) = min(f_low);

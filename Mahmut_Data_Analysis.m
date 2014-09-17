@@ -8,8 +8,8 @@
 
 % specify which data to look at
 load('/local-data/DA-paper/mahmut_data.mat')
-td = 5;
-whiff_anal = 0;
+td = 6;
+
 
 roi1 = [20 30];
 roi2 = [55 65];
@@ -300,7 +300,6 @@ else
 end
 
 
-
 %         #######  ##     ## ######## ########  ##     ## ########    ##    ## ##       
 %        ##     ## ##     ##    ##    ##     ## ##     ##    ##       ###   ## ##       
 %        ##     ## ##     ##    ##    ##     ## ##     ##    ##       ####  ## ##       
@@ -323,7 +322,9 @@ xdata = xdata(:);
 ydata = ydata(:);
 
 fo=optimset('MaxFunEvals',1000,'Display','none');
-x = lsqcurvefit(@hill,[max(ydata) 2 2],xdata,ydata,[max(ydata)/2 2 1],[2*max(ydata) max(ydata) 10],fo);
+x = lsqcurvefit(@hill,[max(ydata) 2 2],xdata,ydata,[1 0 0],[2*max(ydata) max(ydata) 10],fo);
+% save this for later
+LNpred = hill(x,data(td).LinearFit);
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 plot(xdata,hill(x,xdata),'k')
@@ -344,7 +345,7 @@ end
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 plot(data(td).time,data(td).ORN,'k')
 plot(data(td).time,data(td).LinearFit,'r')
-plot(data(td).time,hill(x,data(td).LinearFit),'g')
+plot(data(td).time,LNpred,'g')
 set(gca,'XLim',[20 40])
 xlabel('Time (s)')
 ylabel('Firing rate (Hz)')
@@ -357,8 +358,7 @@ if being_published
 	delete(gcf);
 end
 
-% save this for later
-LNpred = hill(x,data(td).LinearFit);
+
 
 %%
 % They look almost identical. The r-square of the LN prediction is: 
@@ -369,7 +369,6 @@ disp(rsquare(LNpred,data(td).ORN))
 % And the raw Euclidean Distance between the prediction and the data is: 
 
 disp(Cost2(LNpred(205:end-33),data(td).ORN(205:end-33)))
-
 
 %        ##    ## ##       ##    ##    ##     ##  #######  ########  ######## ##       
 %        ###   ## ##       ###   ##    ###   ### ##     ## ##     ## ##       ##       
@@ -387,11 +386,12 @@ disp(Cost2(LNpred(205:end-33),data(td).ORN(205:end-33)))
 % The following figure shows the best fit NLN model.
 
 if redo_bootstrap
+	clear d
 	d.stimulus = data(td).PID;
 	d.stimulus(d.stimulus<0) = 0;
 	d.response = data(td).ORN;
-	x0 = [11   .96         30    1.6];
-	[~,x_NLN] = FitNLNModel(d,x0);
+	x0 = [9.4453    0.9268   22.3047    1.5814];
+	[NLNFit,x_NLN] = FitNLNModel(d,x0);
 end
 
 % solve the model for the best fit parameters
@@ -458,6 +458,8 @@ disp(rsquare(NLNFit,data(td).ORN))
 
 disp(Cost2(NLNFit(205:end-33),data(td).ORN(205:end-33)))
 
+
+
 %     ##        #######   ######       ######  ######## ##    ##  ######  #### ##    ##  ######   
 %     ##       ##     ## ##    ##     ##    ## ##       ###   ## ##    ##  ##  ###   ## ##    ##  
 %     ##       ##     ## ##           ##       ##       ####  ## ##        ##  ####  ## ##        
@@ -479,10 +481,11 @@ logPID(logPID<0) = 0;
 % The following figure shows the best fit NLN model.
 
 if redo_bootstrap
+	clear d
 	d.stimulus = logPID;
 	d.stimulus(d.stimulus<0) = 0;
 	d.response = data(td).ORN;
-	x0 = [7.38   2.85         135.55    3.15];
+	x0 = [8.3175    6.0375   48.4250    2.1891];
 	[~,x_logNLN] = FitNLNModel(d,x0);
 end
 
@@ -562,6 +565,8 @@ disp(Cost2(logNLNFit(205:end-33),data(td).ORN(205:end-33)))
 %% Fixing the filters
 % This data set is not ideal for extracting a linear filter from. Specifically, we need some sort of "white noise" like stimuli to correctly estimate a filters. So we are now going to use an "average" filter from the flickering stimulus experiment and fix that in the NLN model.  
 
+
+
 load('HowGeneralIsGainAdaptation.mat','Filters','filtertime');
 K = mean2(Filters(:,2:end));
 K(filtertime<0) = [];
@@ -569,11 +574,12 @@ K = K/max(K);
 filtertime(filtertime<0) = [];
 
 if redo_bootstrap
+	clear d
 	d.stimulus = logPID;
 	d.stimulus(d.stimulus<0) = 0;
 	d.response = data(td).ORN;
 	d.K = K;
-	x0 = [0.0219    3.0079   24.8205    4.4793];
+	x0 = [9.5146    2.7273   43.9182    1.6673];
 	[~,x_fixedK] = FitNLNModel(d,x0);
 end
 
@@ -642,8 +648,7 @@ disp(rsquare(fixedKFit,data(td).ORN))
 
 disp(Cost2(fixedKFit(205:end-33),data(td).ORN(205:end-33)))
 
-
-
+return
 
 %         ######      ###    #### ##    ##             ###    ##    ##    ###    ##       
 %        ##    ##    ## ##    ##  ###   ##            ## ##   ###   ##   ## ##   ##       
@@ -656,6 +661,12 @@ disp(Cost2(fixedKFit(205:end-33),data(td).ORN(205:end-33)))
 %% log-NLN Model Gain Analysis
 % In this section, we perform a gain analysis on the log NLN prediction first for an arbitrarily chosen history length of 120ms (panel on the left) and then for various history lengths (panel on the right). The history lengths where the slopes are significantly different (p<0.05) are indicated by dots. Significance is determined by bootstrapping the data 100 times.
 
+
+% do it only when LNpred is non zero
+CensoredLNPred = LNpred;
+CensoredLNPred(LNpred<1) = NaN;
+Censored_f = data(td).ORN;
+Censored_f(LNpred<1) = NaN;
 
 f1=figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
 ph(1) = subplot(2,1,1); hold on 
@@ -671,9 +682,9 @@ z = length(data(td).ORN) - 33; % where we end
 history_lengths = (3*floor(1000*logspace(-2,1,30)/3))/1e3;
 
 clear x
-x.response = data(td).ORN(s:z);
-x.prediction = logNLNFit(s:z);
-x.stimulus = logPID(s:z);
+x.response = Censored_f(s:z);
+x.prediction = CensoredLNPred(s:z);
+x.stimulus = data(td).PID(s:z);
 x.time = data(td).time(s:z);
 x.filter_length = 201;
 
@@ -699,7 +710,6 @@ if being_published
 	delete(f2);
 end
 
-return
 
 %%
 % It is clear from the diagram that our method of gain analysis is all wrong: we need to constrain our analysis to the whiffs of odor, and perhaps compare large whiffs to small whiffs. 
@@ -791,14 +801,108 @@ scatter(data(td).time(whiff_offs),p(whiff_offs),'r','filled');
 xlabel('Time (s)')
 ylabel('Stimulus (V)')
 title('Whiff identification')
-set(gca,'XLim',[57 66])
+set(gca,'XLim',[57 66],'YLim',[-.1 max(p)+1])
 
 PrettyFig;
+
 if being_published
 	snapnow;
 	delete(gcf);
 end
 
+% assemble the whiff data
+whiff = struct;
+for i = 1:length(whiff_ons)
+	whiff(i).t_on = whiff_ons(i);
+	whiff(i).t_off = whiff_offs(i);
+	whiff(i).t_peak = loc(i);
+	whiff(i).f = data(td).ORN(whiff_ons(i):whiff_offs(i));
+	whiff(i).fp = logNLNFit(whiff_ons(i):whiff_offs(i));
+	% fit a line 
+	[fitmetrics, gof] = fit(whiff(i).fp,whiff(i).f,'Poly1');
+	whiff(i).slope = fitmetrics.p1;
+	whiff(i).gof = gof.rsquare;
+	whiff(i).r = max(whiff(i).f)/max(whiff(i).fp);
+end
+
+
+% now only do gain analysis for the whiffs
+WhiffORN = NaN*data(td).ORN;
+WhiffORN_Pred = NaN*data(td).ORN;
+
+for i = 1:length(whiff)
+	WhiffORN(whiff(i).t_on:whiff(i).t_off) = whiff(i).f; 
+	WhiffORN_Pred(whiff(i).t_on:whiff(i).t_off) = whiff(i).fp; 
+end
+
+f1=figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+ph(1) = subplot(2,1,1); hold on 
+ph(2) = subplot(2,1,2); hold on
+
+f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+s = 300; % when we start for the gain analysis
+z = length(data(td).ORN) - 33; % where we end
+history_lengths = (3*floor(1000*logspace(-2,1,30)/3))/1e3;
+
+clear x
+x.response = WhiffORN(s:z);
+x.prediction = WhiffORN_Pred(s:z);
+x.stimulus = data(td).PID(s:z);
+x.time = data(td).time(s:z);
+x.filter_length = 201;
+
+
+if redo_bootstrap
+	[p_NLN,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
+	s=abs(l-h);
+	s(p_NLN(1,:)>0.05)=NaN;
+	[~,loc]=max(s);
+	example_history_length_NLN = history_lengths(loc);
+else
+	GainAnalysis4(x,history_lengths,example_history_length_NLN,ph,p_NLN);
+end
+
+xlabel(ph(3),'NLN Prediction (Hz)')
+set(ph(4),'XScale','log')
+
+if being_published
+	snapnow;
+	delete(f1);
+
+	snapnow;
+	delete(f2);
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+whiff([whiff.gof]<.8) = [];
+
+g = NaN*history_lengths;
+hl = floor(history_lengths/3e-3);
+shat = ComputeSmoothedStimulus(data(td).PID,hl);
+for i = 1:length(g)
+	x = shat(i,[whiff.t_peak]); x = x(:);
+	y = [whiff.slope]; y = y(:);
+	y(isnan(x)) = []; x(isnan(x)) = [];
+	[~,temp] = fit(x,y,'Poly1');
+	g(i) = temp.rsquare;
+end
+
+return
 
 
 

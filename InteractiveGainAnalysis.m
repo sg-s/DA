@@ -6,41 +6,62 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [] = InteractiveGainAnalysis(data)
+function [] = InteractiveGainAnalysis(data,data_type)
+switch nargin
+case 0
+	help InteractiveGainAnalysis
+	return
+case 1
+	data_type = 1;
+end
 
-% fit a LN model
-[K,~,filtertime] = FindBestFilter(data.PID,data.ORN,[],'filter_length=199;');
-LinearFit = convolve(data.time,data.PID,K,filtertime) + mean(data.ORN);
-LinearFit(LinearFit<0) =0;
+if data_type == 1
+	% assume we are getting raw data, and we need to fit a model to it
+	% fit a LN model
+	[K,~,filtertime] = FindBestFilter(data.PID,data.ORN,[],'filter_length=199;');
+	LinearFit = convolve(data.time,data.PID,K,filtertime) + mean(data.ORN);
+	LinearFit(LinearFit<0) =0;
 
-xdata = LinearFit;
-ydata = data.ORN;
-% crop it to lose NaNs
-ydata(isnan(xdata)) = [];
-xdata(isnan(xdata)) = [];
-xdata = xdata(:);
-ydata = ydata(:);
-fo=optimset('MaxFunEvals',2000,'Display','none');
-x = lsqcurvefit(@hill,[max(ydata) 2 2],xdata,ydata,[max(ydata)/2 2 1],[2*max(ydata) max(ydata) 10],fo);
-LNFit = hill(x,LinearFit);
-clear x
+	xdata = LinearFit;
+	ydata = data.ORN;
+	% crop it to lose NaNs
+	ydata(isnan(xdata)) = [];
+	xdata(isnan(xdata)) = [];
+	xdata = xdata(:);
+	ydata = ydata(:);
+	fo=optimset('MaxFunEvals',2000,'Display','none');
+	x = lsqcurvefit(@hill,[max(ydata) 2 2],xdata,ydata,[max(ydata)/2 2 1],[2*max(ydata) max(ydata) 10],fo);
+	LNFit = hill(x,LinearFit);
+	% assemble data
 
-% assemble data
-s = 300; % when we start for the gain analysis
-z = length(data.ORN) - 33; % where we end 
-x.response = data.ORN(s:z);
-x.prediction = LNFit(s:z);
-x.stimulus = data.PID(s:z);
-x.time = data.time(s:z);
-x.filter_length = 200; 
+	clear x
+	s = 300; % when we start for the gain analysis
+	z = length(data.ORN) - 33; % where we end 
+	x.response = data.ORN(s:z);
+	x.prediction = LNFit(s:z);
+	x.stimulus = data.PID(s:z);
+	x.time = data.time(s:z);
+	x.filter_length = 200; 
+
+
+else
+	% we're getting a pre-assembled data type, good to go
+	x = data;
+end
+
+
 
 % make the figure
 figure('outerposition',[0 0 1000 900]); hold on
 ph = [];
 ph(1) = subplot(4,1,1); hold on
 set(ph(1),'XLim',[min(data.time) max(data.time)])
-titlestr = strrep(data.original_name,'_','-');
-title(ph(1),titlestr)
+try
+	titlestr = strrep(data.original_name,'_','-');
+	title(ph(1),titlestr)
+catch
+end
+
 ph(2) = subplot(4,1,2); hold on
 set(ph(2),'XLim',[min(data.time) max(data.time)])
 linkaxes([ph(1) ph(2)],'x');

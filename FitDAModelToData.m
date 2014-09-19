@@ -15,60 +15,129 @@
 % You can also specify which flavour of the DA model to use by specifying a global variable called DA_Model_Func which contains a function handle to the DA model you want to use. By default, DA_Model_Func is "@DA_integrate2"
 %
 % You also have to specify a corresponding Validate Param function handle in DA_Model_Validate_Param_Func
-function [p, Rguess,x ] = FitDAModelToData(data,x0,lb,ub,IgnoreInitial)
+function [p, Rguess,x ] = FitDAModelToData(data,x0,lb,ub,min_r2)
 
 global DA_Model_Func
 global DA_Model_Validate_Param_Func	
 global nsteps
 
+default_x0 = [max(data.response) std(data.response) .3 10 2 10 2 -.1*(max(data.stimulus))];
+scale = 4;
 
 switch nargin 
 	case 0
 		help FitDAModelToData
 		return
 	case 1
-		error('Need more inputs. ')
+		x0 = default_x0;
+		lb = x0/scale;
+		ub = x0*scale;
 	case 2
-		lb = x0/2;
-		ub = x0*10;
-		IgnoreInitial = 300;
+		if isempty(x0)
+			x0 = default_x0;
+		end
+		lb = x0/scale;
+		ub = x0*scale;
 	case 3
-		ub = x0*10;
-		IgnoreInitial = 300;
+		ub = x0*scale;
 	case 4
-		IgnoreInitial = 300;
+	case 5
+		if isempty(x0)
+			x0 = default_x0;
+		end
+		if isempty(lb)
+			lb = x0/scale;
+
+		end
+		if isempty(ub)
+			ub = x0*scale;
+		end
+
 end
 
+% special bounds
+temp=ub(x0<0);
+ub(x0<0) = lb(x0<0);
+lb(x0<0) = temp; clear temp;
+lb(3) = 0; ub(3) = 1;
+
+IgnoreInitial = 300;
+nrep = 10;
 
 if isempty(nsteps)
-	nsteps = 100;
+	nsteps = 70;
 end
 
 psoptions = psoptimset('UseParallel',true, 'Vectorized', 'off','Cache','on','CompletePoll','on','Display','iter','MaxIter',nsteps,'MaxFunEvals',20000);
-
-x = patternsearch(@(x) DA_cost_function(x,data,@Cost2,IgnoreInitial),x0,[],[],[],[],lb,ub,psoptions);
-
-
-%psoptions = psoptimset('Display','iter','MaxIter',nsteps,'MaxFunEvals',20000);
-%x = fminsearch(@(x) DA_cost_function(x,data,@Cost2,IgnoreInitial),x0,psoptions);
-
 
 if isempty(DA_Model_Validate_Param_Func)
 	DA_Model_Validate_Param_Func = @ValidateDAParameters2;
 end
 
-p = DA_Model_Validate_Param_Func(x);
-
+if isempty(DA_Model_Func)
+	n = @DA_integrate2;
+end
 
 stimulus = data.stimulus;
 Rguess = 0*stimulus;
 
-if isempty(DA_Model_Func)
-	DA_Model_Func = @DA_integrate2;
+if min_r2
+	psoptions = psoptimset('UseParallel',true, 'Vectorized', 'off','Cache','on','CompletePoll','on','Display','iter','MaxIter',nsteps,'MaxFunEvals',20000);
+	% keep crunching till we can fit the damn thing
+	x = x0;
+	
+	for i = 1:nrep
+
+		% specify new bounds
+		lb = x/scale;
+		ub = x*scale;
+		% special bounds
+		temp=ub(x<0);
+		ub(x<0) = lb(x<0);
+		lb(x<0) = temp; clear temp;
+		if lb(3) < 0
+			lb(3) = 0; 
+		end
+		if ub(3) > 1
+			ub(3) = 1;
+		end
+		ub(1)=1;lb(1)=1;x(1)=1;
+		%x(5) = 2; x(7) = 2; ub(5) = 2; ub(7) = 2; lb(5) = 2; lb(7) = 2;
+
+		% fit
+		x = patternsearch(@(x) DA_cost_function(x,data,@Cost2,IgnoreInitial),x,[],[],[],[],lb,ub,psoptions);
+		p = DA_Model_Validate_Param_Func(x);
+		
+		if isvector(stimulus)
+			Rguess = DA_Model_Func(stimulus,p,data.LNpred);
+		else
+			for i = 1:size(stimulus,2)
+				Rguess(:,i) = DA_Model_Func(stimulus(:,i),p);
+			end
+			clear i
+		end
+
+		Rguess = abs(Rguess);
+
+		if rsquare(Rguess(IgnoreInitial:end),data.response(IgnoreInitial:end)) > min_r2
+			return
+		else
+			disp(oval(rsquare(Rguess(IgnoreInitial:end),data.response(IgnoreInitial:end)),4))
+			fprintf('\n')
+		end	
+
+	end
+else
+	x = patternsearch(@(x) DA_cost_function(x,data,@Cost2,IgnoreInitial),x0,[],[],[],[],lb,ub,psoptions);
+
 end
 
+
+p = DA_Model_Validate_Param_Func(x);
+
+
 if isvector(stimulus)
-	Rguess = DA_Model_Func(stimulus,p);
+	Rguess = DA_Model_Func(stimulus,p,data.LNpred);
 else
 	for i = 1:size(stimulus,2)
 		Rguess(:,i) = DA_Model_Func(stimulus(:,i),p);
@@ -77,3 +146,9 @@ else
 end
 
 Rguess = abs(Rguess);
+
+% show the result
+figure, hold on
+plot(data.response,'k')
+plot(Rguess,'r')
+title(oval(rsquare(Rguess(IgnoreInitial:end),data.response(IgnoreInitial:end)),4))

@@ -27,8 +27,10 @@ Kz = p.C*Ky + (1-p.C) * generate_simple_filter(p.tau_z,p.n_z,t);
 y = filter(Ky,1,S);
 z = filter(Kz,1,S);
 
-R = abs(p.A*y./(1+p.B*z));
+R = (p.A*y./(1+p.B*z));
 
+% % pass through rectifier
+% R(R<0) = 0;
 
 
 function f = generate_simple_filter(tau,n,t)

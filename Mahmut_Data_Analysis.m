@@ -370,6 +370,84 @@ disp(rsquare(LNpred,data(td).ORN))
 
 disp(Cost2(LNpred(205:end-33),data(td).ORN(205:end-33)))
 
+
+% taking log of stimulus
+logPID = log(data(td).PID);
+logPID= logPID - mean2(logPID(1:1000));
+logPID(logPID<0) = 0;
+
+
+%         ######      ###    #### ##    ##             ###    ##    ##    ###    ##       
+%        ##    ##    ## ##    ##  ###   ##            ## ##   ###   ##   ## ##   ##       
+%        ##         ##   ##   ##  ####  ##           ##   ##  ####  ##  ##   ##  ##       
+%        ##   #### ##     ##  ##  ## ## ##          ##     ## ## ## ## ##     ## ##       
+%        ##    ##  #########  ##  ##  ####          ######### ##  #### ######### ##       
+%        ##    ##  ##     ##  ##  ##   ###          ##     ## ##   ### ##     ## ##       
+%         ######   ##     ## #### ##    ##          ##     ## ##    ## ##     ## ######## 
+      
+%% log-NLN Model Gain Analysis
+% In this section, we perform a gain analysis on the log NLN prediction first for an arbitrarily chosen history length of 120ms (panel on the left) and then for various history lengths (panel on the right). The history lengths where the slopes are significantly different (p<0.05) are indicated by dots. Significance is determined by bootstrapping the data 100 times.
+
+
+% do it only when LNpred is non zero
+CensoredLNPred = LNpred;
+CensoredLNPred(LNpred<1) = NaN;
+Censored_f = data(td).ORN;
+Censored_f(LNpred<1) = NaN;
+
+f1=figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+ph(1) = subplot(2,1,1); hold on 
+ph(2) = subplot(2,1,2); hold on
+
+f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+s = 300; % when we start for the gain analysis
+z = length(data(td).ORN) - 33; % where we end
+history_lengths = (3*floor(1000*logspace(-2,1,30)/3))/1e3;
+
+clear x
+x.response = Censored_f(s:z);
+x.prediction = CensoredLNPred(s:z);
+x.stimulus = data(td).PID(s:z);
+x.time = data(td).time(s:z);
+x.filter_length = 201;
+
+
+if redo_bootstrap
+	[p_NLN,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
+	s=abs(l-h);
+	s(p_NLN(1,:)>0.05)=NaN;
+	[~,plot_loc]=max(s);
+	example_history_length_NLN = history_lengths(plot_loc);
+else
+	GainAnalysis4(x,history_lengths,example_history_length_NLN,ph,p_NLN);
+end
+
+xlabel(ph(3),'LN Prediction (Hz)')
+set(ph(4),'XScale','log')
+
+if being_published
+	snapnow;
+	delete(f1);
+
+	snapnow;
+	delete(f2);
+end
+
+
+return
+
+% let's try to fit a DA model
+clear x
+x.response = data(td).ORN;
+x.stimulus = data(td).PID;
+
+
+
+
 %        ##    ## ##       ##    ##    ##     ##  #######  ########  ######## ##       
 %        ###   ## ##       ###   ##    ###   ### ##     ## ##     ## ##       ##       
 %        ####  ## ##       ####  ##    #### #### ##     ## ##     ## ##       ##       
@@ -472,10 +550,7 @@ disp(Cost2(NLNFit(205:end-33),data(td).ORN(205:end-33)))
 % Even the NLN model seems to do a very poor job of predicting the response of the neuron. In this dataset, the stimulus varies wildly (by design), and we know that neurons respond logarithmically to the stimulus (the dose-response curve is log-linear). So perhaps we can predict the response better if we take the _logarithm_ of the stimulus, instead of the stimulus itself. 
 
 
-% taking log of stimulus
-logPID = log(data(td).PID);
-logPID= logPID - mean2(logPID(1:1000));
-logPID(logPID<0) = 0;
+
 
 %%
 % The following figure shows the best fit NLN model.
@@ -649,66 +724,6 @@ disp(rsquare(fixedKFit,data(td).ORN))
 disp(Cost2(fixedKFit(205:end-33),data(td).ORN(205:end-33)))
 
 return
-
-%         ######      ###    #### ##    ##             ###    ##    ##    ###    ##       
-%        ##    ##    ## ##    ##  ###   ##            ## ##   ###   ##   ## ##   ##       
-%        ##         ##   ##   ##  ####  ##           ##   ##  ####  ##  ##   ##  ##       
-%        ##   #### ##     ##  ##  ## ## ##          ##     ## ## ## ## ##     ## ##       
-%        ##    ##  #########  ##  ##  ####          ######### ##  #### ######### ##       
-%        ##    ##  ##     ##  ##  ##   ###          ##     ## ##   ### ##     ## ##       
-%         ######   ##     ## #### ##    ##          ##     ## ##    ## ##     ## ######## 
-      
-%% log-NLN Model Gain Analysis
-% In this section, we perform a gain analysis on the log NLN prediction first for an arbitrarily chosen history length of 120ms (panel on the left) and then for various history lengths (panel on the right). The history lengths where the slopes are significantly different (p<0.05) are indicated by dots. Significance is determined by bootstrapping the data 100 times.
-
-
-% do it only when LNpred is non zero
-CensoredLNPred = LNpred;
-CensoredLNPred(LNpred<1) = NaN;
-Censored_f = data(td).ORN;
-Censored_f(LNpred<1) = NaN;
-
-f1=figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-ph(1) = subplot(2,1,1); hold on 
-ph(2) = subplot(2,1,2); hold on
-
-f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-ph(3) = subplot(1,2,1); hold on 
-axis square
-ph(4) = subplot(1,2,2); hold on
-
-s = 300; % when we start for the gain analysis
-z = length(data(td).ORN) - 33; % where we end
-history_lengths = (3*floor(1000*logspace(-2,1,30)/3))/1e3;
-
-clear x
-x.response = Censored_f(s:z);
-x.prediction = CensoredLNPred(s:z);
-x.stimulus = data(td).PID(s:z);
-x.time = data(td).time(s:z);
-x.filter_length = 201;
-
-
-if redo_bootstrap
-	[p_NLN,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
-	s=abs(l-h);
-	s(p_NLN(1,:)>0.05)=NaN;
-	[~,loc]=max(s);
-	example_history_length_NLN = history_lengths(loc);
-else
-	GainAnalysis4(x,history_lengths,example_history_length_NLN,ph,p_NLN);
-end
-
-xlabel(ph(3),'NLN Prediction (Hz)')
-set(ph(4),'XScale','log')
-
-if being_published
-	snapnow;
-	delete(f1);
-
-	snapnow;
-	delete(f2);
-end
 
 
 %%

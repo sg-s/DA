@@ -71,14 +71,18 @@ LNpred = hill(x,data(td).LinearFit);
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 subplot(1,2,1), hold on
 plot(data(td).filtertime,K,'k')
-set(gca,'XLim',[min(data(td).filtertime)-.1 max(data(td).filtertime)+.1])
+%set(gca,'XLim',[min(data(td).filtertime)-.1 max(data(td).filtertime)+.1])
 xlabel('Filter Lag (s)')
 ylabel('Filter amplitude (Hz/stim)')
 subplot(1,2,2), hold on
 plot(sort(xdata),hill(x,sort(xdata)),'k')
 xlabel('Linear Prediction (Hz)')
 ylabel('Nonlinearity Output (Hz)')
-set(gca,'XLim',[0 max(xdata)])
+
+%set(gca,'XLim',[0 max(xdata)])
+
+
+return
 
 PrettyFig;
 

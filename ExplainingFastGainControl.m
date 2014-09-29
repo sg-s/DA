@@ -71,18 +71,12 @@ LNpred = hill(x,data(td).LinearFit);
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 subplot(1,2,1), hold on
 plot(data(td).filtertime,K,'k')
-%set(gca,'XLim',[min(data(td).filtertime)-.1 max(data(td).filtertime)+.1])
 xlabel('Filter Lag (s)')
 ylabel('Filter amplitude (Hz/stim)')
 subplot(1,2,2), hold on
 plot(sort(xdata),hill(x,sort(xdata)),'k')
 xlabel('Linear Prediction (Hz)')
 ylabel('Nonlinearity Output (Hz)')
-
-%set(gca,'XLim',[0 max(xdata)])
-
-
-return
 
 PrettyFig;
 
@@ -93,7 +87,7 @@ end
 
 
 %%
-% How does the output nonlinearity change the prediciton? In the following figure, the data is shown in black,and the LN prediction is shown in red. 
+% How does the output nonlinearity change the prediction? In the following figure, the data is shown in black,and the LN prediction is shown in red. 
 
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
@@ -123,6 +117,7 @@ disp(rsquare(LNpred,data(td).ORN))
 
 disp(Cost2(LNpred(205:end-33),data(td).ORN(205:end-33)))
 
+
 %      ########     ###       ##     ##  #######  ########  ######## ##       
 %      ##     ##   ## ##      ###   ### ##     ## ##     ## ##       ##       
 %      ##     ##  ##   ##     #### #### ##     ## ##     ## ##       ##       
@@ -134,18 +129,6 @@ disp(Cost2(LNpred(205:end-33),data(td).ORN(205:end-33)))
 %% Fitting a DA Model to ORN response data
 % In this section, we fit a DA model to the example data: 
 disp(data(td).original_name)
-
-% % fit model to data
-% if ~exist('p')
-% 	clear d
-% 	d.stimulus = data(td).PID - mean(data(td).PID);
-% 	d.stimulus = d.stimulus*100;
-% 	d.response = data(td).ORN;
-% 	x0 = [549 4.8 2e-4 .4 14 8 3 -.1127];
-% 	[p,DApred,DAParam]=FitDAModelToData(d,x0,[],[],.95);
-% 	close all
-% 	multiplot(data(td).time,data(td).ORN,DApred)
-% end
 
 
 
@@ -337,10 +320,6 @@ if being_published
 end
 
 
-
-
-return
-
 %%
 % What do to the two models predict of the stimulus-dependent instantaneous gain of the neuron? On the left is the prediction of the LN model, on the right is the prediction of the DA model. 
 
@@ -408,54 +387,7 @@ if being_published
 end
 
 
-%% The DA Model cannot fit the data if $r_{0}$ >0
-% The $r_{0}$ parameter is a fudge factor added to fit some supposed offset which corresponds to the basal firing of the ORN. However, in this case, a negative value is chosen, which makes no sense. If we constrain this to positive values, the best fit is horrible: 
-
-% fit model to data
-if ~exist('p2')
-
-	% choose model
-	global DA_Model_Func
-	global DA_Model_Validate_Param_Func
-	global nsteps
-	nsteps = 200;
-	DA_Model_Func = @DA_integrate2;
-	DA_Model_Validate_Param_Func = @ValidateDAParameters2;
-
-	clear d
-	d.stimulus = data(td).PID;
-	d.response = data(td).ORN;
-	[p2,~,x] = FitDAModelToData(d,[7631 105 .003 0.4 7 4.5 10 1],[1 1 0 1e-1 2 0 2 0],[1e5 1e3 1 20 10 24 15 100]);
-	clear d
-	DApred=DA_Model_Func(data(td).PID,p2);
-	multiplot(data(td).time,data(td).ORN,DApred)
-end
-
-DApred=DA_integrate2(data(td).PID,p2);
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-subplot(2,1,1), hold on
-plot(data(td).time,data(td).PID,'k');
-set(gca,'XLim',[min(data(td).time)-2 max(data(td).time)+2])
-ylabel('PID Voltage (V)')
-hold off
-
-
-subplot(2,1,2), hold on
-plot(data(td).time,data(td).ORN,'k');
-plot(data(td).time,DApred,'r')
-set(gca,'XLim',[min(data(td).time)-2 max(data(td).time)+2])
-ylabel('Firing Rate (Hz)')
-xlabel('Time (s)')
-legend({'Data','DA Fit'})
-PrettyFig;
-hold off
-
-
-if being_published
-	snapnow;
-	delete(fh);
-end
+%% 
 
 
 %% Version Info

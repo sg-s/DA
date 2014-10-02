@@ -169,7 +169,7 @@ PrettyFig;
 
 if being_published
 	snapnow;
-	delete(fh);
+	delete(gcf);
 end
 
 %%
@@ -204,6 +204,42 @@ disp(rsquare(DApred,data(td).ORN))
 % And the raw Euclidean Distance between the prediction and the data is: 
 
 disp(Cost2(DApred(205:end-33),data(td).ORN(205:end-33)))
+
+%    ##        ######  ##     ## 
+%    ##       ##    ## ###   ### 
+%    ##       ##       #### #### 
+%    ##       ##       ## ### ## 
+%    ##       ##       ##     ## 
+%    ##       ##    ## ##     ## 
+%    ########  ######  ##     ## 
+
+%% Linearised Correction Model
+% Our hypothesis is that the ORN modulates its gain based on the input stimulus. In other words, it divisively affects the prediction of the linear model (which is also why the linear model cannot account for this). A first order correction is given by:
+
+%%
+% $$f_{1}=\frac{f_{0}}{1+g_{1}}$$
+
+%%
+% where $g_{1}$ is a first order gain correction term given by
+
+%%
+% $$ g_{1}=K_{1}\otimes s(t) $$ 
+
+%%
+% where $K_{1}$ is the first order "gain filter". We can write out a higher order correction, for example, a second order gain correction: 
+
+%% 
+% $$f_{2}=\frac{f_{1}}{1+g_{2}}$$
+
+%%
+% and so on. In practise, $K_{i}$ is parametrised, and fitted to the data. There are numerical difficulties in estimating these filters non parametrically. 
+
+
+ 
+
+return
+
+
 
 %  ######      ###    #### ##    ##       ###    ##    ##    ###    ##          ##       ##    ## 
 % ##    ##    ## ##    ##  ###   ##      ## ##   ###   ##   ## ##   ##          ##       ###   ## 

@@ -5,81 +5,108 @@
 % 
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
-function [] = FitLCM(data,model,max_order,x0)
+function [data] = FitLCM(data,model,max_order,x0)
+
+param_max_order = 4;	
 switch nargin
 case 0
 	help FitLCM
 	return
 case 1
-	model = @gamma_function;
-	max_order = 2;
-	x0 = [1 1 1];
+	model = @alpha_filter;
+	max_order = param_max_order; % max order of gain correction
+	x0 = [10 1];
 case 2
-	% assume that the model requires N parameters, and one time input
-	n = nargin(model);
-	x0 = ones(1,n);
+	
+	max_order = param_max_order;
 case 3
+	n = nargin(model)-1;
+	x0 = rand(1,n);
+end
+
+if nargin < 4
+	switch char(model)
+		case 'filter_gamma'
+			x0 = [10 2 1];
+			ub = [100 4 1e5];
+			lb = [1e-3 0 0];
+		case 'filter_alpha'
+			x0 = [10 1];
+			ub = [1e2 1e4];
+			lb = [1 1e-4];
+		case 'filter_alpha2'
+			x0 = [30 60 1 .1];
+			ub = [300 300 1e4 2  ];
+			lb = [1/10 1/10 0 ];
+		case 'filter_gamma2'
+			x0 = [10 2 200 1     ];
+			ub = [1e3 5 1e3 1e4  ];
+			lb = [1 1 2 1        ];
+	end
 end
 
 % parameters
-nsteps = 500;
+nsteps = 2000;
 IgnoreInitial = 201;
+IgnoreTerminal = 102;
 
-% build a simple LN model 
-td=1;
-[K,~,filtertime] = FindBestFilter(data(td).PID(500:end),data(td).ORN(500:end),[],'filter_length=201;');
-data(td).K = K;
-data(td).filtertime = filtertime*mean(diff(data(td).time));
-data(td).LinearFit = convolve(data(td).time,data(td).PID,data(td).K,data(td).filtertime);
-data(td).LinearFit = data(td).LinearFit + mean(data(td).ORN);
+% build a simple LN model if not provided in data
+if isfield(data,'f0')
+else
+	[K,~,filtertime] = FindBestFilter(data.PID(500:end),data.ORN(500:end),[],'filter_length=201;');
+	data.K = K;
+	data.filtertime = filtertime*mean(diff(data.time));
+	data.LinearFit = convolve(data.time,data.PID,data.K,data.filtertime);
+	data.LinearFit = data.LinearFit + mean(data.ORN);
 
-xdata = data(td).LinearFit;
-ydata = data(td).ORN;
+	xdata = data.LinearFit;
+	ydata = data.ORN;
 
-% crop it to lose NaNs
-ydata(isnan(xdata)) = [];
-xdata(isnan(xdata)) = [];
+	% crop it to lose NaNs
+	ydata(isnan(xdata)) = [];
+	xdata(isnan(xdata)) = [];
 
-xdata = xdata(:);
-ydata = ydata(:);
+	xdata = xdata(:);
+	ydata = ydata(:);
 
-fo=optimset('MaxFunEvals',1000,'Display','none');
-x = lsqcurvefit(@hill,[max(ydata) 2 2],xdata,ydata,[max(ydata)/2 2 1],[2*max(ydata) max(ydata) 10],fo);
+	fo=optimset('MaxFunEvals',1000,'Display','none');
+	x = lsqcurvefit(@hill,[max(ydata) 2 2],xdata,ydata,[max(ydata)/2 2 1],[2*max(ydata) max(ydata) 10],fo);
 
 
-% save this for later
-LNFit = hill(x,data(td).LinearFit);
-
+	% save this for later
+	data.f0 = hill(x,data.LinearFit);
+end
 
 
 psoptions = psoptimset('UseParallel',true, 'Vectorized', 'off','Cache','on','CompletePoll','on','Display','final','MaxIter',nsteps,'MaxFunEvals',20000);
 
 
 % debug
-colours = jet(max_order+1);
-figure, plot(data.ORN(IgnoreInitial:end),'k')
-hold on
-plot(LNFit(IgnoreInitial:end),'Color',colours(1,:))
+if ~nargout
+	colours = jet(max_order+1);
+	figure, plot(data.ORN(IgnoreInitial:end-IgnoreTerminal),'k')
+	hold on
+	plot(data.f0(IgnoreInitial:end-IgnoreTerminal),'Color',colours(1,:))
+end
 
 
 % now fit the cascade model
-rcap = NaN(max_order+1,length(data.ORN(IgnoreInitial:end)));
-rcap(1,:) = LNFit(IgnoreInitial:end); % stores the nth order predictions
+rcap = NaN(max_order+1,length(data.ORN(IgnoreInitial:end-IgnoreTerminal)));
+rcap(1,:) = data.f0(IgnoreInitial:end-IgnoreTerminal); % stores the 0th order predictions
 fit_cost = NaN(1,length(max_order)+1);
 fit_param = NaN(length(x0),length(max_order));
 
 
-numerator = LNFit(IgnoreInitial:end);
-x0 = [10 .2 10];
-d.stimulus = data.PID-mean(data.PID);
-d.stimulus = d.stimulus(IgnoreInitial:end);
-d.response = data.ORN(IgnoreInitial:end);
+numerator = data.f0(IgnoreInitial:end-IgnoreTerminal);
+d.stimulus = data.PID;
+d.stimulus = d.stimulus(IgnoreInitial:end-IgnoreTerminal);
+d.stimulus = d.stimulus - mean(d.stimulus);
+d.response = data.ORN(IgnoreInitial:end-IgnoreTerminal);
 
 
 for i = 1:max_order
 	% assemble the data
 	d.numerator = numerator;
-	ub = x0*100; lb = x0/100;
 
 	% fit
 	x = patternsearch(@(x) LCM_Cost_Function(x,d,model),x0,[],[],[],[],lb,ub,psoptions);
@@ -88,34 +115,46 @@ for i = 1:max_order
 	fit_param(:,i) = x;
 
 	% debug
-	K = model(x(1),x(2),x(3));
+
+	n = nargin(model)-1;
+	K = model(x(1:n));
 	Rguess = filter(K,1,d.stimulus);
 	Rguess = d.numerator./(1+Rguess);
 	rcap(1+i,:) = Rguess;
-	plot(Rguess,'Color',colours(1+i,:))
+	if ~nargout
+		plot(Rguess,'Color',colours(1+i,:))
+	end
 
 	numerator = Rguess;
-	
+
 
 end
 
+keyboard
 % calculate the cost at each iteration
- a = data.ORN(IgnoreInitial:end);
+a = data.ORN(IgnoreInitial:end-IgnoreTerminal);
 for i = 1:width(rcap)
 	fit_cost(i) = Cost2(a(~isnan(rcap(i,:))),rcap(i,(~isnan(rcap(i,:)))));
 end
 
 
 % make a figure showing all the gain filters calcualted
-figure, hold on
-for i = 1:max_order
-	K = model(fit_param(:,i));
-	plot(K,'Color',colours(i+1,:))
+if ~nargout
+	figure, hold on
+	for i = 1:max_order
+		n = nargin(model)-1;
+		K = model(fit_param(1:n,i));
+		plot(K,'Color',colours(i+1,:))
+	end
+
+
+	% make a figure showing the improvement in fit with order
+	figure, hold on
+	plot(fit_cost,'k')
+
+
+	tilefigs;
 end
-
-keyboard
-
-
 
 
 

@@ -14,8 +14,20 @@ switch length(fieldnames(d))
 	case 2
 		error;
 	case 3
-		K = model(x(1),x(2),x(3));
+		n = nargin(model)-1;
+		K = model(x(1:n));
+		if any(isnan(K))
+			cost = Inf;
+			return
+		end
 		Rguess = filter(K,1,d.stimulus);
+
+		% % pass it through a non-linearity 
+		% Rguess = hill(x(n+1:end),Rguess);
+
+
 		Rguess = d.numerator./(1+Rguess);
 		cost = Cost2(Rguess(~isnan(Rguess)),d.response(~isnan(Rguess)));
+
+
 end

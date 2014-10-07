@@ -1,0 +1,229 @@
+% PairedPulseProtocol.m
+% 
+% created by Srinivas Gorur-Shandilya at 10:20 , 09 April 2014. Contact me at http://srinivas.gs/contact/
+% 
+% This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
+% To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
+
+% internal housekeeping: determine if being called by publish or not
+calling_func = dbstack;
+being_published = 0;
+if ~isempty(calling_func)
+	if find(strcmp('publish',{calling_func.name}))
+		being_published = 1;
+	end
+end
+
+%% Paired Pulse Protocol
+% This document describes the paired pulse experiment. 
+
+load('/local-data/DA-paper/ppp/2014_10_02_CSF2_EA_ab3_PairedPulses_2.mat')
+
+
+%% Stimulus 
+% The following figure shows the stimulus type we present: in one case, a small pulse is followed by a big pulse. In the other, a big pulse is followed by a small pulse. The panel on the top shows the two cases we consider. The panel on the bottom left shows one pair zoomed up, showing that the pulses are similar irrespective of order presented. In the final panel on the bottom right, we quantify the height of the pulses as a function of pulse number. We see that there is no significant difference between the blue and red curves, showing that the stimulus delivery is independent of the order of the pulses.  
+
+
+figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+subplot(2,1,1), hold on
+time = 1e-4:1e-4:1e-4*length(data(2).PID);
+plot(time,mean2(data(2).PID))
+plot(time,mean2(data(3).PID),'r')
+xlabel('Time (s)')
+ylabel('PID')
+
+% zoom up on one
+subplot(2,2,3), hold on
+plot(time,mean2(data(2).PID))
+plot(time,mean2(data(3).PID),'r')
+set(gca,'XLim',[25.2 26.7])
+xlabel('Time (s)')
+ylabel('PID (V)')
+legend({'Pp','pP'})
+
+
+% variation of height with pulse #
+subplot(2,2,4), hold on
+npulses = sum(diff(ControlParadigm(2).Outputs(5,:)) == 1);
+p_height = NaN(2,npulses);
+P_height = NaN(2,npulses);
+[bons,boffs]=ComputeOnsOffs(ControlParadigm(2).Outputs(6,:));
+[fons,foffs]=ComputeOnsOffs(ControlParadigm(2).Outputs(5,:));
+pulse_width = boffs(1)-bons(1);
+for i = 1:npulses
+	PID = mean2(data(2).PID);
+	p_height(1,i)= max(PID(bons(i):boffs(i)+pulse_width/2));
+	P_height(1,i)= max(PID(fons(i):foffs(i)+pulse_width/2));
+end
+[bons,boffs]=ComputeOnsOffs(ControlParadigm(3).Outputs(6,:));
+[fons,foffs]=ComputeOnsOffs(ControlParadigm(3).Outputs(5,:));
+pulse_width = boffs(1)-bons(1);
+for i = 1:npulses
+	PID = mean2(data(3).PID);
+	p_height(2,i)= max(PID(bons(i):boffs(i)+pulse_width/2));
+	P_height(2,i)= max(PID(fons(i):foffs(i)+pulse_width/2));
+end
+plot(p_height(1,:))
+plot(p_height(2,:),'r')
+plot(P_height(1,:))
+plot(P_height(2,:),'r')
+ylabel('Pulse Height (V)')
+xlabel('Pulse #')
+
+
+PrettyFig;
+
+if being_published
+	snapnow;
+	delete(gcf)
+end
+
+
+%% ab3A Responses 
+% In this section, we look at how the ab3A neuron responds to these pulses. 
+
+
+% convert all the spiketimes in all the paradigms to a firing rate.
+if ~exist('f')
+	f(2).A = [];
+	for i = 1:length(spikes)
+		textbar(i,length(spikes))
+		if ~isempty(spikes(i).A) && length(spikes(i).A) > 1
+			[f_this,ft] = spiketimes2f(spikes(i).A);
+			f(i).A  = mean2(f_this);
+			f(i).time = ft;
+		end
+	end
+end
+
+
+figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+subplot(2,2,1:2), hold on
+plot(f(2).time,f(2).A), hold on
+plot(f(2).time,f(3).A,'r')
+set(gca,'XLim',[25 38])
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+legend({'Pp','pP'})
+
+% calcualte peak heights based on order 
+Pp_paradigm = 2; pP_paradigm = 3;
+small_peaks1 = zeros(1,10);
+small_peaks2 = zeros(1,10);
+large_peaks1 = zeros(1,10);
+large_peaks2 = zeros(1,10);
+
+% find when the small valve is on
+small_pulse_1st = interp1(time,ControlParadigm(pP_paradgim).Outputs(6,:),f(pP_paradgim).time);
+small_pulse_2nd = interp1(time,ControlParadigm(Pp_paradgim).Outputs(6,:),f(Pp_paradgim).time);
+[ons_1st,offs_1st] = ComputeOnsOffs(small_pulse_1st);
+[ons_2nd,offs_2nd] = ComputeOnsOffs(small_pulse_2nd);
+dt=mean(diff(f(pP_paradgim).time));
+% everything is delayed a 100ms, so correct for that
+d =floor(.100/dt);
+ons_1st = ons_1st + d; ons_2nd = ons_2nd + d; offs_1st = offs_1st + d; offs_2nd = offs_2nd + d;
+for i = 1:length(small_peaks1)
+	small_peaks1(i) = max(f(pP_paradigm).A(ons_1st(i):offs_1st(i)));
+	small_peaks2(i) = max(f(Pp_paradigm).A(ons_2nd(i):offs_2nd(i)));
+end
+
+% find when the big valve is on
+big_pulse_1st = interp1(time,ControlParadigm(Pp_paradgim).Outputs(5,:),f(Pp_paradgim).time);
+big_pulse_2nd = interp1(time,ControlParadigm(pP_paradgim).Outputs(5,:),f(pP_paradgim).time);
+[ons_1st,offs_1st] = ComputeOnsOffs(big_pulse_1st);
+[ons_2nd,offs_2nd] = ComputeOnsOffs(big_pulse_2nd);
+dt=mean(diff(f(pP_paradgim).time));
+% everything is delayed a 100ms, so correct for that
+d =floor(.100/dt);
+ons_1st = ons_1st + d; ons_2nd = ons_2nd + d; offs_1st = offs_1st + d; offs_2nd = offs_2nd + d;
+for i = 1:length(small_peaks1)
+	large_peaks1(i) = max(f(Pp_paradigm).A(ons_1st(i):offs_1st(i)));
+	large_peaks2(i) = max(f(pP_paradigm).A(ons_2nd(i):offs_2nd(i)));
+end
+
+subplot(2,2,3), hold on
+plot(small_peaks1,small_peaks2,'g.','MarkerSize',35)
+plot(large_peaks1,large_peaks2,'k.','MarkerSize',35)
+
+legend({'small','Large'},'Location','southeast')
+xlabel('Peak f when first (Hz)')
+ylabel('Peak f when second (Hz)')
+set(gca,'XLim',[30 120],'YLim',[30 120])
+axis square
+
+
+PrettyFig;
+
+if being_published
+	snapnow;
+	delete(gcf)
+end
+
+
+
+return
+
+%% LN Model simulations 
+% In this section, we use the LN model with parameters chosen from a representative dataset from Carlotta's flickering stimulus experiment to try to simulate what the neuron responses to these paired pulses will be. The LN model used looks like this:
+
+return
+% load data
+load('/local-data/DA-paper/data.mat')
+td = 4;
+
+
+% build a simple LN model
+K = FindBestFilter(data(td).PID(500:end),data(td).ORN(500:end),[],'filter_length=201;');
+data(td).K = K;
+t = data(td).time;
+data(td).filtertime = filtertime*mean(diff(data(td).time));
+data(td).LinearFit = convolve(data(td).time,data(td).PID,data(td).K,data(td).filtertime) + mean(data(td).ORN);
+filtertime = data(td).filtertime;
+
+xdata = data(td).LinearFit;
+ydata = data(td).ORN;
+
+% crop it to lose NaNs
+ydata(isnan(xdata)) = [];
+xdata(isnan(xdata)) = [];
+
+xdata = xdata(:);
+ydata = ydata(:);
+
+fo=optimset('MaxFunEvals',1000,'Display','none');
+x = lsqcurvefit(@hill,[max(ydata) 2 2],xdata,ydata,[max(ydata)/2 2 1],[2*max(ydata) max(ydata) 10],fo);
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+plot(data(td).filtertime,K,'k')
+xlabel('Filter Lag (s)')
+ylabel('Filter amplitude (Hz/stim)')
+subplot(1,2,2), hold on
+plot(sort(xdata),hill(x,sort(xdata)),'k')
+xlabel('Linear Prediction (Hz)')
+ylabel('Nonlinearity Output (Hz)')
+
+PrettyFig;
+
+if being_published
+	snapnow;
+	delete(gcf);
+end
+
+
+load('/local-data/DA-paper/ppp/2014_10_01_EA_10PairedPulses_100msWidth_100msLag_3.mat')
+
+
+%%
+% We now use this to predict the responses in either case. 
+PID = interp1(time,data(4).PID,t);
+fp1 = convolve(t,PID,K,filtertime) + 100;
+fp1 = hill(x,fp1);
+
+figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+subplot(2,1,1), hold on
+plot(time,fp1)
+
+
+%% LN + Dynamical Gain simulations 
+

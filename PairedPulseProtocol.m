@@ -231,12 +231,11 @@ end
 
 
 
-return
+
 
 %% LN Model simulations 
-% In this section, we use the LN model with parameters chosen from a representative dataset from Carlotta's flickering stimulus experiment to try to simulate what the neuron responses to these paired pulses will be. The LN model used looks like this:
+% In this section, we use the LN model with parameters chosen from a representative dataset from Carlotta's flickering stimulus experiment to try to simulate what the neuron responses to these paired pulses will be. The filter is arbitrarily chosen from old data, and the output non-linearity is fit to the current data set. 
 
-return
 % load data
 load('/local-data/DA-paper/data.mat')
 td = 4;
@@ -244,14 +243,21 @@ td = 4;
 
 % build a simple LN model
 K = FindBestFilter(data(td).PID(500:end),data(td).ORN(500:end),[],'filter_length=201;');
-data(td).K = K;
-t = data(td).time;
-data(td).filtertime = filtertime*mean(diff(data(td).time));
-data(td).LinearFit = convolve(data(td).time,data(td).PID,data(td).K,data(td).filtertime) + mean(data(td).ORN);
 filtertime = data(td).filtertime;
 
-xdata = data(td).LinearFit;
-ydata = data(td).ORN;
+
+
+% now fit a nonlinearity to the data
+K = K/1000;
+load('/local-data/DA-paper/ppp/2014_10_02_CSF2_EA_ab3_PairedPulses_2.mat')
+time = 1:length(data(2).PID); time = time*1e-4;
+t = 0:3e-3:max(time);
+PID = interp1(time,mean2(data(2).PID),t); PID(1) = 0;
+fp2 = convolve(t,PID,K,filtertime);
+
+
+xdata = fp2;
+ydata = f(2).A;
 
 % crop it to lose NaNs
 ydata(isnan(xdata)) = [];
@@ -262,38 +268,95 @@ ydata = ydata(:);
 
 fo=optimset('MaxFunEvals',1000,'Display','none');
 x = lsqcurvefit(@hill,[max(ydata) 2 2],xdata,ydata,[max(ydata)/2 2 1],[2*max(ydata) max(ydata) 10],fo);
+LNP2 = hill(x,fp2);
 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-subplot(1,2,1), hold on
-plot(data(td).filtertime,K,'k')
-xlabel('Filter Lag (s)')
-ylabel('Filter amplitude (Hz/stim)')
-subplot(1,2,2), hold on
-plot(sort(xdata),hill(x,sort(xdata)),'k')
-xlabel('Linear Prediction (Hz)')
-ylabel('Nonlinearity Output (Hz)')
+% now use this to predict the reversed order sequence
+PID = interp1(time,mean2(data(3).PID),t); PID(1) = 0;
+fp3 = convolve(t,PID,K,filtertime);
+LNP3 = hill(x,fp3);
+
+%%
+% The following figure shows the output of the LN simulations using the same stimulus shown the ORN in the figure above. The LN model can capture the same qualitative behaviour we see in the neuron, indicating that the decrease in firing can be explained by a long inhibitory tail from a differentiating filter, and does not need modulation of gain. 
+
+figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+subplot(2,2,1:2), hold on
+plot(t,LNP2,'b'), hold on
+plot(t,LNP3,'r'), hold on
+set(gca,'XLim',[25 38])
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+legend({'Pp','pP'})
+title('LN Model Simulations Lag=100ms')
+
+
+% calcualte peak heights based on order 
+Pp_paradigm = 2; pP_paradigm = 3;
+small_peaks1 = zeros(1,10);
+small_peaks2 = zeros(1,10);
+large_peaks1 = zeros(1,10);
+large_peaks2 = zeros(1,10);
+
+% find when the small valve is on
+small_pulse_1st = interp1(time,ControlParadigm(pP_paradigm).Outputs(6,:),f(pP_paradigm).time);
+small_pulse_2nd = interp1(time,ControlParadigm(Pp_paradigm).Outputs(6,:),f(Pp_paradigm).time);
+[ons_1st,offs_1st] = ComputeOnsOffs(small_pulse_1st);
+[ons_2nd,offs_2nd] = ComputeOnsOffs(small_pulse_2nd);
+dt=3e-3;
+% everything is delayed a 100ms, so correct for that
+d =floor(.100/dt);
+ons_1st = ons_1st + d; ons_2nd = ons_2nd + d; offs_1st = offs_1st + d; offs_2nd = offs_2nd + d;
+for i = 1:length(small_peaks1)
+	small_peaks1(i) = max(LNP3(ons_1st(i):offs_1st(i)));
+	small_peaks2(i) = max(LNP2(ons_2nd(i):offs_2nd(i)));
+end
+
+% find when the big valve is on
+big_pulse_1st = interp1(time,ControlParadigm(Pp_paradigm).Outputs(5,:),f(Pp_paradigm).time);
+big_pulse_2nd = interp1(time,ControlParadigm(pP_paradigm).Outputs(5,:),f(pP_paradigm).time);
+[ons_1st,offs_1st] = ComputeOnsOffs(big_pulse_1st);
+[ons_2nd,offs_2nd] = ComputeOnsOffs(big_pulse_2nd);
+dt=mean(diff(f(pP_paradigm).time));
+% everything is delayed a 100ms, so correct for that
+d =floor(.100/dt);
+ons_1st = ons_1st + d; ons_2nd = ons_2nd + d; offs_1st = offs_1st + d; offs_2nd = offs_2nd + d;
+for i = 1:length(small_peaks1)
+	large_peaks1(i) = max(LNP2(ons_1st(i):offs_1st(i)));
+	large_peaks2(i) = max(LNP3(ons_2nd(i):offs_2nd(i)));
+end
+
+subplot(2,2,3), hold on
+
+
+plot(small_peaks1,small_peaks2,'g.','MarkerSize',35), hold on
+plot(large_peaks1,large_peaks2,'k.','MarkerSize',35)
+
+legend({'small','Large'},'Location','northwest')
+xlabel('Peak f when first (Hz)')
+ylabel('Peak f when second (Hz)')
+set(gca,'XLim',[20 120],'YLim',[20 120])
+axis square
+
+% plot a line of unity
+plot([0 200],[0 200],'k--')
+
+% plot lines to each of the clouds of points
+fo=fit(small_peaks1(:),small_peaks2(:),'poly1');
+plot(min(small_peaks1)-20:20+max(small_peaks1),fo(min(small_peaks1)-20:20+max(small_peaks1)),'g')
+
+
+% plot lines to each of the clouds of points
+fo=fit(large_peaks1(:),large_peaks2(:),'poly1');
+plot(min(large_peaks1)-20:20+max(large_peaks1),fo(min(large_peaks1)-20:20+max(large_peaks1)),'k')
+
+title('Lag=100ms')
 
 PrettyFig;
 
 if being_published
 	snapnow;
-	delete(gcf);
+	delete(gcf)
 end
 
 
-load('/local-data/DA-paper/ppp/2014_10_01_EA_10PairedPulses_100msWidth_100msLag_3.mat')
-
-
-%%
-% We now use this to predict the responses in either case. 
-PID = interp1(time,data(4).PID,t);
-fp1 = convolve(t,PID,K,filtertime) + 100;
-fp1 = hill(x,fp1);
-
-figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
-subplot(2,1,1), hold on
-plot(time,fp1)
-
-
-%% LN + Dynamical Gain simulations 
+% now 
 

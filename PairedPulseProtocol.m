@@ -350,13 +350,76 @@ plot(min(large_peaks1)-20:20+max(large_peaks1),fo(min(large_peaks1)-20:20+max(la
 
 title('Lag=100ms')
 
+
+% now compute the LN model prediction for all lags.
+fp = f;
+for i = 2:11
+	time = 1:length(data(i).PID); time = time*1e-4;
+	t = 0:3e-3:max(time);
+	PID = interp1(time,mean2(data(i).PID),t); PID(1) = 0;
+	fp(i).A = convolve(t,PID,K,filtertime);
+	fp(i).A = hill(x,fp(i).A);
+end
+
+
+
+% now calculate the ratios of each pair as a function of lag
+r_small = NaN(10,5); r_large = NaN(10,5);
+for i = 1:5
+
+	Pp_paradigm = 2*i; % big pulse first paradigm
+	pP_paradigm = 2*i + 1; % small pulse first paradigm
+	time = 1e-4:1e-4:1e-4*length(data(Pp_paradigm).PID);
+
+	% find when the big valve is on
+	big_pulse_1st = interp1(time,ControlParadigm(Pp_paradigm).Outputs(5,:),f(Pp_paradigm).time);
+	big_pulse_2nd = interp1(time,ControlParadigm(pP_paradigm).Outputs(5,:),f(pP_paradigm).time);
+	[ons_1st,offs_1st] = ComputeOnsOffs(big_pulse_1st);
+	[ons_2nd,offs_2nd] = ComputeOnsOffs(big_pulse_2nd);
+	dt=mean(diff(f(pP_paradigm).time));
+	% everything is delayed a 100ms, so correct for that
+	d =floor(.100/dt);
+	ons_1st = ons_1st + d; ons_2nd = ons_2nd + d; offs_1st = offs_1st + d; offs_2nd = offs_2nd + d;
+	for j = 1:10
+		large_peaks1(j) = max(fp(Pp_paradigm).A(ons_1st(j):offs_1st(j)));
+		large_peaks2(j) = max(fp(pP_paradigm).A(ons_2nd(j):offs_2nd(j)));
+	end
+
+	r_large(:,i) = large_peaks1./large_peaks2;
+
+	% find when the small valve is on
+	small_pulse_1st = interp1(time,ControlParadigm(pP_paradigm).Outputs(6,:),f(pP_paradigm).time);
+	small_pulse_2nd = interp1(time,ControlParadigm(Pp_paradigm).Outputs(6,:),f(Pp_paradigm).time);
+	[ons_1st,offs_1st] = ComputeOnsOffs(small_pulse_1st);
+	[ons_2nd,offs_2nd] = ComputeOnsOffs(small_pulse_2nd);
+	dt=mean(diff(f(pP_paradigm).time));
+	% everything is delayed a 100ms, so correct for that
+	d =floor(.100/dt);
+	ons_1st = ons_1st + d; ons_2nd = ons_2nd + d; offs_1st = offs_1st + d; offs_2nd = offs_2nd + d;
+	for j = 1:10
+		small_peaks1(j) = max(fp(pP_paradigm).A(ons_1st(j):offs_1st(j)));
+		small_peaks2(j) = max(fp(Pp_paradigm).A(ons_2nd(j):offs_2nd(j)));
+	end
+	
+	r_small(:,i) = small_peaks1./small_peaks2;
+
+end
+
+
+subplot(2,2,4), hold on
+lag = 100:100:500;
+plot(lag,r_small','g.','MarkerSize',30)
+plot(lag,r_large','k.','MarkerSize',30)
+xlabel('Lag between pulses (ms)')
+ylabel('Ratio of pulses')
+
+% plot a reference line
+plot([0 max(lag)],[1 1],'k--')
+
 PrettyFig;
 
 if being_published
 	snapnow;
 	delete(gcf)
 end
-
-
-% now 
 

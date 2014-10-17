@@ -78,7 +78,6 @@ if being_published
 	delete(gcf)
 end
 
-
 %% ab3A Responses 
 % In this section, we look at how the ab3A neuron responds to these pulses. 
 
@@ -228,8 +227,6 @@ if being_published
 	snapnow;
 	delete(gcf)
 end
-
-
 
 
 
@@ -422,4 +419,14 @@ if being_published
 	snapnow;
 	delete(gcf)
 end
+
+%% Gain Changes vs. Filter effects
+% To clearly see if we can see cases where response decreases after a conditioning pulse due to the shape of the filter vs. response decreases due to a gain change, we present various pulses with and without conditioning pulses of different heights. 
+
+load('/local-data/DA-paper/ppp2/ppp_data.mat')
+
+
+
+
+
 

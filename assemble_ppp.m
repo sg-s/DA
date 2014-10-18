@@ -40,6 +40,9 @@ for i = 1:length(allfiles)
 			% load the PID
 			ppp_data(c).PID=interp1(time,data(j).PID,t);
 
+
+			us = strfind(ControlParadigm(j).Name,'_');
+
 			% check if it makes sense 
 			if max(ControlParadigm(j).Outputs(6,:))
 				% there is a probe
@@ -48,11 +51,34 @@ for i = 1:length(allfiles)
 				ppp_data(c).c_valve=interp1(time,ControlParadigm(j).Outputs(5,:),t);
 				ppp_data(c).p_valve=interp1(time,ControlParadigm(j).Outputs(6,:),t);
 
+
+				% pull out the conditioning pulse height
+				a = strfind(ControlParadigm(j).Name,'c_');
+				z = us(find(us>a+1,1,'first'));
+				ppp_data(c).c_height = str2double(ControlParadigm(j).Name(a+2:z-1));
+
+				% pull out the probe pulse height
+				a = strfind(ControlParadigm(j).Name,'p_');
+				z = us(find(us>a+1,1,'first'));
+				ppp_data(c).p_height = str2double(ControlParadigm(j).Name(a+2:z-1));
+
+
 				
 			else
+
 				% there is no probe, which is silly. swap the probe and conditioning valves around
 				ppp_data(c).c_valve=interp1(time,ControlParadigm(j).Outputs(6,:),t);
 				ppp_data(c).p_valve=interp1(time,ControlParadigm(j).Outputs(5,:),t);
+
+				% pull out the conditioning pulse height
+				a = strfind(ControlParadigm(j).Name,'p_');
+				z = us(find(us>a+1,1,'first'));
+				ppp_data(c).c_height = str2double(ControlParadigm(j).Name(a+2:z-1));
+
+				% pull out the probe pulse height
+				a = strfind(ControlParadigm(j).Name,'c_');
+				z = us(find(us>a+1,1,'first'));
+				ppp_data(c).p_height = str2double(ControlParadigm(j).Name(a+2:z-1));
 
 
 			end
@@ -60,7 +86,8 @@ for i = 1:length(allfiles)
 			% add some metadata
 			ppp_data(c).original_name = allfiles(i).name;
 
-			us = strfind(ControlParadigm(j).Name,'_');
+			ppp_data(c).paradigm_name = ControlParadigm(j).Name;
+
 
 			% pull out the lag
 			a = strfind(ControlParadigm(j).Name,'l_');
@@ -74,11 +101,6 @@ for i = 1:length(allfiles)
 				z = length(ControlParadigm(j).Name);
 			end
 			ppp_data(c).width = str2double(ControlParadigm(j).Name(a+2:z));
-
-			% pull out the conditioning pulse height
-			a = strfind(ControlParadigm(j).Name,'c_');
-			z = us(find(us>a+1,1,'first'));
-			ppp_data(c).c_height = str2double(ControlParadigm(j).Name(a+2:z-1));
 
 			% neuron info
 			if any(strfind(allfiles(i).name,'ab2'))

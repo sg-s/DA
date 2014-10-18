@@ -428,18 +428,41 @@ end
 
 load('/local-data/DA-paper/ppp2/ppp_data.mat')
 
-figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+% we organise the data in a 3D matrix. the first dimension indexes the trial # (globally), the second indexes what the conditioning pulse we use is (so 1 is no conditioning pulse), and the third dimension indexes the width of the pulse
+
+% figure out what's in the data
 conditioning_pulses  =unique([ppp_data.c_height]);
-stim_height = NaN(1000,length(conditioning_pulses));
-resp_height = NaN(1000,length(conditioning_pulses));
-c=ones(length(conditioning_pulses),1);
+pulse_widths  =unique([ppp_data.width]);
+probe_heights = unique([ppp_data.p_height]);
+
+stim_height = NaN(300,length(conditioning_pulses),length(pulse_widths));
+resp_height = NaN(300,length(conditioning_pulses),length(pulse_widths));
+data_source = NaN(300,length(conditioning_pulses),length(pulse_widths));
+
+% make matrices to store the time series averaged over all the pulses
+dt = mean(diff(ppp_data(1).time));
+before = floor(1/dt);
+after = floor(2.5/dt);
+triggered_data(length(probe_heights),length(conditioning_pulses),length(pulse_widths)).PID = zeros(before+after+1,1);
+triggered_data(length(probe_heights),length(conditioning_pulses),length(pulse_widths)).ORN = zeros(before+after+1,1);
+
+% c keeps a count, allowing us to fill the matrix correctly
+c=ones(length(conditioning_pulses),length(pulse_widths));
+
+
 
 for i = 1:length(ppp_data)
 	% figure out what the conditioning pulse is 
-	cond_pulse_type = find(ppp_data(i).c_height == conditioning_pulses);
+	cp = find(ppp_data(i).c_height == conditioning_pulses);
+
+	% figure out what the pulse width is
+	pw = find(ppp_data(i).width == pulse_widths);
+
+	% figure out what the probe pulse is 
+	pp = find(ppp_data(i).p_height == probe_heights);
 
 	if strcmp(ppp_data(i).neuron,'ab3') 
-		% this is the data we want
+		% this is the neuron we want
 
 		% estimate the baseline PID
 		baseline = mean(ppp_data(i).PID(1:find(ppp_data(i).p_valve,1,'first')));
@@ -449,26 +472,57 @@ for i = 1:length(ppp_data)
 		[ons,offs] = ComputeOnsOffs(ppp_data(i).p_valve);
 
 		% look .1 second beyond the valve off 
-		dt = mean(diff(ppp_data(i).time));
 		offs = offs + round(.1/dt);
+
+		% throw away 1st 5 pulses
+		ons(1:5) = [];
+		offs(1:5) = [];
 
 		% extract values for each pulse
 		for j = 1:length(ons)
 			f_max = max(ppp_data(i).f(ons(j):offs(j)));
 			p_max = max(ppp_data(i).PID(ons(j):offs(j)));
 
-			stim_height(c(cond_pulse_type),cond_pulse_type) = p_max;
-			resp_height(c(cond_pulse_type),cond_pulse_type) = f_max;
-			c(cond_pulse_type) = c(cond_pulse_type)+1;
+			stim_height(c(cp,pw),cp,pw) = p_max;
+			resp_height(c(cp,pw),cp,pw) = f_max;
+			data_source(c(cp,pw),cp,pw) =  i;
+
+			% add the full traces
+			if isempty(triggered_data(pp,cp,pw).PID)
+				triggered_data(pp,cp,pw).PID = ppp_data(i).PID(ons(j)-before:ons(j)+after)';
+				triggered_data(pp,cp,pw).ORN = ppp_data(i).f(ons(j)-before:ons(j)+after);
+			else
+				triggered_data(pp,cp,pw).PID= [triggered_data(pp,cp,pw).PID ppp_data(i).PID(ons(j)-before:ons(j)+after)'];
+				triggered_data(pp,cp,pw).ORN= [triggered_data(pp,cp,pw).ORN ppp_data(i).f(ons(j)-before:ons(j)+after)];
+			end
+
+			c(cp,pw) = c(cp,pw)+1;
 
 		end
 		
 	end
 end
 
+% scale PID and ORN correctly
+for i = 1:length(conditioning_pulses)
+	for j = 1:length(pulse_widths)
+		PID(:,i,j) = PID(:,i,j)/c(i,j);
+	end
+	clear j
+end
+clear i
+
+
+probe_heights(end) = []; % the last one sucks
+c = jet(length(probe_heights));
 
 
 
+% make the plot
+figure('outerposition',[0 0 1400 600],'PaperUnits','points','PaperSize',[1400 600]); hold on
+a(1)=subplot(2,2,1); hold on
+a(2) = subplot(2,2,3); hold on
+a(3) = subplot(1,2,2); hold on
 
 
 

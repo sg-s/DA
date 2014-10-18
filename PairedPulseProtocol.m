@@ -423,7 +423,49 @@ end
 %% Gain Changes vs. Filter effects
 % To clearly see if we can see cases where response decreases after a conditioning pulse due to the shape of the filter vs. response decreases due to a gain change, we present various pulses with and without conditioning pulses of different heights. 
 
+%%
+% The following figure shows response of the ab3 neuron to probe pulses of ethyl acetate, in the absence of conditioning, for pulses of different widths (50ms and 300ms)
+
 load('/local-data/DA-paper/ppp2/ppp_data.mat')
+
+figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+conditioning_pulses  =unique([ppp_data.c_height]);
+stim_height = NaN(1000,length(conditioning_pulses));
+resp_height = NaN(1000,length(conditioning_pulses));
+c=ones(length(conditioning_pulses),1);
+
+for i = 1:length(ppp_data)
+	% figure out what the conditioning pulse is 
+	cond_pulse_type = find(ppp_data(i).c_height == conditioning_pulses);
+
+	if strcmp(ppp_data(i).neuron,'ab3') 
+		% this is the data we want
+
+		% estimate the baseline PID
+		baseline = mean(ppp_data(i).PID(1:find(ppp_data(i).p_valve,1,'first')));
+		thisPID = ppp_data(i).PID - baseline;
+
+		% find valve ons and offs
+		[ons,offs] = ComputeOnsOffs(ppp_data(i).p_valve);
+
+		% look .1 second beyond the valve off 
+		dt = mean(diff(ppp_data(i).time));
+		offs = offs + round(.1/dt);
+
+		% extract values for each pulse
+		for j = 1:length(ons)
+			f_max = max(ppp_data(i).f(ons(j):offs(j)));
+			p_max = max(ppp_data(i).PID(ons(j):offs(j)));
+
+			stim_height(c(cond_pulse_type),cond_pulse_type) = p_max;
+			resp_height(c(cond_pulse_type),cond_pulse_type) = f_max;
+			c(cond_pulse_type) = c(cond_pulse_type)+1;
+
+		end
+		
+	end
+end
+
 
 
 

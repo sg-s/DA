@@ -423,9 +423,6 @@ end
 %% Gain Changes vs. Filter effects
 % To clearly see if we can see cases where response decreases after a conditioning pulse due to the shape of the filter vs. response decreases due to a gain change, we present various pulses with and without conditioning pulses of different heights. 
 
-%%
-% The following figure shows response of the ab3 neuron to probe pulses of ethyl acetate, in the absence of conditioning, for pulses of different widths (50ms and 300ms)
-
 load('/local-data/DA-paper/ppp2/ppp_data.mat')
 
 % we organise the data in a 3D matrix. the first dimension indexes the trial # (globally), the second indexes what the conditioning pulse we use is (so 1 is no conditioning pulse), and the third dimension indexes the width of the pulse
@@ -436,7 +433,9 @@ pulse_widths  =unique([ppp_data.width]);
 probe_heights = unique([ppp_data.p_height]);
 
 stim_height = NaN(300,length(conditioning_pulses),length(pulse_widths));
+cond_stim_height = NaN(300,length(conditioning_pulses),length(pulse_widths));
 resp_height = NaN(300,length(conditioning_pulses),length(pulse_widths));
+cond_resp_height = NaN(300,length(conditioning_pulses),length(pulse_widths));
 data_source = NaN(300,length(conditioning_pulses),length(pulse_widths));
 
 % make matrices to store the time series averaged over all the pulses
@@ -470,21 +469,43 @@ for i = 1:length(ppp_data)
 
 		% find valve ons and offs
 		[ons,offs] = ComputeOnsOffs(ppp_data(i).p_valve);
+		[ons2,offs2] = ComputeOnsOffs(ppp_data(i).c_valve);
 
 		% look .1 second beyond the valve off 
 		offs = offs + round(.1/dt);
+		offs2 = offs2 + round(.1/dt);
 
-		% throw away 1st 5 pulses
-		ons(1:5) = [];
-		offs(1:5) = [];
+		% % throw away 1st 5 pulses
+		% ons(1:5) = [];
+		% offs(1:5) = [];
+
+		% if ~isempty(ons2)
+		% 	ons2(1:5) = [];
+		% 	offs2(1:5) = [];
+		% end
+
 
 		% extract values for each pulse
 		for j = 1:length(ons)
 			f_max = max(ppp_data(i).f(ons(j):offs(j)));
-			p_max = max(ppp_data(i).PID(ons(j):offs(j)));
+			p_max = max(thisPID(ons(j):offs(j)));
+
+			if ~isempty(ons2)
+				% also for the cond. pulse, if it exists
+				f_max2 = max(ppp_data(i).f(ons2(j):offs2(j)));
+				p_max2 = max(thisPID(ons2(j):offs2(j)));
+				cond_stim_height(c(cp,pw),cp,pw) = p_max2;
+				cond_resp_height(c(cp,pw),cp,pw) = f_max2;
+			else
+				cond_stim_height(c(cp,pw),cp,pw) = NaN;
+				cond_resp_height(c(cp,pw),cp,pw) = NaN;
+			end
+
 
 			stim_height(c(cp,pw),cp,pw) = p_max;
 			resp_height(c(cp,pw),cp,pw) = f_max;
+
+
 			data_source(c(cp,pw),cp,pw) =  i;
 
 			% add the full traces
@@ -503,26 +524,159 @@ for i = 1:length(ppp_data)
 	end
 end
 
-% scale PID and ORN correctly
-for i = 1:length(conditioning_pulses)
-	for j = 1:length(pulse_widths)
-		PID(:,i,j) = PID(:,i,j)/c(i,j);
-	end
-	clear j
-end
-clear i
 
 
-probe_heights(end) = []; % the last one sucks
-c = jet(length(probe_heights));
+
+%%
+% The following figure shows response of the ab3 neuron to probe pulses of ethyl acetate, in the absence of conditioning, for pulse widths of 50ms. The panels on the left show the stimulus and the response for various amplitudes of the probe pulse, and the panel on the right shows the relationship between the peak of the stimulus and the peak of the response across all the data. Each dot on the right is a single pulse. Traces on the left are averaged over 5 trials. 
 
 
 
 % make the plot
 figure('outerposition',[0 0 1400 600],'PaperUnits','points','PaperSize',[1400 600]); hold on
 a(1)=subplot(2,2,1); hold on
+
+for i = 1:length(probe_heights)
+	plot(a(1),dt*(-before:after),mean(triggered_data(i,1,1).PID'))
+end
+ylabel('Stimulus (a.u.)')
+
 a(2) = subplot(2,2,3); hold on
+for i = 1:length(probe_heights)
+	plot(a(2),dt*(-before:after),mean(triggered_data(i,1,1).ORN'))
+end
+ylabel('Firing Rate (Hz)')
+xlabel('Time (s)')
+
+
 a(3) = subplot(1,2,2); hold on
+scatter(stim_height(:,1,1),resp_height(:,1,1))
+ylabel('Peak Firing Rate (Hz)')
+xlabel('Peak Stimulus (a.u.)')
+
+PrettyFig;
+
+if being_published
+	snapnow;
+	delete(gcf)
+end
 
 
+%%
+% In comparison, the following figure shows the responses to a probe pulse following a conditioning pulse. The black dots are from the unconditioned responses, and the coloured dots are conditioning by a pulse just before the probe pulse (shown on the panels on the left)
+
+this_cond = 2;
+
+% make the plot
+figure('outerposition',[0 0 1400 600],'PaperUnits','points','PaperSize',[1400 600]); hold on
+a(1)=subplot(2,2,1); hold on
+
+
+for i = 1:length(probe_heights)
+	plot(a(1),dt*(-before:after),mean(triggered_data(i,this_cond,1).PID'))
+end
+ylabel('Stimulus (a.u.)')
+
+a(2) = subplot(2,2,3); hold on
+
+for i = 1:length(probe_heights)
+	plot(a(2),dt*(-before:after),mean(triggered_data(i,this_cond,1).ORN'))
+end
+ylabel('Firing Rate (Hz)')
+xlabel('Time (s)')
+
+
+a(3) = subplot(1,2,2); hold on
+scatter(stim_height(:,1,1),resp_height(:,1,1),'k')
+scatter(stim_height(:,this_cond,1),resp_height(:,this_cond,1))
+ylabel('Peak Firing Rate (Hz)')
+xlabel('Peak Stimulus (a.u.)')
+set(a(3),'XLim',[0 3])
+
+PrettyFig;
+
+if being_published
+	snapnow;
+	delete(gcf)
+end
+
+%%
+% What is the effect of the conditioning pulses on response properties of the neuron to the probe pulses? In the following figure, we plot the response vs. the stimulus for the different conditioning pulses used. Each dataset conditioned with a different pulse amplitude is shown in a different colour. 
+
+% ignore large pulses
+resp_height(stim_height(:,1,1)>2,1,1) = NaN;
+stim_height(stim_height(:,1,1)>2,1,1) = NaN;
+
+% make the plot
+figure('outerposition',[0 0 1400 600],'PaperUnits','points','PaperSize',[1400 600]); hold on
+a(1)=subplot(1,3,1); hold on
+
+slopes = NaN*conditioning_pulses;
+intercepts = NaN*conditioning_pulses;
+
+col = jet(length(conditioning_pulses)-1);
+
+for this_cond = 1:length(conditioning_pulses)-1
+	x = stim_height(~isnan(stim_height(:,this_cond,1)),this_cond,1);
+	y = resp_height(~isnan(resp_height(:,this_cond,1)),this_cond,1);
+	scatter(x,y,32,col(this_cond,:))
+
+	% fit a line
+	ff = fit(x,y,'poly1');
+	slopes(this_cond) = ff.p1;
+	intercepts(this_cond) = ff.p2;
+
+	% draw it
+	plot(x,ff(x),'Color',col(this_cond,:))
+
+end
+
+a(2)=subplot(1,3,2); hold on
+gain = slopes/slopes(1);
+
+x = NaN*conditioning_pulses; x(1) = 0;
+for i = 2:length(conditioning_pulses)-1
+	x(i) =  mean2(cond_stim_height(:,i,1));
+end
+scatter(x,gain)
+xlabel('Conditioning Pulse Height (a.u.)')
+ylabel('Relative Gain to probe pulse')
+
+a(3)=subplot(1,3,3); hold on
+scatter(x,intercepts)
+xlabel('Conditioning Pulse Height (a.u.)')
+ylabel('Intercepts')
+PrettyFig;
+
+if being_published
+	snapnow;
+	delete(gcf)
+end
+
+
+
+% figure('outerposition',[0 0 1200 600],'PaperUnits','points','PaperSize',[1200 600]); hold on
+% subplot(1,2,1), hold on
+
+% for i = 1:length(conditioning_pulses)
+% 	y = cond_stim_height(~isnan(cond_stim_height(:,i,1)),i,1);
+% 	x = conditioning_pulses(i)*ones(1,length(y));
+% 	scatter(x,y)
+% end
+% xlabel('Flow of conditioning pulse (mL/min)')
+% ylabel('Stimulus peak (a.u.)')
+
+% subplot(1,2,2), hold on
+
+% for i = 1:length(conditioning_pulses)
+% 	y = cond_resp_height(~isnan(cond_stim_height(:,i,1)),i,1);
+% 	x = conditioning_pulses(i)*ones(1,length(y));
+% 	scatter(x,y)
+% end
+% xlabel('Flow of conditioning pulse (mL/min)')
+% ylabel('Response peak (Hz)')
+
+
+%%
+% How is the reponse to the probe stimulus changed by the conditioning pulse? 
 

@@ -432,11 +432,21 @@ conditioning_pulses  =unique([ppp_data.c_height]);
 pulse_widths  =unique([ppp_data.width]);
 probe_heights = unique([ppp_data.p_height]);
 
-stim_height = NaN(300,length(conditioning_pulses),length(pulse_widths));
-cond_stim_height = NaN(300,length(conditioning_pulses),length(pulse_widths));
-resp_height = NaN(300,length(conditioning_pulses),length(pulse_widths));
-cond_resp_height = NaN(300,length(conditioning_pulses),length(pulse_widths));
-data_source = NaN(300,length(conditioning_pulses),length(pulse_widths));
+
+% we're going to store all the metrics in long vectors, which each vector referring to one parameter
+probe_type =  NaN(9000,1); % what was the intended probe?
+stim_probe = NaN(9000,1); % stores the actual value of the probe
+stim_cond = NaN(9000,1); % what was the actual coniditoning pulse?
+cond_type = NaN(9000,1); % what was the intended conditioning stimulus?
+
+width_type = NaN(9000,1); % what is the width? refer to pulse_widths to figure it out
+
+resp_probe = NaN(9000,1); % response to probe
+resp_cond = NaN(9000,1); % response to cond
+
+data_source = NaN(9000,1); % where did this come from? 
+lag = NaN(9000,1); % lag between pulses 
+
 
 % make matrices to store the time series averaged over all the pulses
 dt = mean(diff(ppp_data(1).time));
@@ -446,19 +456,22 @@ triggered_data(length(probe_heights),length(conditioning_pulses),length(pulse_wi
 triggered_data(length(probe_heights),length(conditioning_pulses),length(pulse_widths)).ORN = zeros(before+after+1,1);
 
 % c keeps a count, allowing us to fill the matrix correctly
-c=ones(length(conditioning_pulses),length(pulse_widths));
+c=1;
 
 
 
 for i = 1:length(ppp_data)
 	% figure out what the conditioning pulse is 
 	cp = find(ppp_data(i).c_height == conditioning_pulses);
+	cond_type(c) = cp;
 
 	% figure out what the pulse width is
 	pw = find(ppp_data(i).width == pulse_widths);
+	width_type(c) = pw;
 
 	% figure out what the probe pulse is 
 	pp = find(ppp_data(i).p_height == probe_heights);
+	probe_type(c) = pp;
 
 	if strcmp(ppp_data(i).neuron,'ab3') 
 		% this is the neuron we want
@@ -471,42 +484,54 @@ for i = 1:length(ppp_data)
 		[ons,offs] = ComputeOnsOffs(ppp_data(i).p_valve);
 		[ons2,offs2] = ComputeOnsOffs(ppp_data(i).c_valve);
 
-		% look .1 second beyond the valve off 
-		offs = offs + round(.1/dt);
-		offs2 = offs2 + round(.1/dt);
-
-		% % throw away 1st 5 pulses
-		% ons(1:5) = [];
-		% offs(1:5) = [];
-
-		% if ~isempty(ons2)
-		% 	ons2(1:5) = [];
-		% 	offs2(1:5) = [];
-		% end
-
+		
 
 		% extract values for each pulse
 		for j = 1:length(ons)
-			f_max = max(ppp_data(i).f(ons(j):offs(j)));
-			p_max = max(thisPID(ons(j):offs(j)));
+			
 
 			if ~isempty(ons2)
-				% also for the cond. pulse, if it exists
-				f_max2 = max(ppp_data(i).f(ons2(j):offs2(j)));
-				p_max2 = max(thisPID(ons2(j):offs2(j)));
-				cond_stim_height(c(cp,pw),cp,pw) = p_max2;
-				cond_resp_height(c(cp,pw),cp,pw) = f_max2;
+				
+				%disp('probe and conditioning pulse')
+			
+				% find the peaks in the PID
+				[~,loc]=findpeaks(thisPID(ons2(j):ons2(j)+floor(2/dt)),'SortStr','descend','MinPeakDistance',floor(.1/dt));
+				loc=loc(1:2); loc=loc+ons2(j); loc=sort(loc,'ascend');
+				stim_probe(c) = thisPID(loc(2));
+				stim_cond(c) = thisPID(loc(1)); 
+
+				resp_cond(c) = max(ppp_data(i).f(loc(1):loc(2))); % maximum b/w PID max
+				resp_probe(c) = max(ppp_data(i).f(loc(2):loc(2)+floor(1/dt)));
+ 				% pidlag = 20; 
+				% ornlag = 80; % totally eyeballed. super inaccurate
+				% f_max = max(ppp_data(i).f(ons(j)+ornlag:offs(j)+ornlag));
+				% p_max = max(thisPID(ons(j)+pidlag:offs(j)+pidlag));
+				% f_max2 = max(ppp_data(i).f(ons2(j)+ornlag:offs2(j)+ornlag));
+				% p_max2 = max(thisPID(ons2(j)+pidlag:offs2(j)+pidlag));
+				
+				% resp_cond(c) = f_max2;
+				% resp_probe(c) = f_max;
 			else
-				cond_stim_height(c(cp,pw),cp,pw) = NaN;
-				cond_resp_height(c(cp,pw),cp,pw) = NaN;
+				% disp('there is no conditioning pulse. just the probe')
+				% so we compute the maximum from this on to the next (very generous, since we don't know the exact lag)
+				a = ons(j);
+				if length(ons) == j
+					z = length(ppp_data(i).f);
+				else
+					z = ons(j+1);
+				end
+				f_max = max(ppp_data(i).f(a:z));
+				p_max = max(thisPID(a:z));
+				stim_probe(c) = p_max;
+				stim_cond(c) = NaN; % because there is no conditioning here!
+				resp_cond(c) = NaN;
+				resp_probe(c) = f_max;
+
 			end
 
-
-			stim_height(c(cp,pw),cp,pw) = p_max;
-			resp_height(c(cp,pw),cp,pw) = f_max;
+			data_source(c) = i;
 
 
-			data_source(c(cp,pw),cp,pw) =  i;
 
 			% add the full traces
 			if isempty(triggered_data(pp,cp,pw).PID)
@@ -517,7 +542,8 @@ for i = 1:length(ppp_data)
 				triggered_data(pp,cp,pw).ORN= [triggered_data(pp,cp,pw).ORN ppp_data(i).f(ons(j)-before:ons(j)+after)];
 			end
 
-			c(cp,pw) = c(cp,pw)+1;
+
+			c = c+1;
 
 		end
 		
@@ -536,21 +562,24 @@ end
 figure('outerposition',[0 0 1400 600],'PaperUnits','points','PaperSize',[1400 600]); hold on
 a(1)=subplot(2,2,1); hold on
 
+col = pmkmp(length(probe_heights),'IsoL');
 for i = 1:length(probe_heights)
-	plot(a(1),dt*(-before:after),mean(triggered_data(i,1,1).PID'))
+	plot(a(1),dt*(-before:after),mean(triggered_data(i,1,1).PID'),'Color',col(i,:))
 end
 ylabel('Stimulus (a.u.)')
 
 a(2) = subplot(2,2,3); hold on
 for i = 1:length(probe_heights)
-	plot(a(2),dt*(-before:after),mean(triggered_data(i,1,1).ORN'))
+	plot(a(2),dt*(-before:after),mean(triggered_data(i,1,1).ORN'),'Color',col(i,:))
 end
 ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')
 
 
 a(3) = subplot(1,2,2); hold on
-scatter(stim_height(:,1,1),resp_height(:,1,1))
+x = stim_height(:,1,1);
+y = resp_height(:,1,1);
+scatter(x,y,32)
 ylabel('Peak Firing Rate (Hz)')
 xlabel('Peak Stimulus (a.u.)')
 
@@ -563,24 +592,25 @@ end
 
 
 %%
-% In comparison, the following figure shows the responses to a probe pulse following a conditioning pulse. The black dots are from the unconditioned responses, and the coloured dots are conditioning by a pulse just before the probe pulse (shown on the panels on the left)
+% What is the effect of a conditioning pulse on the response of the neuron? In the following figure, we compare the response of the neuron to a probe pulse with and without a conditioning pulse just before the probe pulse. 
 
-this_cond = 2;
+this_probe = 3;
+this_width = 1;
 
 % make the plot
 figure('outerposition',[0 0 1400 600],'PaperUnits','points','PaperSize',[1400 600]); hold on
 a(1)=subplot(2,2,1); hold on
 
-
-for i = 1:length(probe_heights)
-	plot(a(1),dt*(-before:after),mean(triggered_data(i,this_cond,1).PID'))
+col = pmkmp(length(conditioning_pulses),'IsoL');
+for i = 1:length(conditioning_pulses)
+	plot(a(1),dt*(-before:after),mean(triggered_data(this_probe,i,this_width).PID'),'Color',col(i,:))
 end
 ylabel('Stimulus (a.u.)')
 
 a(2) = subplot(2,2,3); hold on
 
-for i = 1:length(probe_heights)
-	plot(a(2),dt*(-before:after),mean(triggered_data(i,this_cond,1).ORN'))
+for i = 1:length(conditioning_pulses)
+	plot(a(2),dt*(-before:after),mean(triggered_data(this_probe,i,this_width).ORN'),'Color',col(i,:))
 end
 ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')
@@ -603,22 +633,24 @@ end
 %%
 % What is the effect of the conditioning pulses on response properties of the neuron to the probe pulses? In the following figure, we plot the response vs. the stimulus for the different conditioning pulses used. Each dataset conditioned with a different pulse amplitude is shown in a different colour. 
 
+this_width = 1;
+
 % ignore large pulses
-resp_height(stim_height(:,1,1)>2,1,1) = NaN;
-stim_height(stim_height(:,1,1)>2,1,1) = NaN;
+resp_height(stim_height(:,1,this_width)>2,1,this_width) = NaN;
+stim_height(stim_height(:,1,this_width)>2,1,this_width) = NaN;
 
 % make the plot
 figure('outerposition',[0 0 1400 600],'PaperUnits','points','PaperSize',[1400 600]); hold on
-a(1)=subplot(1,3,1); hold on
+a(1)=subplot(1,2,1); hold on
 
 slopes = NaN*conditioning_pulses;
 intercepts = NaN*conditioning_pulses;
 
-col = jet(length(conditioning_pulses)-1);
+col = pmkmp(length(conditioning_pulses)-1,'IsoL');
 
 for this_cond = 1:length(conditioning_pulses)-1
-	x = stim_height(~isnan(stim_height(:,this_cond,1)),this_cond,1);
-	y = resp_height(~isnan(resp_height(:,this_cond,1)),this_cond,1);
+	x = stim_height(~isnan(stim_height(:,this_cond,this_width)),this_cond,this_width);
+	y = resp_height(~isnan(resp_height(:,this_cond,this_width)),this_cond,this_width);
 	scatter(x,y,32,col(this_cond,:))
 
 	% fit a line
@@ -630,22 +662,21 @@ for this_cond = 1:length(conditioning_pulses)-1
 	plot(x,ff(x),'Color',col(this_cond,:))
 
 end
+xlabel('Stimulus Probe Peak (a.u.)')
+ylabel('Peak Response to Probe (Hz)')
 
-a(2)=subplot(1,3,2); hold on
+a(2)=subplot(1,2,2); hold on
 gain = slopes/slopes(1);
 
 x = NaN*conditioning_pulses; x(1) = 0;
 for i = 2:length(conditioning_pulses)-1
-	x(i) =  mean2(cond_stim_height(:,i,1));
+	x(i) =  mean2(cond_stim_height(:,i,this_width));
 end
-scatter(x,gain)
+
+scatter(x(1:4),gain(1:4),164,col,'filled')
 xlabel('Conditioning Pulse Height (a.u.)')
 ylabel('Relative Gain to probe pulse')
 
-a(3)=subplot(1,3,3); hold on
-scatter(x,intercepts)
-xlabel('Conditioning Pulse Height (a.u.)')
-ylabel('Intercepts')
 PrettyFig;
 
 if being_published
@@ -653,6 +684,54 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% We now repeat the same analysis for the 300ms pulses. 
+
+this_width = 2;
+
+% ignore large pulses
+resp_height(stim_height(:,1,this_width)>2,1,this_width) = NaN;
+stim_height(stim_height(:,1,this_width)>2,1,this_width) = NaN;
+
+% make the plot
+figure('outerposition',[0 0 1400 600],'PaperUnits','points','PaperSize',[1400 600]); hold on
+a(1)=subplot(1,2,1); hold on
+
+slopes = NaN*conditioning_pulses;
+intercepts = NaN*conditioning_pulses;
+
+col = pmkmp(length(conditioning_pulses)-1,'IsoL');
+
+for this_cond = 1:length(conditioning_pulses)-1
+	x = stim_height(~isnan(stim_height(:,this_cond,this_width)),this_cond,this_width);
+	y = resp_height(~isnan(resp_height(:,this_cond,this_width)),this_cond,this_width);
+	scatter(x,y,32,col(this_cond,:))
+
+	% fit a line
+	ff = fit(x,y,'poly1');
+	slopes(this_cond) = ff.p1;
+	intercepts(this_cond) = ff.p2;
+
+	% draw it
+	plot(x,ff(x),'Color',col(this_cond,:))
+
+end
+xlabel('Stimulus Probe Peak (a.u.)')
+ylabel('Peak Response to Probe (Hz)')
+
+a(2)=subplot(1,2,2); hold on
+gain = slopes/slopes(1);
+
+x = NaN*conditioning_pulses; x(1) = 0;
+for i = 2:length(conditioning_pulses)-1
+	x(i) =  mean2(cond_stim_height(:,i,this_width));
+end
+
+scatter(x(1:4),gain(1:4),164,col,'filled')
+xlabel('Conditioning Pulse Height (a.u.)')
+ylabel('Relative Gain to probe pulse')
+
+PrettyFig;
 
 
 % figure('outerposition',[0 0 1200 600],'PaperUnits','points','PaperSize',[1200 600]); hold on

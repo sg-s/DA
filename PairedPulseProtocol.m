@@ -17,7 +17,7 @@ end
 %% Paired Pulse Protocol
 % This document describes the paired pulse experiment. 
 
-load('/local-data/DA-paper/ppp/2014_10_02_CSF2_EA_ab3_PairedPulses_2.mat')
+load('/local-data/DA-paper/ppp1/2014_10_02_CSF2_EA_ab3_PairedPulses_2.mat')
 
 
 %% Stimulus 
@@ -234,7 +234,7 @@ end
 % In this section, we use the LN model with parameters chosen from a representative dataset from Carlotta's flickering stimulus experiment to try to simulate what the neuron responses to these paired pulses will be. The filter is arbitrarily chosen from old data, and the output non-linearity is fit to the current data set. 
 
 % load data
-load('/local-data/DA-paper/data.mat')
+load('/local-data/DA-paper/flickering-stim/data.mat')
 td = 4;
 
 
@@ -246,7 +246,7 @@ filtertime = data(td).filtertime;
 
 % now fit a nonlinearity to the data
 K = K/1000;
-load('/local-data/DA-paper/ppp/2014_10_02_CSF2_EA_ab3_PairedPulses_2.mat')
+load('/local-data/DA-paper/ppp1/2014_10_02_CSF2_EA_ab3_PairedPulses_2.mat')
 time = 1:length(data(2).PID); time = time*1e-4;
 t = 0:3e-3:max(time);
 PID = interp1(time,mean2(data(2).PID),t); PID(1) = 0;
@@ -463,15 +463,15 @@ c=1;
 for i = 1:length(ppp_data)
 	% figure out what the conditioning pulse is 
 	cp = find(ppp_data(i).c_height == conditioning_pulses);
-	cond_type(c) = cp;
+	
 
 	% figure out what the pulse width is
 	pw = find(ppp_data(i).width == pulse_widths);
-	width_type(c) = pw;
+	
 
 	% figure out what the probe pulse is 
 	pp = find(ppp_data(i).p_height == probe_heights);
-	probe_type(c) = pp;
+	
 
 	if strcmp(ppp_data(i).neuron,'ab3') 
 		% this is the neuron we want
@@ -523,8 +523,8 @@ for i = 1:length(ppp_data)
 				f_max = max(ppp_data(i).f(a:z));
 				p_max = max(thisPID(a:z));
 				stim_probe(c) = p_max;
-				stim_cond(c) = NaN; % because there is no conditioning here!
-				resp_cond(c) = NaN;
+				stim_cond(c) = thisPID(a-10); % because there is no conditioning here, pick some point in the past
+				resp_cond(c) = ppp_data(i).f(a-10);
 				resp_probe(c) = f_max;
 
 			end
@@ -543,6 +543,9 @@ for i = 1:length(ppp_data)
 			end
 
 
+			width_type(c) = pw;
+			probe_type(c) = pp;
+			cond_type(c) = cp;
 			c = c+1;
 
 		end
@@ -577,8 +580,8 @@ xlabel('Time (s)')
 
 
 a(3) = subplot(1,2,2); hold on
-x = stim_height(:,1,1);
-y = resp_height(:,1,1);
+x = stim_probe(cond_type==1 & width_type == 1);
+y = resp_probe(cond_type==1 & width_type == 1);
 scatter(x,y,32)
 ylabel('Peak Firing Rate (Hz)')
 xlabel('Peak Stimulus (a.u.)')
@@ -616,12 +619,21 @@ ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')
 
 
-a(3) = subplot(1,2,2); hold on
-scatter(stim_height(:,1,1),resp_height(:,1,1),'k')
-scatter(stim_height(:,this_cond,1),resp_height(:,this_cond,1))
-ylabel('Peak Firing Rate (Hz)')
-xlabel('Peak Stimulus (a.u.)')
-set(a(3),'XLim',[0 3])
+a(3) = subplot(2,2,2); hold on
+x = cond_type(probe_type==this_probe & width_type == this_width);
+y = stim_cond(probe_type==this_probe & width_type == this_width);
+scatter(x,y,32)
+xlabel('Conditioning Type')
+ylabel('Height of Conditioning Pulse (a.u.)')
+
+a(4) = subplot(2,2,4); hold on
+x = stim_cond(probe_type==this_probe & width_type == this_width);
+y = resp_probe(probe_type==this_probe & width_type == this_width);
+scatter(x,y,32)
+
+ylabel('Probe Peak Response  (Hz)')
+xlabel('Conditioning pulse peak (a.u.)')
+
 
 PrettyFig;
 
@@ -636,22 +648,24 @@ end
 this_width = 1;
 
 % ignore large pulses
-resp_height(stim_height(:,1,this_width)>2,1,this_width) = NaN;
-stim_height(stim_height(:,1,this_width)>2,1,this_width) = NaN;
+resp_probe(stim_probe>2) = NaN;
+stim_probe(stim_probe>2) = NaN;
 
 % make the plot
-figure('outerposition',[0 0 1400 600],'PaperUnits','points','PaperSize',[1400 600]); hold on
+figure('outerposition',[0 0 1200 600],'PaperUnits','points','PaperSize',[1200 600]); hold on
 a(1)=subplot(1,2,1); hold on
 
 slopes = NaN*conditioning_pulses;
 intercepts = NaN*conditioning_pulses;
 
-col = pmkmp(length(conditioning_pulses)-1,'IsoL');
+col = pmkmp(length(conditioning_pulses),'IsoL');
 
-for this_cond = 1:length(conditioning_pulses)-1
-	x = stim_height(~isnan(stim_height(:,this_cond,this_width)),this_cond,this_width);
-	y = resp_height(~isnan(resp_height(:,this_cond,this_width)),this_cond,this_width);
+for this_cond = 1:length(conditioning_pulses)
+	x = stim_probe(cond_type==this_cond & width_type == this_width);
+	y = resp_probe(cond_type==this_cond & width_type == this_width);
 	scatter(x,y,32,col(this_cond,:))
+
+	x = x(~isnan(x)); y = y(~isnan(y));
 
 	% fit a line
 	ff = fit(x,y,'poly1');
@@ -669,11 +683,11 @@ a(2)=subplot(1,2,2); hold on
 gain = slopes/slopes(1);
 
 x = NaN*conditioning_pulses; x(1) = 0;
-for i = 2:length(conditioning_pulses)-1
-	x(i) =  mean2(cond_stim_height(:,i,this_width));
+for i = 2:length(conditioning_pulses)
+	x(i) =  mean(stim_cond(cond_type==i & width_type == this_width));
 end
 
-scatter(x(1:4),gain(1:4),164,col,'filled')
+scatter(x,gain,164,col,'filled')
 xlabel('Conditioning Pulse Height (a.u.)')
 ylabel('Relative Gain to probe pulse')
 
@@ -687,33 +701,40 @@ end
 %%
 % We now repeat the same analysis for the 300ms pulses. 
 
+
 this_width = 2;
 
 % ignore large pulses
-resp_height(stim_height(:,1,this_width)>2,1,this_width) = NaN;
-stim_height(stim_height(:,1,this_width)>2,1,this_width) = NaN;
+resp_probe(stim_probe>2) = NaN;
+stim_probe(stim_probe>2) = NaN;
 
 % make the plot
-figure('outerposition',[0 0 1400 600],'PaperUnits','points','PaperSize',[1400 600]); hold on
+figure('outerposition',[0 0 1200 600],'PaperUnits','points','PaperSize',[1200 600]); hold on
 a(1)=subplot(1,2,1); hold on
 
 slopes = NaN*conditioning_pulses;
 intercepts = NaN*conditioning_pulses;
 
-col = pmkmp(length(conditioning_pulses)-1,'IsoL');
+col = pmkmp(length(conditioning_pulses),'LinLhot');
 
-for this_cond = 1:length(conditioning_pulses)-1
-	x = stim_height(~isnan(stim_height(:,this_cond,this_width)),this_cond,this_width);
-	y = resp_height(~isnan(resp_height(:,this_cond,this_width)),this_cond,this_width);
+for this_cond = 1:length(conditioning_pulses)
+	x = stim_probe(cond_type==this_cond & width_type == this_width);
+	y = resp_probe(cond_type==this_cond & width_type == this_width);
 	scatter(x,y,32,col(this_cond,:))
 
-	% fit a line
-	ff = fit(x,y,'poly1');
-	slopes(this_cond) = ff.p1;
-	intercepts(this_cond) = ff.p2;
+	x = x(~isnan(x)); y = y(~isnan(y));
 
-	% draw it
-	plot(x,ff(x),'Color',col(this_cond,:))
+	if ~isempty(x)
+		% fit a line
+		ff = fit(x,y,'poly1');
+		slopes(this_cond) = ff.p1;
+		intercepts(this_cond) = ff.p2;
+
+		% draw it
+		plot(x,ff(x),'Color',col(this_cond,:))
+	end
+
+	
 
 end
 xlabel('Stimulus Probe Peak (a.u.)')
@@ -723,39 +744,17 @@ a(2)=subplot(1,2,2); hold on
 gain = slopes/slopes(1);
 
 x = NaN*conditioning_pulses; x(1) = 0;
-for i = 2:length(conditioning_pulses)-1
-	x(i) =  mean2(cond_stim_height(:,i,this_width));
+for i = 2:length(conditioning_pulses)
+	x(i) =  mean(stim_cond(cond_type==i & width_type == this_width));
 end
 
-scatter(x(1:4),gain(1:4),164,col,'filled')
+scatter(x,gain,164,col,'filled')
 xlabel('Conditioning Pulse Height (a.u.)')
 ylabel('Relative Gain to probe pulse')
 
 PrettyFig;
 
-
-% figure('outerposition',[0 0 1200 600],'PaperUnits','points','PaperSize',[1200 600]); hold on
-% subplot(1,2,1), hold on
-
-% for i = 1:length(conditioning_pulses)
-% 	y = cond_stim_height(~isnan(cond_stim_height(:,i,1)),i,1);
-% 	x = conditioning_pulses(i)*ones(1,length(y));
-% 	scatter(x,y)
-% end
-% xlabel('Flow of conditioning pulse (mL/min)')
-% ylabel('Stimulus peak (a.u.)')
-
-% subplot(1,2,2), hold on
-
-% for i = 1:length(conditioning_pulses)
-% 	y = cond_resp_height(~isnan(cond_stim_height(:,i,1)),i,1);
-% 	x = conditioning_pulses(i)*ones(1,length(y));
-% 	scatter(x,y)
-% end
-% xlabel('Flow of conditioning pulse (mL/min)')
-% ylabel('Response peak (Hz)')
-
-
-%%
-% How is the reponse to the probe stimulus changed by the conditioning pulse? 
-
+if being_published
+	snapnow;
+	delete(gcf)
+end

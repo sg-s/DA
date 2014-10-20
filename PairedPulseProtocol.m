@@ -445,6 +445,7 @@ resp_probe = NaN(9000,1); % response to probe
 resp_cond = NaN(9000,1); % response to cond
 
 data_source = NaN(9000,1); % where did this come from? 
+neuron_id = NaN(9000,1);
 lag = NaN(9000,1); % lag between pulses 
 
 
@@ -458,7 +459,7 @@ triggered_data(length(probe_heights),length(conditioning_pulses),length(pulse_wi
 % c keeps a count, allowing us to fill the matrix correctly
 c=1;
 
-
+allfiles = dir('/local-data/DA-paper/ppp2/raw/2014_10_09_CSF*.mat');
 
 for i = 1:length(ppp_data)
 	% figure out what the conditioning pulse is 
@@ -484,7 +485,12 @@ for i = 1:length(ppp_data)
 		[ons,offs] = ComputeOnsOffs(ppp_data(i).p_valve);
 		[ons2,offs2] = ComputeOnsOffs(ppp_data(i).c_valve);
 
-		
+		% ignore first n pulse
+		n=4;
+		ons(1:n) = []; offs(1:n) =[]; 
+		if ~isempty(ons2)
+			ons2(1:n)= []; offs2(1:n) = [];
+		end
 
 		% extract values for each pulse
 		for j = 1:length(ons)
@@ -494,14 +500,39 @@ for i = 1:length(ppp_data)
 				
 				%disp('probe and conditioning pulse')
 			
-				% find the peaks in the PID
-				[~,loc]=findpeaks(thisPID(ons2(j):ons2(j)+floor(2/dt)),'SortStr','descend','MinPeakDistance',floor(.1/dt));
-				loc=loc(1:2); loc=loc+ons2(j); loc=sort(loc,'ascend');
-				stim_probe(c) = thisPID(loc(2));
-				stim_cond(c) = thisPID(loc(1)); 
 
-				resp_cond(c) = max(ppp_data(i).f(loc(1):loc(2))); % maximum b/w PID max
-				resp_probe(c) = max(ppp_data(i).f(loc(2):loc(2)+floor(1/dt)));
+				if ppp_data(i).width == 300
+					% fall back to a simple algo
+					[resp_cond(c),a] = max(ppp_data(i).f(ons2(j):offs2(j)));
+					[resp_probe(c),b] = max(ppp_data(i).f(ons(j):offs(j)));
+					[stim_cond(c),cc] = max(thisPID(ons2(j):offs2(j)));
+					[stim_probe(c),d] = max(thisPID(ons(j)+15:offs(j)+15));
+
+				else
+					% find the peaks in the PID
+					mpd = max([.1/dt (ppp_data(i).width/1000)/dt]);
+					[~,loc]=findpeaks(thisPID(ons2(j):ons2(j)+floor(2/dt)),'SortStr','descend','MinPeakDistance',mpd);
+					loc=loc(1:2); loc=loc+ons2(j)-1; loc=sort(loc,'ascend');
+					stim_probe(c) = thisPID(loc(2));
+					stim_cond(c) = thisPID(loc(1));		
+					resp_cond(c) = max(ppp_data(i).f(loc(1):loc(2))); % maximum b/w PID max
+					resp_probe(c) = max(ppp_data(i).f(loc(2):loc(2)+floor(1/dt)));	
+				end
+				%debug
+
+				% figure, hold on
+				% plot(thisPID)
+				% scatter(loc(1),thisPID(loc(1)))
+				% scatter(loc(2),thisPID(loc(2)))
+				% title(i)
+				% set(gca,'XLim',[ons2(j)-30 offs2(j)+200])
+
+				% pause(1)
+
+				% delete(gcf)
+
+				
+
  				% pidlag = 20; 
 				% ornlag = 80; % totally eyeballed. super inaccurate
 				% f_max = max(ppp_data(i).f(ons(j)+ornlag:offs(j)+ornlag));
@@ -529,6 +560,11 @@ for i = 1:length(ppp_data)
 
 			end
 
+			neuron_id(c) = find(strcmp(ppp_data(i).original_name,{allfiles.name}));
+			if neuron_id(c) > 0
+				neuron_id(c) = 1;
+				% this is because the last four files are from the same neuron, according to Mahmut
+			end
 			data_source(c) = i;
 
 
@@ -620,18 +656,18 @@ xlabel('Time (s)')
 
 
 a(3) = subplot(2,2,2); hold on
-x = cond_type(probe_type==this_probe & width_type == this_width);
+x = conditioning_pulses(cond_type(probe_type==this_probe & width_type == this_width));
 y = stim_cond(probe_type==this_probe & width_type == this_width);
 scatter(x,y,32)
-xlabel('Conditioning Type')
-ylabel('Height of Conditioning Pulse (a.u.)')
+xlabel('Conditioning Pulse Flow rate (mL/min)')
+ylabel('Cond. Pulse (a.u.)')
 
 a(4) = subplot(2,2,4); hold on
 x = stim_cond(probe_type==this_probe & width_type == this_width);
 y = resp_probe(probe_type==this_probe & width_type == this_width);
 scatter(x,y,32)
 
-ylabel('Probe Peak Response  (Hz)')
+ylabel('Response to Probe (Hz)')
 xlabel('Conditioning pulse peak (a.u.)')
 
 
@@ -641,6 +677,188 @@ if being_published
 	snapnow;
 	delete(gcf)
 end
+
+
+%% 
+% What is the effect of the conditioning pulse on the response properties of the neuron? In the following analysis, we start by pulling out the responses of each neuron to all probe pulses in the absence of any conditioning for the 50ms probes.
+
+% ignore super large probes
+resp_probe(stim_probe>5) = NaN;
+stim_probe(stim_probe>5) = NaN;
+
+this_width = 1;
+figure('outerposition',[0 0 1200 600],'PaperUnits','points','PaperSize',[1200 600]); hold on
+subplot(1,2,1), hold on
+neurons = unique(neuron_id(~isnan(neuron_id)));
+n = length(neurons);
+probe_mins = NaN(n,1);
+probe_maxs = NaN(n,1);
+for i  = 1:length(neurons)
+	this_neuron = neurons(i);
+	x = stim_probe(neuron_id==this_neuron & width_type == this_width & cond_type == 1);
+	y = resp_probe(neuron_id==this_neuron & width_type == this_width & cond_type == 1);
+	x = x(~isnan(x)); y= y(~isnan(y));
+	scatter(x,y,'k')
+	if ~isempty(x)
+		ff = fit(x,y,'poly1');
+		plot(x,ff(x),'k')
+		probe_mins(i) = min(x);
+		probe_maxs(i) = max(x);
+	end
+	
+	
+end
+set(gca,'XLim',[0 3],'YLim',[0 160])
+xlabel('Probe Stimulus Height (V)')
+ylabel('Probe Response Height (Hz)')
+title('Responses to probe alone grouped by neuron')
+
+PrettyFig;
+
+if being_published
+	snapnow;
+end
+
+
+%% 
+% We then show the responses of this neuron to a probe following a conditioning pulse. 
+
+probe_ranges = probe_maxs - probe_mins;
+tolerance = .1; % tolerance for probe ranges
+col = pmkmp(length(conditioning_pulses)-1,'CubicL');
+col = [0 0 0; col];
+for i  = 1:length(neurons)
+	for j = 2:length(conditioning_pulses)
+		this_cond_probe_max = max((stim_probe(neuron_id==i & width_type == this_width & cond_type == j)));
+		this_cond_probe_min = min((stim_probe(neuron_id==i & width_type == this_width & cond_type == j)));
+		if ~isempty(this_cond_probe_min)
+			% check if the range of the probes are OK
+
+			%if abs((this_cond_probe_max - this_cond_probe_min) - probe_ranges(i)) < tolerance*probe_ranges(i)
+				% yay! this is OK
+			
+				x = stim_probe(neuron_id==i & width_type == this_width & cond_type == j);
+				y = resp_probe(neuron_id==i & width_type == this_width & cond_type == j);
+				scatter(x,y,64,col(j,:))
+				x = x(~isnan(x)); y= y(~isnan(y));
+				if ~isempty(x)
+					ff = fit(x,y,'poly1');
+					plot(x,ff(x),'Color',col(j,:))
+
+				end
+				
+			% else
+			% 	(this_cond_probe_max - this_cond_probe_min) 
+			% end
+		end
+
+	end
+	clear j
+end
+clear i
+title('Unconditioned (black) vs conditioned responses (coloured)')
+
+% make labels
+cond_value = [];
+for i = 1:length(conditioning_pulses)
+	cond_value(i) = mean(stim_cond(width_type==this_width & cond_type==i));
+end
+cond_value = reshape(repmat(cond_value,2,1),1,length(conditioning_pulses)*2);
+for i = 1:length(cond_value)
+	cond_label{i} = (oval(cond_value(i),2));
+end
+legend(cond_label,'Location','southeast')
+
+
+PrettyFig;
+
+if being_published
+	snapnow;
+end
+
+
+%%
+% Now, we perform a similar analysis on the 300ms pulses (panel on the right)
+
+title('50ms')
+this_width = 2;
+
+subplot(1,2,2), hold on
+neurons = unique(neuron_id(~isnan(neuron_id)));
+n = length(neurons);
+probe_mins = NaN(n,1);
+probe_maxs = NaN(n,1);
+for i  = 1:length(neurons)
+	this_neuron = neurons(i);
+	x = stim_probe(neuron_id==this_neuron & width_type == this_width & cond_type == 1);
+	y = resp_probe(neuron_id==this_neuron & width_type == this_width & cond_type == 1);
+	x = x(~isnan(x)); y= y(~isnan(y));
+	scatter(x,y,'k')
+	if ~isempty(x)
+		ff = fit(x,y,'poly1');
+		plot(x,ff(x),'k')
+		probe_mins(i) = min(x);
+		probe_maxs(i) = max(x);
+	end
+	
+	
+end
+set(gca,'XLim',[0 3],'YLim',[0 160])
+xlabel('Probe Stimulus Height (V)')
+ylabel('Probe Response Height (Hz)')
+
+
+
+probe_ranges = probe_maxs - probe_mins;
+tolerance = .1; % tolerance for probe ranges
+col = pmkmp(length(conditioning_pulses)-1,'CubicL');
+col = [0 0 0; col];
+for i  = 1:length(neurons)
+	for j = 2:length(conditioning_pulses)
+		this_cond_probe_max = max((stim_probe(neuron_id==i & width_type == this_width & cond_type == j)));
+		this_cond_probe_min = min((stim_probe(neuron_id==i & width_type == this_width & cond_type == j)));
+		if ~isempty(this_cond_probe_min)
+			% check if the range of the probes are OK
+
+			%if abs((this_cond_probe_max - this_cond_probe_min) - probe_ranges(i)) < tolerance*probe_ranges(i)
+				% yay! this is OK
+			
+				x = stim_probe(neuron_id==i & width_type == this_width & cond_type == j);
+				y = resp_probe(neuron_id==i & width_type == this_width & cond_type == j);
+				scatter(x,y,64,col(j,:))
+				x = x(~isnan(x)); y= y(~isnan(y));
+				if ~isempty(x)
+					ff = fit(x,y,'poly1');
+					plot(x,ff(x),'Color',col(j,:))
+
+				end
+				
+			% else
+			% 	(this_cond_probe_max - this_cond_probe_min) 
+			% end
+		end
+
+	end
+	clear j
+end
+clear i
+title('300ms pulses')
+
+cond_value = [];
+% make labels
+for i = 1:length(conditioning_pulses)
+	cond_value(i) = mean(stim_cond(width_type==this_width & cond_type==i));
+end
+cond_value = reshape(repmat(cond_value,2,1),1,length(conditioning_pulses)*2);
+for i = 1:length(cond_value)
+	cond_label{i} = (oval(cond_value(i),2));
+end
+legend(cond_label,'Location','southeast')
+
+PrettyFig;
+
+
+return
 
 %%
 % What is the effect of the conditioning pulses on response properties of the neuron to the probe pulses? In the following figure, we plot the response vs. the stimulus for the different conditioning pulses used. Each dataset conditioned with a different pulse amplitude is shown in a different colour. 
@@ -658,7 +876,7 @@ a(1)=subplot(1,2,1); hold on
 slopes = NaN*conditioning_pulses;
 intercepts = NaN*conditioning_pulses;
 
-col = pmkmp(length(conditioning_pulses),'IsoL');
+col = pmkmp(length(conditioning_pulses),'LinLhot');
 
 for this_cond = 1:length(conditioning_pulses)
 	x = stim_probe(cond_type==this_cond & width_type == this_width);

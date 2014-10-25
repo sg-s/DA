@@ -10,11 +10,22 @@ function [R,y,z] = DA_integrate2(S,p)
 % 
 % modified by Srinivas Gorur-Shandilya
 % here we throw away tau_r as we never use it and instead introduce a new parameter, s0, which is subtracted from the stimulus. 
-
-if ~nargin
+switch nargin
+case 0
 	help DA_integrate2
 	return
+case 1
+	error('Not enough input arguments')
+case 2
+	if ~isvector(S)
+		error('First argument should be a vector')
+	end
+	if ~isstruct(p)
+		error('Second argument should be a structure')
+	end
 end
+
+
 
 S = (S - p.s0); 
 

@@ -12,26 +12,29 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [alpha,d,fp] =  FitFractionalDModel(stimulus, response)
+function [alpha,d,fp] =  FitFractionalDModel(stimulus, response,nsteps)
 switch nargin 
 case 0
 	help FitFractionalDModel
 	return
 case 1
 	error('Not enough input arguments')
-case 2
+case {2,3}
 	if ~isvector(stimulus) || ~isvector(response)
 		error('Arguments should be vectors')
 	end
 	stimulus = stimulus(:);
 	response = response(:);
-	response = response/mean(response);
+	mr = mean(response);
+	response = response/mr;
+	
+end
+if nargin < 3
+	nsteps  = 30;
 end
 
-
 x0 = .35;
-nsteps = 10;
-psoptions = psoptimset('UseParallel',true, 'Vectorized', 'off','Cache','on','CompletePoll','on','Display','iter','MaxIter',nsteps,'MaxFunEvals',2000);
+psoptions = psoptimset('UseParallel',true, 'Vectorized', 'off','Cache','on','CompletePoll','on','Display','none','MaxIter',nsteps,'MaxFunEvals',2000);
 
 lb = [0];% 0 0 0];
 ub = [1];% Inf Inf Inf];
@@ -41,9 +44,11 @@ fp = fgl_deriv(x,stimulus,1);
 fp(fp<0)= 0;
 fp = fp/mean(fp);
 d = finddelay(fp,response);
-fp = [NaN(d,1); fp];
-fp = fp(1:length(response));
-
+if d
+	fp = [NaN(d,1); fp];
+	fp = fp(1:length(response));
+end
+fp = fp*mr;
 
 
 	function c= FDCostFunction(x,stimulus,response)
@@ -51,6 +56,11 @@ fp = fp(1:length(response));
 		fp(fp<0)= 0;
 		fp = fp/mean(fp);
 		d = finddelay(fp,response);
-		c=Cost2(response(d:end),fp(1:end-d+1));
+		if d
+			c=Cost2(response(d:end),fp(1:end-d+1));
+		else
+			c = Cost2(response,fp);
+		end
+
 	end
 end

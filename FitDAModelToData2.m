@@ -1,6 +1,7 @@
-% FitDAModelToData.m
+% FitDAModelToData2.m
 % fits the DA model to data
-% 
+% a better algo for fitting data to the DA model
+% it first only varies A and B to get the scale right
 % created by Srinivas Gorur-Shandilya at 10:20 , 09 April 2014. Contact me at http://srinivas.gs/contact/
 % 
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
@@ -15,9 +16,8 @@
 % You can also specify which flavour of the DA model to use by specifying a global variable called DA_Model_Func which contains a function handle to the DA model you want to use. By default, DA_Model_Func is "@DA_integrate2"
 %
 % You also have to specify a corresponding Validate Param function handle in DA_Model_Validate_Param_Func
-function [p, Rguess,x ] = FitDAModelToData(data,x0,lb,ub,min_r2)
+function [p, Rguess,x ] = FitDAModelToData2(data,x0,lb,ub,min_r2)
 
-default_x0 = [max(data.response) std(data.response) .3 10 2 10 2 -.1*(max(data.stimulus))];
 scale = 4;
 
 switch nargin 
@@ -25,6 +25,7 @@ switch nargin
 		help FitDAModelToData
 		return
 	case 1
+		default_x0 = [max(data.response) std(data.response) .3 10 2 10 2 min(data.stimulus))];
 		x0 = default_x0;
 		lb = x0/scale;
 		ub = x0*scale;
@@ -51,6 +52,27 @@ switch nargin
 		end
 
 end
+
+
+% first just fix A and B
+disp('Fitting A and B parameters...')
+psoptions = psoptimset('UseParallel',true, 'Vectorized', 'off','Cache','on','CompletePoll','on','Display','iter','MaxIter',nsteps,'MaxFunEvals',20000);
+x = patternsearch(@(x) DA_cost_function(x,data),x,[],[],[],[],lb,ub,psoptions);
+p = DA_Model_Validate_Param_Func(x);
+
+
+% show the result
+figure, hold on
+plot(data.response,'k')
+plot(Rguess,'r')
+title(oval(rsquare(Rguess(IgnoreInitial:end),data.response(IgnoreInitial:end)),4))
+Rguess(:,i) = DA_Model_Func(stimulus(:,i),p);
+return
+
+
+
+
+
 
 % special bounds
 temp=ub(x0<0);
@@ -150,9 +172,3 @@ else
 end
 
 Rguess = abs(Rguess);
-
-% show the result
-figure, hold on
-plot(data.response,'k')
-plot(Rguess,'r')
-title(oval(rsquare(Rguess(IgnoreInitial:end),data.response(IgnoreInitial:end)),4))

@@ -175,8 +175,17 @@ for i = 1:length(history_lengths)
 
 	if history_lengths(i) == example_history_length
 
-
-		if debug || plothere(1)
+		temp = plothere(1);
+		temp = whos('temp');
+		temp = temp.class;
+		dothis=0;
+		if strcmp(temp,'matlab.graphics.axis.Axes')
+			dothis=1;
+		elseif strcmp(temp,'double')
+			dothis = plothere(1);
+		end
+	
+		if debug || dothis
 			% % plot the stimulus and the smoothed stimulus
 			plot(plothere(1),t,stimulus,'k','LineWidth',2), hold on
 			plot(plothere(1),t,shat(i,:),'Color',[0.9 0.9 0.9],'LineWidth',4)
@@ -217,7 +226,20 @@ for i = 1:length(history_lengths)
 
 		end
 
-		if plothere(3)
+		temp = plothere(3);
+		temp = whos('temp');
+		temp = temp.class;
+
+		dothis=0;
+		if strcmp(temp,'matlab.graphics.axis.Axes')
+			dothis=1;
+		elseif strcmp(temp,'double')
+			dothis = plothere(1);
+		end
+	
+	
+		if dothis
+
 
 			% axes(plothere(3))
 			% o = .3; % opacity
@@ -294,6 +316,12 @@ if length(plothere) == 4
 	sig_high = p_high<0.05; % these points are significant,
 	scatter(plothere(4),history_lengths(sig_low),low_slopes2.data(sig_low),1256,'g.')
 	scatter(plothere(4),history_lengths(sig_high),high_slopes2.data(sig_high),1256,'r.')
+
+	% plot lines to indicate the autocorrelation time of the stimulus
+	[~,tau] = FindCorrelationTime(stimulus);
+	tau = tau*dt;
+	yy=get(plothere(4),'YLim');
+	plot([tau tau],yy,'k-.')
 
 	set(plothere(4),'LineWidth',2,'FontSize',20,'box','on','XLim',[0 max(history_lengths)])
 	xlabel(plothere(4),'History Length (s)','FontSize',20)

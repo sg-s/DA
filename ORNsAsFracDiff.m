@@ -14,6 +14,11 @@ if ~isempty(calling_func)
 		being_published = 1;
 	end
 end
+% check if there is a data cache and load it
+if exist(strcat(mfilename,'.mat'))
+	load(strcat(mfilename,'.mat'))
+end
+
 
 load('/local-data/DA-paper/flickering-stim/data.mat')
 
@@ -44,7 +49,7 @@ end
 %%
 % We can fit a fractional differentiator to this data set, and compare it to a LN model: 
 
-if ~being_published
+if ~exist('alpha')
 	[alpha,d,fd_pred] = FitFractionalDModel(data(td).PID,data(td).ORN);
 end
 
@@ -126,7 +131,7 @@ x = lsqcurvefit(@hill,[max(ydata) 2 2],xdata,ydata,[max(ydata)/2 2 1],[2*max(yda
 % save this for later
 LN_pred = hill(x,data(td).LinearFit);
 
-if ~being_published
+if ~exist('order_frac_diff')
 	[order_frac_diff,~,fd_pred2] = FitFractionalDModel(data(td).PID2,data(td).ORN);
 end
 
@@ -219,7 +224,7 @@ end
 
 a = 350;
 z = 600;
-if ~being_published
+if ~exist('dr_data')
 	for td = 5:7
 		dr_data(td).PID(1,:) = 0;
 		dr_data(td).fd_pred = dr_data(td).ORN;
@@ -299,7 +304,8 @@ if being_published
 end
 warning on
 
-
+% cache data
+save(strcat(mfilename,'.mat'))
 
 %% Version Info
 % The file that generated this document is called:

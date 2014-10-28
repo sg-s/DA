@@ -284,6 +284,9 @@ end
 %%
 % How do the measured effects of gain adaptation vary with levels of background stimuli? The following figure shows various relative gain measurements for the different background levels: 
 
+
+s = 3000; % when we start for the gain analysis
+z = 8000; % where we end
 figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
 if redo_bootstrap
 	all_p = zeros(length(history_lengths),length(data));
@@ -322,6 +325,72 @@ for td = 1:length(data)
 	titlestr = strcat('Background :',oval(background_odor_level(td),2));
 	title(titlestr)
 end
+
+%% Effect of Threshold
+% What is the effect of a hard threshold on both the ability of the LN model to predict the response, and the estimate of gain adaptation in this system? Is it possible that gain adaptation is present in ORN data, but is hard to detect because of the hard threshold (ORNs can't have negative firing rates)?
+
+%%
+% The figure below shows how a hard threshold can affect this. On the left is the gain analysis for the lowest background, without an artificially threshold. In the sub-plot on the right, the response has been artificially clipped to simulate a ORN silencing under strong stimulus. 
+
+s = 3000;
+z = 8000;
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph=[];
+ph(4)=subplot(1,2,1); hold on 
+td=1;
+clear x
+x.response = data(td).DAModel(s:z);
+x.prediction = data(td).LN_pred(s:z);
+thisPID = interp1(time,mean2(data(td).PID),t);
+x.stimulus = thisPID(s:z);
+x.time = t(s:z);
+x.filter_length = 201;
+GainAnalysis4(x,history_lengths,example_history_length_LN,ph, [all_p(:,td) all_p(:,td)]');
+set(ph(4),'XScale','log')
+
+threshold = 40;
+x.response = x.response - threshold;
+x.response(x.response<0)=0;
+thisPID = interp1(time,mean2(data(td).PID),t);
+
+
+a = 3000;
+z = 8000;
+% build a simple linear model
+[K,~,filtertime] = FindBestFilter(thisPID(a:z),x.response,[],'filter_length=201;');
+filtertime = filtertime*mean(diff(t));
+LinearFit = convolve(t,thisPID(a:z),K,filtertime);
+LinearFit = LinearFit + mean(x.response);
+
+xdata = LinearFit;
+ydata = x.response;
+
+% crop it to lose NaNs
+ydata(isnan(xdata)) = [];
+xdata(isnan(xdata)) = [];
+
+xdata = xdata(:);
+ydata = ydata(:);
+
+fo=optimset('MaxFunEvals',1000,'Display','none');
+xp = lsqcurvefit(@hill,[max(ydata) 2 2],xdata,ydata,[max(ydata)/2 2 1],[2*max(ydata) max(ydata) 10],fo);
+% save this for later
+x.prediction = hill(xp,LinearFit);
+
+z = find(isnan(x.prediction),1,'first')-1;
+x.prediction = x.prediction(1:z);
+x.response = x.response(1:z);
+x.time = x.time(1:z);
+x.stimulus = x.stimulus(1:z);
+
+ph(4)=subplot(1,2,2); hold on 
+if redo_bootstrap
+	p_threshr = GainAnalysis4(x,history_lengths,example_history_length,ph);
+else
+	GainAnalysis4(x,history_lengths,example_history_length_LN,ph, p_threshr);
+end
+
+set(ph(4),'XScale','log')
 
 %% Version Info
 % The file that generated this document is called:

@@ -17,10 +17,13 @@ end
 % check if there is a data cache and load it
 if exist(strcat(mfilename,'.mat'))
 	load(strcat(mfilename,'.mat'))
+
+else
+	load('/local-data/DA-paper/flickering-stim/data.mat')
 end
 
 
-load('/local-data/DA-paper/flickering-stim/data.mat')
+
 
 %% ORNs as fractional differentiators
 % Are ORNs fractional differentiators? 
@@ -49,7 +52,7 @@ end
 %%
 % We can fit a fractional differentiator to this data set, and compare it to a LN model: 
 
-if ~exist('alpha')
+if ~exist('fd_pred')
 	[alpha,d,fd_pred] = FitFractionalDModel(data(td).PID,data(td).ORN);
 end
 
@@ -179,12 +182,10 @@ if ~exist('dr_data')
 
 
 	% throw out weird looking data
-	dr_data(7).PID(:,11) = [];
-	dr_data(7).ORN(:,11) = [];
 	dr_data(5).PID(:,8:10) = [];
 	dr_data(5).ORN(:,8:10) = [];
-	dr_data(6).PID(:,9:11) = [];
-	dr_data(6).ORN(:,9:11) = [];
+	dr_data(6).PID(:,9:10) = [];
+	dr_data(6).ORN(:,9:10) = [];
 end
 
 
@@ -224,7 +225,7 @@ end
 
 a = 350;
 z = 600;
-if ~exist('dr_data')
+if ~isfield(dr_data,'fd_pred')
 	for td = 5:7
 		dr_data(td).PID(1,:) = 0;
 		dr_data(td).fd_pred = dr_data(td).ORN;
@@ -304,7 +305,26 @@ if being_published
 end
 warning on
 
+
+
+%% Responses to long steps of odor 
+% How well does fractional differentiation explain the responses to long steps of odor? In the following section we fit a fractional differentiation operator to long steps of odor. 
+
+% load the data
+load('/local-data/DA-paper/long-steps/mahmut/mahmut_ls.mat')
+figure('outerposition',[0 0 1400 800],'PaperUnits','points','PaperSize',[1400 800]); hold on
+z = 8000;
+subplot(2,1,1), hold on
+for i = 1:length(ls_data)
+	plot(ls_data(i).time(1:z),mean(ls_data(i).PID(1:z,:)'))
+end
+subplot(2,1,2), hold on
+for i = 1:length(ls_data)
+	plot(ls_data(i).time(1:z),mean(ls_data(i).ORN(1:z,:)'))
+end
+
 % cache data
+being_published = 0;
 save(strcat(mfilename,'.mat'))
 
 %% Version Info
@@ -316,6 +336,12 @@ disp(mfilename)
 Opt.Input = 'file';
 disp(DataHash(strcat(mfilename,'.m'),Opt))
 
+%%
+% This file should be in this commit:
+[status,m]=unix('git rev-parse HEAD');
+if ~status
+	disp(m)
+end
 
 
 

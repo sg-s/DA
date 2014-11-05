@@ -94,13 +94,13 @@ end
 % In the first panel, the exponent of the Hill Function is kept constant, while the other parameters are allowed to vary to fit the data. In the second panel, the offset of the Hill function is kept constant, and in the third, all parameters are allowed to vary. The legend shows the r-square between the data and the Hill function fit.
 
 load('/local-data/DA-paper/dose-response/carlotta/dr_data.mat')
+
 Lh= [];
 L = {};
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 for i = 1:3
 	p(i) =  subplot(1,3,i); hold on
 	% no background
-	baseline = [mean(data(7).PID(2:70,:)) mean(data(1).PID(2:70,:))];
 	x=[max(data(7).PID) max(data(1).PID)];
 	y=[max(data(7).ORN) max(data(1).ORN)];
 	scatter(p(i),x,y,'k')

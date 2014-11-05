@@ -34,7 +34,7 @@ if nargin < 3
 end
 
 x0 = .35;
-psoptions = psoptimset('UseParallel',true, 'Vectorized', 'off','Cache','on','CompletePoll','on','Display','none','MaxIter',nsteps,'MaxFunEvals',2000);
+psoptions = psoptimset('UseParallel',true, 'Vectorized', 'off','Cache','on','CompletePoll','on','Display','iter','MaxIter',nsteps,'MaxFunEvals',2000);
 
 lb = [0];% 0 0 0];
 ub = [1];% Inf Inf Inf];

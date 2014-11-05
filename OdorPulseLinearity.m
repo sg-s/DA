@@ -37,7 +37,7 @@ desired_dil_f = [];
 actual_dil_f = [];
 desired_dil_b = [];
 actual_dil_b = [];
-for i = 1:length(data)
+for i = 1:16
 	if ~isempty(data(i).PID)
 		for j = 1:width(data(i).PID)
 			% do the foreground
@@ -62,15 +62,15 @@ desired_dil_f = desired_dil_f*(1/2);
 actual_dil_f= actual_dil_f*(1/2);
 
 scatter(desired_dil_b,actual_dil_b,32,'b','filled')
-xlabel('Desired Dilution')
-ylabel('Actual Dilution')
+xlabel('Desired Concentration')
+ylabel('Actual Concentration')
 title('Foreground Pulses')
 
 
 subplot(1,2,2), hold on
 scatter(desired_dil_f,actual_dil_f,32,'r','filled')
-xlabel('Desired Dilution')
-ylabel('Actual Dilution')
+xlabel('Desired Concentration')
+ylabel('Actual Concentration')
 title('Background Pulses')
 
 PrettyFig;
@@ -101,9 +101,9 @@ background_dil = [];
 foreground_pid = [];
 background_pid = [];
 
-total_flow = 2400; %ml/min
+total_flow = 2200; %ml/min, because only one valve turns on
 
-for i = 1:length(data)
+for i = 1:16
 	if ~isempty(data(i).PID)
 		if any(ControlParadigm(i).Outputs(1:4,1) == 0)
 			% only one flow through odor
@@ -136,7 +136,7 @@ ylabel('Peak PID (V)')
 subplot(1,2,2), hold on
 scatter(foreground_dil,foreground_pid,32,'r','filled')
 scatter(background_dil,background_pid,32,'b','filled')
-xlabel('Effective Dilution')
+xlabel('Effective Concentration')
 ylabel('Peak PID (V)')
 
 PrettyFig;
@@ -148,24 +148,95 @@ end
 
 
 %% How do odor pulses add up?
-% If we present two odor pulses from each of the valves together, at the same time, what does the PID measure? Do the odor pulses add up? 
+% If we present two odor pulses from each of the valves together, at the same time, what does the PID measure? Do the odor pulses add up? In this figure, we consider combinations of two pulses, both of equal amplitude, that are added together, and compare them to cases when they were presented individually (on the right).
 
-figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 
 expected_PID = [];
 actual_PID = [];
+effective_dil = [];
 
-for i = 1:length(data)
+
+total_flow = 2400; %ml/min, because only both valves turn on
+
+for i = 1:16
 	if ~isempty(data(i).PID)
 		if ~any(ControlParadigm(i).Outputs(1:4,1) == 0)
 			% both pulses on together
 			for j = 1:width(data(i).PID)
 				this_foreground_flow = 100*ControlParadigm(i).Outputs(3,1);
 				this_background_flow = 40*ControlParadigm(i).Outputs(4,1);
+				effective_dil = [effective_dil (this_background_flow+this_foreground_flow)/total_flow];
 
 				expected_PID = [expected_PID (mean(foreground_pid(foreground_flow==this_foreground_flow)) + mean(background_pid(background_flow==this_background_flow)))];
 
 				actual_PID = [actual_PID max(data(i).PID(j,:)) - mean(data(i).PID(j,1:1000))];
+
+
+			end
+		end
+		
+	end
+end
+
+subplot(1,2,1), hold on
+scatter(expected_PID,actual_PID)
+xlabel('Sum of Individual pulses (V)')
+ylabel('Actual PID (V)')
+
+% draw a line of unity
+plot([0 max(expected_PID)],[0 max(expected_PID)],'k--')
+plot([0 max(expected_PID)],[0 max(expected_PID)/2],'k--')
+
+subplot(1,2,2), hold on
+scatter(effective_dil,actual_PID,32,'r','filled')
+xlabel('Effective Concentration')
+ylabel('Actual PID (V)')
+
+% also plot single pulses
+single_pulses_dil = [foreground_dil background_dil];
+single_pulses_pid = [foreground_pid background_pid];
+scatter(single_pulses_dil,single_pulses_pid,32,'b','filled')
+
+% fit a line to the double pulses
+[ff,gof1] = fit(effective_dil(:),actual_PID(:),'poly1');
+lh(1)=plot(unique(effective_dil),ff(unique(effective_dil)),'r');
+
+[ff,gof2] = fit(single_pulses_dil(:),single_pulses_pid(:),'poly1');
+lh(2)=plot(unique(single_pulses_dil),ff(unique(single_pulses_dil)),'b');
+
+legend(lh,{oval(gof1.rsquare,2), oval(gof2.rsquare,2)} ,'Location','NorthWest')
+
+title('Single Pulses (Blue), Double Pulses (red)')
+
+PrettyFig;
+
+if being_published
+	snapnow;
+	delete(gcf)
+end
+
+
+%% Are airspeeds at the outlet consistent?
+% In the following figure, we plot airspeeds measured at the outlet when one of the valves opens (blue) compared to when both open (red)
+
+load('/local-data/DA-paper/odor-linearity/2014_11_04_pulse_addition_airspeeds.mat')
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+
+
+for i = 1:16
+	if ~isempty(data(i).PID)
+		if ~any(ControlParadigm(i).Outputs(1:4,1) == 0)
+			% both pulses on together
+			for j = 1:width(data(i).PID)
+				plot(data(i).Airspeed(j,1:10:end),'r')
+
+			end
+		else
+			% only one pulse on
+			for j = 1:width(data(i).PID)
+				plot(data(i).Airspeed(j,1:10:end),'b')
 
 			end
 		end
@@ -174,12 +245,8 @@ for i = 1:length(data)
 end
 
 
-scatter(expected_PID,actual_PID)
-xlabel('Expected PID (V)')
-ylabel('Actual PID (V)')
-
-% draw a line of unity
-plot([0 max(expected_PID)],[0 max(expected_PID)],'k--')
+xlabel('Time (ms)')
+ylabel('-Airspeed (a.u.)')
 
 PrettyFig;
 

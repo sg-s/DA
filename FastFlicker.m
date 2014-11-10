@@ -179,9 +179,323 @@ if being_published
 	delete(gcf)
 end
 
-%% A static model to understand what is going on
-% How do distributions of command voltages translate into distributions of flow signals to distributions of PID signals? In principle, we can work out the functional relationships between all these distributions. 
 
+%% A dynamic model to understand what's going on
+% In this section, we build a detailed phenomenological model of the odor delivery system, to try to understand what's going on. We model all dynamical processes using LN models that are fit to the data, and assume that the PID measures instantaneous odor concentration that scales with the fractional flow through the odor. 
+% 
+% <</code/da/images/model.png>>
+%
+
+clear data
+load('/local-data/DA-paper/fast-flicker/pid/2014_11_07_fast_flicker_single_MFC_2ac.mat')
+
+% extract all MFC filters
+if ~exist('K1','var')
+	K1 = zeros(length(data)*width(data(1).PID),500);
+	c= 1;
+	for i = 1:length(data)
+		for j = 1:width(data(i).PID)
+			K1(c,:) = FitFilter2Data(ControlParadigm(i).Outputs(1,200000:10:500000),data(i).MFC200(j,200000:10:500000),[],'filter_length=499;');
+			c = c+1;
+			
+		end
+	end
+end
+
+
+% extract all non-linearities for MFC
+if ~exist('f1','var')
+	f1 = {};
+	c= 1;
+	for i = 1:length(data)
+		for j = 1:width(data(i).PID)
+			xdata = ControlParadigm(i).Outputs(1,200000:10:500000);
+			xdata = filter(K1(c,:),1,xdata);
+			ydata = data(i).MFC200(j,200000:10:500000);
+
+			% crop it to lose NaNs
+			ydata(isnan(xdata)) = [];
+			xdata(isnan(xdata)) = [];
+
+			xdata = xdata(:);
+			ydata = ydata(:);
+
+			f1{c} = fit(xdata,ydata,'poly6');
+			c= c+1;
+		end
+	end
+end
+
+%%
+% The following figure shows the filters extracted for the MFC response from the command signal, for each trial, colour coded by the control paradigm (colours match previous figures). The panel on the right shows the best-fit non linear functions (which are essentially straight lines). And the two panels below show the data (black) vs the prediction (red) for the lowest flow case and the highest flow case. 
+
+figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
+subplot(3,2,1), hold on
+c = parula(length(data));
+filtertime = 1e-3*(1:length(K1));
+for i = 1:width(K1)
+	plot(filtertime,K1(i,:),'Color',c(ceil(i/3),:))
+end
+xlabel('Filter Lag (s)')
+ylabel('Filter Amplitude (a.u.)')
+title('MFC Filters')
+
+subplot(3,2,2), hold on
+c = parula(length(data));
+filtertime = 1e-3*(1:length(K1));
+cc= 1;
+for i = 1:length(data)
+	for j = 1:width(data(1).PID)
+		xdata = ControlParadigm(i).Outputs(1,200000:10:500000);
+		xdata = filter(K1(cc,:),1,xdata);
+		xdata = sort(xdata);
+		plot(xdata,f1{cc}(xdata),'Color',c(i,:));
+		cc = cc+1;
+	end
+end
+xlabel('Filter output (a.u.)')
+ylabel('MFC Flow Rate (V)')
+title('MFC Nonlinearities')
+
+
+subplot(3,2,3:4), hold on
+time = 1e-4*(1:length(data(1).PID));
+plot(time,data(1).MFC200(3,:),'k')
+xdata = ControlParadigm(1).Outputs(1,200000:10:500000);
+xdata = filter(K1(3,:),1,xdata);
+fp = f1{3}(xdata);
+plot(time(200000:10:500000),fp,'r')
+set(gca,'XLim',[20 30])
+xlabel('Time (s)')
+ylabel('Flow Signal (V)')
+
+subplot(3,2,5:6), hold on
+plot(time,data(7).MFC200(3,:),'k')
+xdata = ControlParadigm(7).Outputs(1,200000:10:500000);
+xdata = filter(K1(21,:),1,xdata);
+fp = f1{21}(xdata);
+plot(time(200000:10:500000),fp,'r')
+set(gca,'XLim',[20 30])
+xlabel('Time (s)')
+ylabel('Flow Signal (V)')
+
+
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
+
+
+% extract all PID filters
+if ~exist('K2','var')
+	K2 = zeros(length(data)*width(data(1).PID),500);
+	c= 1;
+	for i = 1:length(data)
+
+		for j = 1:width(data(i).PID)
+			x = data(i).MFC200(j,200000:10:500000);
+			% convert into a flow
+			x = x*40; % mL/min
+			x = x./(x+2000);
+			K2(c,:) = FitFilter2Data(x,data(i).PID(j,200000:10:500000),[],'filter_length=499;');
+			c = c+1;
+
+		end
+	end
+end
+
+% extract all non-linearities for PID
+if ~exist('f2','var')
+	f2 = {};
+	c= 1;
+	for i = 1:length(data)
+		for j = 1:width(data(i).PID)
+			xdata = data(i).MFC200(j,200000:10:500000);
+			% convert into a flow
+			x = x*40; % mL/min
+			x = x./(x+2000);
+			xdata = filter(K2(c,:),1,xdata);
+			ydata = data(i).PID(j,200000:10:500000);
+
+			% crop it to lose NaNs
+			ydata(isnan(xdata)) = [];
+			xdata(isnan(xdata)) = [];
+
+			xdata = xdata(:);
+			ydata = ydata(:);
+
+			f2{c} = fit(xdata,ydata,'poly6');
+			c= c+1;
+		end
+	end
+end
+
+
+figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
+subplot(3,2,1), hold on
+c = parula(length(data));
+filtertime = 1e-3*(1:length(K2));
+for i = 1:width(K2)
+	plot(filtertime,K2(i,:),'Color',c(ceil(i/3),:))
+end
+xlabel('Filter Lag (s)')
+ylabel('Filter Amplitude (a.u.)')
+title('PID Filters')
+
+subplot(3,2,2), hold on
+c = parula(length(data));
+filtertime = 1e-3*(1:length(K1));
+cc= 1;
+for i = 1:length(data)
+	for j = 1:width(data(1).PID)
+		xdata = data(i).MFC200(j,200000:10:500000);
+		xdata = filter(K2(cc,:),1,xdata);
+		xdata = sort(xdata);
+		plot(xdata,f2{cc}(xdata),'Color',c(i,:));
+		cc = cc+1;
+	end
+end
+xlabel('Filter output (a.u.)')
+ylabel('PID (V)')
+title('PID Nonlinearities')
+
+
+subplot(3,2,3:4), hold on
+plot(time,data(1).PID(3,:),'k')
+xdata = data(1).MFC200(3,200000:10:500000);
+xdata = filter(K2(3,:),1,xdata);
+fp = f2{3}(xdata);
+plot(time(200000:10:500000),fp,'r')
+set(gca,'XLim',[20 30])
+xlabel('Time (s)')
+ylabel('PID (V)')
+
+subplot(3,2,5:6), hold on
+plot(time,data(7).PID(3,:),'k')
+xdata = data(7).MFC200(3,200000:10:500000);
+xdata = filter(K2(21,:),1,xdata);
+fp = f2{21}(xdata);
+plot(time(200000:10:500000),fp,'r')
+set(gca,'XLim',[20 30])
+xlabel('Time (s)')
+ylabel('PID (V)')
+
+
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%% Wrapped Noise
+% In this section, we choose our control signals by wrapping uniformly distributed noise around the extrema, and see what sort of distributions we get out of this. 
+
+load('/local-data/DA-paper/fast-flicker/pid/2014_11_07_fast_flicker_single_MFC_2ac_50ms_wrapped_noise.mat')
+figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
+subplot(2,2,1), hold on
+c = jet(length(data));
+for i = 1:length(data)
+	for j = 1:width(data(i).PID)
+		[y,x] = hist(data(i).MFC200(j,200000:500000),50);
+		plot(x,y,'Color',c(i,:))
+	end
+end
+
+xlabel('MFC Flow (V)')
+ylabel('Count')
+
+
+subplot(2,2,2), hold on
+c = jet(length(data));
+for i = 1:length(data)
+	for j = 1:width(data(i).PID)
+		[y,x] = hist(data(i).PID(j,200000:500000),50);
+		plot(x,y,'Color',c(i,:))
+	end
+end
+
+xlabel('PID (V)')
+ylabel('Count')
+
+subplot(2,2,3:4), hold on
+c = jet(length(data));
+for i = 1:length(data)
+	if ~isempty(data(i).PID)
+		time = 1e-4*(1:length(data(i).PID));
+		plot(time,mean(data(i).PID),'Color',c(i,:))
+	end
+end
+
+set(gca,'XLim',[20 30])
+
+xlabel('Time (s)')
+ylabel('PID (V)')
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
+%% Dilution Noise
+% In this section, we choose our control signals by sampling from a uniform distribution in the effective dilution (the flow through odor/total flow), and then back-calculate the command signal needed to drive the MFC. 
+
+load('/local-data/DA-paper/fast-flicker/pid/2014_11_07_fast_flicker_single_MFC_2ac_50ms_dilution_noise.mat')
+figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
+subplot(2,2,1), hold on
+c = jet(length(data));
+for i = 1:length(data)
+	for j = 1:width(data(i).PID)
+		[y,x] = hist(data(i).MFC200(j,200000:500000),50);
+		plot(x,y,'Color',c(i,:))
+	end
+end
+
+xlabel('MFC Flow (V)')
+ylabel('Count')
+
+
+subplot(2,2,2), hold on
+c = jet(length(data));
+for i = 1:length(data)
+	for j = 1:width(data(i).PID)
+		[y,x] = hist(data(i).PID(j,200000:500000),50);
+		plot(x,y,'Color',c(i,:))
+	end
+end
+
+xlabel('PID (V)')
+ylabel('Count')
+
+subplot(2,2,3:4), hold on
+c = jet(length(data));
+for i = 1:length(data)
+	if ~isempty(data(i).PID)
+		time = 1e-4*(1:length(data(i).PID));
+		plot(time,mean(data(i).PID),'Color',c(i,:))
+	end
+end
+
+set(gca,'XLim',[20 30])
+
+xlabel('Time (s)')
+ylabel('PID (V)')
+
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 
 %% Version Info

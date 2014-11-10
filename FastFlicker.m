@@ -296,7 +296,6 @@ if ~exist('K2','var')
 	K2 = zeros(length(data)*width(data(1).PID),500);
 	c= 1;
 	for i = 1:length(data)
-
 		for j = 1:width(data(i).PID)
 			x = data(i).MFC200(j,200000:10:500000);
 			% convert into a flow
@@ -317,14 +316,14 @@ if ~exist('f2','var')
 		for j = 1:width(data(i).PID)
 			xdata = data(i).MFC200(j,200000:10:500000);
 			% convert into a flow
-			x = x*40; % mL/min
-			x = x./(x+2000);
+			xdata = xdata*40; % mL/min
+			xdata = xdata./(xdata+2000);
 			xdata = filter(K2(c,:),1,xdata);
 			ydata = data(i).PID(j,200000:10:500000);
 
-			% crop it to lose NaNs
-			ydata(isnan(xdata)) = [];
-			xdata(isnan(xdata)) = [];
+			% mean correction
+			xdata = xdata-mean(xdata);
+			xdata = xdata + mean(ydata);
 
 			xdata = xdata(:);
 			ydata = ydata(:);
@@ -354,7 +353,15 @@ cc= 1;
 for i = 1:length(data)
 	for j = 1:width(data(1).PID)
 		xdata = data(i).MFC200(j,200000:10:500000);
+		xdata = xdata*40; % mL/min
+		xdata = xdata./(xdata+2000);
+
 		xdata = filter(K2(cc,:),1,xdata);
+
+		% mean correction
+		xdata = xdata-mean(xdata);
+		xdata = xdata + mean(ydata);
+
 		xdata = sort(xdata);
 		plot(xdata,f2{cc}(xdata),'Color',c(i,:));
 		cc = cc+1;
@@ -368,7 +375,14 @@ title('PID Nonlinearities')
 subplot(3,2,3:4), hold on
 plot(time,data(1).PID(3,:),'k')
 xdata = data(1).MFC200(3,200000:10:500000);
+xdata = xdata*40; % mL/min
+xdata = xdata./(xdata+2000);
 xdata = filter(K2(3,:),1,xdata);
+
+% mean correction
+xdata = xdata-mean(xdata);
+xdata = xdata + mean(data(1).PID(3,200000:500000));
+
 fp = f2{3}(xdata);
 plot(time(200000:10:500000),fp,'r')
 set(gca,'XLim',[20 30])
@@ -378,7 +392,14 @@ ylabel('PID (V)')
 subplot(3,2,5:6), hold on
 plot(time,data(7).PID(3,:),'k')
 xdata = data(7).MFC200(3,200000:10:500000);
+xdata = xdata*40; % mL/min
+xdata = xdata./(xdata+2000);
 xdata = filter(K2(21,:),1,xdata);
+
+% mean correction
+xdata = xdata-mean(xdata);
+xdata = xdata + mean(data(7).PID(3,200000:500000));
+
 fp = f2{21}(xdata);
 plot(time(200000:10:500000),fp,'r')
 set(gca,'XLim',[20 30])
@@ -449,11 +470,15 @@ end
 %% Dilution Noise
 % In this section, we choose our control signals by sampling from a uniform distribution in the effective dilution (the flow through odor/total flow), and then back-calculate the command signal needed to drive the MFC. 
 
-load('/local-data/DA-paper/fast-flicker/pid/2014_11_07_fast_flicker_single_MFC_2ac_50ms_dilution_noise.mat')
+load('/local-data/DA-paper/fast-flicker/pid/2014_11_07_fast_flicker_single_MFC_2ac_50ms_dilution_noise_2.mat')
 figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
 subplot(2,2,1), hold on
+
 c = jet(length(data));
-for i = 1:length(data)
+
+use_these = 1:length(data);
+
+for i = use_these
 	for j = 1:width(data(i).PID)
 		[y,x] = hist(data(i).MFC200(j,200000:500000),50);
 		plot(x,y,'Color',c(i,:))
@@ -466,7 +491,7 @@ ylabel('Count')
 
 subplot(2,2,2), hold on
 c = jet(length(data));
-for i = 1:length(data)
+for i = use_these
 	for j = 1:width(data(i).PID)
 		[y,x] = hist(data(i).PID(j,200000:500000),50);
 		plot(x,y,'Color',c(i,:))
@@ -478,7 +503,65 @@ ylabel('Count')
 
 subplot(2,2,3:4), hold on
 c = jet(length(data));
-for i = 1:length(data)
+for i = use_these
+	if ~isempty(data(i).PID)
+
+		time = 1e-4*(1:length(data(i).PID));
+		plot(time,mean(data(i).PID),'Color',c(i,:))
+	end
+end
+
+set(gca,'XLim',[20 30])
+
+xlabel('Time (s)')
+ylabel('PID (V)')
+
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%% 
+% There is a weird bimodality in the PID histograms that we don't understand. 
+
+%% Mix-and-Match Solution to Odor Delivery Problem
+% Instead of spending time figuring out what's going on in detail, we are going to mix-and-match control paradigms from all experiments, choosing those control paradigms which give us approximately Gaussian distributions. 
+
+load('/local-data/DA-paper/fast-flicker/pid/comibined_data.mat')
+figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
+subplot(2,2,1), hold on
+
+c = [0 0 1; 0 1 0; 1 0 0];
+
+use_these = 1:length(data);
+
+for i = use_these
+	for j = 1:width(data(i).PID)
+		[y,x] = hist(data(i).MFC200(j,200000:500000),50);
+		plot(x,y,'Color',c(i,:))
+	end
+end
+
+xlabel('MFC Flow (V)')
+ylabel('Count')
+
+
+subplot(2,2,2), hold on
+for i = use_these
+	for j = 1:width(data(i).PID)
+		[y,x] = hist(data(i).PID(j,200000:500000),50);
+		plot(x,y,'Color',c(i,:))
+	end
+end
+
+xlabel('PID (V)')
+ylabel('Count')
+
+subplot(2,2,3:4), hold on
+for i = use_these
 	if ~isempty(data(i).PID)
 		time = 1e-4*(1:length(data(i).PID));
 		plot(time,mean(data(i).PID),'Color',c(i,:))
@@ -496,6 +579,7 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
 
 
 %% Version Info

@@ -234,7 +234,7 @@ for i = 1:length(history_lengths)
 		if strcmp(temp,'matlab.graphics.axis.Axes')
 			dothis=1;
 		elseif strcmp(temp,'double')
-			dothis = plothere(1);
+			dothis = plothere(3);
 		end
 	
 	
@@ -318,10 +318,15 @@ if length(plothere) == 4
 	scatter(plothere(4),history_lengths(sig_high),high_slopes2.data(sig_high),1256,'r.')
 
 	% plot lines to indicate the autocorrelation time of the stimulus
-	[~,tau] = FindCorrelationTime(stimulus);
-	tau = tau*dt;
+	% [~,tau] = FindCorrelationTime(stimulus);
+	% tau = tau*dt;
+	% yy=get(plothere(4),'YLim');
+	% plot([tau tau],yy,'k-.')
+
+	% plot line to indicate the location of the example history plot
 	yy=get(plothere(4),'YLim');
-	plot([tau tau],yy,'k-.')
+	plot([example_history_length example_history_length],yy,'k-.')
+
 
 	set(plothere(4),'LineWidth',2,'FontSize',20,'box','on','XLim',[0 max(history_lengths)])
 	xlabel(plothere(4),'History Length (s)','FontSize',20)

@@ -507,7 +507,7 @@ for i = use_these
 	if ~isempty(data(i).PID)
 
 		time = 1e-4*(1:length(data(i).PID));
-		plot(time,mean(data(i).PID),'Color',c(i,:))
+		plot(time,mean2(data(i).PID),'Color',c(i,:))
 	end
 end
 

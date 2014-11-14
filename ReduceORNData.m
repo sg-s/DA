@@ -24,7 +24,7 @@ dt = 3e-3; % the dt of the output data that this function will return
 fA = [];
 fB = [];
 PID = [];
-paradigm = [];
+paradigm = {};
 
 % now combine all the data
 for i = 1:length(allfiles)
@@ -46,7 +46,7 @@ for i = 1:length(allfiles)
 							fA = [fA  spiketimes2f(spikes(j).A(k,1:n),time,dt,3e-2)];
 							fB = [fB  spiketimes2f(spikes(j).B(k,1:n),time,dt,3e-2)];
 
-							paradigm = [paradigm j];
+							paradigm = [paradigm ControlParadigm(j).Name];
 
 							PID = [PID ; interp1(time,data(j).PID(k,:),dt*(1:length(fA)))];
 

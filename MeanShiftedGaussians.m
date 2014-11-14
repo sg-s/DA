@@ -41,15 +41,16 @@ paradigm_names = unique(combined_data.paradigm);
 %% Stimulus Distributions 
 % Three gaussians with different means are chosen. The following figure shows the distributions for every trial of the data analysed here, colour coded by the experimental paradigm. 
 
-
+% some global parameters
 nbins = 50;
 histx = [];
 histy = [];
 paradigm = [];
-t_start = 15;
-t_stop = 55;
 dt = 3e-3;
 all_pid = [];
+
+a = floor(25/3e-3);
+z = floor(55/3e-3);
 
 % assemble all histograms
 for i = 1:length(paradigm_names)
@@ -137,8 +138,6 @@ for i = 1:length(paradigm_names)
 	plot(time,this_orn)
 end
 ylim = get(gca,'YLim');
-a = floor(15/3e-3);
-z = floor(55/3e-3);
 ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')
 
@@ -162,6 +161,50 @@ if being_published
 	delete(gcf)
 end
 
+%% Correlation Times 
+% On what timescales are the stimulus and the response correlated? In the following figure, we plot the autocorrelation function of the stimulus and the responses, for each stimulus presented:
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+
+c = parula(length(paradigm_names));
+
+subplot(1,2,1), hold on
+for i = 1:length(paradigm_names)
+	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
+	this_pid=mean2(combined_data.PID(plot_these,:));
+	this_pid= this_pid(a:z);
+	[y,x]=autocorr(this_pid,500);
+	x = x*3e-3;
+  	plot(x,y,'Color',c(i,:))
+end
+set(gca,'XScale','log')
+xlabel('Time (s)')
+ylabel('Autocorrelation')
+title('Stimulus')
+
+
+subplot(1,2,2), hold on
+for i = 1:length(paradigm_names)
+	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
+	this_orn=mean2(combined_data.fA(:,plot_these));
+	this_orn = this_orn(a:z);
+	[y,x]=autocorr(this_orn,500);
+	x = x*3e-3;
+  	plot(x,y,'Color',c(i,:))
+end
+set(gca,'XScale','log')
+xlabel('Time (s)')
+ylabel('Autocorrelation')
+title('ORN Responses')
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
 %% Neuron Responses: Input-Output Curve Changes
 % How do ORNs change their input-output curves when presented with these different stimuli? If the ORN is a perfect sensor, that adapts perfectly, it would move and stretch its I/O curve so that it is equal to cumulative density function of the stimulus. However, we know that ORNs don't adapt perfectly, so they must do something else. What is it? If the change dominated by a lateral movement of a stretch?
 
@@ -174,8 +217,6 @@ if redo
 	LNModel.LNFit = [];
 	LNModel.H_domain = [];
 
-	a = floor(15/3e-3);
-	z = floor(55/3e-3);
 
 	for i = 1:length(paradigm_names)
 		plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
@@ -200,7 +241,7 @@ if redo
 
 
 		fo=optimset('MaxFunEvals',1000,'Display','none');
-		x = lsqcurvefit(@hill4,[max(ydata) 2 2 0],xdata,ydata,[max(ydata)/2 2 1 0],[2*max(ydata) max(ydata) 10 max(ydata)],fo);
+		x = lsqcurvefit(@hill4,[max(ydata) 2 2 0],xdata,ydata,[max(ydata)/2 -max(ydata) 1 0],[2*max(ydata) max(ydata) 10 max(ydata)],fo);
 		LNFit = hill4(x,xdata);
 
 		% save all of this for later
@@ -394,14 +435,11 @@ for i = 1:length(LNModel)
 	ph(4) = subplot(1,2,2); hold on
 
 
-	a = floor(15/3e-3);
-	z = floor(55/3e-3) - 32; % to correct for the bit of the filter that is acausal
-
 	clear x
-	x.response = this_orn(a:z);
+	x.response = this_orn(a:z-32); % the 32 is to account for the acausal part of the filter
 	x.prediction = LNModel(i).LNFit;
-	x.stimulus = this_pid(a:z);
-	x.time = time(a:z);
+	x.stimulus = this_pid(a:z-32);
+	x.time = time(a:z-32);
 	x.filter_length = 299;
 
 	if redo
@@ -423,8 +461,6 @@ for i = 1:length(LNModel)
 	title(ph(4),paradigm_names{i})
 
 	if being_published
-		snapnow;
-		delete(f1);
 
 		snapnow;
 		delete(f2);

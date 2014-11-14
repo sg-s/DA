@@ -166,53 +166,55 @@ end
 % How do ORNs change their input-output curves when presented with these different stimuli? If the ORN is a perfect sensor, that adapts perfectly, it would move and stretch its I/O curve so that it is equal to cumulative density function of the stimulus. However, we know that ORNs don't adapt perfectly, so they must do something else. What is it? If the change dominated by a lateral movement of a stretch?
 
 % this stores the LN model parameters for all the data
-clear LNModel
-LNModel.K = [];
-LNModel.H = []; % stores hill parameters
-LNModel.LinearFit = [];
-LNModel.LNFit = [];
-LNModel.H_domain = [];
+if redo
+	clear LNModel
+	LNModel.K = [];
+	LNModel.H = []; % stores hill parameters
+	LNModel.LinearFit = [];
+	LNModel.LNFit = [];
+	LNModel.H_domain = [];
 
-a = floor(15/3e-3);
-z = floor(55/3e-3);
+	a = floor(15/3e-3);
+	z = floor(55/3e-3);
 
-for i = 1:length(paradigm_names)
-	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
-	this_orn=mean2(combined_data.fA(:,plot_these));
-	this_pid = mean2(combined_data.PID(plot_these,:));
+	for i = 1:length(paradigm_names)
+		plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
+		this_orn=mean2(combined_data.fA(:,plot_these));
+		this_pid = mean2(combined_data.PID(plot_these,:));
 
-	time = 3e-3*(1:length(this_orn));
+		time = 3e-3*(1:length(this_orn));
 
-	this_pid = this_pid(a:z);
-	this_orn = this_orn(a:z);
+		this_pid = this_pid(a:z);
+		this_orn = this_orn(a:z);
 
-	[K,~,filtertime] = FindBestFilter(this_pid,this_orn,[],'filter_length=299;');
-	filtertime = filtertime*mean(diff(time));
-	K = K/max(K);
-	LinearFit = convolve(time,this_pid,K,filtertime) + mean(this_orn);
+		[K,~,filtertime] = FindBestFilter(this_pid,this_orn,[],'filter_length=299;');
+		filtertime = filtertime*mean(diff(time));
+		K = K/max(K);
+		LinearFit = convolve(time,this_pid,K,filtertime) + mean(this_orn);
 
-	xdata = LinearFit(:);
-	ydata = this_orn(:);
+		xdata = LinearFit(:);
+		ydata = this_orn(:);
 
-	ydata(isnan(xdata)) = [];
-	xdata(isnan(xdata)) = [];
+		ydata(isnan(xdata)) = [];
+		xdata(isnan(xdata)) = [];
 
 
-	fo=optimset('MaxFunEvals',1000,'Display','none');
-	x = lsqcurvefit(@hill4,[max(ydata) 2 2 0],xdata,ydata,[max(ydata)/2 2 1 0],[2*max(ydata) max(ydata) 10 max(ydata)],fo);
-	LNFit = hill4(x,xdata);
+		fo=optimset('MaxFunEvals',1000,'Display','none');
+		x = lsqcurvefit(@hill4,[max(ydata) 2 2 0],xdata,ydata,[max(ydata)/2 2 1 0],[2*max(ydata) max(ydata) 10 max(ydata)],fo);
+		LNFit = hill4(x,xdata);
 
-	% save all of this for later
-	LNModel(i).K = K;
-	LNModel(i).H = x;
-	LNModel(i).LinearFit = LinearFit;
-	LNModel(i).LNFit = LNFit;
-	LNModel(i).H_domain = xdata;
-	LNModel(i).H_range =  ydata;
-	LNModel(i).LNFit_r2 = rsquare(LNFit,ydata);
-	LNModel(i).LinearFit_r2 = rsquare(xdata,ydata);
+		% save all of this for later
+		LNModel(i).K = K;
+		LNModel(i).H = x;
+		LNModel(i).LinearFit = LinearFit;
+		LNModel(i).LNFit = LNFit;
+		LNModel(i).H_domain = xdata;
+		LNModel(i).H_range =  ydata;
+		LNModel(i).LNFit_r2 = rsquare(LNFit,ydata);
+		LNModel(i).LinearFit_r2 = rsquare(xdata,ydata);
+	end
+
 end
-
 
 %%
 % The following figure shows each of the ORN responses to each stimulus together with the best linear fits:
@@ -297,168 +299,141 @@ if being_published
 	delete(gcf)
 end
 
-return
+
 %%
 % Are these changes largely subtractive or largely divisive? In the following figure, we attempt to fit the data using only subtractive, only divisive, or mixed models. 
 
-Lh= [];
+lh= [];
 L = {};
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
-for i = 1:3
-	p(i) =  subplot(1,3,i); hold on
-	% lowest mean case 
-	x=LNModel(i).H_domain;
-	y=LNModel(i).H_range;
-	scatter(p(i),x,y,'k')
-	fo=optimset('MaxFunEvals',1000,'Display','none');
-	hf0 = lsqcurvefit(@hill4,[max(y) 2 2 0],x(:),y(:),[max(y)/2 0 1 0],[2*max(y) max(y) 10 10],fo);
-	Lh(1) = plot(p(i),sort(x),hill4(hf0,sort(x)),'k');
-	L{1} = oval(rsquare(y,hill4(hf,x)),2);
+subplot(1,3,1), hold on
+for i = 1:length(LNModel)
+	x = sort(LNModel(i).H_domain);
+	lh = [lh plot(x,hill4(LNModel(i).H,x),'Color',c(i,:))];
+	L = [L oval(LNModel(i).LNFit_r2,2)];
 end
+title('Mixed Model')
+xlabel('Filtered Stimulus (a.u.)')
+ylabel('Static Nonlinearity (Hz)')
+legend(lh,L,'Location','southeast')
 
-backgrounds = [5 6];
-title(p(1),'Divisive Only')
-for i = 1:length(backgrounds)
-	baseline = mean(data(backgrounds(i)).PID(2:70,:));
-	x=max(data(backgrounds(i)).PID);
-	y=max(data(backgrounds(i)).ORN);
-	scatter(p(1),x,y,32,C(i,:))
+% fixed parameters
+Kd0 = LNModel(1).H(2);
+n0 = LNModel(1).H(3);
+
+subplot(1,3,2), hold on
+lh= [];
+L = {};
+title('Divisive Only')
+for i = 1:length(LNModel)
+	xdata = LNModel(i).H_domain;
+	ydata = LNModel(i).H_range;
+
 	fo=optimset('MaxFunEvals',1000,'Display','none');
-	hf = lsqcurvefit(@hill4,[max(y) hf0(2) 2 0],x(:),y(:),[max(y)/2 hf0(2) 0 0],[2*max(y) hf0(2)+1e-6 10 10],fo);
-	Lh(i+1) = plot(p(1),sort(x),hill4(hf,sort(x)),'Color',C(i,:));
-	div_only_hf = hf;
-	L{i+1} = oval(rsquare(y,hill4(hf,x)),2);
+	x = lsqcurvefit(@hill4,[max(ydata) Kd0 2 0],xdata,ydata,[max(ydata)/2 Kd0-1e-6 1 0],[2*max(ydata) Kd0+1e-6 10 max(ydata)],fo);
+	LNFit = hill4(x,xdata);
+
+	xdata = sort(xdata);
+
+	lh = [lh plot(xdata,hill4(x,xdata),'Color',c(i,:))];
+	r2 = rsquare(LNFit,ydata);
+	L = [L oval(r2,2)];
 end
-xlabel(p(1),'Stimulus (V)')
-ylabel(p(1),'Response (Hz)')
-set(p(1),'XScale','log')
-legend(p(1),Lh,L,'location','northwest')
+xlabel('Filtered Stimulus (a.u.)')
+ylabel('Static Nonlinearity (Hz)')
+legend(lh,L,'Location','southeast')
 
 
-title(p(2),'Subtractive Only')
-for i = 1:length(backgrounds)
-	baseline = mean(data(backgrounds(i)).PID(2:70,:));
-	x=max(data(backgrounds(i)).PID);
-	y=max(data(backgrounds(i)).ORN);
-	scatter(p(2),x,y,32,C(i,:))
+subplot(1,3,3), hold on
+lh= [];
+L = {};
+title('Subtractive Only')
+for i = 1:length(LNModel)
+	xdata = LNModel(i).H_domain;
+	ydata = LNModel(i).H_range;
+
 	fo=optimset('MaxFunEvals',1000,'Display','none');
-	hf = lsqcurvefit(@hill4,[max(y) hf0(2) hf0(3) 0],x(:),y(:),[max(y)/2 0 hf0(3) 0],[2*max(y) 10 hf0(3)+1e-6 10],fo);
-	Lh(i+1) = plot(p(2),sort(x),hill4(hf,sort(x)),'Color',C(i,:));
-	sub_only_hf = hf;
-	L{i+1} = oval(rsquare(y,hill4(hf,x)),2);
+	x = lsqcurvefit(@hill4,[max(ydata) 10 n0 0],xdata,ydata,[max(ydata)/2 0 n0-1e-6 0],[2*max(ydata) max(ydata) n0+1e-6 max(ydata)],fo);
+	LNFit = hill4(x,xdata);
+
+	xdata = sort(xdata);
+
+	lh = [lh plot(xdata,hill4(x,xdata),'Color',c(i,:))];
+	r2 = rsquare(LNFit,ydata);
+	L = [L oval(r2,2)];
 end
-xlabel(p(2),'Stimulus (V)')
-set(p(2),'XScale','log')
-legend(p(2),Lh,L,'location','northwest')
-
-
-title(p(3),'Mixed Model')
-for i = 1:length(backgrounds)
-	baseline = mean(data(backgrounds(i)).PID(2:70,:));
-	x=max(data(backgrounds(i)).PID);
-	y=max(data(backgrounds(i)).ORN);
-	scatter(p(3),x,y,32,C(i,:))
-	fo=optimset('MaxFunEvals',1000,'Display','none');
-	hf = lsqcurvefit(@hill4,[max(y) 2 2 0],x(:),y(:),[max(y)/2 0 0 0],[2*max(y) max(y) 10 10],fo);
-	Lh(i+1)=plot(p(3),sort(x),hill4(hf,sort(x)),'Color',C(i,:));
-	mixed_hf = hf;
-	L{i+1} = oval(rsquare(y,hill4(hf,x)),2);
-end
-xlabel(p(3),'Stimulus (V)')
-set(p(3),'XScale','log')
-legend(p(3),Lh,L,'location','northwest')
-
-
-
-return
-
-%% Neuron Responses: Fast Adaptation 
-% How well do LN models predict the response of neurons in these paradigms? Do we see evidence of fast gain adaptation in these data sets? 
-
-%%
-% First, we fit a LN model to the data set: 
-
-
-
-% build a simple linear model
-
-
-
-
-figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
-subplot(2,2,1), hold on
-plot(filtertime,K,'k')
-xlabel('Filter Lag (s)')
-ylabel('Filter Amplitude (norm)')
-
-subplot(2,2,2), hold on
-plot(xdata,ydata,'.','Color',[.9 .9 .9])
-plot(sort(xdata),hill(x,sort(xdata)),'k')
-xlabel('Filter Output (a.u.)')
-ylabel('ORN Response (Hz)')
-
-subplot(2,2,3:4), hold on
-plot(time(a:z),this_orn(a:z),'k')
-plot(time(a:z),LN_pred(a:z),'r')
-set(gca,'XLim',[30 40])
-
-xlabel('Time (s)')
-ylabel('Firing rate (Hz)')
-legend({'Data','LN Prediction'})
+xlabel('Filtered Stimulus (a.u.)')
+ylabel('Static Nonlinearity (Hz)')
+legend(lh,L,'Location','southeast')
 
 PrettyFig;
 if being_published
-	snapnow;
-	delete(gcf);
+	snapnow
+	delete(gcf)
 end
 
-%% 
-% Now we perform our gain analysis of the prediction using standard methods described elsewhere in this repo.
-ph = [];
-this_pid=mean2(combined_data.PID(combined_data.paradigm==2,:));
-this_orn=mean2(combined_data.fA(:,combined_data.paradigm==2));
-time = 3e-3*(1:length(this_orn));
-
-history_lengths = (3*floor(1000*logspace(-2,1,30)/3))/1e3;
-example_history_length = 0.135;
-
-f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-ph(3) = subplot(1,2,1); hold on 
-axis square
-ph(4) = subplot(1,2,2); hold on
 
 
-s = floor(15/3e-3);
-z = floor(55/3e-3);
+%% Neuron Responses: Fast Adaptation 
+% How well do LN models predict the response of neurons in these paradigms? Do we see evidence of fast gain adaptation in these data sets? Now we perform our gain analysis of the prediction using standard methods described elsewhere in this repo. We do the analysis for each stimulus set. 
 
-clear x
-x.response = this_orn(s:z);
-x.prediction = LN_pred(s:z);
-x.stimulus = this_pid(s:z);
-x.time = time(s:z);
-x.filter_length = 299;
 
-if redo
-	[p_LN,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
-	s=abs(l-h);
-	s(p_LN(1,:)>0.05)=NaN;
-	[~,loc]=max(s);
-	example_history_length_LN = history_lengths(loc);
+for i = 1:length(LNModel)
+	ph = [];
+	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
+	this_orn=mean2(combined_data.fA(:,plot_these));
+	this_pid=mean2(combined_data.PID(plot_these,:));
+	time = 3e-3*(1:length(this_orn));
 
-else
-	GainAnalysis4(x,history_lengths,example_history_length_LN,ph,p_LN);
+	history_lengths = (3*floor(1000*logspace(-2,1,30)/3))/1e3;
+	example_history_length = 0.135;
+
+	f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+	ph(3) = subplot(1,2,1); hold on 
+	axis square
+	ph(4) = subplot(1,2,2); hold on
+
+
+	a = floor(15/3e-3);
+	z = floor(55/3e-3) - 32; % to correct for the bit of the filter that is acausal
+
+	clear x
+	x.response = this_orn(a:z);
+	x.prediction = LNModel(i).LNFit;
+	x.stimulus = this_pid(a:z);
+	x.time = time(a:z);
+	x.filter_length = 299;
+
+	if redo
+		[p_LN,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
+		s=abs(l-h);
+		s(p_LN(1,:)>0.05)=NaN;
+		[~,loc]=max(s);
+
+		% save it for later
+		LNModel(i).ehl = history_lengths(loc);
+		LNModel(i).p = p_LN;
+
+	else
+		GainAnalysis4(x,history_lengths,LNModel(i).ehl,ph,LNModel(i).p);
+	end
+
+	xlabel(ph(3),'LN Prediction (Hz)')
+	set(ph(4),'XScale','log')
+	title(ph(4),paradigm_names{i})
+
+	if being_published
+		snapnow;
+		delete(f1);
+
+		snapnow;
+		delete(f2);
+	end
 end
 
-xlabel(ph(3),'LN Prediction (Hz)')
-set(ph(4),'XScale','log')
 
-if being_published
-	snapnow;
-	delete(f1);
 
-	snapnow;
-	delete(f2);
-end
+
 
 
 

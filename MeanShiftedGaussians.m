@@ -20,11 +20,14 @@ data_root = '/local-data/DA-paper/fast-flicker/orn/';
 allfiles  = dir(strcat(data_root,'*.mat'));
 
 % combine all data
-if redo
-	combined_data = ReduceORNData(data_root,allfiles);
-end
+% if redo
+% 	combined_data = ReduceORNData(data_root,allfiles);
+% end
 
-paradigm_names = unique(combined_data.paradigm);
+% paradigm_names = unique(combined_data.paradigm);
+
+% load cached data
+load('MeanShiftedGaussians.mat')
 
 
 %% Mean Shifted Gaussians
@@ -49,7 +52,7 @@ paradigm = [];
 dt = 3e-3;
 all_pid = [];
 
-a = floor(25/3e-3);
+a = floor(30/3e-3);
 z = floor(55/3e-3);
 
 % assemble all histograms
@@ -57,7 +60,7 @@ for i = 1:length(paradigm_names)
 	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
 	for j = 1:length(plot_these)
 		this_pid = combined_data.PID(plot_these(j),:);
-		this_pid = this_pid(round(t_start/dt):floor(t_stop/dt));
+		this_pid = this_pid(a:z);
 		[y,x] = hist(this_pid,nbins);
 		if mean(x) > .5
 			histx = [histx; x];
@@ -177,7 +180,7 @@ for i = 1:length(paradigm_names)
 	x = x*3e-3;
   	plot(x,y,'Color',c(i,:))
 end
-set(gca,'XScale','log')
+set(gca,'XScale','log','XMinorTick','on')
 xlabel('Time (s)')
 ylabel('Autocorrelation')
 title('Stimulus')
@@ -192,7 +195,7 @@ for i = 1:length(paradigm_names)
 	x = x*3e-3;
   	plot(x,y,'Color',c(i,:))
 end
-set(gca,'XScale','log')
+set(gca,'XScale','log','XMinorTick','on')
 xlabel('Time (s)')
 ylabel('Autocorrelation')
 title('ORN Responses')
@@ -203,6 +206,73 @@ if being_published
 	delete(gcf)
 end
 
+%% Trends in Data
+% Are there any trends in the data? In the following figure, we coarse-grain the data by binning everything along 5-second bins to look at long-term trends in the data. The various colors correspond to various stimulus means, and correspond to other figures in this document. 
+
+% plot_data is indexed by where we start
+all_start = [15:5:50];
+all_end = all_start+5;
+
+
+for i = 1:length(paradigm_names)
+	plot_data(i).stim_slope = [];
+	plot_data(i).stim_slope_err = [];
+	plot_data(i).stim_mean = [];
+	plot_data(i).stim_mean_err = [];
+	plot_data(i).resp_slope = [];
+	plot_data(i).resp_slope_err = [];
+	plot_data(i).resp_mean = [];
+	plot_data(i).resp_mean_err = [];
+
+	for j = 1:length(all_start)
+		a = floor(all_start(j)/3e-3);
+		z = floor(all_end(j)/3e-3);
+		n = sqrt(z-a);
+
+		plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
+		these_pid=mean2(combined_data.PID(plot_these,:));
+		these_resp=mean2(combined_data.fA(:,plot_these));
+
+		cropped_pid = these_pid(a:z);
+		cropped_resp = these_resp(a:z);
+
+		plot_data(i).stim_mean = 		[plot_data(i).stim_mean mean(cropped_pid)];
+		plot_data(i).stim_mean_err = 	[plot_data(i).stim_mean_err std(cropped_pid)/n];
+
+		plot_data(i).resp_mean = 		[plot_data(i).resp_mean mean(cropped_resp)];
+		plot_data(i).resp_mean_err = 	[plot_data(i).resp_mean_err std(cropped_resp)/n];
+
+
+	end
+end
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+c = parula(length(plot_data));
+for i = 1:length(plot_data)
+	errorbar(all_start+2.5,plot_data(i).stim_mean,plot_data(i).stim_mean_err)
+
+end
+xlabel('Time (s)')
+ylabel('PID (V)')
+
+subplot(1,2,2), hold on
+c = parula(length(plot_data));
+for i = 1:length(plot_data)
+	errorbar(all_start+2.5,plot_data(i).resp_mean,plot_data(i).resp_mean_err)
+
+end
+xlabel('Time (s)')
+ylabel('Firing Rate (Hz)')
+
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+return
 
 
 %% Neuron Responses: Input-Output Curve Changes
@@ -227,6 +297,17 @@ if redo
 
 		this_pid = this_pid(a:z);
 		this_orn = this_orn(a:z);
+		time = time(a:z);
+
+		% fit a polynomial trend
+		ff = fit(time(:),this_pid(:),'poly2');
+		this_pid = this_pid - ff(time)';
+
+		% normalise stimulus and response
+		% this_pid = this_pid - mean(this_pid);
+		% this_pid = this_pid/std(this_pid);
+		% this_orn = this_orn - mean(this_orn);
+		% this_orn = this_orn/std(this_orn);
 
 		[K,~,filtertime] = FindBestFilter(this_pid,this_orn,[],'filter_length=299;');
 		filtertime = filtertime*mean(diff(time));
@@ -241,7 +322,7 @@ if redo
 
 
 		fo=optimset('MaxFunEvals',1000,'Display','none');
-		x = lsqcurvefit(@hill4,[max(ydata) 2 2 0],xdata,ydata,[max(ydata)/2 -max(ydata) 1 0],[2*max(ydata) max(ydata) 10 max(ydata)],fo);
+		x = lsqcurvefit(@hill4,[max(ydata) 2 2 0],xdata,ydata,[max(ydata)/100 -max(ydata) 1 0],[20*max(ydata) 10*max(ydata) 10 max(ydata)],fo);
 		LNFit = hill4(x,xdata);
 
 		% save all of this for later
@@ -251,11 +332,13 @@ if redo
 		LNModel(i).LNFit = LNFit;
 		LNModel(i).H_domain = xdata;
 		LNModel(i).H_range =  ydata;
+		LNModel(i).this_orn = this_orn;
 		LNModel(i).LNFit_r2 = rsquare(LNFit,ydata);
 		LNModel(i).LinearFit_r2 = rsquare(xdata,ydata);
 	end
 
 end
+
 
 %%
 % The following figure shows each of the ORN responses to each stimulus together with the best linear fits:
@@ -264,22 +347,20 @@ end
 figure('outerposition',[0 0 1400 600],'PaperUnits','points','PaperSize',[1400 600]); hold on
 for i = 1:6
 	subplot(2,3,i), hold on
-	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
-	this_orn=mean2(combined_data.fA(:,plot_these));
-	this_orn = this_orn(a:z);
+	this_orn = LNModel(i).this_orn;
 	time = 3e-3*(1:length(this_orn));
 	time = time+a*3e-3;
 	plot(time,this_orn,'k');
 	time = 3e-3*(1:length(LNModel(i).LinearFit));
 	time = time+a*3e-3;
 	lh=plot(time,LNModel(i).LinearFit,'r');
-	set(gca,'XLim',[30 40],'YLim',[0 55])
+	set(gca,'XLim',[30 40])
 	legend(lh,oval(LNModel(i).LinearFit_r2,2))
 	title(paradigm_names{i})
 end 
-
-
 PrettyFig;
+
+
 if being_published
 	snapnow
 	delete(gcf)
@@ -292,9 +373,7 @@ end
 figure('outerposition',[0 0 1400 600],'PaperUnits','points','PaperSize',[1400 600]); hold on
 for i = 1:6
 	subplot(2,3,i), hold on
-	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
-	this_orn=mean2(combined_data.fA(:,plot_these));
-	this_orn = this_orn(a:z);
+	this_orn = LNModel(i).this_orn;
 	time = 3e-3*(1:length(this_orn));
 	time = time+a*3e-3;
 	plot(time,this_orn,'k');
@@ -305,9 +384,9 @@ for i = 1:6
 	legend(lh,oval(LNModel(i).LNFit_r2,2))
 	title(paradigm_names{i})
 end 
-
-
 PrettyFig;
+
+
 if being_published
 	snapnow
 	delete(gcf)
@@ -433,6 +512,10 @@ for i = 1:length(LNModel)
 	ph(3) = subplot(1,2,1); hold on 
 	axis square
 	ph(4) = subplot(1,2,2); hold on
+
+	% remove trend
+	ff = fit(time(:),this_pid(:),'poly2');
+	this_pid = this_pid - ff(time)';
 
 
 	clear x

@@ -272,6 +272,55 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% OK, there are clearly trends in some of the data, especially in the responses. Now, we will attempt to remove all the trends by fitting a second-degree polynomial to the stimulus and response from 35 to 55 seconds. 
+
+
+% remove trend
+b = floor(5/3e-3);
+a = floor(35/3e-3);
+z = floor(55/3e-3);
+clear detrended_data
+detrended_data.time = [];
+detrended_data.stim = [];
+detrended_data.resp = [];
+for i = 1:length(paradigm_names)
+	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
+	this_pid=mean2(combined_data.PID(plot_these,:));
+	this_resp=mean2(combined_data.fA(:,plot_these));
+	time = 3e-3*(1:length(this_resp));
+	baseline = mean(this_pid(1:b));
+	time = time(a:z);
+	this_pid = this_pid(a:z);
+	this_resp = this_resp(a:z);
+
+	detrended_data(i).time = time;
+	ff = fit(time(:),this_pid(:),'poly2');
+	detrended_data(i).stim = this_pid - ff(time)' + mean(ff(time)) - baseline;
+
+	ff = fit(time(:),this_resp(:),'poly2');
+	detrended_data(i).resp = this_resp - ff(time) + mean(ff(time));
+end
+
+%% Neuron Responses: Gain-Speed Tradeoff
+% It is believed that when the stimulus is low, the gain needs to be high, which means the ORN integrates the signal over a longer time, which in turn means that the response kinetics are slower. To check if this is the case in this dataset, we compute the cross-correlation functions between the stimulus and the response in each case and see if the width depends in an obvious way on the mean stimulus. 
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+for i = 1:length(detrended_data)
+	a = detrended_data(i).stim - mean(detrended_data(i).stim);
+	a = a/std(a);
+	b = detrended_data(i).resp - mean(detrended_data(i).resp);
+	b = b/std(b);
+	x = xcorr(a,b);
+	t = 3e-3*(1:length(x));
+	t = t-mean(t);
+	x = x/length(x);
+	plot(t,x)
+
+end
+set(gca,'XLim',[-1 2.5])
+xlabel('Lag (s)')
+ylabel('Cross Correlation')
 
 return
 

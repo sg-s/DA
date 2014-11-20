@@ -345,6 +345,83 @@ if being_published
 	delete(gcf)
 end
 
+%% What is the functional form of the decay in response?
+% So far, we have been fitting an exponential to the response in order to extract a timescale. But we didn't claim that it was actually an exponential. Now that we have a very long trajectory, we will fit various functional forms to this and see which one fits best. 
+
+warning off
+lh=[];
+a = floor(2/3e-3);
+z = floor(150/3e-3);
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+for i = 1:2
+
+	subplot(1,2,i), hold on
+	plot_these=find(strcmp(paradigm_names{2+i}, combined_data.paradigm));
+	this_resp=mean2(combined_data.fA(:,plot_these));
+	this_resp = this_resp(a:z);
+	time = 3e-3*(1:length(this_resp));
+	[~,loc]=max(this_resp);
+	t = time(loc:end);
+	t = t -min(t) + 3e-3;
+	plot(t,this_resp(loc:end),'k')
+
+	ft=fittype('a*exp(-x./b)+c');
+	options = fitoptions(ft);
+	options.StartPoint = [max(this_resp) .4 10];
+	ff = fit(t(:),this_resp(loc:end),ft,options);
+	lh(1)=plot(t,ff(t),'r');
+	allfits(i,1).ff = ff;
+
+	ft=fittype('a*exp(-x./b)+ a2*exp(-x./b2) + c');
+	options = fitoptions(ft);
+	options.StartPoint = [max(this_resp) max(this_resp) .4 .4 10];
+	options.Upper = [max(this_resp) max(this_resp) 10 10 max(this_resp)];
+	options.Lower = [10 10 3e-3 3e-3 10];
+	ff = fit(t(:),this_resp(loc:end),ft,options);
+	lh(2)=plot(t,ff(t),'b');
+	allfits(i,2).ff = ff;
+
+	ft=fittype('a*exp(-x./b)+ a2*exp(-x./b2) + a3*exp(-x./b3)  + c');
+	options = fitoptions(ft);
+	options.StartPoint = [max(this_resp) max(this_resp)  max(this_resp) .4 .4 .4 10];
+	options.Upper = [max(this_resp) max(this_resp) max(this_resp) 10 10 10 max(this_resp)];
+	options.Lower = [10 10 10 3e-3 3e-3 3e-3 10];
+	ff = fit(t(:),this_resp(loc:end),ft,options);
+	lh(3)=plot(t,ff(t),'m');
+	allfits(i,3).ff = ff;
+
+	ft=fittype('a*(x.^b) + c');
+	options = fitoptions(ft);
+	options.StartPoint = [max(this_resp) -1 10];
+	options.Upper = [max(this_resp) -.1 max(this_resp)];
+	options.Lower = [10 -100 10];
+	ff = fit(t(:),this_resp(loc:end),ft,options);
+	lh(4)=plot(t,ff(t),'g');
+	allfits(i,4).ff = ff;
+
+	set(gca,'YLim',[min(this_resp(loc:end))-2 this_resp(loc)*2])
+	set(gca,'XScale','log');
+	set(gca,'YScale','log')
+	L = {'exp1','exp2','exp3','power law'};
+	legend(lh,L,'Location','SouthWest')
+	xlabel('Time (s)')
+	ylabel('Firing rate (Hz)')
+
+end
+
+warning on
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% The exponents of the power law fits in the two cases are:
+
+disp([allfits(1,4).ff.b allfits(2,4).ff.b])
+
 
 
 %% Version Info

@@ -2,9 +2,10 @@
 % fits a fractional derivative model to stimulus-response data
 % the idea is simple: the response is just the fractional derivative, passed through some unknown output nonlinearity. 
 % usage:
-% [alpha, NLparam] =  FitFractionalDModel(stimulus, response); 
+% [alpha,d,fp] =  FitFractionalDModel(stimulus, response,nsteps)
 % where stimulus and response are vectors
 % alpha is the degree of fractional differentation, from 0 to 1
+% and d is the delay of the stimulus and the response, as determined by this script
 % and NLparam is a vector containing parameters of the hill function that is fit
 %  
 % created by Srinivas Gorur-Shandilya at 10:20 , 09 April 2014. Contact me at http://srinivas.gs/contact/
@@ -33,7 +34,7 @@ if nargin < 3
 	nsteps  = 30;
 end
 
-x0 = .35;
+x0 = .15;
 psoptions = psoptimset('UseParallel',true, 'Vectorized', 'off','Cache','on','CompletePoll','on','Display','iter','MaxIter',nsteps,'MaxFunEvals',2000);
 
 lb = [0];% 0 0 0];

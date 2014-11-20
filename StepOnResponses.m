@@ -81,6 +81,7 @@ end
 %%
 % What are the timescales of relaxation of firing rates in each of these cases? In the following figure, we fit an exponential to the firing rates from peak onwards, not to claim that the decay is exponential, but to extract a timescale for each case. 
 
+clear ff
 figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
 for i = 1:length(paradigm_names)
 	subplot(2,3,i), hold on
@@ -327,7 +328,7 @@ end
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 c = parula(length(paradigm_names));
 for i = 3:length(plot_data)
-	errorbar(all_start+2.5,plot_data(i).resp_slope,plot_data(i).resp_slope_err)
+	errorbar(all_start+2.5,plot_data(i).resp_slope,plot_data(i).resp_slope_err,'Color',c(i,:))
 
 end
 plot([0 all_start(end)],[0 0],'--')
@@ -406,7 +407,7 @@ for i = 1:2
 	legend(lh,L,'Location','SouthWest')
 	xlabel('Time (s)')
 	ylabel('Firing rate (Hz)')
-
+	title(strrep(paradigm_names{i+2},'_','-'))
 end
 
 warning on

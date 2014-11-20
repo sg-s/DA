@@ -98,7 +98,7 @@ for i = 1:length(paradigm_names)
 	warning on
 	plot(time,this_resp,'k')
 	plot(time(loc:end),ff(t),'r')
-	title(strcat('\tau=',oval(ff.b,2),'s'))
+	title(strcat('tau=',oval(ff.b,2),'s'),'interpreter','tex')
 	xlabel('Time (s)')
 	ylabel('Firing Rate (Hz)')
 end
@@ -142,7 +142,7 @@ for i = 1:length(paradigm_names)
 	time = time(a:z);
 	plot(time,this_resp,'k')
 	plot(time,fdmodel(i).fp,'r')
-	title(strcat('\alpha = ',oval(fdmodel(i).alpha,2)))
+	title(strcat('alpha = ',oval(fdmodel(i).alpha,2)),'interpreter','tex')
 	xlabel('Time (s)')
 	ylabel('Firing Rate (Hz)')
 end
@@ -213,7 +213,7 @@ end
 %%
 % The following figure shows how the response and stimulus are related, for the peak, and for the terminal 1 second. 
 
-figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[500 500]); hold on
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 plot(max_pid,max_f,'r')
 plot(end_pid,end_f,'k')
 legend({'Peak','Terminal'},'Location','NorthWest')
@@ -283,3 +283,84 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%% When does the response stop adapting?
+% When does the ORN response reach steady state? To determine this, we chunk the data into 5-second blocks, and fit lines and extract slopes from each chunk, and plot them as a function of time. 
+
+
+
+% plot_data is indexed by where we start
+all_start = [5:5:145];
+all_end = all_start+5;
+
+clear plot_data
+for i = 3:length(paradigm_names)
+	plot_data(i).resp_slope = [];
+	plot_data(i).resp_slope_err = [];
+	plot_data(i).resp_mean = [];
+	plot_data(i).resp_mean_err = [];
+
+	for j = 1:length(all_start)
+		a = floor(all_start(j)/3e-3);
+		z = floor(all_end(j)/3e-3);
+		n = sqrt(z-a);
+
+		plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
+		these_resp=mean2(combined_data.fA(:,plot_these));
+
+		cropped_resp = these_resp(a:z);
+		t = 3e-3*(1:length(cropped_resp));
+
+		plot_data(i).resp_mean = 		[plot_data(i).resp_mean mean(cropped_resp)];
+		plot_data(i).resp_mean_err = 	[plot_data(i).resp_mean_err std(cropped_resp)/n];
+
+		ff = fit(t(:),cropped_resp(:),'poly1');
+		gof=confint(ff);
+		gof=gof(:,1);
+
+		plot_data(i).resp_slope = [plot_data(i).resp_slope ff.p1];
+		plot_data(i).resp_slope_err = [plot_data(i).resp_slope_err gof(2)-gof(1)];
+
+	end
+end
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+c = parula(length(paradigm_names));
+for i = 3:length(plot_data)
+	errorbar(all_start+2.5,plot_data(i).resp_slope,plot_data(i).resp_slope_err)
+
+end
+plot([0 all_start(end)],[0 0],'--')
+xlabel('Time (s)')
+ylabel('Slope (Hz/s)')
+L = paradigm_names(3:4);
+for i = 1:length(L)
+	L{i} = strrep(L{i},'_','-'); 
+end
+legend(L)
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
+%% Version Info
+% The file that generated this document is called:
+disp(mfilename)
+
+%%
+% and its md5 hash is:
+Opt.Input = 'file';
+disp(DataHash(strcat(mfilename,'.m'),Opt))
+
+%%
+% This file should be in this commit:
+[status,m]=unix('git rev-parse HEAD');
+if ~status
+	disp(m)
+end
+
+

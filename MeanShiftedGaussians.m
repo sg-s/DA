@@ -318,11 +318,22 @@ for i = 1:length(detrended_data)
 	plot(t,x)
 
 end
-set(gca,'XLim',[-1 2.5])
+set(gca,'XLim',[-.5 1])
 xlabel('Lag (s)')
 ylabel('Cross Correlation')
 
-return
+L = paradigm_names;
+for i = 1:length(L)
+	L{i} = L{i}(strfind(L{i},'-')+1:end);
+end
+legend(L)
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 
 %% Neuron Responses: Input-Output Curve Changes
@@ -338,26 +349,12 @@ if redo
 	LNModel.H_domain = [];
 
 
-	for i = 1:length(paradigm_names)
-		plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
-		this_orn=mean2(combined_data.fA(:,plot_these));
-		this_pid = mean2(combined_data.PID(plot_these,:));
+	for i = 1:length(detrended_data)
+		this_orn = detrended_data(i).resp;
+		this_pid = detrended_data(i).stim;
+		time     = detrended_data(i).time;
 
-		time = 3e-3*(1:length(this_orn));
 
-		this_pid = this_pid(a:z);
-		this_orn = this_orn(a:z);
-		time = time(a:z);
-
-		% fit a polynomial trend
-		ff = fit(time(:),this_pid(:),'poly2');
-		this_pid = this_pid - ff(time)';
-
-		% normalise stimulus and response
-		% this_pid = this_pid - mean(this_pid);
-		% this_pid = this_pid/std(this_pid);
-		% this_orn = this_orn - mean(this_orn);
-		% this_orn = this_orn/std(this_orn);
 
 		[K,~,filtertime] = FindBestFilter(this_pid,this_orn,[],'filter_length=299;');
 		filtertime = filtertime*mean(diff(time));
@@ -387,34 +384,56 @@ if redo
 		LNModel(i).LinearFit_r2 = rsquare(xdata,ydata);
 	end
 
+	% calculate filters as in Baccus and Meister (zero mean, unit variance i/o)
+	clear BMModel
+	BMModel.K = [];
+	BMModel.LinearFit = [];
+
+
+	for i = 1:length(detrended_data)
+		this_orn = detrended_data(i).resp;
+		this_pid = detrended_data(i).stim;
+		time     = detrended_data(i).time;
+
+		this_orn = this_orn - mean(this_orn);
+		this_orn = this_orn/std(this_orn);
+
+		this_pid = this_pid - mean(this_pid);
+		this_pid = this_pid/std(this_pid);
+
+		[K,~,filtertime] = FindBestFilter(this_pid,this_orn,[],'filter_length=299;');
+		filtertime = filtertime*mean(diff(time));
+		BMModel(i).LinearFit = convolve(time,this_pid,K,filtertime);
+		BMModel(i).K = K;
+
+
+	end
+
 end
 
 
-%%
+
 % The following figure shows each of the ORN responses to each stimulus together with the best linear fits:
 
 
-figure('outerposition',[0 0 1400 600],'PaperUnits','points','PaperSize',[1400 600]); hold on
-for i = 1:6
-	subplot(2,3,i), hold on
-	this_orn = LNModel(i).this_orn;
-	time = 3e-3*(1:length(this_orn));
-	time = time+a*3e-3;
-	plot(time,this_orn,'k');
-	time = 3e-3*(1:length(LNModel(i).LinearFit));
-	time = time+a*3e-3;
-	lh=plot(time,LNModel(i).LinearFit,'r');
-	set(gca,'XLim',[30 40])
-	legend(lh,oval(LNModel(i).LinearFit_r2,2))
-	title(paradigm_names{i})
-end 
-PrettyFig;
+% figure('outerposition',[0 0 1400 600],'PaperUnits','points','PaperSize',[1400 600]); hold on
+% for i = 1:6
+% 	subplot(2,3,i), hold on
+% 	this_orn = LNModel(i).this_orn;
+% 	time = detrended_data(i).time;
+% 	plot(time,this_orn,'k');
+% 	lh=plot(time,LNModel(i).LinearFit,'r');
+% 	set(gca,'XLim',[35 55])
+% 	legend(lh,oval(LNModel(i).LinearFit_r2,2))
+% 	title(paradigm_names{i})
+% end 
+% PrettyFig;
 
 
-if being_published
-	snapnow
-	delete(gcf)
-end
+% if being_published
+% 	snapnow
+% 	delete(gcf)
+% end
 
 %%
 % The following figure shows each of the ORN responses to each stimulus together with the best LN Model fits:
@@ -424,15 +443,16 @@ figure('outerposition',[0 0 1400 600],'PaperUnits','points','PaperSize',[1400 60
 for i = 1:6
 	subplot(2,3,i), hold on
 	this_orn = LNModel(i).this_orn;
-	time = 3e-3*(1:length(this_orn));
-	time = time+a*3e-3;
+	time = detrended_data(i).time;
 	plot(time,this_orn,'k');
-	time = 3e-3*(1:length(LNModel(i).LNFit));
-	time = time+a*3e-3;
+	aa = min(time);
+	time = 3e-3*(1:length(LNModel(i).LNFit)) + aa;
 	lh=plot(time,LNModel(i).LNFit,'r');
-	set(gca,'XLim',[30 40])
+	set(gca,'XLim',[40 50])
 	legend(lh,oval(LNModel(i).LNFit_r2,2))
-	title(paradigm_names{i})
+	title(paradigm_names{i}(strfind(paradigm_names{i},'-')+1:end))
+	xlabel('Time (s)')
+	ylabel('Firing Rate (Hz)')
 end 
 PrettyFig;
 
@@ -450,7 +470,7 @@ figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 50
 subplot(1,2,1), hold on
 c = parula(length(LNModel));
 for i = 1:length(LNModel)
-	plot(filtertime,LNModel(i).K,'Color',c(i,:))
+	plot(filtertime,BMModel(i).K,'Color',c(i,:))
 end
 xlabel('Filter Lag (s)')
 ylabel('Filter Amplitude (norm)')
@@ -469,72 +489,78 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% Now, we study the gain changes in this system by plotting the filtered stimulus vs. the actual response. Both the stimulus and the response have their means removed and are divided through by their standard deviation. 
+
+nbins = 10;
+plot_range = 5;
+figure('outerposition',[0 0 1400 800],'PaperUnits','points','PaperSize',[1400 800]); hold on
+for i = 1:6
+	subplot(2,3,i), hold on
+	this_orn = detrended_data(i).resp;
+	this_pid = detrended_data(i).stim;
+	this_pid = this_pid - mean(this_pid);
+	this_orn = this_orn - mean(this_orn);
+	time = 3e-3*(1:length(this_pid));
+	%this_orn = this_orn/std(this_orn);
+
+	% recompute linear fits
+	BMModel(i).LinearFit = convolve(time,this_pid,K,filtertime);
+
+	scatter(BMModel(i).LinearFit,this_orn,32,[0.8 0.8 0.8],'filled')
+
+	% bin the data
+	minx = min(BMModel(i).LinearFit);
+	maxx = max(BMModel(i).LinearFit);
+	r = (maxx -minx)/nbins;
+	a = minx;	
+
+	BMModel(i).y = [];
+	BMModel(i).ye = [];
+	BMModel(i).x = linspace(minx,maxx,10);
+
+	for j = 1:nbins
+		z = a+r;
+		BMModel(i).y = [BMModel(i).y mean(this_orn(BMModel(i).LinearFit < z & BMModel(i).LinearFit > a))];
+		BMModel(i).ye = [BMModel(i).ye std(this_orn(BMModel(i).LinearFit < z & BMModel(i).LinearFit > a))];
+		a = a+r;
+	end
+
+	% also fit a line to the middle 1/3 of the data
+	a = minx + r/3;
+	z = maxx - r/3;
+	x = BMModel(i).LinearFit(BMModel(i).LinearFit < z & BMModel(i).LinearFit > a);
+	y = this_orn(BMModel(i).LinearFit < z & BMModel(i).LinearFit > a);
+	ff = fit(x,y,'poly1');
+	temp=confint(ff);
+	BMModel(i).gain_err = temp(2,1)-temp(1,1);
+	BMModel(i).gain = ff.p1;
+
+	errorbar(BMModel(i).x,BMModel(i).y,BMModel(i).ye,'k')
+	xlabel('K\otimess')
+	ylabel('f')
+	title(paradigm_names{i}(strfind(paradigm_names{i},'-')+1:end))
+	set(gca,'XLim',[-.7 .7],'YLim',[-20 20])
+end
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %%
-% Are these changes largely subtractive or largely divisive? In the following figure, we attempt to fit the data using only subtractive, only divisive, or mixed models. 
+% The following plot shows the gain changes in the different cases:
 
-lh= [];
-L = {};
-figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
-subplot(1,3,1), hold on
-for i = 1:length(LNModel)
-	x = sort(LNModel(i).H_domain);
-	lh = [lh plot(x,hill4(LNModel(i).H,x),'Color',c(i,:))];
-	L = [L oval(LNModel(i).LNFit_r2,2)];
+figure('outerposition',[0 0 800 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+errorbar(1:6,[BMModel.gain],[BMModel.gain_err])
+L = paradigm_names;
+for i = 1:length(L)
+	L{i} = L{i}(strfind(L{i},'-')+1:end);
 end
-title('Mixed Model')
-xlabel('Filtered Stimulus (a.u.)')
-ylabel('Static Nonlinearity (Hz)')
-legend(lh,L,'Location','southeast')
-
-% fixed parameters
-Kd0 = LNModel(1).H(2);
-n0 = LNModel(1).H(3);
-
-subplot(1,3,2), hold on
-lh= [];
-L = {};
-title('Divisive Only')
-for i = 1:length(LNModel)
-	xdata = LNModel(i).H_domain;
-	ydata = LNModel(i).H_range;
-
-	fo=optimset('MaxFunEvals',1000,'Display','none');
-	x = lsqcurvefit(@hill4,[max(ydata) Kd0 2 0],xdata,ydata,[max(ydata)/2 Kd0-1e-6 1 0],[2*max(ydata) Kd0+1e-6 10 max(ydata)],fo);
-	LNFit = hill4(x,xdata);
-
-	xdata = sort(xdata);
-
-	lh = [lh plot(xdata,hill4(x,xdata),'Color',c(i,:))];
-	r2 = rsquare(LNFit,ydata);
-	L = [L oval(r2,2)];
-end
-xlabel('Filtered Stimulus (a.u.)')
-ylabel('Static Nonlinearity (Hz)')
-legend(lh,L,'Location','southeast')
-
-
-subplot(1,3,3), hold on
-lh= [];
-L = {};
-title('Subtractive Only')
-for i = 1:length(LNModel)
-	xdata = LNModel(i).H_domain;
-	ydata = LNModel(i).H_range;
-
-	fo=optimset('MaxFunEvals',1000,'Display','none');
-	x = lsqcurvefit(@hill4,[max(ydata) 10 n0 0],xdata,ydata,[max(ydata)/2 0 n0-1e-6 0],[2*max(ydata) max(ydata) n0+1e-6 max(ydata)],fo);
-	LNFit = hill4(x,xdata);
-
-	xdata = sort(xdata);
-
-	lh = [lh plot(xdata,hill4(x,xdata),'Color',c(i,:))];
-	r2 = rsquare(LNFit,ydata);
-	L = [L oval(r2,2)];
-end
-xlabel('Filtered Stimulus (a.u.)')
-ylabel('Static Nonlinearity (Hz)')
-legend(lh,L,'Location','southeast')
+set(gca,'XTick',[1:6],'XTickLabel',L)
+xlabel('Stimulus conc.')
+ylabel('Gain (Hz/V)')
 
 PrettyFig;
 if being_published
@@ -543,6 +569,8 @@ if being_published
 end
 
 
+
+return
 
 %% Neuron Responses: Fast Adaptation 
 % How well do LN models predict the response of neurons in these paradigms? Do we see evidence of fast gain adaptation in these data sets? Now we perform our gain analysis of the prediction using standard methods described elsewhere in this repo. We do the analysis for each stimulus set. 

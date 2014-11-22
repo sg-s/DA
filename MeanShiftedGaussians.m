@@ -305,6 +305,7 @@ end
 %% Neuron Responses: Gain-Speed Tradeoff
 % It is believed that when the stimulus is low, the gain needs to be high, which means the ORN integrates the signal over a longer time, which in turn means that the response kinetics are slower. To check if this is the case in this dataset, we compute the cross-correlation functions between the stimulus and the response in each case and see if the width depends in an obvious way on the mean stimulus. 
 
+c = parula(length(detrended_data));
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 for i = 1:length(detrended_data)
 	a = detrended_data(i).stim - mean(detrended_data(i).stim);
@@ -315,7 +316,7 @@ for i = 1:length(detrended_data)
 	t = 3e-3*(1:length(x));
 	t = t-mean(t);
 	x = x/length(x);
-	plot(t,x)
+	plot(t,x,'Color',c(i,:))
 
 end
 set(gca,'XLim',[-.5 1])
@@ -490,7 +491,7 @@ if being_published
 end
 
 %%
-% Now, we study the gain changes in this system by plotting the filtered stimulus vs. the actual response. Both the stimulus and the response have their means removed and are divided through by their standard deviation. 
+% Now, we study the gain changes in this system by plotting the filtered stimulus vs. the actual response. The stimulus has been means subtracted and are divided through by their standard deviation. 
 
 nbins = 10;
 plot_range = 5;
@@ -570,7 +571,6 @@ end
 
 
 
-return
 
 %% Neuron Responses: Fast Adaptation 
 % How well do LN models predict the response of neurons in these paradigms? Do we see evidence of fast gain adaptation in these data sets? Now we perform our gain analysis of the prediction using standard methods described elsewhere in this repo. We do the analysis for each stimulus set. 
@@ -578,12 +578,8 @@ return
 
 for i = 1:length(LNModel)
 	ph = [];
-	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
-	this_orn=mean2(combined_data.fA(:,plot_these));
-	this_pid=mean2(combined_data.PID(plot_these,:));
-	time = 3e-3*(1:length(this_orn));
 
-	history_lengths = (3*floor(1000*logspace(-2,1,30)/3))/1e3;
+	history_lengths = (3*floor(1000*logspace(-1.5,1,30)/3))/1e3;
 	example_history_length = 0.135;
 
 	f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
@@ -591,16 +587,12 @@ for i = 1:length(LNModel)
 	axis square
 	ph(4) = subplot(1,2,2); hold on
 
-	% remove trend
-	ff = fit(time(:),this_pid(:),'poly2');
-	this_pid = this_pid - ff(time)';
-
 
 	clear x
-	x.response = this_orn(a:z-32); % the 32 is to account for the acausal part of the filter
+	x.response = detrended_data(i).resp(1:end-32); % the 32 is to account for the acausal part of the filter
 	x.prediction = LNModel(i).LNFit;
-	x.stimulus = this_pid(a:z-32);
-	x.time = time(a:z-32);
+	x.stimulus = detrended_data(i).stim(1:end-32); 
+	x.time = detrended_data(i).time(1:end-32);
 	x.filter_length = 299;
 
 	if redo

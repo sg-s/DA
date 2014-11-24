@@ -35,6 +35,7 @@ switch nargin
 		end
 		lb = x0/scale;
 		ub = x0*scale;
+		min_r2 = .95;
 	case 3
 		ub = x0*scale;
 	case 4
@@ -77,6 +78,8 @@ Rguess = 0*stimulus;
 
 if min_r2
 	psoptions = psoptimset('UseParallel',true, 'Vectorized', 'off','Cache','on','CompletePoll','on','Display','iter','MaxIter',nsteps,'MaxFunEvals',20000);
+	x = patternsearch(@(x) DA_cost_function(x,data,IgnoreInitial),x0,[],[],[],[],lb,ub,psoptions);
+
 	% keep crunching till we can fit the damn thing
 	x = x0;
 	
@@ -95,7 +98,6 @@ if min_r2
 		if ub(3) > 1
 			ub(3) = 1;
 		end
-		ub(1)=1;lb(1)=1;x(1)=1;
 		
 		% make sure that p.s0 does not exceed the minimum value of the stimulus
 		if ub(end) > min(stimulus)
@@ -109,7 +111,7 @@ if min_r2
 		end
 
 		% fit
-		x = patternsearch(@(x) DA_cost_function(x,data,@Cost2,IgnoreInitial),x,[],[],[],[],lb,ub,psoptions);
+		x = patternsearch(@(x) DA_cost_function(x,data,IgnoreInitial),x,[],[],[],[],lb,ub,psoptions);
 		p = DA_Model_Validate_Param_Func(x);
 		
 		if isvector(stimulus)
@@ -132,7 +134,7 @@ if min_r2
 
 	end
 else
-	x = patternsearch(@(x) DA_cost_function(x,data,@Cost2,IgnoreInitial),x0,[],[],[],[],lb,ub,psoptions);
+	x = patternsearch(@(x) DA_cost_function(x,data,IgnoreInitial),x0,[],[],[],[],lb,ub,psoptions);
 
 end
 

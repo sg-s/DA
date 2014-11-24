@@ -645,10 +645,82 @@ for i = 1:length(LNModel)
 	end
 end
 
+%% The DA Model
+% In this section, we fit the DA model to the data. First, we fit a DA model to the first trace, which corresponds to the lowest stimulus and also the only stimulus where there is no large trend in the data. 
+
+i=1;
+plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
+this_pid=mean2(combined_data.PID(plot_these,:));
+this_resp=mean2(combined_data.fA(:,plot_these));
+
+% remove baseline
+this_pid = this_pid-mean(this_pid(400:1600));
+
+clear data
+data.response = this_resp;
+data.time = 3e-3*(1:length(this_resp));
+data.stimulus = this_pid;
+
+%[p, Rguess,x ] = FitDAModelToData(data);
+
+x = [162.9375    5.5391    0.0012    0.8672   25.9746  188.0098    0.5977 -0.0013];
+p = ValidateDAParameters2(x);
+R = DA_integrate2(data.stimulus,p);
+
+figure('outerposition',[0 0 1400 700],'PaperUnits','points','PaperSize',[1400 700]); hold on
+plot(data.time,data.response,'k')
+lh=plot(data.time,R,'r');
+xlabel('Time (s)')
+ylabel('Firing Rate (Hz)')
+r = rsquare(data.response,R);
+legend(lh,strcat('r^{2}=',oval(r,2)))
+title('Best Fit DA Model Prediction')
+PrettyFig;
+
+if being_published
+
+	snapnow;
+	delete(gcf);
+end
+
+%%
+% The parameters of this DA model are:
+disp(p)
 
 
+%%
+% What if we fit the DA model only to the flickering part of the stimulus? In the following figure, we plot the best fit DA Model to this part. 
+
+clear data
+a = floor(12/3e-3);
+z = floor(55/3e-3);
+data.response = this_resp(a:z);
+data.time = 3e-3*(1:length(this_resp(a:z)));
+data.stimulus = this_pid(a:z);
 
 
+x= [160.3027    5.4844    0.0012    0.9590   23.7656   21.4786    5.2656 -0.0013];
+p = ValidateDAParameters2(x);
+R = DA_integrate2(data.stimulus,p);
+
+figure('outerposition',[0 0 1400 700],'PaperUnits','points','PaperSize',[1400 700]); hold on
+plot(12+data.time,data.response,'k')
+lh=plot(12+data.time,R,'r');
+xlabel('Time (s)')
+ylabel('Firing Rate (Hz)')
+r = rsquare(data.response(300:end),R(300:end));
+legend(lh,strcat('r^{2}=',oval(r,2)))
+title('Best Fit DA Model Prediction')
+PrettyFig;
+
+if being_published
+
+	snapnow;
+	delete(gcf);
+end
+
+%%
+% As we can see, the fit only slightly improves. 
 
 
 %% Version Info

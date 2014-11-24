@@ -564,7 +564,7 @@ for i = 1:6
 
 	errorbar(BMModel(i).x,BMModel(i).y,BMModel(i).ye,'k')
 	xlabel('K\otimess')
-	ylabel('f')
+	ylabel('f-mean(f) (Hz)')
 	title(paradigm_names{i}(strfind(paradigm_names{i},'-')+1:end))
 	set(gca,'XLim',[-.7 .7],'YLim',[-20 20])
 end
@@ -596,12 +596,11 @@ end
 
 
 
-
 %% Neuron Responses: Fast Adaptation 
 % How well do LN models predict the response of neurons in these paradigms? Do we see evidence of fast gain adaptation in these data sets? Now we perform our gain analysis of the prediction using standard methods described elsewhere in this repo. We do the analysis for each stimulus set. 
 
 
-for i = 1:length(LNModel)
+for i = 1 % only doing first because there is a trend in all others
 	ph = [];
 
 	history_lengths = (3*floor(1000*logspace(-1.5,1,30)/3))/1e3;
@@ -614,7 +613,7 @@ for i = 1:length(LNModel)
 
 
 	clear x
-	x.response = detrended_data(i).resp(1:end-32); % the 32 is to account for the acausal part of the filter
+	x.response = LNModel(i).this_orn(1:end-32); % the 32 is to account for the acausal part of the filter
 	x.prediction = LNModel(i).LNFit;
 	x.stimulus = detrended_data(i).stim(1:end-32); 
 	x.time = detrended_data(i).time(1:end-32);
@@ -663,8 +662,8 @@ data.stimulus = this_pid;
 
 %[p, Rguess,x ] = FitDAModelToData(data);
 
-x = [162.9375    5.5391    0.0012    0.8672   25.9746  188.0098    0.5977 -0.0013];
-p = ValidateDAParameters2(x);
+x1 = [162.9375    5.5391    0.0012    0.8672   25.9746  188.0098    0.5977 -0.0013];
+p = ValidateDAParameters2(x1);
 R = DA_integrate2(data.stimulus,p);
 
 figure('outerposition',[0 0 1400 700],'PaperUnits','points','PaperSize',[1400 700]); hold on
@@ -674,7 +673,7 @@ xlabel('Time (s)')
 ylabel('Firing Rate (Hz)')
 r = rsquare(data.response,R);
 legend(lh,strcat('r^{2}=',oval(r,2)))
-title('Best Fit DA Model Prediction')
+title('Best Fit DA Model Prediction (3%)')
 PrettyFig;
 
 if being_published
@@ -710,7 +709,7 @@ xlabel('Time (s)')
 ylabel('Firing Rate (Hz)')
 r = rsquare(data.response(300:end),R(300:end));
 legend(lh,strcat('r^{2}=',oval(r,2)))
-title('Best Fit DA Model Prediction')
+title('Best Fit DA Model Prediction (3%)')
 PrettyFig;
 
 if being_published
@@ -720,7 +719,54 @@ if being_published
 end
 
 %%
-% As we can see, the fit only slightly improves. 
+% The parameters of this DA model are:
+disp(p)
+
+%%
+% As we can see, the fit only slightly improves. In the following figure, we attempt to fit a DA model the case where the mean of the stimulus is highest. For this, we do two different things: first, we fit a DA model to the data directly, as before. Second, we use DA model parameters from the first fit (to the low stimulus) and use it to predict the response to the high fit. 
+
+%%
+% In the following figure, the black curve is the response to the highest concentration, the green curve is the DA model prediction from the response to the *lowest* concentration, and the red curve is the prediction from the best-fit DA Model. 
+
+i=6;
+plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
+this_pid=mean2(combined_data.PID(plot_these,:));
+this_resp=mean2(combined_data.fA(:,plot_these));
+% remove baseline
+this_pid = this_pid-mean(this_pid(400:1600));
+
+clear data
+data.response = this_resp;
+data.time = 3e-3*(1:length(this_resp));
+data.stimulus = this_pid;
+
+x6 = [  187.9277    5.4844    0.0012    8.8340    2.0156  186.6661    0.0156  -0.0013];
+p = ValidateDAParameters2(x6);
+R = DA_integrate2(data.stimulus,p);
+
+figure('outerposition',[0 0 1400 700],'PaperUnits','points','PaperSize',[1400 700]); hold on
+plot(data.time,data.response,'k')
+clear lh
+p = ValidateDAParameters2(x1);
+R = DA_integrate2(data.stimulus,p);
+lh(1)=plot(data.time,R,'g');
+r1 = rsquare(data.response(300:end),R(300:end));
+p = ValidateDAParameters2(x6);
+R = DA_integrate2(data.stimulus,p);
+lh(2)=plot(data.time,R,'r');
+xlabel('Time (s)')
+ylabel('Firing Rate (Hz)')
+r6 = rsquare(data.response(300:end),R(300:end));
+legend(lh,{ strcat('r^{2}=',oval(r1,2)),strcat('r^{2}=',oval(r6,2))})
+title('Best Fit DA Model Prediction (6.25%)')
+PrettyFig;
+
+if being_published
+
+	snapnow;
+	delete(gcf);
+end
+
 
 
 %% Version Info

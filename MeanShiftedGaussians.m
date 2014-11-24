@@ -302,6 +302,31 @@ for i = 1:length(paradigm_names)
 	detrended_data(i).resp = this_resp - ff(time) + mean(ff(time));
 end
 
+%% Stimulus and Response: Power Spectral Density
+% In this section, we compute the power spectral density of the stimulus and the response for each trace, during the times when the stimulus is flickering. The blue traces are the stimulus, and the red is the response. 
+
+figure('outerposition',[0 0 1400 600],'PaperUnits','points','PaperSize',[1400 600]); hold on
+for i = 1:6
+	subplot(2,3,i), hold on
+	[x,y]=powerspec(1/3e-3,detrended_data(i).stim/max(detrended_data(i).stim),0);
+	plot(x,y,'b')
+	[x,y]=powerspec(1/3e-3,detrended_data(i).resp/max(detrended_data(i).resp),0);
+	plot(x,y,'r')
+	title(paradigm_names{i}(strfind(paradigm_names{i},'-')+1:end))
+	xlabel('Frequency (Hz)')
+	ylabel('Power (norm)')
+	set(gca,'XScale','log','YScale','log')
+end 
+PrettyFig;
+
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
 %% Neuron Responses: Gain-Speed Tradeoff
 % It is believed that when the stimulus is low, the gain needs to be high, which means the ORN integrates the signal over a longer time, which in turn means that the response kinetics are slower. To check if this is the case in this dataset, we compute the cross-correlation functions between the stimulus and the response in each case and see if the width depends in an obvious way on the mean stimulus. 
 

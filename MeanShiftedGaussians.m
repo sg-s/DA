@@ -579,14 +579,24 @@ end
 % The following plot shows the gain changes in the different cases:
 
 figure('outerposition',[0 0 800 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-errorbar(1:6,[BMModel.gain],[BMModel.gain_err])
-L = paradigm_names;
-for i = 1:length(L)
-	L{i} = L{i}(strfind(L{i},'-')+1:end);
-end
-set(gca,'XTick',[1:6],'XTickLabel',L)
-xlabel('Stimulus conc.')
+errorbar(mean(vertcat(detrended_data.stim)'),[BMModel.gain],[BMModel.gain_err])
+xlabel('Stimulus Mean (V)')
 ylabel('Gain (Hz/V)')
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% The following figure shows the co-efficient of variation of the stimulus and the response. 
+
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(cv(vertcat(detrended_data.stim)),cv(horzcat(detrended_data.resp)),'k')
+xlabel('CV (stimulus)')
+ylabel('CV (response)')
 
 PrettyFig;
 if being_published

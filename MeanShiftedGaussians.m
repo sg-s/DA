@@ -326,22 +326,29 @@ if being_published
 end
 
 
+return
 
 %% Neuron Responses: Gain-Speed Tradeoff
 % It is believed that when the stimulus is low, the gain needs to be high, which means the ORN integrates the signal over a longer time, which in turn means that the response kinetics are slower. To check if this is the case in this dataset, we compute the cross-correlation functions between the stimulus and the response in each case and see if the width depends in an obvious way on the mean stimulus. 
 
 c = parula(length(detrended_data));
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+figure('outerposition',[0 0 1200 500],'PaperUnits','points','PaperSize',[1200 500]); hold on
+subplot(1,3,1:2), hold on
+peak_loc = zeros(length(detrended_data),1);
+mean_stim = zeros(length(detrended_data),1);
 for i = 1:length(detrended_data)
-	a = detrended_data(i).stim - mean(detrended_data(i).stim);
+	mean_stim(i) = mean(detrended_data(i).stim);
+	a = detrended_data(i).resp - mean(detrended_data(i).resp);
 	a = a/std(a);
-	b = detrended_data(i).resp - mean(detrended_data(i).resp);
+	b = detrended_data(i).stim - mean(detrended_data(i).stim);
 	b = b/std(b);
-	x = xcorr(a,b);
+	x = xcorr(a,b); % positive peak means a lags b
 	t = 3e-3*(1:length(x));
 	t = t-mean(t);
 	x = x/length(x);
 	plot(t,x,'Color',c(i,:))
+	[~,loc] = max(x);
+	peak_loc(i) = t(loc);
 
 end
 set(gca,'XLim',[-.5 1])
@@ -353,6 +360,12 @@ for i = 1:length(L)
 	L{i} = L{i}(strfind(L{i},'-')+1:end);
 end
 legend(L)
+
+subplot(1,3,3), hold on
+plot(mean_stim,peak_loc)
+xlabel('Mean Stimulus (V)')
+ylabel('Peak of cross correlation (s)')
+
 
 PrettyFig;
 if being_published

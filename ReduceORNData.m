@@ -24,6 +24,7 @@ dt = 3e-3; % the dt of the output data that this function will return
 fA = [];
 fB = [];
 PID = [];
+neuron = [];
 paradigm = {};
 
 % now combine all the data
@@ -50,7 +51,7 @@ for i = 1:length(allfiles)
 
 							PID = [PID ; interp1(time,data(j).PID(k,:),dt*(1:length(fA)))];
 
-
+							neuron = [neuron; i];
 
 
 
@@ -67,3 +68,4 @@ combined_data.fA = fA;
 combined_data.fB = fB;
 combined_data.PID = PID;
 combined_data.paradigm = paradigm;
+combined_data.neuron = neuron;

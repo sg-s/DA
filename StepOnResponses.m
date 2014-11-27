@@ -19,7 +19,7 @@ end
 % redo = 1; deliberately unset
 
 %% Mean Shifted Gaussians
-% % What do the responses of the ORN to the step ON of the odor look like? The following figure shows the stimulus on the left and the response on the right, for the various heights of the step ON. 
+% What do the responses of the ORN to the step ON of the odor look like? The MeanShiftedGaussians dataset comes from two different experiments: neurons 1-4 are exposed to concentrations 3%, 5.5% and 6.25%. Neurons 5-8 are exposed to 3%, 3.5%, 4% and and 4.5%. The following figure shows the stimulus on the left and the response on the right, for the various heights of the step ON, grouped by these experiments. 
 
 load('MeanShiftedGaussians.mat')
 
@@ -27,23 +27,45 @@ load('MeanShiftedGaussians.mat')
 a = floor(4/3e-3);
 z = floor(12/3e-3);
 z1 = floor(11/3e-3);
-max_pid = [];
-max_f = [];
-end_pid = [];
-end_f = [];
+max_pid1 = [];
+max_f1 = [];
+end_pid1 = [];
+end_f1 = [];
+
+max_pid2 = [];
+max_f2 = [];
+end_pid2 = [];
+end_f2 = [];
+
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1), hold on
 c = parula(length(paradigm_names));
 for i = 1:length(paradigm_names)
 	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
-	this_pid=mean2(combined_data.PID(plot_these,:));
-	time = 3e-3*(1:length(this_pid));
-	end_pid = [end_pid mean(this_pid(z1:z))];
-	time = time(a:z);
-	this_pid = this_pid(a:z);
-	max_pid = [max_pid max(this_pid)];
-	plot(time,this_pid,'Color',c(i,:))
+	plot_these = intersect(plot_these, find(combined_data.neuron<5));
+	if ~isempty(plot_these)
+		this_pid=mean2(combined_data.PID(plot_these,:));
+		time = 3e-3*(1:length(this_pid));
+		end_pid1 = [end_pid1 mean(this_pid(z1:z))];
+		time = time(a:z);
+		this_pid = this_pid(a:z);
+		max_pid1 = [max_pid1 max(this_pid)];
+		plot(time,this_pid,'Color',c(i,:))
+	end
+
+
+	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
+	plot_these = intersect(plot_these, find(combined_data.neuron>4));
+	if ~isempty(plot_these)
+		this_pid=mean2(combined_data.PID(plot_these,:));
+		time = 3e-3*(1:length(this_pid));
+		end_pid2 = [end_pid2 mean(this_pid(z1:z))];
+		time = time(a:z);
+		this_pid = this_pid(a:z);
+		max_pid2 = [max_pid2 max(this_pid)];
+		plot(time,this_pid,'Color',c(i,:))
+	end
 end
 xlabel('Time (s)')
 ylabel('Stimulus (V)')
@@ -52,24 +74,44 @@ ylabel('Stimulus (V)')
 subplot(1,3,2), hold on
 for i = 1:length(paradigm_names)
 	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
-	this_resp=mean2(combined_data.fA(:,plot_these));
-	time = 3e-3*(1:length(this_resp));
-	end_f = [end_f mean(this_resp(z1:z))];
-	time = time(a:z);
-	this_resp = this_resp(a:z);
-	plot(time,this_resp,'Color',c(i,:))
-	max_f = [max_f max(this_resp)];
+	plot_these = intersect(plot_these, find(combined_data.neuron<5));
+	if ~isempty(plot_these)
+		this_resp=mean2(combined_data.fA(:,plot_these));
+		time = 3e-3*(1:length(this_resp));
+		end_f1 = [end_f1 mean(this_resp(z1:z))];
+		time = time(a:z);
+		this_resp = this_resp(a:z);
+		plot(time,this_resp,'Color',c(i,:))
+		max_f1 = [max_f1 max(this_resp)];
+	end
+
+
+	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
+	plot_these = intersect(plot_these, find(combined_data.neuron>4));
+	if ~isempty(plot_these)
+		this_resp=mean2(combined_data.fA(:,plot_these));
+		time = 3e-3*(1:length(this_resp));
+		end_f2 = [end_f2 mean(this_resp(z1:z))];
+		time = time(a:z);
+		this_resp = this_resp(a:z);
+		plot(time,this_resp,'Color',c(i,:))
+		max_f2 = [max_f2 max(this_resp)];
+	end
 
 end
 xlabel('Time (s)')
 ylabel('Firing Rate (Hz)')
 
+
 subplot(1,3,3), hold on
-plot(max_pid,max_f,'r')
-plot(end_pid,end_f,'k')
-legend({'Peak','Terminal'},'Location','NorthWest')
+plot(max_pid1,max_f1,'+-r')
+plot(end_pid1,end_f1,'+-k')
+plot(max_pid2,max_f2,'+-r')
+plot(end_pid2,end_f2,'+-k')
+legend({'Peak (1)','Terminal (1)','Peak (2)','Terminal (2)'},'Location','NorthWest')
 xlabel('Stimulus (V)')
 ylabel('Firing Rate (Hz)')
+set(gca,'YLim',[0 150])
 
 PrettyFig;
 if being_published
@@ -81,9 +123,60 @@ end
 %%
 % What are the timescales of relaxation of firing rates in each of these cases? In the following figure, we fit an exponential to the firing rates from peak onwards, not to claim that the decay is exponential, but to extract a timescale for each case. 
 
-clear ff
+clear ff lh L
+L = {};
 figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
-for i = 1:length(paradigm_names)
+subplot(2,3,1), hold on
+% first do the 1st experiment
+plot_these=find(strcmp(paradigm_names{1}, combined_data.paradigm));
+plot_these = intersect(plot_these, find(combined_data.neuron<5));
+this_resp=mean2(combined_data.fA(:,plot_these));
+time = 3e-3*(1:length(this_resp));
+time = time(a:z);
+this_resp = this_resp(a:z);
+[~,loc]=max(this_resp);
+t = time(loc:end);
+t = t -min(t);
+ft=fittype('a*exp(-x./b1)+ a*exp(-x./b2) +c');
+fo = fitoptions(ft);
+fo.Robust = 'on';
+pf = max(this_resp) -  this_resp(end); pf = pf/2;
+fo.Lower = [pf-1e-3 1e-2 1e-2 1];
+fo.Upper = [pf+1e-3 2 20 max(this_resp)];
+fo.StartPoint = [max(this_resp) .1 1 min(this_resp)];
+ff = fit(t(:),this_resp(loc:end),ft,fo);
+plot(time,this_resp,'b')
+lh(1)=plot(time(loc:end),ff(t),'r');
+L{1} = strcat('\tau=',oval(ff.b1,1),',',oval(ff.b2,1),'s'); 
+
+% then the 2nd experiment
+plot_these=find(strcmp(paradigm_names{1}, combined_data.paradigm));
+plot_these = intersect(plot_these, find(combined_data.neuron>4));
+this_resp=mean2(combined_data.fA(:,plot_these));
+time = 3e-3*(1:length(this_resp));
+time = time(a:z);
+this_resp = this_resp(a:z);
+[~,loc]=max(this_resp);
+t = time(loc:end);
+t = t -min(t);
+ft=fittype('a*exp(-x./b1)+ a*exp(-x./b2) +c');
+fo = fitoptions(ft);
+fo.Robust = 'on';
+pf = max(this_resp) -  this_resp(end); pf = pf/2;
+fo.Lower = [pf-1e-3 1e-2 1e-2 1];
+fo.Upper = [pf+1e-3 2 20 max(this_resp)];
+fo.StartPoint = [max(this_resp) .1 1 min(this_resp)];
+ff = fit(t(:),this_resp(loc:end),ft,fo);
+plot(time,this_resp,'k')
+lh(2)=plot(time(loc:end),ff(t),'r');
+L{2} = strcat('\tau=',oval(ff.b1,2),',',oval(ff.b2,2),'s'); 
+
+
+legend(lh,L);
+xlabel('Time (s)')
+ylabel('Firing Rate (Hz)')
+
+for i = 2:length(paradigm_names)
 	subplot(2,3,i), hold on
 	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
 	this_resp=mean2(combined_data.fA(:,plot_these));
@@ -93,13 +186,21 @@ for i = 1:length(paradigm_names)
 	[~,loc]=max(this_resp);
 	t = time(loc:end);
 	t = t -min(t);
-	ft=fittype('a*exp(-x./b)+c');
-	warning off
-	ff = fit(t(:),this_resp(loc:end),ft);
-	warning on
-	plot(time,this_resp,'k')
+	ft=fittype('a*exp(-x./b1)+ a*exp(-x./b2) +c');
+	fo = fitoptions(ft);
+	fo.Robust = 'on';
+	pf = max(this_resp) -  this_resp(end); pf = pf/2;
+	fo.Lower = [pf-1e-3 1e-2 1e-2 1];
+	fo.Upper = [pf+1e-3 2 20 max(this_resp)];
+	fo.StartPoint = [max(this_resp) .1 1 min(this_resp)];
+	ff = fit(t(:),this_resp(loc:end),ft,fo);
+	if i < 5
+		plot(time,this_resp,'b')
+	else
+		plot(time,this_resp,'k')
+	end
 	plot(time(loc:end),ff(t),'r')
-	title(strcat('tau=',oval(ff.b,2),'s'),'interpreter','tex')
+	title(strkat('tau=',oval(ff.b1,2),',',oval(ff.b2,2),'s'))
 	xlabel('Time (s)')
 	ylabel('Firing Rate (Hz)')
 end
@@ -407,7 +508,7 @@ for i = 1:2
 	legend(lh,L,'Location','SouthWest')
 	xlabel('Time (s)')
 	ylabel('Firing rate (Hz)')
-	title(strrep(paradigm_names{i+2},'_','-'))
+	title(strrep(paradigm_names{i+2},'_','-')) 
 end
 
 warning on

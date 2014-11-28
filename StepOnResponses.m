@@ -212,6 +212,51 @@ if being_published
 end
 
 %%
+% These different timescales, and the dependence of timescale on the odor concentration, raises the question of whether these curves "rescale" á la Martelli et al. In the following figure, we rescale all these plots by the peak and plot them one on top of the other. In the following plots, we group the data so that all curves come from the same neuron. 
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+c = parula(length(paradigm_names));
+for i = 1:length(paradigm_names)
+	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
+	plot_these = intersect(plot_these, find(combined_data.neuron<5));
+	if ~isempty(plot_these)
+		this_resp=mean2(combined_data.fA(:,plot_these));
+		time = 3e-3*(1:length(this_resp));
+		time = time(a:z);
+		this_resp = this_resp(a:z);
+		this_resp = this_resp/max(this_resp);
+		plot(time,this_resp,'Color',c(i,:))
+	end
+end
+legend(paradigm_names{[1 5 6]})
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+
+subplot(1,2,2), hold on
+c = parula(length(paradigm_names));
+for i = 1:length(paradigm_names)
+	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
+	plot_these = intersect(plot_these, find(combined_data.neuron>4));
+	if ~isempty(plot_these)
+		this_resp=mean2(combined_data.fA(:,plot_these));
+		time = 3e-3*(1:length(this_resp));
+		time = time(a:z);
+		this_resp = this_resp(a:z);
+		this_resp = this_resp/max(this_resp);
+		plot(time,this_resp,'Color',c(i,:))
+	end
+end
+legend(paradigm_names{1:4})
+xlabel('Time (s)')
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
 % Does a fractional differentiation model explain this response kinetics? How does the order of the fractional differnetiator vary? 
 
 a = floor(5/3e-3);

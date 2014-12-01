@@ -182,6 +182,14 @@ if being_published
 	delete(gcf)
 end
 
+%      ######   #######  ########  ########     ######## #### ##     ## ########  ######  
+%     ##    ## ##     ## ##     ## ##     ##       ##     ##  ###   ### ##       ##    ## 
+%     ##       ##     ## ##     ## ##     ##       ##     ##  #### #### ##       ##       
+%     ##       ##     ## ########  ########        ##     ##  ## ### ## ######    ######  
+%     ##       ##     ## ##   ##   ##   ##         ##     ##  ##     ## ##             ## 
+%     ##    ## ##     ## ##    ##  ##    ##        ##     ##  ##     ## ##       ##    ## 
+%      ######   #######  ##     ## ##     ##       ##    #### ##     ## ########  ######  
+
 %% Correlation Times 
 % On what timescales are the stimulus and the response correlated? In the following figure, we plot the autocorrelation function of the stimulus and the responses, for each stimulus presented:
 
@@ -223,6 +231,15 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%          ######## ########  ######## ##    ## ########   ######  
+%             ##    ##     ## ##       ###   ## ##     ## ##    ## 
+%             ##    ##     ## ##       ####  ## ##     ## ##       
+%             ##    ########  ######   ## ## ## ##     ##  ######  
+%             ##    ##   ##   ##       ##  #### ##     ##       ## 
+%             ##    ##    ##  ##       ##   ### ##     ## ##    ## 
+%             ##    ##     ## ######## ##    ## ########   ######  
+
 
 %% Trends in Data
 % Are there any trends in the data? In the following figure, we coarse-grain the data by binning everything along 5-second bins to look at long-term trends in the data. The various colors correspond to various stimulus means, and correspond to other figures in this document. 
@@ -320,6 +337,15 @@ for i = 1:length(paradigm_names)
 	detrended_data(i).resp = this_resp - ff(time) + mean(ff(time));
 end
 
+%     ########   #######  ##      ## ######## ########      ######  ########  ########  ######  
+%     ##     ## ##     ## ##  ##  ## ##       ##     ##    ##    ## ##     ## ##       ##    ## 
+%     ##     ## ##     ## ##  ##  ## ##       ##     ##    ##       ##     ## ##       ##       
+%     ########  ##     ## ##  ##  ## ######   ########      ######  ########  ######   ##       
+%     ##        ##     ## ##  ##  ## ##       ##   ##            ## ##        ##       ##       
+%     ##        ##     ## ##  ##  ## ##       ##    ##     ##    ## ##        ##       ##    ## 
+%     ##         #######   ###  ###  ######## ##     ##     ######  ##        ########  ######  
+
+
 %% Stimulus and Response: Power Spectral Density
 % In this section, we compute the power spectral density of the stimulus and the response for each trace, during the times when the stimulus is flickering. The blue traces are the stimulus, and the red is the response. 
 
@@ -366,7 +392,13 @@ if being_published
 	delete(gcf)
 end
 
-
+%         ######      ###    #### ##    ##       ##  ######  ########  ######## ######## ########  
+%        ##    ##    ## ##    ##  ###   ##      ##  ##    ## ##     ## ##       ##       ##     ## 
+%        ##         ##   ##   ##  ####  ##     ##   ##       ##     ## ##       ##       ##     ## 
+%        ##   #### ##     ##  ##  ## ## ##    ##     ######  ########  ######   ######   ##     ## 
+%        ##    ##  #########  ##  ##  ####   ##           ## ##        ##       ##       ##     ## 
+%        ##    ##  ##     ##  ##  ##   ###  ##      ##    ## ##        ##       ##       ##     ## 
+%         ######   ##     ## #### ##    ## ##        ######  ##        ######## ######## ########  
 
 %% Neuron Responses: Gain-Speed Tradeoff
 % It is believed that when the stimulus is low, the gain needs to be high, which means the ORN integrates the signal over a longer time, which in turn means that the response kinetics are slower. To check if this is the case in this dataset, we compute the cross-correlation functions between the stimulus and the response in each case and see if the width depends in an obvious way on the mean stimulus. 
@@ -409,7 +441,13 @@ if being_published
 	delete(gcf)
 end
 
-
+%      ####       ##  #######      ######  ##     ## ########  ##     ## ########  ######  
+%       ##       ##  ##     ##    ##    ## ##     ## ##     ## ##     ## ##       ##    ## 
+%       ##      ##   ##     ##    ##       ##     ## ##     ## ##     ## ##       ##       
+%       ##     ##    ##     ##    ##       ##     ## ########  ##     ## ######    ######  
+%       ##    ##     ##     ##    ##       ##     ## ##   ##    ##   ##  ##             ## 
+%       ##   ##      ##     ##    ##    ## ##     ## ##    ##    ## ##   ##       ##    ## 
+%      #### ##        #######      ######   #######  ##     ##    ###    ########  ######  
 
 %% Neuron Responses: Input-Output Curve Changes
 % How do ORNs change their input-output curves when presented with these different stimuli? If the ORN is a perfect sensor, that adapts perfectly, it would move and stretch its I/O curve so that it is equal to cumulative density function of the stimulus. However, we know that ORNs don't adapt perfectly, so they must do something else. What is it? If the change dominated by a lateral movement of a stretch?
@@ -486,30 +524,6 @@ if redo
 
 end
 
-
-
-% The following figure shows each of the ORN responses to each stimulus together with the best linear fits:
-
-
-% figure('outerposition',[0 0 1400 600],'PaperUnits','points','PaperSize',[1400 600]); hold on
-% for i = 1:6
-% 	subplot(2,3,i), hold on
-% 	this_orn = LNModel(i).this_orn;
-% 	time = detrended_data(i).time;
-% 	plot(time,this_orn,'k');
-% 	lh=plot(time,LNModel(i).LinearFit,'r');
-% 	set(gca,'XLim',[35 55])
-% 	legend(lh,oval(LNModel(i).LinearFit_r2,2))
-% 	title(paradigm_names{i})
-% end 
-% PrettyFig;
-
-
-% if being_published
-% 	snapnow
-% 	delete(gcf)
-% end
-
 %%
 % The following figure shows each of the ORN responses to each stimulus together with the best LN Model fits:
 
@@ -563,6 +577,14 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+ % ######      ###    #### ##    ##     ######  ##     ##    ###    ##    ##  ######   ########  ######  
+% ##    ##    ## ##    ##  ###   ##    ##    ## ##     ##   ## ##   ###   ## ##    ##  ##       ##    ## 
+% ##         ##   ##   ##  ####  ##    ##       ##     ##  ##   ##  ####  ## ##        ##       ##       
+% ##   #### ##     ##  ##  ## ## ##    ##       ######### ##     ## ## ## ## ##   #### ######    ######  
+% ##    ##  #########  ##  ##  ####    ##       ##     ## ######### ##  #### ##    ##  ##             ## 
+% ##    ##  ##     ##  ##  ##   ###    ##    ## ##     ## ##     ## ##   ### ##    ##  ##       ##    ## 
+ % ######   ##     ## #### ##    ##     ######  ##     ## ##     ## ##    ##  ######   ########  ######  
 
 %%
 % Now, we study the gain changes in this system by plotting the filtered stimulus vs. the actual response. The stimulus has been means subtracted and are divided through by their standard deviation. 
@@ -654,6 +676,13 @@ if being_published
 	delete(gcf)
 end
 
+%      ########    ###     ######  ########       ###    ########     ###    ########  ######## 
+%      ##         ## ##   ##    ##    ##         ## ##   ##     ##   ## ##   ##     ##    ##    
+%      ##        ##   ##  ##          ##        ##   ##  ##     ##  ##   ##  ##     ##    ##    
+%      ######   ##     ##  ######     ##       ##     ## ##     ## ##     ## ########     ##    
+%      ##       #########       ##    ##       ######### ##     ## ######### ##           ##    
+%      ##       ##     ## ##    ##    ##       ##     ## ##     ## ##     ## ##           ##    
+%      ##       ##     ##  ######     ##       ##     ## ########  ##     ## ##           ##    
 
 
 %% Neuron Responses: Fast Adaptation 
@@ -704,6 +733,15 @@ for i = 1 % only doing first because there is a trend in all others
 	end
 end
 
+%         ########     ###       ##     ##  #######  ########  ######## ##       
+%         ##     ##   ## ##      ###   ### ##     ## ##     ## ##       ##       
+%         ##     ##  ##   ##     #### #### ##     ## ##     ## ##       ##       
+%         ##     ## ##     ##    ## ### ## ##     ## ##     ## ######   ##       
+%         ##     ## #########    ##     ## ##     ## ##     ## ##       ##       
+%         ##     ## ##     ##    ##     ## ##     ## ##     ## ##       ##       
+%         ########  ##     ##    ##     ##  #######  ########  ######## ######## 
+
+
 %% The DA Model
 % In this section, we fit the DA model to the data. First, we fit a DA model to the first trace, which corresponds to the lowest stimulus and also the only stimulus where there is no large trend in the data. 
 
@@ -747,43 +785,43 @@ end
 disp(p)
 
 
+% %%
+% % What if we fit the DA model only to the flickering part of the stimulus? In the following figure, we plot the best fit DA Model to this part. 
+
+% clear data
+% a = floor(12/3e-3);
+% z = floor(55/3e-3);
+% data.response = this_resp(a:z);
+% data.time = 3e-3*(1:length(this_resp(a:z)));
+% data.stimulus = this_pid(a:z);
+
+
+% x= [160.3027    5.4844    0.0012    0.9590   23.7656   21.4786    5.2656 -0.0013];
+% p = ValidateDAParameters2(x);
+% R = DA_integrate2(data.stimulus,p);
+
+% figure('outerposition',[0 0 1400 700],'PaperUnits','points','PaperSize',[1400 700]); hold on
+% plot(12+data.time,data.response,'k')
+% lh=plot(12+data.time,R,'r');
+% xlabel('Time (s)')
+% ylabel('Firing Rate (Hz)')
+% r = rsquare(data.response(300:end),R(300:end));
+% legend(lh,strcat('r^{2}=',oval(r,2)))
+% title('Best Fit DA Model Prediction (3%)')
+% PrettyFig;
+
+% if being_published
+
+% 	snapnow;
+% 	delete(gcf);
+% end
+
+% %%
+% % The parameters of this DA model are:
+% disp(p)
+
 %%
-% What if we fit the DA model only to the flickering part of the stimulus? In the following figure, we plot the best fit DA Model to this part. 
-
-clear data
-a = floor(12/3e-3);
-z = floor(55/3e-3);
-data.response = this_resp(a:z);
-data.time = 3e-3*(1:length(this_resp(a:z)));
-data.stimulus = this_pid(a:z);
-
-
-x= [160.3027    5.4844    0.0012    0.9590   23.7656   21.4786    5.2656 -0.0013];
-p = ValidateDAParameters2(x);
-R = DA_integrate2(data.stimulus,p);
-
-figure('outerposition',[0 0 1400 700],'PaperUnits','points','PaperSize',[1400 700]); hold on
-plot(12+data.time,data.response,'k')
-lh=plot(12+data.time,R,'r');
-xlabel('Time (s)')
-ylabel('Firing Rate (Hz)')
-r = rsquare(data.response(300:end),R(300:end));
-legend(lh,strcat('r^{2}=',oval(r,2)))
-title('Best Fit DA Model Prediction (3%)')
-PrettyFig;
-
-if being_published
-
-	snapnow;
-	delete(gcf);
-end
-
-%%
-% The parameters of this DA model are:
-disp(p)
-
-%%
-% As we can see, the fit only slightly improves. In the following figure, we attempt to fit a DA model the case where the mean of the stimulus is highest. For this, we do two different things: first, we fit a DA model to the data directly, as before. Second, we use DA model parameters from the first fit (to the low stimulus) and use it to predict the response to the high fit. 
+% In the following figure, we attempt to fit a DA model the case where the mean of the stimulus is highest. For this, we do two different things: first, we fit a DA model to the data directly, as before. Second, we use DA model parameters from the first fit (to the low stimulus) and use it to predict the response to the high fit. 
 
 %%
 % In the following figure, the black curve is the response to the highest concentration, the green curve is the DA model prediction from the response to the *lowest* concentration, and the red curve is the prediction from the best-fit DA Model. 
@@ -827,6 +865,66 @@ if being_published
 	delete(gcf);
 end
 
+%%
+% Emboldened by this result, we now use the DA model fit to the lowest stimulus to predict responses to all the other stimuli, and compute the gain for each case, and compare to the actual data: 
+
+x1 = [162.9375    5.5391    0.0012    0.8672   25.9746  188.0098    0.5977 -0.0013];
+p = ValidateDAParameters2(x1);
+
+nbins = 10;
+gain = [];
+gain_err = [];
+
+for i = 1:length(paradigm_names)
+	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
+	this_pid=mean2(combined_data.PID(plot_these,:));
+	this_pid = this_pid-mean(this_pid(400:1600));
+	R = DA_integrate2(this_pid,p);
+	a = floor(20/3e-3);
+	z = floor(55/3e-3);
+	R = R(a:z); this_pid = this_pid(a:z);
+	time = 3e-3*(1:length(R));
+
+	R = R-mean(R);
+	this_pid = this_pid -mean(this_pid);
+
+	[K,~,filtertime] = FindBestFilter(this_pid/std(this_pid),R/std(R),[],'filter_length=299;');
+	filtertime  = filtertime*3e-3;
+
+	% recompute linear fits
+	LinearFit = convolve(time,this_pid,K,filtertime);
+
+	% bin the data
+	minx = min(LinearFit);
+	maxx = max(LinearFit);
+	r = (maxx -minx)/nbins;
+
+
+	% also fit a line to the middle 1/3 of the data
+	a = minx + r/3;
+	z = maxx - r/3;
+	x = LinearFit(LinearFit < z & LinearFit > a);
+	y = R(LinearFit < z & LinearFit > a);
+	ff = fit(x(:),y(:),'poly1');
+	temp=confint(ff);
+	gain_err = [gain_err temp(2,1)-temp(1,1)];
+	gain = [gain ff.p1];
+
+end
+
+figure('outerposition',[0 0 800 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+errorbar(mean(vertcat(detrended_data.stim)'),[BMModel.gain],[BMModel.gain_err],'k')
+errorbar(mean(vertcat(detrended_data.stim)'),gain,gain_err,'r')
+xlabel('Stimulus Mean (V)')
+ylabel('Gain (Hz/V)')
+set(gca,'XScale','log')
+legend('Data','DA Model fit to lowest dose')
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 
 %% Version Info

@@ -212,7 +212,7 @@ end
 
 figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
 for i = 1:length(paradigm_names)
-	subplot(2,3,i), hold on
+	subplot(2,4,i), hold on
 	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
 	this_resp=mean2(combined_data.fA(:,plot_these));
 	time = 3e-3*(1:length(this_resp));

@@ -80,7 +80,7 @@ c = parula(length(paradigm_names));
 paradigm = paradigm -  min(paradigm);
 paradigm = paradigm  + 1;
 
-figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 opacity = .2;
 for i = 1:length(unique(paradigm))
 	x = histx(paradigm==i,:);
@@ -323,12 +323,35 @@ end
 %% Stimulus and Response: Power Spectral Density
 % In this section, we compute the power spectral density of the stimulus and the response for each trace, during the times when the stimulus is flickering. The blue traces are the stimulus, and the red is the response. 
 
+
+all_start = [1:floor(length(detrended_data(i).time)/20):(length(detrended_data(i).time))];
+all_start(end) = [];
+all_end = all_start + floor(length(detrended_data(i).time)/20);
+
 figure('outerposition',[0 0 1400 600],'PaperUnits','points','PaperSize',[1400 600]); hold on
-for i = 1:6
-	subplot(2,3,i), hold on
-	[x,y]=powerspec(1/3e-3,detrended_data(i).stim/max(detrended_data(i).stim),0);
+for i = 1:8
+	subplot(2,4,i), hold on
+	x = zeros(1,257);
+	y = zeros(1,257);
+	for j = 1:length(all_start)
+		a = floor(all_start(j));
+		z = floor(all_end(j));
+		n = sqrt(z-a);
+		[x,y2]=powerspec(1/3e-3,detrended_data(i).stim(a:z)/max(detrended_data(i).stim(a:z)),0);
+		y = y+y2;
+	end
+	y = y/length(all_start);
 	plot(x,y,'b')
-	[x,y]=powerspec(1/3e-3,detrended_data(i).resp/max(detrended_data(i).resp),0);
+	x = zeros(1,257);
+	y = zeros(1,257);
+	for j = 1:length(all_start)
+		a = floor(all_start(j));
+		z = floor(all_end(j));
+		n = sqrt(z-a);
+		[x,y2]=powerspec(1/3e-3,detrended_data(i).resp(a:z)/max(detrended_data(i).resp(a:z)),0);
+		y = y+y2';
+	end
+	y = y/length(all_start);
 	plot(x,y,'r')
 	title(paradigm_names{i}(strfind(paradigm_names{i},'-')+1:end))
 	xlabel('Frequency (Hz)')
@@ -344,12 +367,43 @@ if being_published
 end
 
 
-return
 
 %% Neuron Responses: Gain-Speed Tradeoff
 % It is believed that when the stimulus is low, the gain needs to be high, which means the ORN integrates the signal over a longer time, which in turn means that the response kinetics are slower. To check if this is the case in this dataset, we compute the cross-correlation functions between the stimulus and the response in each case and see if the width depends in an obvious way on the mean stimulus. 
 
+c = parula(length(detrended_data));
+figure('outerposition',[0 0 1200 500],'PaperUnits','points','PaperSize',[1200 500]); hold on
+subplot(1,3,1:2), hold on
+peak_loc = zeros(length(detrended_data),1);
+mean_stim = zeros(length(detrended_data),1);
+for i = 1:length(detrended_data)
+	mean_stim(i) = mean(detrended_data(i).stim);
+	a = detrended_data(i).resp - mean(detrended_data(i).resp);
+	a = a/std(a);
+	b = detrended_data(i).stim - mean(detrended_data(i).stim);
+	b = b/std(b);
+	x = xcorr(a,b); % positive peak means a lags b
+	t = 3e-3*(1:length(x));
+	t = t-mean(t);
+	x = x/max(x);
+	plot(t,x,'Color',c(i,:))
+	[~,loc] = max(x);
+	peak_loc(i) = t(loc);
+end
+set(gca,'XLim',[-.2 .5])
+xlabel('Lag (s)')
+ylabel('Cross Correlation (norm)')
+L = paradigm_names;
+for i = 1:length(L)
+	L{i} = L{i}(strfind(L{i},'-')+1:end);
+end
+legend(L)
+subplot(1,3,3), hold on
+plot(mean_stim,peak_loc*1000,'+-k')
+xlabel('Mean Stimulus (V)')
+ylabel('Peak of cross correlation (ms)')
 
+PrettyFig;
 if being_published
 	snapnow
 	delete(gcf)
@@ -461,8 +515,8 @@ end
 
 
 figure('outerposition',[0 0 1400 600],'PaperUnits','points','PaperSize',[1400 600]); hold on
-for i = 1:6
-	subplot(2,3,i), hold on
+for i = 1:8
+	subplot(2,4,i), hold on
 	this_orn = LNModel(i).this_orn;
 	time = detrended_data(i).time;
 	plot(time,this_orn,'k');
@@ -516,8 +570,8 @@ end
 nbins = 10;
 plot_range = 5;
 figure('outerposition',[0 0 1400 800],'PaperUnits','points','PaperSize',[1400 800]); hold on
-for i = 1:6
-	subplot(2,3,i), hold on
+for i = 1:8
+	subplot(2,4,i), hold on
 	this_orn = detrended_data(i).resp;
 	this_pid = detrended_data(i).stim;
 	this_pid = this_pid - mean(this_pid);
@@ -577,6 +631,7 @@ figure('outerposition',[0 0 800 500],'PaperUnits','points','PaperSize',[1000 500
 errorbar(mean(vertcat(detrended_data.stim)'),[BMModel.gain],[BMModel.gain_err])
 xlabel('Stimulus Mean (V)')
 ylabel('Gain (Hz/V)')
+set(gca,'XScale','log')
 
 PrettyFig;
 if being_published
@@ -589,7 +644,7 @@ end
 
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(cv(vertcat(detrended_data.stim)),cv(horzcat(detrended_data.resp)),'k')
+plot(cv(vertcat(detrended_data.stim)),cv(horzcat(detrended_data.resp)),'+-k')
 xlabel('CV (stimulus)')
 ylabel('CV (response)')
 

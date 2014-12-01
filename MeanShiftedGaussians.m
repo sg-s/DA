@@ -20,11 +20,12 @@ data_root = '/local-data/DA-paper/fast-flicker/orn/';
 allfiles  = dir(strcat(data_root,'*.mat'));
 
 % combine all data
-% if redo
-% 	combined_data = ReduceORNData(data_root,allfiles);
-% end
-
+% combined_data = ReduceORNData(data_root,allfiles);
 % paradigm_names = unique(combined_data.paradigm);
+% save('MeanShiftedGaussians.mat','combined_data','paradigm_names');
+
+
+
 
 % load cached data
 load('MeanShiftedGaussians.mat')
@@ -80,8 +81,15 @@ paradigm = paradigm -  min(paradigm);
 paradigm = paradigm  + 1;
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-for i = 1:length(paradigm)
-	plot(histx(i,:),histy(i,:),'Color',c(paradigm(i),:))
+opacity = .2;
+for i = 1:length(unique(paradigm))
+	x = histx(paradigm==i,:);
+	y = histy(paradigm==i,:);
+
+	for j = 1:width(x)
+		plot(x(j,:),y(j,:),'Color',[c(i,:) opacity])
+	end
+	plot(mean(x),mean(y),'Color',[c(i,:)])
 end
 
 xlabel('PID (V)')
@@ -96,6 +104,7 @@ if being_published
 	delete(gcf)
 end
 
+
 %% Stimulus Reproducibility 
 % In this section, we look at the reproducibility of the stimulus. The following figure shows the stimulus for all the data we look at here, plotted on top of each other, colour-coded by experimental paradigm. 
 
@@ -104,8 +113,16 @@ time = 1:length(all_pid);
 time = time*dt;
 
 figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
-for i = 1:width(all_pid)
-	plot(time,all_pid(i,:),'Color',c(paradigm(i),:))
+
+opacity = .2;
+for i = 1:length(unique(paradigm))
+	x = all_pid(paradigm==i,:);
+	y = histy(paradigm==i,:);
+
+	for j = 1:width(x)
+		plot(time,x(j,:),'Color',[c(i,:) opacity]) % using undocumented opacity value, may break in future
+	end
+	plot(time,mean(x),'Color',[c(i,:)])
 end
 
 ylabel('PID (V)')
@@ -132,13 +149,14 @@ end
 %% Neuron Responses: Overview
 % The following figure shows the responses of the ORNs to this stimuli, and their distributions. 
 
+c = parula(length(paradigm_names));
 figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
 subplot(1,5,1:4), hold on
 for i = 1:length(paradigm_names)
 	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
 	this_orn=mean2(combined_data.fA(:,plot_these));
 	time = 3e-3*(1:length(this_orn));
-	plot(time,this_orn)
+	plot(time,this_orn,'Color',c(i,:))
 end
 ylim = get(gca,'YLim');
 ylabel('Firing Rate (Hz)')
@@ -150,7 +168,7 @@ for i = 1:length(paradigm_names)
 	this_orn=mean2(combined_data.fA(:,plot_these));
 	this_orn = this_orn(a:z);
 	[x,y] = hist(this_orn,50);
-	plot(x,y)
+	plot(x,y,'Color',c(i,:))
 
 end
 set(gca,'YLim',ylim);
@@ -250,7 +268,7 @@ figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 50
 subplot(1,2,1), hold on
 c = parula(length(paradigm_names));
 for i = 1:length(plot_data)
-	errorbar(all_start+2.5,plot_data(i).stim_mean,plot_data(i).stim_mean_err)
+	errorbar(all_start+2.5,plot_data(i).stim_mean,plot_data(i).stim_mean_err,'Color',c(i,:))
 
 end
 xlabel('Time (s)')
@@ -259,7 +277,7 @@ ylabel('PID (V)')
 subplot(1,2,2), hold on
 c = parula(length(paradigm_names));
 for i = 1:length(plot_data)
-	errorbar(all_start+2.5,plot_data(i).resp_mean,plot_data(i).resp_mean_err)
+	errorbar(all_start+2.5,plot_data(i).resp_mean,plot_data(i).resp_mean_err,'Color',c(i,:))
 
 end
 xlabel('Time (s)')
@@ -331,43 +349,7 @@ return
 %% Neuron Responses: Gain-Speed Tradeoff
 % It is believed that when the stimulus is low, the gain needs to be high, which means the ORN integrates the signal over a longer time, which in turn means that the response kinetics are slower. To check if this is the case in this dataset, we compute the cross-correlation functions between the stimulus and the response in each case and see if the width depends in an obvious way on the mean stimulus. 
 
-c = parula(length(detrended_data));
-figure('outerposition',[0 0 1200 500],'PaperUnits','points','PaperSize',[1200 500]); hold on
-subplot(1,3,1:2), hold on
-peak_loc = zeros(length(detrended_data),1);
-mean_stim = zeros(length(detrended_data),1);
-for i = 1:length(detrended_data)
-	mean_stim(i) = mean(detrended_data(i).stim);
-	a = detrended_data(i).resp - mean(detrended_data(i).resp);
-	a = a/std(a);
-	b = detrended_data(i).stim - mean(detrended_data(i).stim);
-	b = b/std(b);
-	x = xcorr(a,b); % positive peak means a lags b
-	t = 3e-3*(1:length(x));
-	t = t-mean(t);
-	x = x/length(x);
-	plot(t,x,'Color',c(i,:))
-	[~,loc] = max(x);
-	peak_loc(i) = t(loc);
 
-end
-set(gca,'XLim',[-.5 1])
-xlabel('Lag (s)')
-ylabel('Cross Correlation')
-
-L = paradigm_names;
-for i = 1:length(L)
-	L{i} = L{i}(strfind(L{i},'-')+1:end);
-end
-legend(L)
-
-subplot(1,3,3), hold on
-plot(mean_stim,peak_loc)
-xlabel('Mean Stimulus (V)')
-ylabel('Peak of cross correlation (s)')
-
-
-PrettyFig;
 if being_published
 	snapnow
 	delete(gcf)

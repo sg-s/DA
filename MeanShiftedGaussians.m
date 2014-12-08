@@ -992,6 +992,7 @@ lh=plot(data.time,fp,'r');
 xlabel('Time (s)')
 ylabel('Firing rate (Hz)')
 legend(lh,strcat('r^2=',oval(rsquare(fp,data.response),2)));
+set(gca,'XLim',[35 55])
 
 subplot(1,5,4:5)
 t=1:333;
@@ -1007,6 +1008,110 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%%
+% OK, that looks good. Now we allow a nonlinearity too, and fit the model again. This is equivalent to a LN model fit. 
+
+clear p
+p.Kr_tau1= 6.5000;
+p.   Kr_n= 3.0840;
+p.Kr_tau2= 46.7267;
+p.   Kr_A= 0.0957;
+p.Ka_tau1= 15;
+p.   Ka_n= 2;
+p.Ka_tau2= 25;
+p.   Ka_A= -1;
+p.      A= 42.6015;
+p.      n= 1.6114;
+p.     Kd= 1.0100;
+p. offset= 5.6211;
+%				 Kr-----------------|-----Ka ---------------|----Hill
+lb = mat2struct([1   1  2  1e-3 		1 	 1 2    -2        1      1 1e-2     0],fieldnames(p));
+ub = mat2struct([100 5 200 1e3 			100  5 200  -1        1e3    5 1e2      1e2],fieldnames(p));
+%p=FitModel2Data(@ReceptorAdaptationModel,data,p,lb,ub);
+
+[fp,Sigma,eta]=ReceptorAdaptationModel(data.stimulus,p);
+
+figure('outerposition',[0 0 1200 500],'PaperUnits','points','PaperSize',[1200 500]); hold on
+lh = [];
+L = {};
+subplot(1,5,1:3), hold on
+plot(data.time,data.response,'k')
+lh=plot(data.time,fp,'r');
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+legend(lh,strcat('r^2=',oval(rsquare(fp,data.response),2)));
+set(gca,'XLim',[35 55])
+
+subplot(1,5,4:5)
+t=1:333;
+Kr = filter_gamma2(p.Kr_tau1,p.Kr_n,p.Kr_tau2,p.Kr_A,t);
+t = t*mean(diff(data.time));
+plot(t,Kr,'r')
+xlabel('Filter Lag (s)')
+ylabel('Filter Amplitude (a.u.)')
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
+% OK, that looks good too. Now, we remove all constraints from the model and allow the adapting filter to play a  role too. 
+
+clear p
+p.Kr_tau1= 6.2051;
+p.   Kr_n= 3.5352;
+p.Kr_tau2= 96.2482;
+p.   Kr_A= 0.0937;
+p.Ka_tau1= 59.5625;
+p.   Ka_n= 0.7539;
+p.Ka_tau2= 292.2656;
+p.   Ka_A= 0.0049;
+p.      A= 44.4394;
+p.      n= 1.7090;
+p.     Kd= 1.0100;
+p. offset= 5.1543;
+%				 Kr-----------------|-----Ka ---------------|----Hill
+lb = mat2struct([1   1  2  1e-3 		1 	 .1 2    1e-3        1      1 1e-2     0],fieldnames(p));
+ub = mat2struct([100 5 200 1e3 			100  5  500  1e3        1e3    5 1e2      1e2],fieldnames(p));
+%p=FitModel2Data(@ReceptorAdaptationModel,data,p,lb,ub);
+
+[fp,Sigma,eta]=ReceptorAdaptationModel(data.stimulus,p);
+
+figure('outerposition',[0 0 1200 500],'PaperUnits','points','PaperSize',[1200 500]); hold on
+lh = [];
+L = {};
+subplot(1,5,1:3), hold on
+plot(data.time,data.response,'k')
+lh=plot(data.time,fp,'r');
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+legend(lh,strcat('r^2=',oval(rsquare(fp,data.response),2)));
+set(gca,'XLim',[35 55])
+
+subplot(1,5,4:5), hold on
+t=1:1e3;
+Kr = filter_gamma2(p.Kr_tau1,p.Kr_n,p.Kr_tau2,p.Kr_A,t);
+Ka = filter_gamma2(p.Ka_tau1,p.Ka_n,p.Ka_tau2,p.Ka_A,t);
+t = t*mean(diff(data.time));
+plot(t,Kr/max(Kr),'r')
+plot(t,Ka/max(Ka),'b')
+legend('Response','Adaptation')
+xlabel('Filter Lag (s)')
+ylabel('Filter Amplitude (norm)')
+
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
 
 %% Version Info
 % The file that generated this document is called:

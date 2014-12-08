@@ -32,7 +32,7 @@
 % 
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
-function f = ReceptorAdaptationModel(s,p)
+function [f,Sigma,eta] = ReceptorAdaptationModel(s,p)
 switch nargin
 case 0
 	help ReceptorAdaptationModel
@@ -55,12 +55,31 @@ Kr = p.Kr(p.Kr_tau1,p.Kr_n,p.Kr_tau2,p.Kr_A,t);
 Ka = p.Ka(p.Ka_tau1,p.Ka_n,p.Ka_tau2,p.Ka_A,t);
 
 % filter the stimulus
-shat = s./(s + filter(Ka,1,s));
-shat = filter(Kr,1,shat);
+s_hat = s - mean(s);
+
+if p.Ka_A < 0
+	% code for ignore adaptation filter
+	Sigma = s;
+else
+	Sigma = s./(1 + filter(Ka,1,s_hat));
+end
+
+Sigma_hat = Sigma - mean(Sigma);
+
+eta = mean(Sigma) + filter(Kr,1,Sigma_hat);
 
 % pass through output non-linearity
-x = [p.A p.Kd p.n p.offset];
-f = hill4(x,shat);
+if p.A < 0
+	% this is code for ignoring the output nonlinearty
+	f = eta;
+else
+	x = [p.A p.Kd p.n];
+	f = hill(x,eta);
+end
+
+f = f + p.offset;
+
+
 
 
 

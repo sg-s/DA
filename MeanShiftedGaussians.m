@@ -926,6 +926,87 @@ if being_published
 	delete(gcf)
 end
 
+%% Fitting a Receptor-Adaptation Model
+% In this section, we consider a class of models where the affinity of the receptor changes in a stimulus-driven fashion. Thierry suggested the following functional form:
+% 
+% $$f=N\left(K_{r}\otimes\frac{s(t)}{s(t)+K_{a}\otimes s(t)}\right)$$
+%
+
+%%
+% where $K_{r}$ and $K_{a}$ are response and adaptation filters (here parametrised as double gamma functions) and $N$ is a Hill function parametrised by height $A$, offset $k$, and steepness $n$. However, this form cannot work. Consider that $K_{a}$ is simply a delta function. Then, 
+%
+% $$f\sim K_{r}\otimes\frac{1}{2}$$
+%
+% which is not what we want. 
+
+%%
+% Instead I consider the following functional form:
+%
+% $$f=N\left(K_{r}\otimes\frac{s(t)}{1+K_{a}\otimes s(t)}\right)$$
+%
+% Here, if we let $A,k\rightarrow\infty$ and set $n=1$, the non-linearity drops out. Furthermore, if we let the amplitude of the adaptation filter $K_{a}\rightarrow0$, the "adapting" part of the model drops away and we are left with the simple linear model. 
+
+%%
+% Armed with this intuition, we attempt to fit the data (the response to the lowest dose) with this reduced model, which should give us, essentially, a simpler linear fit to the data. The following figure shows such a fit: where we neglect the adaptation filter and the output nonlinearity. 
+ 
+
+a = 5000;
+z = 18000;
+
+plot_these=find(strcmp(paradigm_names{1}, combined_data.paradigm));
+this_orn=mean2(combined_data.fA(:,plot_these));
+this_pid=mean2(combined_data.PID(plot_these,:));
+time = 3e-3*(1:length(this_orn));
+data.response = this_orn(a:z);
+data.stimulus = this_pid(a:z);
+data.time = time(a:z);
+
+
+clear p
+p.Kr_tau1= 8.4062;
+p.   Kr_n= 2.2969;
+p.Kr_tau2= 54.3438;
+p.   Kr_A= 1.6875;
+p.Ka_tau1= 15;
+p.   Ka_n= 2;
+p.Ka_tau2= 25;
+p.   Ka_A= -1;
+p.      A= -1;
+p.      n= 1;
+p.     Kd= 2;
+p. offset= 19.9375;
+%				 Kr-----------------|-----Ka ---------------|----Hill
+lb = mat2struct([1   1  2  1e-3 		1 	 1 2    -2          -2    1   1    0],fieldnames(p));
+ub = mat2struct([100 5 200 1e3 			100  5 200  -1      -1    1   2    1e2],fieldnames(p));
+
+%p=FitModel2Data(@ReceptorAdaptationModel,data,p,lb,ub);
+[fp,Sigma,eta]=ReceptorAdaptationModel(data.stimulus,p);
+
+
+figure('outerposition',[0 0 1200 500],'PaperUnits','points','PaperSize',[1200 500]); hold on
+lh = [];
+L = {};
+subplot(1,5,1:3), hold on
+plot(data.time,data.response,'k')
+lh=plot(data.time,fp,'r');
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+legend(lh,strcat('r^2=',oval(rsquare(fp,data.response),2)));
+
+subplot(1,5,4:5)
+t=1:333;
+Kr = filter_gamma2(p.Kr_tau1,p.Kr_n,p.Kr_tau2,p.Kr_A,t);
+t = t*mean(diff(data.time));
+plot(t,Kr,'r')
+xlabel('Filter Lag (s)')
+ylabel('Filter Amplitude (a.u.)')
+
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %% Version Info
 % The file that generated this document is called:

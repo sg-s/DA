@@ -1110,7 +1110,51 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% The quality of fit of this model is comparable to that of the non-parametric LN model, but does it correct for fast gain changes? Here we perform a gain analysis to check. 
 
+
+ph = [];
+
+history_lengths = (3*floor(1000*logspace(-1.5,1,30)/3))/1e3;
+example_history_length = 0.135;
+
+f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+
+clear x
+x.response = data.response;
+x.prediction = fp;
+x.stimulus = data.stimulus;
+x.time = data.time;
+x.filter_length = 199;
+
+if redo
+	[p_LN,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
+	s=abs(l-h);
+	s(p_LN(1,:)>0.05)=NaN;
+	[~,loc]=max(s);
+
+	% save it for later
+	RAModel.ehl = history_lengths(loc);
+	RAModel.p = p_LN;
+
+else
+	GainAnalysis4(x,history_lengths,RAModel.ehl,ph,RAModel.p);
+end
+
+xlabel(ph(3),'RA Prediction (Hz)')
+set(ph(4),'XScale','log')
+title(ph(4),paradigm_names{1})
+
+if being_published
+
+	snapnow;
+	delete(f2);
+end
 
 
 %% Version Info

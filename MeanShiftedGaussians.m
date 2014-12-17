@@ -455,11 +455,9 @@ end
 % this stores the LN model parameters for all the data
 if redo
 	clear LNModel
-	LNModel.K = [];
-	LNModel.H = []; % stores hill parameters
+	LNModel.p = []; % parameterised LN Model
 	LNModel.LinearFit = [];
 	LNModel.LNFit = [];
-	LNModel.H_domain = [];
 
 
 	for i = 1:length(detrended_data)
@@ -467,34 +465,30 @@ if redo
 		this_pid = detrended_data(i).stim;
 		time     = detrended_data(i).time;
 
+		clear p
+  		p.   tau1= 4.5591;
+  		p.    K_n= 4.9181;
+  		p.   tau2= 19.6875;
+  		p.      A= max(this_orn);
+  		p.      n= 2.4297;
+  		p.     Kd= mean(this_orn);
+  		p. offset= mean(this_orn);
+  		p.    K_A= 0.3354;
 
+  		% fit the model
+  		clear data
+  		data.stimulus = this_pid;
+  		data.response = this_orn;
+  		data.time = time;
+  		LNModel(i).p=FitModel2Data(@pLNModel,data,p);
 
-		[K,~,filtertime] = FindBestFilter(this_pid,this_orn,[],'filter_length=299;');
-		filtertime = filtertime*mean(diff(time));
-		K = K/max(K);
-		LinearFit = convolve(time,this_pid,K,filtertime) + mean(this_orn);
+  		% solve for best fit parameters
+  		[LNModel(i).LNFit,LNModel(i).K,LNModel(i).LinearFit] = pLNModel(this_pid,LNModel(i).p);
 
-		xdata = LinearFit(:);
-		ydata = this_orn(:);
-
-		ydata(isnan(xdata)) = [];
-		xdata(isnan(xdata)) = [];
-
-
-		fo=optimset('MaxFunEvals',1000,'Display','none');
-		x = lsqcurvefit(@hill4,[max(ydata) 2 2 0],xdata,ydata,[max(ydata)/100 -max(ydata) 1 0],[20*max(ydata) 10*max(ydata) 10 max(ydata)],fo);
-		LNFit = hill4(x,xdata);
 
 		% save all of this for later
-		LNModel(i).K = K;
-		LNModel(i).H = x;
-		LNModel(i).LinearFit = LinearFit;
-		LNModel(i).LNFit = LNFit;
-		LNModel(i).H_domain = xdata;
-		LNModel(i).H_range =  ydata;
 		LNModel(i).this_orn = this_orn;
-		LNModel(i).LNFit_r2 = rsquare(LNFit,ydata);
-		LNModel(i).LinearFit_r2 = rsquare(xdata,ydata);
+		LNModel(i).LNFit_r2 = rsquare(LNModel(i).LNFit,this_orn);
 	end
 
 	% calculate filters as in Baccus and Meister (zero mean, unit variance i/o)
@@ -531,9 +525,8 @@ end
 figure('outerposition',[0 0 1400 600],'PaperUnits','points','PaperSize',[1400 600]); hold on
 for i = 1:8
 	subplot(2,4,i), hold on
-	this_orn = LNModel(i).this_orn;
 	time = detrended_data(i).time;
-	plot(time,this_orn,'k');
+	plot(time,LNModel(i).this_orn,'k');
 	aa = min(time);
 	time = 3e-3*(1:length(LNModel(i).LNFit)) + aa;
 	lh=plot(time,LNModel(i).LNFit,'r');
@@ -559,15 +552,15 @@ figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 50
 subplot(1,2,1), hold on
 c = parula(length(LNModel));
 for i = 1:length(LNModel)
-	plot(filtertime,BMModel(i).K,'Color',c(i,:))
+	plot(3e-3*(1:length(LNModel(i).K)),LNModel(i).K,'Color',c(i,:))
 end
 xlabel('Filter Lag (s)')
 ylabel('Filter Amplitude (norm)')
 
 subplot(1,2,2), hold on
 for i = 1:length(LNModel)
-	x = sort(LNModel(i).H_domain);
-	plot(x,hill4(LNModel(i).H,x),'Color',c(i,:))
+	x = sort(LNModel(i).LinearFit);
+	plot(x,hill([LNModel(i).p.A LNModel(i).p.Kd LNModel(i).p.n],x),'Color',c(i,:))
 end
 xlabel('Filter Output (a.u.)')
 ylabel('ORN Firing Rate (Hz)')
@@ -577,6 +570,69 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%%
+% Why does the LN model do so poorly in higher stimulus conditions? Two possibilities are: 1) there is something interesting going on in higher doses, making the LN model fit less informative or 2) because the deviations in the signal are smaller in higher doses, the poor fit arises from counting noise. To figure out what's going on, we take the filter from the highest concentration case and use it to predict the response to the lowest concentration:
+ 
+clear p ph L
+p=LNModel(8).p;
+p.A = 41.3682;
+p.offset = 20.0278;
+p.n = 4.4;
+p.Kd = 20;
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(detrended_data(1).time,detrended_data(1).resp,'k');
+ph(1)=plot(detrended_data(1).time,LNModel(1).LNFit,'r');
+ph(2)=plot(detrended_data(1).time,pLNModel(detrended_data(1).stim,p),'g');
+r2 = rsquare(pLNModel(detrended_data(1).stim,p),detrended_data(1).resp);
+L = {};
+L{1} = oval(LNModel(1).LNFit_r2,2);
+L{2} = oval(r2,2);
+legend(ph,L)
+
+set(gca,'XLim',[40 50])
+
+xlabel('Time (s)')
+ylabel('Firing Rate (Hz)')
+
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% The fit is not totally horrible, and is much better than the fit to the responses to higher concentrations. 
+
+%%
+% There seems to be a systematic variation of the filter shape with odor dose. In the following plot, we plot the location of the maximum and the minimum of the filters as a function of stimulus. 
+
+[~,max_loc]=max(reshape([LNModel.K],300,8));
+[~,min_loc]=min(reshape([LNModel.K],300,8));
+ms = mean(reshape([detrended_data.stim],length(detrended_data(1).stim),8));
+
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(ms,max_loc*3e-3,'r-+')
+plot(ms,min_loc*3e-3,'k-+')
+legend({'Maximum','Minimum'})
+
+set(gca,'YScale','log')
+ylabel('Filter Peaks')
+xlabel('Mean Stimulus')
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
+% We see a similar plot to the auto-correlation analysis. Except for the first point, everything seems to be getting faster with increasing stimulus. 
+
 
  % ######      ###    #### ##    ##     ######  ##     ##    ###    ##    ##  ######   ########  ######  
 % ##    ##    ## ##    ##  ###   ##    ##    ## ##     ##   ## ##   ###   ## ##    ##  ##       ##    ## 
@@ -599,8 +655,7 @@ for i = 1:8
 	this_pid = this_pid - mean(this_pid);
 	this_orn = this_orn - mean(this_orn);
 	time = 3e-3*(1:length(this_pid));
-	%this_orn = this_orn/std(this_orn);
-
+	
 	% recompute linear fits
 	BMModel(i).LinearFit = convolve(time,this_pid,K,filtertime);
 
@@ -703,7 +758,7 @@ for i = 1 % only doing first because there is a trend in all others
 
 	clear x
 	x.response = LNModel(i).this_orn(1:end-32); % the 32 is to account for the acausal part of the filter
-	x.prediction = LNModel(i).LNFit;
+	x.prediction = LNModel(i).LNFit(1:end-32);
 	x.stimulus = detrended_data(i).stim(1:end-32); 
 	x.time = detrended_data(i).time(1:end-32);
 	x.filter_length = 299;
@@ -716,10 +771,10 @@ for i = 1 % only doing first because there is a trend in all others
 
 		% save it for later
 		LNModel(i).ehl = history_lengths(loc);
-		LNModel(i).p = p_LN;
+		LNModel(i).pb = p_LN;
 
 	else
-		GainAnalysis4(x,history_lengths,LNModel(i).ehl,ph,LNModel(i).p);
+		GainAnalysis4(x,history_lengths,LNModel(i).ehl,ph,LNModel(i).pb);
 	end
 
 	xlabel(ph(3),'LN Prediction (Hz)')

@@ -619,7 +619,7 @@ plot(ms,max_loc*3e-3,'r-+')
 plot(ms,min_loc*3e-3,'k-+')
 legend({'Maximum','Minimum'})
 
-set(gca,'YScale','log')
+set(gca,'XScale','log')
 ylabel('Filter Peaks')
 xlabel('Mean Stimulus')
 
@@ -655,11 +655,12 @@ for i = 1:8
 	this_pid = this_pid - mean(this_pid);
 	this_orn = this_orn - mean(this_orn);
 	time = 3e-3*(1:length(this_pid));
-	
+
 	% recompute linear fits
 	BMModel(i).LinearFit = convolve(time,this_pid,K,filtertime);
 
-	scatter(BMModel(i).LinearFit,this_orn,32,[0.8 0.8 0.8],'filled')
+	%scatter(BMModel(i).LinearFit,this_orn,32,[0.8 0.8 0.8],'filled')
+	plot(BMModel(i).LinearFit,this_orn,'.','Color',[.8 .8 .8]) 
 
 	% bin the data
 	minx = min(BMModel(i).LinearFit);
@@ -708,7 +709,7 @@ figure('outerposition',[0 0 800 500],'PaperUnits','points','PaperSize',[1000 500
 errorbar(mean(vertcat(detrended_data.stim)'),[BMModel.gain],[BMModel.gain_err])
 xlabel('Stimulus Mean (V)')
 ylabel('Gain (Hz/V)')
-set(gca,'XScale','log')
+set(gca,'XScale','log','YScale','log')
 
 PrettyFig;
 if being_published
@@ -840,41 +841,6 @@ end
 disp(p)
 
 
-% %%
-% % What if we fit the DA model only to the flickering part of the stimulus? In the following figure, we plot the best fit DA Model to this part. 
-
-% clear data
-% a = floor(12/3e-3);
-% z = floor(55/3e-3);
-% data.response = this_resp(a:z);
-% data.time = 3e-3*(1:length(this_resp(a:z)));
-% data.stimulus = this_pid(a:z);
-
-
-% x= [160.3027    5.4844    0.0012    0.9590   23.7656   21.4786    5.2656 -0.0013];
-% p = ValidateDAParameters2(x);
-% R = DA_integrate2(data.stimulus,p);
-
-% figure('outerposition',[0 0 1400 700],'PaperUnits','points','PaperSize',[1400 700]); hold on
-% plot(12+data.time,data.response,'k')
-% lh=plot(12+data.time,R,'r');
-% xlabel('Time (s)')
-% ylabel('Firing Rate (Hz)')
-% r = rsquare(data.response(300:end),R(300:end));
-% legend(lh,strcat('r^{2}=',oval(r,2)))
-% title('Best Fit DA Model Prediction (3%)')
-% PrettyFig;
-
-% if being_published
-
-% 	snapnow;
-% 	delete(gcf);
-% end
-
-% %%
-% % The parameters of this DA model are:
-% disp(p)
-
 %%
 % In the following figure, we attempt to fit a DA model the case where the mean of the stimulus is highest. For this, we do two different things: first, we fit a DA model to the data directly, as before. Second, we use DA model parameters from the first fit (to the low stimulus) and use it to predict the response to the high fit. 
 
@@ -981,6 +947,15 @@ if being_published
 	delete(gcf)
 end
 
+%            ########     ###       ##     ##  #######  ########  ######## ##       
+%            ##     ##   ## ##      ###   ### ##     ## ##     ## ##       ##       
+%            ##     ##  ##   ##     #### #### ##     ## ##     ## ##       ##       
+%            ########  ##     ##    ## ### ## ##     ## ##     ## ######   ##       
+%            ##   ##   #########    ##     ## ##     ## ##     ## ##       ##       
+%            ##    ##  ##     ##    ##     ## ##     ## ##     ## ##       ##       
+%            ##     ## ##     ##    ##     ##  #######  ########  ######## ######## 
+
+
 %% Fitting a Receptor-Adaptation Model
 % In this section, we consider a class of models where the affinity of the receptor changes in a stimulus-driven fashion. Thierry suggested the following functional form:
 % 
@@ -997,13 +972,12 @@ end
 %%
 % Instead I consider the following functional form:
 %
-% $$f=N\left(K_{r}\otimes\frac{s(t)}{1+K_{a}\otimes s(t)}\right)$$
+% $$f=N\left(K_{r}\otimes\frac{s(t)}{1+\beta*K_{a}\otimes s(t)}\right)$$
 %
 % Here, if we let $A,k\rightarrow\infty$ and set $n=1$, the non-linearity drops out. Furthermore, if we let the amplitude of the adaptation filter $K_{a}\rightarrow0$, the "adapting" part of the model drops away and we are left with the simple linear model. 
 
 %%
-% Armed with this intuition, we attempt to fit the data (the response to the lowest dose) with this reduced model, which should give us, essentially, a simpler linear fit to the data. The following figure shows such a fit: where we neglect the adaptation filter and the output nonlinearity. 
- 
+% Armed with this intuition, we attempt to fit the data (the response to the lowest dose) with this reduced model, which should give us, essentially, a simpler LN fit to the data. The following figure shows such a fit: where we neglect the adaptation filter.
 
 a = 5000;
 z = 18000;
@@ -1018,30 +992,34 @@ data.time = time(a:z);
 
 
 clear p
-p.Kr_tau1= 8.4062;
-p.   Kr_n= 2.2969;
-p.Kr_tau2= 54.3438;
-p.   Kr_A= 1.6875;
-p.Ka_tau1= 15;
-p.   Ka_n= 2;
-p.Ka_tau2= 25;
-p.   Ka_A= -1;
-p.      A= -1;
-p.      n= 1;
-p.     Kd= 2;
-p. offset= 19.9375;
-%				 Kr-----------------|-----Ka ---------------|----Hill
-lb = mat2struct([1   1  2  1e-3 		1 	 1 2    -2          -2    1   1    0],fieldnames(p));
-ub = mat2struct([100 5 200 1e3 			100  5 200  -1      -1    1   2    1e2],fieldnames(p));
+p.   tau1= 5.9218;
+p.    K_n= 3.6250;
+p.   tau2= 27.5625;
+p.    K_A= 0.6094;
+p. a_tau1= 10;
+p.    a_n= 1.3750;
+p. a_tau2= 51.3750;
+p.    a_A= -1;
+p.beta= 0;
+p.      A= 51.0312;
+p.      n= 2;
+p.     Kd= 14;
+p. offset= 11.9479;
+
+%				 Kr-----------------|-----Ka ---------------   |----Hill
+lb = mat2struct([1   1  2  1e-3 		1 	 1 2    -2      -1    1      1   1      0],fieldnames(p));
+ub = mat2struct([100 5 200 1e3 			100  5 200  -1      0     1e3    5   1e3    1e2],fieldnames(p));
 
 %p=FitModel2Data(@ReceptorAdaptationModel,data,p,lb,ub);
-[fp,Sigma,eta]=ReceptorAdaptationModel(data.stimulus,p);
 
 
-figure('outerposition',[0 0 1200 500],'PaperUnits','points','PaperSize',[1200 500]); hold on
+fp=ReceptorAdaptationModel(data.stimulus,p);
+
+figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
+
 lh = [];
 L = {};
-subplot(1,5,1:3), hold on
+subplot(2,2,1:2), hold on
 plot(data.time,data.response,'k')
 lh=plot(data.time,fp,'r');
 xlabel('Time (s)')
@@ -1049,48 +1027,57 @@ ylabel('Firing rate (Hz)')
 legend(lh,strcat('r^2=',oval(rsquare(fp,data.response),2)));
 set(gca,'XLim',[35 55])
 
-subplot(1,5,4:5)
-t=1:333;
-Kr = filter_gamma2(p.Kr_tau1,p.Kr_n,p.Kr_tau2,p.Kr_A,t);
+subplot(2,2,3)
+t=1:300;
+Kr = filter_gamma2(p.tau1,p.K_n,p.tau2,p.K_A,t);
 t = t*mean(diff(data.time));
 plot(t,Kr,'r')
 xlabel('Filter Lag (s)')
 ylabel('Filter Amplitude (a.u.)')
 
+subplot(2,2,4)
+x = [p.A p.Kd p.n];
+f = hill(x,sort(shat2));
+plot(sort(shat2),f,'r')
+ylabel('Output non-linearity (Hz)')
+xlabel('Filter Output (a.u.)')
 
 PrettyFig;
+
 if being_published
 	snapnow
 	delete(gcf)
 end
 
 %%
-% OK, that looks good. Now we allow a nonlinearity too, and fit the model again. This is equivalent to a LN model fit. 
+% OK, that looks good. Now, we remove all constraints from the model and allow the adapting filter to play a  role too. 
 
 clear p
-p.Kr_tau1= 6.5000;
-p.   Kr_n= 3.0840;
-p.Kr_tau2= 46.7267;
-p.   Kr_A= 0.0957;
-p.Ka_tau1= 15;
-p.   Ka_n= 2;
-p.Ka_tau2= 25;
-p.   Ka_A= -1;
-p.      A= 42.6015;
-p.      n= 1.6114;
-p.     Kd= 1.0100;
-p. offset= 5.6211;
-%				 Kr-----------------|-----Ka ---------------|----Hill
-lb = mat2struct([1   1  2  1e-3 		1 	 1 2    -2        1      1 1e-2     0],fieldnames(p));
-ub = mat2struct([100 5 200 1e3 			100  5 200  -1        1e3    5 1e2      1e2],fieldnames(p));
+p.   tau1= 5.9218;
+p.    K_n= 3.6250;
+p.   tau2= 27.5625;
+p.    K_A= 0.6094;
+p. a_tau1= 10;
+p.    a_n= 1.3750;
+p. a_tau2= 51.3750;
+p.    a_A= -1;
+p.beta= 1e-4;
+p.      A= 51.0312;
+p.      n= 2;
+p.     Kd= 14;
+p. offset= 11.9479;
+
+%				 Kr-----------------|-----Ka ---------------   |----Hill
+lb = mat2struct([1   1  2  0 		1 	 1 2    0        -1        1      1   1      0],fieldnames(p));
+ub = mat2struct([100 5 200 1        100  5 200  1e-6     1        1e3    5   1e3    1e2],fieldnames(p));
 %p=FitModel2Data(@ReceptorAdaptationModel,data,p,lb,ub);
 
-[fp,Sigma,eta]=ReceptorAdaptationModel(data.stimulus,p);
+fp=ReceptorAdaptationModel(data.stimulus,p);
 
-figure('outerposition',[0 0 1200 500],'PaperUnits','points','PaperSize',[1200 500]); hold on
+figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
 lh = [];
 L = {};
-subplot(1,5,1:3), hold on
+subplot(2,2,1:2), hold on
 plot(data.time,data.response,'k')
 lh=plot(data.time,fp,'r');
 xlabel('Time (s)')
@@ -1098,117 +1085,26 @@ ylabel('Firing rate (Hz)')
 legend(lh,strcat('r^2=',oval(rsquare(fp,data.response),2)));
 set(gca,'XLim',[35 55])
 
-subplot(1,5,4:5)
-t=1:333;
-Kr = filter_gamma2(p.Kr_tau1,p.Kr_n,p.Kr_tau2,p.Kr_A,t);
+subplot(2,2,3), hold on
+t=1:300;
+Kr = filter_gamma2(p.tau1,p.K_n,p.tau2,p.K_A,t);
+Ka = p.beta*filter_gamma2(p.a_tau1,p.a_n,p.a_tau2,p.a_A,t);
 t = t*mean(diff(data.time));
 plot(t,Kr,'r')
-xlabel('Filter Lag (s)')
-ylabel('Filter Amplitude (a.u.)')
-
-PrettyFig;
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-
-%%
-% OK, that looks good too. Now, we remove all constraints from the model and allow the adapting filter to play a  role too. 
-
-clear p
-p.Kr_tau1= 6.2051;
-p.   Kr_n= 3.5352;
-p.Kr_tau2= 96.2482;
-p.   Kr_A= 0.0937;
-p.Ka_tau1= 59.5625;
-p.   Ka_n= 0.7539;
-p.Ka_tau2= 292.2656;
-p.   Ka_A= 0.0049;
-p.      A= 44.4394;
-p.      n= 1.7090;
-p.     Kd= 1.0100;
-p. offset= 5.1543;
-%				 Kr-----------------|-----Ka ---------------|----Hill
-lb = mat2struct([1   1  2  1e-3 		1 	 .1 2    1e-3        1      1 1e-2     0],fieldnames(p));
-ub = mat2struct([100 5 200 1e3 			100  5  500  1e3        1e3    5 1e2      1e2],fieldnames(p));
-%p=FitModel2Data(@ReceptorAdaptationModel,data,p,lb,ub);
-
-[fp,Sigma,eta]=ReceptorAdaptationModel(data.stimulus,p);
-
-figure('outerposition',[0 0 1200 500],'PaperUnits','points','PaperSize',[1200 500]); hold on
-lh = [];
-L = {};
-subplot(1,5,1:3), hold on
-plot(data.time,data.response,'k')
-lh=plot(data.time,fp,'r');
-xlabel('Time (s)')
-ylabel('Firing rate (Hz)')
-legend(lh,strcat('r^2=',oval(rsquare(fp,data.response),2)));
-set(gca,'XLim',[35 55])
-
-subplot(1,5,4:5), hold on
-t=1:1e3;
-Kr = filter_gamma2(p.Kr_tau1,p.Kr_n,p.Kr_tau2,p.Kr_A,t);
-Ka = filter_gamma2(p.Ka_tau1,p.Ka_n,p.Ka_tau2,p.Ka_A,t);
-t = t*mean(diff(data.time));
-plot(t,Kr/max(Kr),'r')
-plot(t,Ka/max(Ka),'b')
+plot(t,Ka,'b')
 legend('Response','Adaptation')
 xlabel('Filter Lag (s)')
-ylabel('Filter Amplitude (norm)')
+ylabel('Filter Amplitude (a.u.)')
 
+subplot(2,2,4)
+x = [p.A p.Kd p.n];
+f = hill(x,sort(shat2));
+plot(sort(shat2),f)
 
 PrettyFig;
 if being_published
 	snapnow
 	delete(gcf)
-end
-
-%%
-% The quality of fit of this model is comparable to that of the non-parametric LN model, but does it correct for fast gain changes? Here we perform a gain analysis to check. 
-
-
-ph = [];
-
-history_lengths = (3*floor(1000*logspace(-1.5,1,30)/3))/1e3;
-example_history_length = 0.135;
-
-f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-ph(3) = subplot(1,2,1); hold on 
-axis square
-ph(4) = subplot(1,2,2); hold on
-
-
-clear x
-x.response = data.response;
-x.prediction = fp;
-x.stimulus = data.stimulus;
-x.time = data.time;
-x.filter_length = 199;
-
-if redo
-	[p_LN,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
-	s=abs(l-h);
-	s(p_LN(1,:)>0.05)=NaN;
-	[~,loc]=max(s);
-
-	% save it for later
-	RAModel.ehl = history_lengths(loc);
-	RAModel.p = p_LN;
-
-else
-	GainAnalysis4(x,history_lengths,RAModel.ehl,ph,RAModel.p);
-end
-
-xlabel(ph(3),'RA Prediction (Hz)')
-set(ph(4),'XScale','log')
-title(ph(4),paradigm_names{1})
-
-if being_published
-
-	snapnow;
-	delete(f2);
 end
 
 

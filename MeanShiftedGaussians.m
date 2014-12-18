@@ -842,6 +842,116 @@ disp(p)
 
 
 %%
+% What if we attempt to fit the DA model just to the flickering bits of the data? 
+
+a = 5000;
+z = 18000;
+
+plot_these=find(strcmp(paradigm_names{1}, combined_data.paradigm));
+this_orn=mean2(combined_data.fA(:,plot_these));
+this_pid=mean2(combined_data.PID(plot_these,:));
+time = 3e-3*(1:length(this_orn));
+data.response = this_orn(a:z);
+data.stimulus = this_pid(a:z);
+data.time = time(a:z);
+
+clear p
+p.       A= 99.4375;
+p.       B= 2.4141;
+p.       C= 0.0012;
+p.   tau_y= 4.2539;
+p.     n_y= 5;
+p.   tau_z= 34.5391;
+p.     n_z= 2.5781;
+p.      s0= -0.3148;
+lb  = [1           1e-3        0    	 0        1  0        1       -min(data.stimulus)];
+ub  = [1e4         1e3         1         100      5  200      5       max(data.stimulus)];
+
+% lb = ValidateDAParameters2(lb);
+% ub = ValidateDAParameters2(ub);
+
+%p=FitModel2Data(@DA_integrate2,data,p,lb,ub);
+
+R = DA_integrate2(data.stimulus,p);
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,4,1:3), hold on
+plot(data.time,data.response,'k')
+lh=plot(data.time,R,'r');
+xlabel('Time (s)')
+ylabel('Firing Rate (Hz)')
+r = rsquare(data.response,R);
+legend(lh,strcat('r^{2}=',oval(r,2)))
+title('Best Fit DA Model Prediction (3%)')
+
+subplot(1,4,4), hold on
+t = 1:333;
+Ky = filter_gamma(p.tau_y,p.n_y,1,t);
+Kz = filter_gamma(p.tau_z,p.n_z,1,t);
+t = t*mean(diff(data.time));
+plot(t,Ky,'r')
+plot(t,Kz,'b')
+legend('K_y','K_z')
+
+
+PrettyFig;
+
+if being_published
+
+	snapnow;
+	delete(gcf);
+end
+
+%%
+% The fit looks pretty good. Now we check if the DA model can account for the fast gain correction we observed earlier. 
+
+ph = [];
+
+history_lengths = (3*floor(1000*logspace(-1.5,1,30)/3))/1e3;
+example_history_length = 0.135;
+
+f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+
+clear x
+x.response = data.response; % the 32 is to account for the acausal part of the filter
+x.prediction = R;
+x.stimulus = data.stimulus; 
+x.time = data.time;
+x.filter_length = 299;
+
+if redo
+	[p_LN,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
+	s=abs(l-h);
+	s(p_LN(1,:)>0.05)=NaN;
+	[~,loc]=max(s);
+
+	% save it for later
+	DAModel.ehl = history_lengths(loc);
+	DAModel.pb = p_LN;
+
+else
+	GainAnalysis4(x,history_lengths,DAModel.ehl,ph,DAModel.pb);
+end
+
+xlabel(ph(3),'LN Prediction (Hz)')
+set(ph(4),'XScale','log')
+title(ph(4),paradigm_names{1})
+
+if being_published
+
+	snapnow;
+	delete(f2);
+end
+
+
+
+
+
+%%
 % In the following figure, we attempt to fit a DA model the case where the mean of the stimulus is highest. For this, we do two different things: first, we fit a DA model to the data directly, as before. Second, we use DA model parameters from the first fit (to the low stimulus) and use it to predict the response to the high fit. 
 
 %%

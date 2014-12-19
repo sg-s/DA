@@ -1123,7 +1123,7 @@ ub = mat2struct([100 5 200 1e3 			100  5 200  -1      0     1e3    5   1e3    1e
 %p=FitModel2Data(@ReceptorAdaptationModel,data,p,lb,ub);
 
 
-fp=ReceptorAdaptationModel(data.stimulus,p);
+[fp,shat,shat2]=ReceptorAdaptationModel(data.stimulus,p);
 
 figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
 
@@ -1209,7 +1209,7 @@ ylabel('Filter Amplitude (a.u.)')
 subplot(2,2,4)
 x = [p.A p.Kd p.n];
 f = hill(x,sort(shat2));
-plot(sort(shat2),f)
+plot(sort(shat2),f,'r')
 
 PrettyFig;
 if being_published

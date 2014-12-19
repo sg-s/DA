@@ -77,7 +77,7 @@ R(t)=\frac{\alpha K_{y}\otimes s(t)}{1+\beta\left(K_{z}\otimes s(t)\right)}+s_{0
 \begin_layout Standard
 \begin_inset Formula 
 \[
-R(t)=N\left(Kr\otimes(\hat{s}(t)-\bar{\hat{s}}(t))+s_{0}\right)
+R(t)=N\left(K_{r}\otimes(\hat{s}(t)-\bar{\hat{s}}(t))+s_{0}\right)
 \]
 
 \end_inset
@@ -89,6 +89,17 @@ R(t)=N\left(Kr\otimes(\hat{s}(t)-\bar{\hat{s}}(t))+s_{0}\right)
 \begin_inset Formula 
 \[
 \hat{s}(t)=\frac{s(t)}{1+\beta K_{a}(s(t)-\bar{s}(t))}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+R(t)=\frac{N\left(K_{r}\otimes(s(t)-\bar{s}(t))+s0\right)}{1+\beta K_{a}(s(t)-\bar{s}(t))}
 \]
 
 \end_inset

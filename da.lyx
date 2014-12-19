@@ -96,5 +96,27 @@ R(t)=N\left(K_{r}\otimes(\hat{s}(t)-\bar{\hat{s}}(t))+s_{0}\right)
 
 \end_layout
 
+\begin_layout Standard
+\begin_inset Formula 
+\[
+R(t)=N\left(K_{r}\otimes(s(t)-\bar{s}(t))+s_{0}\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+R(t)=\frac{N\left(K_{r}\otimes(s(t)-\bar{s}(t))+s_{0}\right)}{1+\beta K_{a}(s(t)-\bar{s}(t))}
+\]
+
+\end_inset
+
+
+\end_layout
+
 \end_body
 \end_document

@@ -66,7 +66,7 @@ Forumlae for Dynamical Adaptation Project
 \begin_layout Standard
 \begin_inset Formula 
 \[
-R(t)=\frac{\alpha K_{y}\otimes s(t)}{1+\beta\left(\gamma K_{y}\otimes s(t)+(1-\gamma)K_{z}\otimes s(t)\right)}+s_{0}
+R(t)=\frac{\alpha K_{y}\otimes s(t)}{1+\beta\left(K_{z}\otimes s(t)\right)}+s_{0}
 \]
 
 \end_inset

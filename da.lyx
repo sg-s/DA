@@ -140,5 +140,49 @@ R(t)=N_{i}\left(K_{r}\otimes\hat{s}(t)\right)
 
 \end_layout
 
+\begin_layout Standard
+\begin_inset Formula 
+\[
+R(t)=N\left(K_{r}\otimes s(t)\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+N(x)=\frac{x^{n}}{x^{n}+\kappa^{n}}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\kappa(t)=\kappa_{0}+\beta\left[\gamma K_{o,s}\otimes s(t)+\left(1-\gamma\right)K_{o,r}\otimes r(t)\right]
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+r(t)=\frac{\alpha K_{r}\otimes s(t)}{1+\beta\left[\gamma K_{o,s}\otimes s(t)+\left(1-\gamma\right)K_{o,r}\otimes r(t)\right]}
+\]
+
+\end_inset
+
+
+\end_layout
+
 \end_body
 \end_document

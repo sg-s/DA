@@ -119,6 +119,28 @@ R(t)=\frac{N\left(K_{r}\otimes(s(t)-\bar{s}(t))+s_{0}\right)}{1+\beta K_{a}\otim
 \end_layout
 
 \begin_layout Standard
+\begin_inset Formula 
+\[
+R(t)=N_{i}\left(K_{r}\otimes\hat{s}(t)\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+\hat{s}(t)=N_{o}\left(s(t)\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 
 \end_layout
 

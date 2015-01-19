@@ -12,11 +12,11 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [R,y,z] = DA_Modelv2(S,p)
+function [R,y,z] = DAModelv2(S,p)
 
 switch nargin
 case 0
-	help DA_Model
+	help DAModelv2
 	return
 case 1
 	error('Not enough input arguments')

@@ -24,26 +24,33 @@ end
 %%
 % The odor stimulus looks like this (different colours are different standard deviations of the exponentiated Gaussians):
 
+load('/local-data/DA-paper/large-variance-flicker/2015_01_22_CS_F1_ab3_3_EtAc.mat')
 
-load('/local-data/DA-paper/natural-flickering/2015_01_19_large_variance_flickering.mat')
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-haz_data = find_data(data);
-time = 1e-4*(1:length(data(haz_data(1)).PID));
-for i = 1:length(haz_data)-1
-	plot(time,mean2(data(haz_data(i)).PID))
-end
-
-set(gca,'XLim',[40 60])
+figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
+subplot(1,8,1:6), hold on
+time = 1e-4*(1:length(data(6).PID));
+plot(time,mean2(data(6).PID),'k')
+set(gca,'XLim',[10 60])
 xlabel('Time (s)')
 ylabel('PID (V)')
 
+subplot(1,8,7:8), hold on
+r = rsquare(data(6).PID,data(6).PID);
+imagescnan(r)
+caxis([0 1])
+colorbar
+axis image
+axis off
+title(strcat('min r^2=',oval(min(min(r)),2)))
+
 PrettyFig;
+
 if being_published
 	snapnow
 	delete(gcf)
 end
 
-load('/local-data/DA-paper/large-variance-flicker/2015_01_22_CS_F1_ab3_3_EtAc.mat')
+
 [fA,tA] = spiketimes2f(spikes(6).A,time);
 fA = mean2(fA);
 PID = interp1(time,mean2(data(6).PID),tA);

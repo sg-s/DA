@@ -216,7 +216,56 @@ end
 %%
 % In conclusion, we tried to get the filter in two different ways, and we see that the filter inexplicably lacks a negative lobe. 
 
+%%
+% What happens when we explicitly specify a filter with a negative lobe? For example, what happens if we use a filter extracted from Gaussian noise with this data? How well does it perform? 
+
+p.  tau1= 3*5.0122;
+p.   K_n= 4.4572;
+p.  tau2= 3*20.3750;
+p.     A= 41.3682;
+p.     n= 4.4297;
+p.    Kd= 20.0591;
+p.offset= 20.0278;
+p.   K_A= 0.3491;
+
+t = 1:1e3;
+K = filter_gamma2(p.tau1,p.K_n,p.tau2,p.K_A,t);
+t = t*mean(diff(tA));
+fp = filter(K,1,PID);
+
+% trivial scaling
+fp = fp + 65.5413;
+fp = fp*0.1492;
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,4,1:3), hold on
+plot(tA,fA,'k')
+l=plot(tA,fp,'r');
+r2 = rsquare(fp,fA);
+legend(l,strcat('r^2=',oval(r2,3)))
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+
+subplot(1,4,4), hold on
+plot(t,K,'r')
+xlabel('Filter Lag (s)')
+ylabel('Filter (norm.)')
+title('Filter from Gaussian Noise')
+
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
 return
+
+
+
+
+
 
 
 p.  tau1= 0.2300;

@@ -45,10 +45,13 @@ title(strcat('min r^2=',oval(min(min(r)),2)))
 
 subplot(2,8,1:6), hold on
 time = 1e-4*(1:length(data(6).MFC200));
-plot(time,mean2(data(6).MFC200),'k')
+dil = mean2(data(6).MFC200)*40; % in  mL/min
+dil = dil./(dil + 2000);
+dil = dil*100;
+plot(time,dil,'k')
 set(gca,'XLim',[10 60])
 xlabel('Time (s)')
-ylabel('MFC Flow Signal (V)')
+ylabel('Dilution (%)')
 
 subplot(2,8,7:8), hold on
 r = rsquare(data(6).MFC200);
@@ -287,21 +290,19 @@ end
 % In this section, we look at gain changes in the ORN. We do so, first, by dividing the instantaneous firing rate by the linear prediction. 
 
 figure('outerposition',[0 0 1400 750],'PaperUnits','points','PaperSize',[1400 750]); hold on
-subplot(3,1,1), hold on
+subplot(2,1,1), hold on
 plot([-1 61],[1 1],'k--')
 plot(tA,fA./fp_normal,'r')
 ylabel('Gain')
+title('from Rev. corr. filter')
 
-subplot(3,1,2), hold on
+subplot(2,1,2), hold on
 plot([-1 61],[1 1],'k--')
 plot(tA,fA./fp_xcorr,'r')
 ylabel('Gain')
-
-subplot(3,1,3), hold on
-plot([-1 61],[1 1],'k--')
-plot(tA,fA./fp_gaussian_K','r')
-ylabel('Gain')
+title('from cross corr. filter')
 xlabel('Time (s)')
+
 
 PrettyFig;
 if being_published

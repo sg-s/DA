@@ -127,9 +127,94 @@ end
 % There are some weird things here. First, the filter estimation doesn't seem to work very well (none of the filters look particularly clean.). Furthermore, the filter, when we can sort of pull it out, seems to have only 1 lobe, and no negative lobe. This is strange, as we expect that in the presence of background, the negative lobe of the filter would get larger. 
 
 %%
+% Even though this looks weird, we will use this filter to make a prediction of the response:
+
+fp  =convolve(tA,PID,K,filtertime);
+fp = fp + 38.8;
+fp = fp*.5067;
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,4,1:3), hold on
+plot(tA,fA,'k')
+l=plot(tA,fp,'r');
+r2 = rsquare(fp,fA);
+legend(l,strcat('r^2=',oval(r2,2)))
+xlabel('Time (s)')
+ylabel('Firing Rate (Hz)')
+
+subplot(1,4,4), hold on
+plot(filtertime,K,'r')
+xlabel('Filter Lag (s)')
+ylabel('Filter (norm.)')
+title('Cross Correlation')
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
 % To figure out what's going on here, we will inspect the cross correlation function between the stimulus and the response: 
 
+[xc,tc]=xcorr(fA-mean(fA),PID-mean(PID));
+xc = xc/max(xc);
+tc = tc*mean(diff(tA));
 
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,4,1:3), hold on
+plot(tc,xc)
+xlabel('Lag (s) (PID->Firing rate)')
+ylabel('Cross-correlation')
+
+subplot(1,4,4), hold on
+plot(tc,xc)
+set(gca,'XLim',[-1 1])
+xlabel('Lag (s)')
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% The Firing rate lags the PID trace by 65ms. 
+
+%%
+% Now, we use the cross correlation function as a kernel and build a linear model around this. The following figure shows how well this linear model performs: 
+
+K=(xc(tc>-0.1 & tc < 1));
+filtertime = (tc(tc>-0.1 & tc < 1));
+fp  =convolve(tA,PID,K,filtertime);
+
+fp = fp +293.3613;
+fp  =fp*0.0670;
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,4,1:3), hold on
+plot(tA,fA,'k')
+l=plot(tA,fp,'r');
+r2 = rsquare(fp,fA);
+legend(l,strcat('r^2=',oval(r2,2)))
+xlabel('Time (s)')
+ylabel('Firing Rate (Hz)')
+
+subplot(1,4,4), hold on
+plot(filtertime,K,'r')
+xlabel('Filter Lag (s)')
+ylabel('Filter (norm.)')
+title('Cross Correlation')
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% In conclusion, we tried to get the filter in two different ways, and we see that the filter inexplicably lacks a negative lobe. 
 
 return
 

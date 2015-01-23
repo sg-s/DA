@@ -26,16 +26,32 @@ end
 
 load('/local-data/DA-paper/large-variance-flicker/2015_01_22_CS_F1_ab3_3_EtAc.mat')
 
-figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
-subplot(1,8,1:6), hold on
+figure('outerposition',[0 0 1400 1000],'PaperUnits','points','PaperSize',[1400 1000]); hold on
+subplot(2,8,9:14), hold on
 time = 1e-4*(1:length(data(6).PID));
 plot(time,mean2(data(6).PID),'k')
 set(gca,'XLim',[10 60])
 xlabel('Time (s)')
 ylabel('PID (V)')
 
-subplot(1,8,7:8), hold on
-r = rsquare(data(6).PID,data(6).PID);
+subplot(2,8,15:16), hold on
+r = rsquare(data(6).PID);
+imagescnan(r)
+caxis([0 1])
+colorbar
+axis image
+axis off
+title(strcat('min r^2=',oval(min(min(r)),2)))
+
+subplot(2,8,1:6), hold on
+time = 1e-4*(1:length(data(6).MFC200));
+plot(time,mean2(data(6).MFC200),'k')
+set(gca,'XLim',[10 60])
+xlabel('Time (s)')
+ylabel('MFC Flow Signal (V)')
+
+subplot(2,8,7:8), hold on
+r = rsquare(data(6).MFC200);
 imagescnan(r)
 caxis([0 1])
 colorbar

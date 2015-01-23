@@ -72,7 +72,67 @@ fA = mean2(fA);
 PID = interp1(time,mean2(data(6).PID),tA);
 
 %%
-% The following figure shows the response of 1 ab3A neuron to this stimulus, with a best fit LN Model. 
+% The following figure shows the response of 1 ab3A neuron to this stimulus. 
+
+
+figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+subplot(2,1,1), hold on
+plot(tA,PID,'k')
+xlabel('Time (s)')
+ylabel('PID (V)')
+subplot(2,1,2), hold on
+plot(tA,fA,'k')
+ylabel('Firing Rate (Hz)')
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% Now we will attempt to find the best fit filter from the stimulus to the data. The following figure shows the filter backed out of this data, for different values of regularisation (scaled by the mean eigenvalue of the covariance matrix). 
+
+
+figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
+subplot(1,3,1), hold on
+[K, ~, filtertime] = FindBestFilter(PID,fA,[],'regmax=0;','regmin=0;','filter_length=599;','offset=49;');
+filtertime = filtertime*mean(diff(tA));
+plot(filtertime,K)
+title('reg = 0')
+xlabel('Filter Lag (s)')
+
+subplot(1,3,2), hold on
+[K, ~, filtertime] = FindBestFilter(PID,fA,[],'regmax=0.1;','regmin=0.1;','filter_length=599;','offset=49;');
+filtertime = filtertime*mean(diff(tA));
+plot(filtertime,K)
+title('reg = 0.1')
+xlabel('Filter Lag (s)')
+
+subplot(1,3,3), hold on
+[K, ~, filtertime] = FindBestFilter(PID,fA,[],'regmax=1;','regmin=1;','filter_length=599;','offset=49;');
+filtertime = filtertime*mean(diff(tA));
+plot(filtertime,K)
+title('reg = 1')
+xlabel('Filter Lag (s)')
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
+% There are some weird things here. First, the filter estimation doesn't seem to work very well (none of the filters look particularly clean.). Furthermore, the filter, when we can sort of pull it out, seems to have only 1 lobe, and no negative lobe. This is strange, as we expect that in the presence of background, the negative lobe of the filter would get larger. 
+
+%%
+% To figure out what's going on here, we will inspect the cross correlation function between the stimulus and the response: 
+
+
+
+return
+
 
 p.  tau1= 0.2300;
 p.   K_n= 1.4219;
@@ -86,23 +146,6 @@ p.offset= 14.0098;
 fp = pLNModel(PID,p);
 
 
-figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
-subplot(2,1,1), hold on
-plot(tA,PID,'k')
-xlabel('Time (s)')
-ylabel('PID (V)')
-subplot(2,1,2), hold on
-plot(tA,fA,'k')
-l=plot(tA,fp,'r');
-r2 = oval(rsquare(fA,fp),2);
-legend(l,strcat('r^2=',r2))
-ylabel('Firing Rate (Hz)')
-
-PrettyFig;
-if being_published
-	snapnow
-	delete(gcf)
-end
 
 %%
 % The LN Model used here has been parametrised and looks like this:
@@ -192,6 +235,8 @@ end
 %% Analysis of MFC reliability
 % A key issue seems to be that the stimulus is not very reproducibale. This may make the rest of the analysis rubbish. In the following figure, we generate this flickering stimulus with differnet switching times, and plot the reliability of the MFC. Each plot shows the r-square between all pairs of 10 trials for each switching time. 
 
+%%
+% In the following figure, the PID values for the feedback control on the Alicat MFC were P = 500, I = 0, D = 6000.
 
 load('/local-data/DA-paper/MFC-calibration/Switching_Time_Reliability.mat')
 

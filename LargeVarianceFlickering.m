@@ -22,7 +22,7 @@ end
 % In this document, we generate odor stimuli flickers over a large range, like the "natural" stimuli, but never goes to zero, so that the neuron should never silence (allowing us to accurately follow its response). 
 
 %%
-% The odor stimulus looks like this (different colours are different standard deviations of the exponentiated Gaussians):
+% The odor stimulus looks like this:
 
 load('/local-data/DA-paper/large-variance-flicker/2015_01_22_CS_F1_ab3_3_EtAc.mat')
 
@@ -67,9 +67,27 @@ if being_published
 end
 
 
+
 [fA,tA] = spiketimes2f(spikes(6).A,time);
 fA = mean2(fA);
 PID = interp1(time,mean2(data(6).PID),tA);
+
+%%
+% What does the stimulus distribution look like? 
+
+[y,x] = histcounts(PID,300);x(1) = [];
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(x,y,'k')
+xlabel('PID (V)')
+ylabel('Count')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 %%
 % The following figure shows the response of 1 ab3A neuron to this stimulus. 
@@ -90,7 +108,7 @@ if being_published
 	delete(gcf)
 end
 
-%%
+%% Fitting A Linear Model to this Data
 % Now we will attempt to find the best fit filter from the stimulus to the data. The following figure shows the filter backed out of this data, for different values of regularisation (scaled by the mean eigenvalue of the covariance matrix). 
 
 
@@ -146,7 +164,6 @@ subplot(1,4,4), hold on
 plot(filtertime,K,'r')
 xlabel('Filter Lag (s)')
 ylabel('Filter (norm.)')
-title('Cross Correlation')
 
 PrettyFig;
 if being_published
@@ -165,7 +182,7 @@ tc = tc*mean(diff(tA));
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,4,1:3), hold on
 plot(tc,xc)
-xlabel('Lag (s) (PID->Firing rate)')
+xlabel('Lag (s) (PID \rightarrow Firing rate)')
 ylabel('Cross-correlation')
 
 subplot(1,4,4), hold on
@@ -260,6 +277,7 @@ if being_published
 end
 
 
+ 
 return
 
 

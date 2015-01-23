@@ -18,8 +18,9 @@
 % 1. (AO)   to MFC 
 % 2. (DO)   to switch controlling main air @ 2L/min
 
+function [ControlParadigm] = MakeLargeVarianceFlicker(varargin)
 
-% some global parameters
+% some global parameters (defaults)
 tc = .05; % switching time. a smaller switching time (like 50ms) is too fast for the MFC to follow
 baseline_dilution = 1/100;
 main_flow = 2000; %ml/min
@@ -27,6 +28,11 @@ MFC_scale = 40; % 1V = 40mL/min
 s = [0 .1 .3 .5 1 1.25 1.5 2 3]; % standard deviation of noise, in units of dilution (%)
 T= 60;
 dt = 1e-4;
+
+% evaluate optional arguments
+for i = 1:nargin
+    eval(varargin{i})
+end
 
 % set up frozen noise
 stream = RandStream.getGlobalStream;

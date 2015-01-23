@@ -182,12 +182,37 @@ end
 xlabel(ph(3),'LN Prediction (Hz)')
 set(ph(4),'XScale','log')
 
-	PrettyFig;
+PrettyFig;
+
 if being_published
 	snapnow
 	delete(gcf)
 end
 
+%% Analysis of MFC reliability
+% A key issue seems to be that the stimulus is not very reproducibale. This may make the rest of the analysis rubbish. In the following figure, we generate this flickering stimulus with differnet switching times, and plot the reliability of the MFC. Each plot shows the r-square between all pairs of 10 trials for each switching time. 
+
+
+load('/local-data/DA-paper/MFC-calibration/Switching_Time_Reliability.mat')
+
+figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+for i = 1:length(results)
+	r= rsquare(results(i).data(2).MFC200);
+	subplot(2,3,i), hold on
+	imagescnan(r);
+	caxis([0 1])
+	colorbar
+	axis image
+	axis off
+	title(strcat('switching time =',mat2str(1000*switching_time(i)),'ms'))
+end
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %% Version Info
 % The file that generated this document is called:

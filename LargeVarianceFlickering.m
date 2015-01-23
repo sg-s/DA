@@ -151,6 +151,8 @@ fp  =convolve(tA,PID,K,filtertime);
 fp = fp + 38.8;
 fp = fp*.5067;
 
+fp_normal = fp;
+
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,4,1:3), hold on
 plot(tA,fA,'k')
@@ -209,6 +211,8 @@ fp  =convolve(tA,PID,K,filtertime);
 fp = fp +293.3613;
 fp  =fp*0.0670;
 
+fp_xcorr = fp;
+
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,4,1:3), hold on
 plot(tA,fA,'k')
@@ -254,6 +258,8 @@ fp = filter(K,1,PID);
 fp = fp + 65.5413;
 fp = fp*0.1492;
 
+fp_gaussian_K = fp;
+
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,4,1:3), hold on
 plot(tA,fA,'k')
@@ -277,80 +283,49 @@ if being_published
 end
 
 
- 
-return
+%% Gain Changes
+% In this section, we look at gain changes in the ORN. We do so, first, by dividing the instantaneous firing rate by the linear prediction. 
 
-
-
-
-
-
-
-p.  tau1= 0.2300;
-p.   K_n= 1.4219;
-p.  tau2= 39.2500;
-p.   K_A= -1.8672;
-p.     A= 170.3750;
-p.     n= 2;
-p.    Kd= -39.2500;
-p.offset= 14.0098;
-
-fp = pLNModel(PID,p);
-
-
-
-%%
-% The LN Model used here has been parametrised and looks like this:
-
-t = 1:300;
-K = filter_gamma2(p.tau1,p.K_n,p.tau2,p.K_A,t);
-t = t*mean(diff(tA));
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-subplot(1,2,1), hold on
-plot(t,K,'r')
-xlabel('Filter Lag (s)')
-subplot(1,2,2), hold on
-plot(1:100,hill([p.A p.Kd p.n],1:100),'r')
-ylabel('Predicted f (Hz)')
-
-PrettyFig;
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-%%
-% How is gain controlled in response to this flickering stimulus? In the following plot we compute the instantaneous gain by dividing the response of the neuron by this LN model prediction. 
-
-gain = fA(:)./fp(:);
-
-figure('outerposition',[0 0 1300 700],'PaperUnits','points','PaperSize',[1300 700]); hold on
-subplot(2,1,1), hold on
-plot(tA,PID,'k')
-ylabel('Stimulus')
-subplot(2,1,2), hold on
+figure('outerposition',[0 0 1400 750],'PaperUnits','points','PaperSize',[1400 750]); hold on
+subplot(3,1,1), hold on
 plot([-1 61],[1 1],'k--')
-plot(tA,gain,'r')
+plot(tA,fA./fp_normal,'r')
 ylabel('Gain')
 
+subplot(3,1,2), hold on
+plot([-1 61],[1 1],'k--')
+plot(tA,fA./fp_xcorr,'r')
+ylabel('Gain')
+
+subplot(3,1,3), hold on
+plot([-1 61],[1 1],'k--')
+plot(tA,fA./fp_gaussian_K','r')
+ylabel('Gain')
+xlabel('Time (s)')
+
 PrettyFig;
 if being_published
 	snapnow
 	delete(gcf)
 end
 
+ 
 %%
-% It looks like the gain is changing ~2 fold in some points. In the following figure, we do a more detailed gain analysis, splitting the data according to when the stimulus is high or low in the past and checking the gain in those points (as before). 
+% It looks like the gain is changing around two fold in some points. In the following figure, we do a more detailed gain analysis, splitting the data according to when the stimulus is high or low in the past and checking the gain in those points (as before). 
 
 % do gain analysis
 clear x
 x.response = fA; 
-x.prediction = fp;
+x.prediction = fp_xcorr;
 x.stimulus = PID; 
 x.time = tA;
 x.filter_length = 299;
 ph = [];
+
+rm_this = [find(isnan(fA)) find(isnan(fp_xcorr)) ];
+x.response(rm_this) = [];
+x.prediction(rm_this) = [];
+x.stimulus(rm_this) = [];
 
 history_lengths = (3*floor(1000*logspace(-1.5,1,30)/3))/1e3;
 example_history_length = 0.135;

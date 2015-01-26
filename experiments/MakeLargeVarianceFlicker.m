@@ -21,8 +21,8 @@
 function [ControlParadigm] = MakeLargeVarianceFlicker(varargin)
 
 % some global parameters (defaults)
-tc = .05; % switching time. a smaller switching time (like 50ms) is too fast for the MFC to follow
-baseline_dilution = 1/100;
+tc = .1; % switching time. a smaller switching time (like 50ms) is too fast for the MFC to follow
+baseline_dilution = .1/100;
 main_flow = 2000; %ml/min
 MFC_scale = 40; % 1V = 40mL/min
 s = [0 .1 .3 .5 1 1.25 1.5 2 3]; % standard deviation of noise, in units of dilution (%)
@@ -58,10 +58,8 @@ for i = 1:length(s)
     a = 1;
     z = a + tc/dt;
     for j = 1:nsteps
-        this_dil = exp(s(i)*noise(j));
-        
+        this_dil = exp(s(i)*noise(j)) -1; % the - 1 is a correction factor because exp(0) = 1
         ControlParadigm2(i).Outputs(1,a:z) = baseline_V+ (this_dil*main_flow/(100 - this_dil))/MFC_scale;
-        
         
         % increment
         a = z;
@@ -84,4 +82,7 @@ l = length(ControlParadigm) + 1;
 ControlParadigm(l).Name = 'end';
 ControlParadigm(l).Outputs = zeros(2,1e4);
 
-save('Large_Variance_Flicker_Kontroller_paradigm.mat','ControlParadigm')
+n = strcat('Large_Variance_Flicker_bl_',mat2str(baseline_dilution*100));
+n = strcat(n,'_Kontroller_paradigm.mat');
+
+save(n,'ControlParadigm')

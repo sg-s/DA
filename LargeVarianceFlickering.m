@@ -376,6 +376,121 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% For completeness, we repeat the gain analysis, but this time for the prediction from the Gaussian Noise. 
+
+% do gain analysis
+clear x
+x.response = mean2(fA); 
+x.prediction = fp_gaussian_K;
+x.stimulus = mean2(PID); 
+x.time = tA;
+x.filter_length = 299;
+ph = [];
+
+rm_this = [find(isnan(mean2(fA))) find(isnan(fp_gaussian_K)) ];
+x.response(rm_this) = [];
+x.prediction(rm_this) = [];
+x.stimulus(rm_this) = [];
+x.time(rm_this) = [];
+
+history_lengths = (3*floor(1000*logspace(-1.5,1,30)/3))/1e3;
+example_history_length = 0.135;
+
+f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+hash = DataHash(x);
+cached_data = cache(hash);
+if isempty(cached_data)
+	[p_gK,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
+	cache(hash,p_gK);
+	% also cache the example history length
+	s=abs(l-h);
+	s(p_gK(1,:)>0.05)=NaN;
+	[~,loc]=max(s);
+	ehl = history_lengths(loc);
+	cache(DataHash(p_gK),ehl);
+
+else
+	p_gK = cached_data;
+	ehl = cache(DataHash(p_gK));
+	GainAnalysis4(x,history_lengths,ehl,ph,p_gK);
+end
+
+xlabel(ph(3),'Linear Prediction (Hz)')
+set(ph(4),'XScale','log')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%% Does an output nonlinearity explain all observed gain changes?  
+% In this section, we fit an output nonlinearity to the linear prediction *post-hoc*, and repeat the gain analysis to see if this operation can account for all previously observed gain changes. 
+
+p.A= 56.6434;
+p.k= 23.3667;
+p.n= 2.9647;
+
+fp_hill = hill(p,fp_normal);
+
+
+% do gain analysis
+clear x
+x.response = mean2(fA); 
+x.prediction = fp_hill;
+x.stimulus = mean2(PID); 
+x.time = tA;
+x.filter_length = 299;
+ph = [];
+
+rm_this = [find(isnan(mean2(fA))) find(isnan(fp_hill)) ];
+x.response(rm_this) = [];
+x.prediction(rm_this) = [];
+x.stimulus(rm_this) = [];
+x.time(rm_this) = [];
+
+history_lengths = (3*floor(1000*logspace(-1.5,1,30)/3))/1e3;
+example_history_length = 0.135;
+
+f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+hash = DataHash(x);
+cached_data = cache(hash);
+if isempty(cached_data)
+	[p_LN,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
+	cache(hash,p_LN);
+	% also cache the example history length
+	s=abs(l-h);
+	s(p_LN(1,:)>0.05)=NaN;
+	[~,loc]=max(s);
+	ehl = history_lengths(loc);
+	cache(DataHash(p_LN),ehl);
+
+else
+	p_LN = cached_data;
+	ehl = cache(DataHash(p_LN));
+	GainAnalysis4(x,history_lengths,ehl,ph,p_LN);
+end
+
+xlabel(ph(3),'LN Prediction (Hz)')
+set(ph(4),'XScale','log')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %% Version Info
 % The file that generated this document is called:

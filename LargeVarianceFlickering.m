@@ -321,25 +321,24 @@ if being_published
 	delete(gcf)
 end
 
-
-return
  
 %%
 % It looks like the gain is changing around two fold in some points. In the following figure, we do a more detailed gain analysis, splitting the data according to when the stimulus is high or low in the past and checking the gain in those points (as before). 
 
 % do gain analysis
 clear x
-x.response = fA; 
-x.prediction = fp_xcorr;
-x.stimulus = PID; 
+x.response = mean2(fA); 
+x.prediction = fp_normal;
+x.stimulus = mean2(PID); 
 x.time = tA;
 x.filter_length = 299;
 ph = [];
 
-rm_this = [find(isnan(fA)) find(isnan(fp_normal)) ];
+rm_this = [find(isnan(mean2(fA))) find(isnan(fp_normal)) ];
 x.response(rm_this) = [];
 x.prediction(rm_this) = [];
 x.stimulus(rm_this) = [];
+x.time(rm_this) = [];
 
 history_lengths = (3*floor(1000*logspace(-1.5,1,30)/3))/1e3;
 example_history_length = 0.135;
@@ -349,18 +348,22 @@ ph(3) = subplot(1,2,1); hold on
 axis square
 ph(4) = subplot(1,2,2); hold on
 
-if redo
-	[p_LN,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
+hash = DataHash(x);
+cached_data = cache(hash);
+if isempty(cached_data)
+	[p_K,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
+	cache(hash,p_K);
+	% also cache the example history length
 	s=abs(l-h);
-	s(p_LN(1,:)>0.05)=NaN;
+	s(p_K(1,:)>0.05)=NaN;
 	[~,loc]=max(s);
-
-	% save it for later
 	ehl = history_lengths(loc);
-	pb = p_LN;
+	cache(DataHash(p_K),ehl);
 
 else
-	GainAnalysis4(x,history_lengths,ehl,ph,pb);
+	p_K = cached_data;
+	ehl = cache(DataHash(p_K));
+	GainAnalysis4(x,history_lengths,ehl,ph,p_K);
 end
 
 xlabel(ph(3),'Linear Prediction (Hz)')
@@ -373,32 +376,6 @@ if being_published
 	delete(gcf)
 end
 
-%% Analysis of MFC reliability
-% A key issue seems to be that the stimulus is not very reproducibale. This may make the rest of the analysis rubbish. In the following figure, we generate this flickering stimulus with differnet switching times, and plot the reliability of the MFC. Each plot shows the r-square between all pairs of 10 trials for each switching time. 
-
-%%
-% In the following figure, the PID values for the feedback control on the Alicat MFC were P = 500, I = 0, D = 6000.
-
-load('/local-data/DA-paper/MFC-calibration/Switching_Time_Reliability.mat')
-
-figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
-for i = 1:length(results)
-	r= rsquare(results(i).data(2).MFC200);
-	subplot(2,3,i), hold on
-	imagescnan(r);
-	caxis([0 1])
-	colorbar
-	axis image
-	axis off
-	title(strcat('switching time =',mat2str(1000*switching_time(i)),'ms'))
-end
-
-PrettyFig;
-
-if being_published
-	snapnow
-	delete(gcf)
-end
 
 %% Version Info
 % The file that generated this document is called:

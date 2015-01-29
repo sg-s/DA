@@ -13,8 +13,6 @@ if ~isempty(calling_func)
 	end
 end
 
-% redo = 1; % deliberately unset
-
 %% Response of ORNs to flickering odor stimuli with large variances
 % From previous experiments, we see that the response of ORNs to largely varying stimuli that mimics the natural odor plumes is particularly interesting: in that no model we have can precisely account for the data, and in that, from other results, we expect to see a large variation of gain of the ORNs to these stimuli. 
 
@@ -22,45 +20,78 @@ end
 % In this document, we generate odor stimuli flickers over a large range, like the "natural" stimuli, but never goes to zero, so that the neuron should never silence (allowing us to accurately follow its response). 
 
 %%
-% The odor stimulus looks like this:
+% The odor stimulus and the response of the ORN looks like this:
 
-load('/local-data/DA-paper/large-variance-flicker/2015_01_22_CS_F1_ab3_3_EtAc.mat')
+load('/local-data/DA-paper/large-variance-flicker/2015_01_28_CS_ab3_2_EA.mat')
+PID = data(4).PID;
+time = 1e-4*(1:length(PID));
+all_spikes = spikes(4).A;
+load('/local-data/DA-paper/large-variance-flicker/2015_01_28_CS_ab3_3_EA.mat')
+PID = vertcat(PID,data(4).PID);
+all_spikes = vertcat(all_spikes,spikes(4).A);
+
+hash = DataHash(full(all_spikes));
+cached_data = cache(hash);
+if isempty(cached_data)
+	fA = spiketimes2f(all_spikes,time);
+	cache(hash,fA);
+else
+	fA = cached_data;
+end
+
+tA = 1e-3*(1:length(fA));
+PID2 = fA;
+for i = 1:width(PID2)
+	PID2(:,i) = interp1(time,PID(i,:),tA);
+end
+PID = PID2; clear PID2
+% some minor cleaning up
+PID(end,:) = PID(end-1,:); 
 
 figure('outerposition',[0 0 1400 1000],'PaperUnits','points','PaperSize',[1400 1000]); hold on
 subplot(2,8,9:14), hold on
-time = 1e-4*(1:length(data(6).PID));
-plot(time,mean2(data(6).PID),'k')
+plot(tA,mean2(fA),'k')
 set(gca,'XLim',[10 60])
 xlabel('Time (s)')
-ylabel('PID (V)')
+ylabel('Firing Rate (Hz)')
 
 subplot(2,8,15:16), hold on
-r = rsquare(data(6).PID);
-imagescnan(r)
+hash = DataHash(fA);
+cached_data = cache(hash);
+if isempty(cached_data)
+	r2 = rsquare(fA);
+	cache(hash,r2);
+else
+	r2 = cached_data;
+end
+imagescnan(r2)
 caxis([0 1])
 colorbar
 axis image
 axis off
-title(strcat('min r^2=',oval(min(min(r)),2)))
+title(strcat('mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
 
 subplot(2,8,1:6), hold on
-time = 1e-4*(1:length(data(6).MFC200));
-dil = mean2(data(6).MFC200)*40; % in  mL/min
-dil = dil./(dil + 2000);
-dil = dil*100;
-plot(time,dil,'k')
+plot(tA,mean2(PID),'k')
 set(gca,'XLim',[10 60])
 xlabel('Time (s)')
-ylabel('Dilution (%)')
+ylabel('Odor Concentration (V)')
 
 subplot(2,8,7:8), hold on
-r = rsquare(data(6).MFC200);
-imagescnan(r)
+hash = DataHash(PID);
+cached_data = cache(hash);
+if isempty(cached_data)
+	r2 = rsquare(PID);
+	cache(hash,r2);
+else
+	r2 = cached_data;
+end
+imagescnan(r2)
 caxis([0 1])
 colorbar
 axis image
 axis off
-title(strcat('min r^2=',oval(min(min(r)),2)))
+title(strcat('mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
 
 PrettyFig;
 
@@ -70,10 +101,6 @@ if being_published
 end
 
 
-
-[fA,tA] = spiketimes2f(spikes(6).A,time);
-fA = mean2(fA);
-PID = interp1(time,mean2(data(6).PID),tA);
 
 %%
 % What does the stimulus distribution look like? 
@@ -92,46 +119,28 @@ if being_published
 end
 
 
-%%
-% The following figure shows the response of 1 ab3A neuron to this stimulus. 
-
-
-figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
-subplot(2,1,1), hold on
-plot(tA,PID,'k')
-xlabel('Time (s)')
-ylabel('PID (V)')
-subplot(2,1,2), hold on
-plot(tA,fA,'k')
-ylabel('Firing Rate (Hz)')
-
-PrettyFig;
-if being_published
-	snapnow
-	delete(gcf)
-end
-
 %% Fitting A Linear Model to this Data
 % Now we will attempt to find the best fit filter from the stimulus to the data. The following figure shows the filter backed out of this data, for different values of regularisation (scaled by the mean eigenvalue of the covariance matrix). 
 
 
 figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
 subplot(1,3,1), hold on
-[K, ~, filtertime] = FindBestFilter(PID,fA,[],'regmax=0;','regmin=0;','filter_length=599;','offset=49;');
+[K, ~, filtertime] = FindBestFilter(mean2(PID),mean2(fA),[],'regmax=0;','regmin=0;','filter_length=599;','offset=49;');
 filtertime = filtertime*mean(diff(tA));
 plot(filtertime,K)
 title('reg = 0')
 xlabel('Filter Lag (s)')
 
+
 subplot(1,3,2), hold on
-[K, ~, filtertime] = FindBestFilter(PID,fA,[],'regmax=0.1;','regmin=0.1;','filter_length=599;','offset=49;');
+[K, ~, filtertime] = FindBestFilter(mean2(PID),mean2(fA),[],'regmax=0.1;','regmin=0.1;','filter_length=599;','offset=49;');
 filtertime = filtertime*mean(diff(tA));
 plot(filtertime,K)
 title('reg = 0.1')
 xlabel('Filter Lag (s)')
 
 subplot(1,3,3), hold on
-[K, ~, filtertime] = FindBestFilter(PID,fA,[],'regmax=1;','regmin=1;','filter_length=599;','offset=49;');
+[K, ~, filtertime] = FindBestFilter(mean2(PID),mean2(fA),[],'regmax=1;','regmin=1;','filter_length=599;','offset=49;');
 filtertime = filtertime*mean(diff(tA));
 plot(filtertime,K)
 title('reg = 1')
@@ -150,17 +159,17 @@ end
 %%
 % Even though this looks weird, we will use this filter to make a prediction of the response:
 
-fp  =convolve(tA,PID,K,filtertime);
-fp = fp + 38.8;
-fp = fp*.5067;
+fp  =convolve(tA,mean2(PID),K,filtertime);
+fp = fp + 47.76;
+fp = fp*.4774;
 
 fp_normal = fp;
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,4,1:3), hold on
-plot(tA,fA,'k')
+plot(tA,mean2(fA),'k')
 l=plot(tA,fp,'r');
-r2 = rsquare(fp,fA);
+r2 = rsquare(fp,mean2(fA));
 legend(l,strcat('r^2=',oval(r2,2)))
 xlabel('Time (s)')
 ylabel('Firing Rate (Hz)')
@@ -180,7 +189,7 @@ end
 %%
 % To figure out what's going on here, we will inspect the cross correlation function between the stimulus and the response: 
 
-[xc,tc]=xcorr(fA-mean(fA),PID-mean(PID));
+[xc,tc]=xcorr(mean2(fA)-mean(mean2(fA)),mean2(PID)-mean(mean2(PID)));
 xc = xc/max(xc);
 tc = tc*mean(diff(tA));
 
@@ -202,25 +211,25 @@ if being_published
 end
 
 %%
-% The Firing rate lags the PID trace by 65ms. 
+% The Firing rate lags the PID trace by 66ms. 
 
 %%
 % Now, we use the cross correlation function as a kernel and build a linear model around this. The following figure shows how well this linear model performs: 
 
 K=(xc(tc>-0.1 & tc < 1));
 filtertime = (tc(tc>-0.1 & tc < 1));
-fp  =convolve(tA,PID,K,filtertime);
+fp  =convolve(tA,mean2(PID),K,filtertime);
 
-fp = fp +293.3613;
-fp  =fp*0.0670;
+fp = fp +30.4745;
+fp  =fp*0.7485;
 
 fp_xcorr = fp;
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,4,1:3), hold on
-plot(tA,fA,'k')
+plot(tA,mean2(fA),'k')
 l=plot(tA,fp,'r');
-r2 = rsquare(fp,fA);
+r2 = rsquare(fp,mean2(fA));
 legend(l,strcat('r^2=',oval(r2,2)))
 xlabel('Time (s)')
 ylabel('Firing Rate (Hz)')
@@ -255,19 +264,19 @@ p.   K_A= 0.3491;
 t = 1:1e3;
 K = filter_gamma2(p.tau1,p.K_n,p.tau2,p.K_A,t);
 t = t*mean(diff(tA));
-fp = filter(K,1,PID);
+fp = filter(K,1,mean2(PID));
 
 % trivial scaling
-fp = fp + 65.5413;
-fp = fp*0.1492;
+fp = fp -0.6562;
+fp = fp*1.7987;
 
 fp_gaussian_K = fp;
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,4,1:3), hold on
-plot(tA,fA,'k')
+plot(tA,mean2(fA),'k')
 l=plot(tA,fp,'r');
-r2 = rsquare(fp,fA);
+r2 = rsquare(fp,mean2(fA));
 legend(l,strcat('r^2=',oval(r2,3)))
 xlabel('Time (s)')
 ylabel('Firing rate (Hz)')
@@ -292,16 +301,18 @@ end
 figure('outerposition',[0 0 1400 750],'PaperUnits','points','PaperSize',[1400 750]); hold on
 subplot(2,1,1), hold on
 plot([-1 61],[1 1],'k--')
-plot(tA,fA./fp_normal,'r')
+plot(tA,mean2(fA)./fp_normal,'r')
 ylabel('Gain')
 title('from Rev. corr. filter')
+set(gca,'YLim',[0 3])
 
 subplot(2,1,2), hold on
 plot([-1 61],[1 1],'k--')
-plot(tA,fA./fp_xcorr,'r')
+plot(tA,mean2(fA)./fp_xcorr,'r')
 ylabel('Gain')
 title('from cross corr. filter')
 xlabel('Time (s)')
+set(gca,'YLim',[0 3])
 
 
 PrettyFig;
@@ -310,6 +321,8 @@ if being_published
 	delete(gcf)
 end
 
+
+return
  
 %%
 % It looks like the gain is changing around two fold in some points. In the following figure, we do a more detailed gain analysis, splitting the data according to when the stimulus is high or low in the past and checking the gain in those points (as before). 

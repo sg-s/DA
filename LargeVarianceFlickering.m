@@ -323,7 +323,7 @@ x.time = tA;
 x.filter_length = 299;
 ph = [];
 
-rm_this = [find(isnan(fA)) find(isnan(fp_xcorr)) ];
+rm_this = [find(isnan(fA)) find(isnan(fp_normal)) ];
 x.response(rm_this) = [];
 x.prediction(rm_this) = [];
 x.stimulus(rm_this) = [];
@@ -350,7 +350,7 @@ else
 	GainAnalysis4(x,history_lengths,ehl,ph,pb);
 end
 
-xlabel(ph(3),'LN Prediction (Hz)')
+xlabel(ph(3),'Linear Prediction (Hz)')
 set(ph(4),'XScale','log')
 
 PrettyFig;

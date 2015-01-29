@@ -3,3 +3,6 @@ html/
 *.pdf
 *.tex
 .DS_Store
+*.lyx~
+*.asv
+html

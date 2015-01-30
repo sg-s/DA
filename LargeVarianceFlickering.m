@@ -16,11 +16,6 @@ end
 %% Response of ORNs to flickering odor stimuli with large variances
 % From previous experiments, we see that the response of ORNs to largely varying stimuli that mimics the natural odor plumes is particularly interesting: in that no model we have can precisely account for the data, and in that, from other results, we expect to see a large variation of gain of the ORNs to these stimuli. 
 
-%%
-% In this document, we generate odor stimuli flickers over a large range, like the "natural" stimuli, but never goes to zero, so that the neuron should never silence (allowing us to accurately follow its response, and reasonably estimate instantaneous gain). 
-
-%%
-% The following figure shows the odor stimulus (ethyl acetate) presented to two ab3A neurons. Each neuron was recorded from ten times. The colormaps on the right show the coefficient of determination between pairwise trials. 
 
 load('/local-data/DA-paper/large-variance-flicker/2015_01_28_CS_ab3_2_EA.mat')
 PID = data(4).PID;
@@ -118,6 +113,11 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% In this document, we generate odor stimuli flickers over a large range, like the "natural" stimuli, but never goes to zero, so that the neuron should never silence (allowing us to accurately follow its response, and reasonably estimate instantaneous gain). 
+
+%%
+% The first figure shows the odor stimulus (ethyl acetate) presented to two ab3A neurons. Each neuron was recorded from ten times. The colormaps on the right show the coefficient of determination between pairwise trials. 
 
 
 %%
@@ -186,9 +186,11 @@ end
 %%
 % Even though this looks weird, we will use this filter to make a prediction of the response:
 
+K = K/max(K);
 fp  =convolve(tA,mean2(PID),K,filtertime);
-fp = fp + 47.76;
-fp = fp*.4774;
+
+fp = fp + 19.7170;
+fp = fp*1.1563;
 
 fp_normal = fp;
 

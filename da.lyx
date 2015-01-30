@@ -59,19 +59,133 @@
 
 \begin_body
 
-\begin_layout Standard
+\begin_layout Title
 Forumlae for Dynamical Adaptation Project
+\end_layout
+
+\begin_layout Author
+Srinivas Gorur-Shandilya
+\end_layout
+
+\begin_layout Section
+Parametric Linear Models
+\end_layout
+
+\begin_layout Subsection
+Parametric LN Model
 \end_layout
 
 \begin_layout Standard
 \begin_inset Formula 
 \[
-R(t)=\frac{\alpha K_{y}\otimes s(t)}{1+\beta\left(K_{z}\otimes s(t)\right)}+s_{0}
+R(t)=N\left(K_{r}\otimes(s(t)-\bar{s}(t))+s_{0}\right)
 \]
 
 \end_inset
 
 
+\end_layout
+
+\begin_layout Subsection
+Parametric Linear Model
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+R(t)=S\left(K_{r}\otimes(s(t)-\bar{s}(t))+s_{0}\right)
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where S is a function that subtracts and scales the input
+\end_layout
+
+\begin_layout Section
+The DA Model(s)
+\end_layout
+
+\begin_layout Subsection
+The original non-ODE DA Model
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+r(t)=\frac{\alpha K_{y}\otimes s(t)}{1+\beta\left[\gamma K_{y}\otimes s(t)+\left(1-\gamma\right)K_{z}\otimes s(t)\right]}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Stimulus-offset DA Model
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+r(t)=\frac{\alpha K_{y}\otimes s'(t)}{1+\beta\left[\gamma K_{y}\otimes s'(t)+\left(1-\gamma\right)K_{z}\otimes s'(t)\right]}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+s'(t)=s(t)+s_{0}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Reduced DA Model
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+R(t)=\frac{\alpha K_{y}\otimes s'(t)}{1+\beta\left(K_{z}\otimes s'(t)\right)}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where
+\end_layout
+
+\begin_layout Standard
+\begin_inset Formula 
+\[
+s'(t)=s(t)+s_{0}
+\]
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Receptor Adaptation Model
 \end_layout
 
 \begin_layout Standard
@@ -96,15 +210,8 @@ R(t)=N\left(K_{r}\otimes(\hat{s}(t)-\bar{\hat{s}}(t))+s_{0}\right)
 
 \end_layout
 
-\begin_layout Standard
-\begin_inset Formula 
-\[
-R(t)=N\left(K_{r}\otimes(s(t)-\bar{s}(t))+s_{0}\right)
-\]
-
-\end_inset
-
-
+\begin_layout Section
+LNA Model
 \end_layout
 
 \begin_layout Standard
@@ -116,6 +223,10 @@ R(t)=\frac{N\left(K_{r}\otimes(s(t)-\bar{s}(t))+s_{0}\right)}{1+\beta K_{a}\otim
 \end_inset
 
 
+\end_layout
+
+\begin_layout Section
+NLN Model
 \end_layout
 
 \begin_layout Standard
@@ -138,6 +249,14 @@ R(t)=N_{i}\left(K_{r}\otimes\hat{s}(t)\right)
 \end_inset
 
 
+\end_layout
+
+\begin_layout Section
+Dynamic Gain Models
+\end_layout
+
+\begin_layout Subsection
+LN-inspired 
 \end_layout
 
 \begin_layout Standard
@@ -171,6 +290,10 @@ N(x)=\frac{x^{n}}{x^{n}+\kappa^{n}}
 \end_inset
 
 
+\end_layout
+
+\begin_layout Subsection
+DA-inspired
 \end_layout
 
 \begin_layout Standard

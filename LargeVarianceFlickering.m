@@ -336,6 +336,8 @@ figure('outerposition',[0 0 1400 750],'PaperUnits','points','PaperSize',[1400 75
 subplot(2,1,1), hold on
 plot([-1 61],[1 1],'k--')
 plot(tA,mean2(fA)./fp_normal,'r')
+% cache the gain to use later
+cache('gain',mean2(fA)./fp_normal)
 ylabel('Gain')
 title('from Rev. corr. filter')
 set(gca,'YLim',[0 3])

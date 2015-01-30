@@ -17,10 +17,10 @@ end
 % From previous experiments, we see that the response of ORNs to largely varying stimuli that mimics the natural odor plumes is particularly interesting: in that no model we have can precisely account for the data, and in that, from other results, we expect to see a large variation of gain of the ORNs to these stimuli. 
 
 %%
-% In this document, we generate odor stimuli flickers over a large range, like the "natural" stimuli, but never goes to zero, so that the neuron should never silence (allowing us to accurately follow its response). 
+% In this document, we generate odor stimuli flickers over a large range, like the "natural" stimuli, but never goes to zero, so that the neuron should never silence (allowing us to accurately follow its response, and reasonably estimate instantaneous gain). 
 
 %%
-% The odor stimulus and the response of the ORN looks like this:
+% The following figure shows the odor stimulus (ethyl acetate) presented to two ab3A neurons. Each neuron was recorded from ten times. The colormaps on the right show the coefficient of determination between pairwise trials. 
 
 load('/local-data/DA-paper/large-variance-flicker/2015_01_28_CS_ab3_2_EA.mat')
 PID = data(4).PID;
@@ -48,6 +48,15 @@ PID = PID2; clear PID2
 % some minor cleaning up
 PID(end,:) = PID(end-1,:); 
 
+%          ######  ######## #### ##     ## ##     ## ##       ##     ##  ######  
+%         ##    ##    ##     ##  ###   ### ##     ## ##       ##     ## ##    ## 
+%         ##          ##     ##  #### #### ##     ## ##       ##     ## ##       
+%          ######     ##     ##  ## ### ## ##     ## ##       ##     ##  ######  
+%               ##    ##     ##  ##     ## ##     ## ##       ##     ##       ## 
+%         ##    ##    ##     ##  ##     ## ##     ## ##       ##     ## ##    ## 
+%          ######     ##    #### ##     ##  #######  ########  #######   ######  
+
+
 figure('outerposition',[0 0 1400 1000],'PaperUnits','points','PaperSize',[1400 1000]); hold on
 subplot(2,8,9:14), hold on
 plot(tA,mean2(fA),'k')
@@ -70,6 +79,15 @@ colorbar
 axis image
 axis off
 title(strcat('mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
+
+%        ########  ########  ######  ########   #######  ##    ##  ######  ######## 
+%        ##     ## ##       ##    ## ##     ## ##     ## ###   ## ##    ## ##       
+%        ##     ## ##       ##       ##     ## ##     ## ####  ## ##       ##       
+%        ########  ######    ######  ########  ##     ## ## ## ##  ######  ######   
+%        ##   ##   ##             ## ##        ##     ## ##  ####       ## ##       
+%        ##    ##  ##       ##    ## ##        ##     ## ##   ### ##    ## ##       
+%        ##     ## ########  ######  ##         #######  ##    ##  ######  ######## 
+
 
 subplot(2,8,1:6), hold on
 plot(tA,mean2(PID),'k')
@@ -108,6 +126,7 @@ end
 [y,x] = histcounts(PID,300);x(1) = [];
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 plot(x,y,'k')
+set(gca,'YScale','log')
 xlabel('PID (V)')
 ylabel('Count')
 
@@ -117,6 +136,14 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%     ##       #### ##    ## ########    ###    ########     ##     ##  #######  ########  ######## ##       
+%     ##        ##  ###   ## ##         ## ##   ##     ##    ###   ### ##     ## ##     ## ##       ##       
+%     ##        ##  ####  ## ##        ##   ##  ##     ##    #### #### ##     ## ##     ## ##       ##       
+%     ##        ##  ## ## ## ######   ##     ## ########     ## ### ## ##     ## ##     ## ######   ##       
+%     ##        ##  ##  #### ##       ######### ##   ##      ##     ## ##     ## ##     ## ##       ##       
+%     ##        ##  ##   ### ##       ##     ## ##    ##     ##     ## ##     ## ##     ## ##       ##       
+%     ######## #### ##    ## ######## ##     ## ##     ##    ##     ##  #######  ########  ######## ######## 
 
 
 %% Fitting A Linear Model to this Data
@@ -247,9 +274,6 @@ if being_published
 end
 
 %%
-% In conclusion, we tried to get the filter in two different ways, and we see that the filter inexplicably lacks a negative lobe. 
-
-%%
 % What happens when we explicitly specify a filter with a negative lobe? For example, what happens if we use a filter extracted from Gaussian noise with this data? How well does it perform? 
 
 p.  tau1= 3*5.0122;
@@ -293,6 +317,14 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%  ######      ###    #### ##    ##       ###    ##    ##    ###    ##       ##    ##  ######  ####  ######  
+% ##    ##    ## ##    ##  ###   ##      ## ##   ###   ##   ## ##   ##        ##  ##  ##    ##  ##  ##    ## 
+% ##         ##   ##   ##  ####  ##     ##   ##  ####  ##  ##   ##  ##         ####   ##        ##  ##       
+% ##   #### ##     ##  ##  ## ## ##    ##     ## ## ## ## ##     ## ##          ##     ######   ##   ######  
+% ##    ##  #########  ##  ##  ####    ######### ##  #### ######### ##          ##          ##  ##        ## 
+% ##    ##  ##     ##  ##  ##   ###    ##     ## ##   ### ##     ## ##          ##    ##    ##  ##  ##    ## 
+%  ######   ##     ## #### ##    ##    ##     ## ##    ## ##     ## ########    ##     ######  ####  ######  
 
 
 %% Gain Changes

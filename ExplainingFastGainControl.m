@@ -67,7 +67,7 @@ d.response = mean2(fA);
 %           ######## ##    ##    ##     ##  #######  ########  ######## ######## 
 
 %% Fitting a LN Model
-% Here, we fit a non-parametric LN model to the data. 
+% Here, we fit a LN model to the data. 
 
 
 if ~exist('K')
@@ -121,6 +121,60 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% We now perform a gain analysis on this data:
+
+% do gain analysis
+clear x
+x.response = mean2(fA); 
+x.prediction = fp_LN;
+x.stimulus = mean2(PID); 
+x.time = tA;
+x.filter_length = 299;
+ph = [];
+
+rm_this = [find(isnan(mean2(fA))) find(isnan(fp_LN)) ];
+x.response(rm_this) = [];
+x.prediction(rm_this) = [];
+x.stimulus(rm_this) = [];
+x.time(rm_this) = [];
+
+history_lengths = (3*floor(1000*logspace(-1.5,1,30)/3))/1e3;
+example_history_length = 0.135;
+
+f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+hash = DataHash(x);
+cached_data = cache(hash);
+if isempty(cached_data)
+	[p_LN,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
+	cache(hash,p_LN);
+	% also cache the example history length
+	s=abs(l-h);
+	s(p_LN(1,:)>0.05)=NaN;
+	[~,loc]=max(s);
+	ehl = history_lengths(loc);
+	cache(DataHash(p_LN),ehl);
+
+else
+	p_LN = cached_data;
+	ehl = cache(DataHash(p_LN));
+	GainAnalysis4(x,history_lengths,history_lengths(14),ph,p_LN);
+end
+
+xlabel(ph(3),'LN Prediction (Hz)')
+set(ph(4),'XScale','log')
+set(ph(4),'YLim',[.7 1.4])
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 
 %           ########     ###       ##     ##  #######  ########  ######## ##       
@@ -169,6 +223,62 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% We now see if this model can account for gain changes. 
+
+% do gain analysis
+clear x
+x.response = mean2(fA); 
+x.prediction = fp_DA2;
+x.stimulus = mean2(PID); 
+x.time = tA;
+x.filter_length = 299;
+ph = [];
+
+rm_this = [find(isnan(mean2(fA))) find(isnan(fp_DA2)) ];
+x.response(rm_this) = [];
+x.prediction(rm_this) = [];
+x.stimulus(rm_this) = [];
+x.time(rm_this) = [];
+
+history_lengths = (3*floor(1000*logspace(-1.5,1,30)/3))/1e3;
+example_history_length = 0.135;
+
+f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+hash = DataHash(x);
+cached_data = cache(hash);
+if isempty(cached_data)
+	[p_DA2,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
+	cache(hash,p_DA2);
+	% also cache the example history length
+	s=abs(l-h);
+	s(p_DA2(1,:)>0.05)=NaN;
+	[~,loc]=max(s);
+	ehl = history_lengths(loc);
+	cache(DataHash(p_DA2),ehl);
+
+else
+	p_DA2 = cached_data;
+	ehl = cache(DataHash(p_DA2));
+	GainAnalysis4(x,history_lengths,history_lengths(14),ph,p_DA2);
+end
+
+xlabel(ph(3),'DAModelv2 Prediction (Hz)')
+set(ph(4),'XScale','log')
+set(ph(4),'YLim',[.7 1.4])
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
 %% Reduced DA Model
 % Can we do away with the weighting term in the previous model? Here we fit a reduced DA Model with only filter driving the gain adaptation behaviour. (see list-of-models.pdf for more detailed notes).  
 
@@ -206,6 +316,63 @@ if being_published
 	delete(gcf)
 end
 
+
+%%
+% We now see if this model can account for gain changes. 
+
+% do gain analysis
+clear x
+x.response = mean2(fA); 
+x.prediction = fp_DA3;
+x.stimulus = mean2(PID); 
+x.time = tA;
+x.filter_length = 299;
+ph = [];
+
+rm_this = [find(isnan(mean2(fA))) find(isnan(fp_DA3)) ];
+x.response(rm_this) = [];
+x.prediction(rm_this) = [];
+x.stimulus(rm_this) = [];
+x.time(rm_this) = [];
+
+history_lengths = (3*floor(1000*logspace(-1.5,1,30)/3))/1e3;
+example_history_length = 0.135;
+
+f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+hash = DataHash(x);
+cached_data = cache(hash);
+if isempty(cached_data)
+	[p_DA3,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
+	cache(hash,p_DA3);
+	% also cache the example history length
+	s=abs(l-h);
+	s(p_DA3(1,:)>0.05)=NaN;
+	[~,loc]=max(s);
+	ehl = history_lengths(loc);
+	cache(DataHash(p_DA3),ehl);
+
+else
+	p_DA3 = cached_data;
+	ehl = cache(DataHash(p_DA3));
+	GainAnalysis4(x,history_lengths,history_lengths(14),ph,p_DA3);
+end
+
+xlabel(ph(3),'DAModelv3 Prediction (Hz)')
+set(ph(4),'XScale','log')
+set(ph(4),'YLim',[.7 1.4])
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
 %% Post-Hoc Gain Correction
 % In this section, we tack on a gain-correction factor to the LN model's prediction (see da-pdfs/list-of-models.pdf) for a full explanation. 
 
@@ -218,7 +385,6 @@ p.beta =  7.0492;
 [fp_LNG,gain] = DivisiveGain(s,p);
 
 figure('outerposition',[0 0 1300 500],'PaperUnits','points','PaperSize',[1300 500]); hold on
-subplot(2,1,1), hold on
 plot(tA,mean2(fA),'k')
 l=plot(tA,fp_LNG,'r');
 r2 = rsquare(fp_LNG,mean2(fA));
@@ -227,6 +393,61 @@ title('Gain-corrected LN Prediction')
 ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')
 
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% We now look at how well it accounts for gain changes:
+
+
+% do gain analysis
+clear x
+x.response = mean2(fA); 
+x.prediction = fp_LNG;
+x.stimulus = mean2(PID); 
+x.time = tA;
+x.filter_length = 299;
+ph = [];
+
+rm_this = [find(isnan(mean2(fA))) find(isnan(fp_LNG)) ];
+x.response(rm_this) = [];
+x.prediction(rm_this) = [];
+x.stimulus(rm_this) = [];
+x.time(rm_this) = [];
+
+history_lengths = (3*floor(1000*logspace(-1.5,1,30)/3))/1e3;
+example_history_length = 0.135;
+
+f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+hash = DataHash(x);
+cached_data = cache(hash);
+if isempty(cached_data)
+	[p_LNG,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
+	cache(hash,p_LNG);
+	% also cache the example history length
+	s=abs(l-h);
+	s(p_LNG(1,:)>0.05)=NaN;
+	[~,loc]=max(s);
+	ehl = history_lengths(loc);
+	cache(DataHash(p_LNG),ehl);
+
+else
+	p_LNG = cached_data;
+	ehl = cache(DataHash(p_LNG));
+	GainAnalysis4(x,history_lengths,history_lengths(14),ph,p_LNG);
+end
+
+xlabel(ph(3),'LN (Gain-corrected) (Hz)')
+set(ph(4),'XScale','log')
+set(ph(4),'YLim',[.7 1.4])
 
 PrettyFig;
 
@@ -234,6 +455,8 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+
 
 %% Version Info
 % The file that generated this document is called:

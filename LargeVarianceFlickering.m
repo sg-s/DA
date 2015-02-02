@@ -21,10 +21,13 @@ load('/local-data/DA-paper/large-variance-flicker/2015_01_28_CS_ab3_2_EA.mat')
 PID = data(4).PID;
 time = 1e-4*(1:length(PID));
 all_spikes = spikes(4).A;
+B_spikes = spikes(4).B;
 load('/local-data/DA-paper/large-variance-flicker/2015_01_28_CS_ab3_3_EA.mat')
 PID = vertcat(PID,data(4).PID);
 all_spikes = vertcat(all_spikes,spikes(4).A);
+B_spikes = vertcat(B_spikes,spikes(4).B);
 
+% A spikes --> firing rate
 hash = DataHash(full(all_spikes));
 cached_data = cache(hash);
 if isempty(cached_data)
@@ -32,6 +35,16 @@ if isempty(cached_data)
 	cache(hash,fA);
 else
 	fA = cached_data;
+end
+
+% B spikes --> firing rate
+hash = DataHash(full(B_spikes));
+cached_data = cache(hash);
+if isempty(cached_data)
+	fB = spiketimes2f(B_spikes,time);
+	cache(hash,fB);
+else
+	fB = cached_data;
 end
 
 tA = 1e-3*(1:length(fA));
@@ -112,6 +125,70 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%%
+% For completeness, here is a comparison of the A neuron's response to that of the B neuron's. 
+
+
+figure('outerposition',[0 0 1400 1000],'PaperUnits','points','PaperSize',[1400 1000]); hold on
+subplot(2,8,1:6), hold on
+plot(tA,mean2(fA),'k')
+set(gca,'XLim',[10 60])
+xlabel('Time (s)')
+ylabel('Firing Rate (A) (Hz)')
+set(gca,'YLim',[0 70])
+
+subplot(2,8,7:8), hold on
+hash = DataHash(fA);
+cached_data = cache(hash);
+if isempty(cached_data)
+	r2 = rsquare(fA);
+	cache(hash,r2);
+else
+	r2 = cached_data;
+end
+imagescnan(r2)
+caxis([0 1])
+colorbar
+axis image
+axis off
+title(strcat('mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
+
+
+subplot(2,8,9:14), hold on
+plot(tA,mean2(fB),'k')
+set(gca,'XLim',[10 60])
+xlabel('Time (s)')
+ylabel('Firing Rate (B) (Hz)')
+set(gca,'YLim',[0 70])
+
+subplot(2,8,15:16), hold on
+hash = DataHash(fB);
+cached_data = cache(hash);
+if isempty(cached_data)
+	r2 = rsquare(fB);
+	cache(hash,r2);
+else
+	r2 = cached_data;
+end
+imagescnan(r2)
+caxis([0 1])
+colorbar
+axis image
+axis off
+title(strcat('mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
+
+
+PrettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+return
+
+
 
 %%
 % In this document, we generate odor stimuli flickers over a large range, like the "natural" stimuli, but never goes to zero, so that the neuron should never silence (allowing us to accurately follow its response, and reasonably estimate instantaneous gain). 

@@ -278,6 +278,7 @@ end
 %%
 % What happens when we explicitly specify a filter with a negative lobe? For example, what happens if we use a filter extracted from Gaussian noise with this data? How well does it perform? 
 
+clear p
 p.  tau1= 3*5.0122;
 p.   K_n= 4.4572;
 p.  tau2= 3*20.3750;
@@ -286,6 +287,9 @@ p.     n= 4.4297;
 p.    Kd= 20.0591;
 p.offset= 20.0278;
 p.   K_A= 0.3491;
+
+% save for later
+Linear_Filter_p = p;
 
 t = 1:1e3;
 K = filter_gamma2(p.tau1,p.K_n,p.tau2,p.K_A,t);
@@ -527,6 +531,60 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%% Further analysis of filter shape
+% We expect that the negative lobe of the filter to be more prominent in this dataset, as the neuron should be more differentiating, as the signal consists of fluctuations on top of a background. But we don't see that. Why? Perhaps because of the non-gaussian statistics of the input stimulus, the filter shape is screwed up. To check this, we generate synthetic data using the bilobed linear filter, and then back out a linear filter from this.
+
+%%
+% In the following figures, we try to back out a filter (red) from synthetic data constructed using the black filter. 
+
+clear p
+p = Linear_Filter_p;
+
+t = 1:1e3;
+K = filter_gamma2(p.tau1,p.K_n,p.tau2,p.K_A,t);
+t = t*mean(diff(tA));
+fp = filter(K,1,mean2(PID));
+fp = fp + 2*randn(length(fp),1);
+
+figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
+
+subplot(1,3,1), hold on
+plot(t,K,'k')
+% now back out a filter from this
+[K_back, ~, filtertime] = FindBestFilter(mean2(PID),fp,[],'regmax=.01;','regmin=.01;','filter_length=999;');
+plot(filtertime*1e-3,K_back/max(K_back),'r')
+title('reg=.01')
+xlabel('Filter Lag (s)')
+ylabel('Filter Amplitude (norm)')
+
+
+subplot(1,3,2), hold on
+plot(t,K,'k')
+% now back out a filter from this
+[K_back, ~, filtertime] = FindBestFilter(mean2(PID),fp,[],'regmax=.1;','regmin=.1;','filter_length=999;');
+plot(filtertime*1e-3,K_back/max(K_back),'r')
+title('reg=.1')
+xlabel('Filter Lag (s)')
+
+
+subplot(1,3,3), hold on
+plot(t,K,'k')
+% now back out a filter from this
+[K_back, ~, filtertime] = FindBestFilter(mean2(PID),fp,[],'regmax=1;','regmin=1;','filter_length=999;');
+plot(filtertime*1e-3,K_back/max(K_back),'r')
+title('reg=1')
+xlabel('Filter Lag (s)')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% It looks like my filter estimation routines can do a good job even with this non-Gaussian stimulus statistics. 
 
 %% Version Info
 % The file that generated this document is called:

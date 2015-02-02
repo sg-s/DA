@@ -12,7 +12,7 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [R,y,z] = DAModelv3(S,p)
+function [R,y,z,Ky,Kz] = DAModelv3(S,p)
 
 switch nargin
 case 0
@@ -32,7 +32,10 @@ end
 % specify bounds for FitModel2Data
 lb.A = 0; lb.B = 0; 
 lb.tau_y = 0; lb.tau_z = 0;
-lb.n_y = 0; lb.n_z = 0;
+
+% some stricter bounds
+lb.n_y = 2; lb.n_z = 2;
+ub.n_y = 2; ub.n_z = 2;
 
 
 S = (S + p.s0); 

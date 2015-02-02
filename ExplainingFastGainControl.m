@@ -145,15 +145,15 @@ p.    A= 556.6875;
 p.    B= 10.9296;
 
 
-[fp_DA,~,~,Ky,Kz] = DAModelv2(mean2(PID),p);
+[fp_DA2,~,~,Ky,Kz] = DAModelv2(mean2(PID),p);
 
 figure('outerposition',[0 0 1300 500],'PaperUnits','points','PaperSize',[1300 500]); hold on
 subplot(1,4,1:3), hold on
 plot(tA,mean2(fA),'k')
-l=plot(tA,fp_DA,'r');
-r2 = rsquare(fp_LN,mean2(fA));
+l=plot(tA,fp_DA2,'r');
+r2 = rsquare(fp_DA2,mean2(fA));
 legend(l,strcat('r^2=',oval(r2,2)))
-title('DA Prediction')
+title('DAModelv2 Prediction')
 ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')
 
@@ -169,9 +169,71 @@ if being_published
 	delete(gcf)
 end
 
+%% Reduced DA Model
+% Can we do away with the weighting term in the previous model? Here we fit a reduced DA Model with only filter driving the gain adaptation behaviour. (see list-of-models.pdf for more detailed notes).  
 
-%% 
+clear p
+p.   s0 = -0.1663;
+p.tau_y = 15.2734;
+p.  n_y = 2;
+p.tau_z = 8.7031;
+p.  n_z = 2;
+p.    A = 542.5781;
+p.    B = 7.1366 ;
 
+
+[fp_DA3,~,~,Ky,Kz] = DAModelv3(mean2(PID),p);
+
+figure('outerposition',[0 0 1300 500],'PaperUnits','points','PaperSize',[1300 500]); hold on
+subplot(1,4,1:3), hold on
+plot(tA,mean2(fA),'k')
+l=plot(tA,fp_DA3,'r');
+r2 = rsquare(fp_DA3,mean2(fA));
+legend(l,strcat('r^2=',oval(r2,2)))
+title('DAModelv3 Prediction')
+ylabel('Firing Rate (Hz)')
+xlabel('Time (s)')
+
+subplot(1,4,4), hold on
+plot((0:300)*1e-3,Ky,'r')
+plot((0:300)*1e-3,Kz,'b')
+legend('K_y','K_z')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%% Post-Hoc Gain Correction
+% In this section, we tack on a gain-correction factor to the LN model's prediction (see da-pdfs/list-of-models.pdf) for a full explanation. 
+
+s = [mean2(PID) fp_LN];
+d.stimulus = s;
+clear p
+p. tau =  43.1673;
+p.   n =  10;
+p.beta =  7.0492;
+[fp_LNG,gain] = DivisiveGain(s,p);
+
+figure('outerposition',[0 0 1300 500],'PaperUnits','points','PaperSize',[1300 500]); hold on
+subplot(2,1,1), hold on
+plot(tA,mean2(fA),'k')
+l=plot(tA,fp_LNG,'r');
+r2 = rsquare(fp_LNG,mean2(fA));
+legend(l,strcat('r^2=',oval(r2,2)))
+title('Gain-corrected LN Prediction')
+ylabel('Firing Rate (Hz)')
+xlabel('Time (s)')
+
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %% Version Info
 % The file that generated this document is called:
@@ -181,3 +243,11 @@ disp(mfilename)
 % and its md5 hash is:
 Opt.Input = 'file';
 disp(DataHash(strcat(mfilename,'.m'),Opt))
+
+%%
+% This file should be in this commit:
+[status,m]=unix('git rev-parse HEAD');
+if ~status
+	disp(m)
+end
+

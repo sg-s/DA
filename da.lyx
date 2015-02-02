@@ -67,12 +67,117 @@ Forumlae for Dynamical Adaptation Project
 Srinivas Gorur-Shandilya
 \end_layout
 
+\begin_layout Standard
+This page lists all the models being considered.
+ Models are written in MATLAB of the form
+\end_layout
+
+\begin_layout Quotation
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+[R,...] = modelname(s,p)
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where R is a vector of the response, s is the stimulus vector, and p is
+ structure containing the parameters of the model.
+ The structure of p can also be obtained using
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+p=getModelParameters(modelname);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+All models listed here can be fit to data using
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+p=FitModel2Data(@modelname,data,p0);
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+where data is a structure with fields stimulus, response and time (optional).
+ 
+\end_layout
+
+\begin_layout Section
+Non-Parametric Linear Models
+\end_layout
+
+\begin_layout Standard
+Refer to the PDF document called 
+\begin_inset Quotes eld
+\end_inset
+
+Filter Analyis
+\begin_inset Quotes erd
+\end_inset
+
+ for a detailed description of this class of models.
+ 
+\end_layout
+
 \begin_layout Section
 Parametric Linear Models
 \end_layout
 
 \begin_layout Subsection
 Parametric LN Model
+\end_layout
+
+\begin_layout Standard
+This model is a parameterised version of the LN model.
+ The filter is parametrised by a double gamma function, that can have one
+ or two lobes as the data demands.
+ The filter is specified by 
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+filter_gamma2
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+and the response of the model to a stimulus is given by
 \end_layout
 
 \begin_layout Standard
@@ -86,8 +191,23 @@ R(t)=N\left(K_{r}\otimes(s(t)-\bar{s}(t))+s_{0}\right)
 
 \end_layout
 
+\begin_layout Standard
+where 
+\begin_inset Formula $N$
+\end_inset
+
+ is some saturating non-linearity.
+ In practise, we use a Hill function, specified in hill.m
+\end_layout
+
 \begin_layout Subsection
 Parametric Linear Model
+\end_layout
+
+\begin_layout Standard
+Same as above, but without the output non-linearity.
+ This is equivalent to throwing out the nonlinearity in the previous model.
+ 
 \end_layout
 
 \begin_layout Standard
@@ -114,6 +234,25 @@ The original non-ODE DA Model
 \end_layout
 
 \begin_layout Standard
+This is as specified in Damon's paper.
+ We use the non-ODE form of the equation, which speeds up computation hugely.
+ This model essentially consists of an integrating filter 
+\begin_inset Formula $K_{y}$
+\end_inset
+
+, with a static gain 
+\begin_inset Formula $\alpha$
+\end_inset
+
+, whose dynamic gain is modualted by a factor 
+\begin_inset Formula $\beta$
+\end_inset
+
+ and whose timescales depend on the filters within the square brackets.
+ 
+\end_layout
+
+\begin_layout Standard
 \begin_inset Formula 
 \[
 r(t)=\frac{\alpha K_{y}\otimes s(t)}{1+\beta\left[\gamma K_{y}\otimes s(t)+\left(1-\gamma\right)K_{z}\otimes s(t)\right]}
@@ -126,6 +265,12 @@ r(t)=\frac{\alpha K_{y}\otimes s(t)}{1+\beta\left[\gamma K_{y}\otimes s(t)+\left
 
 \begin_layout Subsection
 Stimulus-offset DA Model
+\end_layout
+
+\begin_layout Standard
+This is identical to the original DA model, but with a stimulus offset that
+ we introduce because our stimulus measurement has a unknown offset.
+ 
 \end_layout
 
 \begin_layout Standard
@@ -159,6 +304,33 @@ Reduced DA Model
 \end_layout
 
 \begin_layout Standard
+In this model, we reduce the DA model to its essentials, throwing away the
+ weighting factor 
+\begin_inset Formula $\gamma$
+\end_inset
+
+ in the gain term, and saying that all the dynamic gain modulation is due
+ to the 
+\family roman
+\series medium
+\shape up
+\size normal
+\emph off
+\bar no
+\strikeout off
+\uuline off
+\uwave off
+\noun off
+\color none
+
+\begin_inset Formula $K_{z}$
+\end_inset
+
+filter.
+ 
+\end_layout
+
+\begin_layout Standard
 \begin_inset Formula 
 \[
 R(t)=\frac{\alpha K_{y}\otimes s'(t)}{1+\beta\left(K_{z}\otimes s'(t)\right)}
@@ -189,6 +361,12 @@ Receptor Adaptation Model
 \end_layout
 
 \begin_layout Standard
+In this model, we consider that the affinity of the receptor to the ligand
+ changes over time, as a function of the ligand concentration.
+ 
+\end_layout
+
+\begin_layout Standard
 \begin_inset Formula 
 \[
 R(t)=N\left(K_{r}\otimes(\hat{s}(t)-\bar{\hat{s}}(t))+s_{0}\right)
@@ -215,6 +393,12 @@ LNA Model
 \end_layout
 
 \begin_layout Standard
+In this model, we assume that fast gain control is captured in a divisive
+ term (just like the DA model) tacked on to the LN model.
+ 
+\end_layout
+
+\begin_layout Standard
 \begin_inset Formula 
 \[
 R(t)=\frac{N\left(K_{r}\otimes(s(t)-\bar{s}(t))+s_{0}\right)}{1+\beta K_{a}\otimes(s(t)-\bar{s}(t))}
@@ -225,8 +409,27 @@ R(t)=\frac{N\left(K_{r}\otimes(s(t)-\bar{s}(t))+s_{0}\right)}{1+\beta K_{a}\otim
 
 \end_layout
 
+\begin_layout Standard
+Another version of this model involves tacking on the denominator to the
+ non-paramteric LN model prediction.
+ Just the denominator is available in 
+\begin_inset Quotes eld
+\end_inset
+
+DivisiveGain.m
+\begin_inset Quotes erd
+\end_inset
+
+
+\end_layout
+
 \begin_layout Section
 NLN Model
+\end_layout
+
+\begin_layout Standard
+This model assumes there is both an input and output nonlinearity.
+ 
 \end_layout
 
 \begin_layout Standard
@@ -255,8 +458,26 @@ R(t)=N_{i}\left(K_{r}\otimes\hat{s}(t)\right)
 Dynamic Gain Models
 \end_layout
 
+\begin_layout Standard
+In this class of models, we ask if gain modulation is stimulus-driven (like
+ the DA model) or response-driven (like in Liu and Wang).
+ We model both phenomenon, and add a weighting term between them.
+ 
+\end_layout
+
 \begin_layout Subsection
 LN-inspired 
+\end_layout
+
+\begin_layout Standard
+Imagine a LN model, where the output nonlinearity is not static, but changes
+ over time.
+ It can change in response to the stimulus (for example, a pronlonged large
+ stimulus can decrease the slope), and/or it can change according to the
+ reponse itself (for example, a period of high activity of the neuron could
+ temporarily shut it down, or, change the output nonlinearity).
+ We model both processes in an unbiased manner with a weighting factor according
+ to:
 \end_layout
 
 \begin_layout Standard

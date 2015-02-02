@@ -186,8 +186,6 @@ if being_published
 	delete(gcf)
 end
 
-return
-
 
 
 %%
@@ -224,33 +222,19 @@ end
 
 
 %% Fitting A Linear Model to this Data
-% Now we will attempt to find the best fit filter from the stimulus to the data. The following figure shows the filter backed out of this data, for different values of regularisation (scaled by the mean eigenvalue of the covariance matrix). 
+% Now we will attempt to find the best fit filter from the stimulus to the data. The following figure shows the "best" filter backed out of this data. 
 
 
-figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
-subplot(1,3,1), hold on
-[K, ~, filtertime] = FindBestFilter(mean2(PID),mean2(fA),[],'regmax=0;','regmin=0;','filter_length=599;','offset=49;');
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[900 500]); hold on
+plot([-.1 1],[0 0 ],'k--')
+[K, ~, filtertime] = FindBestFilter(mean2(PID),mean2(fA),[],'regmax=10;','regmin=.1;','filter_length=999;');
 filtertime = filtertime*mean(diff(tA));
-plot(filtertime,K)
-title('reg = 0')
-xlabel('Filter Lag (s)')
-
-
-subplot(1,3,2), hold on
-[K, ~, filtertime] = FindBestFilter(mean2(PID),mean2(fA),[],'regmax=0.1;','regmin=0.1;','filter_length=599;','offset=49;');
-filtertime = filtertime*mean(diff(tA));
-plot(filtertime,K)
-title('reg = 0.1')
-xlabel('Filter Lag (s)')
-
-subplot(1,3,3), hold on
-[K, ~, filtertime] = FindBestFilter(mean2(PID),mean2(fA),[],'regmax=1;','regmin=1;','filter_length=599;','offset=49;');
-filtertime = filtertime*mean(diff(tA));
-plot(filtertime,K)
-title('reg = 1')
+plot(filtertime,K,'r')
+ylabel('Filter Amplitude')
 xlabel('Filter Lag (s)')
 
 PrettyFig;
+
 if being_published
 	snapnow
 	delete(gcf)
@@ -258,16 +242,13 @@ end
 
 
 %%
-% There are some weird things here. First, the filter estimation doesn't seem to work very well (none of the filters look particularly clean.). Furthermore, the filter, when we can sort of pull it out, seems to have only 1 lobe, and no negative lobe. This is strange, as we expect that in the presence of background, the negative lobe of the filter would get larger. 
-
-%%
-% Even though this looks weird, we will use this filter to make a prediction of the response:
+% We will use this filter to make a prediction of the response:
 
 K = K/max(K);
 fp  =convolve(tA,mean2(PID),K,filtertime);
 
-fp = fp + 19.7170;
-fp = fp*1.1563;
+fp = fp + 18.6131;
+fp = fp*1.2246;
 
 fp_normal = fp;
 
@@ -286,6 +267,7 @@ xlabel('Filter Lag (s)')
 ylabel('Filter (norm.)')
 
 PrettyFig;
+
 if being_published
 	snapnow
 	delete(gcf)
@@ -353,7 +335,7 @@ if being_published
 end
 
 %%
-% What happens when we explicitly specify a filter with a negative lobe? For example, what happens if we use a filter extracted from Gaussian noise with this data? How well does it perform? 
+% What happens when we explicitly specify a filter that we obtained from stimulation with pseudo-Gaussian stimuli? How well does it perform? 
 
 clear p
 p.  tau1= 3*5.0122;
@@ -413,26 +395,16 @@ end
 %% Gain Changes
 % In this section, we look at gain changes in the ORN. We do so, first, by dividing the instantaneous firing rate by the linear prediction. 
 
-figure('outerposition',[0 0 1400 750],'PaperUnits','points','PaperSize',[1400 750]); hold on
-subplot(2,1,1), hold on
+figure('outerposition',[0 0 1000 450],'PaperUnits','points','PaperSize',[1000 450]); hold on
 plot([-1 61],[1 1],'k--')
 plot(tA,mean2(fA)./fp_normal,'r')
 % cache the gain to use later
 cache('gain',mean2(fA)./fp_normal)
 ylabel('Gain')
-title('from Rev. corr. filter')
-set(gca,'YLim',[0 3])
-
-subplot(2,1,2), hold on
-plot([-1 61],[1 1],'k--')
-plot(tA,mean2(fA)./fp_xcorr,'r')
-ylabel('Gain')
-title('from cross corr. filter')
-xlabel('Time (s)')
-set(gca,'YLim',[0 3])
-
+set(gca,'YLim',[0 2.1],'XLim',[5 60])
 
 PrettyFig;
+
 if being_published
 	snapnow
 	delete(gcf)

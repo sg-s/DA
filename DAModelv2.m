@@ -12,11 +12,11 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [R,y,z] = DAModelv2(S,p)
+function [R,y,z,Ky,Kz] = DA_Modelv2(S,p)
 
 switch nargin
 case 0
-	help DAModelv2
+	help DA_Modelv2
 	return
 case 1
 	error('Not enough input arguments')
@@ -29,6 +29,16 @@ case 2
 	end
 end
 
+% specify bounds for FitModel2Data
+lb.A = 0; lb.B = 0; lb.C = 0 ; 
+lb.tau_y = 0; lb.tau_z = 0;
+
+ub.C = 1; 
+
+% extra bounds
+% lb.n_y = 2; lb.n_z = 2;
+% ub.n_y = 2; ub.n_z = 2;
+
 
 
 S = (S + p.s0); 
@@ -36,7 +46,7 @@ S = (S + p.s0);
 t = 0:300; % filters to be this long; don't use n*tau longer than a few hundred ms in this case...
 % Kz and Ky are the filters described in equations 12 and 13
 Ky = generate_simple_filter(p.tau_y,p.n_y,t);
-Kz = generate_simple_filter(p.tau_z,p.n_z,t);
+Kz = p.C*Ky + (1-p.C) * generate_simple_filter(p.tau_z,p.n_z,t);
 
 % y and z are the stimulus convolved with the filters Ky and Kz
 y = filter(Ky,1,S);

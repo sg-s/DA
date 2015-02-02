@@ -6,10 +6,11 @@
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
 %% Explaining Fast Gain Control
-% We have shown that there is a lot of evidence that ORNs modulate gain as a function of recnetly experienced stimuli. We show that the LN model, despite explaining >95% of the data (typically), fails to account for this fast gain control. Can we develop a model to explain this fast gain control?
+% We have shown that there is a lot of evidence that ORNs modulate gain as a function of recently experienced stimuli. We show that the LN model, despite explaining >95% of the data (for Gaussian/binary inputs), fails to account for this fast gain control. Can we develop a model to explain this fast gain control?
 
 %%
-% In the following sections, we try fitting a Dynamical Adaptation (DA) model to the data. 
+% In the following sections, we fit a variety of models (see da-pdfs/list-of-models.pdf) to the data, to see which model explains the data best, and then analyse how well these models account for observed fast gain changes. 
+
 
 % internal housekeeping: determine if being called by publish or not
 calling_func = dbstack;
@@ -21,405 +22,151 @@ if ~isempty(calling_func)
 end
 
 
-% some parameters
-font_size = 20;
-marker_size = 10;
-marker_size2 = 20;
-history_lengths = (3*floor(1000*logspace(-2,1,30)/3))/1e3;
-example_history_length = 0.135;
+% load data form the large variance flickering experiment
+load('/local-data/DA-paper/large-variance-flicker/2015_01_28_CS_ab3_2_EA.mat')
+PID = data(4).PID;
+time = 1e-4*(1:length(PID));
+all_spikes = spikes(4).A;
+B_spikes = spikes(4).B;
+load('/local-data/DA-paper/large-variance-flicker/2015_01_28_CS_ab3_3_EA.mat')
+PID = vertcat(PID,data(4).PID);
+all_spikes = vertcat(all_spikes,spikes(4).A);
+B_spikes = vertcat(B_spikes,spikes(4).B);
 
-
-% load data
-load('/local-data/DA-paper/data.mat')
-td = 4;
-
-
-%         #######  ##     ## ######## ########  ##     ## ########    ##    ## ##       
-%        ##     ## ##     ##    ##    ##     ## ##     ##    ##       ###   ## ##       
-%        ##     ## ##     ##    ##    ##     ## ##     ##    ##       ####  ## ##       
-%        ##     ## ##     ##    ##    ########  ##     ##    ##       ## ## ## ##       
-%        ##     ## ##     ##    ##    ##        ##     ##    ##       ##  #### ##       
-%        ##     ## ##     ##    ##    ##        ##     ##    ##       ##   ### ##       
-%         #######   #######     ##    ##         #######     ##       ##    ## ######## 
-
-%% Output Non-linearity
-% Does adding an output non-linearity post-hoc improve the linear fit? In the following section, we fit a two-parameter Hill function to the linear prediction and the data, after we have generated the linear prediction. (In other words, the Hill function is fit _after_ the best linear prediction is calculated.) The following figure shows the filter and the shape of the best-fit non-linearity:
-
-
-% build a simple linear model
-[K,~,filtertime] = FindBestFilter(data(td).PID(500:end),data(td).ORN(500:end),[],'filter_length=201;');
-data(td).K = K;
-data(td).filtertime = filtertime*mean(diff(data(td).time));
-data(td).LinearFit = convolve(data(td).time,data(td).PID,data(td).K,data(td).filtertime);
-data(td).LinearFit = data(td).LinearFit + mean(data(td).ORN);
-
-xdata = data(td).LinearFit;
-ydata = data(td).ORN;
-
-% crop it to lose NaNs
-ydata(isnan(xdata)) = [];
-xdata(isnan(xdata)) = [];
-
-xdata = xdata(:);
-ydata = ydata(:);
-
-fo=optimset('MaxFunEvals',1000,'Display','none');
-x = lsqcurvefit(@hill,[max(ydata) 2 2],xdata,ydata,[max(ydata)/2 2 1],[2*max(ydata) max(ydata) 10],fo);
-% save this for later
-LNpred = hill(x,data(td).LinearFit);
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-subplot(1,2,1), hold on
-plot(data(td).filtertime,K,'k')
-xlabel('Filter Lag (s)')
-ylabel('Filter amplitude (Hz/stim)')
-subplot(1,2,2), hold on
-plot(sort(xdata),hill(x,sort(xdata)),'k')
-xlabel('Linear Prediction (Hz)')
-ylabel('Nonlinearity Output (Hz)')
-
-PrettyFig;
-
-if being_published
-	snapnow;
-	delete(gcf);
+% A spikes --> firing rate
+hash = DataHash(full(all_spikes));
+cached_data = cache(hash);
+if isempty(cached_data)
+	fA = spiketimes2f(all_spikes,time);
+	cache(hash,fA);
+else
+	fA = cached_data;
 end
 
-
-%%
-% How does the output nonlinearity change the prediction? In the following figure, the data is shown in black,and the LN prediction is shown in red. 
-
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(data(td).time,data(td).ORN,'k')
-plot(data(td).time,LNpred,'r')
-set(gca,'XLim',[18 22])
-xlabel('Time (s)')
-ylabel('Firing rate (Hz)')
-
-PrettyFig;
-
-if being_published
-	snapnow;
-	delete(gcf);
+tA = 1e-3*(1:length(fA));
+PID2 = fA;
+for i = 1:width(PID2)
+	PID2(:,i) = interp1(time,PID(i,:),tA);
 end
+PID = PID2; clear PID2
+% some minor cleaning up
+PID(end,:) = PID(end-1,:); 
+
+% assemble the data for fitting 
+clear d
+d.stimulus = mean2(PID);
+d.response = mean2(fA);
 
 
+%           ##       ##    ##    ##     ##  #######  ########  ######## ##       
+%           ##       ###   ##    ###   ### ##     ## ##     ## ##       ##       
+%           ##       ####  ##    #### #### ##     ## ##     ## ##       ##       
+%           ##       ## ## ##    ## ### ## ##     ## ##     ## ######   ##       
+%           ##       ##  ####    ##     ## ##     ## ##     ## ##       ##       
+%           ##       ##   ###    ##     ## ##     ## ##     ## ##       ##       
+%           ######## ##    ##    ##     ##  #######  ########  ######## ######## 
+
+%% Fitting a LN Model
+% Here, we fit a non-parametric LN model to the data. 
 
 
-%%
-% They look almost identical. The r-square of the LN prediction is: 
-
-disp(rsquare(LNpred,data(td).ORN))
-
-%%
-% And the raw Euclidean Distance between the prediction and the data is: 
-
-disp(Cost2(LNpred(205:end-33),data(td).ORN(205:end-33)))
-
-
-%      ########     ###       ##     ##  #######  ########  ######## ##       
-%      ##     ##   ## ##      ###   ### ##     ## ##     ## ##       ##       
-%      ##     ##  ##   ##     #### #### ##     ## ##     ## ##       ##       
-%      ##     ## ##     ##    ## ### ## ##     ## ##     ## ######   ##       
-%      ##     ## #########    ##     ## ##     ## ##     ## ##       ##       
-%      ##     ## ##     ##    ##     ## ##     ## ##     ## ##       ##       
-%      ########  ##     ##    ##     ##  #######  ########  ######## ######## 
-
-%% Fitting a DA Model to ORN response data
-% In this section, we fit a DA model to the example data: 
-disp(data(td).original_name)
-
-
-
-% fit model to data
-if ~exist('p')
-	clear d
-	d.stimulus = data(td).PID - mean(data(td).PID);
-	d.stimulus = d.stimulus*100;
-	d.stimulus = d.stimulus(200:end-200);
-	d.LNpred = LNpred(200:end-200);
-	d.response = data(td).ORN(200:end-200);
-	x0 = [1 .32 .2 .4 14 8 3 -.1127];
-	[p,DApred,DAParam]=FitDAModelToData(d,x0,[],[],.95);
-
-
-	% fix DApred
-	temp = NaN*LNpred;
-	temp(200:end-200) = DApred;
-	DApred = temp; clear temp
-
-
+if ~exist('K')
+	[K, ~, filtertime] = FindBestFilter(mean2(PID),mean2(fA),[],'regmax=10;','regmin=.1;','filter_length=999;');
+	filtertime = filtertime*mean(diff(tA));
+	K = K/max(K);
 end
+fp  =convolve(tA,mean2(PID),K,filtertime);
+fp = fp + 18.6131;
+fp = fp*1.2246;
+clear p
+p.A= 56.9845;
+p.k= 23.5616;
+p.n= 2.9577;
 
-%%
-% The DA model primarily consists of two filters, $K_{z}$ and $K_{y}$, which are shown in the figure below: 
+fp_LN = hill(p,fp);
+fp_K = fp; clear fp
 
-t = 0:0.1:100;
-[Ky,Kz] = DA_Filters(p,t);
-t = 3e-3*t;
-figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(t,Ky,'k')
-plot(t,Kz,'r')
-legend({'K_y','K_z'})
+figure('outerposition',[0 0 1300 700],'PaperUnits','points','PaperSize',[1300 700]); hold on
+
+subplot(2,4,1:3), hold on
+plot(tA,mean2(fA),'k')
+l=plot(tA,fp_K,'r');
+r2 = rsquare(fp_K,mean2(fA));
+legend(l,strcat('r^2=',oval(r2,2)))
+title('Linear Prediction')
+ylabel('Firing Rate (Hz)')
+
+subplot(2,4,4), hold on
+plot(filtertime,K,'r')
 xlabel('Lag (s)')
-ylabel('Filter Height')
+ylabel('Filter Amplitude')
 
-PrettyFig;
-
-if being_published
-	snapnow;
-	delete(gcf);
-end
-
-%%
-% All the parameters of the best-fit DA model are:
-disp(p)
-
-
-%%
-% How does the prediction of the DA model compare with the LN model? The following figure shows the data, with the two predictions:
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(data(td).time,data(td).ORN,'k')
-plot(data(td).time,LNpred,'r')
-plot(data(td).time,DApred,'g')
-set(gca,'XLim',[18 22])
+subplot(2,4,5:7), hold on
+plot(tA,mean2(fA),'k')
+l=plot(tA,fp_LN,'r');
+r2 = rsquare(fp_LN,mean2(fA));
+legend(l,strcat('r^2=',oval(r2,2)))
+title('LN Prediction')
+ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')
-ylabel('Firing rate (Hz)')
-legend({'Data','LN Model','DA Model'})
-PrettyFig;
 
-if being_published
-	snapnow;
-	delete(gcf);
-end
-
-%%
-% They look almost identical. The r-square of the DA prediction is: 
-
-disp(rsquare(DApred,data(td).ORN))
-
-%%
-% And the raw Euclidean Distance between the prediction and the data is: 
-
-disp(Cost2(DApred(205:end-33),data(td).ORN(205:end-33)))
-
-%    ##        ######  ##     ## 
-%    ##       ##    ## ###   ### 
-%    ##       ##       #### #### 
-%    ##       ##       ## ### ## 
-%    ##       ##       ##     ## 
-%    ##       ##    ## ##     ## 
-%    ########  ######  ##     ## 
-
-%% Linearised Correction Model
-% Our hypothesis is that the ORN modulates its gain based on the input stimulus. In other words, it divisively affects the prediction of the linear model (which is also why the linear model cannot account for this). A first order correction is given by:
-
-%%
-% $$f_{1}=\frac{f_{0}}{1+g_{1}}$$
-
-%%
-% where $g_{1}$ is a first order gain correction term given by
-
-%%
-% $$ g_{1}=K_{1}\otimes s(t) $$ 
-
-%%
-% where $K_{1}$ is the first order "gain filter". We can write out a higher order correction, for example, a second order gain correction: 
-
-%% 
-% $$f_{2}=\frac{f_{1}}{1+g_{2}}$$
-
-%%
-% and so on. In practise, $K_{i}$ is parametrised, and fitted to the data. There are numerical difficulties in estimating these filters non parametrically. 
-
-
- 
-
-return
-
-
-
-%  ######      ###    #### ##    ##       ###    ##    ##    ###    ##          ##       ##    ## 
-% ##    ##    ## ##    ##  ###   ##      ## ##   ###   ##   ## ##   ##          ##       ###   ## 
-% ##         ##   ##   ##  ####  ##     ##   ##  ####  ##  ##   ##  ##          ##       ####  ## 
-% ##   #### ##     ##  ##  ## ## ##    ##     ## ## ## ## ##     ## ##          ##       ## ## ## 
-% ##    ##  #########  ##  ##  ####    ######### ##  #### ######### ##          ##       ##  #### 
-% ##    ##  ##     ##  ##  ##   ###    ##     ## ##   ### ##     ## ##          ##       ##   ### 
-%  ######   ##     ## #### ##    ##    ##     ## ##    ## ##     ## ########    ######## ##    ## 
-
-
-%% LN Model Gain Analysis
-% In the previous section, we saw that the simple linear model fails to account for this fast adaptation of the ORNs. Specifically, the gain of the neuron _w.r.t_ to the model is significantly different for times when the stimulus is high and the when the stimulus is low.
-
-%%
-% In this section, we want to know if the LN model (adding a non-linear function post-hoc) corrects for this mis-prediction of gain. Here, we repeat the gain analysis as in the previous section, but this time, using the LN prediction instead of the linear prediction. 
-
-f1=figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-ph(1) = subplot(2,1,1); hold on 
-ph(2) = subplot(2,1,2); hold on
-
-title(ph(1),strrep(data(td).original_name,'_','-'),'FontSize',20);
-
-f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-ph(3) = subplot(1,2,1); hold on 
-axis square
-ph(4) = subplot(1,2,2); hold on
-
-
-
-s = 300; % when we start for the gain analysis
-z = length(data(td).ORN) - 33; % where we end
-
-clear x
-x.response = data(td).ORN(s:z);
-x.prediction = LNpred(s:z);
-x.stimulus = data(td).PID(s:z);
-x.time = data(td).time(s:z);
-x.filter_length = 201;
-
-if redo_bootstrap
-	[p_LN,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
-	s=abs(l-h);
-	s(p_LN(1,:)>0.05)=NaN;
-	[~,loc]=max(s);
-	example_history_length_LN = history_lengths(loc);
-
-else
-	GainAnalysis4(x,history_lengths,example_history_length_LN,ph,p_LN);
-end
-
-xlabel(ph(3),'LN Prediction (Hz)')
-set(ph(4),'XScale','log')
-
-if being_published
-	snapnow;
-	delete(f1);
-
-	snapnow;
-	delete(f2);
-end
-
-
- % ######      ###    #### ##    ##       ###    ##    ##    ###    ##          ########     ###    
-% ##    ##    ## ##    ##  ###   ##      ## ##   ###   ##   ## ##   ##          ##     ##   ## ##   
-% ##         ##   ##   ##  ####  ##     ##   ##  ####  ##  ##   ##  ##          ##     ##  ##   ##  
-% ##   #### ##     ##  ##  ## ## ##    ##     ## ## ## ## ##     ## ##          ##     ## ##     ## 
-% ##    ##  #########  ##  ##  ####    ######### ##  #### ######### ##          ##     ## ######### 
-% ##    ##  ##     ##  ##  ##   ###    ##     ## ##   ### ##     ## ##          ##     ## ##     ## 
- % ######   ##     ## #### ##    ##    ##     ## ##    ## ##     ## ########    ########  ##     ## 
-
-
-%% DA Model Gain Analysis
-%  Here, we repeat the gain analysis as in the previous section, but this time, using the DA prediction instead of the LN prediction. 
-
-f1=figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-ph(1) = subplot(2,1,1); hold on 
-ph(2) = subplot(2,1,2); hold on
-
-title(ph(1),strrep(data(td).original_name,'_','-'),'FontSize',20);
-
-f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-ph(3) = subplot(1,2,1); hold on 
-axis square
-ph(4) = subplot(1,2,2); hold on
-
-
-
-s = 300; % when we start for the gain analysis
-z = length(data(td).ORN) - 200; % where we end
-
-clear x
-x.response = data(td).ORN(s:z);
-x.prediction = DApred(s:z);
-x.stimulus = data(td).PID(s:z);
-x.time = data(td).time(s:z);
-x.filter_length = 201;
-
-if redo_bootstrap
-	[p_DA,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
-
-else
-	GainAnalysis4(x,history_lengths,example_history_length_LN,ph,p_DA);
-end
-
-xlabel(ph(3),'LN Prediction (Hz)')
-set(ph(4),'XScale','log')
-
-if being_published
-	snapnow;
-	delete(f1);
-
-	snapnow;
-	delete(f2);
-end
-
-
-%%
-% What do to the two models predict of the stimulus-dependent instantaneous gain of the neuron? On the left is the prediction of the LN model, on the right is the prediction of the DA model. 
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-example_history_length = 0.3;
-s = 300; % when we start for the gain analysis
-z = length(data(td).ORN) - 33; % where we end
-
-ph = []; ph(3) = subplot(1,2,1); hold on
-clear x
-x.response = data(td).ORN(s:z);
-x.prediction = LNpred(s:z);
-x.stimulus = data(td).PID(s:z);
-x.time = data(td).time(s:z);
-x.filter_length = 201;
-GainAnalysis3(x,history_lengths,example_history_length,ph,NaN*history_lengths);
-xlabel('LN Prediction (Hz)')
-ylabel('ORN Response (Hz)')
-
-ph = []; ph(3) = subplot(1,2,2); hold on
-x.prediction = DApred(s:z);
-GainAnalysis3(x,history_lengths,example_history_length,ph,NaN*history_lengths);
-xlabel('DA Prediction (Hz)')
-ylabel('')
-
-
-
-%%
-% Are these slopes significant? Over what history lengths are they significantly different? 
-figure('outerposition',[0 0 1200 500],'PaperUnits','points','PaperSize',[1200 500]); hold on
-example_history_length = 0.12;
-s = 300; % when we start for the gain analysis
-z = length(data(td).ORN) - 33; % where we end
-
-ph = []; ph(4) = subplot(1,2,1); hold on
-clear x
-x.response = data(td).ORN(s:z);
-x.prediction = LNpred(s:z);
-x.stimulus = data(td).PID(s:z);
-x.time = data(td).time(s:z);
-x.filter_length = 201;
-GainAnalysis3(x,history_lengths,example_history_length,ph,p_values(:,td));
-set(gca,'XScale','log')
-xlabel('History Length (s)')
-title('LN Model')
-
-
-ph = []; ph(4) = subplot(1,2,2); hold on
-x.prediction = DApred(s:z);
-if ~exist('p_DA')
-	p_DA=GainAnalysis4(x,history_lengths,example_history_length,ph);
-else
-	p_DA=GainAnalysis4(x,history_lengths,example_history_length,ph,p_DA);
-end
-xlabel('History Length (s)')
-ylabel('')
-set(gca,'XScale','log')
-title('DA Model')
+subplot(2,4,8), hold on
+plot(sort(fp_K),hill(p,sort(fp_K)),'r')
+xlabel('Linear Prediction (Hz)')
 
 PrettyFig;
 
 if being_published
-	snapnow;
-	delete(fh);
+	snapnow
+	delete(gcf)
+end
+
+
+
+%           ########     ###       ##     ##  #######  ########  ######## ##       
+%           ##     ##   ## ##      ###   ### ##     ## ##     ## ##       ##       
+%           ##     ##  ##   ##     #### #### ##     ## ##     ## ##       ##       
+%           ##     ## ##     ##    ## ### ## ##     ## ##     ## ######   ##       
+%           ##     ## #########    ##     ## ##     ## ##     ## ##       ##       
+%           ##     ## ##     ##    ##     ## ##     ## ##     ## ##       ##       
+%           ########  ##     ##    ##     ##  #######  ########  ######## ######## 
+
+%% Fitting a DA Model
+% In the following section, we fit a DA Model (DAModelv2), where we add a stimulus offset term (because we don't know the offset of the PID), and constrain $n_z$ and $n_y$ to 2. 
+
+clear p
+p.   s0= -0.1663;
+p.tau_y= 22.9687;
+p.  n_y= 2;
+p.    C= 0.5701;
+p.tau_z= 150.1172;
+p.  n_z= 2;
+p.    A= 556.6875;
+p.    B= 10.9296;
+
+
+[fp_DA,~,~,Ky,Kz] = DAModelv2(mean2(PID),p);
+
+figure('outerposition',[0 0 1300 500],'PaperUnits','points','PaperSize',[1300 500]); hold on
+subplot(1,4,1:3), hold on
+plot(tA,mean2(fA),'k')
+l=plot(tA,fp_DA,'r');
+r2 = rsquare(fp_LN,mean2(fA));
+legend(l,strcat('r^2=',oval(r2,2)))
+title('DA Prediction')
+ylabel('Firing Rate (Hz)')
+xlabel('Time (s)')
+
+subplot(1,4,4), hold on
+plot((0:300)*1e-3,Ky,'r')
+plot((0:300)*1e-3,Kz,'b')
+legend('K_y','K_z')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
 end
 
 

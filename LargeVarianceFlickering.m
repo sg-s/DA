@@ -523,9 +523,10 @@ end
 %% Does an output nonlinearity explain all observed gain changes?  
 % In this section, we fit an output nonlinearity to the linear prediction *post-hoc*, and repeat the gain analysis to see if this operation can account for all previously observed gain changes. 
 
-p.A= 56.6434;
-p.k= 23.3667;
-p.n= 2.9647;
+clear p
+p.A= 56.9845;
+p.k= 23.5616;
+p.n= 2.9577;
 
 fp_hill = hill(p,fp_normal);
 

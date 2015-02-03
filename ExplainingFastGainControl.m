@@ -69,21 +69,20 @@ d.response = mean2(fA);
 %% Fitting a LN Model
 % Here, we fit a LN model to the data. 
 
+[K, ~, filtertime_full] = FindBestFilter(mean2(PID),mean2(fA),[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
+filtertime_full = filtertime_full*mean(diff(tA));
+filtertime = 1e-3*(-200:900);
+K = interp1(filtertime_full,K,filtertime);
 
-if ~exist('K')
-	[K, ~, filtertime] = FindBestFilter(mean2(PID),mean2(fA),[],'regmax=10;','regmin=.1;','filter_length=999;');
-	filtertime = filtertime*mean(diff(tA));
-	K = K/max(K);
-end
+K = K/max(K);
 fp  =convolve(tA,mean2(PID),K,filtertime);
-fp = fp + 18.6131;
-fp = fp*1.2246;
-clear p
-p.A= 56.9845;
-p.k= 23.5616;
-p.n= 2.9577;
 
-fp_LN = hill(p,fp);
+fp = fp + 20.1314;
+fp = fp*1.1323;
+
+cf = cache('smoothingspline_LN');
+
+fp_LN = cf(fp);
 fp_K = fp; clear fp
 
 figure('outerposition',[0 0 1300 700],'PaperUnits','points','PaperSize',[1300 700]); hold on
@@ -111,7 +110,8 @@ ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')
 
 subplot(2,4,8), hold on
-plot(sort(fp_K),hill(p,sort(fp_K)),'r')
+plot(fp_K,y,'.','Color',[.8 .8 .8])
+plot(sort(fp_K),cf(sort(fp_K)),'r')
 xlabel('Linear Prediction (Hz)')
 
 PrettyFig;

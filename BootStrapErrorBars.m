@@ -42,7 +42,7 @@ high_slopes.data = NaN(1,length(hl));
 n = floor(fraction*length(shat));
 
 for i = 1:length(hl) % for each history length
-	textbar(i,length(hl))
+	disp(i)
 	% do low slopes
 	this_shat = shat(i,:);
 	this_shat(1:hl(i)) = Inf; % the initial segment where we can't estimate shat is excluded
@@ -64,7 +64,8 @@ for i = 1:length(hl) % for each history length
 
 
 	shift =  randi(round(length(idx)),nrep,1);
-	for j = 1:nrep  % bootstrap this nrep times
+	temp = NaN(nrep,1); % stores bootstrap values form par for
+	parfor j = 1:nrep  % bootstrap this nrep times
 		shifted_idx = circshift(idx,[shift(j) 0]);
 		f_low = f(shifted_idx(1:n));
 		fp_low = fp(shifted_idx(1:n));
@@ -75,9 +76,11 @@ for i = 1:length(hl) % for each history length
 
 		% fit lines
 		flow = fit(fp_low,f_low,'Poly1');
-		low_slopes.bootstrap(j,i) = flow.p1;
+		temp(j) = flow.p1;
 	end
 	clear j
+
+	low_slopes.bootstrap(:,i) = temp;
 
 
 
@@ -102,8 +105,9 @@ for i = 1:length(hl) % for each history length
 	% fit lines
 	flow = fit(fp_low,f_low,'Poly1');
 	high_slopes.data(i) = flow.p1;
+	temp = NaN(nrep,1); % stores bootstrap values form par for
 
-	for j = 1:nrep  % bootstrap this many times
+	parfor j = 1:nrep  % bootstrap this many times
 		shift =  randi(length(idx));
 		shifted_idx = circshift(idx,[shift 0]);
 		f_low = f(shifted_idx(1:n));
@@ -115,9 +119,11 @@ for i = 1:length(hl) % for each history length
 
 		% fit lines
 		flow = fit(fp_low,f_low,'Poly1');
-		high_slopes.bootstrap(j,i) = flow.p1;
+		temp(j) = flow.p1;
 	end
 	clear j
+
+	high_slopes.bootstrap(:,i) = temp;
 
 
 	% find the absolute value of the difference between high and low slopes

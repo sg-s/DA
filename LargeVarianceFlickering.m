@@ -535,7 +535,10 @@ end
 % In this section, we fit an output nonlinearity to the linear prediction *post-hoc*, and repeat the gain analysis to see if this operation can account for all previously observed gain changes. The output nonlinearity is chosen to be a smoothing spline. 
 
 y = mean2(fA); y = y(:);
-cf =fit(fp(1:10:end),y(1:10:end),'smoothingspline','SmoothingParam',0.01); 
+
+cf =fit([fp(1:10:end)],[y(1:10:end)],'smoothingspline','SmoothingParam',0.01); 
+% cf =fit( fp(1:10:end), y(1:10:end),'smoothingspline','SmoothingParam',1e-2); 
+
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 plot(fp,y,'.','Color',[.8 .8 .8]), hold on, plot(sort(fp),cf(sort(fp)))
 xlabel('Filter Output (Hz)')

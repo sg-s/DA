@@ -196,14 +196,51 @@ end
 
 
 %%
-% What does the stimulus distribution look like? 
+% The following figure shows the stimulus distribution and the autocorrelation functions of the stimulus and the response. 
 
-[y,x] = histcounts(PID,300);x(1) = [];
-figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(x,y,'k')
+return
+
+
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,3,1), hold on
+for i = 1:width(PID)
+	[y,x] = histcounts(PID(:,i),300);x(1) = [];
+	plot(x,y)
+end
+
 set(gca,'YScale','log')
 xlabel('PID (V)')
 ylabel('Count')
+title('Stimulus Histogram')
+
+subplot(1,3,2), hold on
+a = [];
+for i = 1:width(PID)
+	[zc,temp,c]=FindCorrelationTime(PID(:,i));
+	a = [a temp];
+	l=plot(1:3e3,c(1:3e3));
+end
+
+xlabel('Lag (ms)')
+ylabel('Autocorrelation')
+legend(l,strcat('\tau=',oval(a),'ms'))
+set(gca,'XScale','log')
+title('Stimulus')
+
+subplot(1,3,3), hold on
+a = [];
+for i = 1:width(fA)
+	[zc,temp,c]=FindCorrelationTime(fA(:,i));
+	a = [a temp];
+	l=plot(1:3e3,c(1:3e3));
+end
+
+title('Response')
+xlabel('Lag (ms)')
+ylabel('Autocorrelation')
+legend(l,strcat('\tau=',oval(a),'ms'))
+set(gca,'XScale','log')
 
 PrettyFig;
 

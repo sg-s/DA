@@ -198,9 +198,6 @@ end
 %%
 % The following figure shows the stimulus distribution and the autocorrelation functions of the stimulus and the response. 
 
-return
-
-
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1), hold on
@@ -264,8 +261,11 @@ end
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[900 500]); hold on
 plot([-.1 1],[0 0 ],'k--')
-[K, ~, filtertime] = FindBestFilter(mean2(PID),mean2(fA),[],'regmax=10;','regmin=.1;','filter_length=999;');
-filtertime = filtertime*mean(diff(tA));
+[K, ~, filtertime_full] = FindBestFilter(mean2(PID),mean2(fA),[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
+filtertime_full = filtertime_full*mean(diff(tA));
+filtertime = 1e-3*(-200:900);
+K = interp1(filtertime_full,K,filtertime);
+
 plot(filtertime,K,'r')
 ylabel('Filter Amplitude')
 xlabel('Filter Lag (s)')
@@ -284,8 +284,8 @@ end
 K = K/max(K);
 fp  =convolve(tA,mean2(PID),K,filtertime);
 
-fp = fp + 18.6131;
-fp = fp*1.2246;
+fp = fp + 20.1314;
+fp = fp*1.1323;
 
 fp_normal = fp;
 
@@ -337,39 +337,6 @@ end
 
 %%
 % The Firing rate lags the PID trace by 66ms. 
-
-%%
-% Now, we use the cross correlation function as a kernel and build a linear model around this. The following figure shows how well this linear model performs: 
-
-K=(xc(tc>-0.1 & tc < 1));
-filtertime = (tc(tc>-0.1 & tc < 1));
-fp  =convolve(tA,mean2(PID),K,filtertime);
-
-fp = fp +30.4745;
-fp  =fp*0.7485;
-
-fp_xcorr = fp;
-
-figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
-subplot(1,4,1:3), hold on
-plot(tA,mean2(fA),'k')
-l=plot(tA,fp,'r');
-r2 = rsquare(fp,mean2(fA));
-legend(l,strcat('r^2=',oval(r2,2)))
-xlabel('Time (s)')
-ylabel('Firing Rate (Hz)')
-
-subplot(1,4,4), hold on
-plot(filtertime,K,'r')
-xlabel('Filter Lag (s)')
-ylabel('Filter (norm.)')
-title('Cross Correlation')
-
-PrettyFig;
-if being_published
-	snapnow
-	delete(gcf)
-end
 
 %%
 % What happens when we explicitly specify a filter that we obtained from stimulation with pseudo-Gaussian stimuli? How well does it perform? 
@@ -435,6 +402,14 @@ end
 figure('outerposition',[0 0 1000 450],'PaperUnits','points','PaperSize',[1000 450]); hold on
 plot([-1 61],[1 1],'k--')
 plot(tA,mean2(fA)./fp_normal,'r')
+% a = mean2(fA);
+% a(end) = [];
+% b = fp;
+% b(end) = [];
+% a = mean(reshape(a,10,length(a)/10));
+% b = mean(reshape(b,10,length(b)/10));
+% plot(diff(a)./diff(b))
+
 % cache the gain to use later
 cache('gain',mean2(fA)./fp_normal)
 ylabel('Gain')
@@ -447,7 +422,6 @@ if being_published
 	delete(gcf)
 end
 
- 
 %%
 % It looks like the gain is changing around two fold in some points. In the following figure, we do a more detailed gain analysis, splitting the data according to when the stimulus is high or low in the past and checking the gain in those points (as before). 
 
@@ -558,26 +532,44 @@ end
 
 
 %% Does an output nonlinearity explain all observed gain changes?  
-% In this section, we fit an output nonlinearity to the linear prediction *post-hoc*, and repeat the gain analysis to see if this operation can account for all previously observed gain changes. 
+% In this section, we fit an output nonlinearity to the linear prediction *post-hoc*, and repeat the gain analysis to see if this operation can account for all previously observed gain changes. The output nonlinearity is chosen to be a smoothing spline. 
 
-clear p
-p.A= 56.9845;
-p.k= 23.5616;
-p.n= 2.9577;
+y = mean2(fA); y = y(:);
+cf =fit(fp(1:10:end),y(1:10:end),'smoothingspline','SmoothingParam',0.01); 
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(fp,y,'.','Color',[.8 .8 .8]), hold on, plot(sort(fp),cf(sort(fp)))
+xlabel('Filter Output (Hz)')
+ylabel('Neuron Response (Hz)')
+% cache for later use
+cache('smoothingspline_LN',cf);
 
-fp_hill = hill(p,fp_normal);
+PrettyFig;
 
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
+% clear p
+% p.A= 56.9845;
+% p.k= 23.5616;
+% p.n= 2.9577;
+
+% fp_hill = hill(p,fp_normal);
+fp_ss = cf(fp_normal);
 
 % do gain analysis
 clear x
 x.response = mean2(fA); 
-x.prediction = fp_hill;
+x.prediction = fp_ss;
 x.stimulus = mean2(PID); 
 x.time = tA;
 x.filter_length = 299;
 ph = [];
 
-rm_this = [find(isnan(mean2(fA))) find(isnan(fp_hill)) ];
+rm_this = [find(isnan(mean2(fA))) find(isnan(fp_ss)) ];
 x.response(rm_this) = [];
 x.prediction(rm_this) = [];
 x.stimulus(rm_this) = [];

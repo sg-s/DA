@@ -668,6 +668,102 @@ end
 %%
 % It looks like my filter estimation routines can do a good job even with this non-Gaussian stimulus statistics. 
 
+%% Neuron-by-Neuron analysis
+% This data set has trials from multiple neurons. Here, we group by neuron ID, and repeat the analysis, to see if there any differences between the neurons, and if this causes a spurious gain change. 
+
+fA1 = mean2(fA(:,1:10));
+fA2 = mean2(fA(:,11:20));
+PID1 = mean2(PID(:,1:10));
+PID2 = mean2(PID(:,11:20));
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(tA,fA1,'m')
+plot(tA,fA2,'g');
+legend('ORN 1','ORN 2')
+r2 = rsquare(fA1,fA2);
+title(strcat('r^2=',oval(r2,3)))
+ylabel('Firing Rate (Hz)')
+xlabel('Time (s)')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% They look very similar. How do the filters backed out of the two neurons look? In the following figure, we back out filters from the stimuli and the responses corresponding to each neuron separately, and compare them below. We also compare the neuron-wise response predictions. 
+
+
+figure('outerposition',[0 0 1300 700],'PaperUnits','points','PaperSize',[1300 700]); hold on
+clear l
+l(1)=subplot(2,4,1:3); hold on
+title('ORN 1')
+plot(tA,fA1,'k')
+ylabel('Firing Rate (Hz)')
+
+l(2)=subplot(2,4,5:7); hold on
+title('ORN 1')
+plot(tA,fA2,'k')
+ylabel('Firing Rate (Hz)')
+xlabel('Time (s)')
+
+
+l(3)=subplot(4,4,[8 12]); hold on
+plot([-.1 1],[0 0 ],'k--')
+
+[K, ~, filtertime_full] = FindBestFilter(PID1,fA1,[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
+filtertime_full = filtertime_full*mean(diff(tA));
+filtertime = 1e-3*(-200:900);
+K1 = interp1(filtertime_full,K,filtertime);
+K1 = K1/max(K1);
+
+plot(l(3),filtertime,K1,'m')
+
+[K, ~, filtertime_full] = FindBestFilter(PID2,fA2,[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
+filtertime_full = filtertime_full*mean(diff(tA));
+filtertime = 1e-3*(-200:900);
+K2 = interp1(filtertime_full,K,filtertime);
+K2 = K2/max(K2);
+
+plot(l(3),filtertime,K2,'g')
+ylabel('Filter Amplitude')
+xlabel('Filter Lag (s)')
+
+% make the predictions. 
+fp1 = convolve(tA,PID1,K1,filtertime); 
+fp2 = convolve(tA,PID2,K2,filtertime);
+
+% trivial scaling
+fp1 = fp1+19.5943;
+fp1 = fp1*1.0654;
+
+fp2 = fp2+20.6811;
+fp2 = fp2*1.1950;
+
+clear ll
+ll(1) = plot(l(1),tA,fp1,'m');
+ll(2) = plot(l(2),tA,fp2,'g');
+
+r21 = rsquare(fp1,fA1);
+r22 = rsquare(fp2,fA2);
+
+
+legend(ll(1),strcat('r^2=',oval(r21,3)))
+legend(ll(2),strcat('r^2=',oval(r22,3)))
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
+% In the following section, we analyse the static output non-linearities of the neurons individually. 
+
 %% Version Info
 % The file that generated this document is called:
 disp(mfilename)

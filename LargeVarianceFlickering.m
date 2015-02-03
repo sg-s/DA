@@ -704,7 +704,7 @@ plot(tA,fA1,'k')
 ylabel('Firing Rate (Hz)')
 
 l(2)=subplot(2,4,5:7); hold on
-title('ORN 1')
+title('ORN 2')
 plot(tA,fA2,'k')
 ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')
@@ -763,6 +763,152 @@ end
 
 %%
 % In the following section, we analyse the static output non-linearities of the neurons individually. 
+
+
+cf1 =fit([fp1(1:10:end-300)],[fA1(1:10:end-300)],'smoothingspline','SmoothingParam',0.01);
+cf2 =fit([fp2(1:10:end-300)],[fA2(1:10:end-300)],'smoothingspline','SmoothingParam',0.01);  
+
+figure('outerposition',[0 0 1300 700],'PaperUnits','points','PaperSize',[1300 700]); hold on
+clear l
+l(1)=subplot(2,4,1:3); hold on
+title('ORN 1')
+plot(tA,fA1,'k')
+ylabel('Firing Rate (Hz)')
+
+l(2)=subplot(2,4,5:7); hold on
+title('ORN 2')
+plot(tA,fA2,'k')
+ylabel('Firing Rate (Hz)')
+xlabel('Time (s)')
+
+
+l(3)=subplot(4,4,[8 12]); hold on
+plot(1:90,cf1(1:90),'m')
+plot(1:90,cf2(1:90),'g')
+
+clear ll
+ll(1)=plot(l(1),tA,cf1(fp1),'m');
+ll(2)=plot(l(2),tA,cf2(fp2),'g');
+
+r21 = rsquare(cf1(fp1),fA1);
+r22 = rsquare(cf2(fp2),fA2);
+
+legend(ll(1),strcat('r^2=',oval(r21,3)))
+legend(ll(2),strcat('r^2=',oval(r22,3)))
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% Now for the crucial bit. Do we still observe gain changes when we analyse the ORNs one by one? 
+
+clear x
+x.response = fA1; 
+x.prediction = cf1(fp1);
+x.stimulus = PID1; 
+x.time = tA;
+x.filter_length = 299;
+ph = [];
+
+rm_this = [find(isnan(fA1)) find(isnan(cf1(fp1))) ];
+x.response(rm_this) = [];
+x.prediction(rm_this) = [];
+x.stimulus(rm_this) = [];
+x.time(rm_this) = [];
+
+history_lengths = (3*floor(1000*logspace(-1.5,1,30)/3))/1e3;
+example_history_length = 0.135;
+
+f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+hash = DataHash(x);
+cached_data = cache(hash);
+if isempty(cached_data)
+	[p_LN,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
+	cache(hash,p_LN);
+	% also cache the example history length
+	s=abs(l-h);
+	s(p_LN(1,:)>0.05)=NaN;
+	[~,loc]=max(s);
+	ehl = history_lengths(loc);
+	cache(DataHash(p_LN),ehl);
+
+else
+	p_LN = cached_data;
+	ehl = cache(DataHash(p_LN));
+	GainAnalysis4(x,history_lengths,ehl,ph,p_LN);
+end
+
+xlabel(ph(3),'LN Prediction (Hz)')
+ylabel(ph(3),'ORN 1 Firing Rate (Hz)')
+set(ph(4),'XScale','log')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+% now do ORN 2
+
+clear x
+x.response = fA2; 
+x.prediction = cf2(fp2);
+x.stimulus = PID2; 
+x.time = tA;
+x.filter_length = 299;
+ph = [];
+
+rm_this = [find(isnan(fA2)) find(isnan(cf2(fp2))) ];
+x.response(rm_this) = [];
+x.prediction(rm_this) = [];
+x.stimulus(rm_this) = [];
+x.time(rm_this) = [];
+
+history_lengths = (3*floor(1000*logspace(-1.5,1,30)/3))/1e3;
+example_history_length = 0.135;
+
+f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on 
+axis square
+ph(4) = subplot(1,2,2); hold on
+
+hash = DataHash(x);
+cached_data = cache(hash);
+if isempty(cached_data)
+	[p_LN,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
+	cache(hash,p_LN);
+	% also cache the example history length
+	s=abs(l-h);
+	s(p_LN(1,:)>0.05)=NaN;
+	[~,loc]=max(s);
+	ehl = history_lengths(loc);
+	cache(DataHash(p_LN),ehl);
+
+else
+	p_LN = cached_data;
+	ehl = cache(DataHash(p_LN));
+	GainAnalysis4(x,history_lengths,ehl,ph,p_LN);
+end
+
+xlabel(ph(3),'LN Prediction (Hz)')
+ylabel(ph(3),'ORN 2 Firing Rate (Hz)')
+set(ph(4),'XScale','log')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %% Version Info
 % The file that generated this document is called:

@@ -733,6 +733,7 @@ K2 = K2/max(K2);
 plot(l(3),filtertime,K2,'g')
 ylabel('Filter Amplitude')
 xlabel('Filter Lag (s)')
+title(strcat('r^2=',oval(rsquare(K1,K2))))
 
 % make the predictions. 
 fp1 = convolve(tA,PID1,K1,filtertime); 
@@ -912,6 +913,57 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%% Trial by Trial Analysis
+% In this section, we perform a detailed analysis of the data on a trial-by-trial basis. The reasons are two-fold. First, it is to check if the gain changes we see are apparent even in these trial-to-trial analyses. Second, it is to see if the data lends itself to analysis on an individual trial basis. If this is the case, then the range of potential experiments we can do dramatically increases, as does the sort of data we can analyse. 
+
+TrialFilters = NaN(1101,width(fA));
+TrialFilters_fp = fA;
+for i = 1:width(fA)
+	[K, ~, filtertime_full] = FindBestFilter(PID(:,i),fA(:,i),[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
+	filtertime_full = filtertime_full*mean(diff(tA));
+	filtertime = 1e-3*(-200:900);
+	K = interp1(filtertime_full,K,filtertime);
+	TrialFilters(:,i) = K/max(K);
+end
+
+figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
+subplot(1,3,1), hold on
+plot(filtertime,TrialFilters)
+xlabel('Lag (s)')
+ylabel('Filter Amplitude')
+
+subplot(1,3,2), hold on
+r2 = rsquare(TrialFilters);
+imagescnan(r2)
+caxis([0 1])
+axis image
+colorbar
+axis off
+title(strcat('Filter mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
+
+
+subplot(1,3,3), hold on
+% make all the predictions
+r2 = NaN(width(fA),1);
+for i = 1:width(TrialFilters)
+	TrialFilters_fp(:,i) = convolve(tA,PID(:,i),TrialFilters(:,i),filtertime);
+	r2(i) = rsquare(TrialFilters_fp(:,i),fA(:,i));
+end
+plot(1:20,r2,'k+')
+set(gca,'YLim',[0 1])
+xlabel('Trial')
+ylabel('r^2')
+title('Prediction Fit Quality')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
 
 %% Version Info
 % The file that generated this document is called:

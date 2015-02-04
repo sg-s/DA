@@ -66,27 +66,29 @@ PID(end,:) = PID(end-1,:);
 
 
 figure('outerposition',[0 0 1400 1000],'PaperUnits','points','PaperSize',[1400 1000]); hold on
-subplot(2,8,9:14), hold on
+subplot(2,9,10:14), hold on
 plot(tA,mean2(fA),'k')
 set(gca,'XLim',[10 60])
 xlabel('Time (s)')
 ylabel('Firing Rate (Hz)')
 
-subplot(2,8,15:16), hold on
-hash = DataHash(fA);
-cached_data = cache(hash);
-if isempty(cached_data)
-	r2 = rsquare(fA);
-	cache(hash,r2);
-else
-	r2 = cached_data;
-end
+subplot(2,9,15:16), hold on
+[r2,s] = rsquare(fA);
 imagescnan(r2)
+caxis([0 1])
+axis image
+colorbar
+axis off
+title(strcat('mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
+
+subplot(2,9,17:18), hold on
+imagescnan(s)
 caxis([0 1])
 colorbar
 axis image
 axis off
-title(strcat('mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
+title(strcat('mean slope = ',oval(mean(s(~isnan(s))),2)))
+
 
 %        ########  ########  ######  ########   #######  ##    ##  ######  ######## 
 %        ##     ## ##       ##    ## ##     ## ##     ## ###   ## ##    ## ##       
@@ -97,27 +99,28 @@ title(strcat('mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
 %        ##     ## ########  ######  ##         #######  ##    ##  ######  ######## 
 
 
-subplot(2,8,1:6), hold on
+subplot(2,9,1:5), hold on
 plot(tA,mean2(PID),'k')
 set(gca,'XLim',[10 60])
 xlabel('Time (s)')
 ylabel('Odor Concentration (V)')
 
-subplot(2,8,7:8), hold on
-hash = DataHash(PID);
-cached_data = cache(hash);
-if isempty(cached_data)
-	r2 = rsquare(PID);
-	cache(hash,r2);
-else
-	r2 = cached_data;
-end
+subplot(2,9,6:7), hold on
+[r2,s] = rsquare(PID);
 imagescnan(r2)
 caxis([0 1])
 colorbar
 axis image
 axis off
 title(strcat('mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
+
+subplot(2,9,8:9), hold on
+imagescnan(s)
+caxis([0 1])
+colorbar
+axis image
+axis off
+title(strcat('mean slope = ',oval(mean(s(~isnan(s))),2)))
 
 PrettyFig;
 
@@ -925,4 +928,3 @@ disp(DataHash(strcat(mfilename,'.m'),Opt))
 if ~status
 	disp(m)
 end
-

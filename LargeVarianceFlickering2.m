@@ -290,8 +290,13 @@ if being_published
 	delete(gcf)
 end
 
+%% Gain Changes 
+% In this section, we analyse the gain changes in each of these trials. For each trial, we perform the gain analysis as before, and each figure corresponds to one trial. Note that the fits to all the clouds of green points are very poor, invalidating this approach. 
 
-
+for i = 1:width(PID)
+	ph=GainAnalysisWrapper(fA(:,i),TrialFilters_fp(:,i),PID(:,i),tA);
+	title(ph(4),strcat('Trial #',mat2str(i)))
+end
 
 %% Version Info
 % The file that generated this document is called:

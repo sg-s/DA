@@ -292,11 +292,18 @@ end
 % How does the addition of this output nonlinearity improve the fit? The following plot shows the fit quality ($r^2$) for each trial 
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+clear l
+r2 = NaN(width(fA),1);
+for i = 1:width(TrialFilters)
+	r2(i) = rsquare(TrialFilters_fp(:,i),fA(:,i));
+end
+plot(1:length(r2),r2,'k+');
 r2 = NaN(width(fA),1);
 for i = 1:width(TrialFilters)
 	r2(i) = rsquare(TrialFilters_LN(:,i),fA(:,i));
 end
-plot(1:length(r2),r2,'k+')
+plot(1:length(r2),r2,'r+')
+legend('Linear Fit','LN Fit')
 set(gca,'YLim',[0 1])
 xlabel('Trial')
 ylabel('r^2')
@@ -317,6 +324,44 @@ for i = 1:width(PID)
 	ph=GainAnalysisWrapper(fA(:,i),TrialFilters_LN(:,i),PID(:,i),tA);
 	title(ph(4),strcat('Trial #',mat2str(i)))
 end
+
+%% 
+% It is possible that there are fast gain changes, but our analysis techniques don't allow us to see what they are. (See <https://github.com/sg-s/DA/issues/112 this issue on Github>)
+
+%% Dynamical Adaptation Model Fits
+% Perhaps the gain of the ORN is changing, even though we are unable to see it because the way we analyse it is poor. If this is the case, we should be able to fit a Dynamical Adaptation Model to this dataset and do a better job explaining the data. Is this the case? 
+
+% fit a DA Model 
+clear p d
+p(1).   s0 = -.3;
+p(1).tau_y = 19;
+p(1).  n_y = 2;
+p(1).    C = 0.33;
+p(1).tau_z = 13;
+p(1).  n_z = 2;
+p(1).    A = 64;
+p(1).    B = 4;
+hash = DataHash(TrialFilters_LN);
+cached_data = cache(hash);
+if isempty(cached_data)
+	for i = 1:width(fA)
+		if i > 1
+			p(i) = p(i-1);
+		end
+		d.stimulus = PID(:,i);
+		d.response = fA(:,i);
+		p(i) = FitModel2Data(@DAModelv2,d,p(i));
+		DAModel_pred(:,i) = DAModelv2(PID(:,i),p(i));
+	end
+	% cache
+	cache(hash,p)
+else
+	p = cached_data;
+	for i = 1:width(fA)
+		DAModel_pred(:,i) = DAModelv2(PID(:,i),p(i));
+	end
+end
+
 
 
 

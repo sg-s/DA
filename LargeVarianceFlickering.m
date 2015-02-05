@@ -405,13 +405,6 @@ end
 figure('outerposition',[0 0 1000 450],'PaperUnits','points','PaperSize',[1000 450]); hold on
 plot([-1 61],[1 1],'k--')
 plot(tA,mean2(fA)./fp_normal,'r')
-% a = mean2(fA);
-% a(end) = [];
-% b = fp;
-% b(end) = [];
-% a = mean(reshape(a,10,length(a)/10));
-% b = mean(reshape(b,10,length(b)/10));
-% plot(diff(a)./diff(b))
 
 % cache the gain to use later
 cache('gain',mean2(fA)./fp_normal)
@@ -428,49 +421,8 @@ end
 %%
 % It looks like the gain is changing around two fold in some points. In the following figure, we do a more detailed gain analysis, splitting the data according to when the stimulus is high or low in the past and checking the gain in those points (as before). 
 
-% do gain analysis
-clear x
-x.response = mean2(fA); 
-x.prediction = fp_normal;
-x.stimulus = mean2(PID); 
-x.time = tA;
-x.filter_length = 299;
-ph = [];
-
-rm_this = [find(isnan(mean2(fA))) find(isnan(fp_normal)) ];
-x.response(rm_this) = [];
-x.prediction(rm_this) = [];
-x.stimulus(rm_this) = [];
-x.time(rm_this) = [];
-
-history_lengths = (3*floor(1000*logspace(-1.5,1,30)/3))/1e3;
-example_history_length = 0.135;
-
-f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-ph(3) = subplot(1,2,1); hold on 
-axis square
-ph(4) = subplot(1,2,2); hold on
-
-hash = DataHash(x);
-cached_data = cache(hash);
-if isempty(cached_data)
-	[p_K,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
-	cache(hash,p_K);
-	% also cache the example history length
-	s=abs(l-h);
-	s(p_K(1,:)>0.05)=NaN;
-	[~,loc]=max(s);
-	ehl = history_lengths(loc);
-	cache(DataHash(p_K),ehl);
-
-else
-	p_K = cached_data;
-	ehl = cache(DataHash(p_K));
-	GainAnalysis4(x,history_lengths,ehl,ph,p_K);
-end
-
+ph=GainAnalysisWrapper(mean2(fA2),fp_normal,mean2(PID),tA);
 xlabel(ph(3),'Linear Prediction (Hz)')
-set(ph(4),'XScale','log')
 
 PrettyFig;
 
@@ -482,51 +434,8 @@ end
 %%
 % For completeness, we repeat the gain analysis, but this time for the prediction from the Gaussian Noise. 
 
-% do gain analysis
-clear x
-x.response = mean2(fA); 
-x.prediction = fp_gaussian_K;
-x.stimulus = mean2(PID); 
-x.time = tA;
-x.filter_length = 299;
-ph = [];
-
-rm_this = [find(isnan(mean2(fA))) find(isnan(fp_gaussian_K)) ];
-x.response(rm_this) = [];
-x.prediction(rm_this) = [];
-x.stimulus(rm_this) = [];
-x.time(rm_this) = [];
-
-history_lengths = (3*floor(1000*logspace(-1.5,1,30)/3))/1e3;
-example_history_length = 0.135;
-
-f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-ph(3) = subplot(1,2,1); hold on 
-axis square
-ph(4) = subplot(1,2,2); hold on
-
-hash = DataHash(x);
-cached_data = cache(hash);
-if isempty(cached_data)
-	[p_gK,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
-	cache(hash,p_gK);
-	% also cache the example history length
-	s=abs(l-h);
-	s(p_gK(1,:)>0.05)=NaN;
-	[~,loc]=max(s);
-	ehl = history_lengths(loc);
-	cache(DataHash(p_gK),ehl);
-
-else
-	p_gK = cached_data;
-	ehl = cache(DataHash(p_gK));
-	GainAnalysis4(x,history_lengths,ehl,ph,p_gK);
-end
-
+ph=GainAnalysisWrapper(mean2(fA2),fp_gaussian_K,mean2(PID),tA);
 xlabel(ph(3),'Linear Prediction (Hz)')
-set(ph(4),'XScale','log')
-
-PrettyFig;
 
 if being_published
 	snapnow
@@ -566,49 +475,8 @@ end
 % fp_hill = hill(p,fp_normal);
 fp_ss = cf(fp_normal);
 
-% do gain analysis
-clear x
-x.response = mean2(fA); 
-x.prediction = fp_ss;
-x.stimulus = mean2(PID); 
-x.time = tA;
-x.filter_length = 299;
-ph = [];
-
-rm_this = [find(isnan(mean2(fA))) find(isnan(fp_ss)) ];
-x.response(rm_this) = [];
-x.prediction(rm_this) = [];
-x.stimulus(rm_this) = [];
-x.time(rm_this) = [];
-
-history_lengths = (3*floor(1000*logspace(-1.5,1,30)/3))/1e3;
-example_history_length = 0.135;
-
-f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-ph(3) = subplot(1,2,1); hold on 
-axis square
-ph(4) = subplot(1,2,2); hold on
-
-hash = DataHash(x);
-cached_data = cache(hash);
-if isempty(cached_data)
-	[p_LN,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
-	cache(hash,p_LN);
-	% also cache the example history length
-	s=abs(l-h);
-	s(p_LN(1,:)>0.05)=NaN;
-	[~,loc]=max(s);
-	ehl = history_lengths(loc);
-	cache(DataHash(p_LN),ehl);
-
-else
-	p_LN = cached_data;
-	ehl = cache(DataHash(p_LN));
-	GainAnalysis4(x,history_lengths,ehl,ph,p_LN);
-end
-
-xlabel(ph(3),'LN Prediction (Hz)')
-set(ph(4),'XScale','log')
+ph=GainAnalysisWrapper(mean2(fA2),fp_ss,mean2(PID),tA);
+xlabel(ph(3),'LN Prediction (Hz)');
 
 PrettyFig;
 
@@ -810,50 +678,8 @@ end
 %%
 % Now for the crucial bit. Do we still observe gain changes when we analyse the ORNs one by one? 
 
-clear x
-x.response = fA1; 
-x.prediction = cf1(fp1);
-x.stimulus = PID1; 
-x.time = tA;
-x.filter_length = 299;
-ph = [];
-
-rm_this = [find(isnan(fA1)) find(isnan(cf1(fp1))) ];
-x.response(rm_this) = [];
-x.prediction(rm_this) = [];
-x.stimulus(rm_this) = [];
-x.time(rm_this) = [];
-
-history_lengths = (3*floor(1000*logspace(-1.5,1,30)/3))/1e3;
-example_history_length = 0.135;
-
-f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-ph(3) = subplot(1,2,1); hold on 
-axis square
-ph(4) = subplot(1,2,2); hold on
-
-hash = DataHash(x);
-cached_data = cache(hash);
-if isempty(cached_data)
-	[p_LN,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
-	cache(hash,p_LN);
-	% also cache the example history length
-	s=abs(l-h);
-	s(p_LN(1,:)>0.05)=NaN;
-	[~,loc]=max(s);
-	ehl = history_lengths(loc);
-	cache(DataHash(p_LN),ehl);
-
-else
-	p_LN = cached_data;
-	ehl = cache(DataHash(p_LN));
-	GainAnalysis4(x,history_lengths,ehl,ph,p_LN);
-end
-
-xlabel(ph(3),'LN Prediction (Hz)')
-ylabel(ph(3),'ORN 1 Firing Rate (Hz)')
-set(ph(4),'XScale','log')
-
+ph=GainAnalysisWrapper(fA1,cf1(fA1)),PID1,tA);
+ylabel(ph(3),'ORN 2 Firing Rate (Hz)')
 PrettyFig;
 
 if being_published
@@ -862,50 +688,8 @@ if being_published
 end
 
 % now do ORN 2
-
-clear x
-x.response = fA2; 
-x.prediction = cf2(fp2);
-x.stimulus = PID2; 
-x.time = tA;
-x.filter_length = 299;
-ph = [];
-
-rm_this = [find(isnan(fA2)) find(isnan(cf2(fp2))) ];
-x.response(rm_this) = [];
-x.prediction(rm_this) = [];
-x.stimulus(rm_this) = [];
-x.time(rm_this) = [];
-
-history_lengths = (3*floor(1000*logspace(-1.5,1,30)/3))/1e3;
-example_history_length = 0.135;
-
-f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-ph(3) = subplot(1,2,1); hold on 
-axis square
-ph(4) = subplot(1,2,2); hold on
-
-hash = DataHash(x);
-cached_data = cache(hash);
-if isempty(cached_data)
-	[p_LN,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
-	cache(hash,p_LN);
-	% also cache the example history length
-	s=abs(l-h);
-	s(p_LN(1,:)>0.05)=NaN;
-	[~,loc]=max(s);
-	ehl = history_lengths(loc);
-	cache(DataHash(p_LN),ehl);
-
-else
-	p_LN = cached_data;
-	ehl = cache(DataHash(p_LN));
-	GainAnalysis4(x,history_lengths,ehl,ph,p_LN);
-end
-
-xlabel(ph(3),'LN Prediction (Hz)')
+ph=GainAnalysisWrapper(fA2,cf2(fA2)),PID2,tA);
 ylabel(ph(3),'ORN 2 Firing Rate (Hz)')
-set(ph(4),'XScale','log')
 
 PrettyFig;
 

@@ -266,7 +266,7 @@ if isempty(cached_data)
 else
 	p = cached_data;
 	for i = 1:width(fA)
-		TrialFilters_fp(:,i) = hill(p(i),TrialFilters_fp(:,i));
+		TrialFilters_LN(:,i) = hill(p(i),TrialFilters_fp(:,i));
 	end
 end
 
@@ -276,9 +276,9 @@ a = [];
 ss = 20; % sub sampling for plot
 for i = 1:width(fA)
 	a(i)=autoplot(width(fA),i); hold on
-	plot(TrialFilters_fp(:,i),fA(:,i),'.','Color',[.6 .6 .6])
+	plot(TrialFilters_LN(1:ss:end,i),fA(1:ss:end,i),'.','Color',[.6 .6 .6])
 	title(strcat('Trial #',mat2str(i)))
-	plot(TrialFilters_fp(1:ss:end,i),hill(p(i),TrialFilters_fp(1:ss:end,i)),'r')
+	plot(sort(TrialFilters_fp(1:ss:end,i)),hill(p(i),sort(TrialFilters_fp(1:ss:end,i))),'r')
 end 
 
 PrettyFig('EqualiseX=1;','EqualiseY=1;');
@@ -288,11 +288,33 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% How does the addition of this output nonlinearity improve the fit? The following plot shows the fit quality ($r^2$) for each trial 
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+r2 = NaN(width(fA),1);
+for i = 1:width(TrialFilters)
+	r2(i) = rsquare(TrialFilters_LN(:,i),fA(:,i));
+end
+plot(1:length(r2),r2,'k+')
+set(gca,'YLim',[0 1])
+xlabel('Trial')
+ylabel('r^2')
+title('Prediction Fit Quality')
+
+PrettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
 %% Gain Changes 
 % In this section, we analyse the gain changes in each of these trials. For each trial, we perform the gain analysis as before, and each figure corresponds to one trial. Note that the fits to all the clouds of green points are very poor, invalidating this approach. 
 
 for i = 1:width(PID)
-	ph=GainAnalysisWrapper(fA(:,i),TrialFilters_fp(:,i),PID(:,i),tA);
+	ph=GainAnalysisWrapper(fA(:,i),TrialFilters_LN(:,i),PID(:,i),tA);
 	title(ph(4),strcat('Trial #',mat2str(i)))
 end
 

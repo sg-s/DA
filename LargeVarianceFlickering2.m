@@ -6,9 +6,6 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-%% [continued from Large Variance Flickering.m]
-% In this document we examine another dataset with supposedly shorter correlated stimuli. 
-
 
 calling_func = dbstack;
 being_published = 0;
@@ -19,7 +16,7 @@ if ~isempty(calling_func)
 end
 
 %% Response of ORNs to flickering odor stimuli with large variances
-% From previous experiments, we see that the response of ORNs to largely varying stimuli that mimics the natural odor plumes is particularly interesting: in that no model we have can precisely account for the data, and in that, from other results, we expect to see a large variation of gain of the ORNs to these stimuli. 
+% From previous experiments, we see that the response of ORNs to largely varying stimuli that mimics the natural odor plumes is particularly interesting: in that no model we have can precisely account for the data, and in that, from other results, we expect to see a large variation of gain of the ORNs to these stimuli. This document is continued from Large Variance Flickering.m.  In this document we examine another dataset with supposedly shorter correlated stimuli.
 
 
 load('/local-data/DA-paper/large-variance-flicker/2015_01_22_CS_F1_ab3_3_EtAc.mat')
@@ -276,11 +273,12 @@ end
 
 figure('outerposition',[0 0 1200 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
 a = [];
+ss = 20; % sub sampling for plot
 for i = 1:width(fA)
 	a(i)=autoplot(width(fA),i); hold on
 	plot(TrialFilters_fp(:,i),fA(:,i),'.','Color',[.6 .6 .6])
 	title(strcat('Trial #',mat2str(i)))
-	plot(TrialFilters_fp(:,i),hill(p(i),TrialFilters_fp(:,i)),'r')
+	plot(TrialFilters_fp(1:ss:end,i),hill(p(i),TrialFilters_fp(1:ss:end,i)),'r')
 end 
 
 PrettyFig('EqualiseX=1;','EqualiseY=1;');
@@ -297,6 +295,8 @@ for i = 1:width(PID)
 	ph=GainAnalysisWrapper(fA(:,i),TrialFilters_fp(:,i),PID(:,i),tA);
 	title(ph(4),strcat('Trial #',mat2str(i)))
 end
+
+
 
 %% Version Info
 % The file that generated this document is called:

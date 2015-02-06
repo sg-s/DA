@@ -421,7 +421,7 @@ end
 %%
 % It looks like the gain is changing around two fold in some points. In the following figure, we do a more detailed gain analysis, splitting the data according to when the stimulus is high or low in the past and checking the gain in those points (as before). 
 
-ph=GainAnalysisWrapper(mean2(fA2),fp_normal,mean2(PID),tA);
+ph=GainAnalysisWrapper(mean2(fA),fp_normal,mean2(PID),tA);
 xlabel(ph(3),'Linear Prediction (Hz)')
 
 PrettyFig;
@@ -434,8 +434,11 @@ end
 %%
 % For completeness, we repeat the gain analysis, but this time for the prediction from the Gaussian Noise. 
 
-ph=GainAnalysisWrapper(mean2(fA2),fp_gaussian_K,mean2(PID),tA);
+ph=GainAnalysisWrapper(mean2(fA),fp_gaussian_K,mean2(PID),tA);
 xlabel(ph(3),'Linear Prediction (Hz)')
+
+PrettyFig;
+
 
 if being_published
 	snapnow
@@ -444,19 +447,26 @@ end
 
 
 %% Does an output nonlinearity explain all observed gain changes?  
-% In this section, we fit an output nonlinearity to the linear prediction *post-hoc*, and repeat the gain analysis to see if this operation can account for all previously observed gain changes. The output nonlinearity is chosen to be a smoothing spline. 
+% In this section, we fit an output nonlinearity to the linear prediction *post-hoc*, and repeat the gain analysis to see if this operation can account for all previously observed gain changes. The output nonlinearity is chosen to be a Hill function. 
 
-y = mean2(fA); y = y(:);
+% y = mean2(fA); y = y(:);
 
-cf =fit([fp(1:10:end)],[y(1:10:end)],'smoothingspline','SmoothingParam',0.01); 
+clear p
+p.A = 57.2707;
+p.k = 23.7470;
+p.n = 2.9373;
+
+fp_hill = hill(p,fp_normal);
+
+
+% cf =fit([fp(1:10:end)],[y(1:10:end)],'smoothingspline','SmoothingParam',0.01); 
 % cf =fit( fp(1:10:end), y(1:10:end),'smoothingspline','SmoothingParam',1e-2); 
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(fp,y,'.','Color',[.8 .8 .8]), hold on, plot(sort(fp),cf(sort(fp)))
+plot(fp_normal,mean2(fA),'.','Color',[.8 .8 .8]), hold on, plot(sort(fp_normal),hill(p,sort(fp_normal)))
 xlabel('Filter Output (Hz)')
 ylabel('Neuron Response (Hz)')
 % cache for later use
-cache('smoothingspline_LN',cf);
 
 PrettyFig;
 
@@ -467,15 +477,9 @@ end
 
 
 
-% clear p
-% p.A= 56.9845;
-% p.k= 23.5616;
-% p.n= 2.9577;
+% fp_ss = cf(fp_normal);
 
-% fp_hill = hill(p,fp_normal);
-fp_ss = cf(fp_normal);
-
-ph=GainAnalysisWrapper(mean2(fA2),fp_ss,mean2(PID),tA);
+ph=GainAnalysisWrapper(mean2(fA),fp_hill,mean2(PID),tA);
 xlabel(ph(3),'LN Prediction (Hz)');
 
 PrettyFig;
@@ -637,8 +641,17 @@ end
 % In the following section, we analyse the static output non-linearities of the neurons individually. 
 
 
-cf1 =fit([fp1(1:10:end-300)],[fA1(1:10:end-300)],'smoothingspline','SmoothingParam',0.01);
-cf2 =fit([fp2(1:10:end-300)],[fA2(1:10:end-300)],'smoothingspline','SmoothingParam',0.01);  
+% cf1 =fit([fp1(1:10:end-300)],[fA1(1:10:end-300)],'smoothingspline','SmoothingParam',0.01);
+% cf2 =fit([fp2(1:10:end-300)],[fA2(1:10:end-300)],'smoothingspline','SmoothingParam',0.01);  
+
+clear p 
+p(1).A = 52.7523;
+p(1).k = 21.6964;
+p(1).n = 2.9652;
+
+p(2).A = 61.2457;
+p(2).k = 25.5119;
+p(2).n = 2.9746;
 
 figure('outerposition',[0 0 1300 700],'PaperUnits','points','PaperSize',[1300 700]); hold on
 clear l
@@ -655,15 +668,15 @@ xlabel('Time (s)')
 
 
 l(3)=subplot(4,4,[8 12]); hold on
-plot(1:90,cf1(1:90),'m')
-plot(1:90,cf2(1:90),'g')
+plot(1:90,hill(p(1),1:90),'m')
+plot(1:90,hill(p(2),1:90),'g')
 
 clear ll
-ll(1)=plot(l(1),tA,cf1(fp1),'m');
-ll(2)=plot(l(2),tA,cf2(fp2),'g');
+ll(1)=plot(l(1),tA,hill(p(1),fp1),'m');
+ll(2)=plot(l(2),tA,hill(p(2),fp2),'g');
 
-r21 = rsquare(cf1(fp1),fA1);
-r22 = rsquare(cf2(fp2),fA2);
+r21 = rsquare(hill(p(1),fp1),fA1);
+r22 = rsquare(hill(p(2),fp2),fA2);
 
 legend(ll(1),strcat('r^2=',oval(r21,3)))
 legend(ll(2),strcat('r^2=',oval(r22,3)))
@@ -678,7 +691,7 @@ end
 %%
 % Now for the crucial bit. Do we still observe gain changes when we analyse the ORNs one by one? 
 
-ph=GainAnalysisWrapper(fA1,cf1(fA1)),PID1,tA);
+ph=GainAnalysisWrapper(fA1,hill(p(1),fp1),PID1,tA);
 ylabel(ph(3),'ORN 2 Firing Rate (Hz)')
 PrettyFig;
 
@@ -688,7 +701,7 @@ if being_published
 end
 
 % now do ORN 2
-ph=GainAnalysisWrapper(fA2,cf2(fA2)),PID2,tA);
+ph=GainAnalysisWrapper(fA2,hill(p(2),fp2),PID2,tA);
 ylabel(ph(3),'ORN 2 Firing Rate (Hz)')
 
 PrettyFig;

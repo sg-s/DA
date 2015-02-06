@@ -19,7 +19,7 @@ x.response = response;
 x.prediction = prediction;
 x.stimulus = stimulus; 
 x.time = time;
-x.filter_length = 299; % what does this even do??
+x.filter_length = 499; % what does this even do??
 ph = [];
 
 rm_this = [find(isnan(response)) find(isnan(prediction)) ];
@@ -30,7 +30,7 @@ x.time(rm_this) = [];
 
 
 
-history_lengths = (3*floor(1000*logspace(log10(ct),1,30)/3))/1e3;
+history_lengths = (3*floor(1000*logspace(log10(ct/2),1,30)/3))/1e3;
 if nargin < 5
 	example_history_length = history_lengths(10);
 end

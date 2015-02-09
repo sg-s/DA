@@ -52,11 +52,6 @@ PID = PID2; clear PID2
 % some minor cleaning up
 PID(end,:) = PID(end-1,:); 
 
-% assemble the data for fitting 
-clear d
-d.stimulus = mean2(PID);
-d.response = mean2(fA);
-
 
 %           ##       ##    ##    ##     ##  #######  ########  ######## ##       
 %           ##       ###   ##    ###   ### ##     ## ##     ## ##       ##       
@@ -80,9 +75,13 @@ fp  =convolve(tA,mean2(PID),K,filtertime);
 fp = fp + 20.1314;
 fp = fp*1.1323;
 
-cf = cache('smoothingspline_LN');
+clear p
+p.A =  57.2717;
+p.k =  23.7474;
+p.n =  2.9372;
 
-fp_LN = cf(fp);
+
+fp_LN = hill(p,fp);
 fp_K = fp; clear fp
 
 figure('outerposition',[0 0 1300 700],'PaperUnits','points','PaperSize',[1300 700]); hold on
@@ -110,8 +109,8 @@ ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')
 
 subplot(2,4,8), hold on
-plot(fp_K,y,'.','Color',[.8 .8 .8])
-plot(sort(fp_K),cf(sort(fp_K)),'r')
+plot(fp_K,mean2(fA),'.','Color',[.8 .8 .8])
+plot(sort(fp_K),hill(p,sort(fp_K)),'r')
 xlabel('Linear Prediction (Hz)')
 
 PrettyFig;
@@ -120,6 +119,7 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
 
 %%
 % We now perform a gain analysis on this data:
@@ -176,7 +176,6 @@ if being_published
 	delete(gcf)
 end
 
-
 %           ########     ###       ##     ##  #######  ########  ######## ##       
 %           ##     ##   ## ##      ###   ### ##     ## ##     ## ##       ##       
 %           ##     ##  ##   ##     #### #### ##     ## ##     ## ##       ##       
@@ -212,8 +211,8 @@ ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')
 
 subplot(1,4,4), hold on
-plot((0:300)*1e-3,Ky,'r')
-plot((0:300)*1e-3,Kz,'b')
+plot(1e-3*(1:length(Ky)),Ky,'r')
+plot(1e-3*(1:length(Kz)),Kz,'b')
 legend('K_y','K_z')
 
 PrettyFig;

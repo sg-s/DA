@@ -326,6 +326,61 @@ if being_published
 	delete(gcf)
 end
 
+%             #######  ##     ## ######## ########  ##     ## ######## 
+%            ##     ## ##     ##    ##    ##     ## ##     ##    ##    
+%            ##     ## ##     ##    ##    ##     ## ##     ##    ##    
+%            ##     ## ##     ##    ##    ########  ##     ##    ##    
+%            ##     ## ##     ##    ##    ##        ##     ##    ##    
+%            ##     ## ##     ##    ##    ##        ##     ##    ##    
+%             #######   #######     ##    ##         #######     ##    
+           
+%               ###    ##    ##    ###    ##       ##    ##  ######  ####  ######  
+%              ## ##   ###   ##   ## ##   ##        ##  ##  ##    ##  ##  ##    ## 
+%             ##   ##  ####  ##  ##   ##  ##         ####   ##        ##  ##       
+%            ##     ## ## ## ## ##     ## ##          ##     ######   ##   ######  
+%            ######### ##  #### ######### ##          ##          ##  ##        ## 
+%            ##     ## ##   ### ##     ## ##          ##    ##    ##  ##  ##    ## 
+%            ##     ## ##    ## ##     ## ########    ##     ######  ####  ######  
+
+%% Output Analysis
+% In this section, we analyse the prediction of the linear kernel in some more detail. The following figure shows a plot of the linear predictions vs. the actual response. 
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+plot(fp,R,'.','MarkerSize',12,'MarkerFaceColor',[0.9 0.9 0.9],'MarkerEdgeColor',[0.9 0.9 0.9])
+xlabel('Linear Prediction (Hz)')
+ylabel('Actual response (Hz)')
+clear p l
+p.A = 92.8611; % for normal
+p.k = 32.0745;
+p.n = 1.5221;
+fp_LN = hill(p,fp);
+l = plot(1:100,hill(p,1:100),'r');
+r2 = strcat('r^2=',oval(rsquare(fp_LN,R)));
+legend(l,r2,'Location','southeast');
+
+subplot(1,2,2), hold on
+plot(fp_log,R,'.','MarkerSize',12,'MarkerFaceColor',[0.9 0.9 0.9],'MarkerEdgeColor',[0.9 0.9 0.9])
+xlabel('Linear Prediction (log stim.) (Hz)')
+clear p l
+p.A =  198.3611; % for log
+p.k =  110.4495;
+p.n =  1.2975;
+fp_log_LN = hill(p,fp_log);
+l = plot(1:100,hill(p,1:100),'r');
+r2 = strcat('r^2=',oval(rsquare(fp_log_LN,R)));
+legend(l,r2,'Location','southeast');
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%% 
+% We clearly see that there are large loops in this space, that cannot be fit by any static nonlinear function. These loops are characteristic signatures of a dynamical process that escapes a full description by the linear kernel. 
 
 %% Version Info
 % The file that generated this document is called:

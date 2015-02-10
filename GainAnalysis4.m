@@ -130,7 +130,7 @@ for i = 1:length(history_lengths)
 	s_low = this_shat(t_low);
 	t_low = t(t_low); % t_low is now a time. 
 	 
-
+	this_shat = shat(i,:);
 	% find times when smoothed stim is highest 10%
 	this_shat(1:hl(i)) = -Inf;
 	this_shat(isinf(this_shat)) = -Inf;

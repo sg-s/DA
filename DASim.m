@@ -44,6 +44,10 @@ end
 T = 60;
 dt = 3e-3;
 time = dt*(1:floor(T/dt));
+marker_size=10;
+marker_size2=24;
+font_size=20;
+plot_start = find(time>10,1,'first');
 
 % set up frozen noise
 stream = RandStream.getGlobalStream;
@@ -61,6 +65,7 @@ stimulus(stimulus<p.baseline) = p.baseline;
 p.act = 1+round(p.act/dt);
 stimulus = filtfilt(ones(p.act,1)/length(ones(p.act,1)),1,stimulus);
 plot(DASim_plot(1),time,stimulus,'k')
+set(DASim_plot(1),'Xlim',[10 60])
 ylabel(DASim_plot(1),'Stimulus')
 
 
@@ -76,6 +81,7 @@ hold(DASim_plot(3),'on')
 plot(DASim_plot(3),filtertime,Kz,'m');
 legend(DASim_plot(3),'K_y','K_z')
 hold(DASim_plot(3),'off') 
+set(DASim_plot(2),'Xlim',[10 60])
 
 
 % do the computationally difficult things only when the user is not actively doing things
@@ -100,14 +106,56 @@ if compute
 	% make a linear prediction
 	fp = convolve(time,stimulus,K,filtertime) + mean(R);
 	hold(DASim_plot(2),'on')
-	plot(DASim_plot(2),time,fp,'r');
+	l=plot(DASim_plot(2),time,fp,'r');
+	t2 = floor(length(fp)/2);
+	r2 = strcat('r^2=',oval(rsquare(fp(t2:end),R(t2:end))));
+	legend(l,r2)
 	hold(DASim_plot(2),'off')
+	set(DASim_plot(2),'Xlim',[10 60])
 
 	% scatter plot
 	ss = 3;
-	plot(DASim_plot(5),fp(300:ss:end),R(300:ss:end),'.')
+	plot(DASim_plot(5),fp(plot_start:ss:end),R(plot_start:ss:end),'.','MarkerSize',marker_size,'MarkerFaceColor',[0.9 0.9 0.9],'MarkerEdgeColor',[0.9 0.9 0.9])
 	xlabel(DASim_plot(5),'Linear Prediction')
 	ylabel(DASim_plot(5),'Response')
+	hold(DASim_plot(5),'on')
+
+	% compute shat(the smoothed stimulus)
+	p.hl = floor(p.hl/dt)+1;
+	shat = ComputeSmoothedStimulus(stimulus,round(p.hl));
+
+	n = floor(sum(~isnan(R))*p.frac);
+
+
+	% find times when smoothed stim is lowest x%
+	this_shat = shat;
+	this_shat(1:p.hl) = Inf; % the initial segment where we can't estimate shat is excluded
+	this_shat(isnan(this_shat)) = Inf;
+	this_shat(isnan(R)) = Inf;
+	[~, t_low] = sort(this_shat,'ascend');
+	t_low = t_low(1:n); % this is an index
+	f_low = R(t_low);
+	fp_low = fp(t_low);
+	s_low = this_shat(t_low);
+	t_low = time(t_low); % t_low is now a time. 
+	 
+
+	% find times when smoothed stim is highest x%
+	this_shat = shat;
+	this_shat(1:p.hl) = -Inf;
+	this_shat(isinf(this_shat)) = -Inf;
+	this_shat(isnan(R)) = -Inf;
+	[~, t_high] = sort(this_shat,'descend');
+	t_high = t_high(1:n);
+	f_high = R(t_high);
+	fp_high = fp(t_high);
+	s_high = this_shat(t_high);
+	t_high  = time(t_high);
+
+	% scatter with colours
+	plot(DASim_plot(5),fp_low(1:ss:end),f_low(1:ss:end),'.','MarkerSize',marker_size,'MarkerFaceColor',[0.5 1 0.5],'MarkerEdgeColor',[0.5 1 0.5])
+	plot(DASim_plot(5),fp_high(1:ss:end),f_high(1:ss:end),'.','MarkerSize',marker_size,'MarkerFaceColor',[1 0.5 0.5],'MarkerEdgeColor',[1 0.5 0.5])
+	hold(DASim_plot(5),'off')
 end
 
 % just so that getModelParameters can read it
@@ -129,6 +177,7 @@ lb.n_y = 2; lb.n_z = 2;
 ub.n_y = 2; ub.n_z = 2;
 lb.s0 = -5; ub.s0 = 1;
 ub.tau_z = 1; ub.tau_y = 1;
+ub.frac = 1; lb.frac = 0;
 
 
 function [] = closess(~,~)

@@ -104,7 +104,11 @@ if compute
 	title(DASim_plot(4),'Filter')
 
 	% make a linear prediction
-	fp = convolve(time,stimulus,K,filtertime) + mean(R);
+	fp = convolve(time,stimulus,K,filtertime);
+	f=fit(fp(~(isnan(fp) | isnan(R))),R(~(isnan(fp) | isnan(R))),'poly1');
+	fp = fp*f.p1;
+	fp = fp+f.p2;
+
 	hold(DASim_plot(2),'on')
 	l=plot(DASim_plot(2),time,fp,'r');
 	t2 = floor(length(fp)/2);
@@ -153,9 +157,26 @@ if compute
 	t_high  = time(t_high);
 
 	% scatter with colours
-	plot(DASim_plot(5),fp_low(1:ss:end),f_low(1:ss:end),'.','MarkerSize',marker_size,'MarkerFaceColor',[0.5 1 0.5],'MarkerEdgeColor',[0.5 1 0.5])
-	plot(DASim_plot(5),fp_high(1:ss:end),f_high(1:ss:end),'.','MarkerSize',marker_size,'MarkerFaceColor',[1 0.5 0.5],'MarkerEdgeColor',[1 0.5 0.5])
+	clear l L
+	l(1) = plot(DASim_plot(5),fp_low(1:ss:end),f_low(1:ss:end),'.','MarkerSize',marker_size,'MarkerFaceColor',[0.5 1 0.5],'MarkerEdgeColor',[0.5 1 0.5]);
+	l(2) = plot(DASim_plot(5),fp_high(1:ss:end),f_high(1:ss:end),'.','MarkerSize',marker_size,'MarkerFaceColor',[1 0.5 0.5],'MarkerEdgeColor',[1 0.5 0.5]);
 	hold(DASim_plot(5),'off')
+
+	% remove NaNs
+	censor_these = find(isnan(fp_high) + isnan(fp_low) + isnan(f_low) + isnan(f_high));
+	f_high(censor_these) = [];
+	fp_high(censor_these) = [];
+	f_low(censor_these) = [];
+	fp_low(censor_these) = [];
+	t_low(censor_these) = [];
+	t_high(censor_these) = [];
+
+	% fit lines
+	f = fit(fp_low(1:ss:end),f_low(1:ss:end),'poly1');
+	L{1} = strcat('m=',oval(f.p1));
+	f = fit(fp_high(1:ss:end),f_high(1:ss:end),'poly1');
+	L{2} = strcat('m=',oval(f.p1));
+	legend(l,L,'Location','southeast')
 end
 
 % just so that getModelParameters can read it

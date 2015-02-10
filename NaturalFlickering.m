@@ -1,20 +1,11 @@
 % Mahmut_Data_Analyis.m
-% 
+% this is a complete rewrite on  4:06 , 10 February 2015. 
 % 
 % created by Srinivas Gorur-Shandilya at 10:20 , 09 April 2014. Contact me at http://srinivas.gs/contact/
 % 
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-% specify which data to look at
-load('/local-data/DA-paper/mahmut_data.mat')
-td = 6;
-
-
-roi1 = [20 30];
-roi2 = [55 65];
-
-% internal housekeeping: determine if being called by publish or not
 calling_func = dbstack;
 being_published = 0;
 if ~isempty(calling_func)
@@ -23,181 +14,217 @@ if ~isempty(calling_func)
 	end
 end
 
-example_history_length = 0.135;
-
-%% 
-% How do ORNs respond to non-Gaussian inputs? Real odor stimuli are characterised by long tails and non-gaussian statisitcs, with large whiffs of odor that occur in periods of relatively low signal. Such a stimulus has been generated here, and the responses of ORNs to these signals is analysed in this figure.
-
-
-
+load('/local-data/DA-paper/natural-flickering/mahmut-raw/2014_07_11_EA_natflick_non_period_CFM_1_ab3_1_1_all.mat')
+PID = data(2).PID;
+time = 1e-4*(1:length(PID));
+all_spikes = spikes(2).A;
+B_spikes = spikes(2).B;
 
 
-%                     ########     ###    ########    ###    
-%                     ##     ##   ## ##      ##      ## ##   
-%                     ##     ##  ##   ##     ##     ##   ##  
-%                     ##     ## ##     ##    ##    ##     ## 
-%                     ##     ## #########    ##    ######### 
-%                     ##     ## ##     ##    ##    ##     ## 
-%                     ########  ##     ##    ##    ##     ## 
-
-%% Rough Overview of Data
-% The following figure shows what the stimulus and the neuron's response looks like. 
-
-% assuming baseline has already been removed...
-
-
-figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
-subplot(4,1,1), hold on
-if isvector(data(td).PID)
-	plot(data(td).time,data(td).PID,'k');
+% A spikes --> firing rate
+hash = DataHash(full(all_spikes));
+cached_data = cache(hash);
+if isempty(cached_data)
+	fA = spiketimes2f(all_spikes,time);
+	cache(hash,fA);
 else
-	plot(data(td).time,mean2(data(td).PID),'k');
+	fA = cached_data;
 end
-ylabel('PID (V)')
-titlestr = strkat(data(td).neuron,' response to ',data(td).odor);
-title(titlestr)
-set(gca,'XLim',[min(data(td).time) max(data(td).time)])
-set(gca,'YLim',[-0.1 1.1*max(max(data(td).PID))])
 
-subplot(4,1,2), hold on
-if isvector(data(td).PID)
-	plot(data(td).time,data(td).PID,'k');
+% B spikes --> firing rate
+hash = DataHash(full(B_spikes));
+cached_data = cache(hash);
+if isempty(cached_data)
+	fB = spiketimes2f(B_spikes,time);
+	cache(hash,fB);
 else
-	plot(data(td).time,mean2(data(td).PID),'k');
+	fB = cached_data;
 end
-ylabel('PID (V)')
-set(gca,'XLim',[min(data(td).time) max(data(td).time)])
-set(gca,'YLim',[0 1.1*max(max(data(td).PID))])
-a = min(nonzeros(data(td).PID(:)));
-a = max([a 1e-6]);
-z = 1.1*max((data(td).PID(:)));
-set(gca,'YTick',logspace(log10(a),log10(z),4));
-set(gca,'YScale','log','YMinorTick','on')
 
-subplot(4,1,3), hold on
-if isfield(data,'spiketimes') && isfield(data,'spiketimeB')
-	if isempty(data(td).spiketimeB)
-		raster2(data(td).spiketimes)
-	else
-		raster2(data(td).spiketimeB,data(td).spiketimes)
-	end
+tA = 1e-3*(1:length(fA));
+PID2 = fA;
+for i = 1:width(PID2)
+	PID2(:,i) = interp1(time,PID(i,:),tA);
 end
-set(gca,'XLim',[min(data(td).time) max(data(td).time)])
+PID = PID2; clear PID2
+% some minor cleaning up
+PID(end,:) = PID(end-1,:); 
 
-subplot(4,1,4), hold on
-if isvector(data(td).ORN)
-	plot(data(td).time,data(td).ORN,'k');
-else
-	plot(data(td).time,mean2(data(td).ORN),'k');
-end
-ylabel('Firing Rate (Hz)')
+
+
+figure('outerposition',[0 0 1400 1000],'PaperUnits','points','PaperSize',[1400 1000]); hold on
+subplot(2,9,10:14), hold on
+plot(tA,mean2(fA),'k')
+set(gca,'XLim',[0 70])
 xlabel('Time (s)')
-set(gca,'XLim',[min(data(td).time) max(data(td).time)])
-set(gca,'YLim',[0 1.1*max(max(data(td).ORN))])
+ylabel('Firing Rate (Hz)')
+
+subplot(2,9,15:16), hold on
+[r2,s] = rsquare(fA);
+imagescnan(r2)
+caxis([0 1])
+axis image
+colorbar
+axis off
+title(strcat('mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
+
+subplot(2,9,17:18), hold on
+imagescnan(s)
+colorbar
+axis image
+axis off
+title(strcat('mean slope = ',oval(mean(s(~isnan(s))),2)))
+
+
+subplot(2,9,1:5), hold on
+plot(tA,mean2(PID),'k')
+set(gca,'YScale','log')
+set(gca,'XLim',[0 70])
+xlabel('Time (s)')
+ylabel('Odor Concentration (V)')
+
+subplot(2,9,6:7), hold on
+[r2,s] = rsquare(PID);
+imagescnan(r2)
+caxis([0 1])
+colorbar
+axis image
+axis off
+title(strcat('mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
+
+subplot(2,9,8:9), hold on
+imagescnan(s)
+colorbar
+axis image
+axis off
+title(strcat('mean slope = ',oval(mean(s(~isnan(s))),2)))
 
 PrettyFig;
 
 if being_published
-	snapnow;
-	delete(gcf);
+	snapnow
+	delete(gcf)
 end
 
+%%
+% For completeness, here is a comparison of the A neuron's response to that of the B neuron's. 
 
 
-%     ##     ##    ###    ########  ####    ###    ########  ##       #### ######## ##    ## 
-%     ##     ##   ## ##   ##     ##  ##    ## ##   ##     ## ##        ##     ##     ##  ##  
-%     ##     ##  ##   ##  ##     ##  ##   ##   ##  ##     ## ##        ##     ##      ####   
-%     ##     ## ##     ## ########   ##  ##     ## ########  ##        ##     ##       ##    
-%      ##   ##  ######### ##   ##    ##  ######### ##     ## ##        ##     ##       ##    
-%       ## ##   ##     ## ##    ##   ##  ##     ## ##     ## ##        ##     ##       ##    
-%        ###    ##     ## ##     ## #### ##     ## ########  ######## ####    ##       ##    
+figure('outerposition',[0 0 1400 1000],'PaperUnits','points','PaperSize',[1400 1000]); hold on
+subplot(2,8,1:6), hold on
+plot(tA,mean2(fA),'k')
+set(gca,'XLim',[0 70])
+xlabel('Time (s)')
+ylabel('Firing Rate (A) (Hz)')
+set(gca,'YLim',[0 120])
 
-%% Trial to Trial variability
-% How variable is the response and the stimulus from trial to trial? The following figure shows individual traces of the stimulus and the neuron's response for each trial. 
-
-
-figure('outerposition',[0 0 1000 1000],'PaperUnits','points','PaperSize',[1000 1000]); hold on
-set(gcf,'DefaultAxesColorOrder',jet(width(data(td).PID)))
-subplot(3,2,1), hold on
-plot(data(td).time,data(td).PID);
-ylabel('PID (V)')
-set(gca,'XLim',roi1)
-set(gca,'YLim',[0 1.1*max(max(data(td).PID))])
-
-subplot(3,2,2), hold on
-plot(data(td).time,data(td).PID);
-ylabel('PID (V)')
-set(gca,'XLim',roi2)
-set(gca,'YLim',[0 1.1*max(max(data(td).PID))])
-
-if isfield(data,'spiketimes') && isfield(data,'spiketimeB')
-	subplot(3,2,3), hold on
-	raster2(data(td).spiketimes)
-	set(gca,'XLim',roi1)
-
-
-	subplot(3,2,4), hold on
-	raster2(data(td).spiketimes)
-	set(gca,'XLim',roi2)
+subplot(2,8,7:8), hold on
+hash = DataHash(fA);
+cached_data = cache(hash);
+if isempty(cached_data)
+	r2 = rsquare(fA);
+	cache(hash,r2);
+else
+	r2 = cached_data;
 end
+imagescnan(r2)
+caxis([0 1])
+colorbar
+axis image
+axis off
+title(strcat('mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
 
-subplot(3,2,5), hold on
-plot(data(td).time,data(td).ORN);
-ylabel('Firing Rate (Hz)')
-xlabel('Time (s)')
-set(gca,'XLim',roi1)
-set(gca,'YLim',[0 1.1*max(max(data(td).ORN))])
 
-subplot(3,2,6), hold on
-plot(data(td).time,data(td).ORN);
-ylabel('Firing Rate (Hz)')
+subplot(2,8,9:14), hold on
+plot(tA,mean2(fB),'k')
+set(gca,'XLim',[0 70])
 xlabel('Time (s)')
-set(gca,'XLim',roi2)
-set(gca,'YLim',[0 1.1*max(max(data(td).ORN))])
-PrettyFig;
+ylabel('Firing Rate (B) (Hz)')
+set(gca,'YLim',[0 120])
+
+subplot(2,8,15:16), hold on
+hash = DataHash(fB);
+cached_data = cache(hash);
+if isempty(cached_data)
+	r2 = rsquare(fB);
+	cache(hash,r2);
+else
+	r2 = cached_data;
+end
+imagescnan(r2)
+caxis([0 1])
+colorbar
+axis image
+axis off
+title(strcat('mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
+
+
+PrettyFig();
 
 if being_published
-	snapnow;
-	delete(gcf);
+	snapnow
+	delete(gcf)
 end
 
 
 
 %%
-% It looks like the amplitude of the signal is dropping every trial. It's still not clear why this is the case. From here onwards, the variability will be neglected, and all data from all the trials is averaged together. 
-data(td).PID = mean2(data(td).PID);
-data(td).ORN = mean2(data(td).ORN);
+% In this document, we generate odor stimuli flickers over a large range, like the "natural" stimuli, but never goes to zero, so that the neuron should never silence (allowing us to accurately follow its response, and reasonably estimate instantaneous gain). 
 
-data(td).PID(data(td).PID<0) = 0;
-
+%%
+% The first figure shows the odor stimulus (ethyl acetate) presented to two ab3A neurons. Each neuron was recorded from ten times. The colormaps on the right show the coefficient of determination between pairwise trials. 
 
 
-%      ######  ########    ###    ######## ####  ######  ######## ####  ######   ######  
-%     ##    ##    ##      ## ##      ##     ##  ##    ##    ##     ##  ##    ## ##    ## 
-%     ##          ##     ##   ##     ##     ##  ##          ##     ##  ##       ##       
-%      ######     ##    ##     ##    ##     ##   ######     ##     ##  ##        ######  
-%           ##    ##    #########    ##     ##        ##    ##     ##  ##             ## 
-%     ##    ##    ##    ##     ##    ##     ##  ##    ##    ##     ##  ##    ## ##    ## 
-%      ######     ##    ##     ##    ##    ####  ######     ##    ####  ######   ######  
+%%
+% The following figure shows the stimulus distribution and the autocorrelation functions of the stimulus and the response. 
 
-%% Data Statistics
-% In the following section, we plot some statistical features of the stimulus. In the figure below, the panel on the left shows the distribution (normalised) of the values of the stimulus and the response. The panel on the right shows the autocorrelation function of the stimulus and the response. From the autocorrelation function, we can also estimate the time at which the autocorrelation of the response is zero, which we will use to in future analyses.
 
-clear ph
-figure('outerposition',[0 0 1100 500],'PaperUnits','points','PaperSize',[1100 500]); hold on
-ph(1)=subplot(1,2,1); hold on
-ph(2)=subplot(1,2,2); hold on
-act = PlotDataStatistics(data,td,ph);
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,3,1), hold on
+for i = 1:width(PID)
+	[y,x] = histcounts(PID(:,i),300);x(1) = [];
+	plot(x,y)
+end
 
-set(ph(2),'XScale','linear')
+set(gca,'YScale','log','XScale','log')
+xlabel('PID (V)')
+ylabel('Count')
+title('Stimulus Histogram')
+
+subplot(1,3,2), hold on
+a = [];
+for i = 1:width(PID)
+	[~,~,c,temp]=FindCorrelationTime(PID(:,i));
+	a = [a temp];
+	l=plot(1:3e3,c(1:3e3));
+end
+
+xlabel('Lag (ms)')
+ylabel('Autocorrelation')
+legend(l,strcat('\tau=',oval(a),'ms'))
+set(gca,'XScale','log')
+title('Stimulus')
+
+subplot(1,3,3), hold on
+a = [];
+for i = 1:width(fA)
+	[~,~,c,temp]=FindCorrelationTime(fA(:,i));
+	a = [a temp];
+	l=plot(1:3e3,c(1:3e3));
+end
+
+title('Response')
+xlabel('Lag (ms)')
+ylabel('Autocorrelation')
+legend(l,strcat('\tau=',oval(a),'ms'))
+set(gca,'XScale','log')
 
 PrettyFig;
 
 if being_published
-	snapnow;
-	delete(gcf);
+	snapnow
+	delete(gcf)
 end
-
 
 
 
@@ -211,28 +238,97 @@ end
 
 
 %% Linear Fit
-% The linear filter calculated and shown above is a "best" filter that simultaneously tries to maximise the predictive power of the model while suppressing high frequency components and having a unit gain. 
+% In this section we fit a linear kernel, first to the stimulus, and then to the log of the stimulus using standard methods. 
 
-% build a simple linear model
-[K,~,filtertime] = FindBestFilter(data(td).PID(500:end),data(td).ORN(500:end),[],'filter_length=201;');
-data(td).K = K;
-data(td).filtertime = filtertime*mean(diff(data(td).time));
-data(td).LinearFit = convolve(data(td).time,data(td).PID,data(td).K,data(td).filtertime);
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[900 500]); hold on
+subplot(1,2,1), hold on
+plot([-.1 1],[0 0 ],'k--')
+[K, ~, filtertime_full] = FindBestFilter(mean2(PID),mean2(fA),[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
+filtertime_full = filtertime_full*mean(diff(tA));
+filtertime = 1e-3*(-200:900);
+K = interp1(filtertime_full,K,filtertime);
 
+plot(filtertime,K,'r')
+ylabel('Filter Amplitude')
+xlabel('Filter Lag (s)')
+title('Filter from stimulus')
 
-fh=figure('outerposition',[0 0 400 400],'PaperUnits','points','PaperSize',[1000 400]); hold on
-plot(data(td).filtertime,data(td).K,'k','LineWidth',2)
-title('Linear Filter for this data')
-xlabel('FitlerLag (s)')
-ylabel('Filter Amplitude (Hz)')
-set(gca,'XLim',[min(data(td).filtertime) max(data(td).filtertime)])
+subplot(1,2,2), hold on
+plot([-.1 1],[0 0 ],'k--')
+[Klog, ~, filtertime_full] = FindBestFilter(log(mean2(PID)),mean2(fA),[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
+filtertime_full = filtertime_full*mean(diff(tA));
+filtertime = 1e-3*(-200:900);
+Klog = interp1(filtertime_full,Klog,filtertime);
+
+plot(filtertime,Klog,'r')
+ylabel('Filter Amplitude')
+xlabel('Filter Lag (s)')
+title('Filter from log stimulus')
 
 PrettyFig;
 
 if being_published
-	snapnow;
-	delete(gcf);
+	snapnow
+	delete(gcf)
 end
+
+
+%%
+% We will use this filter to make a prediction of the response:
+
+% convolve with filter to make prediction
+fp = convolve(tA,mean2(PID),K,filtertime);
+fp_log = convolve(tA,log(mean2(PID)),Klog,filtertime);
+
+% correct for trivial scaling
+R = mean2(fA);
+temp =fit(fp(~(isnan(fp) | isnan(R))),R(~(isnan(fp) | isnan(R))),'poly1');
+fp = fp*temp.p1;
+fp = fp+temp.p2;
+temp =fit(fp_log(~(isnan(fp_log) | isnan(R))),R(~(isnan(fp_log) | isnan(R))),'poly1');
+fp_log = fp_log*temp.p1;
+fp_log = fp_log+temp.p2;
+
+
+figure('outerposition',[0 0 1500 800],'PaperUnits','points','PaperSize',[1500 800]); hold on
+subplot(2,4,1:3), hold on
+plot(tA,mean2(fA),'k')
+l=plot(tA,fp,'r');
+r2 = rsquare(fp,mean2(fA));
+legend(l,strcat('r^2=',oval(r2,2)))
+xlabel('Time (s)')
+ylabel('Firing Rate (Hz)')
+
+subplot(2,4,4), hold on
+plot(filtertime,K,'r')
+xlabel('Filter Lag (s)')
+ylabel('Filter (norm.)')
+title('Filter from stimulus')
+
+subplot(2,4,5:7), hold on
+plot(tA,mean2(fA),'k')
+l=plot(tA,fp_log,'r');
+r2 = rsquare(fp_log,mean2(fA));
+legend(l,strcat('r^2=',oval(r2,2)))
+xlabel('Time (s)')
+ylabel('Firing Rate (Hz)')
+
+subplot(2,4,8), hold on
+plot(filtertime,K,'r')
+xlabel('Filter Lag (s)')
+ylabel('Filter (norm.)')
+title('Filter from log stimulus')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
+return
 
 
 %%

@@ -83,7 +83,6 @@ title(strcat('mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
 
 subplot(2,9,17:18), hold on
 imagescnan(s)
-caxis([0 1])
 colorbar
 axis image
 axis off
@@ -116,7 +115,6 @@ title(strcat('mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
 
 subplot(2,9,8:9), hold on
 imagescnan(s)
-caxis([0 1])
 colorbar
 axis image
 axis off

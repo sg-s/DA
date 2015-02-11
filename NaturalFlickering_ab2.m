@@ -14,7 +14,7 @@ if ~isempty(calling_func)
 	end
 end
 
-load('/local-data/DA-paper/natural-flickering/mahmut-raw/2014_07_11_EA_natflick_non_period_CFM_1_ab3_1_1_all.mat')
+load('/local-data/DA-paper/natural-flickering/mahmut-raw/2014_07_11_EA_natflick_non_period_CFM_1_ab2_1_1_all.mat')
 PID = data(2).PID;
 time = 1e-4*(1:length(PID));
 all_spikes = spikes(2).A;
@@ -49,6 +49,10 @@ end
 PID = PID2; clear PID2
 % some minor cleaning up
 PID(end,:) = PID(end-1,:); 
+
+% trash first trial
+fA(:,1) = [];
+PID(:,1) = [];
 
 
 
@@ -342,6 +346,7 @@ end
 %            ##     ## ##   ### ##     ## ##          ##    ##    ##  ##  ##    ## 
 %            ##     ## ##    ## ##     ## ########    ##     ######  ####  ######  
 
+
 %% Output Analysis
 % In this section, we analyse the prediction of the linear kernel in some more detail. The following figure shows a plot of the linear predictions vs. the actual response. 
 
@@ -352,11 +357,11 @@ plot(fp(1:ss:end),R(1:ss:end),'.','MarkerSize',12,'MarkerFaceColor',[0.9 0.9 0.9
 xlabel('Linear Prediction (Hz)')
 ylabel('Actual response (Hz)')
 clear p l
-p.A = 92.8611; % for normal
-p.k = 32.0745;
-p.n = 1.5221;
+p.A = 149.8905;
+p.k = 43.2554;
+p.n = 2.1188;
 fp_LN = hill(p,fp);
-l = plot(1:100,hill(p,1:100),'r');
+l = plot(1:300,hill(p,1:300),'r');
 r2 = strcat('r^2=',oval(rsquare(fp_LN,R)));
 legend(l,r2,'Location','southeast');
 
@@ -364,11 +369,11 @@ subplot(1,2,2), hold on
 plot(fp_log(1:ss:end),R(1:ss:end),'.','MarkerSize',12,'MarkerFaceColor',[0.9 0.9 0.9],'MarkerEdgeColor',[0.9 0.9 0.9])
 xlabel('Linear Prediction (log stim.) (Hz)')
 clear p l
-p.A =  198.3611; % for log
-p.k =  110.4495;
-p.n =  1.2975;
+p.A = 218.4697;
+p.k = 93.7756;
+p.n = 1.4129;
 fp_log_LN = hill(p,fp_log);
-l = plot(1:100,hill(p,1:100),'r');
+l = plot(1:300,hill(p,1:300),'r');
 r2 = strcat('r^2=',oval(rsquare(fp_log_LN,R)));
 legend(l,r2,'Location','southeast');
 

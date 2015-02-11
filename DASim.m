@@ -191,9 +191,11 @@ p.s0 = 0;
 lb.A = 1; lb.B = 1; lb.C = 0 ; 
 lb.tau_y = .01; lb.tau_z = .01;
 
-ub.C = 1; ub.act = 0;
+ub.C = 1; ub.act = 0; ub.sigma = 4;
 
 % extra bounds
+lb.act = 0; ub.act = 1;
+ub.hl = 10; lb.hl = 0;
 lb.n_y = 2; lb.n_z = 2;
 ub.n_y = 2; ub.n_z = 2;
 lb.s0 = -5; ub.s0 = 1;

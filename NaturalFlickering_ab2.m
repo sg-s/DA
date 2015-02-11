@@ -120,7 +120,7 @@ plot(tA,mean2(fA),'k')
 set(gca,'XLim',[0 70])
 xlabel('Time (s)')
 ylabel('Firing Rate (A) (Hz)')
-set(gca,'YLim',[0 120])
+set(gca,'YLim',[0 200])
 
 subplot(2,8,7:8), hold on
 hash = DataHash(fA);
@@ -144,7 +144,7 @@ plot(tA,mean2(fB),'k')
 set(gca,'XLim',[0 70])
 xlabel('Time (s)')
 ylabel('Firing Rate (B) (Hz)')
-set(gca,'YLim',[0 120])
+set(gca,'YLim',[0 200])
 
 subplot(2,8,15:16), hold on
 hash = DataHash(fB);

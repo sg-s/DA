@@ -253,7 +253,6 @@ end
 %             ##    ##     ## ######## ##    ## ########   ######  
 
 
-return
 
 %% Trends in Data
 % Are there any trends in the data? In the following figure, we fit straight lines to the flickering part of each trial of the data, on a per-neuron and per-experiment basis, and plot the slopes for the sitmulus and for the response below: 
@@ -328,69 +327,7 @@ if being_published
 	delete(gcf)
 end
 
-
-% plot_data is indexed by where we start
-all_start = [15:5:50];
-all_end = all_start+5;
-
-
-for i = 1:length(paradigm_names)
-	plot_data(i).stim_slope = [];
-	plot_data(i).stim_slope_err = [];
-	plot_data(i).stim_mean = [];
-	plot_data(i).stim_mean_err = [];
-	plot_data(i).resp_slope = [];
-	plot_data(i).resp_slope_err = [];
-	plot_data(i).resp_mean = [];
-	plot_data(i).resp_mean_err = [];
-
-	for j = 1:length(all_start)
-		a = floor(all_start(j)/3e-3);
-		z = floor(all_end(j)/3e-3);
-		n = sqrt(z-a);
-
-		plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
-		these_pid=mean2(combined_data.PID(plot_these,:));
-		these_resp=mean2(combined_data.fA(:,plot_these));
-
-		cropped_pid = these_pid(a:z);
-		cropped_resp = these_resp(a:z);
-
-		plot_data(i).stim_mean = 		[plot_data(i).stim_mean mean(cropped_pid)];
-		plot_data(i).stim_mean_err = 	[plot_data(i).stim_mean_err std(cropped_pid)/n];
-
-		plot_data(i).resp_mean = 		[plot_data(i).resp_mean mean(cropped_resp)];
-		plot_data(i).resp_mean_err = 	[plot_data(i).resp_mean_err std(cropped_resp)/n];
-
-
-	end
-end
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-subplot(1,2,1), hold on
-c = parula(length(paradigm_names));
-for i = 1:length(plot_data)
-	errorbar(all_start+2.5,plot_data(i).stim_mean,plot_data(i).stim_mean_err,'Color',c(i,:))
-
-end
-xlabel('Time (s)')
-ylabel('PID (V)')
-
-subplot(1,2,2), hold on
-c = parula(length(paradigm_names));
-for i = 1:length(plot_data)
-	errorbar(all_start+2.5,plot_data(i).resp_mean,plot_data(i).resp_mean_err,'Color',c(i,:))
-
-end
-xlabel('Time (s)')
-ylabel('Firing Rate (Hz)')
-
-
-PrettyFig;
-if being_published
-	snapnow
-	delete(gcf)
-end
+return
 
 
 

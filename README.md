@@ -12,7 +12,7 @@ This document lists key results, and the evidence we have for them.
 
 ### Gain changes cannot be explained by a static nonlinearity 
 
-
+## Responses to naturalistic stimuli 
 
 
 ## Chrimson Results ??
@@ -25,3 +25,13 @@ This document lists key results, and the evidence we have for them.
 ### There are two timescales in the step adaptation response
 
 ### Extracellular Spike amplitude varies with response intensity 
+
+## Open Questions / Next Steps
+
+### What determines spike amplitude? What causes "pinching"?
+
+### Do ORNs show power-law variance adaptation? 
+
+### Why are ORN spike amplitudes different? 
+
+### Why do ORNs spike spontaneously? 

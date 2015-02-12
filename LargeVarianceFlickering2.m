@@ -117,6 +117,8 @@ if being_published
 	delete(gcf)
 end
 
+return
+
 %% 
 % Given the very poor reproducibility of this dataset, we will analyse this trial-by-trial. 
 

@@ -8,7 +8,7 @@
 
 function combined_data = ReduceORNData(data_root,allfiles)
 
-dt = 3e-3; % the dt of the output data that this function will return
+dt = 1e-3; % the dt of the output data that this function will return
 
 % % get all the variables to be combined
 % for i = 1:length(allfiles)
@@ -44,8 +44,8 @@ for i = 1:length(allfiles)
 							% haz spikes
 							time = 1e-4*(1:length(data(j).PID(k,:)));
 							n = length(data(j).PID(k,:));
-							fA = [fA  spiketimes2f(spikes(j).A(k,1:n),time,dt,3e-2)];
-							fB = [fB  spiketimes2f(spikes(j).B(k,1:n),time,dt,3e-2)];
+							fA = [fA  spiketimes2f(spikes(j).A(k,1:n),time)];
+							fB = [fB  spiketimes2f(spikes(j).B(k,1:n),time)];
 
 							paradigm = [paradigm ControlParadigm(j).Name];
 

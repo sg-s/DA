@@ -24,11 +24,25 @@ allfiles  = dir(strcat(data_root,'*.mat'));
 % paradigm_names = unique(combined_data.paradigm);
 % save('MeanShiftedGaussians.mat','combined_data','paradigm_names');
 
-
-
-
 % load cached data
 load('MeanShiftedGaussians.mat')
+
+% shorten paradigm names by throwing out 'MFC'
+short_paradigm_names = paradigm_names;
+for i = 1:length(paradigm_names)
+	short_paradigm_names{i} = paradigm_names{i}(strfind(paradigm_names{i},'-')+1:end);
+end
+
+
+% some global parameters
+nbins = 50;
+histx = [];
+histy = [];
+dt = 1e-3;
+all_pid = [];
+
+a = floor(15/dt);
+z = floor(55/dt);
 
 
 %% Mean Shifted Gaussians
@@ -42,101 +56,99 @@ load('MeanShiftedGaussians.mat')
 %        ##    ##    ##     ##  ##     ## ##     ## ##       ##     ## ##    ## 
 %         ######     ##    #### ##     ##  #######  ########  #######   ######  
 
-%% Stimulus Distributions 
-% Three gaussians with different means are chosen. The following figure shows the distributions for every trial of the data analysed here, colour coded by the experimental paradigm. 
+%% Stimulus 
+% The stimulus we present in this experiment consists of a Gaussian with various means. The following figure shoes the mean of the each Gaussian we present. 
 
-% some global parameters
-nbins = 50;
-histx = [];
-histy = [];
-paradigm = [];
-dt = 3e-3;
-all_pid = [];
 
-a = floor(30/3e-3);
-z = floor(55/3e-3);
+a = floor(15/dt);
+z = floor(55/dt);
 
-% assemble all histograms
+clear ax
+figure('outerposition',[0 0 1400 700],'PaperUnits','points','PaperSize',[1400 700]); hold on
+ax(1) = subplot(1,5,1:4); hold on
+xlabel('Time (s)')
+ylabel('PID (V)')
+ax(2) = subplot(1,5,5); hold on
+xlabel('p.d.f.')
+c = parula(length(paradigm_names));
+
 for i = 1:length(paradigm_names)
 	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
-	for j = 1:length(plot_these)
-		this_pid = combined_data.PID(plot_these(j),:);
-		this_pid = this_pid(a:z);
-		[y,x] = hist(this_pid,nbins);
-		if mean(x) > .5
-			histx = [histx; x];
-			histy = [histy; y];
-			paradigm = [paradigm i];
-			all_pid = [all_pid; this_pid];
-		end
+	plot_hist = (combined_data.PID(plot_these,a:z));
+	[~,~,hx,hy]  = splinehist(plot_hist);
+	if i ~= 2
+		% sometheing weird here causes splinehist to crash
+		plot(ax(2),hy,hx,'Color',c(i,:))
 	end
+
+	plot_this = mean2(combined_data.PID(plot_these,:));
+	time = dt*(1:length(plot_this));
+	plot(ax(1),time,plot_this,'Color',c(i,:))
 end
-
-					
-
-
-
-c = parula(length(paradigm_names));
-paradigm = paradigm -  min(paradigm);
-paradigm = paradigm  + 1;
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-opacity = .2;
-for i = 1:length(unique(paradigm))
-	x = histx(paradigm==i,:);
-	y = histy(paradigm==i,:);
-
-	for j = 1:width(x)
-		plot(x(j,:),y(j,:),'Color',[c(i,:) opacity])
-	end
-	plot(mean(x),mean(y),'Color',[c(i,:)])
-end
-
-xlabel('PID (V)')
-ylabel('Count')
-titlestr = strcat(mat2str(length(paradigm)),' trials');
-title(titlestr)
-
 
 PrettyFig;
-if being_published
-	snapnow
-	delete(gcf)
-end
 
 
 %% Stimulus Reproducibility 
 % In this section, we look at the reproducibility of the stimulus. The following figure shows the stimulus for all the data we look at here, plotted on top of each other, colour-coded by experimental paradigm. 
 
-c = parula(length(paradigm_names));
-time = 1:length(all_pid);
-time = time*dt;
+fig_handle=figure('Units','pixels','outerposition',[100 302 1400 498]); hold on
+clf(fig_handle);
+axes_handles(1)=axes('Units','pixels','Position', [12.45 12.45 149.4 149.4]);
+axes_handles(2)=axes('Units','pixels','Position', [174.3 12.45 149.4 149.4]);
+axes_handles(3)=axes('Units','pixels','Position', [336.15 12.45 149.4 149.4]);
+axes_handles(4)=axes('Units','pixels','Position', [498 12.45 149.4 149.4]);
+axes_handles(5)=axes('Units','pixels','Position', [659.85 12.45 149.4 149.4]);
+axes_handles(6)=axes('Units','pixels','Position', [821.7 12.45 149.4 149.4]);
+axes_handles(7)=axes('Units','pixels','Position', [983.55 12.45 149.4 149.4]);
+axes_handles(8)=axes('Units','pixels','Position', [1145.4 12.45 100+149.4 149.4]);
+axes_handles(9)=axes('Units','pixels','Position', [12.45 211.65 149.4 149.4]);
+axes_handles(10)=axes('Units','pixels','Position',[174.3 211.65 149.4 149.4]);
+axes_handles(11)=axes('Units','pixels','Position',[336.15 211.65 149.4 149.4]);
+axes_handles(12)=axes('Units','pixels','Position',[498 211.65 149.4 149.4]);
+axes_handles(13)=axes('Units','pixels','Position',[659.85 211.65 149.4 149.4]);
+axes_handles(14)=axes('Units','pixels','Position',[821.7 211.65 149.4 149.4]);
+axes_handles(15)=axes('Units','pixels','Position',[983.55 211.65 149.4 149.4]);
+axes_handles(16)=axes('Units','pixels','Position',[1145.4 211.65 100+149.4 149.4]);
 
-figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
-
-opacity = .2;
-for i = 1:length(unique(paradigm))
-	x = all_pid(paradigm==i,:);
-	y = histy(paradigm==i,:);
-
-	for j = 1:width(x)
-		plot(time,x(j,:),'Color',[c(i,:) opacity]) % using undocumented opacity value, may break in future
+ti = 1;
+for i = 1:length(paradigm_names)
+	x = combined_data.PID(find(strcmp(paradigm_names{i},combined_data.paradigm)),a:z);
+	[r2,s] = rsquare(x);
+	axes(axes_handles(i))
+	hold(axes_handles(i) ,'on')
+	imagescnan(r2)
+	caxis([0 1])
+	axis image
+	if i == length(paradigm_names)
+		colorbar
 	end
-	plot(time,mean(x),'Color',[c(i,:)])
+	axis off
+	tx = (strcat('r^2 = ',oval(mean(r2(~isnan(r2))),2)));
+	text(1,length(r2)*.8,tx)
+
+	axes(axes_handles(i+length(paradigm_names)))
+	hold(axes_handles(i+length(paradigm_names)) ,'on')
+	imagescnan(s)
+	caxis([0 1.4])
+	if i == length(paradigm_names)
+		colorbar
+	end
+	axis image
+	axis off
+	tx = (strcat('slope = ',oval(mean(s(~isnan(s))),2)));
+	text(1,length(r2)*.8,tx)
+
 end
 
-ylabel('PID (V)')
-xlabel('Time (s)')
-titlestr = strcat(mat2str(length(paradigm)),' trials');
-title(titlestr)
-
-set(gca,'XLim',[15 20])
-
 PrettyFig;
+
 if being_published
 	snapnow
 	delete(gcf)
 end
+
+return
 
 %          ########  ########  ######  ########   #######  ##    ##  ######  ######## 
 %          ##     ## ##       ##    ## ##     ## ##     ## ###   ## ##    ## ##       

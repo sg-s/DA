@@ -155,8 +155,6 @@ if being_published
 	delete(gcf)
 end
 
-return
-
 
 %          ########  ########  ######  ########   #######  ##    ##  ######  ######## 
 %          ##     ## ##       ##    ## ##     ## ##     ## ###   ## ##    ## ##       
@@ -217,59 +215,34 @@ end
 %% Dataset Details
 % Because this experiment was performed on different days on different neurons, all direct comparisons are not possible. The following figure shows the number of trials of data we have for each neuron, for each experimental paradigm. 
 
-return
-
-
-
-%      ######   #######  ########  ########     ######## #### ##     ## ########  ######  
-%     ##    ## ##     ## ##     ## ##     ##       ##     ##  ###   ### ##       ##    ## 
-%     ##       ##     ## ##     ## ##     ##       ##     ##  #### #### ##       ##       
-%     ##       ##     ## ########  ########        ##     ##  ## ### ## ######    ######  
-%     ##       ##     ## ##   ##   ##   ##         ##     ##  ##     ## ##             ## 
-%     ##    ## ##     ## ##    ##  ##    ##        ##     ##  ##     ## ##       ##    ## 
-%      ######   #######  ##     ## ##     ##       ##    #### ##     ## ########  ######  
-
-%% Correlation Times 
-% On what timescales are the stimulus and the response correlated? In the following figure, we plot the autocorrelation function of the stimulus and the responses, for each stimulus presented:
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-
-c = parula(length(paradigm_names));
-
-subplot(1,2,1), hold on
-for i = 1:length(paradigm_names)
-	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
-	this_pid=mean2(combined_data.PID(plot_these,:));
-	this_pid= this_pid(a:z);
-	[y,x]=autocorr(this_pid,500);
-	x = x*3e-3;
-  	plot(x,y,'Color',c(i,:))
+d = NaN(length(unique(combined_data.neuron)),length(unique(combined_data.paradigm)));
+for i = 1:length(unique(combined_data.neuron))
+	for j = 1:length(unique(combined_data.paradigm))
+		d(i,j) = length(intersect(find(combined_data.neuron == i), find(strcmp(paradigm_names{j},combined_data.paradigm))));
+	end
 end
-set(gca,'XScale','log','XMinorTick','on')
-xlabel('Time (s)')
-ylabel('Autocorrelation')
-title('Stimulus')
+d(d==0) =NaN;
+
+figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1000 500]); hold on
+
+imagescnan(d)
+colorbar
+xlabel('Experimental Paradigm')
+set(gca,'XTick',[1:length(unique(combined_data.paradigm))],'XTickLabel',short_paradigm_names,'XTickLabelRotation',45)
+ylabel('Neuron #')
+title('# trials/neuron/experiment')
+
+PrettyFig();
 
 
-subplot(1,2,2), hold on
-for i = 1:length(paradigm_names)
-	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
-	this_orn=mean2(combined_data.fA(:,plot_these));
-	this_orn = this_orn(a:z);
-	[y,x]=autocorr(this_orn,500);
-	x = x*3e-3;
-  	plot(x,y,'Color',c(i,:))
-end
-set(gca,'XScale','log','XMinorTick','on')
-xlabel('Time (s)')
-ylabel('Autocorrelation')
-title('ORN Responses')
-
-PrettyFig;
 if being_published
 	snapnow
 	delete(gcf)
 end
+
+
+%% 
+% As can be seen, the data exists in three different subsets, corresponding to three different days. 
 
 %          ######## ########  ######## ##    ## ########   ######  
 %             ##    ##     ## ##       ###   ## ##     ## ##    ## 
@@ -280,8 +253,81 @@ end
 %             ##    ##     ## ######## ##    ## ########   ######  
 
 
+return
+
 %% Trends in Data
-% Are there any trends in the data? In the following figure, we coarse-grain the data by binning everything along 5-second bins to look at long-term trends in the data. The various colors correspond to various stimulus means, and correspond to other figures in this document. 
+% Are there any trends in the data? In the following figure, we fit straight lines to the flickering part of each trial of the data, on a per-neuron and per-experiment basis, and plot the slopes for the sitmulus and for the response below: 
+
+stim_slopes = NaN(length(unique(combined_data.neuron)),length(unique(combined_data.paradigm)));
+for i = 1:length(unique(combined_data.neuron))
+	for j = 1:length(unique(combined_data.paradigm))
+		analyse_these = (intersect(find(combined_data.neuron == i), find(strcmp(paradigm_names{j},combined_data.paradigm))));
+		if ~isempty(analyse_these)
+			this_data = combined_data.PID(analyse_these,a:z);
+			s = [];
+			for k = 1:width(this_data)
+				temp = fit(time(a:z)',this_data(k,:)','poly1');
+				s = [s temp.p1];
+			end
+			stim_slopes(i,j) =  mean(s);
+		end
+		
+	end
+end
+
+resp_slopes = NaN(length(unique(combined_data.neuron)),length(unique(combined_data.paradigm)));
+for i = 1:length(unique(combined_data.neuron))
+	for j = 1:length(unique(combined_data.paradigm))
+		analyse_these = (intersect(find(combined_data.neuron == i), find(strcmp(paradigm_names{j},combined_data.paradigm))));
+		if ~isempty(analyse_these)
+			this_data = combined_data.fA(a:z,analyse_these);
+			s = [];
+			for k = 1:width(this_data)
+				temp = fit(time(a:z)',this_data(:,k),'poly1');
+				s = [s temp.p1];
+			end
+			resp_slopes(i,j) =  mean(s);
+		end
+		
+	end
+end
+
+b = .1;
+cs = [1:-.01:b];
+% make the red ones
+map = flipud([cs; b*ones(1,length(cs)); b*ones(1,length(cs))]');
+map2 = ([b*ones(1,length(cs)); b*ones(1,length(cs)); cs]');
+map = vertcat(map2,map);
+
+figure('outerposition',[0 0 1400 700],'PaperUnits','points','PaperSize',[1400 700]); hold on
+subplot(1,2,1), hold on
+imagescnan(stim_slopes)
+
+caxis([-max(abs(stim_slopes(~isnan(stim_slopes)))) max(abs(stim_slopes(~isnan(stim_slopes))))])
+colorbar
+colormap(map)
+xlabel('Experimental Paradigm')
+set(gca,'XTick',[1:length(unique(combined_data.paradigm))],'XTickLabel',short_paradigm_names,'XTickLabelRotation',45)
+ylabel('Neuron #')
+title('Stimulus trends (V/s)')
+
+subplot(1,2,2), hold on
+imagescnan(resp_slopes)
+caxis([-max(abs(resp_slopes(~isnan(resp_slopes)))) max(abs(resp_slopes(~isnan(resp_slopes))))])
+colorbar
+colormap(map)
+xlabel('Experimental Paradigm')
+set(gca,'XTick',[1:length(unique(combined_data.paradigm))],'XTickLabel',short_paradigm_names,'XTickLabelRotation',45)
+title('Response trends (Hz/s)')
+
+PrettyFig();
+
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 % plot_data is indexed by where we start
 all_start = [15:5:50];
@@ -345,6 +391,59 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+
+
+%      ######   #######  ########  ########     ######## #### ##     ## ########  ######  
+%     ##    ## ##     ## ##     ## ##     ##       ##     ##  ###   ### ##       ##    ## 
+%     ##       ##     ## ##     ## ##     ##       ##     ##  #### #### ##       ##       
+%     ##       ##     ## ########  ########        ##     ##  ## ### ## ######    ######  
+%     ##       ##     ## ##   ##   ##   ##         ##     ##  ##     ## ##             ## 
+%     ##    ## ##     ## ##    ##  ##    ##        ##     ##  ##     ## ##       ##    ## 
+%      ######   #######  ##     ## ##     ##       ##    #### ##     ## ########  ######  
+
+%% Correlation Times 
+% On what timescales are the stimulus and the response correlated? In the following figure, we plot the autocorrelation function of the stimulus and the responses, for each stimulus presented:
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+
+c = parula(length(paradigm_names));
+
+subplot(1,2,1), hold on
+for i = 1:length(paradigm_names)
+	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
+	this_pid=mean2(combined_data.PID(plot_these,:));
+	this_pid= this_pid(a:z);
+	[y,x]=autocorr(this_pid,500);
+	x = x*3e-3;
+  	plot(x,y,'Color',c(i,:))
+end
+set(gca,'XScale','log','XMinorTick','on')
+xlabel('Time (s)')
+ylabel('Autocorrelation')
+title('Stimulus')
+
+
+subplot(1,2,2), hold on
+for i = 1:length(paradigm_names)
+	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
+	this_orn=mean2(combined_data.fA(:,plot_these));
+	this_orn = this_orn(a:z);
+	[y,x]=autocorr(this_orn,500);
+	x = x*3e-3;
+  	plot(x,y,'Color',c(i,:))
+end
+set(gca,'XScale','log','XMinorTick','on')
+xlabel('Time (s)')
+ylabel('Autocorrelation')
+title('ORN Responses')
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 %%
 % OK, there are clearly trends in some of the data, especially in the responses. Now, we will attempt to remove all the trends by fitting a second-degree polynomial to the stimulus and response from 35 to 55 seconds. 

@@ -99,7 +99,7 @@ end
 %% Stimulus Reproducibility 
 % In this section, we look at the reproducibility of the stimulus. The following figure shows the stimulus for all the data we look at here, plotted on top of each other, colour-coded by experimental paradigm. 
 
-fig_handle=figure('Units','pixels','outerposition',[100 302 1400 498],'PaperSize',[1400 498]); hold on
+fig_handle=figure('Units','pixels','outerposition',[100 302 1400 498],'PaperUnits','points','PaperSize',[1400 498]); hold on
 clf(fig_handle);
 axes_handles(1)=axes('Units','pixels','Position', [12.45 12.45 149.4 149.4]);
 axes_handles(2)=axes('Units','pixels','Position', [174.3 12.45 149.4 149.4]);

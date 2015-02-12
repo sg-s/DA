@@ -99,7 +99,7 @@ end
 %% Stimulus Reproducibility 
 % In this section, we look at the reproducibility of the stimulus. The following figure shows the stimulus for all the data we look at here, plotted on top of each other, colour-coded by experimental paradigm. 
 
-fig_handle=figure('Units','pixels','outerposition',[100 302 1400 498]); hold on
+fig_handle=figure('Units','pixels','outerposition',[100 302 1400 498],'PaperSize',[1400 498]); hold on
 clf(fig_handle);
 axes_handles(1)=axes('Units','pixels','Position', [12.45 12.45 149.4 149.4]);
 axes_handles(2)=axes('Units','pixels','Position', [174.3 12.45 149.4 149.4]);
@@ -176,7 +176,7 @@ figure('outerposition',[0 0 1400 700],'PaperUnits','points','PaperSize',[1400 70
 ax(1) = subplot(1,5,1:4); hold on
 
 xlabel('Time (s)')
-ylabel('PID (V)')
+ylabel('Firing Rate (Hz) (V)')
 ax(2) = subplot(1,5,5); hold on
 xlabel('p.d.f.')
 c = parula(length(paradigm_names));
@@ -223,7 +223,7 @@ for i = 1:length(unique(combined_data.neuron))
 end
 d(d==0) =NaN;
 
-figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1000 500]); hold on
+figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
 
 imagescnan(d)
 colorbar

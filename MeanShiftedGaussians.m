@@ -78,7 +78,7 @@ for i = 1:length(paradigm_names)
 	[~,~,hx,hy]  = splinehist(plot_hist);
 	if i ~= 2
 		% sometheing weird here causes splinehist to crash
-		plot(ax(2),hy,hx,'Color',c(i,:))
+	 	plot(ax(2),hy,hx,'Color',c(i,:))
 	end
 
 	plot_this = mean2(combined_data.PID(plot_these,:));
@@ -87,6 +87,13 @@ for i = 1:length(paradigm_names)
 end
 
 PrettyFig;
+
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 
 %% Stimulus Reproducibility 
@@ -150,6 +157,7 @@ end
 
 return
 
+
 %          ########  ########  ######  ########   #######  ##    ##  ######  ######## 
 %          ##     ## ##       ##    ## ##     ## ##     ## ###   ## ##    ## ##       
 %          ##     ## ##       ##       ##     ## ##     ## ####  ## ##       ##       
@@ -161,38 +169,57 @@ return
 %% Neuron Responses: Overview
 % The following figure shows the responses of the ORNs to this stimuli, and their distributions. 
 
-c = parula(length(paradigm_names));
-figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
-subplot(1,5,1:4), hold on
-for i = 1:length(paradigm_names)
-	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
-	this_orn=mean2(combined_data.fA(:,plot_these));
-	time = 3e-3*(1:length(this_orn));
-	plot(time,this_orn,'Color',c(i,:))
-end
-ylim = get(gca,'YLim');
-ylabel('Firing Rate (Hz)')
+
+a = floor(15/dt);
+z = floor(55/dt);
+
+clear ax
+figure('outerposition',[0 0 1400 700],'PaperUnits','points','PaperSize',[1400 700]); hold on
+ax(1) = subplot(1,5,1:4); hold on
+
 xlabel('Time (s)')
+ylabel('PID (V)')
+ax(2) = subplot(1,5,5); hold on
+xlabel('p.d.f.')
+c = parula(length(paradigm_names));
 
-subplot(1,5,5), hold on
 for i = 1:length(paradigm_names)
 	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
-	this_orn=mean2(combined_data.fA(:,plot_these));
-	this_orn = this_orn(a:z);
-	[x,y] = hist(this_orn,50);
-	plot(x,y,'Color',c(i,:))
+	plot_hist = (combined_data.fA(a:z,plot_these));
+	[~,~,hx,hy]  = splinehist(mean2(plot_hist));
+	% if i ~= 2
+	% 	% sometheing weird here causes splinehist to crash
+		plot(ax(2),hy,hx,'Color',c(i,:))
+	% end
 
+	plot_this = mean2(combined_data.fA(:,plot_these));
+	time = dt*(1:length(plot_this));
+	plot(ax(1),time,plot_this,'Color',c(i,:))
 end
-set(gca,'YLim',ylim);
-xlabel('Count')
-title('Distribution')
+
+PrettyFig('EqualiseY=1;');
 
 
-PrettyFig;
 if being_published
 	snapnow
 	delete(gcf)
 end
+
+
+%      ########     ###    ########    ###     ######  ######## ######## 
+%      ##     ##   ## ##      ##      ## ##   ##    ## ##          ##    
+%      ##     ##  ##   ##     ##     ##   ##  ##       ##          ##    
+%      ##     ## ##     ##    ##    ##     ##  ######  ######      ##    
+%      ##     ## #########    ##    #########       ## ##          ##    
+%      ##     ## ##     ##    ##    ##     ## ##    ## ##          ##    
+%      ########  ##     ##    ##    ##     ##  ######  ########    ##    
+
+%% Dataset Details
+% Because this experiment was performed on different days on different neurons, all direct comparisons are not possible. The following figure shows the number of trials of data we have for each neuron, for each experimental paradigm. 
+
+return
+
+
 
 %      ######   #######  ########  ########     ######## #### ##     ## ########  ######  
 %     ##    ## ##     ## ##     ## ##     ##       ##     ##  ###   ### ##       ##    ## 

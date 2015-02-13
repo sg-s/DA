@@ -48,6 +48,7 @@ if ~isempty(cached_data)
 	temp = cached_data;
 	gain = temp.gain;
 	r2 = temp.r2;
+	t = temp.t;
 	return
 end
 

@@ -416,7 +416,52 @@ if being_published
 	delete(gcf)
 end
 
-return
+%%
+% Another way to think about the gain is to define the gain as 
+%
+% $$ g(t)=\frac{dr}{ds} $$
+%
+
+%%
+% In the following figure, we estimate the gain as so, by fitting lines to intervals 100ms long, and sliding along 10ms. 
+
+[gain,r2,t] = EstimateGain(fp,mean2(fA),100,10);
+t = t*1e-3;
+
+figure('outerposition',[0 0 1400 700],'PaperUnits','points','PaperSize',[1400 700]); hold on
+subplot(4,1,1:3)
+plot(t,gain,'k')
+ylabel('Gain')
+
+subplot(4,1,4)
+plot(t,r2,'k')
+xlabel('Time (s)')
+ylabel('r^2')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% If we exclude points where there is a poor fit to the data ($r^2 < .5$), and take the absolute value of the gain, we get the following picture:
+
+gain(r2<.5) = NaN;
+figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
+plot([0 60],[1 1],'k--')
+plot(t,abs(gain),'r')
+ylabel('Gain')
+xlabel('Time (s)')
+set(gca,'YScale','log')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 
 %%

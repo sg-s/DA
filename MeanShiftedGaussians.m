@@ -72,6 +72,8 @@ ax(2) = subplot(1,5,5); hold on
 xlabel('p.d.f.')
 c = parula(length(paradigm_names));
 
+mean_pid = NaN(length(c),1);
+
 for i = 1:length(paradigm_names)
 	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
 	plot_hist = (combined_data.PID(plot_these,a:z));
@@ -84,6 +86,8 @@ for i = 1:length(paradigm_names)
 	plot_this = mean2(combined_data.PID(plot_these,:));
 	time = dt*(1:length(plot_this));
 	plot(ax(1),time,plot_this,'Color',c(i,:))
+
+	mean_pid(i) = mean(plot_this);
 end
 
 PrettyFig;
@@ -291,12 +295,8 @@ for i = 1:length(unique(combined_data.neuron))
 	end
 end
 
-b = .1;
-cs = [1:-.01:b];
-% make the red ones
-map = flipud([cs; b*ones(1,length(cs)); b*ones(1,length(cs))]');
-map2 = ([b*ones(1,length(cs)); b*ones(1,length(cs)); cs]');
-map = vertcat(map2,map);
+
+map = sweetspot(100);
 
 figure('outerposition',[0 0 1400 700],'PaperUnits','points','PaperSize',[1400 700]); hold on
 subplot(1,2,1), hold on
@@ -342,44 +342,171 @@ return
 %% Correlation Times 
 % On what timescales are the stimulus and the response correlated? In the following figure, we plot the autocorrelation function of the stimulus and the responses, for each stimulus presented:
 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-
-c = parula(length(paradigm_names));
-
-subplot(1,2,1), hold on
-for i = 1:length(paradigm_names)
-	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
-	this_pid=mean2(combined_data.PID(plot_these,:));
-	this_pid= this_pid(a:z);
-	[y,x]=autocorr(this_pid,500);
-	x = x*3e-3;
-  	plot(x,y,'Color',c(i,:))
+corr_times_stim = NaN(length(unique(combined_data.neuron)),length(unique(combined_data.paradigm)));
+for i = 1:length(unique(combined_data.neuron))
+	for j = 1:length(unique(combined_data.paradigm))
+		analyse_these = (intersect(find(combined_data.neuron == i), find(strcmp(paradigm_names{j},combined_data.paradigm))));
+		if ~isempty(analyse_these)
+			this_data = combined_data.PID(analyse_these,a:z);
+			s = [];
+			for k = 1:width(this_data)
+				[~,~,~,half_cross_time] = FindCorrelationTime(this_data(k,:));
+				s = [s half_cross_time];
+			end
+			corr_times_stim(i,j) =  mean(s);
+		end
+		
+	end
 end
-set(gca,'XScale','log','XMinorTick','on')
-xlabel('Time (s)')
-ylabel('Autocorrelation')
-title('Stimulus')
 
+corr_times_resp = NaN(length(unique(combined_data.neuron)),length(unique(combined_data.paradigm)));
+for i = 1:length(unique(combined_data.neuron))
+	for j = 1:length(unique(combined_data.paradigm))
+		analyse_these = (intersect(find(combined_data.neuron == i), find(strcmp(paradigm_names{j},combined_data.paradigm))));
+		if ~isempty(analyse_these)
+			this_data = combined_data.fA(a:z,analyse_these);
+			s = [];
+			for k = 1:width(this_data)
+				[~,~,~,half_cross_time] = FindCorrelationTime(this_data(:,k));
+				s = [s half_cross_time];
+			end
+			corr_times_resp(i,j) =  mean(s);
+		end
+		
+	end
+end
+
+figure('outerposition',[0 0 1400 700],'PaperUnits','points','PaperSize',[1400 700]); hold on
+subplot(1,2,1), hold on
+imagescnan(corr_times_stim)
+caxis([10 200])
+colorbar
+
+xlabel('Experimental Paradigm')
+set(gca,'XTick',[1:length(unique(combined_data.paradigm))],'XTickLabel',short_paradigm_names,'XTickLabelRotation',45)
+ylabel('Neuron #')
+title('Stimulus correlation times (ms)')
 
 subplot(1,2,2), hold on
-for i = 1:length(paradigm_names)
-	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
-	this_orn=mean2(combined_data.fA(:,plot_these));
-	this_orn = this_orn(a:z);
-	[y,x]=autocorr(this_orn,500);
-	x = x*3e-3;
-  	plot(x,y,'Color',c(i,:))
-end
-set(gca,'XScale','log','XMinorTick','on')
-xlabel('Time (s)')
-ylabel('Autocorrelation')
-title('ORN Responses')
+imagescnan(corr_times_resp)
+caxis([10 200])
+colorbar
+xlabel('Experimental Paradigm')
+set(gca,'XTick',[1:length(unique(combined_data.paradigm))],'XTickLabel',short_paradigm_names,'XTickLabelRotation',45)
+title('Response correlation times (ms)')
 
-PrettyFig;
+
+PrettyFig();
+
+
 if being_published
 	snapnow
 	delete(gcf)
 end
+
+%% 
+% Because it's hard to see in the previous plot, we plot the correlation times as a function of paradigm here:
+
+corr_times_stim(isnan(corr_times_stim)) = 0;
+corr_times_resp(isnan(corr_times_resp)) = 0;
+
+corr_times_stim_m = [];
+corr_times_stim_e = [];
+for i = 1:length(paradigm_names)
+	corr_times_stim_m(i) = mean(nonzeros(corr_times_stim(:,i)));
+	corr_times_stim_e(i) = std(nonzeros(corr_times_stim(:,i)));
+	corr_times_stim_e(i) =  corr_times_stim_e(i)/sqrt(length(nonzeros(corr_times_stim(:,i))));
+
+	corr_times_resp_m(i) = mean(nonzeros(corr_times_resp(:,i)));
+	corr_times_resp_e(i) = std(nonzeros(corr_times_resp(:,i)));
+	corr_times_resp_e(i) =  corr_times_resp_e(i)/sqrt(length(nonzeros(corr_times_resp(:,i))));
+end
+
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+errorbar(mean_pid,corr_times_stim_m,corr_times_stim_e,'k')
+errorbar(mean_pid,corr_times_resp_m,corr_times_resp_e,'r')
+set(gca,'YScale','log')
+xlabel('Mean Stimulus (V)')
+ylabel('Correlation Time (ms)')
+
+PrettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%% Linear Kernel Analysis
+% In this section, we ask the question if one linear kernel can capture the response of these ORNs to Gaussian stimulation independent of the mean, or if kernel shape depends on the background concentration. The hypothesis is that kernels will get shorter with increasing mean stimulus, consistent with theories in sensory neuroscience. The null hypothesis is that kernel shape is independent of background odor concentration. 
+
+%%
+% First, we reconstruct kernels for all neurons for the lowest background concentration on a trial by trial bases. The following figure shows the kernels for each neuron, which we obtain by averaging the trial-wise kernels:
+
+if isempty(cache('MeanShiftedGaussians_K'))
+	K = NaN(length(combined_data.paradigm),701);
+	for i = 1:length(combined_data.paradigm)
+		textbar(i,length(combined_data.paradigm))
+		[this_K, ~, filtertime] = FindBestFilter(combined_data.PID(i,a:z),combined_data.fA(a:z,i),[],'regmax=1;','regmin=1;','filter_length=1199;','offset=200;');
+		this_K = this_K(100:800);
+		filtertime = dt*(1:length(this_K)) - .1;
+		K (i,:) = this_K';
+	end
+	cache('MeanShiftedGaussians_K',K);
+	cache('MeanShiftedGaussians_K_filtertime',filtertime*dt);
+else
+	K = cache('MeanShiftedGaussians_K');
+	filtertime = cache('MeanShiftedGaussians_K_filtertime');
+end
+
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+title('Filters grouped by ORN')
+for i = 1:length(unique(combined_data.neuron))
+	use_these = intersect(find(combined_data.neuron == i),find(strcmp(paradigm_names{1},combined_data.paradigm)));
+	temp = K(use_these,:);
+	for j = 1:width(temp)
+		temp(j,:) = temp(j,:)/max(temp(j,:));
+	end  
+	plot(filtertime,mean2(temp))
+end
+
+subplot(1,2,2), hold on
+title('Filters grouped by set')
+use_these = intersect(find(combined_data.neuron <5),find(strcmp(paradigm_names{1},combined_data.paradigm)));
+temp = K(use_these,:);
+for j = 1:width(temp)
+	temp(j,:) = temp(j,:)/max(temp(j,:));
+end  
+plot(filtertime,mean2(temp))
+
+use_these = intersect(find(combined_data.neuron > 4 & combined_data.neuron < 9),find(strcmp(paradigm_names{1},combined_data.paradigm)));
+temp = K(use_these,:);
+for j = 1:width(temp)
+	temp(j,:) = temp(j,:)/max(temp(j,:));
+end  
+plot(filtertime,mean2(temp))
+
+use_these = intersect(find(combined_data.neuron > 8),find(strcmp(paradigm_names{1},combined_data.paradigm)));
+temp = K(use_these,:);
+for j = 1:width(temp)
+	temp(j,:) = temp(j,:)/max(temp(j,:));
+end  
+plot(filtertime,mean2(temp))
+
+PrettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
+
+return
 
 
 %%
@@ -412,60 +539,7 @@ for i = 1:length(paradigm_names)
 	detrended_data(i).resp = this_resp - ff(time) + mean(ff(time));
 end
 
-%     ########   #######  ##      ## ######## ########      ######  ########  ########  ######  
-%     ##     ## ##     ## ##  ##  ## ##       ##     ##    ##    ## ##     ## ##       ##    ## 
-%     ##     ## ##     ## ##  ##  ## ##       ##     ##    ##       ##     ## ##       ##       
-%     ########  ##     ## ##  ##  ## ######   ########      ######  ########  ######   ##       
-%     ##        ##     ## ##  ##  ## ##       ##   ##            ## ##        ##       ##       
-%     ##        ##     ## ##  ##  ## ##       ##    ##     ##    ## ##        ##       ##    ## 
-%     ##         #######   ###  ###  ######## ##     ##     ######  ##        ########  ######  
 
-
-%% Stimulus and Response: Power Spectral Density
-% In this section, we compute the power spectral density of the stimulus and the response for each trace, during the times when the stimulus is flickering. The blue traces are the stimulus, and the red is the response. 
-
-
-all_start = [1:floor(length(detrended_data(i).time)/20):(length(detrended_data(i).time))];
-all_start(end) = [];
-all_end = all_start + floor(length(detrended_data(i).time)/20);
-
-figure('outerposition',[0 0 1400 600],'PaperUnits','points','PaperSize',[1400 600]); hold on
-for i = 1:8
-	subplot(2,4,i), hold on
-	x = zeros(1,257);
-	y = zeros(1,257);
-	for j = 1:length(all_start)
-		a = floor(all_start(j));
-		z = floor(all_end(j));
-		n = sqrt(z-a);
-		[x,y2]=powerspec(1/3e-3,detrended_data(i).stim(a:z)/max(detrended_data(i).stim(a:z)),0);
-		y = y+y2;
-	end
-	y = y/length(all_start);
-	plot(x,y,'b')
-	x = zeros(1,257);
-	y = zeros(1,257);
-	for j = 1:length(all_start)
-		a = floor(all_start(j));
-		z = floor(all_end(j));
-		n = sqrt(z-a);
-		[x,y2]=powerspec(1/3e-3,detrended_data(i).resp(a:z)/max(detrended_data(i).resp(a:z)),0);
-		y = y+y2';
-	end
-	y = y/length(all_start);
-	plot(x,y,'r')
-	title(paradigm_names{i}(strfind(paradigm_names{i},'-')+1:end))
-	xlabel('Frequency (Hz)')
-	ylabel('Power (norm)')
-	set(gca,'XScale','log','YScale','log')
-end 
-PrettyFig;
-
-
-if being_published
-	snapnow
-	delete(gcf)
-end
 
 %         ######      ###    #### ##    ##       ##  ######  ########  ######## ######## ########  
 %        ##    ##    ## ##    ##  ###   ##      ##  ##    ## ##     ## ##       ##       ##     ## 

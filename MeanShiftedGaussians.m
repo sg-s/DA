@@ -452,7 +452,7 @@ if isempty(cache('MeanShiftedGaussians_K'))
 		K (i,:) = this_K';
 	end
 	cache('MeanShiftedGaussians_K',K);
-	cache('MeanShiftedGaussians_K_filtertime',filtertime*dt);
+	cache('MeanShiftedGaussians_K_filtertime',filtertime);
 else
 	K = cache('MeanShiftedGaussians_K');
 	filtertime = cache('MeanShiftedGaussians_K_filtertime');

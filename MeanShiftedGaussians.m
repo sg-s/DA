@@ -435,6 +435,65 @@ if being_published
 	delete(gcf)
 end
 
+return
+
+%% Cross Correlation Analysis
+% In this section, we ask if the response dynamics are invariant of the stimulus background. The null hypothesis is that that it is, and we should expect to see the the shape of the cross correlation function doesn't vary with stimulus background. 
+
+maxlag = 5e3;
+xc = NaN(2*(maxlag)+1,width(combined_data.PID));
+for i = 1:width(combined_data.PID)
+	fA = combined_data.fA(a:z,i);
+	PID = combined_data.PID(i,a:z);
+	[this_xc,tc]=xcorr(fA-mean(fA),PID-mean(PID),maxlag);
+	this_xc = this_xc/max(this_xc(maxlag:maxlag+1e3));
+	xc(:,i) = this_xc;
+end
+
+tc = tc*1e-3;
+
+
+%%
+% First, we show the cross correlation functions for the lowest Gaussian, grouped by Neuron (left), and grouped by experimental set (right).
+
+plot_these = NaN(length(unique(combined_data.neuron)),length(xc));
+for i = 1:length(unique(combined_data.neuron))
+	use_these = intersect(find(combined_data.neuron == i),find(strcmp(paradigm_names{1},combined_data.paradigm)));
+	if length(use_these) > 1
+		plot_these(i,:) = mean2(xc(:,use_these));
+	else
+		plot_these(i,:) = (xc(:,use_these));
+	end
+end
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+plot(tc,plot_these)
+title('grouped by ORN')
+xlabel('Lag (s)')
+ylabel('xcorr (norm)')
+set(gca,'XLim',[-.1 1])
+
+
+subplot(1,2,2), hold on
+title('grouped by set')
+use_these = intersect(find(combined_data.neuron <5),find(strcmp(paradigm_names{1},combined_data.paradigm)));
+temp = xc(:,use_these);
+plot(tc,mean2(temp))
+
+use_these = intersect(find(combined_data.neuron > 4 & combined_data.neuron < 9),find(strcmp(paradigm_names{1},combined_data.paradigm)));
+temp = xc(:,use_these);
+plot(tc,mean2(temp))
+
+use_these = intersect(find(combined_data.neuron > 8),find(strcmp(paradigm_names{1},combined_data.paradigm)));
+temp = xc(:,use_these);
+plot(tc,mean2(temp))
+xlabel('Lag (s)')
+set(gca,'XLim',[-.1 1])
+
+PrettyFig();
+
+
 
 %% Linear Kernel Analysis
 % In this section, we ask the question if one linear kernel can capture the response of these ORNs to Gaussian stimulation independent of the mean, or if kernel shape depends on the background concentration. The hypothesis is that kernels will get shorter with increasing mean stimulus, consistent with theories in sensory neuroscience. The null hypothesis is that kernel shape is independent of background odor concentration. 

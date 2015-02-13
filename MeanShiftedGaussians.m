@@ -504,6 +504,9 @@ if being_published
 	delete(gcf)
 end
 
+%% 
+% If we are to perform a fair comparison of filter shapes in these experiments, we need to ensure that all the filters we are comparing are doing an equally good job at capturing the input/output relationship from the stimulus to the neuron response. In the following figure, we show all the filter shapes, grouped by experiment and set, with the corresponding $r^2$ of fit. 
+
 
 
 

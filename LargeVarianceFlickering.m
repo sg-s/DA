@@ -416,6 +416,9 @@ if being_published
 	delete(gcf)
 end
 
+return
+
+
 %%
 % It looks like the gain is changing around two fold in some points. In the following figure, we do a more detailed gain analysis, splitting the data according to when the stimulus is high or low in the past and checking the gain in those points (as before). 
 

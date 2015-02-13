@@ -470,6 +470,8 @@ for i = 1:length(unique(combined_data.neuron))
 	end  
 	plot(filtertime,mean2(temp))
 end
+xlabel('Filter Lag (s)')
+ylabel('Filter Amplitude (norm)')
 
 subplot(1,2,2), hold on
 title('Filters grouped by set')
@@ -493,6 +495,7 @@ for j = 1:width(temp)
 	temp(j,:) = temp(j,:)/max(temp(j,:));
 end  
 plot(filtertime,mean2(temp))
+xlabel('Filter Lag (s)')
 
 PrettyFig();
 

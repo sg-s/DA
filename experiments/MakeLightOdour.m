@@ -31,12 +31,12 @@ baseline_dilution = .1/100;
 main_flow = 2000; %ml/min
 MFC_scale = 40; % 1V = 40mL/min
 s = [0 .1 .3 .5 1 1.25 1.5 2 3]; % standard deviation of noise, in units of dilution (%)
-T= 60;
 dt = 1e-4;
 
 
 
 %% section 1 light steps
+
 T = 10;
 light_on = floor(1/dt);
 light_off = floor(2/dt);
@@ -61,7 +61,36 @@ ControlParadigm(n).Name = 'AllOFF';
 ControlParadigm(n).Outputs = zeros(3,floor(1/dt));
 
 % save it
-n = ('LightSteps_Kontroller_paradigm.mat');
+n = ('c:\srinivas\LightSteps_Kontroller_paradigm.mat');
+
+save(n,'ControlParadigm')
+%% section 1.1 long light steps
+
+T = 60;
+light_on = floor(5/dt);
+light_off = floor(55/dt);
+
+% make initial startup
+clear ControlParadigm
+ControlParadigm(1).Name = 'CleanAir';
+ControlParadigm(1).Outputs = zeros(3,1e4);
+ControlParadigm(1).Outputs(3,:) = 1;
+
+% make light steps
+light_steps=logspace(log10(1.7),1,10);
+for i = 1:length(light_steps)
+    ControlParadigm(i+1).Name = strcat('Light-',oval(light_steps(i),2),'V');
+    ControlParadigm(i+1).Outputs = zeros(3,floor(T/dt));
+    ControlParadigm(i+1).Outputs(3,:) = 1;
+    ControlParadigm(i+1).Outputs(1,light_on:light_off) = light_steps(i);
+end
+
+n = length(ControlParadigm)+1;
+ControlParadigm(n).Name = 'AllOFF';
+ControlParadigm(n).Outputs = zeros(3,floor(1/dt));
+
+% save it
+n = ('c:\srinivas\LongLightSteps_Kontroller_paradigm.mat');
 
 save(n,'ControlParadigm')
 
@@ -103,7 +132,7 @@ n = length(ControlParadigm)+1;
 ControlParadigm(n).Name = 'AllOFF';
 ControlParadigm(n).Outputs = zeros(3,floor(1/dt));
 
-n = ('LightLogFlicker_Kontroller_paradigm.mat');
+n = ('c:\srinivas\LightLogFlicker_Kontroller_paradigm.mat');
 save(n,'ControlParadigm')
 
 

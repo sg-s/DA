@@ -6,8 +6,6 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-
-% internal housekeeping: determine if being called by publish or not
 calling_func = dbstack;
 being_published = 0;
 if ~isempty(calling_func)
@@ -15,88 +13,171 @@ if ~isempty(calling_func)
 		being_published = 1;
 	end
 end
-% redo = 1; deliberately unset
-
-% intially we will use the trace from the mean shufted gaussian experiment
-load('MeanShiftedGaussians.mat')
-plot_these=find(strcmp(paradigm_names{1}, combined_data.paradigm));
-% remove trend
-b = floor(5/3e-3);
-a = floor(15/3e-3);
-z = floor(55/3e-3);
-clear detrended_data
-detrended_data.time = [];
-detrended_data.stim = [];
-detrended_data.resp = [];
-for i = 1
-	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
-	this_pid=mean2(combined_data.PID(plot_these,:));
-	this_resp=mean2(combined_data.fA(:,plot_these));
-	time = 3e-3*(1:length(this_resp));
-	baseline = mean(this_pid(1:b));
-	time = time(a:z);
-	this_pid = this_pid(a:z);
-	this_resp = this_resp(a:z);
-
-	detrended_data(i).time = time;
-	ff = fit(time(:),this_pid(:),'poly2');
-	detrended_data(i).stim = this_pid - ff(time)' + mean(ff(time)) - baseline;
-
-	ff = fit(time(:),this_resp(:),'poly2');
-	detrended_data(i).resp = this_resp - ff(time) + mean(ff(time));
-end
-dt = mean(diff(detrended_data.time));
 
 %% Figure 1
-% Olfactory Receptor Neurons control gain on a fast time scale in response to fluctuating odor stimuli. 
-figure('outerposition',[0 0 1400 800],'PaperUnits','points','PaperSize',[1400 800]); hold on
-a(1) = subplot(9,3,[1 2 4 5]); hold on % stimulus
-a(2) = subplot(9,3,[7 8 10 11]); hold on % response + prediction
-a(3) = subplot(9,3,[13 14 16 17]); hold on% gain
 
-% LN Model
-a(4) = subplot(9,3,[3 6 9]);hold on
-a(5) = subplot(9,3,[12 15 18]);hold on
-
-% gain analysis
-a(6) = subplot(9,3,[19:3:25]);hold on % scatter plot
-a(7) = subplot(9,3,[20:3:26]); hold on% history lengths plot
-a(7) = subplot(9,3,[21:3:27]); hold on% autocorrelation
-
-% make the plots
-plot(a(1),detrended_data.time,detrended_data.stim,'k')
-ylabel(a(1),'Stimulus (V)')
-plot(a(2),detrended_data.time,detrended_data.resp,'k')
-ylabel(a(2),'ORN Response (Hz)')
-
-p.  tau1= 6.0236;
-p.   K_n= 3.6445;
-p.  tau2= 22.7344;
-p.   K_A= 0.4189;
-p.     A= 45.6247;
-p.     n= 3.1602;
-p.    Kd= 16.5625;
-p.offset= 15.8848;
-
-fp = pLNModel(detrended_data.stim,p);
-plot(a(2),detrended_data.time,fp,'r')
-
-plot(a(3),detrended_data.time,detrended_data.resp./fp','k')
-ylabel(a(3),'Gain')
-
-% plot the LN model
-t = 1:300;
-K = filter_gamma2(p.tau1,p.K_n,p.tau2,p.K_A,t);
-t = dt*t;
-plot(a(4),t,K,'k')
-xlabel(a(4),'Filter Lag (s)')
-
-x = [p.A p.Kd p.n];
-f = hill(x,[0:50]);
-plot(a(5),[0:50],f,'k')
-
-
-
+%%
+% Figure 1. Phenomenology of ORN response dynamics. 
 
 %% Figure 2
-% Fast Gain Control is a general phenomenon, seen in different receptor-odor combinations 
+
+%% Figure 3
+
+%% Figure 4. Fast Gain Control in ORNs. 
+
+fig_handle=figure('Units','pixels','outerposition',[82 5 971 851],'PaperUnits','points','PaperSize',[971 851],'Color','w','Toolbar','none');
+clf(fig_handle);
+axes_handles(1)=axes('Units','pixels','Position',[63.825 723.35 638.25 85.1]);
+axes_handles(2)=axes('Units','pixels','Position',[63.825 595.7 638.25 106.375]);
+axes_handles(3)=axes('Units','pixels','Position',[63.825 510.6 638.25 63.825]);
+axes_handles(4)=axes('Units','pixels','Position',[765.9 680.8 127.65 127.65]);
+axes_handles(5)=axes('Units','pixels','Position',[765.9 510.6 127.65 127.65]);
+axes_handles(6)=axes('Units','pixels','Position',[85.1 255.3 191.475 191.475]);
+axes_handles(7)=axes('Units','pixels','Position',[85.1 42.55 191.475 170.2]);
+axes_handles(8)=axes('Units','pixels','Position',[382.95 255.3 191.475 191.475]);
+axes_handles(9)=axes('Units','pixels','Position',[382.95 42.55 191.475 170.2]);
+axes_handles(10)=axes('Units','pixels','Position',[702.075 255.3 191.475 191.475]);
+axes_handles(11)=axes('Units','pixels','Position',[702.075 42.55 191.475 170.2]);
+for i = 1:length(axes_handles)
+	hold(axes_handles(i),'on')
+end
+
+
+load('/local-data/DA-paper/large-variance-flicker/2015_01_28_CS_ab3_2_EA.mat')
+PID = data(4).PID;
+time = 1e-4*(1:length(PID));
+all_spikes = spikes(4).A;
+B_spikes = spikes(4).B;
+load('/local-data/DA-paper/large-variance-flicker/2015_01_28_CS_ab3_3_EA.mat')
+PID = vertcat(PID,data(4).PID);
+all_spikes = vertcat(all_spikes,spikes(4).A);
+B_spikes = vertcat(B_spikes,spikes(4).B);
+
+% A spikes --> firing rate
+hash = DataHash(full(all_spikes));
+cached_data = cache(hash);
+if isempty(cached_data)
+	fA = spiketimes2f(all_spikes,time);
+	cache(hash,fA);
+else
+	fA = cached_data;
+end
+
+tA = 1e-3*(1:length(fA));
+PID2 = fA;
+for i = 1:width(PID2)
+	PID2(:,i) = interp1(time,PID(i,:),tA);
+end
+PID = PID2; clear PID2
+% some minor cleaning up
+PID(end,:) = PID(end-1,:); 
+
+% plot stimulus
+plot(axes_handles(1),tA,mean2(PID),'k')
+set(axes_handles(1),'XLim',[10 60],'XTickLabel',{})
+ylabel(axes_handles(1),'Stimulus (V)')
+
+% plot response
+plot(axes_handles(2),tA,mean2(fA),'k')
+set(axes_handles(2),'XLim',[10 60],'XTickLabel',{})
+ylabel(axes_handles(2),'Firing Rate (Hz)')
+
+% extract LN model
+[K, ~, filtertime_full] = FindBestFilter(mean2(PID),mean2(fA),[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
+filtertime_full = filtertime_full*mean(diff(tA));
+filtertime = 1e-3*(-200:900);
+K = interp1(filtertime_full,K,filtertime);
+K = K/max(K);
+fp = convolve(tA,mean2(PID),K,filtertime);
+R = mean2(fA);
+temp =fit(fp(~(isnan(fp) | isnan(R))),R(~(isnan(fp) | isnan(R))),'poly1');
+fp = fp*temp.p1;
+fp = fp+temp.p2;
+hold(axes_handles(2),'on')
+clear p
+p.A = 57.2707;
+p.k = 23.7470;
+p.n = 2.9373;
+fp_hill = hill(p,fp);
+
+% plot filter + nonlinearity
+plot(axes_handles(4),filtertime,K,'r')
+plot(axes_handles(5),[0:max(max(fA))],hill(p,[0:max(max(fA))]),'r')
+xlabel(axes_handles(4),'Lag (s)')
+ylabel(axes_handles(4),'Filter (norm)')
+xlabel(axes_handles(5),'Filter Output (Hz)')
+ylabel(axes_handles(5),'Nonlinearity (Hz)')
+
+% plot prediction and prediction quality
+l=plot(axes_handles(2),tA,fp_hill,'r');
+r2 = rsquare(fp_hill,mean2(fA));
+legend(l,strcat('r^2=',oval(r2)))
+
+
+% plot gain
+plot(axes_handles(3),tA,mean2(fA)./fp_hill,'r')
+ylabel(axes_handles(3),'Gain')
+set(axes_handles(3),'XLim',[10 60],'YLim',[0 2])
+xlabel(axes_handles(3),'Time (s)')
+
+
+% gain analysis -- linear model
+ph = []; ph(3:4) = axes_handles(6:7);
+GainAnalysisWrapper(mean2(fA),fp,mean2(PID),tA,0.4290,ph);
+
+% gain analysis -- LN model
+ph = []; ph(3:4) = axes_handles(8:9);
+GainAnalysisWrapper(mean2(fA),fp_hill,mean2(PID),tA,0.4290,ph);
+
+% gain aanlysis -- DA model
+clear p
+p.tau_z = 127.2500;
+p.tau_y = 23.8316;
+p.  n_y = 2;
+p.  n_z = 2;
+p.    A = 729.0620;
+p.    B = 13.8476;
+p.    C = 0.5972;
+p.   s0 = -0.1682;
+[fp_DA,~,~,Ky,Kz] = DAModelv2(mean2(PID),p);
+ph = []; ph(3:4) = axes_handles(10:11);
+GainAnalysisWrapper(mean2(fA),fp_DA,mean2(PID),tA,0.4290,ph);
+
+% equalise axes
+set(axes_handles(7) ,'XLim',[0.1 10],'YLim',[0 2.5])
+set(axes_handles(9) ,'XLim',[0.1 10],'YLim',[0 2.5])
+set(axes_handles(11),'XLim',[0.1 10],'YLim',[0 2.5])
+
+% fix some labels
+ylabel(axes_handles(7),'Gain')
+ylabel(axes_handles(9),'')
+ylabel(axes_handles(11),'')
+ylabel(axes_handles(6),'Neuron Response (Hz)')
+ylabel(axes_handles(8),'')
+ylabel(axes_handles(10),'')
+
+xlabel(axes_handles(6),'Linear Prediction (Hz)')
+xlabel(axes_handles(8),'LN Prediction (Hz)')
+xlabel(axes_handles(10),'DA Prediction (Hz)')
+
+PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
+
+
+%% Version Info
+% The file that generated this document is called:
+disp(mfilename)
+
+%%
+% and its md5 hash is:
+Opt.Input = 'file';
+disp(DataHash(strcat(mfilename,'.m'),Opt))
+
+%%
+% This file should be in this commit:
+[status,m]=unix('git rev-parse HEAD');
+if ~status
+	disp(m)
+end
+
+
+

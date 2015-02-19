@@ -214,15 +214,12 @@ for i = 1:length(history_lengths)
 			xlabel(plothere(2),'Time (s)','FontSize',20)
 			xlabel(plothere(1),'Time (s)','FontSize',20)
 
-			ylabel(plothere(2),'Firing rate (Hz)','FontSize',20)
-			ylabel(plothere(1),'Stimulus (a.u.)','FontSize',20)
+			ylabel(plothere(2),'Firing rate (Hz)')
+			ylabel(plothere(1),'Stimulus (a.u.)')
 			
 			% indicate regions of lowest and highest 10%
 			tp = floor(frac*length(stimulus));
 
-
-			set(plothere(1),'LineWidth',2,'FontSize',20)
-			set(plothere(2),'LineWidth',2,'FontSize',20)
 
 		end
 
@@ -253,7 +250,7 @@ for i = 1:length(history_lengths)
 			plot(plothere(3),fp(1:ss:end),f(1:ss:end),'.','MarkerSize',marker_size,'MarkerFaceColor',[0.9 0.9 0.9],'MarkerEdgeColor',[0.9 0.9 0.9])
 			plot(plothere(3),fp_low(1:ss:end),f_low(1:ss:end),'.','MarkerSize',marker_size,'MarkerFaceColor',[0.5 1 0.5],'MarkerEdgeColor',[0.5 1 0.5])
 			plot(plothere(3),fp_high(1:ss:end),f_high(1:ss:end),'.','MarkerSize',marker_size,'MarkerFaceColor',[1 0.5 0.5],'MarkerEdgeColor',[1 0.5 0.5])
-			set(plothere(3),'LineWidth',2,'box','on','FontSize',font_size)
+			set(plothere(3),'box','on')
 			set(plothere(3),'XLim',[min(f)-1,max(f)+1],'YLim',[min(f)-1,max(f)+1])
 
 			titlestr = strcat('\tau_h=',mat2str(history_lengths(i)),'s  gof:');
@@ -263,9 +260,9 @@ for i = 1:length(history_lengths)
 			title(plothere(3),titlestr);
 
 			% plot the best fit lines
-			plot(plothere(3),[min(fp) max(fp)],fall([min(fp) max(fp)]),'Color',[0.5 0.5 0.5],'LineWidth',3)
-			plot(plothere(3),[min(fp_low) max(fp_low)],flow([min(fp_low) max(fp_low)]),'g','LineWidth',3)
-			plot(plothere(3),[min(fp_high) max(fp_high)],fhigh([min(fp_high) max(fp_high)]),'r','LineWidth',3)
+			plot(plothere(3),[min(fp) max(fp)],fall([min(fp) max(fp)]),'Color',[0.5 0.5 0.5])
+			plot(plothere(3),[min(fp_low) max(fp_low)],flow([min(fp_low) max(fp_low)]),'g')
+			plot(plothere(3),[min(fp_high) max(fp_high)],fhigh([min(fp_high) max(fp_high)]),'r')
 
 			xlabel(plothere(3),'Prediction')
 			ylabel(plothere(3),'Actual neuron response')
@@ -277,7 +274,7 @@ end
 
 if length(plothere) == 4
 	% plot to summary figure
-	plot(plothere(4),history_lengths,all_slopes*ones(1,length(history_lengths)),'k','LineWidth',2), hold on
+	plot(plothere(4),history_lengths,all_slopes*ones(1,length(history_lengths)),'k'), hold on
 end
 
 	
@@ -308,8 +305,8 @@ else
 end
 
 if length(plothere) == 4
-	plot(plothere(4),history_lengths,low_slopes2.data,'g','LineWidth',2), hold on
-	plot(plothere(4),history_lengths,high_slopes2.data,'r','LineWidth',2)
+	plot(plothere(4),history_lengths,low_slopes2.data,'g'), hold on
+	plot(plothere(4),history_lengths,high_slopes2.data,'r')
 	%p_low = p_low*length(p_low); % Bonferroni correction
 	%p_high = p_high*length(p_high); % Bonferroni correction
 	sig_low = p_low<0.05; % these points are significant,
@@ -325,10 +322,10 @@ if length(plothere) == 4
 
 	% plot line to indicate the location of the example history plot
 	yy=get(plothere(4),'YLim');
-	plot([example_history_length example_history_length],yy,'k-.')
+	plot(plothere(4),[example_history_length example_history_length],yy,'k-.')
 
 
-	set(plothere(4),'LineWidth',2,'FontSize',20,'box','on','XLim',[0 max(history_lengths)])
+	set(plothere(4),'box','on','XLim',[0 max(history_lengths)])
 	xlabel(plothere(4),'History Length (s)','FontSize',20)
 	ylabel(plothere(4),'Slope data/prediction (gain)','FontSize',20)
 end

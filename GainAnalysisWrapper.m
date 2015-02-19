@@ -7,7 +7,7 @@
 % 
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
-function [ph] = GainAnalysisWrapper(response,prediction,stimulus,time,example_history_length)
+function [ph] = GainAnalysisWrapper(response,prediction,stimulus,time,example_history_length,ph)
 
 [~,~,~,ct]=FindCorrelationTime(stimulus);
 dt = mean(diff(time));
@@ -20,7 +20,6 @@ x.prediction = prediction;
 x.stimulus = stimulus; 
 x.time = time;
 x.filter_length = 499; % what does this even do??
-ph = [];
 
 rm_this = [find(isnan(response)) find(isnan(prediction)) ];
 x.response(rm_this) = [];
@@ -31,14 +30,17 @@ x.time(rm_this) = [];
 
 
 history_lengths = (3*floor(1000*logspace(log10(ct/2),1,30)/3))/1e3;
-if nargin < 5
+if nargin < 5 
 	example_history_length = history_lengths(10);
 end
 
-f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-ph(3) = subplot(1,2,1); hold on 
-axis square
-ph(4) = subplot(1,2,2); hold on
+if nargin < 6
+	f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+	ph(3) = subplot(1,2,1); hold on 
+	axis square
+	ph(4) = subplot(1,2,2); hold on
+end
+
 
 hash = DataHash(x);
 cached_data = cache(hash);
@@ -54,7 +56,11 @@ if isempty(cached_data)
 
 else
 	p_LN = cached_data;
-	ehl = cache(DataHash(p_LN));
+	if nargin < 5
+		ehl = cache(DataHash(p_LN));
+	else
+		ehl = example_history_length;
+	end
 	GainAnalysis4(x,history_lengths,ehl,ph,p_LN);
 end
 

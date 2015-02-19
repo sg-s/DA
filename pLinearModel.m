@@ -25,3 +25,5 @@ shat = shat + p.offset;
 
 % scale
 f = shat*p.scale;
+
+f(f<0)=0;

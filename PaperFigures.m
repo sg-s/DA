@@ -57,7 +57,7 @@ t = 1e-3*(1:length(fA));
 
 
 % remove bizzare outliers
-rm_this(1) = 8+ find(paradigm==6,1,'first');;
+rm_this(1) = 8+ find(paradigm==6,1,'first');
 rm_this(2) = 2+ find(paradigm==8,1,'first');
 rm_this = [rm_this find(max(fA)==0)];
 fA(:,rm_this) = [];
@@ -82,7 +82,7 @@ all_PID = all_PID(1:10:end,:);
 
 % remove bizzare outliers
 rm_this = [];
-rm_this(1) = find(paradigm_PID==9,1,'first');;
+rm_this(1) = find(paradigm_PID==9,1,'first');
 rm_this(2) = find(paradigm_PID==10,1,'first');
 all_PID(:,rm_this) = [];
 paradigm_PID(rm_this) = [];
@@ -141,6 +141,49 @@ xlabel(axes_handles(6),'Mean Stimulus (V)')
 set(axes_handles(6),'XScale','log','XLim',[5e-2 20],'YLim',[0 1])
 ylabel(axes_handles(6),'Degree of Adaptation')
 
+% use LN model to make predictions
+clear p
+p.  tau1= 5.6925;
+p.   K_n= 6.9533;
+p.  tau2= 20.1989;
+p.   K_A= 0.5832;
+p.offset= 0.9780;
+p. scale= 9.4446;
+p. A= 230.9741;
+p. k= 1.1985;
+p. n= 0.7189;
+
+
+K = filter_gamma2(p.tau1,p.K_n,p.tau2,p.K_A,1:1000);
+K = K/max(K);
+
+fp = NaN(length(fA),length(unique(paradigm)));
+for i = 2:max(paradigm)
+	this_pid = mean2(all_PID(:,paradigm_PID==i));
+	this_pid = this_pid - mean(this_pid(5:1e3));
+	this_pid(this_pid<0) =0;
+	fp(:,i) = filter(K,1,this_pid);
+	fp(:,i) = fp(:,i)/max(fp(:,i));
+	fp(:,i) = fp(:,i)*hill(p,mean(ttp.stimulus(paradigm==i)));
+end
+fp(fp<0) = 0;
+plot(axes_handles(3),t,fp,'r')
+xlabel(axes_handles(3),'Time (s)')
+set(axes_handles(3),'XLim',[.5 3])
+
+plot(axes_handles(5),[5e-2:.1:20],hill(p,[5e-2:.1:20]),'r')
+
+% compute metrics for LN model
+[m,loc]=max(fp);
+ttp.fp = loc*1e-3- nominal_stimulus_start;
+dga.fp = mean(fp(1500:1600,:))./m;
+dga.fp(1) = [];
+x = sort(unique(ttp.stimulus));
+x(1) = []; ttp.fp(1) = [];
+
+% plot metrics for LN model
+plot(axes_handles(4),x,ttp.fp,'r')
+plot(axes_handles(6),x,dga.fp,'r')
 
 PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
 

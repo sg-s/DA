@@ -16,17 +16,152 @@ end
 
 %% Figure 1
 
-%%
-% Figure 1. Phenomenology of ORN response dynamics. 
+clearvars -except being_published
+load('/local-data/DA-paper/carlotta/fig3/abc.mat')
+figure('outerposition',[0 0 1100 700],'PaperUnits','points','PaperSize',[1100 700]); hold on
+axes_handles = NaN(6,1);
+for i = 1:6
+	axes_handles(i) = subplot(2,3,i);
+	hold on
+end
+
+% combine all spikes
+all_spikes = [];
+paradigm = [];
+for i = 1:length(spikes)
+	if isempty(spikes(i).discard)
+		all_spikes = vertcat(all_spikes,spikes(i).A);
+		paradigm = [paradigm i*ones(1,width(spikes(i).A))];
+	else
+		temp = spikes(i).A;
+		rm_this = find(spikes(i).discard);
+		rm_this(rm_this>width(spikes(i).discard)) = [];
+		temp(rm_this,:) = [];
+		all_spikes = vertcat(all_spikes,temp);
+		paradigm = [paradigm i*ones(1,width(temp))];
+	end
+end
+
+time = 1e-4*(1:length(all_spikes));
+
+hash = DataHash(full(all_spikes));
+cached_data = cache(hash);
+if isempty(cached_data)
+	fA = spiketimes2f(all_spikes,time);
+	cache(hash,fA);
+else
+	fA = cached_data;
+end
+
+t = 1e-3*(1:length(fA));
+
+
+% remove bizzare outliers
+rm_this(1) = 8+ find(paradigm==6,1,'first');;
+rm_this(2) = 2+ find(paradigm==8,1,'first');
+rm_this = [rm_this find(max(fA)==0)];
+fA(:,rm_this) = [];
+paradigm(rm_this) = [];
+
+% combine all PID traces. the data is very spotty, so we have to be careful. 
+all_PID = [];
+paradigm_PID = [];
+for i = 1:length(spikes)
+	temp = data(i).PID;
+	temp = temp(find(temp(:,1)),:);
+	all_PID = vertcat(all_PID,temp);
+	paradigm_PID = [paradigm_PID i*ones(1,width(temp))];
+end
+all_PID = all_PID';
+
+% filter and subsample
+for i = 1:width(all_PID)
+	all_PID(:,i) = filter(ones(30,1)/30,1,all_PID(:,i));
+end
+all_PID = all_PID(1:10:end,:);
+
+% remove bizzare outliers
+rm_this = [];
+rm_this(1) = find(paradigm_PID==9,1,'first');;
+rm_this(2) = find(paradigm_PID==10,1,'first');
+all_PID(:,rm_this) = [];
+paradigm_PID(rm_this) = [];
+
+% plot PID
+for i = 1:max(paradigm)
+	plot_these = find(paradigm_PID==i);
+	plot(axes_handles(1),t,mean2(all_PID(:,plot_these)));
+end
+
+set(axes_handles(1),'XLim',[.5 3],'YScale','log','YLim',[7e-2 15])
+xlabel(axes_handles(1),'Time (s)')
+ylabel(axes_handles(1),'Stimulus (V)')
+
+
+% plot neuron responses
+for i = 1:max(paradigm)
+	plot_these = find(paradigm==i);
+	plot(axes_handles(2),t,mean2(fA(:,plot_these)));
+end
+
+set(axes_handles(2),'XLim',[.5 3])
+xlabel(axes_handles(2),'Time (s)')
+ylabel(axes_handles(2),'Firing rate (Hz)')
+
+% compute some stuff
+nominal_stimulus_start = 1.05;
+nominal_stimulus_stop = 1.6;
+ttp.data = NaN(width(fA),1);
+ttp.stimulus = NaN(width(fA),1);
+peak.data = NaN(width(fA),1);
+dga.data = NaN(width(fA),1);
+for i = 1:width(fA)
+	[m,loc]=max(fA(nominal_stimulus_start*1e3:nominal_stimulus_stop*1e3,i));
+	ttp.data(i) = loc*1e-3;
+	ttp.stimulus(i) = max(max(all_PID(:,paradigm_PID == paradigm(i))));
+	peak.data(i) = m;
+	dga.data(i) = mean(fA(1500:1600,i))/m;
+end
+
+% plot time to peak for the data
+plot(axes_handles(4),ttp.stimulus,ttp.data,'k+')
+set(axes_handles(4),'XScale','log','XLim',[5e-2 20])
+xlabel(axes_handles(4),'Mean Stimulus (V)')
+ylabel(axes_handles(4),'Time to peak (s)')
+
+% plot dose-response for data
+plot(axes_handles(5),ttp.stimulus,peak.data,'k+')
+xlabel(axes_handles(5),'Mean Stimulus (V)')
+set(axes_handles(5),'XScale','log','XLim',[5e-2 20])
+ylabel(axes_handles(5),'Peak response (Hz)')
+
+% plot degree of adaptation for data
+plot(axes_handles(6),ttp.stimulus,dga.data,'k+')
+xlabel(axes_handles(6),'Mean Stimulus (V)')
+set(axes_handles(6),'XScale','log','XLim',[5e-2 20],'YLim',[0 1])
+ylabel(axes_handles(6),'Degree of Adaptation')
+
+
+PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+return
 
 %% Figure 2
 
 %% Figure 3
 
-%% Figure 4. Fast Gain Control in ORNs. 
+%% Figure 4. 
 
+
+clearvars -except being_published
 fig_handle=figure('Units','pixels','outerposition',[82 5 971 851],'PaperUnits','points','PaperSize',[971 851],'Color','w','Toolbar','none');
-clf(fig_handle);
+clf(fig_handle); clear axes_handles
 axes_handles(1)=axes('Units','pixels','Position',[63.825 723.35 638.25 85.1]);
 axes_handles(2)=axes('Units','pixels','Position',[63.825 595.7 638.25 106.375]);
 axes_handles(3)=axes('Units','pixels','Position',[63.825 510.6 638.25 63.825]);
@@ -161,6 +296,13 @@ xlabel(axes_handles(8),'LN Prediction (Hz)')
 xlabel(axes_handles(10),'DA Prediction (Hz)')
 
 PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
+
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 
 %% Version Info

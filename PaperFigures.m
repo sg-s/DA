@@ -193,7 +193,6 @@ if being_published
 end
 
 
-return
 
 %% Figure 2
 

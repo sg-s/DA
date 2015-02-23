@@ -86,26 +86,10 @@ temp =fit(fp(~(isnan(fp) | isnan(R))),R(~(isnan(fp) | isnan(R))),'poly1');
 fp = fp*temp.p1;
 fp = fp+temp.p2;
 
-% % plot filter + nonlinearity
-% plot(axes_handles(4),filtertime,K,'r')
-% plot(axes_handles(5),[0:max(max(fA))],hill(p,[0:max(max(fA))]),'r')
-% xlabel(axes_handles(4),'Lag (s)')
-% ylabel(axes_handles(4),'Filter (norm)')
-% xlabel(axes_handles(5),'Filter Output (Hz)')
-% ylabel(axes_handles(5),'Nonlinearity (Hz)')
-
 % plot prediction and prediction quality
 l=plot(axes_handles(2),tA,fp,'r');
 r2 = rsquare(fp,mean2(fA));
 legend(l,strcat('r^2=',oval(r2)))
-
-
-% plot gain
-plot(axes_handles(3),tA,mean2(fA)./fp,'r')
-ylabel(axes_handles(3),'Gain')
-set(axes_handles(3),'XLim',[10 60],'YLim',[0 2])
-xlabel(axes_handles(3),'Time (s)')
-
 
 % gain analysis -- linear model
 ph = []; ph(3:4) = axes_handles(4:5);
@@ -113,14 +97,24 @@ GainAnalysisWrapper(mean2(fA),fp,mean2(PID),tA,0.4290,ph);
 
 % plot gain vs preceding stimulus
 [x,y] = MakeFig6G(mean2(PID),mean2(fA),fp,400);
+%c = MakeFig6H(mean2(PID),mean2(fA),400);
+gain_time = mean(diff(tA))*(1:length(x));
 rm_this = (isnan(x) | isnan(y));
 x(rm_this) = [];
 y(rm_this) = [];
+gain_time(rm_this) = [];
 ss = 50;
 plot(axes_handles(6),x(1:ss:end),y(1:ss:end),'k.')
 xlabel(axes_handles(6),'Stimulus in preceding 400ms')
 ylabel(axes_handles(6),'Instantaneous gain')
 
+% plot gain
+plot(axes_handles(3),gain_time,y,'r')
+ylabel(axes_handles(3),'Gain')
+set(axes_handles(3),'XLim',[10 60],'YLim',[0 7])
+xlabel(axes_handles(3),'Time (s)')
+
+% show adaptation of dynamics
 
 % fix some labels
 ylabel(axes_handles(5),'Gain')

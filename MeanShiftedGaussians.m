@@ -41,9 +41,6 @@ histy = [];
 dt = 1e-3;
 all_pid = [];
 
-a = floor(15/dt);
-z = floor(55/dt);
-
 
 %% Mean Shifted Gaussians
 % How to ORNs respond to mean shifted gaussians? Specifcally, how do they vary their input-output curve? Is the adaptation to this mean optimal (a la Laughlin etc)? Can we find evidence for fast gain adaptation in the curves themselves? 
@@ -327,6 +324,8 @@ if being_published
 	delete(gcf)
 end
 
+
+return
 
 
 %      ######   #######  ########  ########     ######## #### ##     ## ########  ######  

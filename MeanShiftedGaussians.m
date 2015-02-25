@@ -324,9 +324,194 @@ if being_published
 	delete(gcf)
 end
 
+%% 
+% Because this data is so fragmented, we will group this data into experimental days, and analyse each group individually. 
+
+group = [ones(1,4) 2*ones(1,4) 3*ones(1,5)];
+         
+%          ######## ########  ######## ##    ## ########   ######  
+%             ##    ##     ## ##       ###   ## ##     ## ##    ## 
+%             ##    ##     ## ##       ####  ## ##     ## ##       
+%             ##    ########  ######   ## ## ## ##     ##  ######  
+%             ##    ##   ##   ##       ##  #### ##     ##       ## 
+%             ##    ##    ##  ##       ##   ### ##     ## ##    ## 
+%             ##    ##     ## ######## ##    ## ########   ######  
+
+
+%% Trends in Data
+% Are there any trends in the data? In the following figure, we coarse-grain the data by binning everything along 5-second bins to look at long-term trends in the data. The various colors correspond to various stimulus means, and correspond to other figures in this document. 
+
+% plot_data is indexed by where we start
+all_start = [15:5:50];
+all_end = all_start+5;
+
+for k = 1:3 % over groups
+	for i = 1:length(paradigm_names)
+		plot_data(i,k).stim_slope = [];
+		plot_data(i,k).stim_slope_err = [];
+		plot_data(i,k).stim_mean = [];
+		plot_data(i,k).stim_mean_err = [];
+		plot_data(i,k).resp_slope = [];
+		plot_data(i,k).resp_slope_err = [];
+		plot_data(i,k).resp_mean = [];
+		plot_data(i,k).resp_mean_err = [];
+
+		for j = 1:length(all_start)
+			a = floor(all_start(j)/3e-3);
+			z = floor(all_end(j)/3e-3);
+			n = sqrt(z-a);
+
+			plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
+			plot_these = intersect(plot_these,find(ismember(combined_data.neuron,find(group==k))));
+			these_pid=mean2(combined_data.PID(plot_these,:));
+			these_resp=mean2(combined_data.fA(:,plot_these));
+
+			cropped_pid = these_pid(a:z);
+			cropped_resp = these_resp(a:z);
+
+			plot_data(i,k).stim_mean = 		[plot_data(i,k).stim_mean mean(cropped_pid)];
+			plot_data(i,k).stim_mean_err = 	[plot_data(i,k).stim_mean_err std(cropped_pid)/n];
+			plot_data(i,k).resp_mean = 		[plot_data(i,k).resp_mean mean(cropped_resp)];
+			plot_data(i,k).resp_mean_err = 	[plot_data(i,k).resp_mean_err std(cropped_resp)/n];
+
+
+		end
+	end
+end
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+c = parula(length(paradigm_names));
+for i = 1:length(plot_data)
+	for k = 1:3
+		errorbar(all_start+2.5,plot_data(i,k).stim_mean,plot_data(i,k).stim_mean_err,'Color',c(i,:))
+	end
+end
+xlabel('Time (s)')
+ylabel('PID (V)')
+
+subplot(1,2,2), hold on
+c = parula(length(paradigm_names));
+for i = 1:length(plot_data)
+	for k = 1:3
+		errorbar(all_start+2.5,plot_data(i,k).resp_mean,plot_data(i,k).resp_mean_err,'Color',c(i,:))
+	end
+end
+xlabel('Time (s)')
+ylabel('Firing Rate (Hz)')
+
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
+% OK, there are clearly trends in some of the data, especially in the responses. Now, we will attempt to remove all the trends by fitting a second-degree polynomial to the stimulus and response from 35 to 55 seconds. 
+
+
+
+% remove trend
+b = floor(5/3e-3);
+a = floor(35/1e-3);
+z = floor(55/1e-3);
+clear detrended_data
+detrended_data.time = [];
+detrended_data.stim = [];
+detrended_data.resp = [];
+for k = 1:3
+	for i = 1:length(paradigm_names)
+		plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
+		plot_these = intersect(plot_these,find(ismember(combined_data.neuron,find(group==k))));
+		if ~isempty(plot_these)
+			this_pid=mean2(combined_data.PID(plot_these,:));
+			this_resp=mean2(combined_data.fA(:,plot_these));
+			time = 1e-3*(1:length(this_resp));
+			baseline = mean(this_pid(1:b));
+			time = time(a:z);
+			this_pid = this_pid(a:z);
+			this_resp = this_resp(a:z);
+
+			detrended_data(i,k).time = time;
+			ff = fit(time(:),this_pid(:),'poly2');
+			detrended_data(i,k).stim = this_pid - ff(time)' + mean(ff(time)) - baseline;
+
+			ff = fit(time(:),this_resp(:),'poly2');
+			detrended_data(i,k).resp = this_resp - ff(time) + mean(ff(time));
+		end
+	end
+end
+
+
+
+%         ######      ###    #### ##    ##       ##  ######  ########  ######## ######## ########  
+%        ##    ##    ## ##    ##  ###   ##      ##  ##    ## ##     ## ##       ##       ##     ## 
+%        ##         ##   ##   ##  ####  ##     ##   ##       ##     ## ##       ##       ##     ## 
+%        ##   #### ##     ##  ##  ## ## ##    ##     ######  ########  ######   ######   ##     ## 
+%        ##    ##  #########  ##  ##  ####   ##           ## ##        ##       ##       ##     ## 
+%        ##    ##  ##     ##  ##  ##   ###  ##      ##    ## ##        ##       ##       ##     ## 
+%         ######   ##     ## #### ##    ## ##        ######  ##        ######## ######## ########  
+
+%% Neuron Responses: Gain-Speed Tradeoff
+% It is believed that when the stimulus is low, the gain needs to be high, which means the ORN integrates the signal over a longer time, which in turn means that the response kinetics are slower. To check if this is the case in this dataset, we compute the cross-correlation functions between the stimulus and the response in each case and see if the width depends in an obvious way on the mean stimulus. 
+
+c = parula(length(detrended_data));
+figure('outerposition',[0 0 1200 500],'PaperUnits','points','PaperSize',[1200 500]); hold on
+subplot(1,3,1:2), hold on
+peak_loc = NaN(length(detrended_data),3);
+mean_stim = NaN(length(detrended_data),3);
+clear l 
+l = zeros(8,1);
+for k = 1:3
+	for i = 1:length(detrended_data)
+		mean_stim(i,k) = mean(detrended_data(i,k).stim);
+		a = detrended_data(i,k).resp - mean(detrended_data(i,k).resp);
+		if ~isempty(a)
+			a = a/std(a);
+			b = detrended_data(i,k).stim - mean(detrended_data(i,k).stim);
+			b = b/std(b);
+			x = xcorr(a,b); % positive peak means a lags b
+			t = dt*(1:length(x));
+			t = t-mean(t);
+			x = x/max(x);
+
+			l(i) = plot(t,x,'Color',c(i,:));
+
+			[~,loc] = max(x);
+			peak_loc(i,k) = t(loc);
+		end
+	end
+end
+set(gca,'XLim',[-.1 .4])
+xlabel('Lag (s)')
+ylabel('Cross Correlation (norm)')
+L = paradigm_names;
+for i = 1:length(L)
+	L{i} = L{i}(strfind(L{i},'-')+1:end);
+end
+legend(l,L)
+subplot(1,3,3), hold on
+for k = 1:3
+	plot(mean_stim(:,k),peak_loc(:,k)*1000,'+k')
+end
+xlabel('Mean Stimulus (V)')
+set(gca,'XLim',[0 4])
+ylabel('Peak of cross correlation (ms)')
+
+[ff,gof]=fit(mean_stim(~isnan(mean_stim)),peak_loc(~isnan(mean_stim)),'poly1');
+l = plot(0:5,1e3*ff(0:5),'--k');
+legend(l,strcat('r^2=',oval(gof.rsquare)))
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 return
-
 
 %      ######   #######  ########  ########     ######## #### ##     ## ########  ######  
 %     ##    ## ##     ## ##     ## ##     ##       ##     ##  ###   ### ##       ##    ## 
@@ -566,91 +751,40 @@ end
 % If we are to perform a fair comparison of filter shapes in these experiments, we need to ensure that all the filters we are comparing are doing an equally good job at capturing the input/output relationship from the stimulus to the neuron response. In the following figure, we show all the filter shapes, grouped by experiment and set, with the corresponding $r^2$ of fit. 
 
 
-
-
-return
-
-
 %%
 % OK, there are clearly trends in some of the data, especially in the responses. Now, we will attempt to remove all the trends by fitting a second-degree polynomial to the stimulus and response from 35 to 55 seconds. 
 
 
 % remove trend
-b = floor(5/3e-3);
-a = floor(35/3e-3);
-z = floor(55/3e-3);
+b = floor(5/dt);
+a = floor(35/dt);
+z = floor(55/dt);
 clear detrended_data
 detrended_data.time = [];
 detrended_data.stim = [];
 detrended_data.resp = [];
-for i = 1:length(paradigm_names)
-	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
-	this_pid=mean2(combined_data.PID(plot_these,:));
-	this_resp=mean2(combined_data.fA(:,plot_these));
-	time = 3e-3*(1:length(this_resp));
-	baseline = mean(this_pid(1:b));
-	time = time(a:z);
-	this_pid = this_pid(a:z);
-	this_resp = this_resp(a:z);
+for k = 1:3
+	for i = 1:length(paradigm_names)
+		plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
+		this_pid=mean2(combined_data.PID(plot_these,:));
+		this_resp=mean2(combined_data.fA(:,plot_these));
+		time = dt*(1:length(this_resp));
+		baseline = mean(this_pid(1:b));
+		time = time(a:z);
+		this_pid = this_pid(a:z);
+		this_resp = this_resp(a:z);
 
-	detrended_data(i).time = time;
-	ff = fit(time(:),this_pid(:),'poly2');
-	detrended_data(i).stim = this_pid - ff(time)' + mean(ff(time)) - baseline;
+		detrended_data(i,k).time = time;
+		ff = fit(time(:),this_pid(:),'poly2');
+		detrended_data(i,k).stim = this_pid - ff(time)' + mean(ff(time)) - baseline;
 
-	ff = fit(time(:),this_resp(:),'poly2');
-	detrended_data(i).resp = this_resp - ff(time) + mean(ff(time));
+		ff = fit(time(:),this_resp(:),'poly2');
+		detrended_data(i,k).resp = this_resp - ff(time) + mean(ff(time));
+	end
 end
 
 
 
-%         ######      ###    #### ##    ##       ##  ######  ########  ######## ######## ########  
-%        ##    ##    ## ##    ##  ###   ##      ##  ##    ## ##     ## ##       ##       ##     ## 
-%        ##         ##   ##   ##  ####  ##     ##   ##       ##     ## ##       ##       ##     ## 
-%        ##   #### ##     ##  ##  ## ## ##    ##     ######  ########  ######   ######   ##     ## 
-%        ##    ##  #########  ##  ##  ####   ##           ## ##        ##       ##       ##     ## 
-%        ##    ##  ##     ##  ##  ##   ###  ##      ##    ## ##        ##       ##       ##     ## 
-%         ######   ##     ## #### ##    ## ##        ######  ##        ######## ######## ########  
-
-%% Neuron Responses: Gain-Speed Tradeoff
-% It is believed that when the stimulus is low, the gain needs to be high, which means the ORN integrates the signal over a longer time, which in turn means that the response kinetics are slower. To check if this is the case in this dataset, we compute the cross-correlation functions between the stimulus and the response in each case and see if the width depends in an obvious way on the mean stimulus. 
-
-c = parula(length(detrended_data));
-figure('outerposition',[0 0 1200 500],'PaperUnits','points','PaperSize',[1200 500]); hold on
-subplot(1,3,1:2), hold on
-peak_loc = zeros(length(detrended_data),1);
-mean_stim = zeros(length(detrended_data),1);
-for i = 1:length(detrended_data)
-	mean_stim(i) = mean(detrended_data(i).stim);
-	a = detrended_data(i).resp - mean(detrended_data(i).resp);
-	a = a/std(a);
-	b = detrended_data(i).stim - mean(detrended_data(i).stim);
-	b = b/std(b);
-	x = xcorr(a,b); % positive peak means a lags b
-	t = 3e-3*(1:length(x));
-	t = t-mean(t);
-	x = x/max(x);
-	plot(t,x,'Color',c(i,:))
-	[~,loc] = max(x);
-	peak_loc(i) = t(loc);
-end
-set(gca,'XLim',[-.2 .5])
-xlabel('Lag (s)')
-ylabel('Cross Correlation (norm)')
-L = paradigm_names;
-for i = 1:length(L)
-	L{i} = L{i}(strfind(L{i},'-')+1:end);
-end
-legend(L)
-subplot(1,3,3), hold on
-plot(mean_stim,peak_loc*1000,'+-k')
-xlabel('Mean Stimulus (V)')
-ylabel('Peak of cross correlation (ms)')
-
-PrettyFig;
-if being_published
-	snapnow
-	delete(gcf)
-end
 
 %      ####       ##  #######      ######  ##     ## ########  ##     ## ########  ######  
 %       ##       ##  ##     ##    ##    ## ##     ## ##     ## ##     ## ##       ##    ## 

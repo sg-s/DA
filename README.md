@@ -1,37 +1,30 @@
-# Dynamical Adaptation
+# Dynamical Adaptation in ORNs
 
-This document lists key results, and the evidence we have for them. 
+This repository contains all code written for this project. Everything is written in MATLAB. You might want to look at the following projects too, for additional code, etc:
 
-## A LN model predicts the response of ORNs to Gaussian inputs well
+* [Kontroller](https://github.com/sg-s/kontroller) I used this to acquire all data
+* [spikesort](https://github.com/sg-s/spikesort) I used this to sort all spikes from the electro-physiological recordings
+* [mtools](https://github.com/sg-s/srinivas.gs_mtools) Various useful functions in MATLAB, that all other repositories depend on.
 
-## A LN model cannot account for responses to Gaussian inputs with different means
+## Installation
 
-### With increasing mean of Gaussian input, neuron responses speed-up
+Install using my package manager:
 
-### With increasing mean of Gaussian input, neuron gain goes down
+```matlab
+urlwrite('http://srinivas.gs/install.m','install.m')
+install kontroller
+install srinivas.gs_mtools
+install spikesort
+install da
+```
 
-### Gain changes cannot be explained by a static nonlinearity 
+## Make Paper figures
 
-## Responses to naturalistic stimuli 
+A script called `PaperFigures.m` makes all the figures for the paper. If you *don't* run Windows, and have [pdflatex](http://www.math.rug.nl/~trentelman/jacob/pdflatex/pdflatex.html) installed, you can make a PDF with all the figures using:
 
+```
+MakePDF('PaperFigures')
+```
 
-## Chrimson Results ??
+First runs of all scripts will be slow (~10 minutes) but subsequent runs will be much faster (~ seconds) thanks to [cache.m](https://github.com/sg-s/srinivas.gs_mtools/blob/master/docs/cache.md)
 
-
-
-
-## Secondary results
-
-### There are two timescales in the step adaptation response
-
-### Extracellular Spike amplitude varies with response intensity 
-
-## Open Questions / Next Steps
-
-### What determines spike amplitude? What causes "pinching"?
-
-### Do ORNs show power-law variance adaptation? 
-
-### Why are ORN spike amplitudes different? 
-
-### Why do ORNs spike spontaneously? 

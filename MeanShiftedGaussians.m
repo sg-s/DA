@@ -512,6 +512,96 @@ end
 
 
 return
+%%
+% Ok, we show through the cross-correlation function that responses speed up on increasing stimulus mean. Can we see the same effect when we back out filters from the data? 
+
+c = parula(length(detrended_data));
+figure('outerposition',[0 0 1200 500],'PaperUnits','points','PaperSize',[1200 500]); hold on
+subplot(1,3,1:2), hold on
+peak_loc = NaN(length(detrended_data),3);
+mean_stim = NaN(length(detrended_data),3);
+if ~exist('allfilters')
+	for k = 1:3
+		for i = 1:length(detrended_data)
+			allfilters(i,k).K = [];
+			allfilters(i,k).p = [];
+		end
+	end
+end
+clear l 
+l = zeros(8,1);
+for k = 1:3
+	for i = 1:length(detrended_data)
+		mean_stim(i,k) = mean(detrended_data(i,k).stim);
+		a = detrended_data(i,k).resp - mean(detrended_data(i,k).resp);
+		if ~isempty(a)
+			if isempty(allfilters(i,k).K)
+				a = a/std(a);
+				b = detrended_data(i,k).stim - mean(detrended_data(i,k).stim);
+				b = b/std(b);
+
+				[thisK, ~, filtertime_full] = FindBestFilter(b,a,[],'regmax=1;','regmin=1;','filter_length=1499;','offset=300;');
+				thisK = thisK(100:1000);
+				allfilters(i,k).K = thisK;
+				filtertime = filtertime_full(100:1000);
+
+				% fit a parametric filter to this
+				clear d
+				d.stimulus = thisK(200:end);
+				d.stimulus = d.stimulus/max(d.stimulus);
+				d.response = d.stimulus;
+				allfilters(i,k).p = FitModel2Data(@FitFilter,d,p);
+			end
+
+			l(i) = plot(filtertime*dt,allfilters(i,k).K,'Color',c(i,:));
+
+			[~,loc] = max(allfilters(i,k).K);
+			peak_loc(i,k) = filtertime(loc);
+		end
+	end
+end
+
+for k = 1:3
+	for i = 1:8
+		if ~isempty(allfilters(i,k).K)
+			figure, hold on
+			thisK = allfilters(i,k).K(200:end);
+			thisK = thisK/max(thisK);
+			plot(thisK)
+			hold on
+			K2 = FitFilter(thisK,allfilters(i,k).p);
+			plot(K2)
+			pause(2)
+			close(gcf)
+		end
+
+	end
+end
+
+set(gca,'XLim',[-.1 .5])
+xlabel('Lag (s)')
+ylabel('Fitler amplitude (norm)')
+L = paradigm_names;
+for i = 1:length(L)
+	L{i} = L{i}(strfind(L{i},'-')+1:end);
+end
+legend(l,L)
+subplot(1,3,3), hold on
+for k = 1:3
+	plot(mean_stim(:,k),peak_loc(:,k),'+k')
+end
+xlabel('Mean Stimulus (V)')
+set(gca,'XLim',[0 4])
+ylabel('Peak of filter (ms)')
+
+PrettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+return
 
 %      ######   #######  ########  ########     ######## #### ##     ## ########  ######  
 %     ##    ## ##     ## ##     ## ##     ##       ##     ##  ###   ### ##       ##    ## 

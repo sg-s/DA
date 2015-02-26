@@ -195,7 +195,8 @@ if ~exist('K1','var')
 	c= 1;
 	for i = 1:length(data)
 		for j = 1:width(data(i).PID)
-			K1(c,:) = FitFilter2Data(ControlParadigm(i).Outputs(1,200000:10:500000),data(i).MFC200(j,200000:10:500000),[],'filter_length=499;');
+			temp = FindBestFilter(ControlParadigm(i).Outputs(1,200000:10:500000),data(i).MFC200(j,200000:10:500000),[],'regmax=1;','regmin=1;','filter_length=699;','offset=100;');
+			K1(c,:) = temp(101:end-100);
 			c = c+1;
 			
 		end
@@ -302,6 +303,8 @@ if ~exist('K2','var')
 			x = x*40; % mL/min
 			x = x./(x+2000);
 			K2(c,:) = FitFilter2Data(x,data(i).PID(j,200000:10:500000),[],'filter_length=499;');
+			temp = FindBestFilter(x,data(i).PID(j,200000:10:500000),[],'regmax=1;','regmin=1;','filter_length=699;','offset=100;');
+			K2(c,:) = temp(101:end-100);
 			c = c+1;
 
 		end

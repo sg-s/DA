@@ -355,23 +355,13 @@ if being_published
 	delete(gcf)
 end
 
-return
 
 %% 
-% Now, we build a model for the Odour Delivery System, and then feed it with some control signal to get the simulated PID output. We also build another wrapper model that accepts a parameterised distribution and predicts the distribution of PID values. We then numerically optimise the shape of the distribution. 
-
+% Now, we build a model for the Odour Delivery System, and then feed it with some control signal to get the simulated PID output. We also build another wrapper model that accepts a parametrised distribution and predicts the distribution of PID values.
 
 %%
-% How well does this model do? In the following figure, we plot the parametrised control distribution vs. the actual control distribution, while on the right, we plot the result of the model from the parametrised distribution vs. the actual experimental distribution. 
+% How well does this model do? In the following figure, we feed the model with the actual MFC Control signal, and compare the distribution of PID values with what the model predicts. 
 
-clear p;;
-p.  n1= 1.6111;
-p.  x1= 0.0556;
-p.  n2= 3.0518e-05;
-p.  x2= 3.1627e+03;
-p.   A= 0.9999;
-p.xmin= 0.8667;
-p.xmax= 1;
 
 [cy,cx] = hist(MFC_Control,50);
 cy(1:5) = 0;
@@ -379,12 +369,10 @@ cy = interp1(cx,cy,0:1e-3:5);
 cx = 0:1e-3:5;
 cy(isnan(cy)) = 0;
 cy=cy/max(cy);
-cy_hat = dist_gamma2(cx,p);
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 subplot(1,2,1), hold on
 plot(cx,cy,'k')
-l=plot(cx,cy_hat,'r');
 xlabel('MFC Control (V)')
 ylabel('pdf')
 
@@ -395,8 +383,10 @@ px = 0:1e-3:5;
 py(isnan(py)) = 0;
 py=py/max(py);
 plot(px,py,'k')
-py_hat = BestDistribution([],p);
+py_hat = BestDistribution([],MFC_Control);
 plot(px,py_hat,'r')
+xlabel('PID (V)')
+ylabel('pdf')
 
 PrettyFig;
 
@@ -404,6 +394,9 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%%
+% That's pretty solid. Now, we numerically solve the problem of choosing the best distribution of MFC Control Signals to get a target PID distribution. Here, let's say we want a target PID distribution that looks like a Gaussian. 
 
 
 %% Version Info

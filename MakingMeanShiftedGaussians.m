@@ -438,6 +438,10 @@ end
 %%
 % Is this actually true? We return to experiments to check. 
 
+% make a mfc control paradigm from this distribution
+
+[~,s] = BestDistribution(px,p);
+
 %% Version Info
 % The file that generated this document is called:
 disp(mfilename)

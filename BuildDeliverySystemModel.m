@@ -83,6 +83,13 @@ K_PID = K_PID*s;
 K_MFC = mean2(K_MFC(2:end,:));
 K_PID = mean2(K_PID(2:end,:));
 
+
+assignin('base', 'K_MFC',K_MFC);
+assignin('base', 'K_PID',K_PID);
+assignin('base', 'MFC_Scale',MFC_Scale);
+assignin('base','Total_Flow',Total_Flow);
+
+
 PID_pred = DeliverySystemModel(MFC_Control);
 
 d.stimulus = PID_pred(1000:10:end-1000);

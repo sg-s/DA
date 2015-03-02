@@ -57,12 +57,7 @@ disp('Finished running experiment. Will now build a model for the delivery syste
 
 [K_MFC,K_PID,p_LN] = BuildDeliverySystemModel(data,ControlParadigm,1);
 disp('DONE')
-
-assignin('base', 'K_MFC',K_MFC);
-assignin('base', 'K_PID',K_PID);
-assignin('base', 'MFC_Scale',MFC_Scale);
 assignin('base','p_LN',p_LN);
-assignin('base','Total_Flow',Total_Flow);
 
 % subsample data
 time = 1e-4*(1:length(data(use_this).PID));

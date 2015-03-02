@@ -48,7 +48,7 @@ ControlParadigm2(i).Name = n;
 
 ControlParadigm2(i).Outputs= zeros(4,T/dt);
 
-[~,ControlParadigm2(i).Outputs(3,:)] = BestDistribution([],p)];
+[~,ControlParadigm2(i).Outputs(3,:)] = BestDistribution([],p);
     
 ControlParadigm2(i).Outputs(3,end) = mean(ControlParadigm2(i).Outputs(3,:)); % don't leave the ORN with some high or low value
 ControlParadigm2(i).Outputs(3,ControlParadigm2(i).Outputs(3,:) > 5) = 5; % clip for sanity

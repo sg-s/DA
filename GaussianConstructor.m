@@ -46,7 +46,7 @@ disp('DONE. Running the experiment...')
 h = msgbox('Ready to run experiment?','GaussianConstructor');
 uiwait(h);
 
-data = Kontroller('ControlParadigm',ControlParadigm,'RunTheseParadigms',[2 2 2 2 2 3]);
+data = Kontroller('ControlParadigm',ControlParadigm,'RunTheseParadigms',[1 1 1 1 1 2]);
 disp('Censoring the first trial...')
 data(2).PID(1,:) = [];
 data(2).MFC500(1,:) = [];

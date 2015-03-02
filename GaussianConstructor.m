@@ -55,8 +55,53 @@ data(1).MFC500(1,:) = [];
 disp('Finished running experiment. Will now build a model for the delivery system...')
 
 
-[K_MFC,K_PID,p_hill] = BuildDeliverySystemModel(data,ControlParadigm,2);
+[K_MFC,K_PID,p_LN] = BuildDeliverySystemModel(data,ControlParadigm,1);
 disp('DONE')
 
+assignin('base', 'K_MFC',K_MFC);
+assignin('base', 'K_PID',K_PID);
+assignin('base', 'MFC_Scale',MFC_Scale);
+assignin('base','p_LN',p_LN);
+assignin('base','Total_Flow',Total_Flow);
 
+% subsample data
+time = 1e-4*(1:length(data(use_this).PID));
+t = time(1:10:end);
+PID = zeros(width(data(use_this).PID),length(data(use_this).PID)/10);
+MFC = zeros(width(data(use_this).PID),length(data(use_this).PID)/10);
+MFC_Control = (ControlParadigm(use_this).Outputs(2,1:10:end));
+for i = 1:width(data(use_this).PID)
+	PID(i,:) = interp1(time,data(use_this).PID(i,:),t);
+	MFC(i,:) = interp1(time,data(use_this).MFC500(i,:),t);
+end
+clear time
+time = t;
 
+PID_pred = DeliverySystemModel(MFC_Control);
+
+figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
+PID_pred = DeliverySystemModel_LN(MFC_Control);
+for i = 1:4
+	a(i) = autoplot(4,i); hold on
+	plot(time,PID(i,:),'k')
+	l = plot(time,PID_pred,'r');
+	legend(l,strcat('r^2=',oval(rsquare(PID_pred,PID(i,:)))))
+	set(gca,'XLim',[10 20])
+	xlabel('Time (s)')
+	ylabel('PID (V)')
+	title(strcat('Trial#',mat2str(i)))
+end
+
+PrettyFig;
+
+% Construct a questdlg with three options
+choice = questdlg('Happy with this model?', ...
+	'Gaussians', ...
+	'No','Yes','Yes');
+% Handle response
+switch choice
+    case 'No'
+        error('Model failure')
+    case 'Yes'
+    	delete(gcf)
+end

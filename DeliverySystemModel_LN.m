@@ -17,4 +17,4 @@ PID_pred = DeliverySystemModel(s);
 
 % pass through nonlinearity 
 p_LN = evalin('base', 'p_LN');
-PID_pred = p_LN(PID_pred);
+PID_pred = hill(PID_pred,p_LN);

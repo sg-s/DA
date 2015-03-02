@@ -60,6 +60,7 @@ disp('DONE')
 assignin('base','p_LN',p_LN);
 
 % subsample data
+use_this = 1;
 time = 1e-4*(1:length(data(use_this).PID));
 t = time(1:10:end);
 PID = zeros(width(data(use_this).PID),length(data(use_this).PID)/10);

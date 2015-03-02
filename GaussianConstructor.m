@@ -48,8 +48,8 @@ uiwait(h);
 
 data = Kontroller('ControlParadigm',ControlParadigm,'RunTheseParadigms',[1 1 1 1 1 2]);
 disp('Censoring the first trial...')
-data(2).PID(1,:) = [];
-data(2).MFC500(1,:) = [];
+data(1).PID(1,:) = [];
+data(1).MFC500(1,:) = [];
 
 
 disp('Finished running experiment. Will now build a model for the delivery system...')

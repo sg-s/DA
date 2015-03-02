@@ -80,7 +80,7 @@ K_PID = K_PID*s;
 
 
 % now extract one non-linearity
-K_MFC = mean2(K_MFC3(2:end,:));
+K_MFC = mean2(K_MFC(2:end,:));
 K_PID = mean2(K_PID(2:end,:));
 
 PID_pred = DeliverySystemModel(MFC_Control);

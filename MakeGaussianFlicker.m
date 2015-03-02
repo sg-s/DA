@@ -35,6 +35,7 @@ ControlParadigm.Outputs(2,ControlParadigm.Outputs(2,:) < 5/200) = 5/200; % clip 
 
 % add the main air
 ControlParadigm.Outputs(3,:) = 1;
+ControlParadigm.Name = 'all_off';
 
 % make a all zero
 ControlParadigm(2).Outputs = zeros(3,1e4);

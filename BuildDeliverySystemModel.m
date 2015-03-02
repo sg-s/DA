@@ -17,7 +17,9 @@ time = 1e-4*(1:length(data(use_this).PID));
 t = time(1:10:end);
 PID = zeros(width(data(use_this).PID),length(data(use_this).PID)/10);
 MFC = zeros(width(data(use_this).PID),length(data(use_this).PID)/10);
-MFC_Control = (ControlParadigm(use_this).Outputs(use_this,1:10:end));
+MFC_Control = (ControlParadigm(use_this).Outputs(2,1:10:end));
+
+
 for i = 1:width(data(use_this).PID)
 	PID(i,:) = interp1(time,data(use_this).PID(i,:),t);
 	MFC(i,:) = interp1(time,data(use_this).MFC500(i,:),t);
@@ -84,10 +86,7 @@ K_MFC = mean2(K_MFC(2:end,:));
 K_PID = mean2(K_PID(2:end,:));
 
 
-assignin('base', 'K_MFC',K_MFC);
-assignin('base', 'K_PID',K_PID);
-assignin('base', 'MFC_Scale',MFC_Scale);
-assignin('base','Total_Flow',Total_Flow);
+
 
 
 PID_pred = DeliverySystemModel(MFC_Control);
@@ -104,6 +103,7 @@ p_hill = FitModel2Data(@hill,d,p);
 
 
 
+% temp;
 
 
 

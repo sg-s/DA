@@ -438,9 +438,205 @@ end
 %%
 % Is this actually true? We return to experiments to check. 
 
-% make a mfc control paradigm from this distribution
+load('/local-data/DA-paper/mean-shifted-gaussians/2015_03_02_mean_flicker_test_6.mat')
 
-[~,s] = BestDistribution(px,p);
+figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[700 700]); hold on
+for i = 2:5
+	autoplot(4,i-1); hold on
+	py_hat = BestDistribution([],p);
+	plot(px,py_hat,'r');
+	[hy,hx] = hist(data(2).PID(i,:),50);
+	hy = hy/max(hy);
+	plot(hx,hy,'k')
+	xlabel('PID (V)')
+	ylabel('pdf')
+	set(gca,'XLim',[0 2])
+end
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
+% Something has obviously gone wrong, but it is nice that the PID distribution actually looks quite Gaussian. This means that there is some scaling factor that is off, but otherwise, everything is good. In an attempt to solve this once and for all, we will take some new recordings, where we vary the MFC so that we fluctuate from 0-5V on the PID. We will build a model using this data, and then optimise for the many Gaussians we want to construct. 
+
+load('/local-data/DA-paper/mean-shifted-gaussians/2015_03_02_mean_flicker_test_7.mat')
+% subsample data
+time = 1e-4*(1:length(data(2).PID));
+t = time(1:10:end);
+PID = zeros(width(data(2).PID),length(data(2).PID)/10);
+MFC = zeros(width(data(2).PID),length(data(2).PID)/10);
+MFC_Control = (ControlParadigm(2).Outputs(2,1:10:end));
+for i = 1:width(data(2).PID)
+	PID(i,:) = interp1(time,data(2).PID(i,:),t);
+	MFC(i,:) = interp1(time,data(2).MFC500(i,:),t);
+end
+clear time
+time = t;
+
+% remove PID baseline
+PID = PID - mean(data(1).PID(1,:));
+
+% extract all MFC filters
+if ~exist('K_MFC4','var')
+	K_MFC3 = zeros(width(PID),600);
+	for j = 1:width(PID)
+		temp = FindBestFilter(MFC_Control,MFC(j,:),[],'regmax=1;','regmin=1;','filter_length=799;','offset=100;');
+		K_MFC4(j,:) = temp(101:end-100);
+	end
+end
+
+% make linear predictions
+MFC_pred = NaN*MFC;
+s =[];
+for i = 2:5
+	MFC_pred(i,:) = filter(K_MFC4(i,:),1,MFC_Control);
+
+	% fix trivial scaling
+	x = MFC_pred(i,:); x = x(:);
+	y = MFC(i,:); y = y(:);
+	f = fit(x,y,'poly1');
+	MFC_pred(i,:) = f(MFC_pred(i,:));
+	s = [s f.p1];
+end
+s = mean(s);
+K_MFC4 = K_MFC4*s;
+
+figure('outerposition',[0 0 1400 1000],'PaperUnits','points','PaperSize',[1400 1000]); hold on
+for i = 2:5
+	subplot(2,4,i-1), hold on
+	plot(K_MFC4(i-1,:));
+	title(strcat('Trial#',mat2str(i)))
+	xlabel('Lag (ms)')
+	ylabel('Filter')
+
+	subplot(2,4,4+i-1), hold on
+	plot(MFC_pred(i,1000:10:end-1000),MFC(i,1000:10:end-1000),'k.')
+	xlabel('Linear Prediction')
+	ylabel('Data')
+end
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+% convert MFC flows into a dilution
+dil = MFC*100; % 1V = 100mL/min
+dil = dil./(dil + 2000);
+
+% extract all PID filters
+if ~exist('K_PID4','var')
+	K_PID4 = zeros(width(PID),600);
+	for j = 1:width(PID)
+		temp = FindBestFilter(dil(j,:),PID(j,:),[],'regmax=1;','regmin=1;','filter_length=799;','offset=100;');
+		K_PID4(j,:) = temp(101:end-100);
+	end
+end
+
+% make linear predictions
+PID_pred = NaN*dil;
+s =[];
+for i = 2:5
+	PID_pred(i,:) = filter(K_PID4(i,:),1,dil(i,:));
+
+	% fix trivial scaling
+	x = PID_pred(i,:); x = x(:);
+	y = PID(i,:); y = y(:);
+	f = fit(x,y,'poly1');
+	PID_pred(i,:) = f(PID_pred(i,:));
+	s = [s f.p1];
+end
+s = mean(s);
+K_PID4 = K_PID4*s;
+
+
+figure('outerposition',[0 0 1400 1000],'PaperUnits','points','PaperSize',[1400 1000]); hold on
+for i = 2:5
+	subplot(2,4,i-1), hold on
+	plot(K_PID4(i-1,:));
+	title(strcat('Trial#',mat2str(i)))
+	xlabel('Lag (ms)')
+	ylabel('Filter')
+
+	subplot(2,4,4+i-1), hold on
+	plot(PID_pred(i,1000:10:end-1000),PID(i,1000:10:end-1000),'k.')
+	xlabel('Linear Prediction')
+	ylabel('Data')
+end
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
+K_MFC = mean2(K_MFC4(2:end,:));
+K_PID = mean2(K_PID4(2:end,:));
+MFC_Scale = 100;
+Total_Flow = 2000;
+
+figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
+PID_pred = DeliverySystemModel(MFC_Control);
+clear a
+for i = 2:5
+	a(i) = autoplot(4,i-1); hold on
+	
+	plot(PID_pred(1000:10:end-1000),PID(i,1000:10:end-1000),'k.')
+	title(strcat('Trial#',mat2str(i)))
+	xlabel('Linear Model')
+	ylabel('Data')
+end
+
+if ~exist('p_LN4')
+	d.stimulus = PID_pred(1000:10:end-1000);
+	d.response = mean2(PID(2:5,1000:10:end-1000));
+	p_LN4 = fit(d.stimulus(:),d.response(:),'poly3');
+	for i = 2:5
+		plot(a(i),0:1e-3:max(PID_pred),p_LN4(0:1e-3:max(PID_pred)),'r')
+	end
+end
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% Now we plot the output of the combined model. 
+
+p_LN = p_LN4;
+figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
+PID_pred = DeliverySystemModel_LN(MFC_Control);
+for i = 2:5
+	a(i) = autoplot(4,i-1); hold on
+	plot(time,PID(i,:),'k')
+	l = plot(time,PID_pred,'r');
+	legend(l,strcat('r^2=',oval(rsquare(PID_pred,PID(i,:)))))
+	set(gca,'XLim',[10 20])
+	xlabel('Time (s)')
+	ylabel('PID (V)')
+	title(strcat('Trial#',mat2str(i)))
+end
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 %% Version Info
 % The file that generated this document is called:

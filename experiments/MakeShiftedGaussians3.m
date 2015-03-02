@@ -26,9 +26,6 @@ tc = .1; % 50ms is too fast for the MFCs to follow
 
 nsteps= T/tc;
 
-
-
-dil_mean = (dil_min +dil_max)/2;
 V = 2000; %mL/min
 MFC_Scale = 100; % 1V=100mL/min
 
@@ -40,7 +37,7 @@ p.sigma2= 0.4766;
 p.  xmin= 0.0133;
 p.  xmax= 0.0667;
 
-i = 2;
+i = 1;
     
 n = strcat('MFC500-.5V');
 ControlParadigm2(i).Name = n;
@@ -49,7 +46,7 @@ ControlParadigm2(i).Outputs= zeros(3,T/dt);
 
 [~,ControlParadigm2(i).Outputs(2,:)] = BestDistribution([],p);
     
-ControlParadigm2(i).Outputs(2,end) = mean(ControlParadigm2(i).Outputs(3,:)); % don't leave the ORN with some high or low value
+ControlParadigm2(i).Outputs(2,end) = mean(ControlParadigm2(i).Outputs(2,:)); % don't leave the ORN with some high or low value
 ControlParadigm2(i).Outputs(2,ControlParadigm2(i).Outputs(2,:) > 5) = 5; % clip for sanity
 ControlParadigm2(i).Outputs(2,ControlParadigm2(i).Outputs(2,:) < 0) = 0; % clip for sanity
 

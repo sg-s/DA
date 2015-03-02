@@ -396,8 +396,47 @@ if being_published
 end
 
 %%
-% That's pretty solid. Now, we numerically solve the problem of choosing the best distribution of MFC Control Signals to get a target PID distribution. Here, let's say we want a target PID distribution that looks like a Gaussian. 
+% That's pretty solid. Now, we numerically solve the problem of choosing the best distribution of MFC Control Signals to get a target PID distribution. Here, let's say we want a target PID distribution that looks like a Gaussian. After some combination of hand-tuning and automated numerical optimisation, we get the following result. In the figure below, the distribution on the left shows the distribution from which we sample MFC control values. On the distribution on the right, we show the target Gaussian distribution in black, together with with the output of the delivery system model. 
 
+% make target distribution 
+target = normpdf(px,.5,.14);
+target = target/max(target);
+
+% clear d 
+% d.stimulus = px;
+% d.response = target;
+% p = FitModel2Data(@BestDistribution,d,p);
+
+p.   mu1= 0.2137;
+p.sigma1= 0.0362;
+p.   mu2= 0;
+p.sigma2= 0.4766;
+p.  xmin= 0.0133;
+p.  xmax= 0.0667;
+
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+plot(cx,dist_gauss2(cx,p),'r')
+xlabel('MFC Control (V)')
+ylabel('pdf')
+
+subplot(1,2,2), hold on
+plot(px,target,'k')
+py_hat = BestDistribution([],p);
+plot(px,py_hat,'r')
+xlabel('PID (V)')
+ylabel('pdf')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% Is this actually true? We return to experiments to check. 
 
 %% Version Info
 % The file that generated this document is called:

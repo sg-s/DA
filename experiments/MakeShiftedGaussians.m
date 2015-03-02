@@ -27,12 +27,12 @@ main_flow = 2000; %ml/min
 MFC200_scale = 40; % 1V = 40mL/min
 MFC500_scale = 100; % 1V = 100mL/min
 dt = 1e-4;
-T = 20;
-baseline_dilution = [0:6]/100; % in % dilution, excluding flickering odor and flow
+T = 120;
+baseline_dilution = [0 4.5 7 8 9]/100; % in % dilution, excluding flickering odor and flow
 
 % flicker parmaeters
 min_dil = 0; 
-max_dil = 5/100; % in % dilution, excluding baseline odor and flow
+max_dil = 7/100; % in % dilution, excluding baseline odor and flow
 
 %% make some startup paradigms
 clear ControlParadigm
@@ -62,12 +62,17 @@ for i = 1:length(baseline_dilution)
     noise = randi(100,(T/tc_odour),1);
     levels = min_dil:(((max_dil-min_dil)/100)):max_dil;
 
+           
+    baseline_V = ((main_flow*baseline_dilution(i))/(1-baseline_dilution(i)))/MFC200_scale;
+    MFC200_flow = baseline_V*MFC200_scale;
+    total_flow = main_flow + MFC200_flow;
+    
     a = 1;
     z = a + floor(tc_odour/dt);
     nsteps = T/tc_odour;
     for j = 1:nsteps
         this_dil = levels(noise(j));
-        this_V = ((main_flow*this_dil)/(1-this_dil))/MFC500_scale;
+        this_V = ((total_flow*this_dil)/(1-this_dil))/MFC500_scale;
         ControlParadigm(add_here).Outputs(3,a:z) = this_V;
 
         % increment
@@ -77,7 +82,11 @@ for i = 1:length(baseline_dilution)
     ControlParadigm(add_here).Outputs(3,end) = mean(ControlParadigm(add_here).Outputs(3,:)); % don't leave the ORN with some high or low value
     ControlParadigm(add_here).Outputs(3,ControlParadigm(add_here).Outputs(3,:) > 5) = 5; % clip for sanity
     
-    baseline_V = ((main_flow*baseline_dilution(i))/(1-baseline_dilution(i)))/MFC200_scale;
+    % also led
+    ControlParadigm(add_here).Outputs(1,:) = 10*ControlParadigm(add_here).Outputs(3,:);
+    ControlParadigm(add_here).Outputs(1,ControlParadigm(add_here).Outputs(1,:) > 10) = 10; % clip for sanity
+    ControlParadigm(add_here).Outputs(1,end)=  0; 
+
     ControlParadigm(add_here).Outputs(2,:) = baseline_V;
 
 

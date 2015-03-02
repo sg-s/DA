@@ -6,7 +6,7 @@
 % 
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
-function [K_MFC,K_PID,p_hill] = BuildDeliverySystemModel(data,use_this)
+function [K_MFC,K_PID,p_hill] = BuildDeliverySystemModel(data,ControlParadigm,use_this)
 % core parameters
 MFC_Scale = 100;
 Total_Flow = 2000;

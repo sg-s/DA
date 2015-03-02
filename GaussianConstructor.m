@@ -55,7 +55,7 @@ data(2).MFC500(1,:) = [];
 disp('Finished running experiment. Will now build a model for the delivery system...')
 
 
-[K_MFC,K_PID,p_hill] = BuildDeliverySystemModel(data,2);
+[K_MFC,K_PID,p_hill] = BuildDeliverySystemModel(data,ControlParadigm,2);
 disp('DONE')
 
 

@@ -101,3 +101,10 @@ switch choice
     case 'Yes'
     	delete(gcf)
 end
+
+disp('OK. Manipulate will now open. You will have to pick a control distribution to match your target...')
+
+px = 0:1e-3:5;
+Manipulate('BestDistribution',[],px,target);
+
+p = p(end);

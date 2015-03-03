@@ -104,7 +104,6 @@ end
 
 disp('OK. Manipulate will now open. You will have to pick a control distribution to match your target...')
 
-px = 0:1e-3:5;
-Manipulate('BestDistribution',[],px,target);
+Manipulate('BestDistribution',[],target.px,target.py);
 
 p = p(end);

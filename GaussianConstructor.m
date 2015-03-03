@@ -106,4 +106,28 @@ disp('OK. Manipulate will now open. You will have to pick a control distribution
 
 Manipulate('BestDistribution',[],target.px,target.py);
 
+h = msgbox('Done optimising controls?','GaussianConstructor');
+uiwait(h);
+
 p = p(end);
+
+[~,s] = BestDistribution(~,p);
+
+ControlParadigm(1).Outputs(2,:) = s;
+
+data = Kontroller('ControlParadigm',ControlParadigm,'RunTheseParadigms',[1 1 1 2]);
+disp('Censoring the first trial...')
+data(1).PID(1,:) = [];
+data(1).MFC500(1,:) = [];
+
+disp('Estimating distributions:')
+figure, hold on
+plot(target.px,target.py,'k');
+for i = 1:width(data(1).PID)
+	[hy,hx] = hist(data(1).PID(i,:),100);
+	hy = hy/max(hy);
+	plot(hx,hy)
+end
+
+h = msgbox('Happy with this distribution?','GaussianConstructor');
+uiwait(h);

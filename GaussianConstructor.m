@@ -77,8 +77,8 @@ PID_pred = DeliverySystemModel(MFC_Control);
 
 figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
 PID_pred = DeliverySystemModel_LN(MFC_Control);
-for i = 1:4
-	a(i) = autoplot(4,i); hold on
+for i = 1:width(PID)
+	a(i) = autoplot(width(PID),i); hold on
 	plot(time,PID(i,:),'k')
 	l = plot(time,PID_pred,'r');
 	legend(l,strcat('r^2=',oval(rsquare(PID_pred,PID(i,:)))))

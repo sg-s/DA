@@ -104,14 +104,26 @@ end
 
 disp('OK. Manipulate will now open. You will have to pick a control distribution to match your target...')
 
+
+
 Manipulate('BestDistribution',[],target.px,target.py);
 
 h = msgbox('Done optimising controls?','GaussianConstructor');
 uiwait(h);
 
+% this bit of the script is for manually optimising the distribution
+
+clear all
+[ControlParadigm] = MakeGaussianFlicker(0,5,60,1e-4,.1);
+disp('load the seed distribution')
+cx = 1:1e-3:5;
+Manipulate('dist_gauss2',p,cx);
 p = p(end);
 
 [~,s] = BestDistribution([],p);
+s(s<5/200) = 5/200;
+s(s<(mean(s)-3*std(s))) = mean(s); % prevent abnormally low values
+s(end) =  mean(s);
 
 ControlParadigm(1).Outputs(2,:) = s;
 

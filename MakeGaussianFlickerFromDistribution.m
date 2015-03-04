@@ -18,8 +18,8 @@ dt = 1e-4;
 tc= .1; 
 
 [ControlParadigm] = MakeGaussianFlicker(mfc_min,mfc_max,T,dt,tc);
-AllOff = ControlParadigm(end);
-ControlParadigm(end) = [];
+AllOff = ControlParadigm(1);
+ControlParadigm(1) = [];
 
 
 allfiles = dir('dist*.mat');
@@ -30,3 +30,7 @@ for i = 1:length(allfiles)
 	ControlParadigm(end).Outputs(2,:) = s;
 	ControlParadigm(end).Name = strcat('MFC',oval(mean(s)));
 end
+
+ControlParadigm(end+1) = AllOff;
+
+save('Optimised_Gaussian_Flicker_Kontroller_Paradigm.mat','ControlParadigm')

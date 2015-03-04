@@ -66,17 +66,23 @@ else
 	s = p;
 end
 
-% get pid prediction
-PID_pred = DeliverySystemModel_LN(s);
 
-% get pid distribution 
-[hy,hx] = hist(PID_pred,50);
-py = interp1(hx,hy,px);
-py(isnan(py)) = 0;
-py = py/max(py);
+py=0;
+try
+    % get pid prediction
+    PID_pred = DeliverySystemModel_LN(s);
 
-% penalise bullshit distributions
-py(py<eps) = 0;
-if length(nonzeros(py)) < 10
-	py = 0*py;
+    % get pid distribution 
+    [hy,hx] = hist(PID_pred,50);
+    py = interp1(hx,hy,px);
+    py(isnan(py)) = 0;
+    py = py/max(py);
+
+    % penalise bullshit distributions
+    py(py<eps) = 0;
+    if length(nonzeros(py)) < 10
+        py = 0*py;
+    end
+catch
 end
+

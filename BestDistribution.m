@@ -39,12 +39,6 @@ ub.sigma2 = 10;
 ub.sigma1 = 10;
 
 % make parameters readable
-p.xmin;
-p.xmax;
-p.sigma1;
-p.sigma2;
-p.mu1;
-p.mu2;
 
 if isstruct(p)
 	% generate distribution
@@ -85,4 +79,11 @@ try
     end
 catch
 end
+
+p.xmin;
+p.xmax;
+p.sigma1;
+p.sigma2;
+p.mu1;
+p.mu2;
 

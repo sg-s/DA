@@ -13,8 +13,15 @@
 
 function PID_pred = DeliverySystemModel_LN(s)
 
+
 PID_pred = DeliverySystemModel(s);
 
 % pass through nonlinearity 
 p_LN = evalin('base', 'p_LN');
-PID_pred = hill(PID_pred,p_LN);
+temp = whos('p_LN');
+if strcmp(temp.class,'cfit')
+	PID_pred = p_LN(PID_pred);
+else
+	% probably a hill function
+	PID_pred = hill(PID_pred,p_LN);
+end

@@ -23,7 +23,7 @@ ControlParadigm(end) = [];
 
 
 allfiles = dir('dist*.mat');
-for i = 1:allfiles
+for i = 1:length(allfiles)
 	load(allfiles(i).name)
 	[~,s] = BestDistribution([],p);
 	ControlParadigm(end+1) = ControlParadigm(end);

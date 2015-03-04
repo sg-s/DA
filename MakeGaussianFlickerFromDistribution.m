@@ -28,6 +28,8 @@ for i = 1:length(allfiles)
 	[~,s] = BestDistribution([],p);
 	ControlParadigm(end+1) = ControlParadigm(end);
 	s(s<5/200) = 5/200;
+	s(s<(mean(s)-3*std(s))) = mean(s); % prevent abnormally low values
+	s(end) =  mean(s);                 % don't leave it somewhere weird
 	ControlParadigm(end).Outputs(2,:) = s;
 	ControlParadigm(end).Name = strcat('MFC',oval(mean(s)));
 end

@@ -111,7 +111,7 @@ uiwait(h);
 
 p = p(end);
 
-[~,s] = BestDistribution(~,p);
+[~,s] = BestDistribution([],p);
 
 ControlParadigm(1).Outputs(2,:) = s;
 

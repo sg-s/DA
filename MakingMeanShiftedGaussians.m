@@ -638,6 +638,30 @@ if being_published
 end
 
 
+%% After Optimising the distributions
+% Cutting a long story short, we optimise the distributions manually, choosing the best distribution of inputs to generate some gaussians. At the end, the results look like this:
+
+load('/local-data/DA-paper/mean-shifted-gaussians/2015_03_04_flicker_test_9.mat')
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+c = parula(length(data)-1);
+for i = 1:length(data)-1
+	for j = 2:width(data(i).PID)
+		[hy,hx] = hist(data(i).PID(j,:),50);
+		plot(hx,hy,'Color',c(i,:))
+	end
+end
+xlabel('PID (V)')
+ylabel('Count')
+title('Histograms of mean shifted gaussians')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 %% Version Info
 % The file that generated this document is called:
 disp(mfilename)

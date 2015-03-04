@@ -38,15 +38,20 @@ ub.mu2 = 5;
 ub.sigma2 = 10;
 ub.sigma1 = 10;
 
-% make parameters readable
+
 
 if isstruct(p)
+    % make parameters readable
+    p.xmin;
+    p.xmax;
+    p.sigma1;
+    p.sigma2;
+    p.mu1;
+    p.mu2;
+
 	% generate distribution
 	cy = dist_gauss2(cx,p);
 	cy(isnan(cy)) = 0;
-
-
-
 
 	% sample from distribution 
 	n = floor(T/tc);
@@ -80,10 +85,4 @@ try
 catch
 end
 
-p.xmin;
-p.xmax;
-p.sigma1;
-p.sigma2;
-p.mu1;
-p.mu2;
 

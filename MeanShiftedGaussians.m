@@ -204,7 +204,6 @@ if being_published
 	delete(gcf)
 end
 
-
 %      ########     ###    ########    ###     ######  ######## ######## 
 %      ##     ##   ## ##      ##      ## ##   ##    ## ##          ##    
 %      ##     ##  ##   ##     ##     ##   ##  ##       ##          ##    
@@ -245,89 +244,6 @@ end
 %% 
 % As can be seen, the data exists in three different subsets, corresponding to three different days. 
 
-%          ######## ########  ######## ##    ## ########   ######  
-%             ##    ##     ## ##       ###   ## ##     ## ##    ## 
-%             ##    ##     ## ##       ####  ## ##     ## ##       
-%             ##    ########  ######   ## ## ## ##     ##  ######  
-%             ##    ##   ##   ##       ##  #### ##     ##       ## 
-%             ##    ##    ##  ##       ##   ### ##     ## ##    ## 
-%             ##    ##     ## ######## ##    ## ########   ######  
-
-
-
-%% Trends in Data
-% Are there any trends in the data? In the following figure, we fit straight lines to the flickering part of each trial of the data, on a per-neuron and per-experiment basis, and plot the slopes for the sitmulus and for the response below: 
-
-stim_slopes = NaN(length(unique(combined_data.neuron)),length(unique(combined_data.paradigm)));
-for i = 1:length(unique(combined_data.neuron))
-	for j = 1:length(unique(combined_data.paradigm))
-		analyse_these = (intersect(find(combined_data.neuron == i), find(strcmp(paradigm_names{j},combined_data.paradigm))));
-		if ~isempty(analyse_these)
-			this_data = combined_data.PID(analyse_these,a:z);
-			s = [];
-			for k = 1:width(this_data)
-				temp = fit(time(a:z)',this_data(k,:)','poly1');
-				s = [s temp.p1];
-			end
-			stim_slopes(i,j) =  mean(s);
-		end
-		
-	end
-end
-
-resp_slopes = NaN(length(unique(combined_data.neuron)),length(unique(combined_data.paradigm)));
-for i = 1:length(unique(combined_data.neuron))
-	for j = 1:length(unique(combined_data.paradigm))
-		analyse_these = (intersect(find(combined_data.neuron == i), find(strcmp(paradigm_names{j},combined_data.paradigm))));
-		if ~isempty(analyse_these)
-			this_data = combined_data.fA(a:z,analyse_these);
-			s = [];
-			for k = 1:width(this_data)
-				temp = fit(time(a:z)',this_data(:,k),'poly1');
-				s = [s temp.p1];
-			end
-			resp_slopes(i,j) =  mean(s);
-		end
-		
-	end
-end
-
-
-map = sweetspot(100);
-
-figure('outerposition',[0 0 1400 700],'PaperUnits','points','PaperSize',[1400 700]); hold on
-subplot(1,2,1), hold on
-imagescnan(stim_slopes)
-
-caxis([-max(abs(stim_slopes(~isnan(stim_slopes)))) max(abs(stim_slopes(~isnan(stim_slopes))))])
-colorbar
-colormap(map)
-xlabel('Experimental Paradigm')
-set(gca,'XTick',[1:length(unique(combined_data.paradigm))],'XTickLabel',short_paradigm_names,'XTickLabelRotation',45)
-ylabel('Neuron #')
-title('Stimulus trends (V/s)')
-
-subplot(1,2,2), hold on
-imagescnan(resp_slopes)
-caxis([-max(abs(resp_slopes(~isnan(resp_slopes)))) max(abs(resp_slopes(~isnan(resp_slopes))))])
-colorbar
-colormap(map)
-xlabel('Experimental Paradigm')
-set(gca,'XTick',[1:length(unique(combined_data.paradigm))],'XTickLabel',short_paradigm_names,'XTickLabelRotation',45)
-title('Response trends (Hz/s)')
-
-PrettyFig();
-
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-%% 
-% Because this data is so fragmented, we will group this data into experimental days, and analyse each group individually. 
-
-group = [ones(1,4) 2*ones(1,4) 3*ones(1,5)];
          
 %          ######## ########  ######## ##    ## ########   ######  
 %             ##    ##     ## ##       ###   ## ##     ## ##    ## 
@@ -340,6 +256,8 @@ group = [ones(1,4) 2*ones(1,4) 3*ones(1,5)];
 
 %% Trends in Data
 % Are there any trends in the data? In the following figure, we coarse-grain the data by binning everything along 5-second bins to look at long-term trends in the data. The various colors correspond to various stimulus means, and correspond to other figures in this document. 
+
+group = [ones(1,4) 2*ones(1,4) 3*ones(1,5)];
 
 % plot_data is indexed by where we start
 all_start = [15:5:50];
@@ -357,8 +275,8 @@ for k = 1:3 % over groups
 		plot_data(i,k).resp_mean_err = [];
 
 		for j = 1:length(all_start)
-			a = floor(all_start(j)/3e-3);
-			z = floor(all_end(j)/3e-3);
+			a = floor(all_start(j)/dt);
+			z = floor(all_end(j)/dt);
 			n = sqrt(z-a);
 
 			plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
@@ -414,9 +332,9 @@ end
 
 
 % remove trend
-b = floor(5/3e-3);
-a = floor(35/1e-3);
-z = floor(55/1e-3);
+b = floor(5/dt);
+a = floor(35/dt);
+z = floor(55/dt);
 clear detrended_data
 detrended_data.time = [];
 detrended_data.stim = [];
@@ -428,7 +346,7 @@ for k = 1:3
 		if ~isempty(plot_these)
 			this_pid=mean2(combined_data.PID(plot_these,:));
 			this_resp=mean2(combined_data.fA(:,plot_these));
-			time = 1e-3*(1:length(this_resp));
+			time = dt*(1:length(this_resp));
 			baseline = mean(this_pid(1:b));
 			time = time(a:z);
 			this_pid = this_pid(a:z);
@@ -511,7 +429,6 @@ if being_published
 end
 
 
-return
 %%
 % Ok, we show through the cross-correlation function that responses speed up on increasing stimulus mean. Can we see the same effect when we back out filters from the data? 
 
@@ -519,6 +436,7 @@ c = parula(length(detrended_data));
 figure('outerposition',[0 0 1200 500],'PaperUnits','points','PaperSize',[1200 500]); hold on
 subplot(1,3,1:2), hold on
 peak_loc = NaN(length(detrended_data),3);
+min_loc = NaN(length(detrended_data),3);
 mean_stim = NaN(length(detrended_data),3);
 if ~exist('allfilters')
 	for k = 1:3
@@ -540,43 +458,62 @@ for k = 1:3
 				b = detrended_data(i,k).stim - mean(detrended_data(i,k).stim);
 				b = b/std(b);
 
-				[thisK, ~, filtertime_full] = FindBestFilter(b,a,[],'regmax=1;','regmin=1;','filter_length=1499;','offset=300;');
+				[thisK, ~, filtertime_full] = FindBestFilter(b,a,[],'regmax=10;','regmin=1;','filter_length=1099;','offset=300;');
 				thisK = thisK(100:1000);
 				allfilters(i,k).K = thisK;
 				filtertime = filtertime_full(100:1000);
 
 				% fit a parametric filter to this
-				clear d
+				clear d p
+				p.   n= 1.4766;
+				p.   A= 0.7921;
+				p.tau1= 52.3750;
+				p.tau2= 35.6094;
+
 				d.stimulus = thisK(200:end);
 				d.stimulus = d.stimulus/max(d.stimulus);
 				d.response = d.stimulus;
 				allfilters(i,k).p = FitModel2Data(@FitFilter,d,p);
 			end
-
-			l(i) = plot(filtertime*dt,allfilters(i,k).K,'Color',c(i,:));
-
-			[~,loc] = max(allfilters(i,k).K);
-			peak_loc(i,k) = filtertime(loc);
 		end
 	end
 end
 
 for k = 1:3
-	for i = 1:8
-		if ~isempty(allfilters(i,k).K)
-			figure, hold on
-			thisK = allfilters(i,k).K(200:end);
-			thisK = thisK/max(thisK);
-			plot(thisK)
-			hold on
+	for i = 1:length(detrended_data)
+		if ~isempty(allfilters(i,k).p)
 			K2 = FitFilter(thisK,allfilters(i,k).p);
-			plot(K2)
-			pause(2)
-			close(gcf)
-		end
+			filtertime = dt*(1:length(K2));
+			l(i) = plot(filtertime,K2,'Color',c(i,:));
 
+			[~,loc] = max(K2);
+			peak_loc(i,k) = filtertime(loc);
+			[~,loc] = min(K2);
+			min_loc(i,k) = filtertime(loc);
+		end
 	end
 end
+
+
+
+
+% debug -- check that the fit works. 
+% for k = 1:3
+% 	for i = 1:8
+% 		if ~isempty(allfilters(i,k).K)
+% 			figure, hold on
+% 			thisK = allfilters(i,k).K(200:end);
+% 			thisK = thisK/max(thisK);
+% 			plot(thisK)
+% 			hold on
+% 			K2 = FitFilter(thisK,allfilters(i,k).p);
+% 			plot(K2)
+% 			pause(2)
+% 			close(gcf)
+% 		end
+
+% 	end
+% end
 
 set(gca,'XLim',[-.1 .5])
 xlabel('Lag (s)')
@@ -586,13 +523,12 @@ for i = 1:length(L)
 	L{i} = L{i}(strfind(L{i},'-')+1:end);
 end
 legend(l,L)
+
 subplot(1,3,3), hold on
-for k = 1:3
-	plot(mean_stim(:,k),peak_loc(:,k),'+k')
-end
+plot(mean_stim,peak_loc/dt,'k+')
 xlabel('Mean Stimulus (V)')
-set(gca,'XLim',[0 4])
-ylabel('Peak of filter (ms)')
+ylabel('Filter Peak (ms)')
+
 
 PrettyFig;
 if being_published
@@ -724,7 +660,7 @@ for i = 1:width(combined_data.PID)
 	xc(:,i) = this_xc;
 end
 
-tc = tc*1e-3;
+tc = tc*dt;
 
 
 %%
@@ -963,7 +899,7 @@ for i = 1:8
 	time = detrended_data(i).time;
 	plot(time,LNModel(i).this_orn,'k');
 	aa = min(time);
-	time = 3e-3*(1:length(LNModel(i).LNFit)) + aa;
+	time = dt*(1:length(LNModel(i).LNFit)) + aa;
 	lh=plot(time,LNModel(i).LNFit,'r');
 	set(gca,'XLim',[40 50])
 	legend(lh,oval(LNModel(i).LNFit_r2,2))
@@ -987,7 +923,7 @@ figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 50
 subplot(1,2,1), hold on
 c = parula(length(LNModel));
 for i = 1:length(LNModel)
-	plot(3e-3*(1:length(LNModel(i).K)),LNModel(i).K,'Color',c(i,:))
+	plot(dt*(1:length(LNModel(i).K)),LNModel(i).K,'Color',c(i,:))
 end
 xlabel('Filter Lag (s)')
 ylabel('Filter Amplitude (norm)')
@@ -1050,8 +986,8 @@ ms = mean(reshape([detrended_data.stim],length(detrended_data(1).stim),8));
 
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(ms,max_loc*3e-3,'r-+')
-plot(ms,min_loc*3e-3,'k-+')
+plot(ms,max_loc*dt,'r-+')
+plot(ms,min_loc*dt,'k-+')
 legend({'Maximum','Minimum'})
 
 set(gca,'XScale','log')
@@ -1089,7 +1025,7 @@ for i = 1:8
 	this_pid = detrended_data(i).stim;
 	this_pid = this_pid - mean(this_pid);
 	this_orn = this_orn - mean(this_orn);
-	time = 3e-3*(1:length(this_pid));
+	time = dt*(1:length(this_pid));
 
 	% recompute linear fits
 	BMModel(i).LinearFit = convolve(time,this_pid,K,filtertime);
@@ -1246,7 +1182,7 @@ this_pid = this_pid-mean(this_pid(400:1600));
 
 clear data
 data.response = this_resp;
-data.time = 3e-3*(1:length(this_resp));
+data.time = dt*(1:length(this_resp));
 data.stimulus = this_pid;
 
 %[p, Rguess,x ] = FitDAModelToData(data);
@@ -1285,7 +1221,7 @@ z = 18000;
 plot_these=find(strcmp(paradigm_names{1}, combined_data.paradigm));
 this_orn=mean2(combined_data.fA(:,plot_these));
 this_pid=mean2(combined_data.PID(plot_these,:));
-time = 3e-3*(1:length(this_orn));
+time = dt*(1:length(this_orn));
 data.response = this_orn(a:z);
 data.stimulus = this_pid(a:z);
 data.time = time(a:z);
@@ -1299,7 +1235,7 @@ p.     n_y= 5;
 p.   tau_z= 34.5391;
 p.     n_z= 2.5781;
 p.      s0= -0.3148;
-lb  = [1           1e-3        0    	 0        1  0        1       -min(data.stimulus)];
+lb  = [1           dt        0    	 0        1  0        1       -min(data.stimulus)];
 ub  = [1e4         1e3         1         100      5  200      5       max(data.stimulus)];
 
 % lb = ValidateDAParameters2(lb);
@@ -1401,7 +1337,7 @@ this_pid = this_pid-mean(this_pid(400:1600));
 
 clear data
 data.response = this_resp;
-data.time = 3e-3*(1:length(this_resp));
+data.time = dt*(1:length(this_resp));
 data.stimulus = this_pid;
 
 x6 = [  187.9277    5.4844    0.0012    8.8340    2.0156  186.6661    0.0156  -0.0013];
@@ -1446,16 +1382,16 @@ for i = 1:length(paradigm_names)
 	this_pid=mean2(combined_data.PID(plot_these,:));
 	this_pid = this_pid-mean(this_pid(400:1600));
 	R = DA_integrate2(this_pid,p);
-	a = floor(20/3e-3);
-	z = floor(55/3e-3);
+	a = floor(20/dt);
+	z = floor(55/dt);
 	R = R(a:z); this_pid = this_pid(a:z);
-	time = 3e-3*(1:length(R));
+	time = dt*(1:length(R));
 
 	R = R-mean(R);
 	this_pid = this_pid -mean(this_pid);
 
 	[K,~,filtertime] = FindBestFilter(this_pid/std(this_pid),R/std(R),[],'filter_length=299;');
-	filtertime  = filtertime*3e-3;
+	filtertime  = filtertime*dt;
 
 	% recompute linear fits
 	LinearFit = convolve(time,this_pid,K,filtertime);
@@ -1530,7 +1466,7 @@ z = 18000;
 plot_these=find(strcmp(paradigm_names{1}, combined_data.paradigm));
 this_orn=mean2(combined_data.fA(:,plot_these));
 this_pid=mean2(combined_data.PID(plot_these,:));
-time = 3e-3*(1:length(this_orn));
+time = dt*(1:length(this_orn));
 data.response = this_orn(a:z);
 data.stimulus = this_pid(a:z);
 data.time = time(a:z);
@@ -1552,7 +1488,7 @@ p.     Kd= 14;
 p. offset= 11.9479;
 
 %				 Kr-----------------|-----Ka ---------------   |----Hill
-lb = mat2struct([1   1  2  1e-3 		1 	 1 2    -2      -1    1      1   1      0],fieldnames(p));
+lb = mat2struct([1   1  2  dt 		1 	 1 2    -2      -1    1      1   1      0],fieldnames(p));
 ub = mat2struct([100 5 200 1e3 			100  5 200  -1      0     1e3    5   1e3    1e2],fieldnames(p));
 
 %p=FitModel2Data(@ReceptorAdaptationModel,data,p,lb,ub);

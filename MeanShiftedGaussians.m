@@ -537,7 +537,98 @@ if being_published
 end
 
 
-return
+%  ######      ###    #### ##    ##       ###    ##    ##    ###    ##       ##    ##  ######  ####  ######  
+% ##    ##    ## ##    ##  ###   ##      ## ##   ###   ##   ## ##   ##        ##  ##  ##    ##  ##  ##    ## 
+% ##         ##   ##   ##  ####  ##     ##   ##  ####  ##  ##   ##  ##         ####   ##        ##  ##       
+% ##   #### ##     ##  ##  ## ## ##    ##     ## ## ## ## ##     ## ##          ##     ######   ##   ######  
+% ##    ##  #########  ##  ##  ####    ######### ##  #### ######### ##          ##          ##  ##        ## 
+% ##    ##  ##     ##  ##  ##   ###    ##     ## ##   ### ##     ## ##          ##    ##    ##  ##  ##    ## 
+%  ######   ##     ## #### ##    ##    ##     ## ##    ## ##     ## ########    ##     ######  ####  ######  
+
+%% Gain Analysis
+% In this section, we investigate how the gain of the neuron changes with stimulus mean. Since we have already backed out linear filters from the data, we convolve them with the stimulus to get a linear prediction of the response. We plot the actual neuron response vs. the linear prediciton, to see how the slope (thus, the gain) varies with the different stimuli (here, shown in different colours). 
+
+filtertime = dt*(1:length(allfilters(1,1).K));
+filtertime = filtertime - .2;
+
+% first figure out the trivial scaling using the lowest dose
+clear trival_scaling
+trival_scaling = struct;
+for j = 1:3
+	detrended_data(1,j).fp = convolve(detrended_data(1,j).time,detrended_data(1,j).stim,allfilters(1,j).K,filtertime);
+	x = detrended_data(1,j).fp;
+	y = detrended_data(1,j).resp;
+	rm_this = isnan(x) | isnan(y);
+	x(rm_this) = [];
+	y(rm_this) = [];
+	trival_scaling(j).cf = fit(x,y,'poly1');
+end
+
+for i = 1:length(detrended_data)
+	for j = 1:width(detrended_data)
+		if ~isempty(allfilters(i,j).K)
+			detrended_data(i,j).fp = convolve(detrended_data(i,j).time,detrended_data(i,j).stim,allfilters(i,j).K,filtertime);
+			% measure the gain
+			x = detrended_data(i,j).fp;
+			y = detrended_data(i,j).resp;
+			rm_this = isnan(x) | isnan(y);
+			x(rm_this) = [];
+			y(rm_this) = [];
+			temp = fit(x,y,'poly1');
+			detrended_data(i,j).gain = temp.p1;
+
+			% account for some trivial scaling
+			detrended_data(i,j).fp = trival_scaling(j).cf(detrended_data(i,j).fp);
+			
+
+		end
+	end
+end
+
+figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
+ss = 20;
+for j = 1:3
+	subplot(1,3,j), hold on
+	title(strcat('Group # ',oval(j)))
+	set(gca,'XLim',[0 45],'YLim',[0 45])
+	xlabel('Linear Prediction (Hz)')
+	ylabel('Neuron Response (Hz)')
+	for i = 1:length(detrended_data)
+		if ~isempty(allfilters(i,j).K)
+			plot(detrended_data(i,j).fp(1:ss:end),detrended_data(i,j).resp(1:ss:end),'.','Color',c(i,:))
+		end
+	end
+end
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% That's quite convincing. Now, we quantify this effect by plotting gain vs. the mean of the stimulus. We also plot the coefficient of variation of the response as a function of the coefficient of variation of the stimulus.  
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+for j = 1:3
+	for i = 1:length(detrended_data)
+		if ~isempty(allfilters(i,j).K)
+			plot(mean(detrended_data(i,j).stim),detrended_data(i,j).gain,'k+')
+		end
+	end
+end
+set(gca,'XScale','log','YScale','log'); %,'YLim',[5 60],'XLim',[0.4 6])
+xlabel('Mean Stimulus (V)')
+ylabel('Neuron Gain (Hz/V')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
 
 %      ######   #######  ########  ########     ######## #### ##     ## ########  ######  
 %     ##    ## ##     ## ##     ## ##     ##       ##     ##  ###   ### ##       ##    ## 
@@ -548,7 +639,7 @@ return
 %      ######   #######  ##     ## ##     ##       ##    #### ##     ## ########  ######  
 
 %% Correlation Times 
-% On what timescales are the stimulus and the response correlated? In the following figure, we plot the autocorrelation function of the stimulus and the responses, for each stimulus presented:
+% On what timescales are the stimulus and the response correlated? In the following figure, we plot the autocorrelation function of the stimulus and thea responses, for each stimulus presented:
 
 corr_times_stim = NaN(length(unique(combined_data.neuron)),length(unique(combined_data.paradigm)));
 for i = 1:length(unique(combined_data.neuron))

@@ -24,9 +24,17 @@ end
 load('MeanShiftedGaussians.mat')
 
 
-a = floor(4/3e-3);
-z = floor(12/3e-3);
-z1 = floor(11/3e-3);
+% add the experiment subfiled
+combined_data.experiment = combined_data.neuron;
+combined_data.experiment(combined_data.neuron > 8) = 3;
+combined_data.experiment(combined_data.neuron > 4) = 2;
+combined_data.experiment(combined_data.neuron < 5) = 1;
+
+dt = 1e-3;
+
+a = floor(4/dt);
+z = floor(12/dt);
+z1 = floor(11/dt);
 sdata = struct(); % summary data
 sdata(3).max_pid = [];
 sdata(3).max_f = [];
@@ -46,7 +54,7 @@ for i = 1:length(paradigm_names)
 
 		if ~isempty(plot_these)
 			this_pid=mean2(combined_data.PID(plot_these,:));
-			time = 3e-3*(1:length(this_pid));
+			time = dt*(1:length(this_pid));
 			sdata(j).end_pid = [sdata(j).end_pid mean(this_pid(z1:z))];
 			time = time(a:z);
 			this_pid = this_pid(a:z);
@@ -69,7 +77,7 @@ for i = 1:length(paradigm_names)
 
 		if ~isempty(plot_these)
 			this_orn=mean2(combined_data.fA(:,plot_these));
-			time = 3e-3*(1:length(this_orn));
+			time = dt*(1:length(this_orn));
 			sdata(j).end_f = [sdata(j).end_f mean(this_orn(z1:z))];
 			time = time(a:z);
 			this_orn = this_orn(a:z);
@@ -122,7 +130,7 @@ for i = 1:length(paradigm_names)
 
 		if ~isempty(plot_these)
 			this_resp=mean2(combined_data.fA(:,plot_these));
-			time = 3e-3*(1:length(this_resp));
+			time = dt*(1:length(this_resp));
 			time = time(a:z);
 			this_resp = this_resp(a:z);
 			[~,loc]=max(this_resp);
@@ -172,7 +180,7 @@ for i = 1:length(paradigm_names)
 
 		if ~isempty(plot_these)
 			this_resp=mean2(combined_data.fA(:,plot_these));
-			time = 3e-3*(1:length(this_resp));
+			time = dt*(1:length(this_resp));
 			time = time(a:z);
 			this_resp = this_resp(a:z);
 			this_resp = this_resp/max(this_resp);
@@ -187,50 +195,49 @@ if being_published
 	delete(gcf)
 end
 
-%%
 % Does a fractional differentiation model explain this response kinetics? How does the order of the fractional differnetiator vary? 
 
-a = floor(5/3e-3);
-z = floor(12/3e-3);
-if redo
-	clear fdmodel
-	for i = 1:length(paradigm_names)
-		fdmodel(i).d = [];
-		fdmodel(i).alpha = [];
-		fdmodel(i).fp = [];
-		plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
-		this_resp=mean2(combined_data.fA(:,plot_these));
-		this_pid=mean2(combined_data.PID(plot_these,:));
-		time = 3e-3*(1:length(this_resp));
-		time = time(a:z);
-		this_resp = this_resp(a:z);
-		this_pid = this_pid(a:z);
-		[fdmodel(i).alpha,fdmodel(i).d,fdmodel(i).fp] =  FitFractionalDModel(this_pid, this_resp,100);
-	end
-end
+% a = floor(5/dt);
+% z = floor(12/dt);
+% if redo
+% 	clear fdmodel
+% 	for i = 1:length(paradigm_names)
+% 		fdmodel(i).d = [];
+% 		fdmodel(i).alpha = [];
+% 		fdmodel(i).fp = [];
+% 		plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
+% 		this_resp=mean2(combined_data.fA(:,plot_these));
+% 		this_pid=mean2(combined_data.PID(plot_these,:));
+% 		time = dt*(1:length(this_resp));
+% 		time = time(a:z);
+% 		this_resp = this_resp(a:z);
+% 		this_pid = this_pid(a:z);
+% 		[fdmodel(i).alpha,fdmodel(i).d,fdmodel(i).fp] =  FitFractionalDModel(this_pid, this_resp,100);
+% 	end
+% end
 
 
-figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
-for i = 1:length(paradigm_names)
-	subplot(2,4,i), hold on
-	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
-	this_resp=mean2(combined_data.fA(:,plot_these));
-	time = 3e-3*(1:length(this_resp));
-	this_resp = this_resp(a:z);
-	time = time(a:z);
-	plot(time,this_resp,'k')
-	plot(time,fdmodel(i).fp,'r')
-	title(strcat('alpha = ',oval(fdmodel(i).alpha,2)),'interpreter','tex')
-	xlabel('Time (s)')
-	ylabel('Firing Rate (Hz)')
-end
+% figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
+% for i = 1:length(paradigm_names)
+% 	subplot(2,4,i), hold on
+% 	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
+% 	this_resp=mean2(combined_data.fA(:,plot_these));
+% 	time = dt*(1:length(this_resp));
+% 	this_resp = this_resp(a:z);
+% 	time = time(a:z);
+% 	plot(time,this_resp,'k')
+% 	plot(time,fdmodel(i).fp,'r')
+% 	title(strcat('alpha = ',oval(fdmodel(i).alpha,2)),'interpreter','tex')
+% 	xlabel('Time (s)')
+% 	ylabel('Firing Rate (Hz)')
+% end
 
 
-PrettyFig;
-if being_published
-	snapnow
-	delete(gcf)
-end
+% PrettyFig;
+% if being_published
+% 	snapnow
+% 	delete(gcf)
+% end
 
 %%
 % It looks like in an effort to get the adaptation ratio right, the fractional diff. models are messing up the timescales. 
@@ -242,9 +249,9 @@ end
 load('very_long_steps.mat')
 
 
-a = floor(2/3e-3);
-z = floor(152/3e-3);
-z1 = floor(151/3e-3);
+a = floor(2/dt);
+z = floor(152/dt);
+z1 = floor(151/dt);
 max_pid = [];
 max_f = [];
 end_pid = [];
@@ -256,7 +263,7 @@ c = parula(length(paradigm_names));
 for i = 1:length(paradigm_names)
 	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
 	this_pid=mean2(combined_data.PID(plot_these,:));
-	time = 3e-3*(1:length(this_pid));
+	time = dt*(1:length(this_pid));
 	end_pid = [end_pid mean(this_pid(z1:z))];
 	time = time(a:z);
 	this_pid = this_pid(a:z);
@@ -271,7 +278,7 @@ subplot(2,1,2), hold on
 for i = 1:length(paradigm_names)
 	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
 	this_resp=mean2(combined_data.fA(:,plot_these));
-	time = 3e-3*(1:length(this_resp));
+	time = dt*(1:length(this_resp));
 	end_f = [end_f mean(this_resp(z1:z))];
 	time = time(a:z);
 	this_resp = this_resp(a:z);
@@ -309,8 +316,8 @@ end
 % What does the initial transient look like? 
 
 
-a = floor(4/3e-3);
-z = floor(12/3e-3);
+a = floor(4/dt);
+z = floor(12/dt);
 
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
@@ -319,7 +326,7 @@ c = parula(length(paradigm_names));
 for i = 1:length(paradigm_names)
 	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
 	this_pid=mean2(combined_data.PID(plot_these,:));
-	time = 3e-3*(1:length(this_pid));
+	time = dt*(1:length(this_pid));
 	time = time(a:z);
 	this_pid = this_pid(a:z);
 	plot(time,this_pid,'Color',c(i,:))
@@ -334,7 +341,7 @@ subplot(1,2,2), hold on
 for i = 1:length(paradigm_names)
 	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
 	this_resp=mean2(combined_data.fA(:,plot_these));
-	time = 3e-3*(1:length(this_resp));
+	time = dt*(1:length(this_resp));
 	time = time(a:z);
 	this_resp = this_resp(a:z);
 	if i > 2
@@ -383,15 +390,15 @@ for i = 3:length(paradigm_names)
 	plot_data(i).resp_mean_err = [];
 
 	for j = 1:length(all_start)
-		a = floor(all_start(j)/3e-3);
-		z = floor(all_end(j)/3e-3);
+		a = floor(all_start(j)/dt);
+		z = floor(all_end(j)/dt);
 		n = sqrt(z-a);
 
 		plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
 		these_resp=mean2(combined_data.fA(:,plot_these));
 
 		cropped_resp = these_resp(a:z);
-		t = 3e-3*(1:length(cropped_resp));
+		t = dt*(1:length(cropped_resp));
 
 		plot_data(i).resp_mean = 		[plot_data(i).resp_mean mean(cropped_resp)];
 		plot_data(i).resp_mean_err = 	[plot_data(i).resp_mean_err std(cropped_resp)/n];
@@ -432,8 +439,8 @@ end
 
 warning off
 lh=[];
-a = floor(2/3e-3);
-z = floor(150/3e-3);
+a = floor(2/dt);
+z = floor(150/dt);
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 for i = 1:2
 
@@ -441,10 +448,10 @@ for i = 1:2
 	plot_these=find(strcmp(paradigm_names{2+i}, combined_data.paradigm));
 	this_resp=mean2(combined_data.fA(:,plot_these));
 	this_resp = this_resp(a:z);
-	time = 3e-3*(1:length(this_resp));
+	time = dt*(1:length(this_resp));
 	[~,loc]=max(this_resp);
 	t = time(loc:end);
-	t = t -min(t) + 3e-3;
+	t = t -min(t) + dt;
 	plot(t,this_resp(loc:end),'k')
 
 	ft=fittype('a*exp(-x./b)+c');
@@ -458,7 +465,7 @@ for i = 1:2
 	options = fitoptions(ft);
 	options.StartPoint = [max(this_resp) max(this_resp) .4 .4 10];
 	options.Upper = [max(this_resp) max(this_resp) 10 10 max(this_resp)];
-	options.Lower = [10 10 3e-3 3e-3 10];
+	options.Lower = [10 10 dt dt 10];
 	ff = fit(t(:),this_resp(loc:end),ft,options);
 	lh(2)=plot(t,ff(t),'b');
 	allfits(i,2).ff = ff;
@@ -467,7 +474,7 @@ for i = 1:2
 	options = fitoptions(ft);
 	options.StartPoint = [max(this_resp) max(this_resp)  max(this_resp) .4 .4 .4 10];
 	options.Upper = [max(this_resp) max(this_resp) max(this_resp) 10 10 10 max(this_resp)];
-	options.Lower = [10 10 10 3e-3 3e-3 3e-3 10];
+	options.Lower = [10 10 10 dt dt dt 10];
 	ff = fit(t(:),this_resp(loc:end),ft,options);
 	lh(3)=plot(t,ff(t),'m');
 	allfits(i,3).ff = ff;

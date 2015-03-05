@@ -33,14 +33,12 @@ parfor i = (history_length+1):length(stimulus)
 	y = y - mean(y);
 	y = y/max(y);
 	x = x/max(x);
-	if any(isnan(x)) || any(isnan(y)) || max(y) == y(end) || max(y) == y(1) || max(x) == x(end) || max(x) == x(1)
+	if any(isnan(x)) || any(isnan(y)) 
+		% || max(y) == y(end) || max(y) == y(1) || max(x) == x(end) || max(x) == x(1)
 	else
-		xc = xcov(x,y);
-		[~,c(i)] = max(xc(history_length/2:history_length*(1.5)));
-		c(i) = c(i) - history_length/2;
-		if abs(c(i)) < 5
-			
-		end
+		xc = xcorr(y,x);
+		[~,c(i)] = max(xc);
+		c(i) = c(i) - history_length;
 	end
 
 end

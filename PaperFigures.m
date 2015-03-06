@@ -210,6 +210,8 @@ end
 figure('outerposition',[0 0 1400 900],'PaperUnits','points','PaperSize',[1400 900]); hold on
 
 % filters for mean shifted gaussians
+clear l 
+l = zeros(8,1);
 peak_loc_K = NaN(length(detrended_data),3);
 subplot(2,3,1), hold on
 for k = 1:3
@@ -217,7 +219,7 @@ for k = 1:3
 		if ~isempty(allfilters(i,k).p)
 			K2 = FitFilter(allfilters(i,k).K(200:end),allfilters(i,k).p);
 			filtertime = dt*(1:length(K2));
-			plot(filtertime,K2,'Color',c(i,:));
+			l(i)=plot(filtertime,K2,'Color',c(i,:));
 
 			[~,loc] = max(K2);
 			peak_loc_K(i,k) = filtertime(loc);
@@ -227,6 +229,11 @@ end
 set(gca,'XLim',[-.01 .5])
 xlabel('Lag (s)')
 ylabel('Filter')
+L = paradigm_names;
+for i = 1:length(L)
+	L{i} = L{i}(strfind(L{i},'-')+1:end);
+end
+legend(l,L)
 
 
 % xcorr for mean shifted gaussians
@@ -248,7 +255,7 @@ for k = 1:3
 			t = t-mean(t);
 			x = x/max(x);
 
-			l(i) = plot(t,x,'Color',c(i,:));
+			plot(t,x,'Color',c(i,:));
 
 			[~,loc] = max(x);
 			peak_loc_xcorr(i,k) = t(loc);
@@ -259,16 +266,18 @@ end
 set(gca,'XLim',[-.1 .3])
 xlabel('Lag (s)')
 ylabel('Cross Correlation (norm)')
-L = paradigm_names;
-for i = 1:length(L)
-	L{i} = L{i}(strfind(L{i},'-')+1:end);
-end
-legend(l,L)
+
 
 subplot(2,3,3), hold on
 clear l
 l(1) = plot(mean_stim(:),peak_loc_xcorr(:)/dt,'k+');
 l(2) = plot(mean_stim(:),peak_loc_K(:)/dt,'ko');
+
+ff=fit(mean_stim(~isnan(mean_stim)),peak_loc_K(~isnan(mean_stim))/dt,'poly1');
+plot(mean_stim(~isnan(mean_stim)),ff(mean_stim(~isnan(mean_stim))),'k')
+ff=fit(mean_stim(~isnan(mean_stim)),peak_loc_xcorr(~isnan(mean_stim))/dt,'poly1');
+plot(mean_stim(~isnan(mean_stim)),ff(mean_stim(~isnan(mean_stim))),'k')
+
 ylabel('Peak time (ms)')
 xlabel('Mean Stimulus (V)')
 legend(l,{'Cross correlation','Filter'})
@@ -281,8 +290,6 @@ if being_published
 	delete(gcf)
 end
 
-
-return
 
 %% Figure 3
 

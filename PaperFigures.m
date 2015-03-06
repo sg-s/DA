@@ -194,7 +194,8 @@ cf = fit(x(:),y(:),'power1');
 set(axes_handles(8),'XScale','log','YScale','log'); %,'YLim',[5 60],'XLim',[0.4 6])
 xlabel(axes_handles(8),'Mean Stimulus (V)')
 ylabel(axes_handles(8),'Neuron Gain (Hz/V')
-plot(axes_handles(8),x(:),cf(x(:)),'k')
+l=plot(axes_handles(8),x(:),cf(x(:)),'k');
+legend(l,strcat('\alpha=',oval(cf.b)))
 
 
 PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
@@ -203,7 +204,6 @@ if being_published
 	snapnow
 	delete(gcf)
 end
-
 
 %% Figure 2: ORNs speed up responses on increasing stimulus mean
 

@@ -26,6 +26,9 @@ axes_handles(5)=axes('Units','pixels','Position',[63.825 276.575 212.75 106.375]
 axes_handles(6)=axes('Units','pixels','Position',[340.4 276.575 212.75 106.375]);
 axes_handles(7)=axes('Units','pixels','Position',[63.825 42.55 212.75 191.475]);
 axes_handles(8)=axes('Units','pixels','Position',[340.4 42.55 212.75 191.475]);
+for i = 1:length(axes_handles)
+	hold(axes_handles(i),'on')
+end
 
 % load cached data
 load('MeanShiftedGaussians.mat')
@@ -68,6 +71,130 @@ ylabel(axes_handles(2),'ORN Response (Hz)')
 
 set(axes_handles(1),'XLim',[-1 61])
 set(axes_handles(2),'XLim',[-1 61])
+xlabel(axes_handles(2),'Time (s)')
+
+
+% remove trend
+b = floor(5/dt);
+a = floor(35/dt);
+z = floor(55/dt);
+detrended_data = cache('detrended_data'); % needs this in the cache. run MeanShiftedGaussians.m to generate this
+
+% load the filters
+allfilters = cache('allfilters');
+
+% plot the filter for the lowest dose 
+filtertime = dt*(1:length(allfilters(1,1).K));
+filtertime = filtertime - 200*dt;
+plot(axes_handles(3),filtertime,allfilters(1,1).K,'Color',c(1,:))
+set(axes_handles(3),'XLim',[min(filtertime) max(filtertime)])
+xlabel(axes_handles(3),'Lag (s)')
+ylabel(axes_handles(3),'Filter')
+
+% first figure out the trivial scaling using the lowest dose
+clear trival_scaling
+trival_scaling = struct;
+for j = 1:3
+	detrended_data(1,j).fp = convolve(detrended_data(1,j).time,detrended_data(1,j).stim,allfilters(1,j).K,filtertime);
+	x = detrended_data(1,j).fp;
+	y = detrended_data(1,j).resp;
+	rm_this = isnan(x) | isnan(y);
+	x(rm_this) = [];
+	y(rm_this) = [];
+	trival_scaling(j).cf = fit(x,y,'poly1');
+end
+
+for i = 1:length(detrended_data)
+	for j = 1:width(detrended_data)
+		if ~isempty(allfilters(i,j).K)
+			detrended_data(i,j).fp = convolve(detrended_data(i,j).time,detrended_data(i,j).stim,allfilters(i,j).K,filtertime);
+			% measure the gain
+			x = detrended_data(i,j).fp;
+			y = detrended_data(i,j).resp;
+			rm_this = isnan(x) | isnan(y);
+			x(rm_this) = [];
+			y(rm_this) = [];
+			temp = fit(x,y,'poly1');
+			detrended_data(i,j).gain = temp.p1;
+
+			% account for some trivial scaling
+			detrended_data(i,j).fp = trival_scaling(j).cf(detrended_data(i,j).fp);
+			
+
+		end
+	end
+end
+
+% plot linear prediction vs. data
+ss = 20;
+plot(axes_handles(4),detrended_data(1,1).fp(1:ss:end),detrended_data(1,1).resp(1:ss:end),'.','Color',c(1,:))
+xlabel(axes_handles(4),'K \otimes s')
+ylabel(axes_handles(4),'Response (Hz)')
+
+
+% plot the stimulus distributions 
+a = floor(15/dt);
+z = floor(55/dt);
+
+for i = 1:length(paradigm_names)
+	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
+	plot_hist = (combined_data.PID(plot_these,a:z));
+	[hy,hx]  = hist(plot_hist(:),50);
+	hy = hy/max(hy);
+	plot(axes_handles(5),hx,hy,'Color',c(i,:));
+end
+
+xlabel(axes_handles(5),'PID (V)')
+ylabel(axes_handles(5),'count (norm)')
+
+
+% plot the response distributions 
+a = floor(15/dt);
+z = floor(55/dt);
+
+for i = 1:length(paradigm_names)
+	temp =  [detrended_data(i,:).resp];
+	temp = temp(:);
+	[hy,hx]  = hist(temp,50); % this is being 
+	hy = hy/max(hy);
+	plot(axes_handles(6),hx,hy,'Color',c(i,:));
+end
+
+xlabel(axes_handles(6),'Response (Hz)')
+ylabel(axes_handles(6),'count (norm)')
+
+
+% show gain changes -- change in slope of scatter plot
+ss = 50;
+for j = 1:3
+	for i = 1:length(detrended_data)
+		if ~isempty(allfilters(i,j).K)
+			plot(axes_handles(7),detrended_data(i,j).fp(1:ss:end),detrended_data(i,j).resp(1:ss:end),'.','Color',c(i,:))
+		end
+	end
+end
+
+set(axes_handles(7),'XLim',[0 45],'YLim',[0 45])
+xlabel(axes_handles(7),'Linear Prediction (Hz)')
+ylabel(axes_handles(7),'Neuron Response (Hz)')
+
+% show gain changes -- gain vs. mean stimulus
+
+x = []; y = [];
+for j = 1:3
+	for i = 1:length(detrended_data)
+		if ~isempty(allfilters(i,j).K)
+			plot(axes_handles(8),mean(detrended_data(i,j).stim),detrended_data(i,j).gain,'+','Color',c(i,:));
+			x = [x mean(detrended_data(i,j).stim)];
+			y = [y detrended_data(i,j).gain];
+		end
+	end
+end
+cf = fit(x(:),y(:),'power1');
+set(axes_handles(8),'XScale','log','YScale','log'); %,'YLim',[5 60],'XLim',[0.4 6])
+xlabel(axes_handles(8),'Mean Stimulus (V)')
+ylabel(axes_handles(8),'Neuron Gain (Hz/V')
+plot(axes_handles(8),x(:),cf(x(:)),'k')
 
 
 PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
@@ -77,12 +204,6 @@ if being_published
 	delete(gcf)
 end
 
-
-% remove trend
-b = floor(5/dt);
-a = floor(35/dt);
-z = floor(55/dt);
-detrended_data = cache('detrended_data');
 
 
 return

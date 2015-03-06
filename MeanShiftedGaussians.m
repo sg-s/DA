@@ -487,7 +487,7 @@ end
 for k = 1:3
 	for i = 1:length(detrended_data)
 		if ~isempty(allfilters(i,k).p)
-			K2 = FitFilter(allfilters(i,k).K,allfilters(i,k).p);
+			K2 = FitFilter(allfilters(i,k).K(200:end),allfilters(i,k).p);
 			filtertime = dt*(1:length(K2));
 			l(i) = plot(filtertime,K2,'Color',c(i,:));
 

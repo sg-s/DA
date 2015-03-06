@@ -205,11 +205,84 @@ if being_published
 end
 
 
+%% Figure 2: ORNs speed up responses on increasing stimulus mean
+
+figure('outerposition',[0 0 1400 900],'PaperUnits','points','PaperSize',[1400 900]); hold on
+
+% filters for mean shifted gaussians
+peak_loc_K = NaN(length(detrended_data),3);
+subplot(2,3,1), hold on
+for k = 1:3
+	for i = 1:length(detrended_data)
+		if ~isempty(allfilters(i,k).p)
+			K2 = FitFilter(allfilters(i,k).K(200:end),allfilters(i,k).p);
+			filtertime = dt*(1:length(K2));
+			plot(filtertime,K2,'Color',c(i,:));
+
+			[~,loc] = max(K2);
+			peak_loc_K(i,k) = filtertime(loc);
+		end
+	end
+end
+set(gca,'XLim',[-.01 .5])
+xlabel('Lag (s)')
+ylabel('Filter')
+
+
+% xcorr for mean shifted gaussians
+subplot(2,3,2), hold on
+peak_loc_xcorr = NaN(length(detrended_data),3);
+mean_stim = NaN(length(detrended_data),3);
+clear l 
+l = zeros(8,1);
+for k = 1:3
+	for i = 1:length(detrended_data)
+		mean_stim(i,k) = mean(detrended_data(i,k).stim);
+		a = detrended_data(i,k).resp - mean(detrended_data(i,k).resp);
+		if ~isempty(a)
+			a = a/std(a);
+			b = detrended_data(i,k).stim - mean(detrended_data(i,k).stim);
+			b = b/std(b);
+			x = xcorr(a,b); % positive peak means a lags b
+			t = dt*(1:length(x));
+			t = t-mean(t);
+			x = x/max(x);
+
+			l(i) = plot(t,x,'Color',c(i,:));
+
+			[~,loc] = max(x);
+			peak_loc_xcorr(i,k) = t(loc);
+		end
+	end
+end
+
+set(gca,'XLim',[-.1 .3])
+xlabel('Lag (s)')
+ylabel('Cross Correlation (norm)')
+L = paradigm_names;
+for i = 1:length(L)
+	L{i} = L{i}(strfind(L{i},'-')+1:end);
+end
+legend(l,L)
+
+subplot(2,3,3), hold on
+clear l
+l(1) = plot(mean_stim(:),peak_loc_xcorr(:)/dt,'k+');
+l(2) = plot(mean_stim(:),peak_loc_K(:)/dt,'ko');
+ylabel('Peak time (ms)')
+xlabel('Mean Stimulus (V)')
+legend(l,{'Cross correlation','Filter'})
+
+
+PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 return
-
-
-%% Figure 2
 
 %% Figure 3
 

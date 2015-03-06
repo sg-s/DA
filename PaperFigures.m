@@ -14,14 +14,86 @@ if ~isempty(calling_func)
 	end
 end
 
-%% Figure 1
+%% Figure 1: ORNs decrease gain on increasing stimulus mean
+clearvars -except being_published
+fig_handle=figure('Units','pixels','outerposition',[81 5 599 871],'PaperUnits','points','PaperSize',[599 871],'Color','w','Toolbar','none');
+clf(fig_handle);
+axes_handles(1)=axes('Units','pixels','Position',[63.825 744.625 489.325 85.1]);
+axes_handles(2)=axes('Units','pixels','Position',[63.825 616.975 489.325 106.375]);
+axes_handles(3)=axes('Units','pixels','Position',[63.825 425.5 170.2 170.2]);
+axes_handles(4)=axes('Units','pixels','Position',[382.95 425.5 170.2 170.2]);
+axes_handles(5)=axes('Units','pixels','Position',[63.825 276.575 212.75 106.375]);
+axes_handles(6)=axes('Units','pixels','Position',[340.4 276.575 212.75 106.375]);
+axes_handles(7)=axes('Units','pixels','Position',[63.825 42.55 212.75 191.475]);
+axes_handles(8)=axes('Units','pixels','Position',[340.4 42.55 212.75 191.475]);
+
+% load cached data
+load('MeanShiftedGaussians.mat')
+
+% shorten paradigm names by throwing out 'MFC'
+short_paradigm_names = paradigm_names;
+for i = 1:length(paradigm_names)
+	short_paradigm_names{i} = paradigm_names{i}(strfind(paradigm_names{i},'-')+1:end);
+end
+
+
+% some global parameters
+nbins = 50;
+histx = [];
+histy = [];
+dt = 1e-3;
+all_pid = [];
+
+
+a = floor(15/dt);
+z = floor(55/dt);
+
+c = parula(length(paradigm_names));
+
+mean_pid = NaN(length(c),1);
+
+% plot lowest dose stimulus
+plot_these=find(strcmp(paradigm_names{1}, combined_data.paradigm));
+plot_this = mean2(combined_data.PID(plot_these,:));
+time = dt*(1:length(plot_this));
+plot(axes_handles(1),time,plot_this,'Color',c(1,:))
+ylabel(axes_handles(1),'Stimulus (V)')
+
+
+% plot lowest dose response
+plot_this = mean2(combined_data.fA(:,plot_these));
+time = dt*(1:length(plot_this));
+plot(axes_handles(2),time,plot_this,'Color',c(1,:))
+ylabel(axes_handles(2),'ORN Response (Hz)')
+
+set(axes_handles(1),'XLim',[-1 61])
+set(axes_handles(2),'XLim',[-1 61])
+
+
+PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+% remove trend
+b = floor(5/dt);
+a = floor(35/dt);
+z = floor(55/dt);
+detrended_data = cache('detrended_data');
+
+
+return
+
 
 %% Figure 2
 
 %% Figure 3
 
 clearvars -except being_published
-fig_handle=figure('Units','pixels','outerposition',[66 5 661 871],'Color','w','PaperUnits','points','PaperSize',[661 871],'Color','w','Toolbar','none');
+fig_handle=figure('Units','pixels','outerposition',[66 5 661 871],'PaperUnits','points','PaperSize',[661 871],'Color','w','Toolbar','none');
 clf(fig_handle);
 axes_handles(1)=axes('Units','pixels','Position',[63.825 744.625 574.425 85.1]);
 axes_handles(2)=axes('Units','pixels','Position',[63.825 595.7 574.425 127.65]);

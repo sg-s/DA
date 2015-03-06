@@ -335,34 +335,35 @@ end
 b = floor(5/dt);
 a = floor(35/dt);
 z = floor(55/dt);
-clear detrended_data
-detrended_data.time = [];
-detrended_data.stim = [];
-detrended_data.resp = [];
-for k = 1:3
-	for i = 1:length(paradigm_names)
-		plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
-		plot_these = intersect(plot_these,find(ismember(combined_data.neuron,find(group==k))));
-		if ~isempty(plot_these)
-			this_pid=mean2(combined_data.PID(plot_these,:));
-			this_resp=mean2(combined_data.fA(:,plot_these));
-			time = dt*(1:length(this_resp));
-			baseline = mean(this_pid(1:b));
-			time = time(a:z);
-			this_pid = this_pid(a:z);
-			this_resp = this_resp(a:z);
+detrended_data = cache('detrended_data');
+if isempty(detrended_data)
+	detrended_data.time = [];
+	detrended_data.stim = [];
+	detrended_data.resp = [];
+	for k = 1:3
+		for i = 1:length(paradigm_names)
+			plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
+			plot_these = intersect(plot_these,find(ismember(combined_data.neuron,find(group==k))));
+			if ~isempty(plot_these)
+				this_pid=mean2(combined_data.PID(plot_these,:));
+				this_resp=mean2(combined_data.fA(:,plot_these));
+				time = dt*(1:length(this_resp));
+				baseline = mean(this_pid(1:b));
+				time = time(a:z);
+				this_pid = this_pid(a:z);
+				this_resp = this_resp(a:z);
 
-			detrended_data(i,k).time = time;
-			ff = fit(time(:),this_pid(:),'poly2');
-			detrended_data(i,k).stim = this_pid - ff(time)' + mean(ff(time)) - baseline;
+				detrended_data(i,k).time = time;
+				ff = fit(time(:),this_pid(:),'poly2');
+				detrended_data(i,k).stim = this_pid - ff(time)' + mean(ff(time)) - baseline;
 
-			ff = fit(time(:),this_resp(:),'poly2');
-			detrended_data(i,k).resp = this_resp - ff(time) + mean(ff(time));
+				ff = fit(time(:),this_resp(:),'poly2');
+				detrended_data(i,k).resp = this_resp - ff(time) + mean(ff(time));
+			end
 		end
 	end
+	cache('detrended_data',detrended_data)
 end
-
-
 
 %         ######      ###    #### ##    ##       ##  ######  ########  ######## ######## ########  
 %        ##    ##    ## ##    ##  ###   ##      ##  ##    ## ##     ## ##       ##       ##     ## 
@@ -438,51 +439,55 @@ subplot(1,3,1:2), hold on
 peak_loc = NaN(length(detrended_data),3);
 min_loc = NaN(length(detrended_data),3);
 mean_stim = NaN(length(detrended_data),3);
-if ~exist('allfilters')
+allfilters = cache('allfilters');
+if isempty(allfilters)
 	for k = 1:3
 		for i = 1:length(detrended_data)
 			allfilters(i,k).K = [];
 			allfilters(i,k).p = [];
 		end
 	end
-end
-clear l 
-l = zeros(8,1);
-for k = 1:3
-	for i = 1:length(detrended_data)
-		mean_stim(i,k) = mean(detrended_data(i,k).stim);
-		a = detrended_data(i,k).resp - mean(detrended_data(i,k).resp);
-		if ~isempty(a)
-			if isempty(allfilters(i,k).K)
-				a = a/std(a);
-				b = detrended_data(i,k).stim - mean(detrended_data(i,k).stim);
-				b = b/std(b);
+	clear l 
+	l = zeros(8,1);
+	for k = 1:3
+		for i = 1:length(detrended_data)
+			mean_stim(i,k) = mean(detrended_data(i,k).stim);
+			a = detrended_data(i,k).resp - mean(detrended_data(i,k).resp);
+			if ~isempty(a)
+				if isempty(allfilters(i,k).K)
+					a = a/std(a);
+					b = detrended_data(i,k).stim - mean(detrended_data(i,k).stim);
+					b = b/std(b);
 
-				[thisK, ~, filtertime_full] = FindBestFilter(b,a,[],'regmax=10;','regmin=1;','filter_length=1099;','offset=300;');
-				thisK = thisK(100:1000);
-				allfilters(i,k).K = thisK;
-				filtertime = filtertime_full(100:1000);
+					[thisK, ~, filtertime_full] = FindBestFilter(b,a,[],'regmax=10;','regmin=1;','filter_length=1099;','offset=300;');
+					thisK = thisK(100:1000);
+					allfilters(i,k).K = thisK;
+					filtertime = filtertime_full(100:1000);
 
-				% fit a parametric filter to this
-				clear d p
-				p.   n= 1.4766;
-				p.   A= 0.7921;
-				p.tau1= 52.3750;
-				p.tau2= 35.6094;
+					% fit a parametric filter to this
+					clear d p
+					p.   n= 1.4766;
+					p.   A= 0.7921;
+					p.tau1= 52.3750;
+					p.tau2= 35.6094;
 
-				d.stimulus = thisK(200:end);
-				d.stimulus = d.stimulus/max(d.stimulus);
-				d.response = d.stimulus;
-				allfilters(i,k).p = FitModel2Data(@FitFilter,d,p);
+					d.stimulus = thisK(200:end);
+					d.stimulus = d.stimulus/max(d.stimulus);
+					d.response = d.stimulus;
+					p = FitModel2Data(@FitFilter,d,p);
+					p = FitModel2Data(@FitFilter,d,p);
+					allfilters(i,k).p = FitModel2Data(@FitFilter,d,p);
+				end
 			end
 		end
 	end
+	cache('allfilters',allfilters);
 end
 
 for k = 1:3
 	for i = 1:length(detrended_data)
 		if ~isempty(allfilters(i,k).p)
-			K2 = FitFilter(thisK,allfilters(i,k).p);
+			K2 = FitFilter(allfilters(i,k).K,allfilters(i,k).p);
 			filtertime = dt*(1:length(K2));
 			l(i) = plot(filtertime,K2,'Color',c(i,:));
 
@@ -493,8 +498,6 @@ for k = 1:3
 		end
 	end
 end
-
-
 
 
 % debug -- check that the fit works. 

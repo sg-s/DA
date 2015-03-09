@@ -282,8 +282,133 @@ ylabel('Peak time (ms)')
 xlabel('Mean Stimulus (V)')
 legend(l,{'Cross correlation','Filter'})
 
+% now we make the plots for the pulse responses.
+clearvars -except being_published
+load('/local-data/DA-paper/carlotta/fig3/abc.mat')
 
-PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
+% combine all spikes
+all_spikes = [];
+paradigm = [];
+for i = 1:length(spikes)
+	if isempty(spikes(i).discard)
+		all_spikes = vertcat(all_spikes,spikes(i).A);
+		paradigm = [paradigm i*ones(1,width(spikes(i).A))];
+	else
+		temp = spikes(i).A;
+		rm_this = find(spikes(i).discard);
+		rm_this(rm_this>width(spikes(i).discard)) = [];
+		temp(rm_this,:) = [];
+		all_spikes = vertcat(all_spikes,temp);
+		paradigm = [paradigm i*ones(1,width(temp))];
+	end
+end
+
+time = 1e-4*(1:length(all_spikes));
+
+hash = DataHash(full(all_spikes));
+cached_data = cache(hash);
+if isempty(cached_data)
+	fA = spiketimes2f(all_spikes,time);
+	cache(hash,fA);
+else
+	fA = cached_data;
+end
+
+t = 1e-3*(1:length(fA));
+
+
+% remove bizzare outliers
+rm_this(1) = 8+ find(paradigm==6,1,'first');
+rm_this(2) = 2+ find(paradigm==8,1,'first');
+rm_this = [rm_this find(max(fA)==0)];
+fA(:,rm_this) = [];
+paradigm(rm_this) = [];
+
+% combine all PID traces. the data is very spotty, so we have to be careful. 
+all_PID = [];
+paradigm_PID = [];
+for i = 1:length(spikes)
+	temp = data(i).PID;
+	temp = temp(find(temp(:,1)),:);
+	all_PID = vertcat(all_PID,temp);
+	paradigm_PID = [paradigm_PID i*ones(1,width(temp))];
+end
+all_PID = all_PID';
+
+% filter and subsample
+for i = 1:width(all_PID)
+	all_PID(:,i) = filter(ones(30,1)/30,1,all_PID(:,i));
+end
+all_PID = all_PID(1:10:end,:);
+
+% remove bizzare outliers
+rm_this = [];
+rm_this(1) = find(paradigm_PID==9,1,'first');
+rm_this(2) = find(paradigm_PID==10,1,'first');
+all_PID(:,rm_this) = [];
+paradigm_PID(rm_this) = [];
+
+% plot PID
+subplot(2,3,4), hold on
+for i = 1:max(paradigm)
+	plot_these = find(paradigm_PID==i);
+	plot(t,mean2(all_PID(:,plot_these)));
+end
+
+set(gca,'XLim',[.5 3],'YScale','log','YLim',[7e-2 15])
+xlabel('Time (s)')
+ylabel('Stimulus (V)')
+
+
+% plot neuron responses
+subplot(2,3,5), hold on
+for i = 1:max(paradigm)
+	plot_these = find(paradigm==i);
+	plot(t,mean2(fA(:,plot_these)));
+end
+
+set(gca,'XLim',[.5 3])
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+
+% compute some stuff
+nominal_stimulus_start = 1.05;
+nominal_stimulus_stop = 1.6;
+ttp.data = NaN(width(fA),1);
+ttp.stimulus = NaN(width(fA),1);
+peak.data = NaN(width(fA),1);
+dga.data = NaN(width(fA),1);
+for i = 1:width(fA)
+	[m,loc]=max(fA(nominal_stimulus_start*1e3:nominal_stimulus_stop*1e3,i));
+	ttp.data(i) = loc*1e-3;
+	ttp.stimulus(i) = max(max(all_PID(:,paradigm_PID == paradigm(i))));
+	peak.data(i) = m;
+	dga.data(i) = mean(fA(1500:1600,i))/m;
+end
+
+plot_data.x = NaN*paradigm_PID;
+plot_data.xe = NaN*paradigm_PID;
+plot_data.y = NaN*paradigm_PID;
+plot_data.ye = NaN*paradigm_PID;
+for i =1:length(paradigm_PID)
+	plot_data.x(i) = mean(ttp.stimulus(paradigm_PID == i));
+	plot_data.xe(i) = std(ttp.stimulus(paradigm_PID == i));
+	plot_data.y(i) = mean(ttp.data(paradigm_PID == i));
+	plot_data.ye(i) = std(ttp.data(paradigm_PID == i));
+
+end
+
+% plot time to peak for the data
+subplot(2,3,6), hold on
+plot(ttp.stimulus,ttp.data,'k+') % this plots it per trial, noisy
+% errorbarxy(plot_data.x,plot_data.y,plot_data.xe,plot_data.ye)
+% errorbar(plot_data.x,plot_data.y,plot_data.ye) % this looks worse
+set(gca,'XScale','log','XLim',[5e-2 20])
+xlabel('Mean Stimulus (V)')
+ylabel('Time to peak (s)')
+
+
+PrettyFig;
 
 if being_published
 	snapnow

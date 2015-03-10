@@ -48,10 +48,7 @@ dt = 1e-3;
 all_pid = [];
 
 
-a = floor(15/dt);
-z = floor(55/dt);
-
-c = parula(length(paradigm_names));
+c = parula(length(paradigm_names)+1);
 
 mean_pid = NaN(length(c),1);
 
@@ -75,9 +72,9 @@ xlabel(axes_handles(2),'Time (s)')
 
 
 % remove trend
-b = floor(5/dt);
-a = floor(35/dt);
-z = floor(55/dt);
+% b = floor(5/dt);
+% a = floor(35/dt);
+% z = floor(55/dt);
 detrended_data = cache('detrended_data'); % needs this in the cache. run MeanShiftedGaussians.m to generate this
 
 % load the filters
@@ -119,8 +116,6 @@ for i = 1:length(detrended_data)
 
 			% account for some trivial scaling
 			detrended_data(i,j).fp = trival_scaling(j).cf(detrended_data(i,j).fp);
-			
-
 		end
 	end
 end

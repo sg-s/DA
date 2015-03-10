@@ -366,51 +366,46 @@ set(gca,'XLim',[.5 3])
 xlabel('Time (s)')
 ylabel('Firing rate (Hz)')
 
-% compute some stuff
-nominal_stimulus_start = 1.05;
-nominal_stimulus_stop = 1.6;
-ttp.data = NaN(width(fA),1);
-ttp.stimulus = NaN(width(fA),1);
-peak.data = NaN(width(fA),1);
-dga.data = NaN(width(fA),1);
-for i = 1:width(fA)
-	[m,loc]=max(fA(nominal_stimulus_start*1e3:nominal_stimulus_stop*1e3,i));
-	ttp.data(i) = loc*1e-3;
-	ttp.stimulus(i) = max(max(all_PID(:,paradigm_PID == paradigm(i))));
-	peak.data(i) = m;
-	dga.data(i) = mean(fA(1500:1600,i))/m;
-end
+% % compute some stuff
+% nominal_stimulus_start = 1.05;
+% nominal_stimulus_stop = 1.6;
+% ttp.data = NaN(width(fA),1);
+% ttp.stimulus = NaN(width(fA),1);
+% peak.data = NaN(width(fA),1);
+% dga.data = NaN(width(fA),1);
+% for i = 1:width(fA)
+% 	[m,loc]=max(fA(nominal_stimulus_start*1e3:nominal_stimulus_stop*1e3,i));
+% 	ttp.data(i) = loc*1e-3;
+% 	ttp.stimulus(i) = max(max(all_PID(:,paradigm_PID == paradigm(i))));
+% 	peak.data(i) = m;
+% 	dga.data(i) = mean(fA(1500:1600,i))/m;
+% end
 
-plot_data.x = NaN*paradigm_PID;
-plot_data.xe = NaN*paradigm_PID;
-plot_data.y = NaN*paradigm_PID;
-plot_data.ye = NaN*paradigm_PID;
-for i =1:length(paradigm_PID)
-	plot_data.x(i) = mean(ttp.stimulus(paradigm_PID == i));
-	plot_data.xe(i) = std(ttp.stimulus(paradigm_PID == i));
-	plot_data.y(i) = mean(ttp.data(paradigm_PID == i));
-	plot_data.ye(i) = std(ttp.data(paradigm_PID == i));
+% plot_data.x = NaN*paradigm_PID;
+% plot_data.xe = NaN*paradigm_PID;
+% plot_data.y = NaN*paradigm_PID;
+% plot_data.ye = NaN*paradigm_PID;
+% for i =1:length(paradigm_PID)
+% 	plot_data.x(i) = mean(ttp.stimulus(paradigm_PID == i));
+% 	plot_data.xe(i) = std(ttp.stimulus(paradigm_PID == i));
+% 	plot_data.y(i) = mean(ttp.data(paradigm_PID == i));
+% 	plot_data.ye(i) = std(ttp.data(paradigm_PID == i));
 
-end
+% end
+
+load('2ac_timing.mat')
+a = background_stim == 0;
+foreground_stim(foreground_stim<1e-2) = NaN; % not reliable
 
 % plot time to peak for the data
 subplot(2,3,6), hold on
-plot(ttp.stimulus,ttp.data,'k+') % this plots it per trial, noisy
+plot(foreground_stim(a),resp_half_time(a)-stim_half_time(a),'k+')
+% plot(ttp.stimulus,ttp.data,'k+') % this plots it per trial, noisy
 % errorbarxy(plot_data.x,plot_data.y,plot_data.xe,plot_data.ye)
 % errorbar(plot_data.x,plot_data.y,plot_data.ye) % this looks worse
-set(gca,'XScale','log','XLim',[5e-2 20])
+set(gca,'XScale','log','XLim',[1e-2 20],'YLim',[0 100])
 xlabel('Mean Stimulus (V)')
-ylabel('Time to peak (s)')
-
-% we will also plot the timing data on the responses to pulses on top of a background
-allfiles= dir('/local-data/DA-paper/carlotta/fig4/*back*SPK*.mat');
-
-for i = 1:length(allfiles)
-	% load data
-	load(strcat('/local-data/DA-paper/carlotta/fig4/',allfiles(i).name))
-	load(strcat('/local-data/DA-paper/carlotta/fig4/',strrep(allfiles(i).name,'_SPK','')))
-end
-
+ylabel('\tau_{ORN}-\tau_{PID} (ms)','interpreter','tex')
 
 PrettyFig;
 

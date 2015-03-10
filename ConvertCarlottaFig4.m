@@ -88,3 +88,5 @@ ORN_peak(c:end) = [];
 ORN_peak_time(c:end) = [];
 stim_half_time(c:end) = [];
 resp_half_time(c:end) = [];
+
+save('2ac_timing.mat','background_stim','foreground_stim','ORN_peak','ORN_peak_time','stim_half_time','resp_half_time')

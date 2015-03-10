@@ -30,3 +30,4 @@ end
 SamplingRate = 1e4;
 OutputChannelNames = {};
 save('/local-data/DA-paper/carlotta/fig3/abc.mat','ControlParadigm','data','SamplingRate','OutputChannelNames')
+

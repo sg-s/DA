@@ -402,6 +402,15 @@ set(gca,'XScale','log','XLim',[5e-2 20])
 xlabel('Mean Stimulus (V)')
 ylabel('Time to peak (s)')
 
+% we will also plot the timing data on the responses to pulses on top of a background
+allfiles= dir('/local-data/DA-paper/carlotta/fig4/*back*SPK*.mat');
+
+for i = 1:length(allfiles)
+	% load data
+	load(strcat('/local-data/DA-paper/carlotta/fig4/',allfiles(i).name))
+	load(strcat('/local-data/DA-paper/carlotta/fig4/',strrep(allfiles(i).name,'_SPK','')))
+end
+
 
 PrettyFig;
 

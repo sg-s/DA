@@ -418,19 +418,6 @@ end
 %% Figure 3
 
 clearvars -except being_published
-fig_handle=figure('Units','pixels','outerposition',[66 5 661 871],'PaperUnits','points','PaperSize',[661 871],'Color','w','Toolbar','none');
-clf(fig_handle);
-axes_handles(1)=axes('Units','pixels','Position',[63.825 744.625 574.425 85.1]);
-axes_handles(2)=axes('Units','pixels','Position',[63.825 595.7 574.425 127.65]);
-axes_handles(3)=axes('Units','pixels','Position',[63.825 489.325 574.425 85.1]);
-axes_handles(4)=axes('Units','pixels','Position',[63.825 276.575 191.475 170.2]);
-axes_handles(5)=axes('Units','pixels','Position',[382.95 276.575 255.3 170.2]);
-axes_handles(6)=axes('Units','pixels','Position',[63.825 42.55 191.475 191.475]);
-axes_handles(7)=axes('Units','pixels','Position',[382.95 42.55 212.75 191.475]);
-for i = 1:length(axes_handles)
-	hold(axes_handles(i),'on')
-end
-
 
 load('/local-data/DA-paper/large-variance-flicker/2015_01_28_CS_ab3_2_EA.mat')
 PID = data(4).PID;
@@ -461,15 +448,50 @@ PID = PID2; clear PID2
 % some minor cleaning up
 PID(end,:) = PID(end-1,:); 
 
+fig_handle=figure('Units','pixels','outerposition',[99 5 674 871],'PaperUnits','points','PaperSize',[674 871],'Color','w','Toolbar','none');
+clf(fig_handle);
+axes_handles(1)=axes('Units','pixels','Position',[63.825 744.625 489.325 85.1]);
+axes_handles(2)=axes('Units','pixels','Position',[63.825 595.7 489.325 127.65]);
+axes_handles(3)=axes('Units','pixels','Position',[63.825 489.325 489.325 85.1]);
+axes_handles(4)=axes('Units','pixels','Position',[63.825 276.575 191.475 170.2]);
+axes_handles(5)=axes('Units','pixels','Position',[382.95 276.575 255.3 170.2]);
+axes_handles(6)=axes('Units','pixels','Position',[63.825 42.55 191.475 191.475]);
+axes_handles(7)=axes('Units','pixels','Position',[382.95 42.55 212.75 191.475]);
+axes_handles(8)=axes('Units','pixels','Position',[574.425 744.625 63.825 85.1]);
+axes_handles(9)=axes('Units','pixels','Position',[574.425 595.7 63.825 127.65]);
+axes_handles(10)=axes('Units','pixels','Position',[574.425 489.325 63.825 85.1]);
+for i = 1:length(axes_handles)
+	hold(axes_handles(i),'on')
+end
+
+
 % plot stimulus
 plot(axes_handles(1),tA,mean2(PID),'k')
 set(axes_handles(1),'XLim',[10 60],'XTickLabel',{})
 ylabel(axes_handles(1),'Stimulus (V)')
 
+% plot stimulus distribution 
+[x,y] = hist(mean2(PID),50);
+yy = 0:1e-2:max(max(PID));
+xx = interp1(y,x,yy);
+xx(isnan(xx)) = 0;
+xx = xx/max(xx);
+plot(axes_handles(8),xx,yy,'k')
+linkaxes(axes_handles([1 8]),'y')
+
 % plot response
 plot(axes_handles(2),tA,mean2(fA),'k')
 set(axes_handles(2),'XLim',[10 60],'XTickLabel',{})
 ylabel(axes_handles(2),'Firing Rate (Hz)')
+
+% plot response distribution 
+[x,y] = hist(mean2(fA),50);
+yy = 0:1e-2:max(max(fA));
+xx = interp1(y,x,yy);
+xx(isnan(xx)) = 0;
+xx = xx/max(xx);
+plot(axes_handles(9),xx,yy,'k')
+linkaxes(axes_handles([2 9]),'y')
 
 % extract Linear model
 [K, ~, filtertime_full] = FindBestFilter(mean2(PID),mean2(fA),[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
@@ -506,10 +528,20 @@ xlabel(axes_handles(6),'Stimulus in preceding 400ms')
 ylabel(axes_handles(6),'Instantaneous gain')
 
 % plot gain
-plot(axes_handles(3),gain_time,y,'r')
+gain = y;
+plot(axes_handles(3),gain_time,gain,'r')
 ylabel(axes_handles(3),'Gain')
 set(axes_handles(3),'XLim',[10 60],'YLim',[0 7])
 xlabel(axes_handles(3),'Time (s)')
+
+% plot response distribution 
+[x,y] = hist(gain,50);
+yy = min(gain):1e-2:max(gain);
+xx = interp1(y,x,yy);
+xx(isnan(xx)) = 0;
+xx = xx/max(xx);
+plot(axes_handles(10),xx,yy,'r')
+linkaxes(axes_handles([3 10]),'y')
 
 % show adaptation of dynamics
 

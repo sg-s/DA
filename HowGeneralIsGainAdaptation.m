@@ -1,5 +1,6 @@
 % HowGeneralIsGainAdaptation.m
 % summarises gain adaptation in all of carlotta's data. makes plots organised by receptor, odor, correlation length, etc. 
+% this is a complete re-write of this file on 14th March 2015. Everything changes. To see the old version, you have to go back in the git tree. 
 % 
 % created by Srinivas Gorur-Shandilya at 10:20 , 09 April 2014. Contact me at http://srinivas.gs/contact/
 % 
@@ -7,11 +8,6 @@
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
 
-% the following section pre-computes the processor-heavy parts and caches them for later use by publish()
-load('/local-data/DA-paper/data.mat')
-do_these = 2:21;
-N = length(data);
-marker_size = 15;
 
 % internal housekeeping: determine if being called by publish or not
 calling_func = dbstack;
@@ -21,6 +17,83 @@ if ~isempty(calling_func)
 		being_published = 1;
 	end
 end
+
+% load the assembled data
+load('/local-data/DA-paper/carlotta-martelli/flickering-stim/data.mat')
+
+%        ###    ##       ##          ########     ###    ########    ###    
+%       ## ##   ##       ##          ##     ##   ## ##      ##      ## ##   
+%      ##   ##  ##       ##          ##     ##  ##   ##     ##     ##   ##  
+%     ##     ## ##       ##          ##     ## ##     ##    ##    ##     ## 
+%     ######### ##       ##          ##     ## #########    ##    ######### 
+%     ##     ## ##       ##          ##     ## ##     ##    ##    ##     ## 
+%     ##     ## ######## ########    ########  ##     ##    ##    ##     ## 
+
+
+%% Data Overview
+% In this section, we quickly look over the entire data set. In each of the following figures, we plot the mean of the stimulus and the response, and also plot the r^2 for each trial in a pairwise fashion (showing data reproducibility). We also plot the slope of the data, trial wise, so that we can see trends from trial-to-trial. 
+
+for i = 1:length(data)
+	figure('outerposition',[0 0 1400 1000],'PaperUnits','points','PaperSize',[1400 1000]); hold on
+	resp_plot = subplot(2,9,10:14); hold on
+	stim_plot = subplot(2,9,1:5); hold on
+
+	time = (1:length(data(i).PID))*data(i).dt;
+
+	% plot stimulus and response means
+	plot(stim_plot,time,mean2(data(i).PID),'k')
+	plot(resp_plot,time,mean2(data(i).fA),'k')
+	xlabel(resp_plot,'Time (s)')
+	ylabel(resp_plot,'Firing Rate (Hz)')
+	ylabel(stim_plot,'Stimulus (V)')
+	linkaxes([stim_plot resp_plot],'x')
+	set(stim_plot,'XLim',[min(time)-1 max(time)+1])
+
+	suptitle(strrep(data(i).original_name,'_','-'))
+
+
+	subplot(2,9,8:9), hold on
+	[r2,s] = rsquare(data(i).PID);
+	imagescnan(r2)
+	caxis([0 1])
+	colorbar
+	axis image
+	axis off
+	title(strcat('mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
+
+	subplot(2,9,6:7), hold on
+	s=  s(1,:);
+	s(1) = 1;
+	plot(s,'k+')
+	xlabel('Trial #')
+	set(gca,'YLim',[0 max(s)+.5])
+
+	subplot(2,9,17:18), hold on
+	[r2,s] = rsquare(data(i).fA);
+	imagescnan(r2)
+	caxis([0 1])
+	colorbar
+	axis image
+	axis off
+	title(strcat('mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
+
+	subplot(2,9,15:16), hold on
+	s=  s(1,:);
+	s(1) = 1;
+	plot(s,'k+')
+	xlabel('Trial #')
+	set(gca,'YLim',[0 max(s)+.5])
+
+	PrettyFig;
+
+	if being_published
+		snapnow
+		delete(gcf)
+	end
+end
+
+
+return
 
 if ~exist('HowGeneralIsGainAdaptation.mat','file')
 	

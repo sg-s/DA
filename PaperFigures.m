@@ -279,7 +279,7 @@ legend(l,{'Cross correlation','Filter'})
 
 % now we make the plots for the pulse responses.
 clearvars -except being_published
-load('/local-data/DA-paper/carlotta/fig3/abc.mat')
+load('/local-data/DA-paper/carlotta-martelli/fig3/abc.mat')
 
 % combine all spikes
 all_spikes = [];

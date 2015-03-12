@@ -92,10 +92,19 @@ for i = 1:length(data)
 	end
 end
 
+%      ######## #### ##       ######## ######## ########   ######  
+%      ##        ##  ##          ##    ##       ##     ## ##    ## 
+%      ##        ##  ##          ##    ##       ##     ## ##       
+%      ######    ##  ##          ##    ######   ########   ######  
+%      ##        ##  ##          ##    ##       ##   ##         ## 
+%      ##        ##  ##          ##    ##       ##    ##  ##    ## 
+%      ##       #### ########    ##    ######## ##     ##  ######  
 
-return
+%% Analysis of filter shapes
+% In this section, we extract the "best" filter for each data set, for each trial. 
 
-if ~exist('HowGeneralIsGainAdaptation.mat','file')
+
+if ~exist('CM_Data_filters.mat','file')
 	
 	n = length(do_these);
 
@@ -193,7 +202,7 @@ if ~exist('HowGeneralIsGainAdaptation.mat','file')
 
 	% cache locally for use later
 	filtertime = filtertime*mean(diff(data(td).time));
-	save('HowGeneralIsGainAdaptation.mat','Filters','HillFit','LNFitQuality','high_slopes','low_slopes','p_values_low','p_values_high','filtertime','history_lengths','low_gof','high_gof','all_slopes','data_min','data_max','low_min','low_max','high_min','high_max')
+	save('HowGeneralIsGainAdaptation2.mat','Filters','HillFit','LNFitQuality','high_slopes','low_slopes','p_values_low','p_values_high','filtertime','history_lengths','low_gof','high_gof','all_slopes','data_min','data_max','low_min','low_max','high_min','high_max')
 else
 	load('HowGeneralIsGainAdaptation.mat')
 end

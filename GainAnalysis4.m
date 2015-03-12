@@ -19,7 +19,7 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [p,low_slopes,high_slopes,low_gof,high_gof,example_plot,extra_variables] = GainAnalysis4(x,history_lengths,example_history_length,plothere,p,frac)
+function [p,low_slopes,high_slopes,low_gof,high_gof,example_plot,extra_variables] = GainAnalysis4(x,history_lengths,example_history_length,plothere,p)
 
 
 % set defaults
@@ -72,6 +72,7 @@ fp = x.prediction(:);
 stimulus = x.stimulus(:);
 t = x.time(:);
 filter_length = x.filter_length;
+frac = x.frac;
 
 
 % figure out sampling rate
@@ -106,10 +107,6 @@ all_resp(isnan(all_resp)) = [];
 [fall, gof] = fit(all_pred,all_resp,'Poly1');
 all_slopes = fall.p1;
 
-
-if nargin < 6
-	frac=  0.33;
-end
 
 
 n = floor(sum(~isnan(f))*frac);

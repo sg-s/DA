@@ -512,7 +512,7 @@ legend(l,strcat('r^2=',oval(r2)))
 
 % gain analysis -- linear model
 ph = []; ph(3:4) = axes_handles(4:5);
-GainAnalysisWrapper(mean2(fA),fp,mean2(PID),tA,0.4290,ph);
+GainAnalysisWrapper(mean2(fA),fp,mean2(PID),tA,0.4290,ph,.33);
 
 % plot gain vs preceding stimulus
 [x,y] = MakeFig6G(mean2(PID),mean2(fA),fp,400);

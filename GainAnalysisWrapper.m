@@ -7,12 +7,15 @@
 % 
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
-function [ph] = GainAnalysisWrapper(response,prediction,stimulus,time,example_history_length,ph)
+function [ph] = GainAnalysisWrapper(response,prediction,stimulus,time,example_history_length,ph,frac)
 
 [~,~,~,ct]=FindCorrelationTime(stimulus);
 dt = mean(diff(time));
 ct = ct*dt;
 
+if nargin < 7
+	frac = .33;
+end
 
 clear x
 x.response = response; 
@@ -26,6 +29,7 @@ x.response(rm_this) = [];
 x.prediction(rm_this) = [];
 x.stimulus(rm_this) = [];
 x.time(rm_this) = [];
+x.frac = frac;
 
 
 

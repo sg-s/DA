@@ -516,7 +516,7 @@ GainAnalysisWrapper(mean2(fA),fp,mean2(PID),tA,0.4290,ph,.33);
 
 % plot gain vs preceding stimulus
 [x,y] = MakeFig6G(mean2(PID),mean2(fA),fp,400);
-%c = MakeFig6H(mean2(PID),mean2(fA),400);
+c = MakeFig6H(PID,fA,400);
 gain_time = mean(diff(tA))*(1:length(x));
 rm_this = (isnan(x) | isnan(y));
 x(rm_this) = [];

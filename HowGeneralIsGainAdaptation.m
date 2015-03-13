@@ -105,7 +105,63 @@ end
 
 
 if ~exist('CM_Data_filters.mat','file')
-	
+	allfilters = struct;
+	allfilters.K = [];
+	allfilters.filtertime = [];
+	for i = 1:length(data)
+		disp(data(i).original_name)
+		this_data_K = [];
+		parfor j = 1:width(data(i).PID)
+			disp([i j])
+			a = data(i).PID(1e4:end,j);
+			b = data(i).fA(1e4:end,j);
+			[thisK, ~, filtertime_full] = FindBestFilter(a,b,[],'regmax=10;','regmin=.1;','filter_length=1099;','offset=300;','use_cache=0;');
+			thisK = thisK(100:1000);
+			this_data_K(:,j) = thisK;
+		end
+		allfilters(i).K = this_data_K;
+	end
+	save('CM_Data_filters.mat','allfilters')
+else
+	load('CM_Data_filters.mat')
+end
+
+% if ~exist('CM_Data_filters_fixed_r.mat','file')
+% 	allfilters = struct;
+% 	allfilters.K = [];
+% 	allfilters.filtertime = [];
+% 	for i = 1:length(data)
+% 		disp(data(i).original_name)
+% 		this_data_K = [];
+% 		parfor j = 1:width(data(i).PID)
+% 			disp([i j])
+% 			a = data(i).PID(1e4:end,j);
+% 			b = data(i).fA(1e4:end,j);
+% 			[thisK, ~, filtertime_full] = FindBestFilter(a,b,[],'regmax=1;','regmin=1;','filter_length=1099;','offset=300;','use_cache=0;');
+% 			thisK = thisK(100:1000);
+% 			this_data_K(:,j) = thisK;
+% 		end
+% 		allfilters(i).K = this_data_K;
+% 	end
+% 	save('CM_Data_filters_fixed_r.mat','allfilters')
+% else
+% 	load('CM_Data_filters_fixed_r.mat')
+% end
+
+% figure, hold on
+% for j = 1:width(allfilters(i).K)
+% 	x = allfilters(i).K(:,j);
+% 	x = x/max(x);
+% 	plot(x,'k')
+% 	x = allfilters2(i).K(:,j);
+% 	x = x/max(x);
+% 	plot(x,'r')
+% end
+
+return
+
+
+if 1
 	n = length(do_these);
 
 	% initialise history lengths to run the analysis on.

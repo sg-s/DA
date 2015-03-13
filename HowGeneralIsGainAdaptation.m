@@ -149,6 +149,48 @@ if being_published
 end
 
 % account for trivial scaling of all the filters. 
+filtertime = -200:700;
+filtertime = filtertime*1e-3;
+for i = 1:length(allfilters)
+	time = data(i).dt*(1:length(data(i).PID));
+	allfilters(i).cf = NaN(2,width(allfilters(i).K));
+	for j = 1:width(allfilters(i).K)
+		x = convolve(time,data(i).PID(:,j),allfilters(i).K(:,j),filtertime);
+		y = data(i).fA(:,j);
+		temp = fit(x(~isnan(x) & ~isnan(y)),y(~isnan(x) & ~isnan(y)),'poly1');
+		allfilters(i).cf(:,j) = [temp.p1 temp.p2];
+	end
+end
+
+% make the linear predictions
+for i = 1:length(data)
+	data(i).LinearFit = NaN*data(i).fA;
+	for j = 1:width(data(i).fA)
+		fp = convolve(time,data(i).PID(:,j),allfilters(i).K(:,j),filtertime);
+		fp = fp+ allfilters(i).cf(2,j);
+		data(i).LinearFit(:,j) = fp*allfilters(i).cf(1,j);
+	end
+	data(i).LinearFit(data(i).LinearFit < 0)= 0;
+end
+
+% make a geffen-meister plot
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+for i = 1:length(data)
+	[qx,qy]=GeffenMeister(data(i).fA,data(i).LinearFit);
+	plot(qx,qy,'k+')
+end
+plot([0 6],[0 6],'k--')
+set(gca,'XLim',[0 6],'YLim',[0 6])
+xlabel('(P_{S}/P_{N})^{1/2}','interpreter','tex')
+ylabel('(P_{S}/P_{R})^{1/2}','interpreter','tex')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 return
 

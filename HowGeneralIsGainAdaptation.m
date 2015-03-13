@@ -176,7 +176,7 @@ end
 % make a geffen-meister plot
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 for i = 1:length(data)
-	[qx,qy]=GeffenMeister(data(i).fA,data(i).LinearFit);
+	[qx,qy]=GeffenMeister(data(i).fA(1e4:end,:),data(i).LinearFit(1e4:end,:));
 	plot(qx,qy,'k+')
 end
 plot([0 6],[0 6],'k--')

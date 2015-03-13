@@ -250,13 +250,13 @@ if being_published
 	delete(gcf)
 end
 
-%     ##       #### ##    ## ########    ###    ########     ##     ##  #######  ########  ######## ##       
-%     ##        ##  ###   ## ##         ## ##   ##     ##    ###   ### ##     ## ##     ## ##       ##       
-%     ##        ##  ####  ## ##        ##   ##  ##     ##    #### #### ##     ## ##     ## ##       ##       
-%     ##        ##  ## ## ## ######   ##     ## ########     ## ### ## ##     ## ##     ## ######   ##       
-%     ##        ##  ##  #### ##       ######### ##   ##      ##     ## ##     ## ##     ## ##       ##       
-%     ##        ##  ##   ### ##       ##     ## ##    ##     ##     ## ##     ## ##     ## ##       ##       
-%     ######## #### ##    ## ######## ##     ## ##     ##    ##     ##  #######  ########  ######## ######## 
+%      ##       #### ##    ## ########    ###    ########     ######## #### ######## 
+%      ##        ##  ###   ## ##         ## ##   ##     ##    ##        ##     ##    
+%      ##        ##  ####  ## ##        ##   ##  ##     ##    ##        ##     ##    
+%      ##        ##  ## ## ## ######   ##     ## ########     ######    ##     ##    
+%      ##        ##  ##  #### ##       ######### ##   ##      ##        ##     ##    
+%      ##        ##  ##   ### ##       ##     ## ##    ##     ##        ##     ##    
+%      ######## #### ##    ## ######## ##     ## ##     ##    ##       ####    ##    
 
 
 %% Fitting A Linear Model to this Data
@@ -313,6 +313,23 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%%
+% The following plot shows a neuron-wise analysis of the model fit a la Geffen and Meister 2009. Points above the diagonal correspond to model fits to neurons that are exceed the variability in the data. 
+
+% make a geffen-meister plot
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+[qx, qy] = GeffenMeister(fA(1e4:end,1:10),fp(1e4:end));
+plot(qx,qy,'k+')
+[qx, qy] = GeffenMeister(fA(1e4:end,11:end),fp(1e4:end));
+plot(qx,qy,'k+')
+
+plot([0 6],[0 6],'k--')
+set(gca,'XLim',[0 6],'YLim',[0 6])
+xlabel('(P_{S}/P_{N})^{1/2}','interpreter','tex')
+ylabel('(P_{S}/P_{R})^{1/2}','interpreter','tex')
+
+PrettyFig;
 
 
 %%

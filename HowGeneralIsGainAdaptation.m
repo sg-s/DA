@@ -105,58 +105,50 @@ end
 
 
 if ~exist('CM_Data_filters.mat','file')
-	allfilters = struct;
-	allfilters.K = [];
-	allfilters.filtertime = [];
-	for i = 1:length(data)
-		disp(data(i).original_name)
-		this_data_K = [];
-		parfor j = 1:width(data(i).PID)
-			disp([i j])
-			a = data(i).PID(1e4:end,j);
-			b = data(i).fA(1e4:end,j);
-			[thisK, ~, filtertime_full] = FindBestFilter(a,b,[],'regmax=10;','regmin=.1;','filter_length=1099;','offset=300;','use_cache=0;');
-			thisK = thisK(100:1000);
-			this_data_K(:,j) = thisK;
-		end
-		allfilters(i).K = this_data_K;
-	end
-	save('CM_Data_filters.mat','allfilters')
+	% allfilters = struct;
+	% allfilters.K = [];
+	% allfilters.filtertime = [];
+	% for i = 1:length(data)
+	% 	disp(data(i).original_name)
+	% 	this_data_K = [];
+	% 	parfor j = 1:width(data(i).PID)
+	% 		disp([i j])
+	% 		a = data(i).PID(1e4:end,j);
+	% 		b = data(i).fA(1e4:end,j);
+	% 		[thisK, ~, filtertime_full] = FindBestFilter(a,b,[],'regmax=10;','regmin=.1;','filter_length=1099;','offset=300;','use_cache=0;');
+	% 		thisK = thisK(100:1000);
+	% 		this_data_K(:,j) = thisK;
+	% 	end
+	% 	allfilters(i).K = this_data_K;
+	% end
+	% save('CM_Data_filters.mat','allfilters')
 else
 	load('CM_Data_filters.mat')
 end
 
-% if ~exist('CM_Data_filters_fixed_r.mat','file')
-% 	allfilters = struct;
-% 	allfilters.K = [];
-% 	allfilters.filtertime = [];
-% 	for i = 1:length(data)
-% 		disp(data(i).original_name)
-% 		this_data_K = [];
-% 		parfor j = 1:width(data(i).PID)
-% 			disp([i j])
-% 			a = data(i).PID(1e4:end,j);
-% 			b = data(i).fA(1e4:end,j);
-% 			[thisK, ~, filtertime_full] = FindBestFilter(a,b,[],'regmax=1;','regmin=1;','filter_length=1099;','offset=300;','use_cache=0;');
-% 			thisK = thisK(100:1000);
-% 			this_data_K(:,j) = thisK;
-% 		end
-% 		allfilters(i).K = this_data_K;
-% 	end
-% 	save('CM_Data_filters_fixed_r.mat','allfilters')
-% else
-% 	load('CM_Data_filters_fixed_r.mat')
-% end
 
-% figure, hold on
-% for j = 1:width(allfilters(i).K)
-% 	x = allfilters(i).K(:,j);
-% 	x = x/max(x);
-% 	plot(x,'k')
-% 	x = allfilters2(i).K(:,j);
-% 	x = x/max(x);
-% 	plot(x,'r')
-% end
+%%
+% The following figure shows every filter extracted for every trial, grouped by neuron and odor. 
+
+% show all the filters
+figure('outerposition',[0 0 1400 900],'PaperUnits','points','PaperSize',[1400 900]); hold on
+for i = 1:length(allfilters)
+	subplot(3,8,i), hold on
+	filtertime = -200:700;
+	filtertime = filtertime*1e-3;
+	TrialPlot('data',allfilters(i).K,'time',filtertime,'normalize',1,'type','raw','color','cycle');
+	set(gca,'XLim',[min(filtertime) max(filtertime)],'YLim',[-.4 1.1])
+	title(strcat(data(i).neuron_name,'-',data(i).odour_name))
+end
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+% account for trivial scaling of all the filters. 
 
 return
 

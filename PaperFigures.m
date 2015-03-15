@@ -516,6 +516,8 @@ xx(isnan(xx)) = 0;
 xx = xx/max(xx);
 plot(axes_handles(10),xx,yy,'r')
 linkaxes(axes_handles([3 10]),'y')
+set(axes_handles([8 9 10]),'YTick',[]);
+xlabel(axes_handles(10),'pdf')
 
 % show adaptation of dynamics
 

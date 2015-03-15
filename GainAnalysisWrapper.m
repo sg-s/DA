@@ -7,23 +7,30 @@
 % 
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
-function [ph] = GainAnalysisWrapper(response,prediction,stimulus,time,example_history_length,ph,frac)
+function [p_LN,l,h,low_gof,high_gof] = GainAnalysisWrapper(response,prediction,stimulus,time,example_history_length,ph,frac)
 
+if ~nargin
+	help GainAnalysisWrapper
+	return
+end
+
+% find the correlation time 
 [~,~,~,ct]=FindCorrelationTime(stimulus);
 dt = mean(diff(time));
 ct = ct*dt;
 
+% default fraction to segment data into. 
 if nargin < 7
 	frac = .33;
 end
 
+% prepare data. 
 clear x
 x.response = response; 
 x.prediction = prediction;
 x.stimulus = stimulus; 
 x.time = time;
 x.filter_length = 499; % what does this even do??
-
 rm_this = [find(isnan(response)) find(isnan(prediction)) ];
 x.response(rm_this) = [];
 x.prediction(rm_this) = [];
@@ -31,25 +38,25 @@ x.stimulus(rm_this) = [];
 x.time(rm_this) = [];
 x.frac = frac;
 
-
-
+% make history lengths based on the correlation time of the data
 history_lengths = (3*floor(1000*logspace(log10(ct/2),1,30)/3))/1e3;
 if nargin < 5 
 	example_history_length = history_lengths(10);
 end
 
-if nargin < 6
-	f2=figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% make figure if none exists, and is needed
+if nargin < 6 
+	figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 	ph(3) = subplot(1,2,1); hold on 
 	axis square
 	ph(4) = subplot(1,2,2); hold on
 end
 
-
+% check cache to see if we have already computed this
 hash = DataHash(x);
 cached_data = cache(hash);
 if isempty(cached_data)
-	[p_LN,l,h] = GainAnalysis4(x,history_lengths,example_history_length,ph);
+	[p_LN,l,h,low_gof,high_gof] = GainAnalysis4(x,history_lengths,example_history_length,ph);
 	cache(hash,p_LN);
 	% also cache the example history length
 	s=abs(l-h);
@@ -59,15 +66,18 @@ if isempty(cached_data)
 	cache(DataHash(p_LN),ehl);
 
 else
+	% cached data exists. let's use that 
 	p_LN = cached_data;
 	if nargin < 5
 		ehl = cache(DataHash(p_LN));
 	else
 		ehl = example_history_length;
 	end
-	GainAnalysis4(x,history_lengths,ehl,ph,p_LN);
+	[p_LN,l,h,low_gof,high_gof] = GainAnalysis4(x,history_lengths,ehl,ph,p_LN);
 end
 
-xlabel(ph(3),'Prediction (Hz)')
-ylabel(ph(3),'Data (Hz)')
-set(ph(4),'XScale','log')
+if ~isempty(ph)
+	xlabel(ph(3),'Prediction (Hz)')
+	ylabel(ph(3),'Data (Hz)')
+	set(ph(4),'XScale','log')
+end

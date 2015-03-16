@@ -605,37 +605,6 @@ for i = do_these
 	GainAnalysisWrapper2('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph);
 end
 
-% clean up the plot
-% remove all the scatter points
-h=get(ph(3),'Children');
-rm_this = [];
-for i = 1:length(h)
-	if strcmp(get(h(i),'Marker'),'.')
-		rm_this = [rm_this i];
-	end
-end
-delete(h(rm_this))
-
-% remove all the dots indicating low p
-h=get(ph(4),'Children');
-rm_this = [];
-for i = 1:length(h)
-	if strcmp(get(h(i),'Marker'),'.')
-		rm_this = [rm_this i];
-	end
-end
-delete(h(rm_this))
-
-% remove the line indicating the example history plot
-h=get(ph(4),'Children');
-rm_this = [];
-for i = 1:length(h)
-	if  strcmp(get(h(i),'LineStyle'),'-.')
-		rm_this = [rm_this i];
-	end
-end
-delete(h(rm_this))
-
 
 % find the right place to clip the x axis
 c = [];
@@ -688,38 +657,6 @@ for i = do_these
 	GainAnalysisWrapper2('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph);
 end
 
-% clean up the plot
-% remove all the scatter points
-h=get(ph(3),'Children');
-rm_this = [];
-for i = 1:length(h)
-	if strcmp(get(h(i),'Marker'),'.')
-		rm_this = [rm_this i];
-	end
-end
-delete(h(rm_this))
-
-% remove all the dots indicating low p
-h=get(ph(4),'Children');
-rm_this = [];
-for i = 1:length(h)
-	if strcmp(get(h(i),'Marker'),'.')
-		rm_this = [rm_this i];
-	end
-end
-delete(h(rm_this))
-
-% remove the line indicating the example history plot
-h=get(ph(4),'Children');
-rm_this = [];
-for i = 1:length(h)
-	if  strcmp(get(h(i),'LineStyle'),'-.')
-		rm_this = [rm_this i];
-	end
-end
-delete(h(rm_this))
-
-
 % find the right place to clip the x axis
 c = [];
 for i = do_these
@@ -731,15 +668,94 @@ set(ph(4),'XLim',[history_lengths(floor(mean(c))) 11],'YLim',[.5 1.5])
 h=get(ph(3),'Children');
 legend(h(1:2),{'High Stim.','Low Stim.'},'Location','northwest')
 
+%     ########  #### ######## ######## ######## ########  ######## ##    ## ######## 
+%     ##     ##  ##  ##       ##       ##       ##     ## ##       ###   ##    ##    
+%     ##     ##  ##  ##       ##       ##       ##     ## ##       ####  ##    ##    
+%     ##     ##  ##  ######   ######   ######   ########  ######   ## ## ##    ##    
+%     ##     ##  ##  ##       ##       ##       ##   ##   ##       ##  ####    ##    
+%     ##     ##  ##  ##       ##       ##       ##    ##  ##       ##   ###    ##    
+%     ########  #### ##       ##       ######## ##     ## ######## ##    ##    ##    
+    
+%      #######  ########   #######  ##     ## ########   ######  
+%     ##     ## ##     ## ##     ## ##     ## ##     ## ##    ## 
+%     ##     ## ##     ## ##     ## ##     ## ##     ## ##       
+%     ##     ## ##     ## ##     ## ##     ## ########   ######  
+%     ##     ## ##     ## ##     ## ##     ## ##   ##         ## 
+%     ##     ## ##     ## ##     ## ##     ## ##    ##  ##    ## 
+%      #######  ########   #######   #######  ##     ##  ######  
+
+
+do_these = [7 8 10 14 17 18];
+odours = {'1but','1o3ol','dsucc','2ac','2but','5ol'};
+l = [];
+for i = do_these
+	K = allfilters(i).K;
+	for j = 1:width(K)
+		K(:,j) = K(:,j)/max(K(:,j));
+	end
+	l=[l plot(axes_handles(7),filtertime,mean2(K))];
+end
+legend(l,odours)
+
+clear ph
+ph(3:4) = axes_handles(8:9);
+for i = do_these
+	[~,ehl]=max(gain_data(i).low_slopes - gain_data(i).high_slopes);
+	time = data(i).dt*(1:length(data(i).PID(1e4:end,1)));
+	response = mean2(data(i).fA(1e4:end,:));
+	stimulus = mean2(data(i).PID(1e4:end,:));
+	prediction = mean2(data(i).LinearFit(1e4:end,:));
+	GainAnalysisWrapper2('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph);
+end
+
+
+% add a minimal legend
+h=get(ph(3),'Children');
+legend(h(1:2),{'High Stim.','Low Stim.'},'Location','northwest')
+
+% find the right place to clip the x axis
+c = [];
+for i = do_these
+	c = [c find(gain_data(i).low_gof > .85 & gain_data(i).high_gof > .85,1,'first')];
+end
+set(ph(4),'XLim',[history_lengths(floor(mean(c))) 11],'YLim',[.5 1.5])
+
+
 % cosmetics
 xlabel(axes_handles(1),'Lag (s)')
 xlabel(axes_handles(4),'Lag (s)')
 title(axes_handles(1),'Filters')
 title(axes_handles(4),'Filters')
+title(axes_handles(7),'Filters')
 ylabel(axes_handles(3),'Relative Gain')
 ylabel(axes_handles(6),'Relative Gain')
+ylabel(axes_handles(9),'Relative Gain')
 title(axes_handles(2),strcat('T_H=',oval(history_lengths(10))))
 title(axes_handles(5),strcat('T_H=',oval(history_lengths(10))))
+title(axes_handles(8),strcat('T_H=',oval(history_lengths(10))))
+
+for j = 1:length(axes_handles)
+	% remove all the scatter points
+	h=get(axes_handles(j),'Children');
+	rm_this = [];
+	for i = 1:length(h)
+		if strcmp(get(h(i),'Marker'),'.')
+			rm_this = [rm_this i];
+		end
+	end
+	delete(h(rm_this))
+
+	% remove the line indicating the example history plot
+	h=get(axes_handles(j),'Children');
+	rm_this = [];
+	for i = 1:length(h)
+		if  strcmp(get(h(i),'LineStyle'),'-.')
+			rm_this = [rm_this i];
+		end
+	end
+	delete(h(rm_this))
+end
+
 
 PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
 

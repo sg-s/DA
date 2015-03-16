@@ -7,7 +7,7 @@
 % 
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
-function [p_LN,l,h,low_gof,high_gof] = GainAnalysisWrapper(response,prediction,stimulus,time,example_history_length,ph,frac)
+function [p_LN,l,h,low_gof,high_gof,history_lengths] = GainAnalysisWrapper(response,prediction,stimulus,time,example_history_length,ph,frac)
 
 if ~nargin
 	help GainAnalysisWrapper
@@ -39,10 +39,12 @@ x.time(rm_this) = [];
 x.frac = frac;
 
 % make history lengths based on the correlation time of the data
-history_lengths = (3*floor(1000*logspace(log10(ct/2),1,30)/3))/1e3;
-if nargin < 5 
+history_lengths = (3*floor(1000*logspace(log10(.2/2),1,30)/3))/1e3;
+if nargin < 5 || isempty(example_history_length)
 	example_history_length = history_lengths(10);
 end
+
+x.history_lengths = history_lengths;
 
 % make figure if none exists, and is needed
 if nargin < 6 

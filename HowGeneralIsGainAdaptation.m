@@ -129,25 +129,8 @@ end
 
 
 %%
-% The following figure shows every filter extracted for every trial, grouped by neuron and odor. 
+% The following figure shows every filter extracted for every trial, grouped by neuron and odor. We also show the mean $r^2$ of the linear fit in each data set. 
 
-% show all the filters
-figure('outerposition',[0 0 1400 900],'PaperUnits','points','PaperSize',[1400 900]); hold on
-for i = 1:length(allfilters)
-	subplot(3,8,i), hold on
-	filtertime = -200:700;
-	filtertime = filtertime*1e-3;
-	TrialPlot('data',allfilters(i).K,'time',filtertime,'normalize',1,'type','raw','color','cycle');
-	set(gca,'XLim',[min(filtertime) max(filtertime)],'YLim',[-.4 1.1])
-	title(strcat(data(i).neuron_name,'-',data(i).odour_name))
-end
-
-PrettyFig;
-
-if being_published
-	snapnow
-	delete(gcf)
-end
 
 % account for trivial scaling of all the filters. 
 filtertime = -200:700;
@@ -170,20 +153,26 @@ for i = 1:length(data)
 		fp = convolve(time,data(i).PID(:,j),allfilters(i).K(:,j),filtertime);
 		fp = fp+ allfilters(i).cf(2,j);
 		data(i).LinearFit(:,j) = fp*allfilters(i).cf(1,j);
+		allfilters(i).r2(j) = rsquare(data(i).LinearFit(:,j),data(i).fA(:,j));
 	end
 	data(i).LinearFit(data(i).LinearFit < 0)= 0;
 end
 
-% make a geffen-meister plot
-figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-for i = 1:length(data)
-	[qx,qy]=GeffenMeister(data(i).fA(1e4:end,:),data(i).LinearFit(1e4:end,:));
-	plot(qx,qy,'k+')
+% show all the filters
+figure('outerposition',[0 0 1400 900],'PaperUnits','points','PaperSize',[1400 900]); hold on
+for i = 1:length(allfilters)
+	subplot(3,8,i), hold on
+	filtertime = -200:700;
+	filtertime = filtertime*1e-3;
+	TrialPlot('data',allfilters(i).K,'time',filtertime,'normalize',1,'type','raw','color','cycle');
+	set(gca,'XLim',[min(filtertime) max(filtertime)],'YLim',[-.4 1.1])
+	title(strcat(data(i).neuron_name,'-',data(i).odour_name))
+	%ylabel(strcat('r^2=',oval(mean(allfilters(i).r2))))
+	if i == 17
+		xlabel('Filter lag (s)')
+		ylabel('Filter (norm)')
+	end
 end
-plot([0 6],[0 6],'k--')
-set(gca,'XLim',[0 6],'YLim',[0 6])
-xlabel('(P_{S}/P_{N})^{1/2}','interpreter','tex')
-ylabel('(P_{S}/P_{R})^{1/2}','interpreter','tex')
 
 PrettyFig;
 
@@ -192,10 +181,152 @@ if being_published
 	delete(gcf)
 end
 
+%% 
+% How good are these fits? In the following figure, we estimate fit quality in two ways: first, by comparing the signal/residual power to the signal/noise power, using the Geffen-Meister method (left), and then by comparing that to a simple $r^2$ metric. 
+
+% make a geffen-meister plot
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+qx = []; qy = [];
+for i = 1:length(data)
+	[qx(i),qy(i)]=GeffenMeister(data(i).fA(1e4:end,:),data(i).LinearFit(1e4:end,:));
+end
+plot(qx,qy,'k+')
+plot([0 6],[0 6],'k--')
+set(gca,'XLim',[0 6],'YLim',[0 6])
+xlabel('(P_{S}/P_{N})^{1/2}','interpreter','tex')
+ylabel('(P_{S}/P_{R})^{1/2}','interpreter','tex')
+
+subplot(1,2,2), hold on
+r2 = [];
+for i = 1:length(allfilters)
+	r2(i) = mean(allfilters(i).r2);
+end
+plot(qy./qx,r2,'k+')
+ylabel('r^2')
+xlabel('(P_{S}/P_{N})^{1/2}/(P_{S}/P_{R})^{1/2}')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%              ######      ###    #### ##    ## 
+%             ##    ##    ## ##    ##  ###   ## 
+%             ##         ##   ##   ##  ####  ## 
+%             ##   #### ##     ##  ##  ## ## ## 
+%             ##    ##  #########  ##  ##  #### 
+%             ##    ##  ##     ##  ##  ##   ### 
+%              ######   ##     ## #### ##    ## 
+
+%                ###    ##    ##    ###    ##     ##    ##  ######  ####  ######  
+%               ## ##   ###   ##   ## ##   ##      ##  ##  ##    ##  ##  ##    ## 
+%              ##   ##  ####  ##  ##   ##  ##       ####   ##        ##  ##       
+%             ##     ## ## ## ## ##     ## ##        ##     ######   ##   ######  
+%             ######### ##  #### ######### ##        ##          ##  ##        ## 
+%             ##     ## ##   ### ##     ## ##        ##    ##    ##  ##  ##    ## 
+%             ##     ## ##    ## ##     ## ########  ##     ######  ####  ######  
+
+%% Gain Analysis
+% In this section we use the linear filter convolved with the stimulus to estimate the gain of the neuron and perform the gain analysis as described elsewhere. 
+
+if exist('CMData_Gain.mat')
+	gain_data = struct;
+	gain_data.history_lengths = [];
+	gain_data.low_slopes = [];
+	gain_data.high_slopes = [];
+	gain_data.low_gof = [];
+	gain_data.high_gof = [];
+	gain_data.p = [];
+	history_lengths = (3*floor(1000*logspace(-1,1,30)/3))/1e3;
+	for i = 1:length(data)
+		time = data(i).dt*(1:length(data(i).PID(1e4:end,1)));
+		response = mean2(data(i).fA(1e4:end,:));
+		stimulus = mean2(data(i).PID(1e4:end,:));
+		prediction = mean2(data(i).LinearFit(1e4:end,:));
+		[p,l,h,low_gof,high_gof,history_lengths] = GainAnalysisWrapper2('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths);
+		gain_data(i).history_lengths = history_lengths;
+		gain_data(i).p = p;
+		gain_data(i).low_slopes = l;
+		gain_data(i).high_slopes = h;
+		gain_data(i).low_gof = low_gof;
+		gain_data(i).high_gof = high_gof;
+
+	end
+	save('CMData_Gain.mat','gain_data')
+else
+	load(('CMData_Gain.mat'))
+end
+
+
+% figure, hold on
+% for i = 1:length(gain_data)
+% 	rm_this = gain_data(i).low_gof < .85 | gain_data(i).high_gof < .85;
+% 	x = gain_data(i).history_lengths;
+% 	l = gain_data(i).low_slopes;
+% 	h = gain_data(i).high_slopes;
+% 	x(rm_this) = []; l(rm_this) = []; h(rm_this) = [];
+% 	plot(x,l,'g')
+% 	plot(x,h,'r')
+% end
+% set(gca,'XScale','log')
+
+
+%% Experimental Replicates
+% In this section, we see how gain analysis works over experimental replicates. We analyse data from the following data files:
+
+do_these = [2     7     9    13    15    16];
+for i = do_these
+	disp(data(i).original_name)
+end
+
+figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,3,1), hold on
+for i = do_these
+	K = allfilters(i).K;
+	for j = 1:width(K)
+		K(:,j) = K(:,j)/max(K(:,j));
+	end
+	plot(filtertime,mean2(K))
+end
+clear ph
+ph(3)=subplot(1,3,2); hold on
+ph(4)=subplot(1,3,3); hold on
+for i = do_these
+	[~,ehl]=max(gain_data(i).low_slopes - gain_data(i).high_slopes);
+	GainAnalysisWrapper(mean2(data(i).fA(1e4:end,:)),mean2(data(i).LinearFit(1e4:end,:)),mean2(data(i).PID(1e4:end,:)),time,gain_data(i).history_lengths(ehl),ph,.33);
+end
+
+
+subplot(1,3,3), hold on
+for i = do_these
+	rm_this = gain_data(i).low_gof < .85 | gain_data(i).high_gof < .85;
+	rm_this = gain_data(i).history_lengths < .1;
+	x = gain_data(i).history_lengths;
+	l = gain_data(i).low_slopes;
+	h = gain_data(i).high_slopes;
+	x(rm_this) = []; l(rm_this) = []; h(rm_this) = [];
+	plot(x,l,'g')
+	plot(x,h,'r')
+end
+set(gca,'XScale','log')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
 % save
 save(combined_data_file,'data','-append')
 
-return
+re
 
 
 if 1

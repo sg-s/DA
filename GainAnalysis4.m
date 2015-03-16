@@ -52,7 +52,7 @@ case 6
 end
 
 
-if isempty(plothere) && ~isempty(plotid)
+if isempty(plothere) 
 	if debug
 		figure; hold on; 
 		plothere(1) = subplot(2,1,1); hold on;
@@ -171,64 +171,66 @@ for i = 1:length(history_lengths)
 	
 
 	if history_lengths(i) == example_history_length
+		dothis = 0;
+		if ~isempty(plothere)
+			temp = plothere(1);
+			temp = whos('temp');
+			temp = temp.class;
+			dothis=0;
+			if strcmp(temp,'matlab.graphics.axis.Axes')
+				dothis=1;
+			elseif strcmp(temp,'double')
+				dothis = plothere(1);
+			end
+		
+			if debug || dothis
+				% % plot the stimulus and the smoothed stimulus
+				plot(plothere(1),t,stimulus,'k','LineWidth',2), hold on
+				plot(plothere(1),t,shat(i,:),'Color',[0.9 0.9 0.9],'LineWidth',4)
 
-		temp = plothere(1);
-		temp = whos('temp');
-		temp = temp.class;
-		dothis=0;
-		if strcmp(temp,'matlab.graphics.axis.Axes')
-			dothis=1;
-		elseif strcmp(temp,'double')
-			dothis = plothere(1);
-		end
-	
-		if debug || dothis
-			% % plot the stimulus and the smoothed stimulus
-			plot(plothere(1),t,stimulus,'k','LineWidth',2), hold on
-			plot(plothere(1),t,shat(i,:),'Color',[0.9 0.9 0.9],'LineWidth',4)
+				% plot the response and the prediction 
+				plot(plothere(2),t,f,'k','LineWidth',1), hold on
+				plot(plothere(2),t,fp,'r','LineWidth',1), hold on
 
-			% plot the response and the prediction 
-			plot(plothere(2),t,f,'k','LineWidth',1), hold on
-			plot(plothere(2),t,fp,'r','LineWidth',1), hold on
+				plot(plothere(1),t_high,s_high,'r.')
+				plot(plothere(1),t_low,s_low,'g.')
 
-			plot(plothere(1),t_high,s_high,'r.')
-			plot(plothere(1),t_low,s_low,'g.')
+				% highlight the sections we use for the analysis
+				plot(plothere(2),t_high,f_high,'k.','LineWidth',2), hold on
+				plot(plothere(2),t_high,fp_high,'r.','LineWidth',2), hold on
+				plot(plothere(2),t_low,f_low,'k.','LineWidth',2), hold on
+				plot(plothere(2),t_low,fp_low,'r.','LineWidth',2), hold on
 
-			% highlight the sections we use for the analysis
-			plot(plothere(2),t_high,f_high,'k.','LineWidth',2), hold on
-			plot(plothere(2),t_high,fp_high,'r.','LineWidth',2), hold on
-			plot(plothere(2),t_low,f_low,'k.','LineWidth',2), hold on
-			plot(plothere(2),t_low,fp_low,'r.','LineWidth',2), hold on
+				% save these for later
+				example_plot.t_low = t_low;
+				example_plot.f_low = f_low;
+				example_plot.fp_low = fp_low;
+				example_plot.t_high= t_high;
+				example_plot.f_high= f_high;
+				example_plot.fp_high = fp_high;
 
-			% save these for later
-			example_plot.t_low = t_low;
-			example_plot.f_low = f_low;
-			example_plot.fp_low = fp_low;
-			example_plot.t_high= t_high;
-			example_plot.f_high= f_high;
-			example_plot.fp_high = fp_high;
+				xlabel(plothere(2),'Time (s)','FontSize',20)
+				xlabel(plothere(1),'Time (s)','FontSize',20)
 
-			xlabel(plothere(2),'Time (s)','FontSize',20)
-			xlabel(plothere(1),'Time (s)','FontSize',20)
-
-			ylabel(plothere(2),'Firing rate (Hz)')
-			ylabel(plothere(1),'Stimulus (a.u.)')
-			
-			% indicate regions of lowest and highest 10%
-			tp = floor(frac*length(stimulus));
+				ylabel(plothere(2),'Firing rate (Hz)')
+				ylabel(plothere(1),'Stimulus (a.u.)')
+				
+				% indicate regions of lowest and highest 10%
+				tp = floor(frac*length(stimulus));
 
 
-		end
+			end
 
-		temp = plothere(3);
-		temp = whos('temp');
-		temp = temp.class;
+			temp = plothere(3);
+			temp = whos('temp');
+			temp = temp.class;
 
-		dothis=0;
-		if strcmp(temp,'matlab.graphics.axis.Axes')
-			dothis=1;
-		elseif strcmp(temp,'double')
-			dothis = plothere(3);
+			dothis=0;
+			if strcmp(temp,'matlab.graphics.axis.Axes')
+				dothis=1;
+			elseif strcmp(temp,'double')
+				dothis = plothere(3);
+			end
 		end
 	
 	

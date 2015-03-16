@@ -585,7 +585,7 @@ for i = 1:9
 end
 
 % first row: experimental replicates
-do_these = [2     7     9    13    15    16];
+do_these = [2 7 9 13 15 16];
 
 for i = do_these
 	K = allfilters(i).K;
@@ -643,6 +643,10 @@ for i = do_these
 	c = [c find(gain_data(i).low_gof > .85 & gain_data(i).high_gof > .85,1,'first')];
 end
 set(ph(4),'XLim',[history_lengths(floor(mean(c))) 11],'YLim',[.5 1.5])
+
+% add a minimal legend
+h=get(ph(3),'Children');
+legend(h(1:2),{'High Stim.','Low Stim.'},'Location','northwest')
 
 
 %    ########  #### ######## ######## ######## ########  ######## ##    ## ######## 
@@ -723,6 +727,9 @@ for i = do_these
 end
 set(ph(4),'XLim',[history_lengths(floor(mean(c))) 11],'YLim',[.5 1.5])
 
+% add a minimal legend
+h=get(ph(3),'Children');
+legend(h(1:2),{'High Stim.','Low Stim.'},'Location','northwest')
 
 % cosmetics
 xlabel(axes_handles(1),'Lag (s)')

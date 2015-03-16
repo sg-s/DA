@@ -556,11 +556,189 @@ if being_published
 	delete(gcf)
 end
 
+%      ######## ####  ######   ##     ## ########  ########    ##        
+%      ##        ##  ##    ##  ##     ## ##     ## ##          ##    ##  
+%      ##        ##  ##        ##     ## ##     ## ##          ##    ##  
+%      ######    ##  ##   #### ##     ## ########  ######      ##    ##  
+%      ##        ##  ##    ##  ##     ## ##   ##   ##          ######### 
+%      ##        ##  ##    ##  ##     ## ##    ##  ##                ##  
+%      ##       ####  ######    #######  ##     ## ########          ##  
 
 %% Figure 4: Gain Control is widely observed
 
 clearvars -except being_published
+load('CMData_Gain.mat')
+load('CM_Data_filters.mat')
+combined_data_file = ('/local-data/DA-paper/carlotta-martelli/flickering-stim/data.mat');
+load(combined_data_file)
+filtertime = -200:700;
+filtertime = filtertime*1e-3;
+history_lengths = (3*floor(1000*logspace(-1,1,30)/3))/1e3;
 
+
+s = 860;
+figure('outerposition',[0 0 s s],'PaperUnits','points','PaperSize',[s s]); hold on, clear s
+axes_handles = [];
+for i = 1:9
+	axes_handles(i) = subplot(3,3,i); hold on
+end
+
+% first row: experimental replicates
+do_these = [2     7     9    13    15    16];
+
+for i = do_these
+	K = allfilters(i).K;
+	for j = 1:width(K)
+		K(:,j) = K(:,j)/max(K(:,j));
+	end
+	plot(axes_handles(1),filtertime,mean2(K))
+end
+clear ph
+ph(3:4) = axes_handles(2:3);
+for i = do_these
+	[~,ehl]=max(gain_data(i).low_slopes - gain_data(i).high_slopes);
+	time = data(i).dt*(1:length(data(i).PID(1e4:end,1)));
+	response = mean2(data(i).fA(1e4:end,:));
+	stimulus = mean2(data(i).PID(1e4:end,:));
+	prediction = mean2(data(i).LinearFit(1e4:end,:));
+	GainAnalysisWrapper2('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph);
+end
+
+% clean up the plot
+% remove all the scatter points
+h=get(ph(3),'Children');
+rm_this = [];
+for i = 1:length(h)
+	if strcmp(get(h(i),'Marker'),'.')
+		rm_this = [rm_this i];
+	end
+end
+delete(h(rm_this))
+
+% remove all the dots indicating low p
+h=get(ph(4),'Children');
+rm_this = [];
+for i = 1:length(h)
+	if strcmp(get(h(i),'Marker'),'.')
+		rm_this = [rm_this i];
+	end
+end
+delete(h(rm_this))
+
+% remove the line indicating the example history plot
+h=get(ph(4),'Children');
+rm_this = [];
+for i = 1:length(h)
+	if  strcmp(get(h(i),'LineStyle'),'-.')
+		rm_this = [rm_this i];
+	end
+end
+delete(h(rm_this))
+
+
+% find the right place to clip the x axis
+c = [];
+for i = do_these
+	c = [c find(gain_data(i).low_gof > .85 & gain_data(i).high_gof > .85,1,'first')];
+end
+set(ph(4),'XLim',[history_lengths(floor(mean(c))) 11],'YLim',[.5 1.5])
+
+
+%    ########  #### ######## ######## ######## ########  ######## ##    ## ######## 
+%    ##     ##  ##  ##       ##       ##       ##     ## ##       ###   ##    ##    
+%    ##     ##  ##  ##       ##       ##       ##     ## ##       ####  ##    ##    
+%    ##     ##  ##  ######   ######   ######   ########  ######   ## ## ##    ##    
+%    ##     ##  ##  ##       ##       ##       ##   ##   ##       ##  ####    ##    
+%    ##     ##  ##  ##       ##       ##       ##    ##  ##       ##   ###    ##    
+%    ########  #### ##       ##       ######## ##     ## ######## ##    ##    ##    
+   
+%    ##    ## ######## ##     ## ########   #######  ##    ##  ######  
+%    ###   ## ##       ##     ## ##     ## ##     ## ###   ## ##    ## 
+%    ####  ## ##       ##     ## ##     ## ##     ## ####  ## ##       
+%    ## ## ## ######   ##     ## ########  ##     ## ## ## ##  ######  
+%    ##  #### ##       ##     ## ##   ##   ##     ## ##  ####       ## 
+%    ##   ### ##       ##     ## ##    ##  ##     ## ##   ### ##    ## 
+%    ##    ## ########  #######  ##     ##  #######  ##    ##  ######  
+
+
+do_these = [11 17];
+l = [];
+for i = do_these
+	K = allfilters(i).K;
+	for j = 1:width(K)
+		K(:,j) = K(:,j)/max(K(:,j));
+	end
+	l=[l plot(axes_handles(4),filtertime,mean2(K))];
+end
+legend(l,{'pb1A','ab3A'})
+
+clear ph
+ph(3:4) = axes_handles(5:6);
+for i = do_these
+	[~,ehl]=max(gain_data(i).low_slopes - gain_data(i).high_slopes);
+	time = data(i).dt*(1:length(data(i).PID(1e4:end,1)));
+	response = mean2(data(i).fA(1e4:end,:));
+	stimulus = mean2(data(i).PID(1e4:end,:));
+	prediction = mean2(data(i).LinearFit(1e4:end,:));
+	GainAnalysisWrapper2('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph);
+end
+
+% clean up the plot
+% remove all the scatter points
+h=get(ph(3),'Children');
+rm_this = [];
+for i = 1:length(h)
+	if strcmp(get(h(i),'Marker'),'.')
+		rm_this = [rm_this i];
+	end
+end
+delete(h(rm_this))
+
+% remove all the dots indicating low p
+h=get(ph(4),'Children');
+rm_this = [];
+for i = 1:length(h)
+	if strcmp(get(h(i),'Marker'),'.')
+		rm_this = [rm_this i];
+	end
+end
+delete(h(rm_this))
+
+% remove the line indicating the example history plot
+h=get(ph(4),'Children');
+rm_this = [];
+for i = 1:length(h)
+	if  strcmp(get(h(i),'LineStyle'),'-.')
+		rm_this = [rm_this i];
+	end
+end
+delete(h(rm_this))
+
+
+% find the right place to clip the x axis
+c = [];
+for i = do_these
+	c = [c find(gain_data(i).low_gof > .85 & gain_data(i).high_gof > .85,1,'first')];
+end
+set(ph(4),'XLim',[history_lengths(floor(mean(c))) 11],'YLim',[.5 1.5])
+
+
+% cosmetics
+xlabel(axes_handles(1),'Lag (s)')
+title(axes_handles(1),'Filters')
+title(axes_handles(4),'Filters')
+ylabel(axes_handles(3),'Gain')
+
+PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
+
+ylabel(axes_handles(1),'Exp. Replicates','FontSize',20)
+ylabel(axes_handles(4),'Diff. ORNs','FontSize',20)
+ylabel(axes_handles(7),'Diff. odors','FontSize',20)
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 
 

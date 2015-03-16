@@ -34,62 +34,64 @@ load(combined_data_file)
 %% Data Overview
 % In this section, we quickly look over the entire data set. In each of the following figures, we plot the mean of the stimulus and the response, and also plot the r^2 for each trial in a pairwise fashion (showing data reproducibility). We also plot the slope of the data, trial wise, so that we can see trends from trial-to-trial. 
 
-for i = 1:length(data)
-	figure('outerposition',[0 0 1400 1000],'PaperUnits','points','PaperSize',[1400 1000]); hold on
-	resp_plot = subplot(2,9,10:14); hold on
-	stim_plot = subplot(2,9,1:5); hold on
+if being_published
+	for i = 1:length(data)
+		figure('outerposition',[0 0 1400 1000],'PaperUnits','points','PaperSize',[1400 1000]); hold on
+		resp_plot = subplot(2,9,10:14); hold on
+		stim_plot = subplot(2,9,1:5); hold on
 
-	time = (1:length(data(i).PID))*data(i).dt;
+		time = (1:length(data(i).PID))*data(i).dt;
 
-	% plot stimulus and response means
-	plot(stim_plot,time,mean2(data(i).PID),'k')
-	plot(resp_plot,time,mean2(data(i).fA),'k')
-	xlabel(resp_plot,'Time (s)')
-	ylabel(resp_plot,'Firing Rate (Hz)')
-	ylabel(stim_plot,'Stimulus (V)')
-	linkaxes([stim_plot resp_plot],'x')
-	set(stim_plot,'XLim',[min(time)-1 max(time)+1])
+		% plot stimulus and response means
+		plot(stim_plot,time,mean2(data(i).PID),'k')
+		plot(resp_plot,time,mean2(data(i).fA),'k')
+		xlabel(resp_plot,'Time (s)')
+		ylabel(resp_plot,'Firing Rate (Hz)')
+		ylabel(stim_plot,'Stimulus (V)')
+		linkaxes([stim_plot resp_plot],'x')
+		set(stim_plot,'XLim',[min(time)-1 max(time)+1])
 
-	suptitle(strrep(data(i).original_name,'_','-'))
+		suptitle(strrep(data(i).original_name,'_','-'))
 
 
-	subplot(2,9,8:9), hold on
-	[r2,s] = rsquare(data(i).PID);
-	imagescnan(r2)
-	caxis([0 1])
-	colorbar
-	axis image
-	axis off
-	title(strcat('mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
+		subplot(2,9,8:9), hold on
+		[r2,s] = rsquare(data(i).PID);
+		imagescnan(r2)
+		caxis([0 1])
+		colorbar
+		axis image
+		axis off
+		title(strcat('mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
 
-	subplot(2,9,6:7), hold on
-	s=  s(1,:);
-	s(1) = 1;
-	plot(s,'k+')
-	xlabel('Trial #')
-	set(gca,'YLim',[0 max(s)+.5])
+		subplot(2,9,6:7), hold on
+		s=  s(1,:);
+		s(1) = 1;
+		plot(s,'k+')
+		xlabel('Trial #')
+		set(gca,'YLim',[0 max(s)+.5])
 
-	subplot(2,9,17:18), hold on
-	[r2,s] = rsquare(data(i).fA);
-	imagescnan(r2)
-	caxis([0 1])
-	colorbar
-	axis image
-	axis off
-	title(strcat('mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
+		subplot(2,9,17:18), hold on
+		[r2,s] = rsquare(data(i).fA);
+		imagescnan(r2)
+		caxis([0 1])
+		colorbar
+		axis image
+		axis off
+		title(strcat('mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
 
-	subplot(2,9,15:16), hold on
-	s=  s(1,:);
-	s(1) = 1;
-	plot(s,'k+')
-	xlabel('Trial #')
-	set(gca,'YLim',[0 max(s)+.5])
+		subplot(2,9,15:16), hold on
+		s=  s(1,:);
+		s(1) = 1;
+		plot(s,'k+')
+		xlabel('Trial #')
+		set(gca,'YLim',[0 max(s)+.5])
 
-	PrettyFig;
+		PrettyFig;
 
-	if being_published
-		snapnow
-		delete(gcf)
+		if being_published
+			snapnow
+			delete(gcf)
+		end
 	end
 end
 
@@ -114,8 +116,8 @@ if ~exist('CM_Data_filters.mat','file')
 		this_data_K = [];
 		parfor j = 1:width(data(i).PID)
 			disp([i j])
-			a = data(i).PID(1e4:end,j);
-			b = data(i).fA(1e4:end,j);
+			a = data(i).PID(1e4:length(data(i).PID),j);
+			b = data(i).fA(1e4:length(data(i).PID),j);
 			[thisK, ~, filtertime_full] = FindBestFilter(a,b,[],'regmax=.1;','regmin=.1;','filter_length=1099;','offset=300;','use_cache=0;');
 			thisK = thisK(100:1000);
 			this_data_K(:,j) = thisK;
@@ -233,6 +235,7 @@ end
 %% Gain Analysis
 % In this section we use the linear filter convolved with the stimulus to estimate the gain of the neuron and perform the gain analysis as described elsewhere. 
 
+history_lengths = (3*floor(1000*logspace(-1,1,30)/3))/1e3;
 if ~exist('CMData_Gain.mat')
 	gain_data = struct;
 	gain_data.history_lengths = [];
@@ -241,7 +244,7 @@ if ~exist('CMData_Gain.mat')
 	gain_data.low_gof = [];
 	gain_data.high_gof = [];
 	gain_data.p = [];
-	history_lengths = (3*floor(1000*logspace(-1,1,30)/3))/1e3;
+	
 	for i = 1:length(data)
 		time = data(i).dt*(1:length(data(i).PID(1e4:end,1)));
 		response = mean2(data(i).fA(1e4:end,:));
@@ -384,11 +387,69 @@ for i = do_these
 end
 legend(l,{'pb1A','ab3A'})
 
+clear ph
+ph(3)=subplot(1,3,2); hold on
+ph(4)=subplot(1,3,3); hold on
+for i = do_these
+	[~,ehl]=max(gain_data(i).low_slopes - gain_data(i).high_slopes);
+	time = data(i).dt*(1:length(data(i).PID(1e4:end,1)));
+	response = mean2(data(i).fA(1e4:end,:));
+	stimulus = mean2(data(i).PID(1e4:end,:));
+	prediction = mean2(data(i).LinearFit(1e4:end,:));
+	GainAnalysisWrapper2('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph);
+end
+
+% clean up the plot
+% remove all the scatter points
+h=get(ph(3),'Children');
+rm_this = [];
+for i = 1:length(h)
+	if strcmp(get(h(i),'Marker'),'.')
+		rm_this = [rm_this i];
+	end
+end
+delete(h(rm_this))
+
+% remove all the dots indicating low p
+h=get(ph(4),'Children');
+rm_this = [];
+for i = 1:length(h)
+	if strcmp(get(h(i),'Marker'),'.')
+		rm_this = [rm_this i];
+	end
+end
+delete(h(rm_this))
+
+% remove the line indicating the example history plot
+h=get(ph(4),'Children');
+rm_this = [];
+for i = 1:length(h)
+	if  strcmp(get(h(i),'LineStyle'),'-.')
+		rm_this = [rm_this i];
+	end
+end
+delete(h(rm_this))
+
+
+% find the right place to clip the x axis
+c = [];
+for i = do_these
+	c = [c find(gain_data(i).low_gof > .85 & gain_data(i).high_gof > .85,1,'first')];
+end
+set(ph(4),'XLim',[history_lengths(floor(mean(c))) history_lengths(end)],'YLim',[.5 1.5])
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 % save
 save(combined_data_file,'data','-append')
 
-re
+return
 
 
 if 1

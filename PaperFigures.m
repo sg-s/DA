@@ -548,6 +548,7 @@ xlabel(axes_handles(10),'pdf')
 ylabel(axes_handles(5),'Gain')
 xlabel(axes_handles(4),'Linear Prediction (Hz)')
 ylabel(axes_handles(4),'Neuron Response (Hz)')
+set(axes_handles(2),'YLim',[0 100])
 
 PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
 
@@ -725,9 +726,13 @@ set(ph(4),'XLim',[history_lengths(floor(mean(c))) 11],'YLim',[.5 1.5])
 
 % cosmetics
 xlabel(axes_handles(1),'Lag (s)')
+xlabel(axes_handles(4),'Lag (s)')
 title(axes_handles(1),'Filters')
 title(axes_handles(4),'Filters')
-ylabel(axes_handles(3),'Gain')
+ylabel(axes_handles(3),'Relative Gain')
+ylabel(axes_handles(6),'Relative Gain')
+title(axes_handles(2),strcat('T_H=',oval(history_lengths(10))))
+title(axes_handles(5),strcat('T_H=',oval(history_lengths(10))))
 
 PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
 

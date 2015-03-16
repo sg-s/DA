@@ -14,6 +14,15 @@ if ~isempty(calling_func)
 	end
 end
 
+%    ######## ####  ######   ##     ## ########  ########       ##   
+%    ##        ##  ##    ##  ##     ## ##     ## ##           ####   
+%    ##        ##  ##        ##     ## ##     ## ##             ##   
+%    ######    ##  ##   #### ##     ## ########  ######         ##   
+%    ##        ##  ##    ##  ##     ## ##   ##   ##             ##   
+%    ##        ##  ##    ##  ##     ## ##    ##  ##             ##   
+%    ##       ####  ######    #######  ##     ## ########     ###### 
+
+
 %% Figure 1: ORNs decrease gain on increasing stimulus mean
 clearvars -except being_published
 fig_handle=figure('Units','pixels','outerposition',[81 5 599 871],'PaperUnits','points','PaperSize',[599 871],'Color','w','Toolbar','none');
@@ -200,6 +209,16 @@ if being_published
 	delete(gcf)
 end
 
+
+%      ######## ####  ######   ##     ## ########  ########     #######  
+%      ##        ##  ##    ##  ##     ## ##     ## ##          ##     ## 
+%      ##        ##  ##        ##     ## ##     ## ##                 ## 
+%      ######    ##  ##   #### ##     ## ########  ######       #######  
+%      ##        ##  ##    ##  ##     ## ##   ##   ##          ##        
+%      ##        ##  ##    ##  ##     ## ##    ##  ##          ##        
+%      ##       ####  ######    #######  ##     ## ########    ######### 
+
+
 %% Figure 2: ORNs speed up responses on increasing stimulus mean
 
 figure('outerposition',[0 0 1400 900],'PaperUnits','points','PaperSize',[1400 900]); hold on
@@ -374,9 +393,6 @@ foreground_stim(foreground_stim<1e-2) = NaN; % not reliable
 % plot time to peak for the data
 subplot(2,3,6), hold on
 plot(foreground_stim(a),resp_half_time(a)-stim_half_time(a),'k+')
-% plot(ttp.stimulus,ttp.data,'k+') % this plots it per trial, noisy
-% errorbarxy(plot_data.x,plot_data.y,plot_data.xe,plot_data.ye)
-% errorbar(plot_data.x,plot_data.y,plot_data.ye) % this looks worse
 set(gca,'XScale','log','XLim',[1e-2 20],'YLim',[0 100])
 xlabel('Mean Stimulus (V)')
 ylabel('\tau_{ORN}-\tau_{PID} (ms)','interpreter','tex')
@@ -388,8 +404,16 @@ if being_published
 	delete(gcf)
 end
 
+%       ######## ####  ######   ##     ## ########  ########     #######  
+%       ##        ##  ##    ##  ##     ## ##     ## ##          ##     ## 
+%       ##        ##  ##        ##     ## ##     ## ##                 ## 
+%       ######    ##  ##   #### ##     ## ########  ######       #######  
+%       ##        ##  ##    ##  ##     ## ##   ##   ##                 ## 
+%       ##        ##  ##    ##  ##     ## ##    ##  ##          ##     ## 
+%       ##       ####  ######    #######  ##     ## ########     #######  
 
-%% Figure 3
+
+%% Figure 3: ORNs show fast gain control 
 
 clearvars -except being_published
 
@@ -486,7 +510,8 @@ legend(l,strcat('r^2=',oval(r2)))
 
 % gain analysis -- linear model
 ph = []; ph(3:4) = axes_handles(4:5);
-GainAnalysisWrapper(mean2(fA),fp,mean2(PID),tA,0.4290,ph,.33);
+history_lengths = (3*floor(1000*logspace(-1,1,30)/3))/1e3;
+GainAnalysisWrapper2('response',mean2(fA),'prediction',fp,'stimulus',mean2(PID),'time',tA,'ph',ph,'history_lengths',history_lengths);
 
 % plot gain vs preceding stimulus
 [x,y] = MakeFig6G(mean2(PID),mean2(fA),fp,400);
@@ -518,8 +543,6 @@ plot(axes_handles(10),xx,yy,'r')
 linkaxes(axes_handles([3 10]),'y')
 set(axes_handles([8 9 10]),'YTick',[]);
 xlabel(axes_handles(10),'pdf')
-
-% show adaptation of dynamics
 
 % fix some labels
 ylabel(axes_handles(5),'Gain')

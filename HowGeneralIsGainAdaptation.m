@@ -233,7 +233,7 @@ end
 %% Gain Analysis
 % In this section we use the linear filter convolved with the stimulus to estimate the gain of the neuron and perform the gain analysis as described elsewhere. 
 
-if exist('CMData_Gain.mat')
+if ~exist('CMData_Gain.mat')
 	gain_data = struct;
 	gain_data.history_lengths = [];
 	gain_data.low_slopes = [];
@@ -297,22 +297,51 @@ ph(3)=subplot(1,3,2); hold on
 ph(4)=subplot(1,3,3); hold on
 for i = do_these
 	[~,ehl]=max(gain_data(i).low_slopes - gain_data(i).high_slopes);
-	GainAnalysisWrapper(mean2(data(i).fA(1e4:end,:)),mean2(data(i).LinearFit(1e4:end,:)),mean2(data(i).PID(1e4:end,:)),time,gain_data(i).history_lengths(ehl),ph,.33);
+	time = data(i).dt*(1:length(data(i).PID(1e4:end,1)));
+	response = mean2(data(i).fA(1e4:end,:));
+	stimulus = mean2(data(i).PID(1e4:end,:));
+	prediction = mean2(data(i).LinearFit(1e4:end,:));
+	GainAnalysisWrapper2('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph);
 end
 
+% clean up the plot
+% remove all the scatter points
+h=get(ph(3),'Children');
+rm_this = [];
+for i = 1:length(h)
+	if strcmp(get(h(i),'Marker'),'.')
+		rm_this = [rm_this i];
+	end
+end
+delete(h(rm_this))
 
-subplot(1,3,3), hold on
+% remove all the dots indicating low p
+h=get(ph(4),'Children');
+rm_this = [];
+for i = 1:length(h)
+	if strcmp(get(h(i),'Marker'),'.')
+		rm_this = [rm_this i];
+	end
+end
+delete(h(rm_this))
+
+% remove the line indicating the example history plot
+h=get(ph(4),'Children');
+rm_this = [];
+for i = 1:length(h)
+	if  strcmp(get(h(i),'LineStyle'),'-.')
+		rm_this = [rm_this i];
+	end
+end
+delete(h(rm_this))
+
+
+% find the right place to clip the x axis
+c = [];
 for i = do_these
-	rm_this = gain_data(i).low_gof < .85 | gain_data(i).high_gof < .85;
-	rm_this = gain_data(i).history_lengths < .1;
-	x = gain_data(i).history_lengths;
-	l = gain_data(i).low_slopes;
-	h = gain_data(i).high_slopes;
-	x(rm_this) = []; l(rm_this) = []; h(rm_this) = [];
-	plot(x,l,'g')
-	plot(x,h,'r')
+	c = [c find(gain_data(i).low_gof > .85 & gain_data(i).high_gof > .85,1,'first')];
 end
-set(gca,'XScale','log')
+set(ph(4),'XLim',[history_lengths(floor(mean(c))) history_lengths(end)],'YLim',[.5 1.5])
 
 PrettyFig;
 

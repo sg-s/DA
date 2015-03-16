@@ -350,6 +350,39 @@ if being_published
 	delete(gcf)
 end
 
+%    ########  #### ######## ######## ######## ########  ######## ##    ## ######## 
+%    ##     ##  ##  ##       ##       ##       ##     ## ##       ###   ##    ##    
+%    ##     ##  ##  ##       ##       ##       ##     ## ##       ####  ##    ##    
+%    ##     ##  ##  ######   ######   ######   ########  ######   ## ## ##    ##    
+%    ##     ##  ##  ##       ##       ##       ##   ##   ##       ##  ####    ##    
+%    ##     ##  ##  ##       ##       ##       ##    ##  ##       ##   ###    ##    
+%    ########  #### ##       ##       ######## ##     ## ######## ##    ##    ##    
+   
+%    ##    ## ######## ##     ## ########   #######  ##    ##  ######  
+%    ###   ## ##       ##     ## ##     ## ##     ## ###   ## ##    ## 
+%    ####  ## ##       ##     ## ##     ## ##     ## ####  ## ##       
+%    ## ## ## ######   ##     ## ########  ##     ## ## ## ##  ######  
+%    ##  #### ##       ##     ## ##   ##   ##     ## ##  ####       ## 
+%    ##   ### ##       ##     ## ##    ##  ##     ## ##   ### ##    ## 
+%    ##    ## ########  #######  ##     ##  #######  ##    ##  ######  
+
+
+%% Different Neurons
+% In this section, we compare the fast gain control properties of two different neurons to the same odour. 
+
+do_these = [11 17];
+
+figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,3,1), hold on
+l = [];
+for i = do_these
+	K = allfilters(i).K;
+	for j = 1:width(K)
+		K(:,j) = K(:,j)/max(K(:,j));
+	end
+	l=[l plot(filtertime,mean2(K))];
+end
+legend(l,{'pb1A','ab3A'})
 
 
 % save

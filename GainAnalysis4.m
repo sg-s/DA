@@ -288,19 +288,6 @@ else
 
 	p_low = p; p_high = p;
 
-	% calculate p-values for each cloud 
-	% p_low  = ones(length(history_lengths),1);
-	% p_high = ones(length(history_lengths),1);
-	% for i = 1:length(history_lengths)
-	% 	a = abs(low_slopes2.bootstrap(:,i) - all_slopes);
-	% 	a0 = abs(low_slopes2.data(i) - all_slopes);
-	% 	p_low(i) = sum(a>a0)/length(low_slopes2.bootstrap);
-
-	% 	a = abs(high_slopes2.bootstrap(:,i) - all_slopes);
-	% 	a0 = abs(high_slopes2.data(i) - all_slopes);
-	% 	p_high(i) = sum(a>a0)/length(high_slopes2.bootstrap);
-	% end
-
 end
 
 if length(plothere) == 4
@@ -312,12 +299,6 @@ if length(plothere) == 4
 	sig_high = p_high<0.05; % these points are significant,
 	scatter(plothere(4),history_lengths(sig_low),low_slopes2.data(sig_low),1256,'g.')
 	scatter(plothere(4),history_lengths(sig_high),high_slopes2.data(sig_high),1256,'r.')
-
-	% plot lines to indicate the autocorrelation time of the stimulus
-	% [~,tau] = FindCorrelationTime(stimulus);
-	% tau = tau*dt;
-	% yy=get(plothere(4),'YLim');
-	% plot([tau tau],yy,'k-.')
 
 	% plot line to indicate the location of the example history plot
 	yy=get(plothere(4),'YLim');

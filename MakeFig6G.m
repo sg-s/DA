@@ -44,7 +44,6 @@ end
 x = NaN*stimulus;
 y = NaN*stimulus;
 
-
 parfor i = (history_length+1):length(stimulus)
 	x(i) = mean(stimulus(i-history_length:i));
 	if any(isnan(prediction(i-history_length:i))) || any(isnan(response(i-history_length:i)))

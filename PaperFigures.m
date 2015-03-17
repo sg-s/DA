@@ -787,7 +787,7 @@ end
 disp(mfilename)
 
 t = toc;
-disp(strcat('Build in ',oval(t),' seconds.'))
+disp(strcat('Built in:',oval(t),' seconds.'))
 
 %%
 % and its md5 hash is:

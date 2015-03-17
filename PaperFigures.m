@@ -93,10 +93,10 @@ allfilters = cache('allfilters');
 % plot the filter for the lowest dose 
 filtertime = dt*(1:length(allfilters(1,1).K));
 filtertime = filtertime - 200*dt;
-plot(axes_handles(3),filtertime,allfilters(1,1).K,'Color',c(1,:))
+plot(axes_handles(3),filtertime,allfilters(1,1).K/max(allfilters(1,1).K),'Color',c(1,:))
 set(axes_handles(3),'XLim',[min(filtertime) max(filtertime)])
 xlabel(axes_handles(3),'Lag (s)')
-ylabel(axes_handles(3),'Filter')
+ylabel(axes_handles(3),'Filter K (norm)')
 
 % first figure out the trivial scaling using the lowest dose
 clear trival_scaling
@@ -198,9 +198,10 @@ end
 cf = fit(x(:),y(:),'power1');
 set(axes_handles(8),'XScale','log','YScale','log'); %,'YLim',[5 60],'XLim',[0.4 6])
 xlabel(axes_handles(8),'Mean Stimulus (V)')
-ylabel(axes_handles(8),'Neuron Gain (Hz/V')
+ylabel(axes_handles(8),'Neuron Gain (Hz/V)')
 l=plot(axes_handles(8),x(:),cf(x(:)),'k');
 legend(l,strcat('\alpha=',oval(cf.b)))
+% set(axes_handles(8),'YLim',[2 100])
 
 
 PrettyFig('plw=1.3;','lw=1.5;','fs=14;')
@@ -414,7 +415,7 @@ end
 %       ##       ####  ######    #######  ##     ## ########     #######  
 
 
-%% Figure 3: ORNs show fast gain control 
+%% Figure 3: ORNs can change gain on a fast time scale 
 
 clearvars -except being_published
 
@@ -654,12 +655,12 @@ for i = do_these
 	for j = 1:width(K)
 		K(:,j) = K(:,j)/max(K(:,j));
 	end
-	l=[l plot(axes_handles(4),filtertime,mean2(K))];
+	l=[l plot(axes_handles(7),filtertime,mean2(K))];
 end
 legend(l,{'pb1A','ab3A'})
 
 clear ph
-ph(3:4) = axes_handles(5:6);
+ph(3:4) = axes_handles(8:9);
 for i = do_these
 	[~,ehl]=max(gain_data(i).low_slopes - gain_data(i).high_slopes);
 	time = data(i).dt*(1:length(data(i).PID(1e4:end,1)));
@@ -705,12 +706,12 @@ for i = do_these
 	for j = 1:width(K)
 		K(:,j) = K(:,j)/max(K(:,j));
 	end
-	l=[l plot(axes_handles(7),filtertime,mean2(K))];
+	l=[l plot(axes_handles(4),filtertime,mean2(K))];
 end
 legend(l,odours)
 
 clear ph
-ph(3:4) = axes_handles(8:9);
+ph(3:4) = axes_handles(5:6);
 for i = do_these
 	[~,ehl]=max(gain_data(i).low_slopes - gain_data(i).high_slopes);
 	time = data(i).dt*(1:length(data(i).PID(1e4:end,1)));
@@ -786,9 +787,6 @@ end
 % The file that generated this document is called:
 disp(mfilename)
 
-t = toc;
-disp(strcat('Built in:',oval(t),' seconds.'))
-
 %%
 % and its md5 hash is:
 Opt.Input = 'file';
@@ -800,6 +798,11 @@ disp(DataHash(strcat(mfilename,'.m'),Opt))
 if ~status
 	disp(m)
 end
+
+t = toc;
+%% 
+% This document was built in: 
+disp(strcat(oval(t,3),' seconds.'))
 
 
 

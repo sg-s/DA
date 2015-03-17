@@ -773,8 +773,8 @@ end
 PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
 
 ylabel(axes_handles(1),'Exp. Replicates','FontSize',20)
-ylabel(axes_handles(4),'Diff. ORNs','FontSize',20)
-ylabel(axes_handles(7),'Diff. odors','FontSize',20)
+ylabel(axes_handles(7),'Diff. ORNs','FontSize',20)
+ylabel(axes_handles(4),'Diff. odors','FontSize',20)
 
 if being_published
 	snapnow

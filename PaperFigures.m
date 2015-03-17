@@ -13,6 +13,7 @@ if ~isempty(calling_func)
 		being_published = 1;
 	end
 end
+tic
 
 %    ######## ####  ######   ##     ## ########  ########       ##   
 %    ##        ##  ##    ##  ##     ## ##     ## ##           ####   
@@ -179,7 +180,7 @@ for j = 1:3
 end
 
 set(axes_handles(7),'XLim',[0 45],'YLim',[0 45])
-xlabel(axes_handles(7),'Linear Prediction (Hz)')
+xlabel(axes_handles(7),'K\otimes stimulus (Hz)')
 ylabel(axes_handles(7),'Neuron Response (Hz)')
 
 % show gain changes -- gain vs. mean stimulus
@@ -446,21 +447,23 @@ PID = PID2; clear PID2
 % some minor cleaning up
 PID(end,:) = PID(end-1,:); 
 
-fig_handle=figure('Units','pixels','outerposition',[99 5 674 871],'PaperUnits','points','PaperSize',[674 871],'Color','w','Toolbar','none');
+fig_handle=figure('Units','pixels','outerposition',[100 143 1241 677],'Color','w','PaperUnits','points','PaperSize',[1241 677],'Toolbar','none','Menubar','none');
 clf(fig_handle);
-axes_handles(1)=axes('Units','pixels','Position',[63.825 744.625 489.325 85.1]);
-axes_handles(2)=axes('Units','pixels','Position',[63.825 595.7 489.325 127.65]);
-axes_handles(3)=axes('Units','pixels','Position',[63.825 489.325 489.325 85.1]);
-axes_handles(4)=axes('Units','pixels','Position',[63.825 276.575 191.475 170.2]);
-axes_handles(5)=axes('Units','pixels','Position',[382.95 276.575 255.3 170.2]);
-axes_handles(6)=axes('Units','pixels','Position',[63.825 42.55 191.475 191.475]);
-axes_handles(7)=axes('Units','pixels','Position',[382.95 42.55 212.75 191.475]);
-axes_handles(8)=axes('Units','pixels','Position',[574.425 744.625 63.825 85.1]);
-axes_handles(9)=axes('Units','pixels','Position',[574.425 595.7 63.825 127.65]);
-axes_handles(10)=axes('Units','pixels','Position',[574.425 489.325 63.825 85.1]);
+axes_handles(1)=axes('Units','pixels','Position',[295.65 476.325 558.45 147.825]);
+axes_handles(2)=axes('Units','pixels','Position',[295.65 328.5 558.45 131.4]);
+axes_handles(3)=axes('Units','pixels','Position',[295.65 180.675 558.45 131.4]);
+axes_handles(4)=axes('Units','pixels','Position',[49.275 328.5 180.675 180.675]);
+axes_handles(5)=axes('Units','pixels','Position',[936.225 361.35 279.225 262.8]);
+axes_handles(6)=axes('Units','pixels','Position',[936.225 49.275 279.225 180.675]);
+axes_handles(7)=axes('Units','pixels','Position',[295.65 49.275 558.45 114.975]);
+axes_handles(8)=axes('Units','pixels','Position',[49.275 49.275 180.675 180.675]);
+
 for i = 1:length(axes_handles)
 	hold(axes_handles(i),'on')
 end
+
+% set up a colour map
+c = parula(8);
 
 
 % plot stimulus
@@ -468,28 +471,10 @@ plot(axes_handles(1),tA,mean2(PID),'k')
 set(axes_handles(1),'XLim',[10 60],'XTickLabel',{})
 ylabel(axes_handles(1),'Stimulus (V)')
 
-% plot stimulus distribution 
-[x,y] = hist(mean2(PID),50);
-yy = 0:1e-2:max(max(PID));
-xx = interp1(y,x,yy);
-xx(isnan(xx)) = 0;
-xx = xx/max(xx);
-plot(axes_handles(8),xx,yy,'k')
-linkaxes(axes_handles([1 8]),'y')
-
 % plot response
 plot(axes_handles(2),tA,mean2(fA),'k')
 set(axes_handles(2),'XLim',[10 60],'XTickLabel',{})
 ylabel(axes_handles(2),'Firing Rate (Hz)')
-
-% plot response distribution 
-[x,y] = hist(mean2(fA),50);
-yy = 0:1e-2:max(max(fA));
-xx = interp1(y,x,yy);
-xx(isnan(xx)) = 0;
-xx = xx/max(xx);
-plot(axes_handles(9),xx,yy,'k')
-linkaxes(axes_handles([2 9]),'y')
 
 % extract Linear model
 [K, ~, filtertime_full] = FindBestFilter(mean2(PID),mean2(fA),[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
@@ -503,52 +488,77 @@ temp =fit(fp(~(isnan(fp) | isnan(R))),R(~(isnan(fp) | isnan(R))),'poly1');
 fp = fp*temp.p1;
 fp = fp+temp.p2;
 
+% plot linear filter
+plot(axes_handles(4),filtertime,K,'Color',c(3,:))
+xlabel(axes_handles(4),'Lag (s)')
+ylabel(axes_handles(4),'Filter (norm)')
+
 % plot prediction and prediction quality
-l=plot(axes_handles(2),tA,fp,'r');
+l=plot(axes_handles(3),tA,fp,'Color',c(3,:));
 r2 = rsquare(fp,mean2(fA));
 legend(l,strcat('r^2=',oval(r2)))
+set(axes_handles(3),'XTickLabel',{})
+ylabel(axes_handles(3),'K\otimes stimulus (Hz)')
+
 
 % gain analysis -- linear model
-ph = []; ph(3:4) = axes_handles(4:5);
+ph = []; ph(3:4) = axes_handles(5:6);
 history_lengths = (3*floor(1000*logspace(-1,1,30)/3))/1e3;
-GainAnalysisWrapper2('response',mean2(fA),'prediction',fp,'stimulus',mean2(PID),'time',tA,'ph',ph,'history_lengths',history_lengths);
+[~,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',mean2(fA),'prediction',fp,'stimulus',mean2(PID),'time',tA,'ph',ph,'history_lengths',history_lengths);
+set(axes_handles(6),'XLim',[.09 11]) % to show .1 and 10 on the log scale
 
 % plot gain vs preceding stimulus
 [x,y] = MakeFig6G(mean2(PID),mean2(fA),fp,400);
-% c = MakeFig6H(PID,fA,400);
 gain_time = mean(diff(tA))*(1:length(x));
 rm_this = (isnan(x) | isnan(y));
 x(rm_this) = [];
 y(rm_this) = [];
 gain_time(rm_this) = [];
 ss = 50;
-plot(axes_handles(6),x(1:ss:end),y(1:ss:end),'k.')
-xlabel(axes_handles(6),'Stimulus in preceding 400ms')
-ylabel(axes_handles(6),'Instantaneous gain')
+plot(axes_handles(8),x(1:ss:end),y(1:ss:end),'k.')
+xlabel(axes_handles(8),'Stimulus in preceding 400ms')
+ylabel(axes_handles(8),'Relative gain')
 
 % plot gain
 gain = y;
-plot(axes_handles(3),gain_time,gain,'r')
-ylabel(axes_handles(3),'Gain')
-set(axes_handles(3),'XLim',[10 60],'YLim',[0 7])
-xlabel(axes_handles(3),'Time (s)')
+plot(axes_handles(7),gain_time,gain,'Color',c(3,:))
+ylabel(axes_handles(7),'Relative Gain')
+set(axes_handles(7),'XLim',[10 60],'YLim',[0 7])
+xlabel(axes_handles(7),'Time (s)')
 
-% plot response distribution 
-[x,y] = hist(gain,50);
-yy = min(gain):1e-2:max(gain);
-xx = interp1(y,x,yy);
-xx(isnan(xx)) = 0;
-xx = xx/max(xx);
-plot(axes_handles(10),xx,yy,'r')
-linkaxes(axes_handles([3 10]),'y')
-set(axes_handles([8 9 10]),'YTick',[]);
-xlabel(axes_handles(10),'pdf')
+
+% link some axes
+linkaxes(axes_handles([1:3 7]),'x')
+linkaxes(axes_handles([2:3]),'y')
 
 % fix some labels
-ylabel(axes_handles(5),'Gain')
-xlabel(axes_handles(4),'Linear Prediction (Hz)')
-ylabel(axes_handles(4),'Neuron Response (Hz)')
+ylabel(axes_handles(6),'Relative Gain')
 set(axes_handles(2),'YLim',[0 100])
+ylabel(axes_handles(5),'Firing Rate (Hz)')
+xlabel(axes_handles(5),'K\otimes stimulus (Hz)')
+
+% Indicate regions of high and low stimulus on the stimulus
+hl = history_lengths(11)*1e3;
+shat = ComputeSmoothedStimulus(mean2(PID),hl);
+
+n = floor(sum(~isnan(mean2(fA)))*.33);
+shat(1:hl) = Inf; % the initial segment where we can't estimate shat is excluded
+shat(isnan(shat)) = Inf;
+shat(isnan(mean2(fA))) = Inf;
+[~, t_low] = sort(shat,'ascend');
+t_low = t_low(1:n); % this is an index
+t_low = tA(t_low); % t_low is now a time. 
+ 
+shat = ComputeSmoothedStimulus(mean2(PID),hl);
+shat(1:hl) = -Inf;
+shat(isinf(shat)) = -Inf;
+shat(isnan(mean2(fA))) = -Inf;
+[~, t_high] = sort(shat,'descend');
+t_high = t_high(1:n);
+t_high  = tA(t_high);
+
+plot(axes_handles(1),t_low,1+0*t_low,'g.')
+plot(axes_handles(1),t_high,1+0*t_low,'r.')
 
 PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
 
@@ -773,6 +783,9 @@ end
 %% Version Info
 % The file that generated this document is called:
 disp(mfilename)
+
+t = toc;
+disp(strcat('Build in ',oval(t),' seconds.'))
 
 %%
 % and its md5 hash is:

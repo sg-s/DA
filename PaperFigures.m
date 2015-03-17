@@ -203,7 +203,7 @@ l=plot(axes_handles(8),x(:),cf(x(:)),'k');
 legend(l,strcat('\alpha=',oval(cf.b)))
 
 
-PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
+PrettyFig('plw=1.3;','lw=1.5;','fs=14;')
 
 if being_published
 	snapnow

@@ -5,6 +5,17 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
+
+calling_func = dbstack;
+being_published = 0;
+if ~isempty(calling_func)
+	if find(strcmp('publish',{calling_func.name}))
+		being_published = 1;
+	end
+end
+tic
+
+
 %% STA Analysis
 % In this document we try to perform a spike-triggered analysis of the data to see if we can quantify the data without resorting to firing rates, which inherently smooth and average date. 
 

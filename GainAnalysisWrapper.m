@@ -39,7 +39,7 @@ x.time(rm_this) = [];
 x.frac = frac;
 
 % make history lengths based on the correlation time of the data
-history_lengths = (3*floor(1000*logspace(log10(.2/2),1,30)/3))/1e3;
+history_lengths = (3*floor(1000*logspace(log10(ct/2),1,30)/3))/1e3;
 if nargin < 5 || isempty(example_history_length)
 	example_history_length = history_lengths(10);
 end

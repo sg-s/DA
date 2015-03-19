@@ -60,7 +60,6 @@ for i = 1:length(allfiles)
 	stA(baddata,:) = [];
 	PID(baddata,:) = [];
 
-	% stA(remove,:) = [];
 	stim_signal = squeeze(stim_signal);
 	if ~isvector(stim_signal)
 		stim_signal = mean2(stim_signal);
@@ -75,10 +74,19 @@ for i = 1:length(allfiles)
 	z = find(stim_signal>0,1,'last');
 	z = round(z/1e4)*1e3;
 
+	% save the spikes in a usable sparse format
+	clear spikes
+	spikes = sparse(length(time),width(stA));
+	for j = 1:width(stA)
+		spikes(nonzeros(stA(j,:)),j) = 1;
+	end
+
 	data(i).fA = spiketimes2f(squeeze(stA),time);
 	data(i).fA = data(i).fA(a:z,:);
 	data(i).original_name = allfiles(i).name;
 	data(i).dt = 1e-3;
+	data(i).spikes = spikes;
+	data(i).fullPID = PID';
 
 	% subsample PID
 	if size(PID,2) > size(PID,1)

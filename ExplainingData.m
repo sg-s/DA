@@ -36,6 +36,7 @@ detrended_data = cache('detrended_data');
 
 % Fit DA Model to Mean Shifted Gaussians 
 
+load('DA_Fit_to_MSG.mat')
 
 for i = 1:3
 	% prep data
@@ -54,6 +55,8 @@ for i = 1:3
 	for k = 1:5
 		p(i) = FitModel2Data(@DAModelv2,d,p(i));
 	end
+
+	save('DA_Fit_to_MSG.mat','p','-append')
 end
 
 

@@ -74,6 +74,44 @@ xlabel('Time relative to spike (s)')
 
 PrettyFig;
 
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
+% This is some crazy stuff. Why is a spike more predictive of something that happened 600ms ago than the present? To check these crazy results, we repeat the analysis on Carlotta's flickering data. 
+
+before = 1e4;
+after = 6e3;
+load('/local-data/DA-paper/carlotta-martelli/flickering-stim/data.mat')
+figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+subplot(2,1,1), hold on
+K = STA(data(1).spikes(1e5:end-5e4,:),data(1).fullPID(1e5:end-5e4,:),before,after);
+t = -before:after;
+t = t*1e-4;
+plot(t,K)
+title(strrep(data(1).original_name,'_','-'))
+ylabel('Stimulus (V)')
+
+subplot(2,1,2), hold on
+K = STA(data(8).spikes(1e5:end-2e5,:),data(8).fullPID(1e5:end-2e5,:),before,after);
+t = -before:after;
+t = t*1e-4;
+plot(t,K)
+title(strrep(data(8).original_name,'_','-'))
+ylabel('Stimulus (V)')
+xlabel('Time relative to spike (s)')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
 
 %% Version Info
 % The file that generated this document is called:

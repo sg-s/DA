@@ -40,6 +40,14 @@ if size(stim,2) > size(stim,1)
 	stim = stim';
 end
 
+% check cache
+x.stim = stim;
+x.resp = resp;
+cached_data = cache(DataHash(x));
+if ~isempty(cached_data)
+	g = cached_data;
+	return
+end
 
 for i = 1:width(stim)
 	% throw out NaNs
@@ -70,5 +78,6 @@ for i = 1:width(stim)
 end
 
 
-
+% cache data
+cache(DataHash(x),g);
 

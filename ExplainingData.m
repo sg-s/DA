@@ -34,6 +34,14 @@ end
 detrended_data = cache('detrended_data'); 
 
 
+%       ########     ###               ##       ##     ##  ######   ######   
+%       ##     ##   ## ##               ##      ###   ### ##    ## ##    ##  
+%       ##     ##  ##   ##               ##     #### #### ##       ##        
+%       ##     ## ##     ##    #######    ##    ## ### ##  ######  ##   #### 
+%       ##     ## #########              ##     ##     ##       ## ##    ##  
+%       ##     ## ##     ##             ##      ##     ## ##    ## ##    ##  
+%       ########  ##     ##            ##       ##     ##  ######   ######   
+
 % Fit DA Model to Mean Shifted Gaussians 
 
 load('DA_Fit_to_MSG.mat')
@@ -58,5 +66,13 @@ for i = 1:3
 
 	save('DA_Fit_to_MSG.mat','p','-append')
 end
+
+
+%%
+% The following plot shows the gain of the ORN vs stimulus, with the best-fit DA model overlaid. Data is in black, and the DA model fits are in red. The data is segmented into experimental "days", so that the same set of neurons appears in all stimulus means. The DA model is also fit in this fashion, so we get three sets of DA model fits. 
+
+figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+
+% plot the gain of the data
 
 

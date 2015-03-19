@@ -36,8 +36,8 @@ g = NaN(width(stim),1);
 if size(stim,2) > size(stim,1)
 	stim = stim';
 end
-if size(stim,2) > size(stim,1)
-	stim = stim';
+if size(resp,2) > size(resp,1)
+	resp = resp';
 end
 
 % check cache

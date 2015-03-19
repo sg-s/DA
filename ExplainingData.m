@@ -72,7 +72,48 @@ end
 % The following plot shows the gain of the ORN vs stimulus, with the best-fit DA model overlaid. Data is in black, and the DA model fits are in red. The data is segmented into experimental "days", so that the same set of neurons appears in all stimulus means. The DA model is also fit in this fashion, so we get three sets of DA model fits. 
 
 figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-
+clear l
 % plot the gain of the data
+for i = 1:3
+	stim = [];
+	resp = [];
+	for j = 1:8
+		if ~isempty(detrended_data(j,i).stim)
+			stim = [stim; detrended_data(j,i).stim];
+			resp = [resp detrended_data(j,i).resp];
+		end
+	end
+	g = EstimateGain2(stim,resp);
+	l(1)=plot(mean(stim'),g,'k+');
+end
+
+% plot the gain of the DA model fits
+for i = 1:3
+	stim = [];
+	resp = [];
+	for j = 1:8
+		if ~isempty(detrended_data(j,i).stim)
+			stim = [stim; detrended_data(j,i).stim];
+			this_resp = DAModelv2(detrended_data(j,i).stim,p(i));
+			this_resp(1:1e3) = NaN;
+			resp = [resp; this_resp];
+		end
+	end
+	g = EstimateGain2(stim,resp);
+	l(2)=plot(mean(stim'),g,'r+');
+end
+
+set(gca,'XScale','log','YScale','log')
+xlabel('Mean Stimulus (V)')
+ylabel('Gain (Hz/V)')
+legend(l,{'Data','DA Model'})
+
+PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 

@@ -67,6 +67,15 @@ for i = 1:3
 	save('DA_Fit_to_MSG.mat','p','-append')
 end
 
+%    ##      ## ######## ########  ######## ########     ########     ###    
+%    ##  ##  ## ##       ##     ## ##       ##     ##    ##     ##   ## ##   
+%    ##  ##  ## ##       ##     ## ##       ##     ##    ##     ##  ##   ##  
+%    ##  ##  ## ######   ########  ######   ########     ##     ## ##     ## 
+%    ##  ##  ## ##       ##     ## ##       ##   ##      ##     ## ######### 
+%    ##  ##  ## ##       ##     ## ##       ##    ##     ##     ## ##     ## 
+%     ###  ###  ######## ########  ######## ##     ##    ########  ##     ## 
+
+
 
 %%
 % The following plot shows the gain of the ORN vs stimulus, with the best-fit DA model overlaid. Data is in black, and the DA model fits are in red. The data is segmented into experimental "days", so that the same set of neurons appears in all stimulus means. The DA model is also fit in this fashion, so we get three sets of DA model fits. 
@@ -115,5 +124,71 @@ if being_published
 	delete(gcf)
 end
 
+
+%   ######  ########  ######## ######## ########  ##     ## ########     ########     ###    
+%  ##    ## ##     ## ##       ##       ##     ## ##     ## ##     ##    ##     ##   ## ##   
+%  ##       ##     ## ##       ##       ##     ## ##     ## ##     ##    ##     ##  ##   ##  
+%   ######  ########  ######   ######   ##     ## ##     ## ########     ##     ## ##     ## 
+%        ## ##        ##       ##       ##     ## ##     ## ##           ##     ## ######### 
+%  ##    ## ##        ##       ##       ##     ## ##     ## ##           ##     ## ##     ## 
+%   ######  ##        ######## ######## ########   #######  ##           ########  ##     ## 
+
+%%
+% In this section we check if the DA model can account for observed speedup of responses with increasing stimulus mean. 
+
+% xcorr for mean shifted gaussians
+peak_loc_xcorr = NaN(length(detrended_data),3);
+mean_stim = NaN(length(detrended_data),3);
+clear l 
+l = zeros(8,1);
+for k = 1:3
+	for i = 1:length(detrended_data)
+		mean_stim(i,k) = mean(detrended_data(i,k).stim);
+		a = detrended_data(i,k).resp - mean(detrended_data(i,k).resp);
+		if ~isempty(a)
+			a = a/std(a);
+			b = detrended_data(i,k).stim - mean(detrended_data(i,k).stim);
+			b = b/std(b);
+			x = xcorr(a,b); % positive peak means a lags b
+			t = 1e-3*(1:length(x));
+			t = t-mean(t);
+			x = x/max(x);
+			[~,loc] = max(x);
+			peak_loc_xcorr(i,k) = t(loc);
+		end
+	end
+end 
+
+% now compute xcorr for the DA model
+peak_loc_xcorr_DA = NaN(length(detrended_data),3);
+for i = 1:3
+	for j = 1:8
+		if ~isempty(detrended_data(j,i).stim)
+			this_resp = DAModelv2(detrended_data(j,i).stim,p(i));
+			this_resp(1:1e3) = NaN;
+			detrended_data(j,i).DAFit = this_resp;
+			this_stim = detrended_data(j,i).stim;
+			this_stim(1:1e3) = [];
+			this_resp(1:1e3) = [];
+			a = this_resp - mean(this_resp);
+			b = this_stim - mean(this_stim);
+			a = a/std(a);
+			b = b/std(b);
+			x = xcorr(a,b); % positive peak means a lags b
+			t = 1e-3*(1:length(x));
+			t = t-mean(t);
+			x = x/max(x);
+			[~,loc] = max(x);
+			peak_loc_xcorr_DA(j,i) = t(loc);
+
+		end
+	end
+end
+
+
+figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+clear l
+l(1) = plot(mean_stim(:),peak_loc_xcorr(:)/1e-3,'k+');
+l(2) = plot(mean_stim(:),peak_loc_xcorr_DA(:)/1e-3,'r+');
 
 

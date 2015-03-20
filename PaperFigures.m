@@ -427,11 +427,14 @@ rm_this(2) = find(paradigm_PID==10,1,'first');
 all_PID(:,rm_this) = [];
 paradigm_PID(rm_this) = [];
 
+% define colourmap
+c = parula(max(paradigm)+1);
+
 % plot PID
 subplot(2,3,4), hold on
 for i = 1:max(paradigm)
 	plot_these = find(paradigm_PID==i);
-	plot(t,mean2(all_PID(:,plot_these)));
+	plot(t,mean2(all_PID(:,plot_these)),'Color',c(i,:));
 end
 
 set(gca,'XLim',[.5 3],'YScale','log','YLim',[7e-2 15])
@@ -443,7 +446,7 @@ ylabel('Stimulus (V)')
 subplot(2,3,5), hold on
 for i = 1:max(paradigm)
 	plot_these = find(paradigm==i);
-	plot(t,mean2(fA(:,plot_these)));
+	plot(t,mean2(fA(:,plot_these)),'Color',c(i,:));
 end
 
 set(gca,'XLim',[.5 3])

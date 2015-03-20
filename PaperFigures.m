@@ -291,23 +291,38 @@ return
 
 figure('outerposition',[0 0 1400 900],'PaperUnits','points','PaperSize',[1400 900]); hold on
 
-% filters for mean shifted gaussians
+% fit parametric filters to the raw, neuron-wise filters extracted earlier 
+% for i = 1:8
+% 	for j = 1:13
+% 		if ~isempty(MSG_data(i,j).K)
+% 			d.stimulus = MSG_data(i,j).K(200:end);
+% 			d.response = MSG_data(i,j).K(200:end);
+% 			for k = 1:5
+% 				MSG_data(i,j).p = FitModel2Data(@FitFilter,d,MSG_data(i,j).p);
+% 			end
+% 		end
+% 	end
+% end
+
+
+% compute peak locations of all these filters
 clear l 
 l = zeros(8,1);
-peak_loc_K = NaN(length(detrended_data),3);
+peak_loc_K = NaN(8,13);
 subplot(2,3,1), hold on
-for k = 1:3
-	for i = 1:length(detrended_data)
-		if ~isempty(allfilters(i,k).p)
-			K2 = FitFilter(allfilters(i,k).K(200:end),allfilters(i,k).p);
-			filtertime = dt*(1:length(K2));
+for i = 1:8
+	for j = 1:13
+		if ~isempty(MSG_data(i,j).K)
+			K2 = FitFilter(MSG_data(i,j).K(200:end),MSG_data(i,j).p);
+			filtertime = 1e-3*(1:length(K2));
 			l(i)=plot(filtertime,K2,'Color',c(i,:));
-
 			[~,loc] = max(K2);
-			peak_loc_K(i,k) = filtertime(loc);
+			peak_loc_K(i,j) = filtertime(loc);
 		end
 	end
 end
+
+
 set(gca,'XLim',[-.01 .5])
 xlabel('Lag (s)')
 ylabel('Filter')
@@ -318,19 +333,19 @@ end
 legend(l,L)
 
 
-% xcorr for mean shifted gaussians
+% compute the cross-correlation for the data, on a per-neuron basis 
 subplot(2,3,2), hold on
-peak_loc_xcorr = NaN(length(detrended_data),3);
-mean_stim = NaN(length(detrended_data),3);
+peak_loc_xcorr = NaN(8,13);
 clear l 
 l = zeros(8,1);
-for k = 1:3
-	for i = 1:length(detrended_data)
-		mean_stim(i,k) = mean(detrended_data(i,k).stim);
-		a = detrended_data(i,k).resp - mean(detrended_data(i,k).resp);
-		if ~isempty(a)
+for i = 1:8
+	for j = 1:13
+		if ~isempty(MSG_data(i,j).K)
+			a = mean2(MSG_data(i,j).resp);
+			a = a - mean(a);
 			a = a/std(a);
-			b = detrended_data(i,k).stim - mean(detrended_data(i,k).stim);
+			b = mean2(MSG_data(i,j).stim);
+			b = b - mean(b); 
 			b = b/std(b);
 			x = xcorr(a,b); % positive peak means a lags b
 			t = dt*(1:length(x));
@@ -340,7 +355,7 @@ for k = 1:3
 			plot(t,x,'Color',c(i,:));
 
 			[~,loc] = max(x);
-			peak_loc_xcorr(i,k) = t(loc);
+			peak_loc_xcorr(i,j) = t(loc);
 		end
 	end
 end
@@ -352,13 +367,15 @@ ylabel('Cross Correlation (norm)')
 
 subplot(2,3,3), hold on
 clear l
+peak_loc_xcorr = peak_loc_xcorr(~isnan(peak_loc_xcorr));
 l(1) = plot(mean_stim(:),peak_loc_xcorr(:)/dt,'k+');
+peak_loc_K = peak_loc_K(~isnan(peak_loc_K));
 l(2) = plot(mean_stim(:),peak_loc_K(:)/dt,'ko');
 
-ff=fit(mean_stim(~isnan(mean_stim)),peak_loc_K(~isnan(mean_stim))/dt,'poly1');
-plot(mean_stim(~isnan(mean_stim)),ff(mean_stim(~isnan(mean_stim))),'k')
-ff=fit(mean_stim(~isnan(mean_stim)),peak_loc_xcorr(~isnan(mean_stim))/dt,'poly1');
-plot(mean_stim(~isnan(mean_stim)),ff(mean_stim(~isnan(mean_stim))),'k')
+ff=fit(mean_stim(:),peak_loc_K(:)/dt,'poly1');
+plot(mean_stim(:),ff(mean_stim(:)),'k')
+ff=fit(mean_stim(:),peak_loc_xcorr(:)/dt,'poly1');
+plot(mean_stim(:),ff(mean_stim(:)),'k')
 
 ylabel('Peak time (ms)')
 xlabel('Mean Stimulus (V)')

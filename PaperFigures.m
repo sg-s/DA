@@ -133,38 +133,6 @@ for i = 1:8
 end
 
 
-% first figure out the trivial scaling using the lowest dose
-% clear trival_scaling
-% trival_scaling = struct;
-% for j = 1:3
-% 	detrended_data(1,j).fp = convolve(detrended_data(1,j).time,detrended_data(1,j).stim,allfilters(1,j).K,filtertime);
-% 	x = detrended_data(1,j).fp;
-% 	y = detrended_data(1,j).resp;
-% 	rm_this = isnan(x) | isnan(y);
-% 	x(rm_this) = [];
-% 	y(rm_this) = [];
-% 	trival_scaling(j).cf = fit(x,y,'poly1');
-% end
-
-% for i = 1:length(detrended_data)
-% 	for j = 1:width(detrended_data)
-% 		if ~isempty(allfilters(i,j).K)
-% 			detrended_data(i,j).fp = convolve(detrended_data(i,j).time,detrended_data(i,j).stim,allfilters(i,j).K,filtertime);
-% 			% measure the gain
-% 			x = detrended_data(i,j).fp;
-% 			y = detrended_data(i,j).resp;
-% 			rm_this = isnan(x) | isnan(y);
-% 			x(rm_this) = [];
-% 			y(rm_this) = [];
-% 			temp = fit(x,y,'poly1');
-% 			detrended_data(i,j).gain = temp.p1;
-
-% 			% account for some trivial scaling
-% 			detrended_data(i,j).fp = trival_scaling(j).cf(detrended_data(i,j).fp);
-% 		end
-% 	end
-% end
-
 % plot linear prediction vs. data for the lowest dose. 
 ss = 25;
 y = mean2([MSG_data(1,:).resp]);
@@ -276,7 +244,6 @@ if being_published
 	delete(gcf)
 end
 
-return
 
 %      ######## ####  ######   ##     ## ########  ########     #######  
 %      ##        ##  ##    ##  ##     ## ##     ## ##          ##     ## 
@@ -290,6 +257,7 @@ return
 %% Figure 2: ORNs speed up responses on increasing stimulus mean
 
 figure('outerposition',[0 0 1400 900],'PaperUnits','points','PaperSize',[1400 900]); hold on
+
 
 % fit parametric filters to the raw, neuron-wise filters extracted earlier 
 % for i = 1:8
@@ -381,9 +349,21 @@ ylabel('Peak time (ms)')
 xlabel('Mean Stimulus (V)')
 legend(l,{'Cross correlation','Filter'})
 
+%        ########  ##     ## ##        ######  ########  ######  
+%        ##     ## ##     ## ##       ##    ## ##       ##    ## 
+%        ##     ## ##     ## ##       ##       ##       ##       
+%        ########  ##     ## ##        ######  ######    ######  
+%        ##        ##     ## ##             ## ##             ## 
+%        ##        ##     ## ##       ##    ## ##       ##    ## 
+%        ##         #######  ########  ######  ########  ######  
+
+
+
 % now we make the plots for the pulse responses.
 clearvars -except being_published
 load('/local-data/DA-paper/carlotta-martelli/fig3/abc.mat')
+
+% now do some post-processing and clean up
 
 % combine all spikes
 all_spikes = [];

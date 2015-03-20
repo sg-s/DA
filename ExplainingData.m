@@ -31,7 +31,7 @@ for i = 1:length(paradigm_names)
 	short_paradigm_names{i} = paradigm_names{i}(strfind(paradigm_names{i},'-')+1:end);
 end
 
-detrended_data = cache('detrended_data'); 
+load('MSG_per_neuron.mat','MSG_data')
 
 
 %       ########     ###               ##       ##     ##  ######   ######   
@@ -46,26 +46,32 @@ detrended_data = cache('detrended_data');
 
 load('DA_Fit_to_MSG.mat')
 
-for i = 1:3
-	% prep data
+for j = 1:13 % these many neurons
 	clear d
 	c = 1;
-	for j = 1:8
-		if ~isempty(detrended_data(j,i).stim)
-			d(c).stimulus = detrended_data(j,i).stim;
-			d(c).response = detrended_data(j,i).resp;
-			d(c).response(1:1e3) = NaN;
-			c=c+1;
+	for i = 1:8 % these many paradigms		
+		if ~isempty(MSG_data(i,j).stim)
+			if width(MSG_data(i,j).stim) > 1
+				% we ignore neurons with only one trial
+				d(c).stimulus = mean2(MSG_data(i,j).stim);
+				d(c).response = mean2(MSG_data(i,j).resp);
+				d(c).response(1:1e3) = NaN;
+				c=c+1;
+			end
 		end
 	end
-
-	% optimise
-	for k = 1:5
-		p(i) = FitModel2Data(@DAModelv2,d,p(i));
+	if exist('d','var')
+		% optimise
+		for k = 1:5
+			p(j) = FitModel2Data(@DAModelv2,d,p(j));
+		end
 	end
-
 	save('DA_Fit_to_MSG.mat','p','-append')
 end
+
+
+
+
 
 %    ##      ## ######## ########  ######## ########     ########     ###    
 %    ##  ##  ## ##       ##     ## ##       ##     ##    ##     ##   ## ##   
@@ -191,4 +197,14 @@ clear l
 l(1) = plot(mean_stim(:),peak_loc_xcorr(:)/1e-3,'k+');
 l(2) = plot(mean_stim(:),peak_loc_xcorr_DA(:)/1e-3,'r+');
 
+xlabel('Mean Stimulus (V)')
+ylabel('Peak of xcorr (ms)')
+legend(l,{'Data','DA Model'})
+
+PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 

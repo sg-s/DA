@@ -329,9 +329,7 @@ end
 %%
 % OK, there are clearly trends in some of the data, especially in the responses. Now, we will attempt to remove all the trends by fitting a second-degree polynomial to the stimulus and response from 35 to 55 seconds. 
 
-
-
-% remove trend
+% remove trend -- and combine by experimental group
 b = floor(5/dt);
 a = floor(35/dt);
 z = floor(55/dt);
@@ -364,6 +362,45 @@ if isempty(detrended_data)
 	end
 	cache('detrended_data',detrended_data)
 end
+
+% remove trend -- and combine by neuron
+b = floor(5/dt);
+a = floor(35/dt);
+z = floor(55/dt);
+if ~exist('MSG_per_neuron.mat','file')
+	MSG_data.time = [];
+	MSG_data.stim = [];
+	MSG_data.resp = [];
+	for k = 1:max(combined_data.neuron)
+		for i = 1:length(paradigm_names)
+			plot_these = find(strcmp(paradigm_names{i}, combined_data.paradigm));
+			plot_these = intersect(plot_these,find(combined_data.neuron==k));
+			if ~isempty(plot_these)
+				MSG_data(i,k).stim = NaN(20001,length(plot_these));
+				MSG_data(i,k).resp = NaN(20001,length(plot_these));
+				for n = 1:length(plot_these)
+					this_pid=(combined_data.PID(plot_these(n),:));
+					this_resp=(combined_data.fA(:,plot_these(n)));
+					time = dt*(1:length(this_resp));
+					baseline = mean(this_pid(1:b));
+					time = time(a:z);
+					this_pid = this_pid(a:z);
+					this_resp = this_resp(a:z);
+					MSG_data(i,k).time = time;
+					ff = fit(time(:),this_pid(:),'poly2');
+					this_stim = this_pid - ff(time)' + mean(ff(time)) - baseline;
+					MSG_data(i,k).stim(:,n) = this_stim(:);
+
+					ff = fit(time(:),this_resp(:),'poly2');
+					this_resp  = this_resp - ff(time) + mean(ff(time));
+					MSG_data(i,k).resp(:,n) = this_resp(:);
+				end
+			end
+		end
+	end
+	save('MSG_per_neuron.mat','MSG_data')
+end
+
 
 %         ######      ###    #### ##    ##       ##  ######  ########  ######## ######## ########  
 %        ##    ##    ## ##    ##  ###   ##      ##  ##    ## ##     ## ##       ##       ##     ## 

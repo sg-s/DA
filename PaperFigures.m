@@ -65,76 +65,119 @@ mean_pid = NaN(length(c),1);
 % plot lowest dose stimulus
 plot_these=find(strcmp(paradigm_names{1}, combined_data.paradigm));
 plot_this = mean2(combined_data.PID(plot_these,:));
+err = std(combined_data.PID(plot_these,:));
+err = err/sqrt(length(plot_these));
 time = dt*(1:length(plot_this));
 plot(axes_handles(1),time,plot_this,'Color',c(1,:))
+% axes(axes_handles(1))
+% shadedErrorBar(time,plot_this,err,{'Color',c(1,:)})
 ylabel(axes_handles(1),'Stimulus (V)')
 
 
 % plot lowest dose response
 plot_this = mean2(combined_data.fA(:,plot_these));
+err = std(combined_data.fA(:,plot_these)');
+err = err/sqrt(length(plot_these));
 time = dt*(1:length(plot_this));
 plot(axes_handles(2),time,plot_this,'Color',c(1,:))
 ylabel(axes_handles(2),'ORN Response (Hz)')
-
-set(axes_handles(1),'XLim',[-1 61])
-set(axes_handles(2),'XLim',[-1 61])
+% axes(axes_handles(2))
+% shadedErrorBar(time,plot_this,err,{'Color',c(1,:)})
+set(axes_handles(1),'XLim',[15 55])
+set(axes_handles(2),'XLim',[15 55])
 xlabel(axes_handles(2),'Time (s)')
 
 
 % remove trend
-% b = floor(5/dt);
-% a = floor(35/dt);
-% z = floor(55/dt);
-detrended_data = cache('detrended_data'); % needs this in the cache. run MeanShiftedGaussians.m to generate this
+load('MSG_per_neuron.mat','MSG_data')
 
-% load the filters
-allfilters = cache('allfilters');
+% back out all filters
+% for i = 1:8
+% 	for j = 1:13
+% 		if width(MSG_data(i,j).stim) > 1
+% 			this_stim = mean2(MSG_data(i,j).stim);
+% 			this_resp = mean2(MSG_data(i,j).resp);
+% 			[K, ~, filtertime_full] = FindBestFilter(this_stim,this_resp,[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
+% 			filtertime_full = filtertime_full;
+% 			filtertime = (-200:900);
+% 			K = interp1(filtertime_full,K,filtertime);
+% 			MSG_data(i,j).K = K/max(K);
+% 		end
+% 	end
+% end
+% save('MSG_per_neuron.mat','MSG_data')
 
 % plot the filter for the lowest dose 
-filtertime = dt*(1:length(allfilters(1,1).K));
-filtertime = filtertime - 200*dt;
-plot(axes_handles(3),filtertime,allfilters(1,1).K/max(allfilters(1,1).K),'Color',c(1,:))
+filtertime = (-200:900)*1e-3;
+K = 0*filtertime;
+for i = 1:13 % get all the filters for the lowest dose
+	K = [K; MSG_data(1,i).K];
+end
+err = std(K);
+err = err/sqrt(width(K));
+axes(axes_handles(3))
+shadedErrorBar(filtertime,mean2(K),err,{'Color',c(1,:)})
 set(axes_handles(3),'XLim',[min(filtertime) max(filtertime)])
 xlabel(axes_handles(3),'Lag (s)')
 ylabel(axes_handles(3),'Filter K (norm)')
 
-% first figure out the trivial scaling using the lowest dose
-clear trival_scaling
-trival_scaling = struct;
-for j = 1:3
-	detrended_data(1,j).fp = convolve(detrended_data(1,j).time,detrended_data(1,j).stim,allfilters(1,j).K,filtertime);
-	x = detrended_data(1,j).fp;
-	y = detrended_data(1,j).resp;
-	rm_this = isnan(x) | isnan(y);
-	x(rm_this) = [];
-	y(rm_this) = [];
-	trival_scaling(j).cf = fit(x,y,'poly1');
-end
-
-for i = 1:length(detrended_data)
-	for j = 1:width(detrended_data)
-		if ~isempty(allfilters(i,j).K)
-			detrended_data(i,j).fp = convolve(detrended_data(i,j).time,detrended_data(i,j).stim,allfilters(i,j).K,filtertime);
-			% measure the gain
-			x = detrended_data(i,j).fp;
-			y = detrended_data(i,j).resp;
-			rm_this = isnan(x) | isnan(y);
-			x(rm_this) = [];
-			y(rm_this) = [];
-			temp = fit(x,y,'poly1');
-			detrended_data(i,j).gain = temp.p1;
-
-			% account for some trivial scaling
-			detrended_data(i,j).fp = trival_scaling(j).cf(detrended_data(i,j).fp);
+% make linear predictions everywhere
+for i = 1:8
+	for j = 1:13
+		if width(MSG_data(i,j).stim) > 1
+			this_stim = mean2(MSG_data(i,j).stim);
+			this_resp = mean2(MSG_data(i,j).resp);
+			MSG_data(i,j).fp = convolve(MSG_data(i,j).time,mean2(MSG_data(i,j).stim),MSG_data(i,j).K,filtertime);
 		end
 	end
 end
 
-% plot linear prediction vs. data
-ss = 20;
-plot(axes_handles(4),detrended_data(1,1).fp(1:ss:end),detrended_data(1,1).resp(1:ss:end),'.','Color',c(1,:))
+
+% first figure out the trivial scaling using the lowest dose
+% clear trival_scaling
+% trival_scaling = struct;
+% for j = 1:3
+% 	detrended_data(1,j).fp = convolve(detrended_data(1,j).time,detrended_data(1,j).stim,allfilters(1,j).K,filtertime);
+% 	x = detrended_data(1,j).fp;
+% 	y = detrended_data(1,j).resp;
+% 	rm_this = isnan(x) | isnan(y);
+% 	x(rm_this) = [];
+% 	y(rm_this) = [];
+% 	trival_scaling(j).cf = fit(x,y,'poly1');
+% end
+
+% for i = 1:length(detrended_data)
+% 	for j = 1:width(detrended_data)
+% 		if ~isempty(allfilters(i,j).K)
+% 			detrended_data(i,j).fp = convolve(detrended_data(i,j).time,detrended_data(i,j).stim,allfilters(i,j).K,filtertime);
+% 			% measure the gain
+% 			x = detrended_data(i,j).fp;
+% 			y = detrended_data(i,j).resp;
+% 			rm_this = isnan(x) | isnan(y);
+% 			x(rm_this) = [];
+% 			y(rm_this) = [];
+% 			temp = fit(x,y,'poly1');
+% 			detrended_data(i,j).gain = temp.p1;
+
+% 			% account for some trivial scaling
+% 			detrended_data(i,j).fp = trival_scaling(j).cf(detrended_data(i,j).fp);
+% 		end
+% 	end
+% end
+
+% plot linear prediction vs. data for the lowest dose. 
+ss = 25;
+y = mean2([MSG_data(1,:).resp]);
+x = mean2([MSG_data(1,:).fp])
+plot(axes_handles(4),x(1:ss:end),y(1:ss:end),'.','Color',c(1,:))
+
+
 xlabel(axes_handles(4),'K \otimes s')
 ylabel(axes_handles(4),'Response (Hz)')
+
+
+return
+
 
 
 % plot the stimulus distributions 

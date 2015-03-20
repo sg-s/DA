@@ -208,3 +208,30 @@ if being_published
 	delete(gcf)
 end
 
+%   ########  ##     ## ##        ######  ########  ######             ##       ########     ###    
+%   ##     ## ##     ## ##       ##    ## ##       ##    ##             ##      ##     ##   ## ##   
+%   ##     ## ##     ## ##       ##       ##       ##                    ##     ##     ##  ##   ##  
+%   ########  ##     ## ##        ######  ######    ######     #######    ##    ##     ## ##     ## 
+%   ##        ##     ## ##             ## ##             ##              ##     ##     ## ######### 
+%   ##        ##     ## ##       ##    ## ##       ##    ##             ##      ##     ## ##     ## 
+%   ##         #######  ########  ######  ########  ######             ##       ########  ##     ## 
+
+%%
+% In this section we check if we can fit a DA model to the dose-response pulse experiment from Carlotta's paper. 
+
+load('PulseData.mat')
+d = struct;
+for i = 1:length(PulseData)
+	d(i).stimulus = mean2(PulseData(i).stim);
+	d(i).response = mean2(PulseData(i).resp);
+	d(i).response(3000:end) = [];
+	d(i).stimulus(3000:end) = [];
+	d(i).response(1:1000) = NaN;
+	% d(i).response = [NaN(5,1); d(i).response];
+	% d(i).stimulus = [zeros(5,1); d(i).stimulus];
+end
+
+% fit
+p = FitModel2Data(@DAModelv2,d);
+
+

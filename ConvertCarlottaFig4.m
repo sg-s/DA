@@ -7,13 +7,13 @@
 %
 % this script converts carlotta's fig4 data for 2ac into a more usable format
 
-allfiles= dir('/local-data/DA-paper/carlotta/fig4/*SPK*.mat');
+allfiles= dir('/local-data/DA-paper/carlotta-martelli/fig4/*SPK*.mat');
 
 clear data
 for i = 1:length(allfiles)
 	% load data
-	load(strcat('/local-data/DA-paper/carlotta/fig4/',allfiles(i).name))
-	load(strcat('/local-data/DA-paper/carlotta/fig4/',strrep(allfiles(i).name,'_SPK','')))
+	load(strcat('/local-data/DA-paper/carlotta-martelli/fig4/',allfiles(i).name))
+	load(strcat('/local-data/DA-paper/carlotta-martelli/fig4/',strrep(allfiles(i).name,'_SPK','')))
 
 	disp(allfiles(i).name)
 
@@ -54,6 +54,41 @@ stim_half_time = NaN(1e4,1); % time it takes to go to half max
 resp_half_time = NaN(1e4,1); % time it takes to go to half max
 ORN_half_time = NaN(1e4,1);
 c = 1;
+
+
+% convert data into PulseData for other uses
+PulseData = struct;
+for i = 1:length(dilutions)
+	PulseData(i).resp = ((squeeze(data(1).fA(i,:,:)))');
+	PulseData(i).stim = ((squeeze(data(1).PID(i,:,:)))');
+end
+
+% check for bad data
+for i = 1:length(PulseData)
+	rm_this_trial = [];
+	for j = 1:width(PulseData(i).resp)
+		if std(PulseData(i).resp(:,j))< 1e-1
+			rm_this_trial = [rm_this_trial j];
+		end
+	end
+	PulseData(i).resp(:,rm_this_trial) = [];
+	PulseData(i).stim(:,rm_this_trial) = [];
+end
+
+for i = 1:length(PulseData)
+	rm_this_trial = [];
+	for j = 1:width(PulseData(i).resp)
+		if std(PulseData(i).stim(:,j)) == 0
+			rm_this_trial = [rm_this_trial j];
+		end
+	end
+	PulseData(i).resp(:,rm_this_trial) = [];
+	PulseData(i).stim(:,rm_this_trial) = [];
+end
+
+save('PulseData.mat','PulseData')
+
+
 
 for i = 1:length(data)
 	for j = 1:length(data(i).dilutions)

@@ -540,7 +540,26 @@ plot(axes_handles(2),tA,mean2(fA),'k')
 set(axes_handles(2),'XLim',[10 60],'XTickLabel',{})
 ylabel(axes_handles(2),'Firing Rate (Hz)')
 
-% extract Linear model
+% extract Linear model for each trial 
+K = [];
+for i = [3:10 13:20]
+	[this_K, ~, filtertime_full] = FindBestFilter(PID(:,i),fA(:,i),[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
+	filtertime_full = filtertime_full*mean(diff(tA));
+	filtertime = 1e-3*(-200:900);
+	this_K = interp1(filtertime_full,this_K,filtertime);
+	K = [K;this_K];
+end
+
+% plot linear filter
+axes(axes_handles(4))
+plot_this = mean2(K);
+err = std(K)/sqrt(width(K));
+shadedErrorBar(filtertime,plot_this,err,{'Color',c(3,:)})
+xlabel(axes_handles(4),'Lag (s)')
+ylabel(axes_handles(4),'Filter K')
+
+
+% make a linear prediction using a filter fit to the mean data (this is almost exactly the same)
 [K, ~, filtertime_full] = FindBestFilter(mean2(PID),mean2(fA),[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
 filtertime_full = filtertime_full*mean(diff(tA));
 filtertime = 1e-3*(-200:900);
@@ -552,10 +571,6 @@ temp =fit(fp(~(isnan(fp) | isnan(R))),R(~(isnan(fp) | isnan(R))),'poly1');
 fp = fp*temp.p1;
 fp = fp+temp.p2;
 
-% plot linear filter
-plot(axes_handles(4),filtertime,K,'Color',c(3,:))
-xlabel(axes_handles(4),'Lag (s)')
-ylabel(axes_handles(4),'Filter (norm)')
 
 % plot prediction and prediction quality
 l=plot(axes_handles(3),tA,fp,'Color',c(3,:));
@@ -570,6 +585,10 @@ ph = []; ph(3:4) = axes_handles(5:6);
 history_lengths = (3*floor(1000*logspace(-1,1,30)/3))/1e3;
 [~,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',mean2(fA),'prediction',fp,'stimulus',mean2(PID),'time',tA,'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(11));
 set(axes_handles(6),'XLim',[.09 11]) % to show .1 and 10 on the log scale
+
+% show the p-value
+axes(axes_handles(5))
+text(10,60,'p < 0.01')
 
 % plot gain vs preceding stimulus
 [x,y] = MakeFig6G(mean2(PID),mean2(fA),fp,history_lengths(11)*1e3);

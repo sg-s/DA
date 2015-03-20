@@ -235,3 +235,20 @@ end
 p = FitModel2Data(@DAModelv2,d);
 
 
+%    ##       ##     ## ########         ##    ########     ###    
+%    ##       ##     ## ##                ##   ##     ##   ## ##   
+%    ##       ##     ## ##                 ##  ##     ##  ##   ##  
+%    ##       ##     ## ######   #######    ## ##     ## ##     ## 
+%    ##        ##   ##  ##                 ##  ##     ## ######### 
+%    ##         ## ##   ##                ##   ##     ## ##     ## 
+%    ########    ###    ##               ##    ########  ##     ## 
+
+load('LVF_data.mat')
+
+d = struct;
+for i = 1:2
+	d(i).stimulus = mean2(data(i).stim);
+	d(i).response = mean2(data(i).resp);
+	d(i).response(1:1e3) = NaN;
+end
+

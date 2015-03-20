@@ -168,16 +168,12 @@ end
 % plot linear prediction vs. data for the lowest dose. 
 ss = 25;
 y = mean2([MSG_data(1,:).resp]);
-x = mean2([MSG_data(1,:).fp])
+x = mean2([MSG_data(1,:).fp]);
 plot(axes_handles(4),x(1:ss:end),y(1:ss:end),'.','Color',c(1,:))
 
 
 xlabel(axes_handles(4),'K \otimes s')
 ylabel(axes_handles(4),'Response (Hz)')
-
-
-return
-
 
 
 % plot the stimulus distributions 
@@ -188,12 +184,12 @@ for i = 1:length(paradigm_names)
 	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
 	plot_hist = (combined_data.PID(plot_these,a:z));
 	[hy,hx]  = hist(plot_hist(:),50);
-	hy = hy/max(hy);
+	hy = hy/sum(hy);
 	plot(axes_handles(5),hx,hy,'Color',c(i,:));
 end
 
 xlabel(axes_handles(5),'PID (V)')
-ylabel(axes_handles(5),'count (norm)')
+ylabel(axes_handles(5),'p.d.f')
 
 
 % plot the response distributions 
@@ -201,59 +197,86 @@ a = floor(15/dt);
 z = floor(55/dt);
 
 for i = 1:length(paradigm_names)
-	temp =  [detrended_data(i,:).resp];
-	temp = temp(:);
-	[hy,hx]  = hist(temp,50); % this is being 
-	hy = hy/max(hy);
+	temp =  [MSG_data(i,:).resp];
+	temp = mean2(temp);
+	[hy,hx]  = hist(temp,50);
+	hy = hy/sum(hy);
 	plot(axes_handles(6),hx,hy,'Color',c(i,:));
 end
 
 xlabel(axes_handles(6),'Response (Hz)')
-ylabel(axes_handles(6),'count (norm)')
+ylabel(axes_handles(6),'p.d.f')
 
 
-% show gain changes -- change in slope of scatter plot
+% show gain changes for all paradigms -- average over neurons 
 ss = 50;
-for j = 1:3
-	for i = 1:length(detrended_data)
-		if ~isempty(allfilters(i,j).K)
-			plot(axes_handles(7),detrended_data(i,j).fp(1:ss:end),detrended_data(i,j).resp(1:ss:end),'.','Color',c(i,:))
-		end
+for i = 1:8 % iterate over all paradigms 
+	y = ([MSG_data(i,:).resp]);
+	x = ([MSG_data(i,:).fp]);
+	if ~isvector(x)
+		x = mean2(x);
 	end
+	if ~isvector(y)
+		y = mean2(y);
+	end 
+	plot(axes_handles(7),x(1:ss:end),y(1:ss:end),'.','Color',c(i,:))
 end
 
-set(axes_handles(7),'XLim',[0 45],'YLim',[0 45])
-xlabel(axes_handles(7),'K\otimes stimulus (Hz)')
+xlabel(axes_handles(7),'K\otimes s')
 ylabel(axes_handles(7),'Neuron Response (Hz)')
 
-% show gain changes -- gain vs. mean stimulus
 
-x = []; y = [];
-for j = 1:3
-	for i = 1:length(detrended_data)
-		if ~isempty(allfilters(i,j).K)
-			plot(axes_handles(8),mean(detrended_data(i,j).stim),detrended_data(i,j).gain,'+','Color',c(i,:));
-			x = [x mean(detrended_data(i,j).stim)];
-			y = [y detrended_data(i,j).gain];
+% compute gain changes on a per-neuron basis
+
+gain = NaN(8,13);
+mean_stim = NaN(8,13);
+for i = 1:8 % iterate over all paradigms 
+	this_x = [];
+	this_y = [];
+	for j = 1:13
+		if width(MSG_data(i,j).stim) > 1
+			y = MSG_data(i,j).resp; % average over all neurons 
+			x = MSG_data(i,j).fp;
+			if ~isvector(x)
+				x = mean2(x);
+			end
+			if ~isvector(y)
+				y = mean2(y);
+			end 
+			
+			gain(i,j) = EstimateGain2(x,y);
+			mean_stim(i,j) = mean(mean([MSG_data(i,:).stim]));
 		end
+	end	
+end
+
+% show gain changes -- gain vs. mean stimulus
+for i = 1:8 % iterate over all paradigms 
+	for j = 1:13
+		plot(axes_handles(8),mean_stim(i,j),gain(i,j),'+','Color',c(i,:));
 	end
 end
-cf = fit(x(:),y(:),'power1');
-set(axes_handles(8),'XScale','log','YScale','log'); %,'YLim',[5 60],'XLim',[0.4 6])
+
+mean_stim = mean_stim(~isnan(mean_stim));
+gain = gain(~isnan(gain));
+
+
+cf = fit(mean_stim(:),gain(:),'power1');
+set(axes_handles(8),'XScale','log','YScale','log','YLim',[1e-3 2e-2])
 xlabel(axes_handles(8),'Mean Stimulus (V)')
 ylabel(axes_handles(8),'Neuron Gain (Hz/V)')
-l=plot(axes_handles(8),x(:),cf(x(:)),'k');
+l=plot(axes_handles(8),sort(mean_stim),cf(sort(mean_stim)),'k');
 legend(l,strcat('\alpha=',oval(cf.b)))
-% set(axes_handles(8),'YLim',[2 100])
 
+PrettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=0;','FixLogY=0;')
 
-PrettyFig('plw=1.3;','lw=1.5;','fs=14;')
 
 if being_published
 	snapnow
 	delete(gcf)
 end
 
+return
 
 %      ######## ####  ######   ##     ## ########  ########     #######  
 %      ##        ##  ##    ##  ##     ## ##     ## ##          ##     ## 

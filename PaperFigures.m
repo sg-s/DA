@@ -328,7 +328,7 @@ for i = 1:8
 	end
 end
 
-set(gca,'XLim',[-.1 .3])
+set(gca,'XLim',[-.1 .3],'YLim',[-.5 1.1])
 xlabel('Lag (s)')
 ylabel('Cross Correlation (norm)')
 

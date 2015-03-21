@@ -1072,6 +1072,64 @@ xlabel(axes_handles(7),'Mean Stimulus (V)')
 ylabel(axes_handles(7),'Neuron Gain (Hz/V)')
 
 
+%    ########     ###        ######  ########  ######## ######## ########  ##     ## ########  
+%    ##     ##   ## ##      ##    ## ##     ## ##       ##       ##     ## ##     ## ##     ## 
+%    ##     ##  ##   ##     ##       ##     ## ##       ##       ##     ## ##     ## ##     ## 
+%    ##     ## ##     ##     ######  ########  ######   ######   ##     ## ##     ## ########  
+%    ##     ## #########          ## ##        ##       ##       ##     ## ##     ## ##        
+%    ##     ## ##     ##    ##    ## ##        ##       ##       ##     ## ##     ## ##        
+%    ########  ##     ##     ######  ##        ######## ######## ########   #######  ##        
+
+
+% xcorr for mean shifted gaussians
+peak_loc_data = NaN(8,13);
+peak_loc_DA = NaN(8,13);
+for i = 1:8 % iterate over all paradigms 
+	for j = 1:13
+		if width(MSG_data(i,j).stim) > 1
+			this_resp = MSG_data(i,j).resp;
+			this_stim = MSG_data(i,j).stim;
+			this_pred = MSG_data(i,j).fp_DA;
+			if ~isvector(this_resp)
+				this_resp = mean2(this_resp);
+			end
+			if ~isvector(this_stim)
+				this_stim = mean2(this_stim);
+			end
+			if ~isvector(this_pred)
+				this_pred = mean2(this_pred);
+			end
+
+			a = this_resp - mean(this_resp);
+			b = this_stim - mean(this_stim);
+			a = a/std(a);
+			b = b/std(b);
+			x = xcorr(a,b); % positive peak means a lags b
+			t = 1e-3*(1:length(x));
+			t = t-mean(t);
+			x = x/max(x);
+			[~,loc] = max(x);
+			peak_loc_data(i,j) = t(loc);
+
+			
+			a = this_pred - mean(this_pred);
+			a = a/std(a);
+			x = xcorr(a,b); % positive peak means a lags b
+			x = x/max(x);
+			[~,loc] = max(x);
+			peak_loc_DA(i,j) = t(loc);
+
+		end
+	end
+end 
+
+plot(axes_handles(8),mean_stim(:),1e3*peak_loc_data(:),'kx')
+plot(axes_handles(8),mean_stim(:),1e3*peak_loc_DA(:),'rx')
+set(axes_handles(8),'XLim',[-.1 3],'YLim',[35 120])
+xlabel(axes_handles(8),'Mean Stimulus (V)')
+ylabel(axes_handles(8),'Peak xcorr. (ms)')
+
+
 PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
 
 if being_published

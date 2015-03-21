@@ -119,5 +119,7 @@ end
 if ~isempty(ph)
 	xlabel(ph(3),'Prediction (Hz)')
 	ylabel(ph(3),'Data (Hz)')
-	set(ph(4),'XScale','log')
+	if length(ph) > 3
+		set(ph(4),'XScale','log')
+	end
 end

@@ -199,8 +199,6 @@ ylabel(axes_handles(7),'Neuron Response (Hz)')
 gain = NaN(8,13);
 mean_stim = NaN(8,13);
 for i = 1:8 % iterate over all paradigms 
-	this_x = [];
-	this_y = [];
 	for j = 1:13
 		if width(MSG_data(i,j).stim) > 1
 			y = MSG_data(i,j).resp; % average over all neurons 
@@ -860,6 +858,221 @@ PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
 ylabel(axes_handles(1),'Exp. Replicates','FontSize',20)
 ylabel(axes_handles(7),'Diff. ORNs','FontSize',20)
 ylabel(axes_handles(4),'Diff. odors','FontSize',20)
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%       ######## ####  ######   ##     ## ########  ########    ######## 
+%       ##        ##  ##    ##  ##     ## ##     ## ##          ##       
+%       ##        ##  ##        ##     ## ##     ## ##          ##       
+%       ######    ##  ##   #### ##     ## ########  ######      #######  
+%       ##        ##  ##    ##  ##     ## ##   ##   ##                ## 
+%       ##        ##  ##    ##  ##     ## ##    ##  ##          ##    ## 
+%       ##       ####  ######    #######  ##     ## ########     ######  
+
+
+%      ##     ##  #######  ########  ######## ##        ######  
+%      ###   ### ##     ## ##     ## ##       ##       ##    ## 
+%      #### #### ##     ## ##     ## ##       ##       ##       
+%      ## ### ## ##     ## ##     ## ######   ##        ######  
+%      ##     ## ##     ## ##     ## ##       ##             ## 
+%      ##     ## ##     ## ##     ## ##       ##       ##    ## 
+%      ##     ##  #######  ########  ######## ########  ######  
+
+
+
+%% Figure 5: Models to explain observed phenomena 
+
+figure('outerposition',[0 0 1400 600],'PaperUnits','points','PaperSize',[1400 600]); hold on
+clear axes_handles
+for i = 1:10
+	axes_handles(i) = subplot(2,5,i); hold on
+end
+
+% first column shows fit quality
+for i = 1:5:10
+	plot(axes_handles(i),[0 5],[0 5],'k--')
+	xlabel(axes_handles(i),'(P_{S}/P_{N})^{1/2}','interpreter','tex')
+	ylabel(axes_handles(i),'(P_{S}/P_{R})^{1/2}','interpreter','tex')
+end
+
+% Label the columns
+title(axes_handles(1),'Fit Quality')
+title(axes_handles(2),'Weber Scaling')
+title(axes_handles(3),'Response Speedup')
+title(axes_handles(4),'Pulse Speedup')
+title(axes_handles(5),'Fast Gain Control')
+
+
+%       ########     ###               ##     ##  #######  ########  ######## ##       
+%       ##     ##   ## ##              ###   ### ##     ## ##     ## ##       ##       
+%       ##     ##  ##   ##             #### #### ##     ## ##     ## ##       ##       
+%       ##     ## ##     ##            ## ### ## ##     ## ##     ## ######   ##       
+%       ##     ## #########            ##     ## ##     ## ##     ## ##       ##       
+%       ##     ## ##     ##            ##     ## ##     ## ##     ## ##       ##       
+%       ########  ##     ##            ##     ##  #######  ########  ######## ######## 
+
+
+% DA Model
+load('LVF_data.mat')
+% generate predictions
+for i = 1:length(data)
+	data(i).fp = DAModelv2(mean2(data(i).stim),p(i));
+	% censor the first 10 seconds
+	resp = data(i).resp(1e4:end,:);
+	fp = data(i).fp(1e4:end);
+	% show fit quality of DA model for Large Variance Flicker
+	[qx, qy] = GeffenMeister(resp,fp);
+	plot(axes_handles(6),qx,qy,'ko')
+end
+
+
+% show gain analysis -- da model
+ph = []; ph(3) = axes_handles(10);
+history_lengths = 0.4890;
+time = 1e-3*(1:length(data(1).fp));
+[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',mean2([data.resp]),'prediction',mean2([data.fp]),'stimulus',mean2([data.stim]),'time',time,'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(1));
+
+
+% show the p-value
+axes(axes_handles(10))
+text(10,60,strkat('p = ',oval(p(1))))
+
+
+%     ########     ###             ########  ##     ## ##        ######  ########  ######  
+%     ##     ##   ## ##            ##     ## ##     ## ##       ##    ## ##       ##    ## 
+%     ##     ##  ##   ##           ##     ## ##     ## ##       ##       ##       ##       
+%     ##     ## ##     ##          ########  ##     ## ##        ######  ######    ######  
+%     ##     ## #########          ##        ##     ## ##             ## ##             ## 
+%     ##     ## ##     ##          ##        ##     ## ##       ##    ## ##       ##    ## 
+%     ########  ##     ##          ##         #######  ########  ######  ########  ######  
+
+
+% pulses
+
+load('PulseData.mat')
+% make all the model predictions
+qx = NaN(length(PulseData),1);
+qy = NaN(length(PulseData),1);
+for i = 1:length(PulseData)
+	for j = 1:width(PulseData(i).stim)
+		PulseData(i).fp(:,j) = DAModelv2(PulseData(i).stim(:,j),p);
+	end
+	[qx(i), qy(i)] = GeffenMeister(PulseData(i).resp,PulseData(i).fp);
+end
+
+% show this on the plot
+plot(axes_handles(6),qx,qy,'k+')
+
+% show the pulse timing data again
+load('2ac_timing.mat')
+a = background_stim == 0;
+foreground_stim(foreground_stim<1e-2) = NaN; % not reliable
+
+plot(axes_handles(9),foreground_stim(a),resp_half_time(a)-stim_half_time(a),'k+')
+set(axes_handles(9),'XScale','log','XLim',[1e-2 20],'YLim',[0 100])
+xlabel(axes_handles(9),'Mean Stimulus (V)')
+ylabel(axes_handles(9),'\tau_{ORN}-\tau_{PID} (ms)','interpreter','tex')
+
+% show the timing data for the DA model
+stim_half_time = NaN(1e4,1); % time it takes to go to half max
+resp_half_time = NaN(1e4,1); % time it takes to go to half max
+foreground_stim = NaN(1e4,1);
+c = 1;
+a = 1050;
+z = 1500; % nominal stimulus start and stop
+for i = 1:length(PulseData)
+	for j = 1:width(PulseData(i).stim)
+		this_stim = PulseData(i).stim(:,j);
+		foreground_stim(c) = mean(this_stim(a:z));
+		this_stim = this_stim/max(this_stim(a:z));
+		this_resp = PulseData(i).fp(:,j);
+		this_resp = this_resp -  mean(this_resp(1:a));
+		this_resp = this_resp/max(this_resp(a:z));
+		stim_half_time(c) = max([find(this_stim(a:z)>.5,1,'first') NaN]);
+		resp_half_time(c) = max([find(this_resp(a:z)>.5,1,'first') NaN]);
+		c = c+1;
+	end
+end
+stim_half_time(c:end) = [];
+resp_half_time(c:end) = [];
+foreground_stim(c:end) = [];
+
+
+plot(axes_handles(9),foreground_stim,resp_half_time-stim_half_time,'r+')
+
+%      ########     ###              ##      ## ######## ########  ######## ########  
+%      ##     ##   ## ##             ##  ##  ## ##       ##     ## ##       ##     ## 
+%      ##     ##  ##   ##            ##  ##  ## ##       ##     ## ##       ##     ## 
+%      ##     ## ##     ##           ##  ##  ## ######   ########  ######   ########  
+%      ##     ## #########           ##  ##  ## ##       ##     ## ##       ##   ##   
+%      ##     ## ##     ##           ##  ##  ## ##       ##     ## ##       ##    ##  
+%      ########  ##     ##            ###  ###  ######## ########  ######## ##     ## 
+
+% show weber scaling 
+load('MSG_per_neuron.mat','MSG_data')
+load('DA_Fit_to_MSG.mat')
+
+% compute all the model predictions and the fit qualities 
+qx = NaN(8,13);
+qy = NaN(8,13);
+for i = 1:8 % there are 8 paradimgs in the MSG data
+	for j = 1:13 % there are 13 neurons
+		if ~isempty(p(j).A) && width(MSG_data(i,j).stim) > 1
+			for k = 1:width(MSG_data(i,j).stim)
+				MSG_data(i,j).fp_DA(:,k) = DAModelv2(MSG_data(i,j).stim(:,k),p(j));
+			end
+			% compute the geffen-Meister error metric
+			[qx(i,j) qy(i,j)] = GeffenMeister(MSG_data(i,j).resp,MSG_data(i,j).fp_DA);
+		end
+	end
+end
+
+% plot on the error plot, and colour code by stimulus
+c = parula(9);
+for i = 1:8
+	this_qx = qx(i,~isnan(qx(i,:)));
+	this_qy = qy(i,~isnan(qy(i,:)));
+	plot(axes_handles(6),this_qx,this_qy,'x','Color',c(i,:))
+end
+
+
+% show the gain plot again, and also the gain for the da model 
+gain = NaN(8,13);
+gain_DA = NaN(8,13);
+mean_stim = NaN(8,13);
+for i = 1:8 % iterate over all paradigms 
+	for j = 1:13
+		if width(MSG_data(i,j).stim) > 1
+			y = MSG_data(i,j).resp; % average over all neurons 
+			x = MSG_data(i,j).fp;
+			if ~isvector(x)
+				x = mean2(x);
+			end
+			if ~isvector(y)
+				y = mean2(y);
+			end 
+			
+			gain(i,j) = EstimateGain2(x,y);
+
+			x = MSG_data(i,j).fp_DA;
+			if ~isvector(x)
+				x = mean2(x);
+			end
+			gain_DA(i,j) = EstimateGain2(x,y);
+			mean_stim(i,j) = mean(mean([MSG_data(i,:).stim]));
+		end
+	end	
+end
+plot(axes_handles(7),mean_stim(:),gain(:),'kx')
+plot(axes_handles(7),mean_stim(:),gain_DA(:),'rx')
+xlabel(axes_handles(7),'Mean Stimulus (V)')
+ylabel(axes_handles(7),'Neuron Gain (Hz/V)')
+
+
+PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
 
 if being_published
 	snapnow

@@ -152,12 +152,12 @@ for i = 1:length(paradigm_names)
 	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
 	plot_hist = (combined_data.PID(plot_these,a:z));
 	[hy,hx]  = hist(plot_hist(:),50);
-	hy = hy/sum(hy);
+	hy = hy/length(plot_these);
 	plot(axes_handles(5),hx,hy,'Color',c(i,:));
 end
 
 xlabel(axes_handles(5),'PID (V)')
-ylabel(axes_handles(5),'p.d.f')
+ylabel(axes_handles(5),'count')
 
 
 % plot the response distributions 
@@ -168,12 +168,11 @@ for i = 1:length(paradigm_names)
 	temp =  [MSG_data(i,:).resp];
 	temp = mean2(temp);
 	[hy,hx]  = hist(temp,50);
-	hy = hy/sum(hy);
 	plot(axes_handles(6),hx,hy,'Color',c(i,:));
 end
 
 xlabel(axes_handles(6),'Response (Hz)')
-ylabel(axes_handles(6),'p.d.f')
+ylabel(axes_handles(6),'count')
 
 
 % show gain changes for all paradigms -- average over neurons 

@@ -209,7 +209,13 @@ for i = 1:8 % iterate over all paradigms
 				y = mean2(y);
 			end 
 			
-			gain(i,j) = EstimateGain2(x,y);
+			% trim NaNs again
+			rm_this = isnan(x) | isnan(y);
+			x(rm_this) = [];
+			y(rm_this) = [];
+
+			temp=fit(x(:),y(:),'poly1');
+			gain(i,j) = temp.p1;
 			mean_stim(i,j) = mean(mean([MSG_data(i,:).stim]));
 		end
 	end	
@@ -227,11 +233,20 @@ gain = gain(~isnan(gain));
 
 
 cf = fit(mean_stim(:),gain(:),'power1');
-set(axes_handles(8),'XScale','log','YScale','log','YLim',[1e-3 2e-2])
+set(axes_handles(8),'XScale','log','YScale','log','YLim',[.03 1],'XLim',[.5 3.5])
 xlabel(axes_handles(8),'Mean Stimulus (V)')
 ylabel(axes_handles(8),'Neuron Gain (Hz/V)')
-l=plot(axes_handles(8),sort(mean_stim),cf(sort(mean_stim)),'k');
-legend(l,strcat('\alpha=',oval(cf.b)))
+l(1)=plot(axes_handles(8),sort(mean_stim),cf(sort(mean_stim)),'k');
+L = strcat('\alpha=',oval(cf.b));
+
+% fit a power law with expoenent -1
+options = fitoptions(fittype('power1'));
+options.Lower = [-Inf -1];
+options.Upper = [Inf -1];
+cf = fit(mean_stim(:),gain(:),'power1',options);
+l(2)=plot(axes_handles(8),sort(mean_stim),cf(sort(mean_stim)),'k--');
+
+legend(l,{L, strcat('\alpha=-1,\beta=',oval(cf.a))} )
 
 PrettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=0;','FixLogY=0;')
 

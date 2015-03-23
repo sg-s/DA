@@ -128,7 +128,6 @@ for i = 1:8
 			this_stim = mean2(MSG_data(i,j).stim);
 			this_resp = mean2(MSG_data(i,j).resp);
 			MSG_data(i,j).fp = convolve(MSG_data(i,j).time,mean2(MSG_data(i,j).stim),MSG_data(i,j).K,filtertime) + mean(mean2(MSG_data(i,j).resp));
-			mean(mean2(MSG_data(i,j).resp))
 		end
 	end
 end
@@ -240,7 +239,7 @@ ylabel(axes_handles(8),'Neuron Gain (Hz/V)')
 l(1)=plot(axes_handles(8),sort(mean_stim),cf(sort(mean_stim)),'k');
 L = strcat('\alpha=',oval(cf.b));
 
-% fit a power law with expoenent -1
+% fit a power law with exponent -1
 options = fitoptions(fittype('power1'));
 options.Lower = [-Inf -1];
 options.Upper = [Inf -1];
@@ -250,7 +249,6 @@ l(2)=plot(axes_handles(8),sort(mean_stim),cf(sort(mean_stim)),'k--');
 legend(l,{L, strcat('\alpha=-1,\beta=',oval(cf.a))} )
 
 PrettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=0;','FixLogY=0;')
-
 
 return
 

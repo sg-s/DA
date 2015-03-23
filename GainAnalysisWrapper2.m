@@ -83,6 +83,12 @@ else
 	ph = [];
 end
 
+if exist('use_cache','var') 
+else
+	use_cache = true;
+end
+
+
 % clean up a little and ignore NaNs
 x.filter_length = 499; % what does this even do??
 rm_this = [find(isnan(response)) find(isnan(prediction)) ];
@@ -95,6 +101,9 @@ x.time(rm_this) = [];
 % check cache to see if we have already computed this
 hash = DataHash(x);
 cached_data = cache(hash);
+if ~use_cache
+	cached_data = [];
+end
 if isempty(cached_data)
 	[p_LN,l,h,low_gof,high_gof] = GainAnalysis4(x,history_lengths,example_history_length,ph);
 	cache(hash,p_LN);

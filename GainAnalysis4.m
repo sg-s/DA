@@ -54,7 +54,7 @@ end
 
 if isempty(plothere) 
 	if debug
-		figure; hold on; 
+		figure, hold on; 
 		plothere(1) = subplot(2,1,1); hold on;
 		plothere(2) = subplot(2,1,2); hold on;
 		figure, hold on;
@@ -79,6 +79,13 @@ frac = x.frac;
 dt = mean(diff(t));
 hl = round(history_lengths/dt);
 
+%         ######  ##     ##  #######   #######  ######## ##     ## 
+%        ##    ## ###   ### ##     ## ##     ##    ##    ##     ## 
+%        ##       #### #### ##     ## ##     ##    ##    ##     ## 
+%         ######  ## ### ## ##     ## ##     ##    ##    ######### 
+%              ## ##     ## ##     ## ##     ##    ##    ##     ## 
+%        ##    ## ##     ## ##     ## ##     ##    ##    ##     ## 
+%         ######  ##     ##  #######   #######     ##    ##     ## 
 
 
 % compute shat(the smoothed stimulus)
@@ -269,6 +276,34 @@ for i = 1:length(history_lengths)
 
 	end	
 
+	%        ##     ##    ###    ##       #### ########  #### ######## ##    ## 
+	%        ##     ##   ## ##   ##        ##  ##     ##  ##     ##     ##  ##  
+	%        ##     ##  ##   ##  ##        ##  ##     ##  ##     ##      ####   
+	%        ##     ## ##     ## ##        ##  ##     ##  ##     ##       ##    
+	%         ##   ##  ######### ##        ##  ##     ##  ##     ##       ##    
+	%          ## ##   ##     ## ##        ##  ##     ##  ##     ##       ##    
+	%           ###    ##     ## ######## #### ########  ####    ##       ##    
+
+
+	% this is where we determine the strict criteria for the validity of the gain analysis 
+	% see : https://github.com/sg-s/DA/issues/148
+
+	% check for sampling homogeneity
+	validity.H(i) = abs((mean(t_low) - mean(t_high))/(mean(t))); % this should be low
+	
+	% range for data
+	validity.R_low(i) = (max(f_low) - min(f_low))/(max(f) - min(f));
+	validity.R_high(i) = (max(f_high) - min(f_high))/(max(f) - min(f));
+
+	% range for prediction
+	validity.Rp_low(i) = (max(fp_low) - min(fp_low))/(max(fp) - min(fp));
+	validity.Rp_high(i) = (max(fp_high) - min(fp_high))/(max(fp) - min(fp));
+
+	% goodness of fit? 
+	validity.low_gof(i) = low_gof(i);
+	validity.high_gof(i) = high_gof(i);
+
+
 end
 
 if length(plothere) == 4
@@ -276,13 +311,21 @@ if length(plothere) == 4
 	plot(plothere(4),history_lengths,all_slopes*ones(1,length(history_lengths)),'k'), hold on
 end
 
-	
+
+%    ########   #######   #######  ########  ######  ######## ########     ###    ########  
+%    ##     ## ##     ## ##     ##    ##    ##    ##    ##    ##     ##   ## ##   ##     ## 
+%    ##     ## ##     ## ##     ##    ##    ##          ##    ##     ##  ##   ##  ##     ## 
+%    ########  ##     ## ##     ##    ##     ######     ##    ########  ##     ## ########  
+%    ##     ## ##     ## ##     ##    ##          ##    ##    ##   ##   ######### ##        
+%    ##     ## ##     ## ##     ##    ##    ##    ##    ##    ##    ##  ##     ## ##        
+%    ########   #######   #######     ##     ######     ##    ##     ## ##     ## ##        
+
+
 % bootstrap slopes
 if nargin > 4 % we specify the p-values
 	low_slopes2.data = low_slopes;
 	high_slopes2.data = high_slopes;
 	
-
 else
 	[low_slopes2, high_slopes2,p] = BootStrapErrorBars(x,history_lengths,frac);
 
@@ -290,9 +333,20 @@ else
 
 end
 
+% throw out all invalid data
+v = (validity.H < 0.1 & validity.R_low > .5 & validity.R_high > .5 & validity.low_gof > .8 & validity.high_gof > .8);
+
+low_slopes2.data(~v) = NaN;
+high_slopes2.data(~v) = NaN;
+
+	
+
+
+% this is where we plot the history length plot
 if length(plothere) == 4
 	plot(plothere(4),history_lengths,low_slopes2.data,'g'), hold on
 	plot(plothere(4),history_lengths,high_slopes2.data,'r')
+
 	%p_low = p_low*length(p_low); % Bonferroni correction
 	%p_high = p_high*length(p_high); % Bonferroni correction
 	sig_low = p_low<0.05; % these points are significant,

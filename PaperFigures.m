@@ -127,7 +127,8 @@ for i = 1:8
 		if width(MSG_data(i,j).stim) > 1
 			this_stim = mean2(MSG_data(i,j).stim);
 			this_resp = mean2(MSG_data(i,j).resp);
-			MSG_data(i,j).fp = convolve(MSG_data(i,j).time,mean2(MSG_data(i,j).stim),MSG_data(i,j).K,filtertime);
+			MSG_data(i,j).fp = convolve(MSG_data(i,j).time,mean2(MSG_data(i,j).stim),MSG_data(i,j).K,filtertime) + mean(mean2(MSG_data(i,j).resp));
+			mean(mean2(MSG_data(i,j).resp))
 		end
 	end
 end
@@ -250,6 +251,8 @@ legend(l,{L, strcat('\alpha=-1,\beta=',oval(cf.a))} )
 
 PrettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=0;','FixLogY=0;')
 
+
+return
 
 if being_published
 	snapnow

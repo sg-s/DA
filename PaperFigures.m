@@ -250,8 +250,6 @@ legend(l,{L, strcat('\alpha=-1,\beta=',oval(cf.a))} )
 
 PrettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=0;','FixLogY=0;')
 
-return
-
 if being_published
 	snapnow
 	delete(gcf)

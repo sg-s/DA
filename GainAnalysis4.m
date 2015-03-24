@@ -334,18 +334,17 @@ else
 end
 
 % throw out all invalid data
-v = (validity.H < 0.1 & validity.R_low > .5 & validity.R_high > .5 & validity.low_gof > .8 & validity.high_gof > .8);
-
-low_slopes2.data(~v) = NaN;
-high_slopes2.data(~v) = NaN;
+% v = (validity.H < 0.1 & validity.R_low > .5 & validity.R_high > .5 & validity.low_gof > .8 & validity.high_gof > .8);
+% low_slopes2.data(~v) = NaN;
+% high_slopes2.data(~v) = NaN;
 
 	
 
 
 % this is where we plot the history length plot
 if length(plothere) == 4
-	plot(plothere(4),history_lengths(v),low_slopes2.data(v),'g.-'), hold on
-	plot(plothere(4),history_lengths(v),high_slopes2.data(v),'r.-')
+	plot(plothere(4),history_lengths,low_slopes2.data,'g.-'), hold on
+	plot(plothere(4),history_lengths,high_slopes2.data,'r.-')
 
 	%p_low = p_low*length(p_low); % Bonferroni correction
 	%p_high = p_high*length(p_high); % Bonferroni correction

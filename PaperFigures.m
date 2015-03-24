@@ -525,16 +525,15 @@ PID = PID2; clear PID2
 % some minor cleaning up
 PID(end,:) = PID(end-1,:); 
 
-fig_handle=figure('Units','pixels','outerposition',[100 143 1241 677],'Color','w','PaperUnits','points','PaperSize',[1241 677],'Toolbar','none','Menubar','none');
+fig_handle=figure('Units','pixels','outerposition',[100 100 1240 720],'Color','w','PaperUnits','points','PaperSize',[1240 720],'Toolbar','none');
 clf(fig_handle);
-axes_handles(1)=axes('Units','pixels','Position',[295.65 476.325 558.45 147.825]);
-axes_handles(2)=axes('Units','pixels','Position',[295.65 328.5 558.45 131.4]);
-axes_handles(3)=axes('Units','pixels','Position',[295.65 180.675 558.45 131.4]);
-axes_handles(4)=axes('Units','pixels','Position',[49.275 328.5 180.675 180.675]);
-axes_handles(5)=axes('Units','pixels','Position',[936.225 361.35 279.225 262.8]);
-axes_handles(6)=axes('Units','pixels','Position',[936.225 49.275 279.225 180.675]);
-axes_handles(7)=axes('Units','pixels','Position',[295.65 49.275 558.45 114.975]);
-axes_handles(8)=axes('Units','pixels','Position',[49.275 49.275 180.675 180.675]);
+axes_handles(1)=axes('Units','pixels','Position',[70 490 402.5 105]);
+axes_handles(2)=axes('Units','pixels','Position',[542.5 437.5 105 105]);
+axes_handles(3)=axes('Units','pixels','Position',[735 560 472.5 105]);
+axes_handles(4)=axes('Units','pixels','Position',[735 437.5 472.5 105]);
+axes_handles(5)=axes('Units','pixels','Position',[70 70 262.5 262.5]);
+axes_handles(6)=axes('Units','pixels','Position',[437.5 70 262.5 262.5]);
+axes_handles(7)=axes('Units','pixels','Position',[805 70 350 262.5]);
 
 for i = 1:length(axes_handles)
 	hold(axes_handles(i),'on')
@@ -546,13 +545,13 @@ c = parula(8);
 
 % plot stimulus
 plot(axes_handles(1),tA,mean2(PID),'k')
-set(axes_handles(1),'XLim',[10 60],'XTickLabel',{})
+set(axes_handles(1),'XLim',[10 60])
 ylabel(axes_handles(1),'Stimulus (V)')
 
 % plot response
-plot(axes_handles(2),tA,mean2(fA),'k')
-set(axes_handles(2),'XLim',[10 60],'XTickLabel',{})
-ylabel(axes_handles(2),'Firing Rate (Hz)')
+plot(axes_handles(3),tA,mean2(fA),'k')
+set(axes_handles(3),'XLim',[10 60],'XTickLabel',{});
+ylabel(axes_handles(3),'Firing Rate (Hz)')
 
 % extract Linear model for each trial 
 K = [];
@@ -565,12 +564,12 @@ for i = [3:10 13:20]
 end
 
 % plot linear filter
-axes(axes_handles(4))
+axes(axes_handles(2))
 plot_this = mean2(K);
 err = std(K)/sqrt(width(K));
 shadedErrorBar(filtertime,plot_this,err,{'Color',c(3,:)})
-xlabel(axes_handles(4),'Lag (s)')
-ylabel(axes_handles(4),'Filter K')
+xlabel(axes_handles(2),'Lag (s)')
+ylabel(axes_handles(2),'Filter K')
 
 
 % make a linear prediction using a filter fit to the mean data (this is almost exactly the same)
@@ -587,18 +586,17 @@ fp = fp+temp.p2;
 
 
 % plot prediction and prediction quality
-l=plot(axes_handles(3),tA,fp,'Color',c(3,:));
+l=plot(axes_handles(4),tA,fp,'Color',c(3,:));
 r2 = rsquare(fp,mean2(fA));
 legend(l,strcat('r^2=',oval(r2)))
-set(axes_handles(3),'XTickLabel',{})
-ylabel(axes_handles(3),'K\otimes stimulus (Hz)')
+ylabel(axes_handles(4),'K\otimes stimulus (Hz)')
 
 
 % gain analysis -- linear model
-ph = []; ph(3:4) = axes_handles(5:6);
+ph = []; ph(3:4) = axes_handles([5 7]);
 history_lengths = (3*floor(1000*logspace(-1,1,30)/3))/1e3;
 [~,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',mean2(fA),'prediction',fp,'stimulus',mean2(PID),'time',tA,'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(11));
-set(axes_handles(6),'XLim',[.09 11]) % to show .1 and 10 on the log scale
+set(axes_handles(7),'XLim',[.09 11]) % to show .1 and 10 on the log scale
 
 % show the p-value
 axes(axes_handles(5))
@@ -612,25 +610,26 @@ x(rm_this) = [];
 y(rm_this) = [];
 gain_time(rm_this) = [];
 ss = 50;
-plot(axes_handles(8),x(1:ss:end),y(1:ss:end),'k.')
-xlabel(axes_handles(8),'Stimulus in preceding 489ms')
-ylabel(axes_handles(8),'Relative gain')
+plot(axes_handles(6),x(1:ss:end),y(1:ss:end),'k.')
+xlabel(axes_handles(6),'Stimulus in preceding 489ms')
+ylabel(axes_handles(6),'Relative gain')
 
 % plot gain
 gain = y;
-plot(axes_handles(7),gain_time,gain,'k')
-ylabel(axes_handles(7),'Relative Gain')
-set(axes_handles(7),'XLim',[10 60],'YLim',[0 7])
-xlabel(axes_handles(7),'Time (s)')
+% plot(axes_handles(7),gain_time,gain,'k')
+% ylabel(axes_handles(7),'Relative Gain')
+% set(axes_handles(7),'XLim',[10 60],'YLim',[0 7])
+% xlabel(axes_handles(7),'Time (s)')
 
 
 % link some axes
-linkaxes(axes_handles([1:3 7]),'x')
-linkaxes(axes_handles([2:3]),'y')
+linkaxes(axes_handles([3:4]))
 
 % fix some labels
-ylabel(axes_handles(6),'Relative Gain')
-set(axes_handles(2),'YLim',[0 100])
+xlabel(axes_handles(4),'Time (s)')
+xlabel(axes_handles(1),'Time (s)')
+ylabel(axes_handles(7),'Relative Gain')
+set(axes_handles(4),'YLim',[0 100])
 ylabel(axes_handles(5),'Firing Rate (Hz)')
 xlabel(axes_handles(5),'K\otimes stimulus (Hz)')
 title(axes_handles(5),'')

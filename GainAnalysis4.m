@@ -107,11 +107,7 @@ high_max = NaN*history_lengths;
 
 
 % calculate the slopes for all points
-all_pred = fp(filter_length+2:end);
-all_resp  = f(filter_length+2:end);
-all_pred(isnan(all_resp)) = [];
-all_resp(isnan(all_resp)) = [];
-[fall, gof] = fit(all_pred,all_resp,'Poly1');
+fall =fit(fp(~(isnan(fp) | isnan(f))),f(~(isnan(fp) | isnan(f))),'poly1');
 all_slopes = fall.p1;
 
 

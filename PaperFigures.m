@@ -15,6 +15,13 @@ if ~isempty(calling_func)
 end
 tic
 
+% this determines which figures to do. 
+fig1 = true;
+fig2 = true;
+fig3 = false;
+fig4 = false;
+fig5 = false;
+
 %    ######## ####  ######   ##     ## ########  ########       ##   
 %    ##        ##  ##    ##  ##     ## ##     ## ##           ####   
 %    ##        ##  ##        ##     ## ##     ## ##             ##   
@@ -23,9 +30,10 @@ tic
 %    ##        ##  ##    ##  ##     ## ##    ##  ##             ##   
 %    ##       ####  ######    #######  ##     ## ########     ###### 
 
+if fig1
 
 %% Figure 1: ORNs decrease gain on increasing stimulus mean
-clearvars -except being_published
+clearvars -except being_published fig1 fig2 fig3 fig4 fig5
 fig_handle=figure('Units','pixels','outerposition',[81 5 599 871],'PaperUnits','points','PaperSize',[599 871],'Color','w','Toolbar','none');
 clf(fig_handle);
 axes_handles(1)=axes('Units','pixels','Position',[63.825 744.625 489.325 85.1]);
@@ -87,8 +95,7 @@ set(axes_handles(1),'XLim',[15 55])
 set(axes_handles(2),'XLim',[15 55])
 xlabel(axes_handles(2),'Time (s)')
 
-
-% remove trend
+% load the data cut and processed
 load('MSG_per_neuron.mat','MSG_data')
 
 % back out all filters
@@ -255,6 +262,8 @@ if being_published
 	delete(gcf)
 end
 
+end
+
 
 %      ######## ####  ######   ##     ## ########  ########     #######  
 %      ##        ##  ##    ##  ##     ## ##     ## ##          ##     ## 
@@ -264,6 +273,7 @@ end
 %      ##        ##  ##    ##  ##     ## ##    ##  ##          ##        
 %      ##       ####  ######    #######  ##     ## ########    ######### 
 
+if fig2
 
 %% Figure 2: ORNs speed up responses on increasing stimulus mean
 
@@ -349,12 +359,15 @@ clear l
 peak_loc_xcorr = peak_loc_xcorr(~isnan(peak_loc_xcorr));
 l(1) = plot(mean_stim(:),peak_loc_xcorr(:)/dt,'k+');
 peak_loc_K = peak_loc_K(~isnan(peak_loc_K));
-l(2) = plot(mean_stim(:),peak_loc_K(:)/dt,'ko');
+l(2) = plot(mean_stim(:),peak_loc_K(:)/dt,'r+');
 
-ff=fit(mean_stim(:),peak_loc_K(:)/dt,'poly1');
-plot(mean_stim(:),ff(mean_stim(:)),'k')
-ff=fit(mean_stim(:),peak_loc_xcorr(:)/dt,'poly1');
-plot(mean_stim(:),ff(mean_stim(:)),'k')
+% do a non-parametric r2 test
+
+
+% ff=fit(mean_stim(:),peak_loc_K(:)/dt,'poly1');
+% plot(mean_stim(:),ff(mean_stim(:)),'k')
+% ff=fit(mean_stim(:),peak_loc_xcorr(:)/dt,'poly1');
+% plot(mean_stim(:),ff(mean_stim(:)),'k')
 
 ylabel('Peak time (ms)')
 xlabel('Mean Stimulus (V)')
@@ -371,7 +384,7 @@ legend(l,{'Cross correlation','Filter'})
 
 
 % now we make the plots for the pulse responses.
-clearvars -except being_published
+clearvars -except being_published fig1 fig2 fig3 fig4 fig5
 load('/local-data/DA-paper/carlotta-martelli/fig3/abc.mat')
 
 % now do some post-processing and clean up
@@ -483,6 +496,8 @@ if being_published
 	delete(gcf)
 end
 
+end
+
 %       ######## ####  ######   ##     ## ########  ########     #######  
 %       ##        ##  ##    ##  ##     ## ##     ## ##          ##     ## 
 %       ##        ##  ##        ##     ## ##     ## ##                 ## 
@@ -491,10 +506,11 @@ end
 %       ##        ##  ##    ##  ##     ## ##    ##  ##          ##     ## 
 %       ##       ####  ######    #######  ##     ## ########     #######  
 
+if fig3
 
 %% Figure 3: ORNs can change gain on a fast time scale 
 
-clearvars -except being_published
+clearvars -except being_published fig1 fig2 fig3 fig4 fig5
 
 load('/local-data/DA-paper/large-variance-flicker/2015_01_28_CS_ab3_2_EA.mat')
 PID = data(4).PID;
@@ -665,6 +681,8 @@ if being_published
 	delete(gcf)
 end
 
+end
+
 %      ######## ####  ######   ##     ## ########  ########    ##        
 %      ##        ##  ##    ##  ##     ## ##     ## ##          ##    ##  
 %      ##        ##  ##        ##     ## ##     ## ##          ##    ##  
@@ -673,9 +691,11 @@ end
 %      ##        ##  ##    ##  ##     ## ##    ##  ##                ##  
 %      ##       ####  ######    #######  ##     ## ########          ##  
 
+if fig4
+
 %% Figure 4: Gain Control is widely observed
 
-clearvars -except being_published
+clearvars -except being_published fig1 fig2 fig3 fig4 fig5
 load('CMData_Gain.mat')
 load('CM_Data_filters.mat')
 combined_data_file = ('/local-data/DA-paper/carlotta-martelli/flickering-stim/data.mat');
@@ -713,6 +733,8 @@ for i = do_these
 end
 clear ph
 ph(3:4) = axes_handles(2:3);
+
+
 for i = do_these
 	[~,ehl]=max(gain_data(i).low_slopes - gain_data(i).high_slopes);
 	time = data(i).dt*(1:length(data(i).PID(1e4:end,1)));
@@ -885,6 +907,8 @@ if being_published
 	delete(gcf)
 end
 
+end
+
 %       ######## ####  ######   ##     ## ########  ########    ######## 
 %       ##        ##  ##    ##  ##     ## ##     ## ##          ##       
 %       ##        ##  ##        ##     ## ##     ## ##          ##       
@@ -902,6 +926,7 @@ end
 %      ##     ## ##     ## ##     ## ##       ##       ##    ## 
 %      ##     ##  #######  ########  ######## ########  ######  
 
+if fig5
 
 
 %% Figure 5: Models to explain observed phenomena 
@@ -1158,7 +1183,7 @@ if being_published
 	delete(gcf)
 end
 
-
+end
 
 %% Version Info
 % The file that generated this document is called:

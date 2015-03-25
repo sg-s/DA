@@ -361,17 +361,16 @@ l(1) = plot(mean_stim(:),peak_loc_xcorr(:)/dt,'k+');
 peak_loc_K = peak_loc_K(~isnan(peak_loc_K));
 l(2) = plot(mean_stim(:),peak_loc_K(:)/dt,'r+');
 
-% do a non-parametric r2 test
+% calculate Spearman's rho (http://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient)
+s2 = spear(mean_stim,peak_loc_K);
+s1 = spear(mean_stim,peak_loc_xcorr);
 
+legend(l,{strcat('Cross correlation, \rho=',oval(s1)), strcat('Filter, \rho=',oval(s2))})
 
-% ff=fit(mean_stim(:),peak_loc_K(:)/dt,'poly1');
-% plot(mean_stim(:),ff(mean_stim(:)),'k')
-% ff=fit(mean_stim(:),peak_loc_xcorr(:)/dt,'poly1');
-% plot(mean_stim(:),ff(mean_stim(:)),'k')
 
 ylabel('Peak time (ms)')
 xlabel('Mean Stimulus (V)')
-legend(l,{'Cross correlation','Filter'})
+
 
 %        ########  ##     ## ##        ######  ########  ######  
 %        ##     ## ##     ## ##       ##    ## ##       ##    ## 

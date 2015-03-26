@@ -16,9 +16,9 @@ end
 tic
 
 % this determines which figures to do. 
-fig1 = true;
-fig2 = true;
-fig3 = false;
+fig1 = false;
+fig2 = false;
+fig3 = true;
 fig4 = false;
 fig5 = false;
 

@@ -71,7 +71,6 @@ f = x.response(:);
 fp = x.prediction(:);
 stimulus = x.stimulus(:);
 t = x.time(:);
-filter_length = x.filter_length;
 frac = x.frac;
 
 
@@ -247,6 +246,8 @@ for i = 1:length(history_lengths)
 			% transparentScatter(fp_low,f_low,'g',o,dotsize);
 			% transparentScatter(fp_high,f_high,'r',o,dotsize);
 
+			hold(plothere(3),'on')
+
 			% plot these on the scatter plot
 			ss = floor(length(fp_low)/1000); % plot only a 1000 points
 			plot(plothere(3),fp(1:ss:end),f(1:ss:end),'.','MarkerSize',marker_size,'MarkerFaceColor',[0.9 0.9 0.9],'MarkerEdgeColor',[0.9 0.9 0.9])
@@ -272,32 +273,32 @@ for i = 1:length(history_lengths)
 
 	end	
 
-	%        ##     ##    ###    ##       #### ########  #### ######## ##    ## 
-	%        ##     ##   ## ##   ##        ##  ##     ##  ##     ##     ##  ##  
-	%        ##     ##  ##   ##  ##        ##  ##     ##  ##     ##      ####   
-	%        ##     ## ##     ## ##        ##  ##     ##  ##     ##       ##    
-	%         ##   ##  ######### ##        ##  ##     ##  ##     ##       ##    
-	%          ## ##   ##     ## ##        ##  ##     ##  ##     ##       ##    
-	%           ###    ##     ## ######## #### ########  ####    ##       ##    
+	% %        ##     ##    ###    ##       #### ########  #### ######## ##    ## 
+	% %        ##     ##   ## ##   ##        ##  ##     ##  ##     ##     ##  ##  
+	% %        ##     ##  ##   ##  ##        ##  ##     ##  ##     ##      ####   
+	% %        ##     ## ##     ## ##        ##  ##     ##  ##     ##       ##    
+	% %         ##   ##  ######### ##        ##  ##     ##  ##     ##       ##    
+	% %          ## ##   ##     ## ##        ##  ##     ##  ##     ##       ##    
+	% %           ###    ##     ## ######## #### ########  ####    ##       ##    
 
 
-	% this is where we determine the strict criteria for the validity of the gain analysis 
-	% see : https://github.com/sg-s/DA/issues/148
+	% % this is where we determine the strict criteria for the validity of the gain analysis 
+	% % see : https://github.com/sg-s/DA/issues/148
 
-	% check for sampling homogeneity
-	validity.H(i) = abs((mean(t_low) - mean(t_high))/(mean(t))); % this should be low
+	% % check for sampling homogeneity
+	% validity.H(i) = abs((mean(t_low) - mean(t_high))/(mean(t))); % this should be low
 	
-	% range for data
-	validity.R_low(i) = (max(f_low) - min(f_low))/(max(f) - min(f));
-	validity.R_high(i) = (max(f_high) - min(f_high))/(max(f) - min(f));
+	% % range for data
+	% validity.R_low(i) = (max(f_low) - min(f_low))/(max(f) - min(f));
+	% validity.R_high(i) = (max(f_high) - min(f_high))/(max(f) - min(f));
 
-	% range for prediction
-	validity.Rp_low(i) = (max(fp_low) - min(fp_low))/(max(fp) - min(fp));
-	validity.Rp_high(i) = (max(fp_high) - min(fp_high))/(max(fp) - min(fp));
+	% % range for prediction
+	% validity.Rp_low(i) = (max(fp_low) - min(fp_low))/(max(fp) - min(fp));
+	% validity.Rp_high(i) = (max(fp_high) - min(fp_high))/(max(fp) - min(fp));
 
-	% goodness of fit? 
-	validity.low_gof(i) = low_gof(i);
-	validity.high_gof(i) = high_gof(i);
+	% % goodness of fit? 
+	% validity.low_gof(i) = low_gof(i);
+	% validity.high_gof(i) = high_gof(i);
 
 
 end
@@ -339,6 +340,7 @@ end
 
 % this is where we plot the history length plot
 if length(plothere) == 4
+	hold(plothere(4),'on')
 	plot(plothere(4),history_lengths,low_slopes2.data,'g'), hold on
 	plot(plothere(4),history_lengths,high_slopes2.data,'r')
 

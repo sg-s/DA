@@ -6,73 +6,126 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [] = InteractiveGainAnalysis(data,data_type)
-switch nargin
-case 0
-	help InteractiveGainAnalysis
-	return
-case 1
-	data_type = 1;
-end
+function [] = InteractiveGainAnalysis(p)
 
-if data_type == 1
-	% assume we are getting raw data, and we need to fit a model to it
-	% fit a LN model
-	[K,~,filtertime] = FindBestFilter(data.PID,data.ORN,[],'filter_length=199;');
-	LinearFit = convolve(data.time,data.PID,K,filtertime) + mean(data.ORN);
-	LinearFit(LinearFit<0) =0;
+% get the data to work with from the base workspace
+data = evalin('base', 'IGA_data');
 
-	xdata = LinearFit;
-	ydata = data.ORN;
-	% crop it to lose NaNs
-	ydata(isnan(xdata)) = [];
-	xdata(isnan(xdata)) = [];
-	xdata = xdata(:);
-	ydata = ydata(:);
-	fo=optimset('MaxFunEvals',2000,'Display','none');
-	x = lsqcurvefit(@hill,[max(ydata) 2 2],xdata,ydata,[max(ydata)/2 2 1],[2*max(ydata) max(ydata) 10],fo);
-	LNFit = hill(x,LinearFit);
-	% assemble data
-
-	clear x
-	s = 300; % when we start for the gain analysis
-	z = length(data.ORN) - 33; % where we end 
-	x.response = data.ORN(s:z);
-	x.prediction = LNFit(s:z);
-	x.stimulus = data.PID(s:z);
-	x.time = data.time(s:z);
-	x.filter_length = 200; 
-
-
-else
-	% we're getting a pre-assembled data type, good to go
-	x = data;
-end
-
-
-
-% make the figure
-figure('outerposition',[0 0 1000 900]); hold on
-ph = [];
-ph(1) = subplot(4,1,1); hold on
-set(ph(1),'XLim',[min(data.time) max(data.time)])
-try
-	titlestr = strrep(data.original_name,'_','-');
-	title(ph(1),titlestr)
+% check if the figure has been created
+IGA_figure = [];
+try IGA_figure = evalin('base', 'IGA_figure');
+	IGA_plot = evalin('base', 'IGA_plot');
 catch
+	IGA_figure = figure('Units','pixels','Position',[10 100 1149 700],'Name','Interactive Gain Analysis','IntegerHandle','off','CloseRequestFcn',@closess,'Color','w'); hold on
+	clf(IGA_figure);
+	IGA_plot(1)=axes('Units','pixels','Position',[52.5 490 612.5 175]);
+	plot(data.time,data.stimulus,'k')
+	IGA_plot(2)=axes('Units','pixels','Position',[52.5 280 612.5 175]);
+	plot(data.time,data.response,'k')
+	IGA_plot(3)=axes('Units','pixels','Position',[52.5 52.5 612.5 192.5]);
+	plot(data.time,data.prediction,'k')
+	linkaxes(IGA_plot(1:3),'x');
+	linkaxes(IGA_plot(2:3),'y');
+	set(IGA_plot(1),'box','off','XLim',[min(data.time) max(data.time)])
+	set(IGA_plot(2),'box','off','XLim',[min(data.time) max(data.time)])
+	set(IGA_plot(3),'box','off','XLim',[min(data.time) max(data.time)])
+	IGA_plot(4)=axes('Units','pixels','Position',[717.5 332.5 385 332.5]);
+	IGA_plot(5)=axes('Units','pixels','Position',[717.5 52.5 385 210]);
+	ylabel(IGA_plot(1),'Stimulus')
+	ylabel(IGA_plot(2),'Response')
+	ylabel(IGA_plot(3),'Prediction')
+
+	% save to the base workspace
+	assignin('base','IGA_figure',IGA_figure)
+	assignin('base','IGA_plot',IGA_plot)
+
+	% clean up data
+	rm_this = unique([find(isnan(data.response)) find(isnan(data.prediction)) find(isnan(data.stimulus))]);
+	data.response(rm_this) = [];
+	data.prediction(rm_this) = [];
+	data.stimulus(rm_this) = [];
+	data.time(rm_this) = [];
 end
 
-ph(2) = subplot(4,1,2); hold on
-set(ph(2),'XLim',[min(data.time) max(data.time)])
-linkaxes([ph(1) ph(2)],'x');
-ph(3) = subplot(2,2,3); hold on; axis square
-ph(4) = subplot(2,2,4); hold on;
-set(ph(4),'XScale','log')
 
-% use Manipulate to plot everything
-x.history_lengths= (3*floor(1000*logspace(-2,1,30)/3))/1e3;
-p.t_h = 0.12;
-p.t = mean(data.time);
-p.frac=  0.33;
-Manipulate('InteractiveGainAnalysisEngine',p,x,[],[],ph);
 
+% say what the parameters are for getModelParameters
+p.frac;
+[~,~,~,hl_min]=FindCorrelationTime(data.stimulus);
+dt = mean(diff(data.time));
+hl_min = (hl_min*dt);
+p.hl_max; % in s
+history_lengths = logspace(log10(hl_min),log10(p.hl_max),30);
+p.ehl;
+lb.ehl = 1;
+ub.ehl = 30;
+ub.frac = 1;
+lb.frac = 0;
+ub.hl_max = 10;
+lb.hl_max = 1; 
+
+% pick the example history length
+example_history_length = history_lengths(round(p.ehl));
+
+event = [];
+eval(strcat('event =','p','.event;')); % this bizzare construction is so that getModelParameters doesn't see this code. Yes, we're obfuscating code to hide from other code that was designed to read code. 
+compute = 0;
+if isempty(event)
+	compute = 1;
+elseif strcmp(event.EventName,'ContinuousValueChange')
+	compute = 0;
+elseif strcmp(event.EventName,'Action')
+	compute = 1;
+end
+
+if compute
+
+	cla(IGA_plot(4))
+	cla(IGA_plot(5))
+	% do the gain analysis. 
+	ph(3:4) = IGA_plot(4:5);
+	p_Linear = NaN(2,30);
+	
+	data.frac = p.frac;
+	GainAnalysis4(data,history_lengths,example_history_length,ph,p_Linear);
+	ylabel(IGA_plot(5),'Gain')
+	set(IGA_plot(5),'XScale','log')
+
+	% Indicate regions of high and low stimulus on the stimulus
+	hl = floor(example_history_length/dt);
+	shat = ComputeSmoothedStimulus(data.stimulus,hl);
+
+	n = floor(p.frac*length(data.response));
+	shat(1:hl) = Inf; % the initial segment where we can't estimate shat is excluded
+	shat(isnan(shat)) = Inf;
+	shat(isnan(data.response)) = Inf;
+	[~, t_low] = sort(shat,'ascend');
+	t_low = t_low(1:n); % this is an index
+	t_low = data.time(t_low); % t_low is now a time. 
+	 
+	shat = ComputeSmoothedStimulus(data.stimulus,hl);
+	shat(1:hl) = -Inf;
+	shat(isinf(shat)) = -Inf;
+	shat(isnan(data.response)) = -Inf;
+	[~, t_high] = sort(shat,'descend');
+	t_high = t_high(1:n);
+	t_high  = data.time(t_high);
+
+	ypos = max(data.stimulus) + 0.1*std(data.stimulus);
+	cla(IGA_plot(1))
+	hold(IGA_plot(1),'on')
+	plot(IGA_plot(1),data.time,data.stimulus,'k')
+	plot(IGA_plot(1),t_low,ypos+0*t_low,'g.')
+	plot(IGA_plot(1),t_high,ypos+0*t_low,'r.')
+
+
+end
+
+function [] = closess(~,~)
+	delete(IGA_figure)
+	evalin('base','clear IGA_figure')
+	evalin('base','clear IGA_plot')
+
+end
+
+end

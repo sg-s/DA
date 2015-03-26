@@ -16,9 +16,9 @@ end
 tic
 
 % this determines which figures to do. 
-fig1 = false;
-fig2 = false;
-fig3 = true;
+fig1 = true;
+fig2 = true;
+fig3 = false;
 fig4 = false;
 fig5 = false;
 
@@ -483,10 +483,14 @@ foreground_stim(foreground_stim<1e-2) = NaN; % not reliable
 
 % plot time to peak for the data
 subplot(2,3,6), hold on
-plot(foreground_stim(a),resp_half_time(a)-stim_half_time(a),'k+')
+l=plot(foreground_stim(a),resp_half_time(a)-stim_half_time(a),'k+');
 set(gca,'XScale','log','XLim',[1e-2 20],'YLim',[0 100])
 xlabel('Mean Stimulus (V)')
 ylabel('\tau_{ORN}-\tau_{PID} (ms)','interpreter','tex')
+
+% calculate the spearman rho
+s2 = spear(foreground_stim(a),resp_half_time(a)-stim_half_time(a));
+legend(l,strcat('\rho=',oval(s2)));
 
 PrettyFig;
 

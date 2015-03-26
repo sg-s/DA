@@ -18,10 +18,26 @@
 % 
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
-function [V, Ca,spikes] = XJWNeuronEuler(time,stimulus,p)
+function [f,spikes,V,Ca] = XJWNeuronEuler(stimulus,p)
+if ~nargin
+	help XJWNeuronEuler
+	return
+end
+
+% set bounds
+lb.tau_Ca = 0.1; 		ub.tau_Ca = 20; 			% seconds
+lb.gL = 0; 				ub.gL = 10; 
+lb.Cm = 5; 				ub.Cm = 100; 
+lb.Vk = - 70;			ub.Vk = -50;
+
+% some more restrictive bounds
+lb.Vth = -70; 			ub.Vth = -55;
+lb.Vrest = -80; 		ub.Vrest = -70;
+lb.Vreset = -70; 		ub.Vreset = -60;
+lb.B = -1; 				ub.B = 1; 
 
 
-time = time(:);
+time = 1e-3*(1:length(stimulus));
 stimulus = stimulus(:);
 spikes = 0*time;
 V = 0*time;
@@ -30,11 +46,12 @@ Ca = 1*time;
 % initial conditions
 temp1 = min([p.Vrest p.Vreset]);
 temp2 = max([p.Vrest p.Vreset]);
-V(1) = temp1 + rand*(temp2-temp1);
+V(1) = temp1 + .5*(temp2-temp1);
 
+dt = (time(2) - time(1));
 
 for i = 2:length(time)
-	dt = (time(i) - time(i-1));
+
 
 	% calculate derivative
 	f1 = -p.gL*(V(i-1) - p.Vreset);
@@ -43,7 +60,6 @@ for i = 2:length(time)
 
 	f = f1+f2+f3;
 
-	
 
 	V(i) = V(i-1) + dt*f/p.Cm;
 	Ca(i) = Ca(i-1)*(1- dt/p.tau_Ca);
@@ -51,7 +67,7 @@ for i = 2:length(time)
 		Ca(i)=0;
 	end
 	if V(i) > p.Vth
-		if V(i-1) < 0
+		if V(i-1) < 0 && ~spikes(i-1)
 			V(i-1) = 30; % fake a spike
 			V(i) = p.Vreset;
 			spikes(i)=1;
@@ -62,4 +78,5 @@ for i = 2:length(time)
 	end
 end
 
-
+% generate the firing rate estimate 
+f = spiketimes2f(spikes,time,1e-3);

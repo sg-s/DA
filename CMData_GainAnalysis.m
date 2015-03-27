@@ -74,12 +74,12 @@ for i = 1:length(data)
 		plot_here = ax(1);
 		disp(i)
 	end
-	% if any(strfind(data(i).original_name,'50ms'))
-	% 	plot_here = ax(2);
-	% end
-	% if any(strfind(data(i).original_name,'100ms'))
-	% 	plot_here = ax(3);
-	% end
+	if any(strfind(data(i).original_name,'50ms'))
+		plot_here = ax(2);
+	end
+	if any(strfind(data(i).original_name,'100ms'))
+		plot_here = ax(3);
+	end
 
 
 	if ~isempty(plot_here)

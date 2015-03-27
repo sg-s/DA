@@ -102,6 +102,15 @@ for i = 1:length(data)
 	% add the name
 	IGA_data.name = data(i).original_name;
 
+	% fix the gain to be exactly 1
+	x = IGA_data.prediction;
+	y = IGA_data.response;
+	rm_this = isnan(x) | isnan(y);
+	x(rm_this) = [];
+	y(rm_this) = [];
+	temp = fit(x,y,'poly1');
+	IGA_data.prediction = IGA_data.prediction*temp.p1;
+
 
 
 	[~,low_slopes,high_slopes]=GainAnalysis4(IGA_data,history_lengths,[],ph,p);
@@ -178,6 +187,15 @@ for i = 1:length(data)
 		temp = fit(x.time(:),x.stimulus(:),'poly2');
 		x.stimulus = x.stimulus - temp(x.time) + mean(x.stimulus);
 
+		% fix the gain to be exactly 1 -- this is trivial -- the gain is not one because we average over many trials. 
+		a = x.prediction;
+		b = x.response;
+		rm_this = isnan(a) | isnan(b);
+		a(rm_this) = [];
+		b(rm_this) = [];
+		temp = fit(a,b,'poly1');
+		x.prediction = x.prediction*temp.p1;
+
 
 		x.frac = .33;
 
@@ -219,23 +237,6 @@ end
 % <</code/da/CMData_fig3.PNG>>
 %
 
-
-figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
-for j = 1:3
-	ax(j) = subplot(1,3,j); hold on
-end
-
-corr_times = [30 50 100];
-
-for i = 1:length(corr_times)
-	do_these = find([data.corr_time] == corr_times(i));
-	for j = 1:length(do_these)
-		do_this = do_these(j);
-		temp = mean(data(do_this).fA);
-		temp = temp/temp(1);
-		plot(ax(i),temp)
-	end
-end 
 
 
 %% Version Info

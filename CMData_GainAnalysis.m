@@ -69,71 +69,76 @@ all_high = NaN(length(data),30);
 
 for i = 1:length(data)
 	% figure out where to plot
+	plot_here = [];
 	if any(strfind(data(i).original_name,'30ms'))
 		plot_here = ax(1);
+		disp(i)
 	end
-	if any(strfind(data(i).original_name,'50ms'))
-		plot_here = ax(2);
-	end
-	if any(strfind(data(i).original_name,'100ms'))
-		plot_here = ax(3);
-	end
-
-	ph = [];
-	ph(4) = plot_here;
-
-	IGA_data.time = 1e-3*(1:length(mean2(data(i).PID)));
-	IGA_data.stimulus = mean2(data(i).PID);
-	IGA_data.prediction = mean2(data(i).LinearFit);
-	IGA_data.response = mean2(data(i).fA);
-
-	% throw out first 5 seconds
-	IGA_data.time = IGA_data.time(5e3:end);
-	IGA_data.stimulus = IGA_data.stimulus(5e3:end);
-	IGA_data.response = IGA_data.response(5e3:end);
-	IGA_data.prediction = IGA_data.prediction(5e3:end);
-
-	IGA_data.frac = .33;
-
-	% remove trend in stimulus
-	temp = fit(IGA_data.time(:),IGA_data.stimulus(:),'poly2');
-	IGA_data.stimulus = IGA_data.stimulus - temp(IGA_data.time) + mean(IGA_data.stimulus);
-
-	% add the name
-	IGA_data.name = data(i).original_name;
-
-	% fix the gain to be exactly 1
-	x = IGA_data.prediction;
-	y = IGA_data.response;
-	rm_this = isnan(x) | isnan(y);
-	x(rm_this) = [];
-	y(rm_this) = [];
-	temp = fit(x,y,'poly1');
-	IGA_data.prediction = IGA_data.prediction*temp.p1;
+	% if any(strfind(data(i).original_name,'50ms'))
+	% 	plot_here = ax(2);
+	% end
+	% if any(strfind(data(i).original_name,'100ms'))
+	% 	plot_here = ax(3);
+	% end
 
 
+	if ~isempty(plot_here)
+		ph = [];
+		ph(4) = plot_here;
 
-	[~,low_slopes,high_slopes]=GainAnalysis4(IGA_data,history_lengths,[],ph,p);
+		IGA_data.time = 1e-3*(1:length(mean2(data(i).PID)));
+		IGA_data.stimulus = mean2(data(i).PID);
+		IGA_data.prediction = mean2(data(i).LinearFit);
+		IGA_data.response = mean2(data(i).fA);
 
-	all_low(i,:) = low_slopes;
-	all_high(i,:) = high_slopes;
+		% throw out first 5 seconds
+		IGA_data.time = IGA_data.time(5e3:end);
+		IGA_data.stimulus = IGA_data.stimulus(5e3:end);
+		IGA_data.response = IGA_data.response(5e3:end);
+		IGA_data.prediction = IGA_data.prediction(5e3:end);
 
-	if any(strfind(data(i).original_name,'100ms'))
-		temp = find(high_slopes - low_slopes < 0,1,'first');
-		if isempty(temp)
-			temp = NaN;
-		else
-			cross_over_time(i) = history_lengths(temp);
-			K = mean2(allfilters(i).K);
-			[~,loc]=max(K);
-			filter_peak_loc(i) = loc-200;
-			filter_width(i) = find(abs(K(200:end))>3*std(K(1:200)),1,'last');
-			[~,~,~,x4]=FindCorrelationTime(IGA_data.stimulus);
-			stimulus_autocorr(i) = x4;
-			[~,~,~,x4]=FindCorrelationTime(IGA_data.response);
-			response_autocorr(i) = x4;
+		IGA_data.frac = .33;
+
+		% remove trend in stimulus
+		temp = fit(IGA_data.time(:),IGA_data.stimulus(:),'poly2');
+		IGA_data.stimulus = IGA_data.stimulus - temp(IGA_data.time) + mean(IGA_data.stimulus);
+
+		% add the name
+		IGA_data.name = data(i).original_name;
+
+		% fix the gain to be exactly 1
+		x = IGA_data.prediction;
+		y = IGA_data.response;
+		rm_this = isnan(x) | isnan(y);
+		x(rm_this) = [];
+		y(rm_this) = [];
+		temp = fit(x,y,'poly1');
+		IGA_data.prediction = IGA_data.prediction*temp.p1;
 
 
+
+		[~,low_slopes,high_slopes]=GainAnalysis4(IGA_data,history_lengths,[],ph,p);
+
+		all_low(i,:) = low_slopes;
+		all_high(i,:) = high_slopes;
+
+		if any(strfind(data(i).original_name,'100ms'))
+			temp = find(high_slopes - low_slopes < 0,1,'first');
+			if isempty(temp)
+				temp = NaN;
+			else
+				cross_over_time(i) = history_lengths(temp);
+				K = mean2(allfilters(i).K);
+				[~,loc]=max(K);
+				filter_peak_loc(i) = loc-200;
+				filter_width(i) = find(abs(K(200:end))>3*std(K(1:200)),1,'last');
+				[~,~,~,x4]=FindCorrelationTime(IGA_data.stimulus);
+				stimulus_autocorr(i) = x4;
+				[~,~,~,x4]=FindCorrelationTime(IGA_data.response);
+				response_autocorr(i) = x4;
+
+
+			end
 		end
 	end
 end
@@ -237,7 +242,118 @@ end
 % <</code/da/CMData_fig3.PNG>>
 %
 
+%% A closer look at the 30ms correlated stimuli
+% Of the four 30ms correlated stimuli we have, three have inverse gain control, and one doesn't. What's special about the one that is normal? 
 
+figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[700 700]); hold on
+clear ph
+do_these = find([data.corr_time] == 30);
+for do_this = 1:length(do_these)
+	i = do_these(do_this);
+	ph(4) = subplot(2,2,do_this); hold on
+
+	clear x
+	x.time = 1e-3*(1:length(mean2(data(i).PID)));
+	x.stimulus = mean2(data(i).PID);
+	x.prediction = mean2(data(i).LinearFit);
+	x.response = mean2(data(i).fA);
+
+	% throw out first 5 seconds
+	x.time = x.time(5e3:end);
+	x.stimulus = x.stimulus(5e3:end);
+	x.response = x.response(5e3:end);
+	x.prediction = x.prediction(5e3:end);
+
+	% remove trend in stimulus
+	temp = fit(x.time(:),x.stimulus(:),'poly2');
+	x.stimulus = x.stimulus - temp(x.time) + mean(x.stimulus);
+
+	% fix the gain to be exactly 1 -- this is trivial -- the gain is not one because we average over many trials. 
+	a = x.prediction;
+	b = x.response;
+	rm_this = isnan(a) | isnan(b);
+	a(rm_this) = [];
+	b(rm_this) = [];
+	temp = fit(a,b,'poly1');
+	x.prediction = x.prediction*temp.p1;
+	x.frac = .33;
+
+	[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',x.response,'prediction',x.prediction,'stimulus',x.stimulus,'time',x.time,'ph',ph,'history_lengths',history_lengths);
+	title(data(i).odour_name)
+	ylabel('Gain')
+end
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
+% Note that the 1o3ol is the only case where we see the "normal" gain control scenario. In the following figure we plot the distribution of stimuli in each case:
+
+
+figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[700 700]); hold on
+clear ph
+do_these = find([data.corr_time] == 30);
+for do_this = 1:length(do_these)
+	i = do_these(do_this);
+	ph(4) = subplot(2,2,do_this); hold on
+
+	stim =  mean2(data(i).PID);
+	time = 1e-3*(1:length(mean2(data(i).PID)));
+	stim(1:5e3) = [];
+	time(1:5e3) = [];
+	temp = fit(time(:),stim(:),'poly2');
+	stim = stim - temp(time) + mean(stim);
+
+	[y,x] = hist(stim,50);
+
+	y = y/sum(y);
+	plot(x,y)
+	title(data(i).odour_name)
+end
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
+% Aha! In every case where the distribution is weird and non-unimodal, we see an inversion. If this is true, we predict that in the 50ms correlated sitmuli, we also expect to see a non-unimodal distribution: 
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+clear ph
+do_these = find([data.corr_time] == 50);
+for do_this = 1:length(do_these)
+	i = do_these(do_this);
+
+	stim =  mean2(data(i).PID);
+	time = 1e-3*(1:length(mean2(data(i).PID)));
+	stim(1:5e3) = [];
+	time(1:5e3) = [];
+	temp = fit(time(:),stim(:),'poly2');
+	stim = stim - temp(time) + mean(stim);
+
+	[y,x] = hist(stim,50);
+
+	y = y/sum(y);
+	plot(x,y)
+	title(data(i).odour_name)
+end
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
+% Bam. So the distribution was the culprit. 
 
 %% Version Info
 % The file that generated this document is called:

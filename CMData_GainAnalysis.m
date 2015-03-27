@@ -31,6 +31,19 @@ load(combined_data_file)
 filtertime = -200:700;
 filtertime = filtertime*1e-3;
 
+% add a new field with correlation times
+for i = 1:length(data)
+	if any(strfind(data(i).original_name,'30ms'))
+		data(i).corr_time = 30;
+	end
+	if any(strfind(data(i).original_name,'50ms'))
+		data(i).corr_time = 50;
+	end
+	if any(strfind(data(i).original_name,'100ms'))
+		data(i).corr_time = 100;
+	end
+end
+
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 for i = 1:3
@@ -196,6 +209,34 @@ end
 % 
 % <</code/da/CMData_fig2.PNG>>
 %
+
+%%
+% Armed with this information, we can go back to investigating why we don't see the standard picture when the stimulus is correlated on 30 or 50ms.
+
+%%
+% I have no idea, but for 30ms and 50ms correlated stimuli, gain analysis seems to suggest that the fast gain control is inverted (gain at times when stimulus is locally high is HIGH), and this is not due to trivial reasons like neuron silencing, etc. It also appears to be odour-independent. 
+% 
+% <</code/da/CMData_fig3.PNG>>
+%
+
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+for j = 1:3
+	ax(j) = subplot(1,3,j); hold on
+end
+
+corr_times = [30 50 100];
+
+for i = 1:length(corr_times)
+	do_these = find([data.corr_time] == corr_times(i));
+	for j = 1:length(do_these)
+		do_this = do_these(j);
+		temp = mean(data(do_this).fA);
+		temp = temp/temp(1);
+		plot(ax(i),temp)
+	end
+end 
+
 
 %% Version Info
 % The file that generated this document is called:

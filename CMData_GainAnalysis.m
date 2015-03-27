@@ -188,13 +188,13 @@ end
 %%
 % That's interesting. We will look in detail at one of the cases where this switch over happens:
 % 
-% <<CMData_fig1.PNG>>
+% <</code/da/CMData_fig1.PNG>>
 %
 
 %%
 % It looks like this is entirely because the neuron stops firing. What if we ignore all the times when the neuron is silent (f<5Hz)? 
 % 
-% <<CMData_fig2.PNG>>
+% <</code/da/CMData_fig2.PNG>>
 %
 
 %% Version Info

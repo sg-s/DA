@@ -1,25 +1,13 @@
-% GainAnalysis4.m
-% a better, improved version of GainAnalysis.m
-% GainAnalysis4 differs from GainAnalysis3 in that p_values are calculated for each cloud, instead of pair-wise
-%
-% x is a structure with the following fields:
-% x.response -- the actual data
-% x.prediction -- the prediction you want to compare to
-% x.time -- time vector
-% x.stimulus -- the stimulus vector 
-%
-% and you also need to specify
-%
-% history_lengths (a vector of history lengths)
-% example_history_length (one number)
-% plothere is a 4x1 vector of axis handles if you want to plots to appear somewhere special. the first two are used for fig 1 
+% GainAnalysis5.m
+% a better, improved version of GainAnalysis4.m
+% see: https://github.com/sg-s/DA/issues/182
 %
 % created by Srinivas Gorur-Shandilya at 10:20 , 09 April 2014. Contact me at http://srinivas.gs/contact/
 % 
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [p,low_slopes,high_slopes,low_gof,high_gof,example_plot,extra_variables] = GainAnalysis4(x,history_lengths,example_history_length,plothere,p)
+function [p,low_slopes,high_slopes,low_gof,high_gof,example_plot,extra_variables] = GainAnalysis5(x,history_lengths,example_history_length,plothere,p)
 
 
 % set defaults
@@ -106,8 +94,10 @@ high_max = NaN*history_lengths;
 
 
 % calculate the slopes for all points
-fall =fit(fp(~(isnan(fp) | isnan(f))),f(~(isnan(fp) | isnan(f))),'poly1');
-all_slopes = fall.p1;
+[coeff,score,latent] = pca([fp(~(isnan(fp) | isnan(f))) f(~(isnan(fp) | isnan(f)))]);
+all_slopes = coeff(2,1)/coeff(1,1);
+
+
 
 
 
@@ -157,20 +147,25 @@ for i = 1:length(history_lengths)
 	high_min(i) = min(f_high);
 	high_max(i) = max(f_high);
 
-	% fit lines
-	[flow, gof] = fit(fp_low,f_low,'Poly1');
-	low_gof(i) = gof.rsquare;
-	er = confint(flow);
-	low_slopes_err(i)=flow.p1-er(1,1);
-	low_slopes(i) = flow.p1;
+	% use PCA to get slopes of clouds of points
+	[coeff,score,latent] = pca([fp_low f_low]);
+	low_slopes(i) = coeff(2,1)/coeff(1,1);
+	low_gof(i) = latent(1)/sum(latent);
 
-	[fhigh, gof] = fit(fp_high,f_high,'Poly1');
-	high_gof(i) =  gof.rsquare;
-	er = confint(fhigh);
-	high_slopes_err(i)=fhigh.p1-er(1,1);
-	high_slopes(i) = fhigh.p1;
+	% if low_slopes(i) < 0
+	% 	low_slopes(i) = coeff(2,2)/coeff(2,1)
+	% 	low_gof(i) = latent(2)/sum(latent);
+	% end
 
-	
+	[coeff,score,latent] = pca([fp_high f_high]);
+	high_slopes(i) = coeff(2,1)/coeff(1,1);
+	high_gof(i) = latent(1)/sum(latent);
+
+	% if high_slopes(i) < 0
+	% 	high_slopes(i) = coeff(2,2)/coeff(2,1);
+	% 	high_gof(i) = latent(2)/sum(latent);
+	% end
+
 
 	if history_lengths(i) == example_history_length
 		dothis = 0;
@@ -239,13 +234,6 @@ for i = 1:length(history_lengths)
 		if dothis
 
 
-			% axes(plothere(3))
-			% o = .3; % opacity
-			% dotsize = 5e-1; 
-			% transparentScatter(fp,f,'k',.05,dotsize);
-			% transparentScatter(fp_low,f_low,'g',o,dotsize);
-			% transparentScatter(fp_high,f_high,'r',o,dotsize);
-
 			hold(plothere(3),'on')
 
 			% plot these on the scatter plot
@@ -263,44 +251,14 @@ for i = 1:length(history_lengths)
 			title(plothere(3),titlestr);
 
 			% plot the best fit lines
-			plot(plothere(3),[min(fp) max(fp)],fall([min(fp) max(fp)]),'Color',[0.5 0.5 0.5])
-			plot(plothere(3),[min(fp_low) max(fp_low)],flow([min(fp_low) max(fp_low)]),'g')
-			plot(plothere(3),[min(fp_high) max(fp_high)],fhigh([min(fp_high) max(fp_high)]),'r')
+			% plot(plothere(3),[min(fp) max(fp)],fall([min(fp) max(fp)]),'Color',[0.5 0.5 0.5])
+			%plot(plothere(3),[min(fp_low) max(fp_low)],flow([min(fp_low) max(fp_low)]),'g')
+			%plot(plothere(3),[min(fp_high) max(fp_high)],fhigh([min(fp_high) max(fp_high)]),'r')
 
 			xlabel(plothere(3),'Prediction')
 			ylabel(plothere(3),'Actual neuron response')
 		end
-
 	end	
-
-	% %        ##     ##    ###    ##       #### ########  #### ######## ##    ## 
-	% %        ##     ##   ## ##   ##        ##  ##     ##  ##     ##     ##  ##  
-	% %        ##     ##  ##   ##  ##        ##  ##     ##  ##     ##      ####   
-	% %        ##     ## ##     ## ##        ##  ##     ##  ##     ##       ##    
-	% %         ##   ##  ######### ##        ##  ##     ##  ##     ##       ##    
-	% %          ## ##   ##     ## ##        ##  ##     ##  ##     ##       ##    
-	% %           ###    ##     ## ######## #### ########  ####    ##       ##    
-
-
-	% % this is where we determine the strict criteria for the validity of the gain analysis 
-	% % see : https://github.com/sg-s/DA/issues/148
-
-	% % check for sampling homogeneity
-	% validity.H(i) = abs((mean(t_low) - mean(t_high))/(mean(t))); % this should be low
-	
-	% % range for data
-	% validity.R_low(i) = (max(f_low) - min(f_low))/(max(f) - min(f));
-	% validity.R_high(i) = (max(f_high) - min(f_high))/(max(f) - min(f));
-
-	% % range for prediction
-	% validity.Rp_low(i) = (max(fp_low) - min(fp_low))/(max(fp) - min(fp));
-	% validity.Rp_high(i) = (max(fp_high) - min(fp_high))/(max(fp) - min(fp));
-
-	% % goodness of fit? 
-	% validity.low_gof(i) = low_gof(i);
-	% validity.high_gof(i) = high_gof(i);
-
-
 end
 
 if length(plothere) == 4
@@ -324,7 +282,7 @@ if nargin > 4 % we specify the p-values
 	high_slopes2.data = high_slopes;
 	
 else
-	[low_slopes2, high_slopes2,p] = BootStrapErrorBars(x,history_lengths,frac);
+	[low_slopes2, high_slopes2,p] = BootStrapErrorBars5(x,history_lengths,frac,low_slopes,high_slopes);
 
 	p_low = p; p_high = p;
 
@@ -418,4 +376,4 @@ extra_variables.low_max = low_max;
 extra_variables.high_min = high_min;
 extra_variables.high_max = high_max;
 
-extra_variables.all_slopes = fall.p1*ones(length(history_lengths),1);
+extra_variables.all_slopes = all_slopes*ones(length(history_lengths),1);

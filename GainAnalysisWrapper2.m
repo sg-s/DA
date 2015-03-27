@@ -88,14 +88,20 @@ else
 	use_cache = true;
 end
 
+% new -- now allows you to choose which engine to use. 
+if exist('engine','var') 
+else
+	engine = @GainAnalysis4;
+end
+
 
 % clean up a little and ignore NaNs
-x.filter_length = 499; % what does this even do??
-rm_this = [find(isnan(response)) find(isnan(prediction)) ];
+rm_this = [find(isnan(response)); find(isnan(prediction)) ];
 x.response(rm_this) = [];
 x.prediction(rm_this) = [];
 x.stimulus(rm_this) = [];
 x.time(rm_this) = [];
+x.engine = engine;
 
 
 % check cache to see if we have already computed this
@@ -105,7 +111,7 @@ if ~use_cache
 	cached_data = [];
 end
 if isempty(cached_data)
-	[p_LN,l,h,low_gof,high_gof] = GainAnalysis4(x,history_lengths,example_history_length,ph);
+	[p_LN,l,h,low_gof,high_gof] = x.engine(x,history_lengths,example_history_length,ph);
 	cache(hash,p_LN);
 	% also cache the example history length
 	s=abs(l-h);
@@ -122,14 +128,16 @@ else
 	else
 		ehl = example_history_length;
 	end
-	[p_LN,l,h,low_gof,high_gof] = GainAnalysis4(x,history_lengths,ehl,ph,p_LN);
+	[p_LN,l,h,low_gof,high_gof] = x.engine(x,history_lengths,ehl,ph,p_LN);
 end
 
 try
 	xlabel(ph(3),'Prediction (Hz)')
 	ylabel(ph(3),'Data (Hz)')
+catch
 end
 try
 	set(ph(4),'XScale','log')
+catch
 end
 

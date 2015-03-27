@@ -613,16 +613,25 @@ ylabel(axes_handles(4),'K\otimes stimulus (Hz)')
 
 % gain analysis -- linear model
 ph = []; ph(3:4) = axes_handles([5 7]);
-history_lengths = (3*floor(1000*logspace(-1,1,30)/3))/1e3;
-[~,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',mean2(fA),'prediction',fp,'stimulus',mean2(PID),'time',tA,'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(11));
+
+[~,~,~,hl_min1]=FindCorrelationTime(mean2(fA));
+[~,~,~,hl_min2]=FindCorrelationTime(mean2(PID));
+hl_min = hl_min1+hl_min2;
+hl_max = 10;
+dt = 1e-3;
+hl_min = (hl_min*dt);
+history_lengths = logspace(log10(hl_min),log10(hl_max),30);
+
+[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',mean2(fA),'prediction',fp,'stimulus',mean2(PID),'time',tA,'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(7),'use_cache',1);
 set(axes_handles(7),'XLim',[.09 11]) % to show .1 and 10 on the log scale
 
 % show the p-value
 axes(axes_handles(5))
 text(10,60,'p < 0.01')
 
+
 % plot gain vs preceding stimulus
-[x,y] = MakeFig6G(mean2(PID),mean2(fA),fp,history_lengths(11)*1e3);
+[x,y] = MakeFig6G(mean2(PID),mean2(fA),fp,round(history_lengths(7)*1e3));
 gain_time = mean(diff(tA))*(1:length(x));
 rm_this = (isnan(x) | isnan(y));
 x(rm_this) = [];
@@ -630,7 +639,7 @@ y(rm_this) = [];
 gain_time(rm_this) = [];
 ss = 50;
 plot(axes_handles(6),x(1:ss:end),y(1:ss:end),'k.')
-xlabel(axes_handles(6),'Stimulus in preceding 489ms')
+xlabel(axes_handles(6),'Stimulus in preceding 472ms')
 ylabel(axes_handles(6),'Relative gain')
 
 % plot gain
@@ -654,7 +663,7 @@ xlabel(axes_handles(5),'K\otimes stimulus (Hz)')
 title(axes_handles(5),'')
 
 % Indicate regions of high and low stimulus on the stimulus
-hl = history_lengths(11)*1e3;
+hl = round(history_lengths(7)*1e3);
 shat = ComputeSmoothedStimulus(mean2(PID),hl);
 
 n = floor(sum(~isnan(mean2(fA)))*.33);

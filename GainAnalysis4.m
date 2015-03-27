@@ -105,6 +105,10 @@ high_min = NaN*history_lengths;
 high_max = NaN*history_lengths;
 
 
+% ignore times when ORN barely fires
+% f(f<5) = NaN;
+
+
 % calculate the slopes for all points
 fall =fit(fp(~(isnan(fp) | isnan(f))),f(~(isnan(fp) | isnan(f))),'poly1');
 all_slopes = fall.p1;
@@ -344,17 +348,61 @@ if length(plothere) == 4
 	plot(plothere(4),history_lengths,low_slopes2.data,'g'), hold on
 	plot(plothere(4),history_lengths,high_slopes2.data,'r')
 
-	%p_low = p_low*length(p_low); % Bonferroni correction
-	%p_high = p_high*length(p_high); % Bonferroni correction
-	sig_low = p_low<0.05; % these points are significant,
-	sig_high = p_high<0.05; % these points are significant,
+	% we now perform a Holm-Bonferroni correction 
+	% (see: https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method)
+
+	if any(isnan(p_low))
+		% this means we should skip this...
+		sig_low = 0*history_lengths;
+		sig_low = logical(sig_low);
+		sig_high = sig_low;
+	else
+
+		% order p values from low to high
+		[p_low,idx] = sort(p_low);
+		history_lengths = history_lengths(idx);
+		A = .05; % alpha, significance value
+
+		% find the minimum k such that p(k) > A/(m+1-k)
+		m = length(history_lengths);
+		k_cut = [];
+		for k = 1:m
+			if p_low(k) > A/(m + 1 - k)
+				k_cut = k;
+				break
+			end
+		end
+		
+		% accept k-1 hypotheses
+		if isempty(k_cut)
+			% everything is signficant 
+			sig_low = 1+0*history_lengths;
+			sig_low = logical(sig_low);
+		else
+			sig_low = 0*history_lengths;
+			sig_low(1:k_cut) = 1; 
+			sig_low = logical(sig_low);
+		end
+		sig_high = sig_low;
+		p_high = p_low;
+		
+	end
+
+	% resort the history lengths into the original order
+	[history_lengths,idx] = sort(history_lengths);
+	sig_low = sig_low(idx);
+	sig_high = sig_high(idx);
+	p_low = p_low(idx);
+	p_high = p_high(idx);
+
 	scatter(plothere(4),history_lengths(sig_low),low_slopes2.data(sig_low),1256,'g.')
 	scatter(plothere(4),history_lengths(sig_high),high_slopes2.data(sig_high),1256,'r.')
 
 	% plot line to indicate the location of the example history plot
 	yy=get(plothere(4),'YLim');
-	plot(plothere(4),[example_history_length example_history_length],yy,'k-.')
-
+	if ~isempty(example_history_length)
+		plot(plothere(4),[example_history_length example_history_length],yy,'k-.')
+	end
 
 	set(plothere(4),'box','on','XLim',[0 max(history_lengths)])
 	xlabel(plothere(4),'History Length (s)','FontSize',20)

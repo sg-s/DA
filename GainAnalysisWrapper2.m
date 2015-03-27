@@ -125,10 +125,11 @@ else
 	[p_LN,l,h,low_gof,high_gof] = GainAnalysis4(x,history_lengths,ehl,ph,p_LN);
 end
 
-if ~isempty(ph)
+try
 	xlabel(ph(3),'Prediction (Hz)')
 	ylabel(ph(3),'Data (Hz)')
-	if length(ph) > 3
-		set(ph(4),'XScale','log')
-	end
 end
+try
+	set(ph(4),'XScale','log')
+end
+

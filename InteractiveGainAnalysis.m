@@ -16,14 +16,16 @@ IGA_figure = [];
 try IGA_figure = evalin('base', 'IGA_figure');
 	IGA_plot = evalin('base', 'IGA_plot');
 catch
-	IGA_figure = figure('Units','pixels','Position',[10 100 1149 700],'Name','Interactive Gain Analysis','IntegerHandle','off','CloseRequestFcn',@closess,'Color','w'); hold on
+	IGA_figure = figure('Units','pixels','Position',[10 100 1149 700],'Name',strrep(data.name,'_','-'),'IntegerHandle','off','CloseRequestFcn',@closess,'Color','w'); hold on
 	clf(IGA_figure);
 	IGA_plot(1)=axes('Units','pixels','Position',[52.5 490 612.5 175]);
 	plot(data.time,data.stimulus,'k')
 	IGA_plot(2)=axes('Units','pixels','Position',[52.5 280 612.5 175]);
 	plot(data.time,data.response,'k')
 	IGA_plot(3)=axes('Units','pixels','Position',[52.5 52.5 612.5 192.5]);
-	plot(data.time,data.prediction,'k')
+	l=plot(data.time,data.prediction,'k');
+	r2 = rsquare(data.prediction,data.response);
+	legend(l,strcat('r^2=',oval(r2)))
 	linkaxes(IGA_plot(1:3),'x');
 	linkaxes(IGA_plot(2:3),'y');
 	set(IGA_plot(1),'box','off','XLim',[min(data.time) max(data.time)])
@@ -51,15 +53,18 @@ end
 
 % say what the parameters are for getModelParameters
 p.frac;
-[~,~,~,hl_min]=FindCorrelationTime(data.stimulus);
+[~,~,~,hl_min1]=FindCorrelationTime(data.stimulus);
+[~,~,~,hl_min2]=FindCorrelationTime(data.response);
+hl_min = hl_min1+hl_min2;
 dt = mean(diff(data.time));
 hl_min = (hl_min*dt);
+hl_min = .1;
 p.hl_max; % in s
 history_lengths = logspace(log10(hl_min),log10(p.hl_max),30);
 p.ehl;
 lb.ehl = 1;
 ub.ehl = 30;
-ub.frac = 1;
+ub.frac = .66;
 lb.frac = 0;
 ub.hl_max = 10;
 lb.hl_max = 1; 
@@ -90,6 +95,12 @@ if compute
 	GainAnalysis4(data,history_lengths,example_history_length,ph,p_Linear);
 	ylabel(IGA_plot(5),'Gain')
 	set(IGA_plot(5),'XScale','log')
+
+	% bootstrap the slope only for the example history length
+	ph(4) = [];
+	pp = GainAnalysis4(data,example_history_length,example_history_length,ph);
+	axes(IGA_plot(4))
+	text(10,max(data.response)*.8,strcat('p=',oval(pp(1))));
 
 	% Indicate regions of high and low stimulus on the stimulus
 	hl = floor(example_history_length/dt);

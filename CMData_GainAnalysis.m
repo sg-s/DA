@@ -72,7 +72,6 @@ for i = 1:length(data)
 	plot_here = [];
 	if any(strfind(data(i).original_name,'30ms'))
 		plot_here = ax(1);
-		disp(i)
 	end
 	if any(strfind(data(i).original_name,'50ms'))
 		plot_here = ax(2);
@@ -353,7 +352,75 @@ end
 
 
 %%
-% Bam. So the distribution was the culprit. 
+% Bam. So the distribution was the culprit. But note that bimodal distributions don't seem to affect anything for 100ms correlated data. 
+
+
+%% PCA-based slope estimation
+% There seems to be many problems with the way we estimate slopes of the clouds of points. What if we instead calculated the first principal component, and used that to calculate the slope of the cloud? We repeat the analysis of the 100ms data, but now extract slopes using PCA. 
+
+figure('outerposition',[0 0 1500 1000],'PaperUnits','points','PaperSize',[1500 1000]); hold on
+for j = 1:6
+	ax(j) = subplot(2,3,j); hold on
+	set(gca,'XScale','log')
+end
+
+odours = {'1but','2but','2ac','5ol','1o3ol','d2succ'};
+
+for i = 1:length(data)
+	% figure out where to plot
+	plot_here = [];
+	for j = 1:length(odours)
+		if any(strfind(data(i).original_name,'100ms')) && any(strfind(data(i).original_name,odours{j}))
+			plot_here = ax(j);
+		end
+	end
+	
+	if ~isempty(plot_here)
+		clear x
+		x.time = 1e-3*(1:length(mean2(data(i).PID)));
+		x.stimulus = mean2(data(i).PID);
+		x.prediction = mean2(data(i).LinearFit);
+		x.response = mean2(data(i).fA);
+
+		% throw out first 5 seconds
+		x.time = x.time(5e3:end);
+		x.stimulus = x.stimulus(5e3:end);
+		x.response = x.response(5e3:end);
+		x.prediction = x.prediction(5e3:end);
+
+		% remove trend in stimulus
+		temp = fit(x.time(:),x.stimulus(:),'poly2');
+		x.stimulus = x.stimulus - temp(x.time) + mean(x.stimulus);
+
+		% fix the gain to be exactly 1 -- this is trivial -- the gain is not one because we average over many trials. 
+		a = x.prediction;
+		b = x.response;
+		rm_this = isnan(a) | isnan(b);
+		a(rm_this) = [];
+		b(rm_this) = [];
+		temp = fit(a,b,'poly1');
+		x.prediction = x.prediction*temp.p1;
+
+
+		x.frac = .33;
+
+		clear ph
+		ph(4) = plot_here;
+		[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',x.response,'prediction',x.prediction,'stimulus',x.stimulus,'time',x.time,'ph',ph,'history_lengths',history_lengths,'engine',@GainAnalysis5);
+	end
+end
+
+for j = 1:6
+	title(ax(j),odours{j})
+end
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 %% Version Info
 % The file that generated this document is called:

@@ -67,10 +67,6 @@ else
 end
 x.history_lengths = history_lengths;
 
-if exist('example_history_length','var') 
-else
-	example_history_length = history_lengths(10);
-end
 
 if exist('frac','var') 
 else
@@ -111,22 +107,26 @@ if ~use_cache
 	cached_data = [];
 end
 if isempty(cached_data)
+	if exist('example_history_length','var') 
+	else
+		example_history_length = history_lengths(10);
+	end
 	[p_LN,l,h,low_gof,high_gof] = x.engine(x,history_lengths,example_history_length,ph);
 	cache(hash,p_LN);
 	% also cache the example history length
-	s=abs(l-h);
-	s(p_LN(1,:)>0.05)=NaN;
-	[~,loc]=max(s);
+	g = l-h;
+	g(~p_LN(2,:)) = -Inf;
+	[~,loc]=max(g);
 	ehl = history_lengths(loc);
 	cache(DataHash(p_LN),ehl);
 
 else
 	% cached data exists. let's use that 
 	p_LN = cached_data;
-	if nargin < 5
-		ehl = cache(DataHash(p_LN));
-	else
+	if exist('example_history_length','var') 
 		ehl = example_history_length;
+	else
+		ehl = cache(DataHash(p_LN));
 	end
 	[p_LN,l,h,low_gof,high_gof] = x.engine(x,history_lengths,ehl,ph,p_LN);
 end

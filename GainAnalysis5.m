@@ -372,7 +372,7 @@ end
 
 
 % package p for backwards compatibility
-p = [p_low; p_high];
+p = [p_low; sig_low];
 
 % package some extra variables that may be requested
 extra_variables.data_min = min(x.response)*ones(length(history_lengths),1);

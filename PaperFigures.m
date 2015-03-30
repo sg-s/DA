@@ -18,8 +18,8 @@ tic
 % this determines which figures to do. 
 fig1 = false;
 fig2 = false;
-fig3 = true;
-fig4 = false;
+fig3 = false;
+fig4 = true;
 fig5 = false;
 
 %    ######## ####  ######   ##     ## ########  ########       ##   
@@ -718,7 +718,7 @@ combined_data_file = ('/local-data/DA-paper/carlotta-martelli/flickering-stim/da
 load(combined_data_file)
 filtertime = -200:700;
 filtertime = filtertime*1e-3;
-history_lengths = (3*floor(1000*logspace(-1,1,30)/3))/1e3;
+history_lengths = logspace(log10(.200),1,30);
 
 
 s = 860;
@@ -736,6 +736,19 @@ end
 % ##    ##  ##       ##        ##        ##  ##    ## ##     ##    ##    ##       ##    ## 
 % ##     ## ######## ##        ######## ####  ######  ##     ##    ##    ########  ######  
 
+% add a new field with correlation times
+for i = 1:length(data)
+	if any(strfind(data(i).original_name,'30ms'))
+		data(i).corr_time = 30;
+	end
+	if any(strfind(data(i).original_name,'50ms'))
+		data(i).corr_time = 50;
+	end
+	if any(strfind(data(i).original_name,'100ms'))
+		data(i).corr_time = 100;
+	end
+end
+
 
 % first row: experimental replicates
 do_these = [2 7 9 13 15 16];
@@ -752,21 +765,36 @@ ph(3:4) = axes_handles(2:3);
 
 
 for i = do_these
-	[~,ehl]=max(gain_data(i).low_slopes - gain_data(i).high_slopes);
-	time = data(i).dt*(1:length(data(i).PID(1e4:end,1)));
-	response = mean2(data(i).fA(1e4:end,:));
-	stimulus = mean2(data(i).PID(1e4:end,:));
-	prediction = mean2(data(i).LinearFit(1e4:end,:));
-	GainAnalysisWrapper2('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph);
+	time = 1e-3*(1:length(mean2(data(i).PID)));
+	stimulus = mean2(data(i).PID);
+	prediction = mean2(data(i).LinearFit);
+	response = mean2(data(i).fA);
+
+	% throw out first 5 seconds
+	time = time(5e3:end);
+	stimulus = stimulus(5e3:end);
+	response = response(5e3:end);
+	prediction = prediction(5e3:end);
+
+	% remove trend in stimulus
+	temp = fit(time(:),stimulus(:),'poly2');
+	stimulus = stimulus - temp(time) + mean(stimulus);
+
+	% fix the gain to be exactly 1
+	x = prediction;
+	y = response;
+	rm_this = isnan(x) | isnan(y) ;
+	x(rm_this) = [];
+	y(rm_this) = [];
+	temp = fit(x,y,'poly1');
+	prediction = prediction*temp.p1;
+
+	% ignore very low responses
+	y(y<5) = NaN;
+
+	GainAnalysisWrapper2('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph,'engine',@GainAnalysis5,'use_cache',true);
 end
 
-
-% find the right place to clip the x axis
-c = [];
-for i = do_these
-	c = [c find(gain_data(i).low_gof > .85 & gain_data(i).high_gof > .85,1,'first')];
-end
-set(ph(4),'XLim',[history_lengths(floor(mean(c))) 11],'YLim',[.5 1.5])
 
 % add a minimal legend
 h=get(ph(3),'Children');
@@ -801,27 +829,47 @@ for i = do_these
 end
 legend(l,{'pb1A','ab3A'})
 
+
 clear ph
 ph(3:4) = axes_handles(8:9);
 for i = do_these
-	[~,ehl]=max(gain_data(i).low_slopes - gain_data(i).high_slopes);
-	time = data(i).dt*(1:length(data(i).PID(1e4:end,1)));
-	response = mean2(data(i).fA(1e4:end,:));
-	stimulus = mean2(data(i).PID(1e4:end,:));
-	prediction = mean2(data(i).LinearFit(1e4:end,:));
-	GainAnalysisWrapper2('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph);
+	time = 1e-3*(1:length(mean2(data(i).PID)));
+	stimulus = mean2(data(i).PID);
+	prediction = mean2(data(i).LinearFit);
+	response = mean2(data(i).fA);
+
+	% throw out first 5 seconds
+	time = time(5e3:end);
+	stimulus = stimulus(5e3:end);
+	response = response(5e3:end);
+	prediction = prediction(5e3:end);
+
+	% remove trend in stimulus
+	temp = fit(time(:),stimulus(:),'poly2');
+	stimulus = stimulus - temp(time) + mean(stimulus);
+
+	% fix the gain to be exactly 1
+	x = prediction;
+	y = response;
+	rm_this = isnan(x) | isnan(y) ;
+	x(rm_this) = [];
+	y(rm_this) = [];
+	temp = fit(x,y,'poly1');
+	prediction = prediction*temp.p1;
+
+	% ignore very low responses
+	y(y<5) = NaN;
+
+	GainAnalysisWrapper2('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph,'engine',@GainAnalysis5,'use_cache',true);
 end
 
-% find the right place to clip the x axis
-c = [];
-for i = do_these
-	c = [c find(gain_data(i).low_gof > .85 & gain_data(i).high_gof > .85,1,'first')];
-end
-set(ph(4),'XLim',[history_lengths(floor(mean(c))) 11],'YLim',[.5 1.5])
+
 
 % add a minimal legend
 h=get(ph(3),'Children');
 legend(h(1:2),{'High Stim.','Low Stim.'},'Location','northwest')
+
+
 
 %     ########  #### ######## ######## ######## ########  ######## ##    ## ######## 
 %     ##     ##  ##  ##       ##       ##       ##     ## ##       ###   ##    ##    
@@ -855,12 +903,34 @@ legend(l,odours)
 clear ph
 ph(3:4) = axes_handles(5:6);
 for i = do_these
-	[~,ehl]=max(gain_data(i).low_slopes - gain_data(i).high_slopes);
-	time = data(i).dt*(1:length(data(i).PID(1e4:end,1)));
-	response = mean2(data(i).fA(1e4:end,:));
-	stimulus = mean2(data(i).PID(1e4:end,:));
-	prediction = mean2(data(i).LinearFit(1e4:end,:));
-	GainAnalysisWrapper2('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph);
+	time = 1e-3*(1:length(mean2(data(i).PID)));
+	stimulus = mean2(data(i).PID);
+	prediction = mean2(data(i).LinearFit);
+	response = mean2(data(i).fA);
+
+	% throw out first 5 seconds
+	time = time(5e3:end);
+	stimulus = stimulus(5e3:end);
+	response = response(5e3:end);
+	prediction = prediction(5e3:end);
+
+	% remove trend in stimulus
+	temp = fit(time(:),stimulus(:),'poly2');
+	stimulus = stimulus - temp(time) + mean(stimulus);
+
+	% fix the gain to be exactly 1
+	x = prediction;
+	y = response;
+	rm_this = isnan(x) | isnan(y) ;
+	x(rm_this) = [];
+	y(rm_this) = [];
+	temp = fit(x,y,'poly1');
+	prediction = prediction*temp.p1;
+
+	% ignore very low responses
+	y(y<5) = NaN;
+
+	GainAnalysisWrapper2('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph,'engine',@GainAnalysis5,'use_cache',true);
 end
 
 
@@ -868,12 +938,53 @@ end
 h=get(ph(3),'Children');
 legend(h(1:2),{'High Stim.','Low Stim.'},'Location','northwest')
 
-% find the right place to clip the x axis
-c = [];
-for i = do_these
-	c = [c find(gain_data(i).low_gof > .85 & gain_data(i).high_gof > .85,1,'first')];
+% clean up -- remove the scatter points
+for j = [2 5 8]
+	h=get(axes_handles(j),'Children');
+	rm_this = [];
+	for i = 1:length(h)
+		if strcmp(get(h(i),'Marker'),'.')
+			rm_this = [rm_this i];
+		end
+	end
+	delete(h(rm_this))
 end
-set(ph(4),'XLim',[history_lengths(floor(mean(c))) 11],'YLim',[.5 1.5])
+
+% remove the line indicating the example history plot
+for j = [3 6 9]
+	h=get(axes_handles(j),'Children');
+	rm_this = [];
+	for i = 1:length(h)
+		try
+			if  strcmp(get(h(i),'LineStyle'),'-.')
+				rm_this = [rm_this i];
+			end
+		catch
+		end
+	end
+	delete(h(rm_this))
+
+	% remove the lines where the data isn't significant
+	h=get(axes_handles(j),'Children');
+	rm_this = [];
+	for i = 1:length(h)
+		try
+			if  strcmp(get(h(i),'Type'),'line')
+				rm_this = [rm_this i];
+			end
+		catch
+		end
+	end
+	delete(h(rm_this))
+
+	% make all the scater plots smaller
+	h=get(axes_handles(j),'Children');
+	for i = 1:length(h)
+		 set(h(i),'SizeData',256)
+	end
+
+	set(axes_handles(j),'XLim',[.1 10],'YLim',[.6 1.45])
+end
 
 
 % cosmetics
@@ -889,27 +1000,6 @@ title(axes_handles(2),strcat('T_H=',oval(history_lengths(10))))
 title(axes_handles(5),strcat('T_H=',oval(history_lengths(10))))
 title(axes_handles(8),strcat('T_H=',oval(history_lengths(10))))
 
-for j = 1:length(axes_handles)
-	% remove all the scatter points
-	h=get(axes_handles(j),'Children');
-	rm_this = [];
-	for i = 1:length(h)
-		if strcmp(get(h(i),'Marker'),'.')
-			rm_this = [rm_this i];
-		end
-	end
-	delete(h(rm_this))
-
-	% remove the line indicating the example history plot
-	h=get(axes_handles(j),'Children');
-	rm_this = [];
-	for i = 1:length(h)
-		if  strcmp(get(h(i),'LineStyle'),'-.')
-			rm_this = [rm_this i];
-		end
-	end
-	delete(h(rm_this))
-end
 
 
 PrettyFig('plw=1.5;','lw=1.5;','fs=14;')

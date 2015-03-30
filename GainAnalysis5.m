@@ -148,23 +148,16 @@ for i = 1:length(history_lengths)
 	high_max(i) = max(f_high);
 
 	% use PCA to get slopes of clouds of points
-	[coeff,score,latent] = pca([fp_low f_low]);
-	low_slopes(i) = coeff(2,1)/coeff(1,1);
+	[coeff_low,score_low,latent] = pca([fp_low f_low]);
+	low_slopes(i) = coeff_low(2,1)/coeff_low(1,1);
 	low_gof(i) = latent(1)/sum(latent);
 
-	% if low_slopes(i) < 0
-	% 	low_slopes(i) = coeff(2,2)/coeff(2,1)
-	% 	low_gof(i) = latent(2)/sum(latent);
-	% end
 
-	[coeff,score,latent] = pca([fp_high f_high]);
-	high_slopes(i) = coeff(2,1)/coeff(1,1);
+
+	[coeff_high,score_high,latent] = pca([fp_high f_high]);
+	high_slopes(i) = coeff_high(2,1)/coeff_high(1,1);
 	high_gof(i) = latent(1)/sum(latent);
 
-	% if high_slopes(i) < 0
-	% 	high_slopes(i) = coeff(2,2)/coeff(2,1);
-	% 	high_gof(i) = latent(2)/sum(latent);
-	% end
 
 
 	if history_lengths(i) == example_history_length
@@ -238,6 +231,8 @@ for i = 1:length(history_lengths)
 
 			% plot these on the scatter plot
 			ss = floor(length(fp_low)/1000); % plot only a 1000 points
+
+
 			plot(plothere(3),fp(1:ss:end),f(1:ss:end),'.','MarkerSize',marker_size,'MarkerFaceColor',[0.9 0.9 0.9],'MarkerEdgeColor',[0.9 0.9 0.9])
 			plot(plothere(3),fp_low(1:ss:end),f_low(1:ss:end),'.','MarkerSize',marker_size,'MarkerFaceColor',[0.5 1 0.5],'MarkerEdgeColor',[0.5 1 0.5])
 			plot(plothere(3),fp_high(1:ss:end),f_high(1:ss:end),'.','MarkerSize',marker_size,'MarkerFaceColor',[1 0.5 0.5],'MarkerEdgeColor',[1 0.5 0.5])
@@ -251,9 +246,17 @@ for i = 1:length(history_lengths)
 			title(plothere(3),titlestr);
 
 			% plot the best fit lines
-			% plot(plothere(3),[min(fp) max(fp)],fall([min(fp) max(fp)]),'Color',[0.5 0.5 0.5])
-			%plot(plothere(3),[min(fp_low) max(fp_low)],flow([min(fp_low) max(fp_low)]),'g')
-			%plot(plothere(3),[min(fp_high) max(fp_high)],fhigh([min(fp_high) max(fp_high)]),'r')
+			xx = coeff_low(1,1).*score_low(:,1); xx = xx+mean(fp_low); 
+			[xx,idx] = sort(xx);
+			y = coeff_low(2,1).*score_low(:,1); y = y+mean(f_low);
+			y = y(idx);
+			plot(plothere(3),xx,y,'g')
+
+			xx = coeff_high(1,1).*score_high(:,1); xx = xx+mean(fp_high); 
+			[xx,idx] = sort(xx);
+			y = coeff_high(2,1).*score_high(:,1); y = y+mean(f_high);
+			y = y(idx);
+			plot(plothere(3),xx,y,'r')
 
 			xlabel(plothere(3),'Prediction')
 			ylabel(plothere(3),'Actual neuron response')
@@ -299,6 +302,13 @@ end
 % this is where we plot the history length plot
 if length(plothere) == 4
 	hold(plothere(4),'on')
+
+	% plot line to indicate the location of the example history plot
+	yy=([.8*min(high_slopes2.data) 1.2*max(low_slopes2.data)]);
+	if ~isempty(example_history_length)
+		plot(plothere(4),[example_history_length example_history_length],yy,'k-.')
+	end
+
 	plot(plothere(4),history_lengths,low_slopes2.data,'g'), hold on
 	plot(plothere(4),history_lengths,high_slopes2.data,'r')
 
@@ -352,11 +362,7 @@ if length(plothere) == 4
 	scatter(plothere(4),history_lengths(sig_low),low_slopes2.data(sig_low),1256,'g.')
 	scatter(plothere(4),history_lengths(sig_high),high_slopes2.data(sig_high),1256,'r.')
 
-	% plot line to indicate the location of the example history plot
-	yy=get(plothere(4),'YLim');
-	if ~isempty(example_history_length)
-		plot(plothere(4),[example_history_length example_history_length],yy,'k-.')
-	end
+	
 
 	set(plothere(4),'box','on','XLim',[0 max(history_lengths)])
 	xlabel(plothere(4),'History Length (s)','FontSize',20)

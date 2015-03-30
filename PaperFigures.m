@@ -16,9 +16,9 @@ end
 tic
 
 % this determines which figures to do. 
-fig1 = true;
-fig2 = true;
-fig3 = false;
+fig1 = false;
+fig2 = false;
+fig3 = true;
 fig4 = false;
 fig5 = false;
 
@@ -622,24 +622,19 @@ ylabel(axes_handles(4),'K\otimes stimulus (Hz)')
 % gain analysis -- linear model
 ph = []; ph(3:4) = axes_handles([5 7]);
 
-[~,~,~,hl_min1]=FindCorrelationTime(mean2(fA));
-[~,~,~,hl_min2]=FindCorrelationTime(mean2(PID));
-hl_min = hl_min1+hl_min2;
+hl_min = .1;
 hl_max = 10;
-dt = 1e-3;
-hl_min = (hl_min*dt);
 history_lengths = logspace(log10(hl_min),log10(hl_max),30);
 
-[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',mean2(fA),'prediction',fp,'stimulus',mean2(PID),'time',tA,'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(7),'use_cache',1);
+[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',mean2(fA),'prediction',fp,'stimulus',mean2(PID),'time',tA,'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(11),'use_cache',1,'engine',@GainAnalysis5);
 set(axes_handles(7),'XLim',[.09 11]) % to show .1 and 10 on the log scale
 
 % show the p-value
 axes(axes_handles(5))
 text(10,60,'p < 0.01')
 
-
 % plot gain vs preceding stimulus
-[x,y] = MakeFig6G(mean2(PID),mean2(fA),fp,round(history_lengths(7)*1e3));
+[x,y] = MakeFig6G(mean2(PID),mean2(fA),fp,round(history_lengths(11)*1e3));
 gain_time = mean(diff(tA))*(1:length(x));
 rm_this = (isnan(x) | isnan(y));
 x(rm_this) = [];
@@ -665,6 +660,7 @@ linkaxes(axes_handles([3:4]))
 xlabel(axes_handles(4),'Time (s)')
 xlabel(axes_handles(1),'Time (s)')
 ylabel(axes_handles(7),'Relative Gain')
+set(axes_handles(7),'YScale','log','YTick',[0.5 1 2],'YLim',[0.4 3.5])
 set(axes_handles(4),'YLim',[0 100])
 ylabel(axes_handles(5),'Firing Rate (Hz)')
 xlabel(axes_handles(5),'K\otimes stimulus (Hz)')

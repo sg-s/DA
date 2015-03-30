@@ -16,10 +16,10 @@ end
 tic
 
 % this determines which figures to do. 
-fig1 = false;
-fig2 = false;
-fig3 = false;
-fig4 = false;
+fig1 = true;
+fig2 = true;
+fig3 = true;
+fig4 = true;
 fig5 = true;
 
 %    ######## ####  ######   ##     ## ########  ########       ##   
@@ -1183,8 +1183,6 @@ time = 1e-3*(1:length(data(1).fp));
 axes(axes_handles(10))
 text(10,60,strkat('p = ',oval(p(1))))
 
-
-return
 
 
 %     ########     ###             ########  ##     ## ##        ######  ########  ######  

@@ -17,7 +17,7 @@ tic
 
 % this determines which figures to do. 
 fig1 = true;
-fig2 = false;
+fig2 = true;
 fig3 = false;
 fig4 = false;
 fig5 = false;
@@ -492,7 +492,12 @@ xlabel('Mean Stimulus (V)')
 ylabel('\tau_{ORN}-\tau_{PID} (ms)','interpreter','tex')
 
 % calculate the spearman rho
-s2 = spear(foreground_stim(a),resp_half_time(a)-stim_half_time(a));
+x = foreground_stim(a);
+y = resp_half_time(a)-stim_half_time(a);
+rm_this = y<0 | y>100;
+x(rm_this) = [];
+y(rm_this) = [];
+s2 = spear(x,y);
 legend(l,strcat('\rho=',oval(s2)));
 
 PrettyFig;

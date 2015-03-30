@@ -16,10 +16,10 @@ end
 tic
 
 % this determines which figures to do. 
-fig1 = true;
-fig2 = true;
-fig3 = true;
-fig4 = true;
+fig1 = false;
+fig2 = false;
+fig3 = false;
+fig4 = false;
 fig5 = true;
 
 %    ######## ####  ######   ##     ## ########  ########       ##   
@@ -480,24 +480,48 @@ xlabel('Time (s)')
 ylabel('Firing rate (Hz)')
 
 
-load('2ac_timing.mat')
-a = background_stim == 0;
-foreground_stim(foreground_stim<1e-2) = NaN; % not reliable
+load('PulseData.mat')
+
+% show the timing data for the DA model
+stim_half_time = NaN(1e4,1); % time it takes to go to half max
+resp_half_time = NaN(1e4,1); % time it takes to go to half max
+foreground_stim = NaN(1e4,1);
+c = 1;
+a = 1050;
+z = 1500; % nominal stimulus start and stop
+for i = 1:length(PulseData)
+	for j = 1:width(PulseData(i).stim)
+		this_stim = PulseData(i).stim(:,j);
+		foreground_stim(c) = mean(this_stim(a:z));
+		this_stim = this_stim/max(this_stim(a:z));
+		this_resp = PulseData(i).resp(:,j);
+		this_resp = this_resp -  mean(this_resp(1:a));
+		this_resp = this_resp/max(this_resp(a:z));
+		stim_half_time(c) = max([find(this_stim(a:z)>.5,1,'first') NaN]);
+		resp_half_time(c) = max([find(this_resp(a:z)>.5,1,'first') NaN]);
+		c = c+1;
+	end
+end
+stim_half_time(c:end) = [];
+resp_half_time(c:end) = [];
+resp_time = resp_half_time - stim_half_time;
+foreground_stim(c:end) = [];
+
+% clean up
+rm_this = foreground_stim < 1e-2 | resp_time < 0 | resp_time > 100;
+foreground_stim(rm_this) = [];
+resp_time(rm_this) = [];
+
 
 % plot time to peak for the data
 subplot(2,3,6), hold on
-l=plot(foreground_stim(a),resp_half_time(a)-stim_half_time(a),'k+');
+l=plot(foreground_stim,resp_time,'k+');
 set(gca,'XScale','log','XLim',[1e-2 20],'YLim',[0 100])
 xlabel('Mean Stimulus (V)')
 ylabel('\tau_{ORN}-\tau_{PID} (ms)','interpreter','tex')
 
 % calculate the spearman rho
-x = foreground_stim(a);
-y = resp_half_time(a)-stim_half_time(a);
-rm_this = y<0 | y>100;
-x(rm_this) = [];
-y(rm_this) = [];
-s2 = spear(x,y);
+s2 = spear(foreground_stim,resp_time);
 legend(l,strcat('\rho=',oval(s2)));
 
 PrettyFig;
@@ -996,9 +1020,9 @@ title(axes_handles(7),'Filters')
 ylabel(axes_handles(3),'Relative Gain')
 ylabel(axes_handles(6),'Relative Gain')
 ylabel(axes_handles(9),'Relative Gain')
-title(axes_handles(2),strcat('T_H=',oval(history_lengths(10))))
-title(axes_handles(5),strcat('T_H=',oval(history_lengths(10))))
-title(axes_handles(8),strcat('T_H=',oval(history_lengths(10))))
+title(axes_handles(2),'')
+title(axes_handles(5),'')
+title(axes_handles(8),'')
 
 
 
@@ -1118,12 +1142,37 @@ end
 % show this on the plot
 plot(axes_handles(6),qx,qy,'k+')
 
-% show the pulse timing data again
-load('2ac_timing.mat')
-a = background_stim == 0;
-foreground_stim(foreground_stim<1e-2) = NaN; % not reliable
 
-plot(axes_handles(9),foreground_stim(a),resp_half_time(a)-stim_half_time(a),'k+')
+% show the timing data
+stim_half_time = NaN(1e4,1); % time it takes to go to half max
+resp_half_time = NaN(1e4,1); % time it takes to go to half max
+foreground_stim = NaN(1e4,1);
+c = 1;
+a = 1050;
+z = 1500; % nominal stimulus start and stop
+for i = 1:length(PulseData)
+	for j = 1:width(PulseData(i).stim)
+		this_stim = PulseData(i).stim(:,j);
+		foreground_stim(c) = mean(this_stim(a:z));
+		this_stim = this_stim/max(this_stim(a:z));
+		this_resp = PulseData(i).resp(:,j);
+		this_resp = this_resp -  mean(this_resp(1:a));
+		this_resp = this_resp/max(this_resp(a:z));
+		stim_half_time(c) = max([find(this_stim(a:z)>.5,1,'first') NaN]);
+		resp_half_time(c) = max([find(this_resp(a:z)>.5,1,'first') NaN]);
+		c = c+1;
+	end
+end
+stim_half_time(c:end) = [];
+resp_half_time(c:end) = [];
+resp_time = resp_half_time - stim_half_time;
+foreground_stim(c:end) = [];
+
+% clean up
+rm_this = foreground_stim < 1e-2 | resp_time < 0 | resp_time > 100;
+foreground_stim(rm_this) = [];
+resp_time(rm_this) = [];
+
 set(axes_handles(9),'XScale','log','XLim',[1e-2 20],'YLim',[0 100])
 xlabel(axes_handles(9),'Mean Stimulus (V)')
 ylabel(axes_handles(9),'\tau_{ORN}-\tau_{PID} (ms)','interpreter','tex')
@@ -1152,7 +1201,12 @@ stim_half_time(c:end) = [];
 resp_half_time(c:end) = [];
 foreground_stim(c:end) = [];
 
+% clean up exactly like we did the data
+foreground_stim(rm_this) = [];
+resp_time(rm_this) = [];
 
+
+return
 plot(axes_handles(9),foreground_stim,resp_half_time-stim_half_time,'r+')
 
 %      ########     ###              ##      ## ######## ########  ######## ########  

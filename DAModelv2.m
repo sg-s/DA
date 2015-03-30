@@ -51,7 +51,7 @@ if filter_length < length(S)/10
 else
 	filter_length = length(S)/10; % ridiculously long filters
 end
-t = 0:filter_length; % filters to be this long; don't use n*tau longer than a few hundred ms in this case...
+t = 0:filter_length; 
 % Kz and Ky are the filters described in equations 12 and 13
 Ky = generate_simple_filter(p.tau_y,p.n_y,t);
 Kz = p.C*Ky + (1-p.C) * generate_simple_filter(p.tau_z,p.n_z,t);

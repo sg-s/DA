@@ -200,6 +200,11 @@ xlabel(axes_handles(7),'K\otimes s')
 ylabel(axes_handles(7),'Neuron Response (Hz)')
 
 
+% get the gain scaling factor -- this is to correct for the fact that we normalised the filter heights everywhere
+x = mean2(horzcat(MSG_data(1,:).stim));
+y = mean2(horzcat(MSG_data(1,:).resp));
+gsf = std(y)/std(x);
+
 % compute gain changes on a per-neuron basis
 
 gain = NaN(8,13);
@@ -223,10 +228,10 @@ for i = 1:8 % iterate over all paradigms
 
 			temp=fit(x(:),y(:),'poly1');
 			gain(i,j) = temp.p1;
-			mean_stim(i,j) = mean(mean([MSG_data(i,:).stim]));
+			mean_stim(i,j) = mean(mean([MSG_data(i,j).stim]));
 
 			% get the units of gain right
-			gain(i,j) = gain(i,j)*(std(x)/std(mean2([MSG_data(i,:).stim])));
+			gain(i,j) = gain(i,j)*gsf;
 		end
 	end	
 end
@@ -1172,7 +1177,9 @@ foreground_stim(c:end) = [];
 rm_this = foreground_stim < 1e-2 | resp_time < 0 | resp_time > 100;
 foreground_stim(rm_this) = [];
 resp_time(rm_this) = [];
+resp_time_data = resp_time;
 
+plot(axes_handles(9),foreground_stim,resp_time,'k+')
 set(axes_handles(9),'XScale','log','XLim',[1e-2 20],'YLim',[0 100])
 xlabel(axes_handles(9),'Mean Stimulus (V)')
 ylabel(axes_handles(9),'\tau_{ORN}-\tau_{PID} (ms)','interpreter','tex')
@@ -1201,13 +1208,19 @@ stim_half_time(c:end) = [];
 resp_half_time(c:end) = [];
 foreground_stim(c:end) = [];
 
+resp_time = resp_half_time - stim_half_time;
+
 % clean up exactly like we did the data
 foreground_stim(rm_this) = [];
 resp_time(rm_this) = [];
 
+l=plot(axes_handles(9),foreground_stim,resp_time,'r+');
 
-return
-plot(axes_handles(9),foreground_stim,resp_half_time-stim_half_time,'r+')
+% show the spearman rho with the data
+s=spear(resp_time,resp_time_data);
+set(axes_handles(9),'XScale','log','XLim',[1e-2 20],'YLim',[0 100])
+legend(l,strcat('\rho=',oval(s)))
+
 
 %      ########     ###              ##      ## ######## ########  ######## ########  
 %      ##     ##   ## ##             ##  ##  ## ##       ##     ## ##       ##     ## 
@@ -1245,6 +1258,12 @@ for i = 1:8
 end
 
 
+% get the gain scaling factor -- this is to correct for the fact that we normalised the filter heights everywhere
+x = mean2(horzcat(MSG_data(1,:).stim));
+y = mean2(horzcat(MSG_data(1,:).resp));
+gsf = std(y)/std(x);
+
+
 % show the gain plot again, and also the gain for the da model 
 gain = NaN(8,13);
 gain_DA = NaN(8,13);
@@ -1254,28 +1273,53 @@ for i = 1:8 % iterate over all paradigms
 		if width(MSG_data(i,j).stim) > 1
 			y = MSG_data(i,j).resp; % average over all neurons 
 			x = MSG_data(i,j).fp;
+			x_da = MSG_data(i,j).fp_DA;
 			if ~isvector(x)
 				x = mean2(x);
 			end
 			if ~isvector(y)
 				y = mean2(y);
 			end 
-			
-			gain(i,j) = EstimateGain2(x,y);
+			if ~isvector(x_da)
+				x_da = mean2(x_da);
+			end 
 
-			x = MSG_data(i,j).fp_DA;
-			if ~isvector(x)
-				x = mean2(x);
-			end
-			gain_DA(i,j) = EstimateGain2(x,y);
-			mean_stim(i,j) = mean(mean([MSG_data(i,:).stim]));
+
+			% trim NaNs again
+			rm_this = isnan(x) | isnan(y) | isnan(x_da);
+			x(rm_this) = [];
+			x_da(rm_this) = [];
+			y(rm_this) = [];
+
+			temp=fit(x(:),y(:),'poly1');
+			gain(i,j) = temp.p1;
+			mean_stim(i,j) = mean(mean([MSG_data(i,j).stim]));
+
+			temp=fit(x(:),x_da(:),'poly1');
+			gain_DA(i,j) = temp.p1;
+
+			% get the units of gain right
+			gain(i,j) = gain(i,j)*gsf;
+			gain_DA(i,j) = gain_DA(i,j)*gsf;
+
 		end
 	end	
 end
 plot(axes_handles(7),mean_stim(:),gain(:),'kx')
-plot(axes_handles(7),mean_stim(:),gain_DA(:),'rx')
+l=plot(axes_handles(7),mean_stim(:),gain_DA(:),'rx');
 xlabel(axes_handles(7),'Mean Stimulus (V)')
 ylabel(axes_handles(7),'Neuron Gain (Hz/V)')
+
+% show the spearman rho 
+a = gain(:);
+b = gain_DA(:);
+rm_this = isnan(a) | isnan(b);
+a(rm_this) = [];
+b(rm_this) = [];
+s = spear(a,b);
+legend(l,strcat('\rho=',oval(s)));
+
+
 
 
 %    ########     ###        ######  ########  ######## ######## ########  ##     ## ########  
@@ -1317,23 +1361,36 @@ for i = 1:8 % iterate over all paradigms
 			[~,loc] = max(x);
 			peak_loc_data(i,j) = t(loc);
 
-			
+			% throw out the first 5 seconds
+			this_pred(1:5e3) = [];
+			b(1:5e3) = [];
 			a = this_pred - mean(this_pred);
 			a = a/std(a);
 			x = xcorr(a,b); % positive peak means a lags b
 			x = x/max(x);
+			t = 1e-3*(1:length(x));
+			t = t-mean(t);
 			[~,loc] = max(x);
 			peak_loc_DA(i,j) = t(loc);
+			mean_stim(i,j) = mean(mean([MSG_data(i,j).stim]));
 
 		end
 	end
 end 
 
 plot(axes_handles(8),mean_stim(:),1e3*peak_loc_data(:),'kx')
-plot(axes_handles(8),mean_stim(:),1e3*peak_loc_DA(:),'rx')
-set(axes_handles(8),'XLim',[-.1 3],'YLim',[35 120])
+l=plot(axes_handles(8),mean_stim(:),1e3*peak_loc_DA(:),'rx');
+set(axes_handles(8),'XLim',[-.1 4],'YLim',[35 120])
 xlabel(axes_handles(8),'Mean Stimulus (V)')
 ylabel(axes_handles(8),'Peak xcorr. (ms)')
+
+a = peak_loc_data(:);
+b = peak_loc_DA(:);
+rm_this = isnan(a) | isnan(b) | a < 0 | b < 0;
+a(rm_this) = [];
+b(rm_this) = [];
+s = spear(a,b);
+legend(l,strcat('\rho=',oval(s)));
 
 
 PrettyFig('plw=1.5;','lw=1.5;','fs=14;')

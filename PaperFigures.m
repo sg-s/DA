@@ -1087,6 +1087,57 @@ title(axes_handles(4),'Pulse Speedup')
 title(axes_handles(5),'Fast Gain Control')
 
 
+
+%       ##       ##    ##    ##     ##  #######  ########  ######## ##       
+%       ##       ###   ##    ###   ### ##     ## ##     ## ##       ##       
+%       ##       ####  ##    #### #### ##     ## ##     ## ##       ##       
+%       ##       ## ## ##    ## ### ## ##     ## ##     ## ######   ##       
+%       ##       ##  ####    ##     ## ##     ## ##     ## ##       ##       
+%       ##       ##   ###    ##     ## ##     ## ##     ## ##       ##       
+%       ######## ##    ##    ##     ##  #######  ########  ######## ######## 
+
+load('LVF_data.mat')
+tA = 1e-3*(1:length(data(1).stim));
+% extract filters for each neuron
+for i = 1:length(data)
+	[this_K, ~, filtertime_full] = FindBestFilter(mean2(data(i).stim),mean2(data(i).resp),[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
+	filtertime_full = filtertime_full*1e-3;
+	filtertime = 1e-3*(-200:900);
+	this_K = interp1(filtertime_full,this_K,filtertime);
+	data(i).K = this_K;
+end
+
+% make linear predictions and extract non-linearities 
+for i = 1:length(data)
+	fp = convolve(tA,mean2(data(i).stim),data(i).K,filtertime);
+	R = mean2(data(i).resp);
+	temp =fit(fp(~(isnan(fp) | isnan(R))),R(~(isnan(fp) | isnan(R))),'poly1');
+	fp = fp*temp.p1;
+	fp = fp+temp.p2;
+	data(i).LinearFit = fp;
+	data(i).LNFit = hill(p_LN(i),data(i).LinearFit);
+
+	% show fit quality of DA model for Large Variance Flicker
+	[qx, qy] = GeffenMeister(data(i).resp,data(i).LNFit);
+	plot(axes_handles(1),qx,qy,'ko')
+end
+
+% show gain analysis -- da model
+ph = []; ph(3) = axes_handles(5);
+history_lengths = 0.4890;
+time = 1e-3*(1:length(data(1).LinearFit));
+p=GainAnalysisWrapper2('response',mean2([data.resp]),'prediction',mean2([data.LNFit]),'stimulus',mean2([data.stim]),'time',time,'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(1),'engine',@GainAnalysis5);
+
+
+% show the p-value
+axes(axes_handles(5))
+if p(1) == 0
+	text(10,60,'p<0.01')
+else
+	text(10,60,strkat('p = ',oval(p(1))))
+end
+
+
 %       ########     ###               ##     ##  #######  ########  ######## ##       
 %       ##     ##   ## ##              ###   ### ##     ## ##     ## ##       ##       
 %       ##     ##  ##   ##             #### #### ##     ## ##     ## ##       ##       
@@ -1114,12 +1165,15 @@ end
 ph = []; ph(3) = axes_handles(10);
 history_lengths = 0.4890;
 time = 1e-3*(1:length(data(1).fp));
-[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',mean2([data.resp]),'prediction',mean2([data.fp]),'stimulus',mean2([data.stim]),'time',time,'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(1));
+[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',mean2([data.resp]),'prediction',mean2([data.fp]),'stimulus',mean2([data.stim]),'time',time,'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(1),'engine',@GainAnalysis5);
 
 
 % show the p-value
 axes(axes_handles(10))
 text(10,60,strkat('p = ',oval(p(1))))
+
+
+return
 
 
 %     ########     ###             ########  ##     ## ##        ######  ########  ######  

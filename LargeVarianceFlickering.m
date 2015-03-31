@@ -203,7 +203,7 @@ end
 % The following figure shows the stimulus distribution and the autocorrelation functions of the stimulus and the response. 
 
 
-figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+f=figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1), hold on
 for i = 1:width(PID)
 	[y,x] = histcounts(PID(:,i),300);x(1) = [];
@@ -215,33 +215,35 @@ xlabel('PID (V)')
 ylabel('Count')
 title('Stimulus Histogram')
 
-subplot(1,3,2), hold on
+figure(f);
+plot_here= subplot(1,3,2); hold on
 a = [];
 for i = 1:width(PID)
 	[zc,temp,c]=FindCorrelationTime(PID(:,i));
 	a = [a temp];
-	l=plot(1:3e3,c(1:3e3));
+	l=plot(plot_here,1:3e3,c(1:3e3));
 end
 
-xlabel('Lag (ms)')
-ylabel('Autocorrelation')
+xlabel(plot_here,'Lag (ms)')
+ylabel(plot_here,'Autocorrelation')
 legend(l,strcat('\tau=',oval(a),'ms'))
-set(gca,'XScale','log')
-title('Stimulus')
+set(plot_here,'XScale','log')
+title(plot_here,'Stimulus')
 
-subplot(1,3,3), hold on
+figure(f);
+plot_here = subplot(1,3,3); hold on
 a = [];
 for i = 1:width(fA)
 	[zc,temp,c]=FindCorrelationTime(fA(:,i));
 	a = [a temp];
-	l=plot(1:3e3,c(1:3e3));
+	l=plot(plot_here,1:3e3,c(1:3e3));
 end
 
-title('Response')
-xlabel('Lag (ms)')
-ylabel('Autocorrelation')
+title(plot_here,'Response')
+xlabel(plot_here,'Lag (ms)')
+ylabel(plot_here,'Autocorrelation')
 legend(l,strcat('\tau=',oval(a),'ms'))
-set(gca,'XScale','log')
+set(plot_here,'XScale','log')
 
 PrettyFig;
 
@@ -331,6 +333,12 @@ ylabel('(P_{S}/P_{R})^{1/2}','interpreter','tex')
 
 PrettyFig;
 
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
 
 %%
 % To figure out what's going on here, we will inspect the cross correlation function between the stimulus and the response: 
@@ -356,65 +364,26 @@ if being_published
 	delete(gcf)
 end
 
+
 %%
 % The Firing rate lags the PID trace by 66ms. 
 
-%%
-% What happens when we explicitly specify a filter that we obtained from stimulation with pseudo-Gaussian stimuli? How well does it perform? 
 
-clear p
-p.  tau1= 3*5.0122;
-p.   K_n= 4.4572;
-p.  tau2= 3*20.3750;
-p.     A= 41.3682;
-p.     n= 4.4297;
-p.    Kd= 20.0591;
-p.offset= 20.0278;
-p.   K_A= 0.3491;
+%  ######      ###    #### ##    ## 
+% ##    ##    ## ##    ##  ###   ## 
+% ##         ##   ##   ##  ####  ## 
+% ##   #### ##     ##  ##  ## ## ## 
+% ##    ##  #########  ##  ##  #### 
+% ##    ##  ##     ##  ##  ##   ### 
+%  ######   ##     ## #### ##    ## 
+%    ###    ##    ##    ###    ##       ##    ##  ######  ####  ######  
+%   ## ##   ###   ##   ## ##   ##        ##  ##  ##    ##  ##  ##    ## 
+%  ##   ##  ####  ##  ##   ##  ##         ####   ##        ##  ##       
+% ##     ## ## ## ## ##     ## ##          ##     ######   ##   ######  
+% ######### ##  #### ######### ##          ##          ##  ##        ## 
+% ##     ## ##   ### ##     ## ##          ##    ##    ##  ##  ##    ## 
+% ##     ## ##    ## ##     ## ########    ##     ######  ####  ######  
 
-% save for later
-Linear_Filter_p = p;
-
-t = 1:1e3;
-K = filter_gamma2(p.tau1,p.K_n,p.tau2,p.K_A,t);
-t = t*mean(diff(tA));
-fp = filter(K,1,mean2(PID));
-
-% trivial scaling
-fp = fp -0.6562;
-fp = fp*1.7987;
-
-fp_gaussian_K = fp;
-
-figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
-subplot(1,4,1:3), hold on
-plot(tA,mean2(fA),'k')
-l=plot(tA,fp,'r');
-r2 = rsquare(fp,mean2(fA));
-legend(l,strcat('r^2=',oval(r2,3)))
-xlabel('Time (s)')
-ylabel('Firing rate (Hz)')
-
-subplot(1,4,4), hold on
-plot(t,K,'r')
-xlabel('Filter Lag (s)')
-ylabel('Filter (norm.)')
-title('Filter from Gaussian Noise')
-
-
-PrettyFig;
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-%  ######      ###    #### ##    ##       ###    ##    ##    ###    ##       ##    ##  ######  ####  ######  
-% ##    ##    ## ##    ##  ###   ##      ## ##   ###   ##   ## ##   ##        ##  ##  ##    ##  ##  ##    ## 
-% ##         ##   ##   ##  ####  ##     ##   ##  ####  ##  ##   ##  ##         ####   ##        ##  ##       
-% ##   #### ##     ##  ##  ## ## ##    ##     ## ## ## ## ##     ## ##          ##     ######   ##   ######  
-% ##    ##  #########  ##  ##  ####    ######### ##  #### ######### ##          ##          ##  ##        ## 
-% ##    ##  ##     ##  ##  ##   ###    ##     ## ##   ### ##     ## ##          ##    ##    ##  ##  ##    ## 
-%  ######   ##     ## #### ##    ##    ##     ## ##    ## ##     ## ########    ##     ######  ####  ######  
 
 
 %% Gain Changes
@@ -443,9 +412,9 @@ end
 %
 
 %%
-% In the following figure, we estimate the gain as so, by fitting lines to intervals 100ms long, and sliding along 10ms. 
+% In the following figure, we estimate the gain as so, by fitting lines to intervals 400ms long, and sliding along 10ms. 
 
-[gain,r2,t] = EstimateGain(fp,mean2(fA),100,10);
+[gain,r2,t] = EstimateGain(fp,mean2(fA),400,10);
 t = t*1e-3;
 
 figure('outerposition',[0 0 1400 700],'PaperUnits','points','PaperSize',[1400 700]); hold on
@@ -491,20 +460,6 @@ ph=GainAnalysisWrapper(mean2(fA),fp_normal,mean2(PID),tA);
 xlabel(ph(3),'Linear Prediction (Hz)')
 
 PrettyFig;
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-%%
-% For completeness, we repeat the gain analysis, but this time for the prediction from the Gaussian Noise. 
-
-ph=GainAnalysisWrapper(mean2(fA),fp_gaussian_K,mean2(PID),tA);
-xlabel(ph(3),'Linear Prediction (Hz)')
-
-PrettyFig;
-
 
 if being_published
 	snapnow

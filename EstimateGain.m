@@ -41,6 +41,7 @@ temp.stimulus = stimulus;
 temp.response = response;
 temp.tw = tw;
 temp.s = s;
+temp.method = 'PCA';
 hash = DataHash(temp);
 
 cached_data = cache(hash);
@@ -58,13 +59,22 @@ gain = NaN(length(t),1);
 r2 = gain;
 
 
-for i = 1:length(gain)
+parfor i = 1:length(gain)
 	x = stimulus((t(i)-tw/2+1):(t(i)+tw/2-1));
 	y = response((t(i)-tw/2+1):(t(i)+tw/2-1));
-	[f,g] = fit(x,y,'poly1');
-	gain(i) = f.p1;
-	r2(i) = g.rsquare;
+	if any(isnan(x)) | any(isnan(y))
+	else
 
+		% use PCA to get slopes of clouds of points
+		[coeff,~,latent] = pca([x y]);
+		gain(i) = coeff(2,1)/coeff(1,1);
+		low_gof(i) = latent(1)/sum(latent);
+
+
+		% [f,g] = fit(x,y,'poly1');
+		% gain(i) = f.p1;
+		% r2(i) = g.rsquare;
+	end
 end
 
 

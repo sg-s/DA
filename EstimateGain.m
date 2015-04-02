@@ -41,7 +41,7 @@ temp.stimulus = stimulus;
 temp.response = response;
 temp.tw = tw;
 temp.s = s;
-temp.method = 'PCA';
+temp.method = 'PCA_with_errors';
 hash = DataHash(temp);
 
 cached_data = cache(hash);
@@ -68,7 +68,7 @@ parfor i = 1:length(gain)
 		% use PCA to get slopes of clouds of points
 		[coeff,~,latent] = pca([x y]);
 		gain(i) = coeff(2,1)/coeff(1,1);
-		low_gof(i) = latent(1)/sum(latent);
+		r2(i) = latent(1)/sum(latent);
 
 
 		% [f,g] = fit(x,y,'poly1');

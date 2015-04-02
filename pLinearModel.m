@@ -11,8 +11,8 @@ function [f,K,shat] = pLinearModel(s,p)
 lb.n = 0; 
 ub.n = 6;
 lb.tau1 = 1;
-ub.tau1 = 100;
-lb.tau2 = 1;
+ub.tau1 = 200;
+lb.tau2 = 10;
 ub.tau2 = 200;
 lb.A = 0;
 ub.A = 2;
@@ -27,7 +27,14 @@ p.scale;
 p.offset;
 
 % make the filters
-K = filter_gamma2(p,1:300);
+% make the filters
+filter_length = 7*max([p.n*p.tau2  p.n*p.tau1]);
+if filter_length < length(s)/10
+else
+	filter_length = length(s)/10; % ridiculously long filters
+end
+t = 0:filter_length; 
+K = filter_gamma2(t,p);
 
 % filter the input
 shat = filter(K,1,s-mean(s));

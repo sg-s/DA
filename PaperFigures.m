@@ -18,9 +18,9 @@ tic
 % this determines which figures to do. 
 fig1 = true;
 fig2 = true;
-fig3 = true;
-fig4 = true;
-fig5 = true;
+fig3 = false;
+fig4 = false;
+fig5 = false;
 
 %    ######## ####  ######   ##     ## ########  ########       ##   
 %    ##        ##  ##    ##  ##     ## ##     ## ##           ####   
@@ -333,6 +333,7 @@ legend(l,L)
 % compute the cross-correlation for the data, on a per-neuron basis 
 subplot(2,3,2), hold on
 peak_loc_xcorr = NaN(8,13);
+peak_xcorr = NaN(8,13);
 clear l 
 l = zeros(8,1);
 for i = 1:8
@@ -351,7 +352,7 @@ for i = 1:8
 
 			plot(t,x,'Color',c(i,:));
 
-			[~,loc] = max(x);
+			[peak_xcorr(i,j),loc] = max(x);
 			peak_loc_xcorr(i,j) = t(loc);
 		end
 	end
@@ -655,7 +656,7 @@ hl_min = .1;
 hl_max = 10;
 history_lengths = logspace(log10(hl_min),log10(hl_max),30);
 
-[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',mean2(fA),'prediction',fp,'stimulus',mean2(PID),'time',tA,'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(11),'use_cache',1,'engine',@GainAnalysis5);
+[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',mean2(fA),'prediction',fp,'stimulus',mean2(PID),'time',tA,'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(9),'use_cache',1,'engine',@GainAnalysis5);
 set(axes_handles(7),'XLim',[.09 11]) % to show .1 and 10 on the log scale
 
 % show the p-value
@@ -663,7 +664,7 @@ axes(axes_handles(5))
 text(10,60,'p < 0.01')
 
 % plot gain vs preceding stimulus
-[x,y] = MakeFig6G(mean2(PID),mean2(fA),fp,round(history_lengths(11)*1e3));
+[x,y] = MakeFig6G(mean2(PID),mean2(fA),fp,round(history_lengths(9)*1e3));
 gain_time = mean(diff(tA))*(1:length(x));
 rm_this = (isnan(x) | isnan(y));
 x(rm_this) = [];
@@ -696,7 +697,7 @@ xlabel(axes_handles(5),'K\otimes stimulus (Hz)')
 title(axes_handles(5),'')
 
 % Indicate regions of high and low stimulus on the stimulus
-hl = round(history_lengths(7)*1e3);
+hl = round(history_lengths(9)*1e3);
 shat = ComputeSmoothedStimulus(mean2(PID),hl);
 
 n = floor(sum(~isnan(mean2(fA)))*.33);

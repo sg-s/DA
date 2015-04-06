@@ -282,12 +282,12 @@ d.stimulus = d.stimulus - mean(d.stimulus);
 
 clear p
 
-  p.     n= 0.6201;
-  p.     A= 1.1021;
-  p.  tau1= 197.3970;
-  p.  tau2= 199.9998;
-  p. scale= 3.5249e-05;
-  p.offset= 7.3670e+03;
+p.     n= 0.6201;
+p.     A= 1.1021;
+p.  tau1= 197.3970;
+p.  tau2= 199.9998;
+p. scale= 3.5249e-05;
+p.offset= 7.3670e+03;
 
 [gain_pred,K_g] = pLinearModel(d.stimulus,p);
 
@@ -312,6 +312,7 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
 
 
 

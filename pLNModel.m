@@ -33,10 +33,12 @@ lb.tau2 = 2;
 lb.Hill_n = 1;
 ub.Hill_n = 10;
 ub.Hill_A = 1e3;
-lb.Hill_A = 50;
+lb.Hill_A = 25;
 ub.tau2 = 500;
 ub.tau1 = 200;
 lb.Hill_Kd = 1;
+ub.Hill_Kd = 200;
+ub.A = 1e3;
 
 % make the filters
 filter_length = 4*max([p.n*p.tau2  p.n*p.tau1]);
@@ -56,3 +58,8 @@ shat = shat + p.offset;
 % pass through the non-linearity
 x = [p.Hill_A p.Hill_Kd p.Hill_n];
 f = hill(x,shat);
+
+% prevent it from returning all zeros
+if sum(f) == 0
+	f = NaN*f;
+end

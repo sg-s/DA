@@ -16,11 +16,11 @@ end
 tic
 
 % this determines which figures to do. 
-fig1 = true;
-fig2 = true;
+fig1 = false;
+fig2 = false;
 fig3 = false;
 fig4 = false;
-fig5 = false;
+fig5 = true;
 
 %    ######## ####  ######   ##     ## ########  ########       ##   
 %    ##        ##  ##    ##  ##     ## ##     ## ##           ####   
@@ -1147,7 +1147,302 @@ end
 %    ######## ##    ##    ##         #######  ########  ######  ########  ######  
 
 
+
 load('PulseData.mat')
+
+% average filters
+K = mean2(vertcat(data.K));
+K = K/max(K);
+
+% create the data to be fit
+% clear d
+% time = 1e-3*(1:length(PulseData(1).stim(:,1)));
+% for i = 1:length(PulseData)
+% 	d(i).stimulus = convolve(time,mean2(PulseData(i).stim),K,filtertime);
+% 	d(i).response = mean2(PulseData(i).resp);
+% end
+
+clear p
+p.A =  225.1576;
+p.k =  382.2206;
+p.n =  0.3952;
+
+% this stores quality metrics
+qx = NaN(length(PulseData),1);
+qy = NaN(length(PulseData),1);
+
+% make predictions everywhere
+for i = 1:length(PulseData)
+	PulseData(i).pred = NaN*PulseData(i).stim;
+	for j = 1:width(PulseData(i).stim)
+		PulseData(i).pred(:,j) = convolve(time,PulseData(i).stim(:,j),K,filtertime);
+		PulseData(i).pred(:,j) = hill(PulseData(i).pred(:,j),p);
+	end
+	[qx(i), qy(i)] = GeffenMeister(PulseData(i).resp,PulseData(i).pred);
+end
+
+
+% show this on the plot
+plot(axes_handles(1),qx,qy,'k+')
+
+% show the timing data
+stim_half_time = NaN(1e4,1); % time it takes to go to half max
+resp_half_time = NaN(1e4,1); % time it takes to go to half max
+foreground_stim = NaN(1e4,1);
+c = 1;
+a = 1050;
+z = 1500; % nominal stimulus start and stop
+for i = 1:length(PulseData)
+	for j = 1:width(PulseData(i).stim)
+		this_stim = PulseData(i).stim(:,j);
+		foreground_stim(c) = mean(this_stim(a:z));
+		this_stim = this_stim/max(this_stim(a:z));
+		this_resp = PulseData(i).resp(:,j);
+		this_resp = this_resp -  mean(this_resp(1:a));
+		this_resp = this_resp/max(this_resp(a:z));
+		stim_half_time(c) = max([find(this_stim(a:z)>.5,1,'first') NaN]);
+		resp_half_time(c) = max([find(this_resp(a:z)>.5,1,'first') NaN]);
+		c = c+1;
+	end
+end
+stim_half_time(c:end) = [];
+resp_half_time(c:end) = [];
+resp_time_data = resp_half_time - stim_half_time;
+foreground_stim(c:end) = [];
+
+% clean up
+rm_this = foreground_stim < 1e-2 | resp_time_data < 0 | resp_time_data > 100;
+foreground_stim(rm_this) = [];
+resp_time_data(rm_this) = [];
+
+plot(axes_handles(4),foreground_stim,resp_time_data,'k+')
+set(axes_handles(4),'XScale','log','XLim',[1e-2 20],'YLim',[0 100])
+xlabel(axes_handles(4),'Mean Stimulus (V)')
+ylabel(axes_handles(4),'\tau_{ORN}-\tau_{PID} (ms)','interpreter','tex')
+
+% show the timing data for the LN model
+stim_half_time = NaN(1e4,1); % time it takes to go to half max
+resp_half_time = NaN(1e4,1); % time it takes to go to half max
+foreground_stim = NaN(1e4,1);
+c = 1;
+a = 1050;
+z = 1500; % nominal stimulus start and stop
+for i = 1:length(PulseData)
+	for j = 1:width(PulseData(i).stim)
+		this_stim = PulseData(i).stim(:,j);
+		foreground_stim(c) = mean(this_stim(a:z));
+		this_stim = this_stim/max(this_stim(a:z));
+		this_resp = PulseData(i).pred(:,j);
+		this_resp = this_resp -  mean(this_resp(1:a));
+		this_resp = this_resp/max(this_resp(a:z));
+		stim_half_time(c) = max([find(this_stim(a:z)>.5,1,'first') NaN]);
+		resp_half_time(c) = max([find(this_resp(a:z)>.5,1,'first') NaN]);
+		c = c+1;
+	end
+end
+stim_half_time(c:end) = [];
+resp_half_time(c:end) = [];
+foreground_stim(c:end) = [];
+
+resp_time = resp_half_time - stim_half_time;
+
+% clean up exactly like we did the data
+foreground_stim(rm_this) = [];
+resp_time(rm_this) = [];
+
+l=plot(axes_handles(4),foreground_stim,resp_time,'r+');
+
+% show the spearman rho with the data
+s=rsquare(resp_time,resp_time_data);
+set(axes_handles(4),'XScale','log','XLim',[1e-2 20],'YLim',[0 100])
+legend(l,strcat('r^2=',oval(s)))
+
+% ##       ##    ##    ##      ## ######## ########  ######## ########  
+% ##       ###   ##    ##  ##  ## ##       ##     ## ##       ##     ## 
+% ##       ####  ##    ##  ##  ## ##       ##     ## ##       ##     ## 
+% ##       ## ## ##    ##  ##  ## ######   ########  ######   ########  
+% ##       ##  ####    ##  ##  ## ##       ##     ## ##       ##   ##   
+% ##       ##   ###    ##  ##  ## ##       ##     ## ##       ##    ##  
+% ######## ##    ##     ###  ###  ######## ########  ######## ##     ## 
+
+load('MSG_per_neuron.mat','MSG_data')
+load('LN_Fit_to_MSG.mat','p')
+% fit a LN model for each neuron
+% clear p
+% for i = 1:13
+% 	clear d
+% 	c = 1;
+% 	for j = 1:8
+% 		if width(MSG_data(j,i).stim)>1
+% 			d(c).stimulus = mean2(MSG_data(j,i).stim);
+% 			d(c).response = mean2(MSG_data(j,i).resp);
+% 			c = c+1;
+% 		end
+% 	end
+% 	if exist('d','var')
+% 		p(i) = FitModel2Data(@pLNModel,d,'p0',p(i),'nsteps',2);
+% 	end
+% end
+
+% compute all the model predictions and the fit qualities 
+qx = NaN(8,13);
+qy = NaN(8,13);
+for i = 1:8 % there are 8 paradimgs in the MSG data
+	for j = 1:13 % there are 13 neurons
+		if ~isempty(p(j).A) && width(MSG_data(i,j).stim) > 1
+			for k = 1:width(MSG_data(i,j).stim)
+				MSG_data(i,j).fp_LN(:,k) = pLNModel(MSG_data(i,j).stim(:,k),p(j));
+			end
+			% compute the geffen-Meister error metric
+			[qx(i,j) qy(i,j)] = GeffenMeister(MSG_data(i,j).resp,MSG_data(i,j).fp_LN);
+		end
+	end
+end
+
+% plot on the error plot, and colour code by stimulus
+c = parula(9);
+for i = 1:8
+	this_qx = qx(i,~isnan(qx(i,:)));
+	this_qy = qy(i,~isnan(qy(i,:)));
+	plot(axes_handles(1),this_qx,this_qy,'x','Color',c(i,:))
+end
+
+
+% get the gain scaling factor -- this is to correct for the fact that we normalised the filter heights everywhere
+x = mean2(horzcat(MSG_data(1,:).stim));
+y = mean2(horzcat(MSG_data(1,:).resp));
+gsf = std(y)/std(x);
+
+
+% show the gain plot again, and also the gain for the da model 
+gain = NaN(8,13);
+gain_DA = NaN(8,13);
+mean_stim = NaN(8,13);
+for i = 1:8 % iterate over all paradigms 
+	for j = 1:13
+		if width(MSG_data(i,j).stim) > 1
+			y = MSG_data(i,j).resp; % average over all neurons 
+			x = MSG_data(i,j).fp;
+			x_da = MSG_data(i,j).fp_LN;
+			if ~isvector(x)
+				x = mean2(x);
+			end
+			if ~isvector(y)
+				y = mean2(y);
+			end 
+			if ~isvector(x_da)
+				x_da = mean2(x_da);
+			end 
+
+
+			% trim NaNs again
+			rm_this = isnan(x) | isnan(y) | isnan(x_da);
+			x(rm_this) = [];
+			x_da(rm_this) = [];
+			y(rm_this) = [];
+
+			temp=fit(x(:),y(:),'poly1');
+			gain(i,j) = temp.p1;
+			mean_stim(i,j) = mean(mean([MSG_data(i,j).stim]));
+
+			temp=fit(x(:),x_da(:),'poly1');
+			gain_DA(i,j) = temp.p1;
+
+			% get the units of gain right
+			gain(i,j) = gain(i,j)*gsf;
+			gain_DA(i,j) = gain_DA(i,j)*gsf;
+
+		end
+	end	
+end
+plot(axes_handles(2),mean_stim(:),gain(:),'kx')
+l=plot(axes_handles(2),mean_stim(:),gain_DA(:),'rx');
+xlabel(axes_handles(2),'Mean Stimulus (V)')
+ylabel(axes_handles(2),'Neuron Gain (Hz/V)')
+set(axes_handles(2),'XScale','log','YScale','log')
+
+% show the spearman rho 
+a = gain(:);
+b = gain_DA(:);
+rm_this = isnan(a) | isnan(b);
+a(rm_this) = [];
+b(rm_this) = [];
+s = rsquare(a,b);
+legend(l,strcat('r^2=',oval(s)));
+
+
+% ##       ##    ##     ######  ########  ######## ######## ########  ##     ## ########  
+% ##       ###   ##    ##    ## ##     ## ##       ##       ##     ## ##     ## ##     ## 
+% ##       ####  ##    ##       ##     ## ##       ##       ##     ## ##     ## ##     ## 
+% ##       ## ## ##     ######  ########  ######   ######   ##     ## ##     ## ########  
+% ##       ##  ####          ## ##        ##       ##       ##     ## ##     ## ##        
+% ##       ##   ###    ##    ## ##        ##       ##       ##     ## ##     ## ##        
+% ######## ##    ##     ######  ##        ######## ######## ########   #######  ##        
+   
+
+
+peak_loc_data = NaN(8,13);
+peak_loc_DA = NaN(8,13);
+for i = 1:8 % iterate over all paradigms 
+	for j = 1:13
+		if width(MSG_data(i,j).stim) > 1
+			this_resp = MSG_data(i,j).resp;
+			this_stim = MSG_data(i,j).stim;
+			this_pred = MSG_data(i,j).fp_LN;
+			if ~isvector(this_resp)
+				this_resp = mean2(this_resp);
+			end
+			if ~isvector(this_stim)
+				this_stim = mean2(this_stim);
+			end
+			if ~isvector(this_pred)
+				this_pred = mean2(this_pred);
+			end
+
+			a = this_resp - mean(this_resp);
+			b = this_stim - mean(this_stim);
+			a = a/std(a);
+			b = b/std(b);
+			x = xcorr(a,b); % positive peak means a lags b
+			t = 1e-3*(1:length(x));
+			t = t-mean(t);
+			x = x/max(x);
+			[~,loc] = max(x);
+			peak_loc_data(i,j) = t(loc);
+
+			% throw out the first 5 seconds
+			this_pred(1:5e3) = [];
+			b(1:5e3) = [];
+			a = this_pred - mean(this_pred);
+			a = a/std(a);
+			x = xcorr(a,b); % positive peak means a lags b
+			x = x/max(x);
+			t = 1e-3*(1:length(x));
+			t = t-mean(t);
+			[~,loc] = max(x);
+			peak_loc_DA(i,j) = t(loc);
+			mean_stim(i,j) = mean(mean([MSG_data(i,j).stim]));
+
+		end
+	end
+end 
+
+plot(axes_handles(3),mean_stim(:),1e3*peak_loc_data(:),'kx')
+l=plot(axes_handles(3),mean_stim(:),1e3*peak_loc_DA(:),'rx');
+set(axes_handles(3),'XLim',[-.1 4],'YLim',[5 120])
+xlabel(axes_handles(3),'Mean Stimulus (V)')
+ylabel(axes_handles(3),'Peak xcorr. (ms)')
+
+a = peak_loc_data(:);
+b = peak_loc_DA(:);
+rm_this = isnan(a) | isnan(b) | a < 0 | b < 0;
+a(rm_this) = [];
+b(rm_this) = [];
+s = rsquare(a,b);
+legend(l,strcat('r^2=',oval(s)));
+
+return
+
 
 
 %       ########     ###               ##     ##  #######  ########  ######## ##       
@@ -1280,10 +1575,9 @@ resp_time(rm_this) = [];
 
 l=plot(axes_handles(9),foreground_stim,resp_time,'r+');
 
-% show the spearman rho with the data
-s=spear(resp_time,resp_time_data);
-set(axes_handles(9),'XScale','log','XLim',[1e-2 20],'YLim',[0 100])
-legend(l,strcat('\rho=',oval(s)))
+s=rsquare(resp_time,resp_time_data);
+set(axes_handles(4),'XScale','log','XLim',[1e-2 20],'YLim',[0 100])
+legend(l,strcat('r^2=',oval(s)))
 
 
 %      ########     ###              ##      ## ######## ########  ######## ########  
@@ -1373,6 +1667,7 @@ plot(axes_handles(7),mean_stim(:),gain(:),'kx')
 l=plot(axes_handles(7),mean_stim(:),gain_DA(:),'rx');
 xlabel(axes_handles(7),'Mean Stimulus (V)')
 ylabel(axes_handles(7),'Neuron Gain (Hz/V)')
+set(axes_handles(7),'XScale','log','YScale','log')
 
 % show the spearman rho 
 a = gain(:);
@@ -1380,8 +1675,8 @@ b = gain_DA(:);
 rm_this = isnan(a) | isnan(b);
 a(rm_this) = [];
 b(rm_this) = [];
-s = spear(a,b);
-legend(l,strcat('\rho=',oval(s)));
+s = rsquare(a,b);
+legend(l,strcat('r^2=',oval(s)));
 
 
 
@@ -1444,7 +1739,7 @@ end
 
 plot(axes_handles(8),mean_stim(:),1e3*peak_loc_data(:),'kx')
 l=plot(axes_handles(8),mean_stim(:),1e3*peak_loc_DA(:),'rx');
-set(axes_handles(8),'XLim',[-.1 4],'YLim',[35 120])
+set(axes_handles(8),'XLim',[-.1 4],'YLim',[5 120])
 xlabel(axes_handles(8),'Mean Stimulus (V)')
 ylabel(axes_handles(8),'Peak xcorr. (ms)')
 
@@ -1453,8 +1748,8 @@ b = peak_loc_DA(:);
 rm_this = isnan(a) | isnan(b) | a < 0 | b < 0;
 a(rm_this) = [];
 b(rm_this) = [];
-s = spear(a,b);
-legend(l,strcat('\rho=',oval(s)));
+s = rsquare(a,b);
+legend(l,strcat('r^2=',oval(s)));
 
 
 PrettyFig('plw=1.5;','lw=1.5;','fs=14;')

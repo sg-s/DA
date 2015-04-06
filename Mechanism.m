@@ -21,7 +21,6 @@ tic
 
 %% The Microscope light is effective in activating the neuron
 % In fact, it is far more effective than the specially built LED light we built for the purpose. The following figure shows the set up illuminated by the high-powered LEDs:
-
 % 
 % <</Users/sigbhu/code/da/images/amber-led.jpg>>
 %

@@ -23,7 +23,7 @@ tic
 % In fact, it is far more effective than the specially built LED light we built for the purpose. The following figure shows the set up illuminated by the high-powered LEDs:
 
 % 
-% <</code/da/images/amber-led.jpg>>
+% <</Users/sigbhu/code/da/images/amber-led.jpg>>
 %
 
 %%

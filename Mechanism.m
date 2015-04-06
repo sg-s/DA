@@ -20,7 +20,33 @@ tic
 % Two (non-exclusive) possibilities are that the gain is controlled at the receptor level, and that the gain is controlled at the firing machinery. To disambiguate the two, we record the neuron's responses to a flickering odour stimulus. We then repeat the experiment, but also drive the neuron optically through light activating ReaChR channels. 
 
 %% The Microscope light is effective in activating the neuron
-% In fact, it is far more effective than the specially built LED light we built for the purpose. The following figure shows a trace where the microscope light was turned on around the 10s mark. 
+% In fact, it is far more effective than the specially built LED light we built for the purpose. The following figure shows the set up illuminated by the high-powered LEDs:
+
+% 
+% <</code/da/images/amber-led.jpg>>
+%
+
+%%
+% Despite being really bright, the power at 591nm at the location of the fly from these LEDs isn't even close to what the microscope light can crank out:
+
+LightLevels = [287 315 315; 297 323 308; 294 313 316; 304 309 313; 246 241 241 ; 127 162 165; 771 727 725; 1280 1320 1250; 2210 2060 2070];
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+errorbar(mean(LightLevels'),std(LightLevels'),'kx')
+set(gca,'XTickLabel',{'LED:5V','LED:4V','LED:3V','LED:2V','LED:1V','M: 2V','M: 3V','M: 3.5V','M: 4V'})
+set(gca,'XTick',[1:9],'XTickLabelRotation',45)
+ylabel('Power @ 591nm (\muW)')
+
+PrettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
+% The following figure shows a trace where the microscope light was turned on around the 10s mark. 
 
 load('/local-data/DA-paper/reachr/2015_04_03_ReaChR_F4_ab3_1_EA.mat')
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on

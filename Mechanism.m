@@ -247,7 +247,7 @@ for i = 1:width(PID_3V)
 end
 
 K_3_5V = [];
-fp_3V = fA_3_5V;
+fp_3_5V = fA_3_5V;
 for i = 1:width(PID_3_5V)
 	[this_K, ~, filtertime_full] = FindBestFilter(PID_3_5V(:,i),fA_3_5V(:,i),[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
 	filtertime_full = filtertime_full*mean(diff(tA));
@@ -274,17 +274,17 @@ subplot(1,2,2), hold on
 x = mean2(fp_no_light);
 y = mean2(fA_no_light);
 ss = 50;
-plot(x(1:ss:end),y(1:ss:end),'.','Color',c(1,:))
+l(1)=plot(x(1:ss:end),y(1:ss:end),'.','Color',c(1,:));
 
 x = mean2(fp_3V);
 y = mean2(fA_3V);
-plot(x(1:ss:end),y(1:ss:end),'.','Color',c(2,:))
+l(2)=plot(x(1:ss:end),y(1:ss:end),'.','Color',c(2,:));
 
 x = mean2(fp_3_5V);
 y = mean2(fA_3_5V);
-plot(x(1:ss:end),y(1:ss:end),'.','Color',c(3,:))
+l(3)=plot(x(1:ss:end),y(1:ss:end),'.','Color',c(3,:));
 
-
+legend(l,{'No light','3V','3.5V'})
 xlabel('K \otimes s')
 ylabel('Response (Hz)')
 

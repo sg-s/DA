@@ -65,6 +65,24 @@ if being_published
 	delete(gcf)
 end
 
+%% LED at maximum power can barely elicit spikes
+% The following figure shows the responses of the neuron to the LED at maximum power delivered through the objective:
+
+load('/local-data/DA-paper/reachr/2015_04_08_RR_F2_ab3_2_EA.mat')
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+time = 1e-4*(1:length(data(6).PID));
+fA=spiketimes2f(spikes(6).A([2 3 5 6],:),time,1e-3);
+tA = 1e-3*(1:length(fA));
+plot(tA,mean2(fA),'r')
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+
+PrettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 
 %% Version Info

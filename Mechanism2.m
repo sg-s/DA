@@ -37,8 +37,26 @@ clear p
 p.A= 2.7288;
 p.k= 1.9863;
 p.n= 2.8827;
-l=plot(LED.x,hill(LED.x,p),'r')
+l=plot(LED.x,hill(LED.x,p),'r');
 legend(l,'Hill Fit','location','southeast')
+
+PrettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% This is comparable to the light delivered through the microscope, and is much brighter than the LED not through the objective:
+
+LightLevels = [287 315 315; 297 323 308; 294 313 316; 304 309 313; 246 241 241 ; 127 162 165; 771 727 725; 1280 1320 1250; 2210 2060 2070];
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+errorbar(mean(LightLevels'),std(LightLevels'),'kx')
+set(gca,'XTickLabel',{'LED:5V','LED:4V','LED:3V','LED:2V','LED:1V','M: 2V','M: 3V','M: 3.5V','M: 4V'})
+set(gca,'XTick',[1:9],'XTickLabelRotation',45)
+ylabel('Power @ 591nm (\muW)')
 
 PrettyFig();
 

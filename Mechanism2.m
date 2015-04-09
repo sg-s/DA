@@ -84,6 +84,15 @@ if being_published
 	delete(gcf)
 end
 
+%% Direct LED illumination is very bright
+% By mounting the LED on a micromanipulator, we can introduce it under the objective, a few millimetres above the fly. This leads to a lot of light being dumped on the fly. We measure ~35mW of power at the fly location, a more than 10x improvement. 
+%
+% <</Users/sigbhu/code/da/images/led2.jpg>>
+%
+
+
+
+
 
 %% Version Info
 % The file that generated this document is called:

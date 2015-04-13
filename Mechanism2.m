@@ -90,7 +90,66 @@ end
 % <</Users/sigbhu/code/da/images/led2.jpg>>
 %
 
+%% Direct LED illumination is very effective in eliciting spikes
+% By sticking the LED a few mm above the fly, we can activate the neuron strongly: 
 
+figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+subplot(2,2,1), hold on
+load('/local-data/DA-paper/reachr/2015_04_10_RR_F2_ab3_1_EA.mat')
+time = 1e-4*(1:length(data(6).PID));
+[fA,tA]=spiketimes2f(spikes(5).A,time,1e-3);
+plot(tA,fA)
+[fA,tA]=spiketimes2f(spikes(6).A,time,1e-3);
+plot(tA,fA)
+legend({'3V','4V'})
+xlabel('Time (s)')
+title('Neuron 1')
+ylabel('Firing Rate (Hz)')
+
+subplot(2,2,2), hold on
+load('/local-data/DA-paper/reachr/2015_04_10_RR_F2_ab3_2_EA_2.mat')
+[fA1,tA]=spiketimes2f(spikes(3).A,time,1e-3);
+[fA2,tA]=spiketimes2f(spikes(4).A,time,1e-3);
+load('/local-data/DA-paper/reachr/2015_04_10_RR_F2_ab3_2_EA.mat')
+temp=spiketimes2f(spikes(3).A,time,1e-3);
+fA1 = [fA1 temp];
+temp=spiketimes2f(spikes(4).A,time,1e-3);
+fA2 = [fA2 temp];
+plot(tA,mean2(fA1))
+plot(tA,mean2(fA2))
+[fA,tA]=spiketimes2f(spikes(5).A,time,1e-3);
+plot(tA,fA)
+[fA,tA]=spiketimes2f(spikes(6).A,time,1e-3);
+plot(tA,mean2(fA))
+legend({'1V','2V','3V','4V'})
+xlabel('Time (s)')
+title('Neuron 2')
+ylabel('Firing Rate (Hz)')
+
+subplot(2,2,3), hold on
+load('/local-data/DA-paper/reachr/2015_04_10_RR_F2_ab3_3_EA.mat')
+[fA,tA]=spiketimes2f(spikes(7).A,time,1e-3);
+plot(tA,fA)
+legend({'2.2V'})
+xlabel('Time (s)')
+title('Neuron 3')
+ylabel('Firing Rate (Hz)')
+
+subplot(2,2,4), hold on
+load('/local-data/DA-paper/reachr/2015_04_10_RR_F2_ab3_4_EA.mat')
+[fA,tA]=spiketimes2f(spikes(6).A,time,1e-3);
+plot(tA,mean2(fA))
+legend({'4V'})
+xlabel('Time (s)')
+title('Neuron 4')
+ylabel('Firing Rate (Hz)')
+
+PrettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 
 

@@ -180,7 +180,50 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% They respond just as strong as in the previous case, which means upping the ATR concentration led to a 5000x improvement in sensitivity! 
 
+%% Flies fed with 2mM ATR are more sensitive to odour
+% While attempting to perform the experiments, we observed that odour stimuli that elicited a nice response in earlier experiemnts quickly saturated the neuron, and were unusable. We traced this to the fact that neurons in flies fed with 2mM ATR are much, much more sensitive to odour: 
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(2,2,4), hold on
+
+load('/local-data/DA-paper/reachr/2015_04_10_RR_F3_ab3_5_EA_2mM.mat')
+time = 1e-4*(1:length(data(11).PID));
+[fA,tA]=spiketimes2f(spikes(11).A,time,1e-3);
+plot(tA,mean2(fA))
+xlabel('Time (s)')
+set(gca,'YLim',[0 150])
+subplot(2,2,2), hold on
+title('fly fed with 2mM ATR')
+plot(time,mean2(data(11).PID))
+
+set(gca,'YLim',[0 2])
+
+
+subplot(2,2,1), hold on
+title('fly fed with 400uM ATR')
+load('/local-data/DA-paper/reachr/2015_04_03_ReaChR_F3_ab3_3_EA.mat')
+time = 1e-4*(1:length(data(2).PID));
+plot(time,mean2(data(2).PID))
+set(gca,'XLim',[0 10])
+set(gca,'YLim',[0 2])
+ylabel('PID (V)')
+
+[fA,tA]=spiketimes2f(spikes(2).A,time,1e-3);
+subplot(2,2,3), hold on
+plot(tA,mean2(fA))
+set(gca,'XLim',[0 10])
+set(gca,'YLim',[0 150])
+ylabel('ab3A response (Hz)')
+
+PrettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 
 %% Version Info

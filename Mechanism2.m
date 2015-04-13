@@ -156,6 +156,10 @@ end
 
 %% Feeding flies with 2mM ATR greatly increases their sensitivity to light
 % In all previous experiments, flies were fed with 400uL of 400uM ATR. In these experiments, they were fed with 400uL of 2mM ATR. The neurons were so sensitive to light that we could activate them with room lights! In the following figure, we moved the LEDs far away from the fly, and very weakly turned them on. Even then, we can elicit strong responses:
+%
+% <</Users/sigbhu/code/da/images/led_2mM.jpg>>
+%
+
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 load('/local-data/DA-paper/reachr/2015_04_10_RR_F3_ab3_1_EA_2mM.mat')
@@ -166,7 +170,7 @@ plot(tA,fA)
 plot(tA,fA)
 legend({'1V','1.5V'})
 xlabel('Time (s)')
-title('Neuron 1')
+title('Neuron from fly fed with 2mM ATR')
 ylabel('Firing Rate (Hz)')
 
 PrettyFig();

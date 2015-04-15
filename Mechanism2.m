@@ -260,7 +260,7 @@ end
 %% ORN pinches even at low firing rates
 % In the following figure, we show that the ORN pinches (spike amplitude becomes very small) even at very modest firing rates (here, the firing rate never exceeds 50Hz)
 %
-% <</Users/sigbhu/code/da/images/low-f-pinch.jpg>>
+% <</Users/sigbhu/code/da/images/low-f-pinch.png>>
 %
 
 

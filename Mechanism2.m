@@ -173,7 +173,7 @@ if being_published
 end
 
 %%
-% If we fit a sine wave to this oscillation, we get the timer period of the oscillation to be: 
+% If we fit a sine wave to this oscillation, we get the time period of the oscillation to be: 
 
 
 x = tA(tA>10&tA<50);
@@ -185,6 +185,80 @@ disp(cf.b1/(2*pi))
 
 %%
 % which is suspiciously close to 1s.
+
+%% Driving the neuron with light and odour decreases spike amplitude but leaves firing rate unchanged. 
+% In the following figure, this neuron responds strongly to light activation:
+
+figure('outerposition',[0 0 700 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+load('/local-data/DA-paper/reachr/2015_04_10_RR_F2_ab3_2_EA_2.mat')
+time = 1e-4*(1:length(data(3).PID));
+[fA,tA]=spiketimes2f(spikes(3).A,time,1e-3);
+plot(tA,fA)
+[fA,tA]=spiketimes2f(spikes(4).A,time,1e-3);
+plot(tA,fA)
+legend({'1V','2V'})
+xlabel('Time (s)')
+ylabel('Firing Rate (Hz)')
+PrettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% The following plot shows the responses to odour flicker with and without supplemental light activation:
+
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+time = 1e-4*(1:length(data(12).PID)); 
+ax(1)=subplot(1,3,1:2); hold on
+ax(2)=subplot(1,3,3); hold on
+[fA0,tA]=spiketimes2f(spikes(12).A,time,1e-3);
+l(1) = plot(ax(1),tA,mean2(fA0));
+[y,x] = hist(mean2(fA0),50);
+plot(ax(2),y,x)
+[fA1,tA]=spiketimes2f(spikes(13).A(2:end,:),time,1e-3);
+l(2) = plot(ax(1),tA,mean2(fA1));
+[y,x] = hist(mean2(fA1),50);
+plot(ax(2),y,x)
+xlabel(ax(1),'Time (s)')
+ylabel(ax(1),'Firing Rate (Hz)')
+legend(l,{'Odour + 0V Light','Odour + 1V Light'})
+set(ax(1),'XLim',[20 60])
+PrettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% In the following plot, we show how the gain changes by plotting the two responses against each other:
+
+figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[700 700]); hold on
+x = mean2(fA0);y= mean2(fA1);
+ss = 20;
+plot([0 100],[0 100],'k--')
+plot(x(1:ss:end),y(1:ss:end),'k.')
+xlabel('Response to odour flicker (Hz)')
+ylabel('Response to odour flicker+light(Hz)')
+set(gca,'XLim',[0 max(y)*1.1],'YLim',[0 max(y)*1.1])
+
+cf = fit(x(:),y(:),'poly1');
+l=plot(sort(x),cf(sort(x)),'r');
+legend(l,strcat('Rel. gain = ',oval(cf.p1)))
+
+PrettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
+
 
 %% Feeding flies with 2mM ATR greatly increases their sensitivity to light
 % In all previous experiments, flies were fed with 400uL of 400uM ATR. In these experiments, they were fed with 400uL of 2mM ATR. The neurons were so sensitive to light that we could activate them with room lights! In the following figure, we moved the LEDs far away from the fly, and very weakly turned them on. Even then, we can elicit strong responses:

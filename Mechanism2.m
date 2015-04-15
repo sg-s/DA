@@ -154,6 +154,38 @@ end
 %%
 % However, moving the LED in and out is very tricky and hard to do.
 
+%% Long Pulses of light cause ORN to oscillate 
+% Now we present the light in the same way (around 30mM of light just above the fly) and present long pulses of light to the fly. As the following figure shows, instead of responding with a  steady firing rate, the neuron oscillates:
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+load('/local-data/DA-paper/reachr/2015_04_10_RR_F2_ab3_2_EA.mat')
+time = 1e-4*(1:length(data(9).PID));
+[fA,tA]=spiketimes2f(spikes(9).A,time,1e-3);
+plot(tA,fA)
+legend({'1V','2V'})
+xlabel('Time (s)')
+ylabel('Firing Rate (Hz)')
+PrettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% If we fit a sine wave to this oscillation, we get the timer period of the oscillation to be: 
+
+
+x = tA(tA>10&tA<50);
+y = fA(tA>10&tA<50);
+y = y-mean(y);
+y = y/(2*std(y));
+cf=fit(x(:),y(:),'sin1');
+disp(cf.b1/(2*pi))
+
+%%
+% which is suspiciously close to 1s.
+
 %% Feeding flies with 2mM ATR greatly increases their sensitivity to light
 % In all previous experiments, flies were fed with 400uL of 400uM ATR. In these experiments, they were fed with 400uL of 2mM ATR. The neurons were so sensitive to light that we could activate them with room lights! In the following figure, we moved the LEDs far away from the fly, and very weakly turned them on. Even then, we can elicit strong responses:
 %

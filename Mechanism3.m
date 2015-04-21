@@ -138,12 +138,7 @@ end
 % ff = fit(t(:),resp(loc:end),ft,fo);
 % plot(t+mint,ff(t),'r')
 
-PrettyFig();
 
-if being_published
-	snapnow
-	delete(gcf)
-end
 
 %%
 % Can one filter be used to predict the response of the other? 
@@ -219,6 +214,13 @@ figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 50
 plot(tA,resp,'k')
 xlabel('Time (s)')
 ylabel('Firing Rate (Hz)')
+
+PrettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 
 %%

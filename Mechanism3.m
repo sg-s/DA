@@ -79,11 +79,21 @@ haz_data = 14;
 haz_data = 18;
 [stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,stim,resp,ParadigmNames,paradigm,1);
 
-
-figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-% show filters for each case
 c = parula(length(ParadigmNames)+1);
+figure('outerposition',[0 0 1200 600],'PaperUnits','points','PaperSize',[1200 600]); hold on
+subplot(1,2,1), hold on
+for i = 1:length(paradigm)
+	[y,x] = hist(resp(1e4:end,i),50);
+	plot(x,y,'Color',c(paradigm(i),:))
+end
+set(gca,'YScale','log')
+xlabel('Response (Hz)')
+ylabel('Count')
+
+% show filters for each case
+subplot(1,2,2), hold on
 clear l
+K = [];
 for i = 1:width(stim)
 	this_stim = stim(:,i);
 	this_resp = resp(:,i);
@@ -93,6 +103,7 @@ for i = 1:width(stim)
 	filtertime_full = filtertime_full*1e-3;
 	filtertime = 1e-3*(-200:900);
 	this_K = interp1(filtertime_full,this_K,filtertime);
+	K = [K; this_K];
 	this_K = this_K/max(this_K);
 	l(paradigm(i)) = plot(filtertime,this_K,'Color',c(paradigm(i),:));
 end
@@ -111,19 +122,6 @@ end
 %%
 % Why are the filter shapes different? What does it mean?
 
-%%
-% We know that ORNs adapt to steps of odour imperfectly, and this adaptation has two timescales. What about steps of light? Is the adaptation perfect? How many timescales are there? 
-
-datapath = ('/local-data/DA-paper/reachr/2015_04_16_RR_F5_ab3_1_EA_1mM_2days.mat');
-haz_data = 23;
-[stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,[],[],{},[],1);
-resp(55e3:end)=[];
-tA = 1e-3*(1:length(resp));
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(tA,resp,'k')
-xlabel('Time (s)')
-ylabel('Firing Rate (Hz)')
 
 % [~,loc]=max(resp);
 % t = tA(loc:end);
@@ -146,6 +144,82 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%%
+% Can one filter be used to predict the response of the other? 
+
+figure('outerposition',[0 0 1200 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
+subplot(2,2,1), hold on
+title('Same Filter')
+tA = 1e-3*(1:length(resp));
+plot(tA,resp(:,1),'k')
+ylabel('Response to odour (Hz)')
+fp = convolve(tA,stim(:,1),K(1,:),filtertime);
+% fix trival scaling
+temp = fit(fp(1e4:end-200),resp(1e4:end-200,1),'poly1');
+fp = fp*temp.p1 + temp.p2;
+l = plot(tA,fp,'r');
+r = rsquare(fp(1e4:end),resp(1e4:end,1));
+legend(l,strcat('r^2=',oval(r)))
+set(gca,'XLim',[20 40],'YLim',[0 100])
+
+subplot(2,2,2), hold on
+title('Different Filter')
+plot(tA,resp(:,1),'k')
+fp = convolve(tA,stim(:,1),K(4,:),filtertime);
+% fix trival scaling
+temp = fit(fp(1e4:end-200),resp(1e4:end-200,1),'poly1');
+fp = fp*temp.p1 + temp.p2;
+l = plot(tA,fp,'r');
+r = rsquare(fp(1e4:end),resp(1e4:end,1));
+legend(l,strcat('r^2=',oval(r)))
+set(gca,'XLim',[20 40],'YLim',[0 100])
+
+subplot(2,2,3), hold on
+ylabel('Response to light (Hz)')
+plot(tA,resp(:,4),'k')
+fp = convolve(tA,stim(:,4),K(4,:),filtertime);
+% fix trival scaling
+temp = fit(fp(1e4:end-200),resp(1e4:end-200,4),'poly1');
+fp = fp*temp.p1 + temp.p2;
+l = plot(tA,fp,'r');
+r = rsquare(fp(1e4:end),resp(1e4:end,4));
+legend(l,strcat('r^2=',oval(r)))
+set(gca,'XLim',[20 40],'YLim',[0 100])
+
+subplot(2,2,4), hold on
+plot(tA,resp(:,4),'k')
+fp = convolve(tA,stim(:,4),K(1,:),filtertime);
+% fix trival scaling
+temp = fit(fp(1e4:end-200),resp(1e4:end-200,4),'poly1');
+fp = fp*temp.p1 + temp.p2;
+l = plot(tA,fp,'r');
+r = rsquare(fp(1e4:end),resp(1e4:end,4));
+legend(l,strcat('r^2=',oval(r)))
+set(gca,'XLim',[20 40],'YLim',[0 100])
+
+PrettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
+% We know that ORNs adapt to steps of odour imperfectly, and this adaptation has two timescales. What about steps of light? Is the adaptation perfect? How many timescales are there? 
+
+datapath = ('/local-data/DA-paper/reachr/2015_04_16_RR_F5_ab3_1_EA_1mM_2days.mat');
+haz_data = 23;
+[stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,[],[],{},[],1);
+resp(55e3:end)=[];
+tA = 1e-3*(1:length(resp));
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(tA,resp,'k')
+xlabel('Time (s)')
+ylabel('Firing Rate (Hz)')
+
 
 %%
 % While it's hard to say if there are two timescales or one, what is clear is that the degree of adaptation (the ratio of the peak firing rate to the adapted firing rate) is much higher than with an odour step that generates an equivalent peak firing rate. 

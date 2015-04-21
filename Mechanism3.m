@@ -111,6 +111,45 @@ end
 %%
 % Why are the filter shapes different? What does it mean?
 
+%%
+% We know that ORNs adapt to steps of odour imperfectly, and this adaptation has two timescales. What about steps of light? Is the adaptation perfect? How many timescales are there? 
+
+datapath = ('/local-data/DA-paper/reachr/2015_04_16_RR_F5_ab3_1_EA_1mM_2days.mat');
+haz_data = 23;
+[stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,[],[],{},[],1);
+resp(55e3:end)=[];
+tA = 1e-3*(1:length(resp));
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(tA,resp,'k')
+xlabel('Time (s)')
+ylabel('Firing Rate (Hz)')
+
+% [~,loc]=max(resp);
+% t = tA(loc:end);
+% mint = min(t);
+% t = t -min(t);
+% ft=fittype('a*exp(-x./b1)+ a*exp(-x./b2) +c');
+% fo = fitoptions(ft);
+% fo.Robust = 'on';
+% tf = mean(resp(end-100:end));
+% pf = max(resp);  pf = pf - tf; pf = pf/2;
+% fo.Lower = [pf-1e-3 1e-2 1e-2 tf-1e-3];
+% fo.Upper = [pf+1e-3 2 20 tf+1e-3];
+% fo.StartPoint = [pf .1 1 tf];
+% ff = fit(t(:),resp(loc:end),ft,fo);
+% plot(t+mint,ff(t),'r')
+
+PrettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% While it's hard to say if there are two timescales or one, what is clear is that the degree of adaptation (the ratio of the peak firing rate to the adapted firing rate) is much higher than with an odour step that generates an equivalent peak firing rate. 
+
 %% Responses of ORNs to light flicker with an odour background
 % In the following section, we do the corollary of the experiment we did before. Here, we present a flickering light stimulus, and present an odour background on top. 
 
@@ -132,6 +171,8 @@ end
 datapath = ('/local-data/DA-paper/reachr/2015_04_17_RR_F3_ab3_4_EA_1mM.mat');
 haz_data = [18:21];
 [stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,[],[],{},[],1);
+stim(55e4:end,:) = [];
+resp(55e4:end,:) = [];
 MechanismAnalysis_PlotGain(stim,resp,ParadigmNames,paradigm,1);
 
 PrettyFig();

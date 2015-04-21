@@ -162,7 +162,7 @@ load('/local-data/DA-paper/reachr/2015_04_10_RR_F2_ab3_2_EA.mat')
 time = 1e-4*(1:length(data(9).PID));
 [fA,tA]=spiketimes2f(spikes(9).A,time,1e-3);
 plot(tA,fA)
-legend({'1V','2V'})
+legend({'2V'})
 xlabel('Time (s)')
 ylabel('Firing Rate (Hz)')
 PrettyFig();
@@ -337,6 +337,268 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%% Titrating ATR doses and feeding durations leads to a sweetspot where the ORNs respond normally to odour and can be easily activated by light. It is very hit or miss for now, and the control paradigms for each neuron had to be hand-tuned to get it right. 
+
+%% Responses to Odour Flicker with Light Backgrounds
+% In the following figures, we present flickering odour stimuli to and record their responses to the odour with and without an additional light activation. Each figure corresponds to data from one neuron. 
+
+load ('/local-data/DA-paper/reachr/2015_04_16_RR_F1_ab3_1_EA_1mM.mat')
+
+haz_data = [16:19];
+
+PID = [];
+fA = [];
+ParadigmNames = {};
+paradigm = [];
+
+for i = 1:length(haz_data)
+	time = 1e-4*(1:length(data(haz_data(i)).PID));
+	[temp, tA] = spiketimes2f(spikes(haz_data(i)).A,time,1e-3);
+	rm_this = sum(temp) == 0;
+
+	% add PID
+	temp_pid = temp;
+	for j = 1:width(temp)
+		temp_pid(:,j) = interp1(time,data(haz_data(i)).PID(j,:),tA);
+	end
+
+	temp_pid(:,rm_this) = [];
+	temp(:,rm_this) = [];
+	
+	% add to fA
+	fA = [fA temp];
+	paradigm = [paradigm i*(ones(1,width(temp)))];
+
+	PID = [PID temp_pid];
+
+	ParadigmNames = [ParadigmNames strrep(ControlParadigm(haz_data(i)).Name,'_','-')];
+end
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,3,1), hold on
+% show stimulus distributions in all cases. 
+c = parula(length(ParadigmNames)+1);
+clear l
+for i = 1:length(ParadigmNames)
+	temp = PID(:,paradigm == i);
+	temp(1:1e4,:) = [];
+	for j = 1:width(temp)
+		[y,x] = hist(temp(:,j),50);
+		l(i) = plot(x,y,'Color',c(i,:));
+	end
+end
+xlabel('Stimulus (V)')
+ylabel('Count')
+% legend(l,ParadigmNames)
+
+% show filters for each case
+subplot(1,3,2), hold on
+clear l
+for i = 1:width(PID)
+	this_stim = PID(:,i);
+	this_resp = fA(:,i);
+	this_stim(1:1e4,:) = [];
+	this_resp(1:1e4,:) = [];
+	[this_K, ~, filtertime_full] = FindBestFilter(this_stim,this_resp,[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
+	filtertime_full = filtertime_full*mean(diff(tA));
+	filtertime = 1e-3*(-200:900);
+	this_K = interp1(filtertime_full,this_K,filtertime);
+	this_K = this_K/max(this_K);
+	l(paradigm(i)) = plot(filtertime,this_K,'Color',c(paradigm(i),:));
+end
+legend(l,ParadigmNames)
+xlabel('Filter Lag (s)')
+ylabel('Filter Amplitude (norm)')
+
+% show the gain changes, if any
+ss = 20;
+fmax = 0;
+subplot(1,3,3), hold on
+plot([0 100],[0 100],'k--')
+fA0 = fA(:,paradigm == 1);
+fA0(1:1e4,:) = [];
+if width(fA0) > 1
+	fA0 = mean2(fA0);
+end
+L = {};
+clear l
+for i = 2:length(ParadigmNames)
+	temp = fA(:,paradigm == i);
+	if width(temp)>1
+		temp  =mean2(temp);
+	end
+	temp(1:1e4,:) = [];
+	plot(fA0(1:ss:end),temp(1:ss:end),'.','Color',c(i,:));
+	fmax = max([fmax max(fA0) max(temp)]);
+
+	% fit lines to points
+	cf = fit(fA0(:),temp(:),'poly1');
+	l(i)=plot(sort(fA0),cf(sort(fA0)),'Color',c(i,:));
+	L{i} = strcat('Rel. gain = ',oval(cf.p1));
+
+end
+set(gca,'XLim',[0 fmax],'YLim',[0 fmax])
+l(1) = [];
+L(1) = [];
+legend(l,L)
+xlabel('Response to odour flicker (Hz)')
+ylabel('Response to odour flicker + light (Hz)')
+
+
+PrettyFig();
+
+
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
+% Here's another neuron:
+
+load ('/local-data/DA-paper/reachr/2015_04_16_RR_F2_ab3_1_EA_1mM.mat')
+
+haz_data = [16 18];
+
+PID = [];
+fA = [];
+ParadigmNames = {};
+paradigm = [];
+
+for i = 1:length(haz_data)
+	time = 1e-4*(1:length(data(haz_data(i)).PID));
+	[temp, tA] = spiketimes2f(spikes(haz_data(i)).A,time,1e-3);
+	rm_this = sum(temp) == 0;
+
+	% add PID
+	temp_pid = temp;
+	for j = 1:width(temp)
+		temp_pid(:,j) = interp1(time,data(haz_data(i)).PID(j,:),tA);
+	end
+
+	temp_pid(:,rm_this) = [];
+	temp(:,rm_this) = [];
+	
+	% add to fA
+	fA = [fA temp];
+	paradigm = [paradigm i*(ones(1,width(temp)))];
+
+	PID = [PID temp_pid];
+
+	ParadigmNames = [ParadigmNames strrep(ControlParadigm(haz_data(i)).Name,'_','-')];
+end
+
+load ('/local-data/DA-paper/reachr/2015_04_16_RR_F2_ab3_1_EA_1mM_2.mat')
+haz_data = [23 24];
+
+for i = 1:length(haz_data)
+	time = 1e-4*(1:length(data(haz_data(i)).PID));
+	[temp, tA] = spiketimes2f(spikes(haz_data(i)).A,time,1e-3);
+	rm_this = sum(temp) == 0;
+
+	% add PID
+	temp_pid = temp;
+	for j = 1:width(temp)
+		temp_pid(:,j) = interp1(time,data(haz_data(i)).PID(j,:),tA);
+	end
+
+	temp_pid(:,rm_this) = [];
+	temp(:,rm_this) = [];
+	
+	% add to fA
+	fA = [fA temp];
+	paradigm = [paradigm (i+2)*(ones(1,width(temp)))];
+
+	PID = [PID temp_pid];
+
+	ParadigmNames = [ParadigmNames strrep(ControlParadigm(haz_data(i)).Name,'_','-')];
+end
+
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,3,1), hold on
+% show stimulus distributions in all cases. 
+c = parula(length(ParadigmNames)+1);
+clear l
+for i = 1:length(ParadigmNames)
+	temp = PID(:,paradigm == i);
+	temp(1:1e4,:) = [];
+	for j = 1:width(temp)
+		[y,x] = hist(temp(:,j),50);
+		l(i) = plot(x,y,'Color',c(i,:));
+	end
+end
+xlabel('Stimulus (V)')
+ylabel('Count')
+% legend(l,ParadigmNames)
+
+% show filters for each case
+subplot(1,3,2), hold on
+clear l
+for i = 1:width(PID)
+	this_stim = PID(:,i);
+	this_resp = fA(:,i);
+	this_stim(1:1e4,:) = [];
+	this_resp(1:1e4,:) = [];
+	[this_K, ~, filtertime_full] = FindBestFilter(this_stim,this_resp,[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
+	filtertime_full = filtertime_full*mean(diff(tA));
+	filtertime = 1e-3*(-200:900);
+	this_K = interp1(filtertime_full,this_K,filtertime);
+	this_K = this_K/max(this_K);
+	l(paradigm(i)) = plot(filtertime,this_K,'Color',c(paradigm(i),:));
+end
+legend(l,ParadigmNames)
+xlabel('Filter Lag (s)')
+ylabel('Filter Amplitude (norm)')
+
+% show the gain changes, if any
+ss = 20;
+fmax = 0;
+subplot(1,3,3), hold on
+plot([0 100],[0 100],'k--')
+fA0 = fA(:,paradigm == 1);
+fA0(1:1e4,:) = [];
+if width(fA0) > 1
+	fA0 = mean2(fA0);
+end
+L = {};
+clear l
+for i = 2:length(ParadigmNames)
+	temp = fA(:,paradigm == i);
+	if width(temp)>1
+		temp  =mean2(temp);
+	end
+	temp(1:1e4,:) = [];
+	plot(fA0(1:ss:end),temp(1:ss:end),'.','Color',c(i,:));
+	fmax = max([fmax max(fA0) max(temp)]);
+
+	% fit lines to points
+	cf = fit(fA0(:),temp(:),'poly1');
+	l(i)=plot(sort(fA0),cf(sort(fA0)),'Color',c(i,:));
+	L{i} = strcat('Rel. gain = ',oval(cf.p1));
+
+end
+set(gca,'XLim',[0 fmax],'YLim',[0 fmax])
+l(1) = [];
+L(1) = [];
+legend(l,L)
+xlabel('Response to odour flicker (Hz)')
+ylabel('Response to odour flicker + light (Hz)')
+
+
+PrettyFig();
+
+
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
 
 
 %% Version Info

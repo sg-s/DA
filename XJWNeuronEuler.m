@@ -9,8 +9,8 @@
 % p.gAHP -- AHP (K+) conductance 
 % p.Vk -- K channel potential 
 % p.tau_Ca -- time constant for calcium buffering 
-% p.C -- calcium kick for each spike
-% p.Cm -- membrance capcaitance 
+% p.Alpha -- calcium kick for each spike
+% p.Cm -- membrane capacitance 
 % p.Vth -- threshold voltage
 % 
 % 
@@ -55,7 +55,7 @@ for i = 2:length(time)
 
 	% calculate derivative
 	f1 = -p.gL*(V(i-1) - p.Vreset);
-	f2 = p.Cm*(p.A)*(stimulus(i-1)-p.B);
+	f2 = (p.A)*(stimulus(i-1)-p.B);
 	f3 = -p.gAHP*(Ca(i-1))*(V(i-1) - p.Vk);
 
 	f = f1+f2+f3;
@@ -71,7 +71,7 @@ for i = 2:length(time)
 			V(i-1) = 30; % fake a spike
 			V(i) = p.Vreset;
 			spikes(i)=1;
-			Ca(i) = Ca(i) + p.C;
+			Ca(i) = Ca(i) + p.Alpha; % amount of calcium entering/spike
 		else
 			V(i) = p.Vreset;
 		end

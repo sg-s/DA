@@ -477,6 +477,67 @@ if being_published
 end
 
 
+%% What does the gain depend on?
+% What controls gain? The stimulus, or the derivative of the stimulus, or combination thereof? To investigate this, we assumed that the linear prediction deviates from the actual response $r(t)$ according to 
+%
+% $$ r(t)=\frac{r_{linear}(t)}{1+K_{g}\otimes s(t)} $$
+%
+
+%%
+% where $K_{g}$ is a bilobed filter. If the lobes have opposing signs, then the gain is controlled at least in part by the derivative of the stimulus. If both the lobes have the same sign, then the derivative of the stimulus plays no part in controlling gain. If the filter is overall positive, then increases in stimuli lead to decreases in gain (which fits the Dynamical Adaptation Model, optimal coding theory, etc.)
+
+%%
+% The following figure shows the best-fit gain filter, together with the corrected linear prediction: 
+
+
+clear p
+p.tau1= 298.4000;
+p.tau2= 21.1818;
+p.   n= 2;
+p.   A= -4.8735;
+p.beta= 0.0040;
+clear d
+d.response = mean2(fA);
+d.response(1:1e4) = NaN;
+d.stimulus = [mean2(PID) fp];
+[f,gain,Ka] = DivisiveGain(d.stimulus,p);
+figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
+subplot(1,4,1), hold on
+plot(Ka)
+xlabel('Lag (ms)')
+ylabel('Gain filter')
+
+subplot(1,4,2:4), hold on
+plot(tA,mean2(fA),'k')
+clear l L
+l(1) = plot(tA,fp,'r'); L{1} = strcat('Linear pred. r^2=',oval(rsquare(mean2(fA),fp)));
+l(2) = plot(tA,f,'b'); L{2} = strcat('Gain corr. pred. r^2=',oval(rsquare(mean2(fA),f)));
+legend(l,L)
+xlabel('Time (s)')
+set(gca,'XLim',[30 50])
+ylabel('Firing Rate (Hz)')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
+% Points to note:
+% 
+% * Both lobes of the gain filter are of the same sign, indicating that the derivative of the stimulus does not control gain
+% * The peak of the second lobe matches our previous analysis of where the gain control is most relevant
+% * The sign of the filter matches the Dynamical Adaptation model, and optimal coding theory, etc. 
+
+
+
+
+
+
+
 
 
 %% Version Info

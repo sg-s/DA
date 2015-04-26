@@ -21,6 +21,15 @@
 
 function [f,K,shat] = LNAModel(s,p)
 
+% specify bounds
+lb.tau1 = 0;
+lb.tau2 = 0;
+lb.tau_g = 0;
+
+lb.HillMax = 0;
+lb.Hill_n = 1;
+lb.n = 1;
+
 % make the filters
 t = 1:300;
 K = filter_gamma2(t,p);

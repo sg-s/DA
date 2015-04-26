@@ -15,10 +15,20 @@ case 1
 	error('No parameters specified')
 end
 
-% specify bounds
-lb.tau = 0; lb.n = 0; 
+% list parameters for readability
+p.tau1;
+p.tau2;
+p.n;
+p.A;
+p.beta;
 
+
+% specify bounds
+lb.tau1 = 1;  
+lb.tau2 = 1;  
 ub.n = 10;
+lb.n = 2;
+lb.beta = 0;
 
 if isvector(s)
 	error('Divisive Gain requires that the first argument be a 2xN matrix, where the first row is the stimulus and the second row is the prediction to be gain-corrected')
@@ -31,12 +41,21 @@ end
 fp = s(2,:);
 s = s(1,:);
 
-% make the filters
-t = 1:300;
-Ka = filter_gamma(p.tau,p.n,1,t);
+% see https://github.com/sg-s/DA/issues/114 for an explanation of the following
+filter_length = 5*max([p.n*p.tau1 p.n*p.tau2]);
+if filter_length < length(s)/10
+else
+	filter_length = length(s)/10; % ridiculously long filters
+end
+if filter_length < 300
+	filter_length = 300;
+end
+t = 0:filter_length; 
 
-% run through response filter
-gain = filter(Ka,1,s-mean2(s));
+Ka = filter_gamma2(t,p);
+
+% run through adaptation filter
+gain = filter(Ka,1,s-mean(s))+1;
 
 % scale
 gain = gain*p.beta;

@@ -70,6 +70,8 @@ if being_published
 	delete(gcf)
 end
 
+return
+
 %% Responses of ORNs to light flicker vs. odour flicker
 % In this section, we present both a light flicker and a odour flicker to the same ORN and compare the filters we back out of the data. 
 

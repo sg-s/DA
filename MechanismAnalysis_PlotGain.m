@@ -9,18 +9,20 @@ function [] = MechanismAnalysis_PlotGain(stim,resp,ParadigmNames,paradigm,use_li
 if use_light
 	figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 	nplots = 2;
+	mplots = 1;
 	filterplot = 1;
 	gainplot = 2;
 else
-	figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+	figure('outerposition',[0 0 1500 800],'PaperUnits','points','PaperSize',[1500 500]); hold on
 	nplots = 3;
+	mplots = 2;
 	filterplot = 2;
 	gainplot = 3;
 end
 
 c = parula(length(ParadigmNames)+1);
 if ~use_light
-	subplot(1,nplots,1), hold on
+	subplot(mplots,nplots,1), hold on
 	% show stimulus distributions in all cases. 
 	
 	clear l
@@ -37,7 +39,7 @@ if ~use_light
 end
 
 % show filters for each case
-subplot(1,nplots,filterplot), hold on
+subplot(mplots,nplots,filterplot), hold on
 clear l
 for i = 1:width(stim)
 	this_stim = stim(:,i);
@@ -58,7 +60,7 @@ ylabel('Filter Amplitude (norm)')
 % show the gain changes, if any
 ss = 20;
 fmax = 0;
-subplot(1,nplots,gainplot), hold on
+subplot(mplots,nplots,gainplot), hold on
 plot([0 100],[0 100],'k--')
 resp0 = resp(:,paradigm == 1);
 resp0(1:1e4,:) = [];
@@ -67,6 +69,8 @@ if width(resp0) > 1
 end
 L = {};
 clear l
+rel_gain = ones(length(ParadigmNames),1);
+mean_response = NaN(length(ParadigmNames),1);
 for i = 2:length(ParadigmNames)
 	temp = resp(:,paradigm == i);
 	if width(temp)>1
@@ -80,6 +84,9 @@ for i = 2:length(ParadigmNames)
 	cf = fit(resp0(:),temp(:),'poly1');
 	l(i)=plot(sort(resp0),cf(sort(resp0)),'Color',c(i,:));
 	L{i} = strcat('Rel. gain = ',oval(cf.p1));
+	rel_gain(i) = cf.p1;
+	mean_response(i) = mean(temp);
+	mean_response(1) = mean(resp0);
 
 end
 set(gca,'XLim',[0 fmax],'YLim',[0 fmax])
@@ -94,3 +101,42 @@ else
 	ylabel('Response to odour flicker + light (Hz)')
 end
 
+% compute correlation functions
+subplot(mplots,nplots,4), hold on
+resp0 = resp(:,paradigm == 1);
+if width(resp0) > 1
+	resp0 = mean2(resp0);
+end
+resp0 = resp0 - mean(resp0);
+resp0 = resp0/std(resp0);
+peak_xcorr = NaN(length(ParadigmNames)-1,1);
+for i = 1:length(peak_xcorr)
+	this_resp = resp(:,paradigm == (1 + i));
+	if width(this_resp) > 1
+		this_resp = mean2(this_resp);
+	end
+	this_resp = this_resp - mean(this_resp);
+	this_resp = this_resp/std(this_resp);
+	peak_xcorr(i) = finddelay(resp0,this_resp);
+	x = xcorr(this_resp(1e4:end),resp0(1e4:end));
+	x = x/max(x);
+	tx = 1e-3*(1:length(x));
+	tx = tx - mean(tx);
+	plot(tx,x,'Color',c(i+1,:))
+end
+set(gca,'XLim',[-.2 .5])
+ylabel('Cross Correlation')
+xlabel('Lag (s)')
+
+
+% plot peak vs gain
+subplot(mplots,nplots,5), hold on
+plot(rel_gain(2:end),peak_xcorr,'k+')
+xlabel('Relative Gain')
+ylabel('Delay (ms)')
+
+% plot gain vs response
+subplot(mplots,nplots,6), hold on
+plot(mean_response,rel_gain,'k+')
+ylabel('Relative Gain')
+xlabel('Mean Response (Hz)')

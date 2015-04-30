@@ -70,7 +70,29 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% Here is another neuron, where, instead of steadily supplying light, we flicker the light @100Hz in an effort to get more sustained firing from the light:
+
+
+datapath = '/local-data/DA-paper/reachr/2015_04_28_RR_F1_ab3_2_EA_400uM.mat';
+haz_data = [14 16];
+[stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,[],[],{},[],0);
+datapath = '/local-data/DA-paper/reachr/2015_04_28_RR_F1_ab3_2_EA_400uM_2.mat';
+
+haz_data = 21;
+[stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,stim,resp,ParadigmNames,paradigm,0);
+
+MechanismAnalysis_PlotGain(stim,resp,ParadigmNames,paradigm,0);
+
+PrettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 return
+
 
 %% Responses of ORNs to light flicker vs. odour flicker
 % In this section, we present both a light flicker and a odour flicker to the same ORN and compare the filters we back out of the data. 

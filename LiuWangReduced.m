@@ -29,6 +29,8 @@ lb.Alpha = 0;
 ub.r_th = 0;
 ub.r_k = 0;
 ub.r_reset = 0;
+lb.tau_m = 0;
+lb.tau_Ca = 0;
 
 % relative constraints
 if p.tau_Ca < p.tau_m

@@ -104,7 +104,7 @@ haz_data = 18;
 [stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,stim,resp,ParadigmNames,paradigm,1);
 
 c = parula(length(ParadigmNames)+1);
-figure('outerposition',[0 0 1200 600],'PaperUnits','points','PaperSize',[1200 600]); hold on
+figure('outerposition',[0 0 1200 600],'PaperUnits','points','PaperSize',[1200 1000]); hold on
 subplot(1,2,1), hold on
 for i = 1:length(paradigm)
 	[y,x] = hist(resp(1e4:end,i),50);

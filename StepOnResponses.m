@@ -24,10 +24,10 @@ end
 load('MeanShiftedGaussians.mat')
 
 
-% add the experiment subfiled
-combined_data.experiment = combined_data.neuron;
+% add the experiment sub field
+combined_data.experiment = NaN*combined_data.neuron;
 combined_data.experiment(combined_data.neuron > 8) = 3;
-combined_data.experiment(combined_data.neuron > 4) = 2;
+combined_data.experiment(combined_data.neuron > 4 & combined_data.neuron < 9) = 2;
 combined_data.experiment(combined_data.neuron < 5) = 1;
 
 dt = 1e-3;
@@ -116,6 +116,14 @@ end
 %%
 % What are the timescales of relaxation of firing rates in each of these cases? In the following figure, we fit a 2-parameter exponential to the firing rates from peak onwards, not to claim that the decay is exponential, but to extract a timescale for each case. In the following plots, the color of the data indicates the experiment it comes from, while the fits are shown in red. The data is grouped by neuron; so the same set of neurons appears in all data coloured the same color.  
 
+
+F_adap = []; % degree of adaptation
+tau_adap = []; % result of fitting 1 exp
+tau_1 = []; % result of fitting 2 exp -- first term
+tau_2 = []; 
+experiment = [];
+
+
 clear ff lh L
 L = {};
 figure('outerposition',[0 0 1500 800],'PaperUnits','points','PaperSize',[1500 800]); hold on
@@ -148,6 +156,21 @@ for i = 1:length(paradigm_names)
 			plot(time,this_resp,'Color',c(j,:))
 			lh = [lh plot(time(loc:end),ff(t),'r')];
 			L = [L (strcat('\tau=',oval(ff.b1,1),',',oval(ff.b2,1),'s'))];
+
+			F_adap = [F_adap (max(this_resp) - mean(this_resp(end-1000:end)))/(max(this_resp))];
+			tau_1 = [tau_1 ff.b1];
+			tau_2 = [tau_2 ff.b2];
+
+			% also fit a single term exp
+			ft=fittype('a*exp(-x./b1) +c');
+			fo = fitoptions(ft);
+			fo.Robust = 'on';
+			fo.StartPoint = [pf .1 tf];
+			ff = fit(t(:),this_resp(loc:end),ft,fo);
+			tau_adap = [tau_adap ff.b1];
+			experiment = [experiment j];
+
+
 		end
 	end
 	legend(lh,L)
@@ -163,6 +186,24 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%% The Liu-Wang Model
+% The Liu-Wang model predicts that the adaptation degree (ratio of peak firing - ss firing to peak firing) depends linearly on the timescale of adaptation, and that the slope of this line is the negative timescale of calcium in the ORN. Here, we fit this data to the Liu-Wang prediction:
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(tau_adap,F_adap,'k+')
+ff = fit(tau_adap(:),F_adap(:),'poly1');
+plot(tau_adap,ff(tau_adap),'r')
+legend(strcat('\tau_{Ca}=',oval(-ff.p1*1000),'ms'))
+xlabel('Adaptation Time (s)')
+ylabel('Degree of adaptation')
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 %%
 % These different timescales, and the dependence of timescale on the odor concentration, raises the question of whether these curves "rescale" á la Martelli et al. In the following figure, we rescale all these plots by the peak and plot them one on top of the other. In the following plots, we group the data so that all curves come from the same neuron. 
@@ -190,6 +231,7 @@ for i = 1:length(paradigm_names)
 end
 
 PrettyFig;
+
 if being_published
 	snapnow
 	delete(gcf)
@@ -248,7 +290,7 @@ end
 
 load('very_long_steps.mat')
 
-
+dt = 3e-3;
 a = floor(2/dt);
 z = floor(152/dt);
 z1 = floor(151/dt);

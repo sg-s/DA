@@ -476,7 +476,6 @@ if being_published
 	delete(gcf)
 end
 
-return
 %% What does the gain depend on?
 % What controls gain? The stimulus, or the derivative of the stimulus, or combination thereof? To investigate this, we allow the DA model to control gain with a bilobed filter. If the lobes are of opposing signs, then this suggests that gain is controlled by the derivative of the stimulus. If the size of both lobes are the same, then this suggests that the gain is controlled just by the derivative, and the stimulus magnitude doesn't play a role. 
 

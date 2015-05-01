@@ -7,7 +7,7 @@
 
 function [] = MechanismAnalysis_PlotSummary(alldata)
 
-figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 
 offset = 3e4; % first x seconds nuked
 

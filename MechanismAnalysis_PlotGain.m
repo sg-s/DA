@@ -13,7 +13,7 @@ if use_light
 	filterplot = 1;
 	gainplot = 2;
 else
-	figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1500 500]); hold on
+	figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
 	nplots = 3;
 	mplots = 2;
 	filterplot = 2;

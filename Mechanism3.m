@@ -31,7 +31,10 @@ ParadigmNames = {};
 paradigm = [];
 
 [stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,[],[],{},[],0);
-
+alldata(1).stim = stim;
+alldata(1).resp = resp;
+alldata(1).ParadigmNames = ParadigmNames;
+alldata(1).paradigm = paradigm;
 MechanismAnalysis_PlotGain(stim,resp,ParadigmNames,paradigm,0);
 
 
@@ -60,7 +63,10 @@ paradigm = [];
 datapath =  ('/local-data/DA-paper/reachr/2015_04_16_RR_F2_ab3_1_EA_1mM_2.mat');
 haz_data = [23 24];
 [stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,stim,resp,ParadigmNames,paradigm,0);
-
+alldata(2).stim = stim;
+alldata(2).resp = resp;
+alldata(2).ParadigmNames = ParadigmNames;
+alldata(2).paradigm = paradigm;
 MechanismAnalysis_PlotGain(stim,resp,ParadigmNames,paradigm,0);
 
 PrettyFig();
@@ -81,7 +87,10 @@ datapath = '/local-data/DA-paper/reachr/2015_04_28_RR_F1_ab3_2_EA_400uM_2.mat';
 
 haz_data = 21;
 [stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,stim,resp,ParadigmNames,paradigm,0);
-
+alldata(3).stim = stim;
+alldata(3).resp = resp;
+alldata(3).ParadigmNames = ParadigmNames;
+alldata(3).paradigm = paradigm;
 MechanismAnalysis_PlotGain(stim,resp,ParadigmNames,paradigm,0);
 
 PrettyFig();
@@ -90,6 +99,25 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%% Summary
+% Here we summarise the results from the three neurons show above. In the following figure, the fold change in gain is plotted for each neuron as a function of increasing light stimulation. Note that the odour stimulus doesn't change much. 
+
+alldata(1).stim(:,7) = []; % this is an initial transient
+alldata(1).resp(:,7) = [];
+alldata(1).paradigm(:,7) = [];
+
+MechanismAnalysis_PlotSummary(alldata);
+PrettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%% Fast Gain Control
+
 
 return
 
@@ -147,20 +175,6 @@ end
 % Why are the filter shapes different? What does it mean?
 
 
-% [~,loc]=max(resp);
-% t = tA(loc:end);
-% mint = min(t);
-% t = t -min(t);
-% ft=fittype('a*exp(-x./b1)+ a*exp(-x./b2) +c');
-% fo = fitoptions(ft);
-% fo.Robust = 'on';
-% tf = mean(resp(end-100:end));
-% pf = max(resp);  pf = pf - tf; pf = pf/2;
-% fo.Lower = [pf-1e-3 1e-2 1e-2 tf-1e-3];
-% fo.Upper = [pf+1e-3 2 20 tf+1e-3];
-% fo.StartPoint = [pf .1 1 tf];
-% ff = fit(t(:),resp(loc:end),ft,fo);
-% plot(t+mint,ff(t),'r')
 
 
 
@@ -248,7 +262,7 @@ end
 
 
 %%
-% While it's hard to say if there are two timescales or one, what is clear is that the degree of adaptation (the ratio of the peak firing rate to the adapted firing rate) is much higher than with an odour step that generates an equivalent peak firing rate. 
+% While it's hard to say if there are two timescales or one, what is clear is that the degree of adaptation (the ratio of the peak firing rate to the adapted firing rate) is much higher than with an odour step that generates an equivalent peak firing rate. (This is partly remedied by flashing light @ 100Hz). 
 
 %% Responses of ORNs to light flicker with an odour background
 % In the following section, we do the corollary of the experiment we did before. Here, we present a flickering light stimulus, and present an odour background on top. 

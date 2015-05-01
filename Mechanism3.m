@@ -117,6 +117,60 @@ end
 
 
 %% Fast Gain Control
+% Can we observe fast gain control in this dataset? Does it change with supplemental light stimulation? In the following figure, we analyse fast gain control in the first two neurons (the third was too noisy, and the stimulus wasn't reproducible enough). Brighter colours mean more light stimulation. It looks like the degree of fast gain control seems to be increasing with increasing light stimulation. 
+
+c =parula(4);
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+for i = 1:length(alldata)-1
+	clear ph
+	ph(4) = subplot(1,length(alldata)-1,i); hold on
+	for j = 1:length(alldata(i).ParadigmNames)
+		% fit a filter
+		resp = (alldata(i).resp(:,alldata(i).paradigm==j));
+		stim = (alldata(i).stim(:,alldata(i).paradigm==j));
+		if width(resp)>1
+			resp  =mean2(resp);
+			stim = mean2(stim);
+		
+			resp(1:1e4) = [];
+			stim(1:1e4) = [];
+			time = 1e-3*(1:length(stim));
+			[K, ~, filtertime_full] = FindBestFilter(stim,resp,[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
+			filtertime_full = filtertime_full*1e-3;
+			filtertime = 1e-3*(-200:900);
+			K = interp1(filtertime_full,K,filtertime);
+			pred = convolve(time,stim,K,filtertime);
+			%trivial scaling
+			ff = fit(pred(~isnan(pred)),resp(~isnan(pred)),'poly1');
+			pred = ff.p1*pred + ff.p2;
+
+
+			history_lengths = logspace(log10(.1),1,30);
+			example_history_length = history_lengths(10);
+			[~,~,~,~,~,~,handles]= GainAnalysisWrapper2('response',resp,'prediction',pred,'stimulus',stim,'time',time,'engine',@GainAnalysis5,'history_lengths',history_lengths,'example_history_length',example_history_length,'ph',ph,'engine',@GainAnalysis5,'use_cache',true);
+
+			% remove extra bullshit
+			delete(handles.horz_line)
+			delete(handles.vert_line)
+			delete(handles.green_line)
+			delete(handles.red_line)
+
+			set(handles.red_dots,'MarkerFaceColor',c(j,:),'MarkerEdgeColor',c(j,:),'CData',c(j,:))
+			set(handles.green_dots,'MarkerFaceColor',c(j,:),'MarkerEdgeColor',c(j,:),'CData',c(j,:))
+		end
+
+	end
+	
+end
+
+PrettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
 
 
 return

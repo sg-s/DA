@@ -66,7 +66,7 @@ for i = 1:length(alldata)
 	ylabel('Fold Change')
 	xlabel('Supplemental Light (V)')
 	legend('Mean Stimulus','Gain')
-	set(gca,'XTick',[1:length(alldata(i).ParadigmNames)],'XTickLabel',xt,'XLim',[0 6],'YLim',[.2 1.2])
+	set(gca,'XTick',[1:length(alldata(i).ParadigmNames)],'XTickLabel',xt,'XLim',[0 6],'YLim',[.2 1.3])
 
 	
 

@@ -7,9 +7,9 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [p,low_slopes,high_slopes,low_gof,high_gof,example_plot,extra_variables] = GainAnalysis5(x,history_lengths,example_history_length,plothere,p)
+function [p,low_slopes,high_slopes,low_gof,high_gof,example_plot,extra_variables,handles] = GainAnalysis5(x,history_lengths,example_history_length,plothere,p)
 
-
+handles = [];
 % set defaults
 example_plot = [];
 marker_size=10;
@@ -266,7 +266,7 @@ end
 
 if length(plothere) == 4
 	% plot to summary figure
-	plot(plothere(4),history_lengths,all_slopes*ones(1,length(history_lengths)),'k'), hold on
+	handles.horz_line = plot(plothere(4),history_lengths,all_slopes*ones(1,length(history_lengths)),'k'); hold on
 end
 
 
@@ -306,11 +306,11 @@ if length(plothere) == 4
 	% plot line to indicate the location of the example history plot
 	yy=([.8*min(high_slopes2.data) 1.2*max(low_slopes2.data)]);
 	if ~isempty(example_history_length)
-		plot(plothere(4),[example_history_length example_history_length],yy,'k-.')
+		handles.vert_line = plot(plothere(4),[example_history_length example_history_length],yy,'k-.');
 	end
 
-	plot(plothere(4),history_lengths,low_slopes2.data,'g'), hold on
-	plot(plothere(4),history_lengths,high_slopes2.data,'r')
+	handles.green_line = plot(plothere(4),history_lengths,low_slopes2.data,'g'); hold on
+	handles.red_line = plot(plothere(4),history_lengths,high_slopes2.data,'r');
 
 	% we now perform a Holm-Bonferroni correction 
 	% (see: https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method)
@@ -359,8 +359,8 @@ if length(plothere) == 4
 	p_low = p_low(idx);
 	p_high = p_high(idx);
 
-	scatter(plothere(4),history_lengths(sig_low),low_slopes2.data(sig_low),1256,'g.')
-	scatter(plothere(4),history_lengths(sig_high),high_slopes2.data(sig_high),1256,'r.')
+	handles.green_dots = scatter(plothere(4),history_lengths(sig_low),low_slopes2.data(sig_low),1256,'g.');
+	handles.red_dots = scatter(plothere(4),history_lengths(sig_high),high_slopes2.data(sig_high),1256,'r.');
 
 	
 

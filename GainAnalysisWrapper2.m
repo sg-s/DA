@@ -7,7 +7,7 @@
 % 
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
-function [p_LN,l,h,low_gof,high_gof,history_lengths] = GainAnalysisWrapper2(varargin)
+function [p_LN,l,h,low_gof,high_gof,history_lengths,handles] = GainAnalysisWrapper2(varargin)
 
 if ~nargin
 	help GainAnalysisWrapper
@@ -111,7 +111,7 @@ if isempty(cached_data)
 	else
 		example_history_length = history_lengths(10);
 	end
-	[p_LN,l,h,low_gof,high_gof] = x.engine(x,history_lengths,example_history_length,ph);
+	[p_LN,l,h,low_gof,high_gof,~,~,handles] = x.engine(x,history_lengths,example_history_length,ph);
 	cache(hash,p_LN);
 	% also cache the example history length
 	g = l-h;
@@ -128,7 +128,7 @@ else
 	else
 		ehl = cache(DataHash(p_LN));
 	end
-	[p_LN,l,h,low_gof,high_gof] = x.engine(x,history_lengths,ehl,ph,p_LN);
+	[p_LN,l,h,low_gof,high_gof,~,~,handles] = x.engine(x,history_lengths,ehl,ph,p_LN);
 end
 
 try

@@ -172,10 +172,6 @@ end
 
 
 
-
-return
-
-
 %% Responses of ORNs to light flicker vs. odour flicker
 % In this section, we present both a light flicker and a odour flicker to the same ORN and compare the filters we back out of the data. 
 
@@ -226,10 +222,7 @@ if being_published
 end
 
 %%
-% Why are the filter shapes different? What does it mean?
-
-
-
+% Why are the filter shapes different? It's probably because we don't drive the ORNs strong enough with light. I would bet that if we drove the ORNs stronger, the filter shape will be the same. 
 
 
 %%
@@ -320,10 +313,15 @@ end
 
 %% Responses of ORNs to light flicker with an odour background
 % In the following section, we do the corollary of the experiment we did before. Here, we present a flickering light stimulus, and present an odour background on top. 
+clear alldata
 
 datapath =  ('/local-data/DA-paper/reachr/2015_04_17_RR_F2_ab3_1_EA_1mM_4days.mat');
 haz_data = [18:20];
 [stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,[],[],{},[],1);
+alldata(1).stim = stim;
+alldata(1).resp = resp;
+alldata(1).ParadigmNames = ParadigmNames;
+alldata(1).paradigm = paradigm;
 MechanismAnalysis_PlotGain(stim,resp,ParadigmNames,paradigm,1);
 
 PrettyFig();
@@ -341,8 +339,23 @@ haz_data = [18:21];
 [stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,[],[],{},[],1);
 stim(55e4:end,:) = [];
 resp(55e4:end,:) = [];
+alldata(2).stim = stim;
+alldata(2).resp = resp;
+alldata(2).ParadigmNames = ParadigmNames;
+alldata(2).paradigm = paradigm;
 MechanismAnalysis_PlotGain(stim,resp,ParadigmNames,paradigm,1);
 
+PrettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% Here is a summary of all the data:
+
+MechanismAnalysis_PlotSummary(alldata);
 PrettyFig();
 
 if being_published

@@ -64,7 +64,11 @@ for i = 1:length(alldata)
 	errorbar(gain,gain_err,'r')
 
 	ylabel('Fold Change')
-	xlabel('Supplemental Light (V)')
+	if max(std(alldata(i).stim')) < eps
+		xlabel('Supplemental Odour (V)')
+	else
+		xlabel('Supplemental Light (V)')
+	end
 	legend('Mean Stimulus','Gain')
 	set(gca,'XTick',[1:length(alldata(i).ParadigmNames)],'XTickLabel',xt,'XLim',[0 6],'YLim',[.2 1.3])
 

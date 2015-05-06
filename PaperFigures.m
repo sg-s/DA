@@ -18,9 +18,9 @@ tic
 % this determines which figures to do. 
 fig1 = false;
 fig2 = false;
-fig3 = false;
+fig3 = true;
 fig4 = false;
-fig5 = true;
+fig5 = false;
 
 %    ######## ####  ######   ##     ## ########  ########       ##   
 %    ##        ##  ##    ##  ##     ## ##     ## ##           ####   
@@ -664,7 +664,7 @@ axes(axes_handles(5))
 text(10,60,'p < 0.01')
 
 % plot gain vs preceding stimulus
-[x,y] = MakeFig6G(mean2(PID),mean2(fA),fp,round(history_lengths(9)*1e3));
+[x,y] = MakeFig6G(mean2(PID),mean2(fA),fp,500);
 gain_time = mean(diff(tA))*(1:length(x));
 rm_this = (isnan(x) | isnan(y));
 x(rm_this) = [];
@@ -672,8 +672,29 @@ y(rm_this) = [];
 gain_time(rm_this) = [];
 ss = 50;
 plot(axes_handles(6),x(1:ss:end),y(1:ss:end),'k.')
-xlabel(axes_handles(6),'Stimulus in preceding 472ms')
+xlabel(axes_handles(6),'Stimulus in preceding 500ms')
 ylabel(axes_handles(6),'Relative gain')
+
+% fit a Weber-scaling to these points
+[x,idx] = sort(x);
+y = y(idx);
+% get equal bins in x
+my = NaN(100,1); mx = my;
+a = 1;
+ss = floor(length(x)/length(my));
+for i = 1:length(my)-1
+	z = a+ss;
+	my(i) = max(y(a:z));
+	mx(i) = mean(x(a:z));
+	a = z;
+end
+my(end) = []; mx(end) = [];
+mx(1:20) = []; my(1:20) = [];
+
+fo = fitoptions('rat01');
+fo.StartPoint = [.4 -.08];
+ff = fit(mx(:),my(:),'rat01',fo);
+plot(axes_handles(6),.17:.01:max(x),ff(.17:.01:max(x)),'r')
 
 % plot gain
 gain = y;
@@ -1007,7 +1028,7 @@ for j = [3 6 9]
 	end
 	delete(h(rm_this))
 
-	% make all the scater plots smaller
+	% make all the scatter plots smaller
 	h=get(axes_handles(j),'Children');
 	for i = 1:length(h)
 		 set(h(i),'SizeData',256)

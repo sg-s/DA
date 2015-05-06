@@ -337,8 +337,8 @@ end
 datapath = ('/local-data/DA-paper/reachr/2015_04_17_RR_F3_ab3_4_EA_1mM.mat');
 haz_data = [18:21];
 [stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,[],[],{},[],1);
-stim(55e4:end,:) = [];
-resp(55e4:end,:) = [];
+stim(55e3:end,:) = [];
+resp(55e3:end,:) = [];
 alldata(2).stim = stim;
 alldata(2).resp = resp;
 alldata(2).ParadigmNames = ParadigmNames;

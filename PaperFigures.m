@@ -16,9 +16,9 @@ end
 tic
 
 % this determines which figures to do. 
-fig1 = false;
+fig1 = true;
 fig2 = false;
-fig3 = true;
+fig3 = false;
 fig4 = false;
 fig5 = false;
 
@@ -144,11 +144,15 @@ end
 ss = 25;
 y = mean2([MSG_data(1,:).resp]);
 x = mean2([MSG_data(1,:).fp]);
-plot(axes_handles(4),x(1:ss:end),y(1:ss:end),'.','Color',c(1,:))
+l=plot(axes_handles(4),x(1:ss:end),y(1:ss:end),'.','Color',c(1,:));
 
 
 xlabel(axes_handles(4),'K \otimes s')
 ylabel(axes_handles(4),'Response (Hz)')
+
+% add a r2 
+r = rsquare(x,y);
+legend(l,strcat('r^2=',oval(r)),'Location','northwest');
 
 
 % plot the stimulus distributions 

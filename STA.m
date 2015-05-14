@@ -50,6 +50,8 @@ end
 K = zeros(before+after+1,width(spikes));
 
 for i = 1:width(spikes)
+	% remove mean
+	stimulus(:,i) =  stimulus(:,i) - mean(stimulus(:,i));
 	permitted_spikes = find(spikes(:,i));
 	permitted_spikes(permitted_spikes<before) = [];
 	permitted_spikes(permitted_spikes>length(stimulus)-after) = [];

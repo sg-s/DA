@@ -47,6 +47,8 @@ xlabel('Time relative to spike (s)')
 
 PrettyFig;
 
+return
+
 if being_published
 	snapnow
 	delete(gcf)

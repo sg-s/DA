@@ -654,9 +654,10 @@ ph = []; ph(3:4) = axes_handles([5 7]);
 
 hl_min = .1;
 hl_max = 10;
-history_lengths = logspace(log10(hl_min),log10(hl_max),30);
+history_lengths = [logspace(log10(hl_min),log10(.5),15) logspace(log10(.5),log10(10),15)];
+history_lengths = unique(history_lengths);
 
-[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',mean2(fA),'prediction',fp,'stimulus',mean2(PID),'time',tA,'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(9),'use_cache',1,'engine',@GainAnalysis5);
+[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',mean2(fA),'prediction',fp,'stimulus',mean2(PID),'time',tA,'ph',ph,'history_lengths',history_lengths,'example_history_length',.5,'use_cache',1,'engine',@GainAnalysis5);
 set(axes_handles(7),'XLim',[.09 11]) % to show .1 and 10 on the log scale
 
 % show the p-value

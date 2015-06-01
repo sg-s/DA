@@ -250,6 +250,64 @@ if being_published
 end
 
 
+%% Comparison of LFP and firing rates for odor and light
+% How does the LFP get translated into firing? Here, we measure from flies expressing ReaChR in the ab3A neuron and activate that neuron with both light and odour. We then compare the LFP and the firing rate:
+
+load('/local-data/DA-paper/reachr/2015_05_18_RR_F2_ab3_2_EA_2.mat')
+
+haz_data =  [4 6 7 10];
+figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[700 700]); hold on
+for i = 1:length(haz_data)
+	subplot(length(haz_data),2,2*(i-1)+1), hold on
+	oktrials = setdiff(1:width(data(haz_data(i)).voltage),spikes(haz_data(i)).discard);
+	V = [];
+	for j = oktrials
+		this_v= data(haz_data(i)).voltage(j,:);
+		this_v(1:3e4) = [];
+		[~,this_v] = filter_trace(this_v);
+		this_v = this_v - mean(this_v(1:1e4));
+		V = [this_v; V];
+	end
+	V = mean2(V);
+	V = V(1:10:end);
+	t = 1e-3*(1:length(V));
+	plot(t,V)
+	if i == 1
+		title('LFP (mV)')
+	end
+	if any(strfind(ControlParadigm(haz_data(i)).Name,'Odour'))
+		ylabel('Odour')
+	else
+		ylabel('Light')
+	end
+
+	subplot(length(haz_data),2,2*(i-1)+2), hold on
+	[f,t]=(spiketimes2f(spikes(haz_data(i)).A));
+	f = mean2(f);
+	t= t-3;
+	f(t<0)=[];
+	t(t<0)=[];
+	plot(t,f);
+	set(gca,'YLim',[0 150])
+	if i == 1
+		title('Firing Rate (Hz)')
+	end
+end
+xlabel('Time (s)')
+
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% A trivial explanation for the discrepancy between firing rate/LFP for light and odour could be that the LFP is not a good measure of the total transmembrane current in the neuron. We could pick up only the current at the dendrite. Since we expect ReaChR to be localised everywhere on the neuron, and since it is fair to assume that the light penetrates the tissue very well, the LFP could be artifically small since we can only measure the transmembrance current in the dendrite, and not, say, in the cell body. 
+
+%%
+% A more interesting explanation would be that for the same transmembrane current, the neuron's firing machinery has different gains, based on whether the current is due to ORs or due to ReaChR. But this is improbable, and even if so, is very hard to show. 
 
 
 %% Version Info

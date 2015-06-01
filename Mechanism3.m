@@ -107,6 +107,8 @@ alldata(1).stim(:,7) = []; % this is an initial transient
 alldata(1).resp(:,7) = [];
 alldata(1).paradigm(:,7) = [];
 
+odour_flicker = alldata;
+
 MechanismAnalysis_PlotSummary(alldata);
 PrettyFig();
 
@@ -384,6 +386,22 @@ if being_published
 	delete(gcf)
 end
 
+
+%%
+% In this figure, we compare the slope and the offset of each data set, in the odour flicker and the light flicker case: 
+
+figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[700 700]); hold on
+GainPhasePlot(odour_flicker,'b');
+GainPhasePlot(alldata,'r')
+ylabel('Mean Firing Rate (norm)')
+xlabel('Gain (norm)')
+
+PrettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %% Version Info
 % The file that generated this document is called:

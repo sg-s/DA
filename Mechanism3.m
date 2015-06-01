@@ -352,6 +352,27 @@ if being_published
 	delete(gcf)
 end
 
+%% 
+% Here is yet another neuron, that we acquired with the LFP (not shown):
+datapath = ('/local-data/DA-paper/reachr/2015_05_18_RR_F2_ab3_2_EA.mat');
+haz_data = [25 26 27 28];
+[stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,[],[],{},[],1);
+stim(1:1e4,:) = [];
+resp(1:1e4,:) = [];
+alldata(3).stim = stim;
+alldata(3).resp = resp;
+alldata(3).ParadigmNames = ParadigmNames;
+alldata(3).paradigm = paradigm;
+MechanismAnalysis_PlotGain(stim,resp,ParadigmNames,paradigm,1);
+
+PrettyFig();
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
 %%
 % Here is a summary of all the data:
 

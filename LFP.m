@@ -71,35 +71,47 @@ if being_published
 	delete(gcf)
 end
 
-% So we ignore for the time being trials where we start from no odour -> odour. 
+data(19).voltage(4,:) = []; % this trial is to be abandoned. 
+data(19).PID(4,:) = [];
 
-%% LFP changes with flickering odor stimulus
-% Here, we present a flickering odor stimulus, wait for some time while the slow changes in the LFP go away, and then record the LFP responses. In the following figure, we remove spikes from the LFP, mean subtract, and divide by the standard deviation:
+% Because there is a slow variation, and we're not really interested in it, we filter it out and plot the data. In the following figure, we remove spikes from the LFP, and then filter it with a high-pass filter with a 5 second cutoff (because we're not interested in any feature with a time scale longer than 5 seconds.) The LFP is shown together with the stimulus and the firing rates. 
 
-do_these = [2 3 6 7 8 9 11];
-c = parula(length(do_these)+1);
+c = parula(width(data(19).voltage)+1);
 
 figure('outerposition',[0 0 1200 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
-subplot(2,1,1), hold on
+subplot(3,1,1), hold on
 time = 1e-4*(1:length(data(19).PID));
-for i = 1:length(do_these)
-	plot(time,data(19).PID(do_these(i),:),'Color',c(i,:))
+for i = 1:width(data(19).PID)
+	plot(time(1:20:end),data(19).PID(i,1:20:end),'Color',c(i,:))
 end
 ylabel('PID (V)')
 set(gca,'XLim',[20 60])
 
-subplot(2,1,2), hold on
-time = 1e-4*(1:length(data(19).PID));
-for i = 1:length(do_these)
-	this_LFP = data(19).voltage(do_these(i),:);
-	% filter
+time = time(1:10:end);
+subplot(3,1,2), hold on
+for i = 1:width(data(19).PID)
+	this_LFP = data(19).voltage(i,:);
+	% filter to remove spikes
 	[~,this_LFP] = filter_trace(this_LFP);
-	this_LFP = this_LFP - mean(this_LFP(2e5:end));
-	this_LFP = this_LFP/std(this_LFP(2e5:end));
-	plot(time,this_LFP,'Color',c(i,:))
+
+	% now pass it through a high pass filter with a 5 second cutoff to remove slow fluctuations:
+	this_LFP = this_LFP(1:10:end);
+	temp = filtfilt(ones(5e3,1)/5e3,1,this_LFP);
+
+	plot(time,this_LFP-temp,'Color',c(i,:))
 end
-ylabel('LFP (mV)')
-set(gca,'XLim',[20 60])
+ylabel('LFP (a.u.)')
+set(gca,'XLim',[20 60],'YLim',[-.3 .3])
+
+
+subplot(3,1,3), hold on
+[f,t] = spiketimes2f(spikes(19).A,1e-4*(1:length(spikes(19).A)),1e-3);
+f(:,4) = [];
+for i = 1:width(f)
+	plot(t,f(:,i),'Color',c(i,:))
+end
+ylabel('Firing Rate (Hz)')
+set(gca,'XLim',[20 60],'YLim',[0 60])
 xlabel('Time (s)')
 
 PrettyFig;
@@ -109,23 +121,26 @@ if being_published
 	delete(gcf)
 end
 
+
 %% Linear Models for LFP
 % We now back out linear filters for the LFP on a trial-by-trial basis. 
 
-K = zeros(601,length(do_these));
-for i = 1:length(do_these)
-	this_LFP = data(19).voltage(do_these(i),:);
+K = zeros(601,width(data(19).PID));
+for i = 1:width(data(19).PID)
+	this_LFP = data(19).voltage(i,:);
 	% filter
+	% filter to remove spikes
 	[~,this_LFP] = filter_trace(this_LFP);
-	this_LFP = this_LFP - mean(this_LFP(2e5:end));
-	this_LFP = this_LFP/std(this_LFP(2e5:end));
-	time = 1e-4*(1:length(this_LFP));
-	t = 20+  (1e-3:1e-3:40);
-	this_LFP = interp1(time,this_LFP,t);
-	this_PID = data(19).PID(do_these(i),:);
-	this_PID = interp1(time,this_PID,t);
-	this_PID = this_PID - mean(this_PID);
-	this_PID = this_PID/std(this_PID);
+
+	% now pass it through a high pass filter with a 5 second cutoff to remove slow fluctuations:
+	this_LFP = this_LFP(1:10:end);
+	temp = filtfilt(ones(5e3,1)/5e3,1,this_LFP);
+	this_LFP = this_LFP - temp;
+	this_LFP = this_LFP(20e3:end);
+	time = 1e-3*(1:length(this_LFP));
+	this_PID = data(19).PID(i,:);
+	this_PID = this_PID(1:10:end);
+	this_PID = this_PID(20e3:end);
 	[K(:,i),~,filtertime] = FindBestFilter(this_PID,this_LFP,[],'regmax=1;','regmin=1;','filter_length=600;');
 end
 
@@ -149,24 +164,26 @@ end
 
 
 i = 2;
-this_LFP = data(19).voltage(do_these(i),:);
 % filter
+this_LFP = data(19).voltage(i,:);
+% filter to remove spikes
 [~,this_LFP] = filter_trace(this_LFP);
-this_LFP = this_LFP - mean(this_LFP(2e5:end));
-this_LFP = this_LFP/std(this_LFP(2e5:end));
-time = 1e-4*(1:length(this_LFP));
-t = 20+  (1e-3:1e-3:40);
-this_LFP = interp1(time,this_LFP,t);
-this_PID = data(19).PID(do_these(i),:);
-this_PID = interp1(time,this_PID,t);
-this_PID = this_PID - mean(this_PID);
-this_PID = this_PID/std(this_PID);
+
+% now pass it through a high pass filter with a 5 second cutoff to remove slow fluctuations:
+this_LFP = this_LFP(1:10:end);
+temp = filtfilt(ones(5e3,1)/5e3,1,this_LFP);
+this_LFP = this_LFP - temp;
+this_LFP = this_LFP(20e3:end);
+time = 1e-3*(1:length(this_LFP));
+this_PID = data(19).PID(i,:);
+this_PID = this_PID(1:10:end);
+this_PID = this_PID(20e3:end);
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(t,this_LFP,'k')
-fp = convolve(t,this_PID,K(:,end),filtertime);
-plot(t,fp,'r');
-
+plot(time+20,this_LFP,'k')
+fp = convolve(time,this_PID,K(:,i),filtertime);
+l = plot(time+20,fp,'r');
+legend(strcat('r^2=',oval(rsquare(fp,this_LFP))))
 
 PrettyFig;
 
@@ -180,20 +197,21 @@ end
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 
-for i = 1:length(do_these)
-	this_LFP = data(19).voltage(do_these(i),:);
-	% filter
+for i = 1:width(data(19).voltage)
+	this_LFP = data(19).voltage(i,:);
+	% filter to remove spikes
 	[~,this_LFP] = filter_trace(this_LFP);
-	this_LFP = this_LFP - mean(this_LFP(2e5:end));
-	this_LFP = this_LFP/std(this_LFP(2e5:end));
-	time = 1e-4*(1:length(this_LFP));
-	t = 20+  (1e-3:1e-3:40);
-	this_LFP = interp1(time,this_LFP,t);
-	this_PID = data(19).PID(do_these(i),:);
-	this_PID = interp1(time,this_PID,t);
-	this_PID = this_PID - mean(this_PID);
-	this_PID = this_PID/std(this_PID);
-	fp = convolve(t,this_PID,K(:,end),filtertime);
+
+	% now pass it through a high pass filter with a 5 second cutoff to remove slow fluctuations:
+	this_LFP = this_LFP(1:10:end);
+	temp = filtfilt(ones(5e3,1)/5e3,1,this_LFP);
+	this_LFP = this_LFP - temp;
+	this_LFP = this_LFP(20e3:end);
+	time = 1e-3*(1:length(this_LFP));
+	this_PID = data(19).PID(i,:);
+	this_PID = this_PID(1:10:end);
+	this_PID = this_PID(20e3:end);
+	fp = convolve(time,this_PID,K(:,i),filtertime);
 	r2 = rsquare(fp,this_LFP);
 	plot(i,r2,'k+')
 end
@@ -212,36 +230,36 @@ end
 
 mean_LFP = 0*this_LFP;
 mean_PID = 0*this_PID;
-for i = 1:length(do_these)
-	this_LFP = data(19).voltage(do_these(i),:);
-	% filter
+for i = 1:width(data(19).voltage)
+	this_LFP = data(19).voltage(i,:);
+	% filter to remove spikes
 	[~,this_LFP] = filter_trace(this_LFP);
-	this_LFP = this_LFP - mean(this_LFP(2e5:end));
-	this_LFP = this_LFP/std(this_LFP(2e5:end));
-	time = 1e-4*(1:length(this_LFP));
-	t = 20+  (1e-3:1e-3:40);
-	this_LFP = interp1(time,this_LFP,t);
-	mean_LFP = mean_LFP + this_LFP;
 
-	this_PID = data(19).PID(do_these(i),:);
-	this_PID = interp1(time,this_PID,t);
-	this_PID = this_PID - mean(this_PID);
-	this_PID = this_PID/std(this_PID);
+	% now pass it through a high pass filter with a 5 second cutoff to remove slow fluctuations:
+	this_LFP = this_LFP(1:10:end);
+	temp = filtfilt(ones(5e3,1)/5e3,1,this_LFP);
+	this_LFP = this_LFP - temp;
+	this_LFP = this_LFP(20e3:end);
+	time = 1e-3*(1:length(this_LFP));
+	this_PID = data(19).PID(i,:);
+	this_PID = this_PID(1:10:end);
+	this_PID = this_PID(20e3:end);
 	mean_PID = mean_PID + this_PID;
+	mean_LFP = mean_LFP + this_LFP;
 end
-mean_LFP = mean_LFP/length(do_these);
-mean_PID = mean_PID/length(do_these);
-all_K = FindBestFilter(this_PID,this_LFP,[],'regmax=1;','regmin=1;','filter_length=600;');
+mean_LFP = mean_LFP/width(data(19).voltage);
+mean_PID = mean_PID/width(data(19).voltage);
+all_K = FindBestFilter(mean_PID,mean_LFP,[],'regmax=1;','regmin=1;','filter_length=600;');
 all_K = all_K(30:500,:);
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(t,mean_LFP,'k')
+plot(time+20,mean_LFP,'k')
 hold on
-fp = convolve(t,mean_PID,all_K,filtertime);
-l = plot(t,fp,'r');
-legend(l,strcat('r^2=',oval(rsquare(fp,mean_LFP))));
+LFP_pred = convolve(time,mean_PID,all_K,filtertime);
+l = plot(time+20,LFP_pred,'r');
+legend(l,strcat('r^2=',oval(rsquare(LFP_pred,mean_LFP))));
 xlabel('Time (s)')
-ylabel('LFP (norm)')
+ylabel('LFP (a.u.)')
 PrettyFig;
 
 if being_published
@@ -249,6 +267,47 @@ if being_published
 	delete(gcf)
 end
 
+%% Linear Models for firing rate
+% Why is the LFP so hard to predict with a linear model? What if we extract a filter for the firing rates directly from the PID?
+
+K_Pf = zeros(1001,width(data(19).PID));
+fp = NaN*f;
+for i = 1:width(f)
+	this_PID = data(19).PID(i,:);
+	this_PID = this_PID(1:10:end);
+	this_PID = this_PID(20e3:end);
+	[K_Pf(:,i),~,filtertime] = FindBestFilter(this_PID,f(20e3:end,i),[],'regmax=1;','regmin=1;','filter_length=1000;','use_cache=0;');
+end
+
+K_Pf = K_Pf(70:570,:);
+filtertime = filtertime(70:570);
+
+for i = 1:width(f)
+	this_PID = data(19).PID(i,:);
+	this_PID = this_PID(1:10:end);
+	this_PID = this_PID(20e3:end);
+	fp(20e3:end,i) = convolve(time(20e3:end),this_PID,K_Pf(:,i),filtertime);
+	temp = fit(fp(20e3:end-100,i),f(20e3:end-100,i),'poly1');
+	fp(:,i) = temp(fp(:,i));	
+end
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(time,mean2(f),'k')
+l = plot(time,mean2(fp),'r');
+legend(l,strcat('r^2=',oval(rsquare(mean2(f),mean2(fp)))))
+set(gca,'XLim',[20 60])
+ylabel('Firing Rate (Hz)')
+xlabel('Time (s)')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% So, for some unknown reason, we can't predict the firing rates of the neuron very well. Something is weird about this, so it's hard to know what's going on with the LFP. 
 
 %% Comparison of LFP and firing rates for odor and light
 % How does the LFP get translated into firing? Here, we measure from flies expressing ReaChR in the ab3A neuron and activate that neuron with both light and odour. We then compare the LFP and the firing rate:

@@ -292,8 +292,8 @@ for i = 1:width(f)
 end
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(time,mean2(f),'k')
-l = plot(time,mean2(fp),'r');
+plot(t,mean2(f),'k')
+l = plot(t,mean2(fp),'r');
 legend(l,strcat('r^2=',oval(rsquare(mean2(f),mean2(fp)))))
 set(gca,'XLim',[20 60])
 ylabel('Firing Rate (Hz)')

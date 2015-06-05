@@ -18,7 +18,11 @@ end
 
 for i = 1:length(haz_data)
 	time = 1e-4*(1:length(data(haz_data(i)).PID));
-	[temp, tA] = spiketimes2f(spikes(haz_data(i)).A,time,1e-3);
+	try
+		[temp, tA] = spiketimes2f(spikes(haz_data(i)).A,time,1e-3);
+	catch
+		keyboard
+	end
 	rm_this = sum(temp) == 0;
 
 	% add PID

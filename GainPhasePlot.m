@@ -35,7 +35,7 @@ for i = 1:length(alldata)
 			x = resp0(:); 
 			ff = fit(x,y,'poly1');
 			temp_gain = [temp_gain ff.p1];
-			temp_offset = [temp_offset mean(y)/mean(x)];
+			temp_offset = [temp_offset mean(y)];
 
 
 		end

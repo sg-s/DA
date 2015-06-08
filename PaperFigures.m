@@ -17,9 +17,9 @@ tic
 
 % this determines which figures to do. 
 fig1 = true;
-fig2 = false;
-fig3 = false;
-fig4 = false;
+fig2 = true;
+fig3 = true;
+fig4 = true;
 fig5 = false;
 
 %    ######## ####  ######   ##     ## ########  ########       ##   
@@ -253,6 +253,7 @@ gain = gain(~isnan(gain));
 
 cf = fit(mean_stim(:),gain(:),'power1');
 set(axes_handles(8),'XScale','log','YScale','log','YLim',[1 100],'XLim',[.5 3.5])
+% set(axes_handles(8),'XScale','linear','YScale','linear','YLim',[1 45],'XLim',[.5 3.5])
 xlabel(axes_handles(8),'Mean Stimulus (V)')
 ylabel(axes_handles(8),'Neuron Gain (Hz/V)')
 l(1)=plot(axes_handles(8),sort(mean_stim),cf(sort(mean_stim)),'k');
@@ -265,7 +266,7 @@ options.Upper = [Inf -1];
 cf = fit(mean_stim(:),gain(:),'power1',options);
 l(2)=plot(axes_handles(8),sort(mean_stim),cf(sort(mean_stim)),'k--');
 
-legend(l,{L, strcat('\alpha=-1,\beta=',oval(cf.a))} )
+legend(l,{L, strcat('\alpha:=-1,\beta=',oval(cf.a))} )
 
 PrettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=0;','FixLogY=0;')
 
@@ -699,7 +700,8 @@ mx(1:20) = []; my(1:20) = [];
 fo = fitoptions('rat01');
 fo.StartPoint = [.4 -.08];
 ff = fit(mx(:),my(:),'rat01',fo);
-plot(axes_handles(6),.17:.01:max(x),ff(.17:.01:max(x)),'r')
+l = plot(axes_handles(6),.17:.01:max(x),ff(.17:.01:max(x)),'r');
+legend(l,'Weber Envelope');
 
 % plot gain
 gain = y;

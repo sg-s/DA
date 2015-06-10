@@ -73,7 +73,7 @@ Khat = flipud(real(ifft(H)));
 Khat = Khat/max(Khat);
 Khat = interp1(1:length(Khat),Khat,0.5:0.5:length(Khat));
 
-[Khat2,~,filtertime] = FindBestFilter(a,b,[],'filter_length=600;');
+[Khat2,~,filtertime] = FindBestFilter(a,b,[],'filter_length=600;','regmax = .01;','regmin=.01;');
 Khat2 = Khat2/max(Khat2);
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
@@ -91,10 +91,6 @@ if being_published
 	snapnow
 	delete(gcf)
 end
-
-%%
-% In this particular case, it seems to outperform our battle-tested reverse correlation methods (probably because of the strong sine wave in the inputs and the outputs). 
-
 
 %% Phase Relationships
 % In the previous section, we plotted the real part of the transfer function H. Now, we plot the imaginary part, which tells us how the phase depends on the frequency. 

@@ -17,9 +17,9 @@ tic
 
 % this determines which figures to do. 
 fig1 = true;
-fig2 = true;
-fig3 = true;
-fig4 = true;
+fig2 = false;
+fig3 = false;
+fig4 = false;
 fig5 = false;
 
 %    ######## ####  ######   ##     ## ########  ########       ##   
@@ -335,7 +335,7 @@ end
 legend(l,L)
 
 
-% compute the cross-correlation for the data, on a per-neuron basis 
+% compute the cross-correlation coefficient for the data, on a per-neuron basis 
 subplot(2,3,2), hold on
 peak_loc_xcorr = NaN(8,13);
 peak_xcorr = NaN(8,13);
@@ -345,12 +345,16 @@ for i = 1:8
 	for j = 1:13
 		if ~isempty(MSG_data(i,j).K)
 			a = mean2(MSG_data(i,j).resp);
-			a = a - mean(a);
-			a = a/std(a);
 			b = mean2(MSG_data(i,j).stim);
-			b = b - mean(b); 
-			b = b/std(b);
-			x = xcorr(a,b); % positive peak means a lags b
+
+			% a = a - mean(a);
+			% % a = a/std(a);
+			
+			% b = b - mean(b); 
+			% b = b/std(b);
+			% x = xcorr(a,b); % positive peak means a lags b
+
+			x = xcoeff(a,b);
 			t = dt*(1:length(x));
 			t = t-mean(t);
 			x = x/max(x);

@@ -211,8 +211,6 @@ end
 % So even though the filter extraction is really good (indicating the noise is weak), the Bode diagrams are rubbish, and it's hard to see anything there. 
 
 
-return
-
 %% Synthetic Data: Ankle Joint Compliance Data
 % This data is synthesised by some models used in Westwick and Kearney. We're going to attempt recreate Fig 5.7 (pg 118). 
 
@@ -220,94 +218,38 @@ iodata = ExampleData(1,10); d = iodata.Data; a = d(:,1); b = d(:,2);
 t = 0.002*(1:length(a));
 
 fs = 1/0.002;
-[denom,f] = pwelch(a,[],[],[],fs);
+[~,f] = pwelch(a,[],[],[],fs);
 H = cpsd(a,b)./cpsd(a,a);
+
+% use the toolbox
+FR = fresp(iodata);
+fr = FR.data;
+ft = 0:length(fr)-1;
+ft = ft*get(FR,'DomainIncr');
 
 figure('outerposition',[0 0 700 800],'PaperUnits','points','PaperSize',[700 800]); hold on
 subplot(3,1,1), hold on
 plot(f,abs(H))
+plot(ft,abs(fr(:,1)))
+legend({'abs(H)','toolbox result'})
 ylabel('Magnitude')
-set(gca,'YScale','log')
+set(gca,'YScale','log','XLim',[0 250])
 
 subplot(3,1,2), hold on
-plot(f,unwrap(rad2deg(angle(H))))
+plot(f,-unwrap(rad2deg(angle(H))))
+plot(ft,unwrap(rad2deg(angle(fr(:,1)))));
+legend({'angle(H)','toolbox result'})
 ylabel('Phase (degrees)')
+set(gca,'YScale','linear','XLim',[0 250])
 
 subplot(3,1,3), hold on
 c=(abs(cpsd(a,b)).^2)./(cpsd(a,a).*cpsd(b,b));
 plot(f,c)
-ylabel('Coherence')
-PrettyFig;
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-
-
-return
-
-%% Phase Relationships and Coherence
-% In the previous section, we plotted the real part of the transfer function H. Now, we plot the imaginary part, which tells us how the phase depends on the frequency. 
-
-figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
-subplot(2,1,1), hold on
-plot(f,imag(H));
-ylabel('Phase (degrees)')
-xlabel('Frequency (Hz)')
-set(gca,'XScale','log')
-
-subplot(2,1,2), hold on
-c=(abs(cpsd(a,b)).^2)./(pwelch(a).*pwelch(b));
-plot(f,c)
+plot(ft,fr(:,2))
+legend({'Coherence','toolbox result'})
+set(gca,'YLim',[0 1.1],'XLim',[0 250])
 ylabel('Coherence')
 xlabel('Frequency (Hz)')
-set(gca,'XScale','log')
-
-PrettyFig;
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-%% More synthetic data: white noise analysis
-% Now we repeat the analysis, but with white noise. 
-
-
-t = 1e-3:1e-3:60;
-a = randn(length(t),1); 
-K = filter_alpha2(30,70,1,.2,1:500);
-b = filter(K,1,a) + randn(60e3,1);
-
-[denom,f] = pwelch(a,[],[],[],1e3);
-H = cpsd(a,b)./denom;
-ff = (0:499)*(1e3/500);
-Kf = fft(K);
-
-figure('outerposition',[0 0 700 900],'PaperUnits','points','PaperSize',[700 900]); hold on
-subplot(3,1,1), hold on
-plot(f,real(H)/max(real(H)),'r')
-plot(ff,real(Kf)/max(real(Kf)));
-legend({'real(H)','FFT(K)'})
-ylabel('Power (norm)')
-xlabel('Frequency (Hz)')
-set(gca,'XScale','log')
-
-subplot(3,1,2), hold on
-plot(f,imag(H));
-ylabel('Phase (degrees)')
-xlabel('Frequency (Hz)')
-set(gca,'XScale','log')
-
-subplot(3,1,3), hold on
-c=(abs(cpsd(a,b)).^2)./(pwelch(a).*pwelch(b));
-plot(f,c)
-ylabel('Coherence')
-xlabel('Frequency (Hz)')
-set(gca,'XScale','log')
-
 PrettyFig;
 
 if being_published
@@ -350,44 +292,81 @@ PID(end,:) = PID(end-1,:);
 
 
 % compute transfer function on a trial-wise basis
+fs = 1e3;
+
 clear H
 for i = 1:20
 	a = PID(:,i);
 	b  =fA(:,i);
 	a = a(20e3:end);
 	b = b(20e3:end);
-	[denom,f] = pwelch(a,[],[],[],1e3);
-	H(i,:) = cpsd(a,b)./denom;
+	t = 1e-3*(1:length(a));
+	[~,f] = pwelch(a,[],[],[],fs);
+	H(i,:) = cpsd(a,b)./cpsd(a,a);
+
+	% also use the toolbox
+	d = nldat;
+	set(d,'Data',[a b]);
+	set(d,'DomainValues',t);
+	set(d,'DomainIncr',1/fs);
+	set(d,'ChanNames',{'x','y'},'ChanUnits',{'x','y'})
+	FR = fresp(d);
+	fr = FR.data;
+	ft = 0:length(fr)-1;
+	ft = ft*get(FR,'DomainIncr');
+	% save it
+	G(i,:) = fr(:,1);
+	C(i,:) = fr(:,2);
+
 end
 
 figure('outerposition',[0 0 500 900],'PaperUnits','points','PaperSize',[500 900]); hold on
 subplot(3,1,1), hold on
-cmap = parula(21);
+A = f*0;
 for i = 1:20
-	plot(f,reala(H(i,:)),'Color',cmap(i,:))
+	A = A + abs(H(i,:))';
 end
+plot(f,A/20,'k')
+A = ft*0;
+for i = 1:20
+	A = A + abs(G(i,:));
+end
+plot(ft,A/20,'r')
+legend('Abs(H)','toolbox')
 set(gca,'XScale','log')
 ylabel('Amplitude')
 
 subplot(3,1,2), hold on
-cmap = parula(21);
+A = f*0;
 for i = 1:20
-	plot(f,imag(H(i,:)),'Color',cmap(i,:))
+	A = A + angle(H(i,:))';
 end
-set(gca,'XScale','log','YLim',[-180 180],'XLim',[1e-3 1e3])
-ylabel('Phase (degrees')
+plot(f,rad2deg(-A/20),'k')
+A = ft*0;
+for i = 1:20
+	A = A + angle(G(i,:));
+end
+plot(ft,rad2deg(A/20),'r')
+legend('Angle(H)','toolbox')
+set(gca,'XScale','log')
+ylabel('Amplitude')
 
+set(gca,'XScale','log','YLim',[-180 180])
+ylabel('Phase (degrees)')
+
+clear c
 subplot(3,1,3), hold on
-cmap = parula(21);
 for i = 1:20
 	a = PID(:,i);
 	b  =fA(:,i);
 	a = a(20e3:end);
 	b = b(20e3:end);
-	c=(abs(cpsd(a,b)).^2)./(pwelch(a).*pwelch(b));
-	plot(f,c,'Color',cmap(i,:))
+	c(i,:)=(abs(cpsd(a,b)).^2)./(pwelch(a).*pwelch(b));
 end
+plot(f,mean2(c),'k')
+plot(ft,mean2(C),'r')
 set(gca,'XScale','log')
+legend('Coherence','toolbox')
 ylabel('Coherence')
 
 PrettyFig;

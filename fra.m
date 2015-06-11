@@ -13,6 +13,7 @@ if ~isempty(calling_func)
 	end
 end
 tic
+warning off
 
 %% Frequency Response Analysis
 % In this document, we analyse data using frequency response plots (Bode plots, etc.)
@@ -44,31 +45,48 @@ end
 
 
 %% 
-% We now compute the frequency response by dividing the cross spectrum by the power spectrum, and compare it to the Fourier transform of the filter:
+% We now compute the frequency response by dividing the cross spectrum by the power spectrum, and compare it to the Fourier transform of the filter. We also use the NLID toolbox to calculate the same thing. 
 
+% do your own compute
 fs = 1e3;
 [~,f] = pwelch(a,[],[],[],fs);
 H = cpsd(a,b)./cpsd(a,a);
-ff = (0:length(K)-1)*(1e3/length(K));
+ff = (0:length(K)-1)*(fs/length(K));
 Kf = fft(K);
+
+% use the toolbox
+d = nldat;
+set(d,'Data',[a b]);
+set(d,'DomainValues',t);
+set(d,'DomainIncr',1/fs);
+set(d,'ChanNames',{'x','y'},'ChanUnits',{'x','y'})
+FR = fresp(d);
+fr = FR.data;
+ft = 0:length(fr)-1;
+ft = ft*get(FR,'DomainIncr');
 
 figure('outerposition',[0 0 700 800],'PaperUnits','points','PaperSize',[700 800]); hold on
 subplot(3,1,1), hold on
-plot(ff,abs(Kf))
 plot(f,abs(H))
-legend({'real(H)','FFT(K)'})
+plot(ft,abs(fr(:,1)))
+plot(ff,abs(Kf))
+
+legend({'abs(H)','toolbox result','FFT(K)'})
 ylabel('Magnitude')
 set(gca,'YScale','log','XLim',[0 500])
 
 subplot(3,1,2), hold on
-plot(f,unwrap(rad2deg(angle(H))))
+plot(f,-unwrap(rad2deg(angle(H))))
+plot(ft,unwrap(rad2deg(angle(fr(:,1)))));
+legend({'angle(H)','toolbox result'})
 ylabel('Phase (degrees)')
 set(gca,'YScale','linear','XLim',[0 500])
-
 
 subplot(3,1,3), hold on
 c=(abs(cpsd(a,b)).^2)./(cpsd(a,a).*cpsd(b,b));
 plot(f,c)
+plot(ft,fr(:,2))
+legend({'Coherence','toolbox result'})
 set(gca,'YLim',[0 1.1],'XLim',[0 500])
 ylabel('Coherence')
 xlabel('Frequency (Hz)')
@@ -78,6 +96,7 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
 
 %% 
 % Can we get back the filter by inverse FTing the periodogram?
@@ -117,23 +136,39 @@ H = cpsd(a,b)./cpsd(a,a);
 ff = (0:length(K)-1)*(1e3/length(K));
 Kf = fft(K);
 
+% use the toolbox
+d = nldat;
+set(d,'Data',[a b]);
+set(d,'DomainValues',t);
+set(d,'DomainIncr',1/fs);
+set(d,'ChanNames',{'x','y'},'ChanUnits',{'x','y'})
+FR = fresp(d);
+fr = FR.data;
+ft = 0:length(fr)-1;
+ft = ft*get(FR,'DomainIncr');
+
 figure('outerposition',[0 0 700 800],'PaperUnits','points','PaperSize',[700 800]); hold on
 subplot(3,1,1), hold on
-plot(ff,abs(Kf))
 plot(f,abs(H))
-legend({'real(H)','FFT(K)'})
+plot(ft,abs(fr(:,1)))
+plot(ff,abs(Kf))
+
+legend({'abs(H)','toolbox result','FFT(K)'})
 ylabel('Magnitude')
 set(gca,'YScale','log','XLim',[0 500])
 
 subplot(3,1,2), hold on
-plot(f,unwrap(rad2deg(angle(H))))
+plot(f,-unwrap(rad2deg(angle(H))))
+plot(ft,unwrap(rad2deg(angle(fr(:,1)))));
+legend({'angle(H)','toolbox result'})
 ylabel('Phase (degrees)')
 set(gca,'YScale','linear','XLim',[0 500])
-
 
 subplot(3,1,3), hold on
 c=(abs(cpsd(a,b)).^2)./(cpsd(a,a).*cpsd(b,b));
 plot(f,c)
+plot(ft,fr(:,2))
+legend({'Coherence','toolbox result'})
 set(gca,'YLim',[0 1.1],'XLim',[0 500])
 ylabel('Coherence')
 xlabel('Frequency (Hz)')
@@ -151,6 +186,9 @@ end
 Khat = flipud(real(ifft(H)));
 Khat = interp1(1:length(Khat),Khat,0.5:0.5:length(Khat));
 
+K_toolbox = (real(ifft(fr(:,1))));
+K_toolbox = interp1(1:length(K_toolbox),K_toolbox,0.5:0.5:length(K_toolbox));
+
 Khat2 = revCorrFilter(a,b,'filter_length',500,'reg',.01);
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
@@ -158,8 +196,9 @@ plot(K,'k')
 set(gca,'XLim',[0 500])
 plot(Khat,'r')
 plot(Khat2,'b')
+plot(K_toolbox,'g')
 xlabel('Filter lag (ms)')
-legend('Actual Filter','IFFT(H)','Rev.Corr. Filter')
+legend('Actual Filter','IFFT(H)','Rev.Corr. Filter','IFFT(toolbox)')
 PrettyFig;
 
 if being_published
@@ -171,6 +210,8 @@ end
 %%
 % So even though the filter extraction is really good (indicating the noise is weak), the Bode diagrams are rubbish, and it's hard to see anything there. 
 
+
+return
 
 %% Synthetic Data: Ankle Joint Compliance Data
 % This data is synthesised by some models used in Westwick and Kearney. We're going to attempt recreate Fig 5.7 (pg 118). 

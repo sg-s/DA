@@ -75,7 +75,7 @@ ylabel('Magnitude')
 set(gca,'YScale','log','XLim',[0 500])
 
 subplot(3,1,2), hold on
-plot(f,-unwrap(rad2deg(angle(H))))
+plot(f,unwrap(rad2deg(angle(H))))
 plot(ft,unwrap(rad2deg(angle(fr(:,1)))));
 legend({'angle(H)','toolbox result'})
 ylabel('Phase (degrees)')
@@ -100,7 +100,7 @@ end
 %% 
 % Can we get back the filter by inverse FTing the periodogram?
 
-Khat = flipud(real(ifft(H)));
+Khat = (real(ifft(H)));
 Khat = interp1(1:length(Khat),Khat,0.5:0.5:length(Khat));
 
 Khat2 = revCorrFilter(a,b,'filter_length',500,'reg',0);

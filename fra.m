@@ -49,8 +49,7 @@ end
 
 % do your own compute
 fs = 1e3;
-[~,f] = pwelch(a,[],[],[],fs);
-H = cpsd(a,b)./cpsd(a,a);
+[H,f] = tfestiamte(a,b,[],[],[],fs);
 ff = (0:length(K)-1)*(fs/length(K));
 Kf = fft(K);
 
@@ -124,15 +123,16 @@ end
 % It's nice to see that both methods exactly get back the original filter. 
 
 %% Synthetic Data: Exponential Filter with Output Noise
-% In this section, we add some additive Gaussian Noise to the output and repeat the analysis. 
+% In this section, we add some additive Gaussian Noise to the output and repeat the analysis. We shorten the nfft window to account for the noise, so we average over more Welch windows. 
+
 t = 1e-3:1e-3:60;
 a = randn(length(t),1) + .4*sin(t)';
 K = filter_exp(30,1,1:500);
 b = filter(K,1,a) + .1*randn(60e3,1);
 
 fs = 1e3;
-[~,f] = pwelch(a,[],[],[],fs);
-H = cpsd(a,b)./cpsd(a,a);
+nfft = 2^10;
+[H,f] = tfestimate(a,b,[],[],nfft,fs);
 ff = (0:length(K)-1)*(1e3/length(K));
 Kf = fft(K);
 
@@ -149,26 +149,26 @@ ft = ft*get(FR,'DomainIncr');
 
 figure('outerposition',[0 0 700 800],'PaperUnits','points','PaperSize',[700 800]); hold on
 subplot(3,1,1), hold on
-plot(f,abs(H))
 plot(ft,abs(fr(:,1)))
+plot(f,abs(H))
 plot(ff,abs(Kf))
 
-legend({'abs(H)','toolbox result','FFT(K)'})
+legend({'toolbox result','abs(H)','FFT(K)'})
 ylabel('Magnitude')
-set(gca,'YScale','log','XLim',[0 500])
+set(gca,'YScale','log','XLim',[0 500],'YLim',[.01 2])
 
 subplot(3,1,2), hold on
-plot(f,-unwrap(rad2deg(angle(H))))
+plot(f,unwrap(rad2deg(angle(H))))
 plot(ft,unwrap(rad2deg(angle(fr(:,1)))));
 legend({'angle(H)','toolbox result'})
 ylabel('Phase (degrees)')
 set(gca,'YScale','linear','XLim',[0 500])
 
 subplot(3,1,3), hold on
-c=(abs(cpsd(a,b)).^2)./(cpsd(a,a).*cpsd(b,b));
-plot(f,c)
+[c,f] = mscohere(a,b,[],[],[],fs);
 plot(ft,fr(:,2))
-legend({'Coherence','toolbox result'})
+plot(f(1:10:end),csaps(f,c(:,end),1e-3,f(1:10:end)));
+legend({'toolbox result','Smoothed Coherence'})
 set(gca,'YLim',[0 1.1],'XLim',[0 500])
 ylabel('Coherence')
 xlabel('Frequency (Hz)')
@@ -183,7 +183,7 @@ end
 % This looks pretty bad. Can we extract filters? How bad does the FFT do?
 
 
-Khat = flipud(real(ifft(H)));
+Khat = (real(ifft(H)));
 Khat = interp1(1:length(Khat),Khat,0.5:0.5:length(Khat));
 
 K_toolbox = (real(ifft(fr(:,1))));
@@ -208,7 +208,7 @@ end
 
 
 %%
-% So even though the filter extraction is really good (indicating the noise is weak), the Bode diagrams are rubbish, and it's hard to see anything there. 
+% So even though the filter extraction is really good (indicating the noise is weak), the Bode diagrams are noisy, and it's hard to see anything there. 
 
 
 %% Synthetic Data: Ankle Joint Compliance Data
@@ -218,8 +218,8 @@ iodata = ExampleData(1,10); d = iodata.Data; a = d(:,1); b = d(:,2);
 t = 0.002*(1:length(a));
 
 fs = 1/0.002;
-[~,f] = pwelch(a,[],[],[],fs);
-H = cpsd(a,b)./cpsd(a,a);
+nfft = 2^8;
+[H,f] = tfestimate(a,b,[],[],nfft,fs);
 
 % use the toolbox
 FR = fresp(iodata);
@@ -236,17 +236,17 @@ ylabel('Magnitude')
 set(gca,'YScale','log','XLim',[0 250])
 
 subplot(3,1,2), hold on
-plot(f,-unwrap(rad2deg(angle(H))))
+plot(f,unwrap(rad2deg(angle(H))))
 plot(ft,unwrap(rad2deg(angle(fr(:,1)))));
 legend({'angle(H)','toolbox result'})
 ylabel('Phase (degrees)')
 set(gca,'YScale','linear','XLim',[0 250])
 
 subplot(3,1,3), hold on
-c=(abs(cpsd(a,b)).^2)./(cpsd(a,a).*cpsd(b,b));
-plot(f,c)
+[c,f] = mscohere(a,b,[],[],[],fs);
 plot(ft,fr(:,2))
-legend({'Coherence','toolbox result'})
+plot(f(1:10:end),csaps(f,c(:,end),1e-3,f(1:10:end)));
+legend({'toolbox result','Smoothed coherence'})
 set(gca,'YLim',[0 1.1],'XLim',[0 250])
 ylabel('Coherence')
 xlabel('Frequency (Hz)')
@@ -293,7 +293,6 @@ PID(end,:) = PID(end-1,:);
 
 % compute transfer function on a trial-wise basis
 fs = 1e3;
-
 clear H
 for i = 1:20
 	a = PID(:,i);
@@ -301,8 +300,7 @@ for i = 1:20
 	a = a(20e3:end);
 	b = b(20e3:end);
 	t = 1e-3*(1:length(a));
-	[~,f] = pwelch(a,[],[],[],fs);
-	H(i,:) = cpsd(a,b)./cpsd(a,a);
+	[H(i,:),f] = tfestimate(a,b,[],[],2^10,fs);
 
 	% also use the toolbox
 	d = nldat;
@@ -320,20 +318,21 @@ for i = 1:20
 
 end
 
-figure('outerposition',[0 0 500 900],'PaperUnits','points','PaperSize',[500 900]); hold on
+figure('outerposition',[0 0 900 700],'PaperUnits','points','PaperSize',[900 700]); hold on
 subplot(3,1,1), hold on
 A = f*0;
 for i = 1:20
 	A = A + abs(H(i,:))';
 end
 plot(f,A/20,'k')
+set(gca,'XScale','log')
+
 A = ft*0;
 for i = 1:20
 	A = A + abs(G(i,:));
 end
 plot(ft,A/20,'r')
 legend('Abs(H)','toolbox')
-set(gca,'XScale','log')
 ylabel('Amplitude')
 
 subplot(3,1,2), hold on
@@ -341,7 +340,7 @@ A = f*0;
 for i = 1:20
 	A = A + angle(H(i,:))';
 end
-plot(f,rad2deg(-A/20),'k')
+plot(f,rad2deg(A/20),'k')
 A = ft*0;
 for i = 1:20
 	A = A + angle(G(i,:));
@@ -354,19 +353,21 @@ ylabel('Amplitude')
 set(gca,'XScale','log','YLim',[-180 180])
 ylabel('Phase (degrees)')
 
-clear c
+c = [];
 subplot(3,1,3), hold on
 for i = 1:20
 	a = PID(:,i);
 	b  =fA(:,i);
 	a = a(20e3:end);
 	b = b(20e3:end);
-	c(i,:)=(abs(cpsd(a,b)).^2)./(pwelch(a).*pwelch(b));
+
+	[temp,f] = mscohere(a,b,[],[],[],fs);
+	c(i,:) = csaps(f,temp,.5,f(1:10:end));
 end
-plot(f,mean2(c),'k')
+plot(f(1:10:end),mean2(c),'k')
 plot(ft,mean2(C),'r')
 set(gca,'XScale','log')
-legend('Coherence','toolbox')
+legend('Smoothed Coherence','toolbox')
 ylabel('Coherence')
 
 PrettyFig;

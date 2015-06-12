@@ -49,7 +49,7 @@ end
 
 % do your own compute
 fs = 1e3;
-[H,f] = tfestiamte(a,b,[],[],[],fs);
+[H,f] = tfestimate(a,b,[],[],[],fs);
 ff = (0:length(K)-1)*(fs/length(K));
 Kf = fft(K);
 

@@ -177,21 +177,21 @@ plot(ff,abs(Kf))
 
 legend({'abs(H)','toolbox result','FFT(K)'})
 ylabel('Magnitude')
-set(gca,'YScale','log','XLim',[0 500])
+set(gca,'YScale','linear','XLim',[.1 500],'XScale','log')
 
 subplot(3,1,2), hold on
 plot(f,rad2deg(unwrap(angle(H))))
 plot(ft,rad2deg(unwrap(angle(fr(:,1)))));
 legend({'angle(H)','toolbox result'})
 ylabel('Phase (degrees)')
-set(gca,'YScale','linear','XLim',[0 500])
+set(gca,'YScale','linear','XLim',[.1 500],'XScale','log')
 
 subplot(3,1,3), hold on
 [c,f] = mscohere(a,b,[],[],2^10,fs);
 plot(f,c)
 plot(ft,fr(:,2))
 legend({'Coherence','toolbox result'})
-set(gca,'YLim',[0 1.1],'XLim',[0 500])
+set(gca,'YLim',[0 1.1],'XLim',[.1 500],'XScale','log')
 ylabel('Coherence')
 xlabel('Frequency (Hz)')
 PrettyFig;
@@ -340,21 +340,21 @@ plot(f,abs(H))
 plot(ft,abs(fr(:,1)))
 legend({'abs(H)','toolbox result'})
 ylabel('Magnitude')
-set(gca,'YScale','log','XLim',[0 250])
+set(gca,'YScale','linear','XLim',[0 250],'XScale','log')
 
 subplot(3,1,2), hold on
 plot(f,rad2deg(unwrap(angle(H))))
 plot(ft,rad2deg(unwrap(angle(fr(:,1)))));
-legend({'angle(H)','toolbox result'})
+legend({'angle(H)','toolbox result'},'Location','southwest')
 ylabel('Phase (degrees)')
-set(gca,'YScale','linear','XLim',[0 250])
+set(gca,'YScale','linear','XLim',[0 250],'XScale','log')
 
 subplot(3,1,3), hold on
 [c,f] = mscohere(a,b,[],[],[],fs);
 plot(ft,fr(:,2))
 plot(f(1:10:end),csaps(f,c(:,end),1e-3,f(1:10:end)));
-legend({'toolbox result','Smoothed coherence'})
-set(gca,'YLim',[0 1.1],'XLim',[0 250])
+legend({'toolbox result','Smoothed coherence'},'Location','southwest')
+set(gca,'YLim',[0 1.1],'XLim',[0 250],'XScale','log')
 ylabel('Coherence')
 xlabel('Frequency (Hz)')
 PrettyFig;

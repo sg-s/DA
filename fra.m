@@ -75,8 +75,8 @@ ylabel('Magnitude')
 set(gca,'YScale','log','XLim',[0 500])
 
 subplot(3,1,2), hold on
-plot(f,unwrap(rad2deg(angle(H))))
-plot(ft,unwrap(rad2deg(angle(fr(:,1)))));
+plot(f,rad2deg(unwrap(angle(H))))
+plot(ft,rad2deg(unwrap(angle(fr(:,1)))));
 legend({'angle(H)','toolbox result'})
 ylabel('Phase (degrees)')
 set(gca,'YScale','linear','XLim',[0 500])
@@ -122,6 +122,113 @@ end
 %%
 % It's nice to see that both methods exactly get back the original filter. 
 
+
+%% Synthetic Data: Bilobed filter with no noise
+% In this section, we generate some synthetic data using uncorrelated white noise and a simple bilobed filter meant to mimic a ORN filter. 
+
+t = 1e-3:1e-3:60;
+a = randn(length(t),1);% + .4*sin(t)';
+K = (filter_alpha2(30,70,1,.2,1:500));
+b = filter(K,1,a) + 0*randn(60e3,1);
+
+figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+subplot(2,8,1:6), hold on
+ylabel('Input')
+plot(t,a,'k')
+subplot(2,8,9:14), hold on
+plot(t,b,'r')
+ylabel('Output')
+subplot(2,8,7:8), hold on
+plot(1e-3*(1:length(K)),K,'r')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%% 
+% We now compute the frequency response by dividing the cross spectrum by the power spectrum, and compare it to the Fourier transform of the filter. We also use the NLID toolbox to calculate the same thing. 
+
+% do your own compute
+fs = 1e3;
+[H,f] = tfestimate(a,b,[],[],[],fs);
+ff = (0:length(K)-1)*(fs/length(K));
+Kf = fft(K);
+
+% use the toolbox
+d = nldat;
+set(d,'Data',[a b]);
+set(d,'DomainValues',t);
+set(d,'DomainIncr',1/fs);
+set(d,'ChanNames',{'x','y'},'ChanUnits',{'x','y'})
+FR = fresp(d);
+fr = FR.data;
+ft = 0:length(fr)-1;
+ft = ft*get(FR,'DomainIncr');
+
+figure('outerposition',[0 0 700 800],'PaperUnits','points','PaperSize',[700 800]); hold on
+subplot(3,1,1), hold on
+plot(f,abs(H))
+plot(ft,abs(fr(:,1)))
+plot(ff,abs(Kf))
+
+legend({'abs(H)','toolbox result','FFT(K)'})
+ylabel('Magnitude')
+set(gca,'YScale','log','XLim',[0 500])
+
+subplot(3,1,2), hold on
+plot(f,rad2deg(unwrap(angle(H))))
+plot(ft,rad2deg(unwrap(angle(fr(:,1)))));
+legend({'angle(H)','toolbox result'})
+ylabel('Phase (degrees)')
+set(gca,'YScale','linear','XLim',[0 500])
+
+subplot(3,1,3), hold on
+[c,f] = mscohere(a,b,[],[],2^10,fs);
+plot(f,c)
+plot(ft,fr(:,2))
+legend({'Coherence','toolbox result'})
+set(gca,'YLim',[0 1.1],'XLim',[0 500])
+ylabel('Coherence')
+xlabel('Frequency (Hz)')
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%% 
+% Can we get back the filter by inverse FTing the periodogram?
+
+Khat = (real(ifft(H)));
+Khat = interp1(1:length(Khat),Khat,0.5:0.5:length(Khat));
+
+K_toolbox = (real(ifft(fr(:,1))));
+K_toolbox = interp1(1:length(K_toolbox),K_toolbox,0.5:0.5:length(K_toolbox));
+
+Khat2 = revCorrFilter(a,b,'filter_length',500,'reg',0);
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(K,'k')
+set(gca,'XLim',[0 500])
+plot(Khat,'r')
+plot(Khat2,'b')
+plot(K_toolbox,'g')
+xlabel('Filter lag (ms)')
+legend('Actual Filter','IFFT(H)','Rev.Corr. Filter','K_{toolbox}')
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
 %% Synthetic Data: Exponential Filter with Output Noise
 % In this section, we add some additive Gaussian Noise to the output and repeat the analysis. We shorten the nfft window to account for the noise, so we average over more Welch windows. 
 
@@ -158,8 +265,8 @@ ylabel('Magnitude')
 set(gca,'YScale','log','XLim',[0 500],'YLim',[.01 2])
 
 subplot(3,1,2), hold on
-plot(f,unwrap(rad2deg(angle(H))))
-plot(ft,unwrap(rad2deg(angle(fr(:,1)))));
+plot(f,rad2deg(unwrap(angle(H))))
+plot(ft,rad2deg(unwrap(angle(fr(:,1)))));
 legend({'angle(H)','toolbox result'})
 ylabel('Phase (degrees)')
 set(gca,'YScale','linear','XLim',[0 500])
@@ -236,8 +343,8 @@ ylabel('Magnitude')
 set(gca,'YScale','log','XLim',[0 250])
 
 subplot(3,1,2), hold on
-plot(f,unwrap(rad2deg(angle(H))))
-plot(ft,unwrap(rad2deg(angle(fr(:,1)))));
+plot(f,rad2deg(unwrap(angle(H))))
+plot(ft,rad2deg(unwrap(angle(fr(:,1)))));
 legend({'angle(H)','toolbox result'})
 ylabel('Phase (degrees)')
 set(gca,'YScale','linear','XLim',[0 250])
@@ -299,6 +406,10 @@ for i = 1:20
 	b  =fA(:,i);
 	a = a(20e3:end);
 	b = b(20e3:end);
+
+	a = a - mean(a); b =  b - mean(b);
+	a = a/std(a); b = b/std(b);
+
 	t = 1e-3*(1:length(a));
 	[H(i,:),f] = tfestimate(a,b,[],[],2^10,fs);
 

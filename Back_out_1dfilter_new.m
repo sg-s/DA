@@ -13,7 +13,7 @@ if ~length(varargin)
 else
     N=varargin{1};
 end
-DOXCORR = 0; % don't do by default
+DOXCORR = 1; % don't do by default
 ZEROPAD = 1; % 1 is default
 if length(varargin)>1
     if varargin{2}==-1

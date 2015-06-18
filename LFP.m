@@ -71,48 +71,55 @@ if being_published
 	delete(gcf)
 end
 
-data(19).voltage(4,:) = []; % this trial is to be abandoned. 
-data(19).PID(4,:) = [];
 
-% Because there is a slow variation, and we're not really interested in it, we filter it out and plot the data. In the following figure, we remove spikes from the LFP, and then filter it with a high-pass filter with a 5 second cutoff (because we're not interested in any feature with a time scale longer than 5 seconds.) The LFP is shown together with the stimulus and the firing rates. 
+%% LFP responses to a flickering odour stimulus
+% In the following figure we analyse the response of the LFP from two neurons to a flickering odour stimulus. The following figure shows the stimulus and the PID from the dataset. We bandpass the LFP to remove slow fluctuations that we don't care about, and remove spikes. 
 
-c = parula(width(data(19).voltage)+1);
+load('/local-data/DA-paper/LFP/2015_06_16_RR_F4_ab3_11_EA.mat')
+PID = data(22).PID;
+LFP = data(22).voltage;
+rm_this = 3;
+PID(rm_this,:) = [];
+LFP(rm_this,:) = [];
+PID = PID(:,1:10:end);
+LFP = LFP(:,1:10:end);
+orn = ones(width(PID),1);
 
-figure('outerposition',[0 0 1200 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
-subplot(3,1,1), hold on
-time = 1e-4*(1:length(data(19).PID));
-for i = 1:width(data(19).PID)
-	plot(time(1:20:end),data(19).PID(i,1:20:end),'Color',c(i,:))
+load('/local-data/DA-paper/LFP/2015_06_16_RR_F4_ab3_12_EA.mat')
+PID2 = data(22).PID;
+LFP2 = data(22).voltage;
+PID2 = PID2(:,1:10:end);
+LFP2 = LFP2(:,1:10:end);
+PID = [PID; PID2];
+LFP = [LFP; LFP2];
+orn = [orn; 2*ones(width(PID2),1)];
+
+% bandpass
+for i = 1:width(PID)
+	LFP(i,:) = filter_trace(LFP(i,:),1000,10);
 end
+
+% remove mean and divide by standard deviation
+for i = 1:width(PID)
+	LFP(i,:) = LFP(i,:) -  mean(LFP(i,:));
+	LFP(i,:) = LFP(i,:)/std(LFP(i,:));
+end
+
+time = 1e-3*(1:length(LFP));
+
+figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+subplot(2,1,1), hold on
+l(1) = errorShade(time,mean2(PID(orn==1,:)),std(PID(orn==1,:)),'Color',[1 0 0]);
+l(2) = errorShade(time,mean2(PID(orn==2,:)),std(PID(orn==2,:)),'Color',[0 0 1]);
+set(gca,'XLim',[10 40])
 ylabel('PID (V)')
-set(gca,'XLim',[20 60])
-
-time = time(1:10:end);
-subplot(3,1,2), hold on
-for i = 1:width(data(19).PID)
-	this_LFP = data(19).voltage(i,:);
-	% filter to remove spikes
-	[~,this_LFP] = filter_trace(this_LFP);
-
-	% now pass it through a high pass filter with a 5 second cutoff to remove slow fluctuations:
-	this_LFP = this_LFP(1:10:end);
-	temp = filtfilt(ones(5e3,1)/5e3,1,this_LFP);
-
-	plot(time,this_LFP-temp,'Color',c(i,:))
-end
-ylabel('LFP (a.u.)')
-set(gca,'XLim',[20 60],'YLim',[-.3 .3])
-
-
-subplot(3,1,3), hold on
-[f,t] = spiketimes2f(spikes(19).A,1e-4*(1:length(spikes(19).A)),1e-3);
-f(:,4) = [];
-for i = 1:width(f)
-	plot(t,f(:,i),'Color',c(i,:))
-end
-ylabel('Firing Rate (Hz)')
-set(gca,'XLim',[20 60],'YLim',[0 60])
+legend(l,{'ORN 1','ORN 2'})
+subplot(2,1,2), hold on
+errorShade(time,mean2(LFP(orn==1,:)),std(LFP(orn==1,:)),'Color',[1 0 0]);
+errorShade(time,mean2(LFP(orn==2,:)),std(LFP(orn==2,:)),'Color',[0 0 1]);
+set(gca,'XLim',[10 40])
 xlabel('Time (s)')
+ylabel('LFP (norm)')
 
 PrettyFig;
 
@@ -121,69 +128,27 @@ if being_published
 	delete(gcf)
 end
 
-
-%% Linear Models for LFP
-% We now back out linear filters for the LFP on a trial-by-trial basis. 
-
-K = zeros(601,width(data(19).PID));
-for i = 1:width(data(19).PID)
-	this_LFP = data(19).voltage(i,:);
-	% filter
-	% filter to remove spikes
-	[~,this_LFP] = filter_trace(this_LFP);
-
-	% now pass it through a high pass filter with a 5 second cutoff to remove slow fluctuations:
-	this_LFP = this_LFP(1:10:end);
-	temp = filtfilt(ones(5e3,1)/5e3,1,this_LFP);
-	this_LFP = this_LFP - temp;
-	this_LFP = this_LFP(20e3:end);
-	time = 1e-3*(1:length(this_LFP));
-	this_PID = data(19).PID(i,:);
-	this_PID = this_PID(1:10:end);
-	this_PID = this_PID(20e3:end);
-	[K(:,i),~,filtertime] = FindBestFilter(this_PID,this_LFP,[],'regmax=1;','regmin=1;','filter_length=600;');
-end
-
-K = K(30:500,:);
-filtertime = filtertime(30:500);
-
-figure('outerposition',[0 0 600 500],'PaperUnits','points','PaperSize',[600 500]); hold on
-plot(filtertime,K)
-xlabel('Lag (ms)')
-ylabel('Filter')
-
-PrettyFig;
-
-if being_published
-	snapnow
-	delete(gcf)
-end
 
 %%
-% How good are these predictions? The following figure shows an example trace with the best linear fit:
+% This is a very clean dataset, and we see that the LFP is fairly reproducible, even between neurons. In this treatment, we ignore the absolute value of the LFP, by removing the mean and dividing through by the standard deviation. 
 
+%% PID -> LFP filters
+% Can a simple linear filter predict the LFP? In this section, we extract linear filters on a trial-wise basis.
 
-i = 2;
-% filter
-this_LFP = data(19).voltage(i,:);
-% filter to remove spikes
-[~,this_LFP] = filter_trace(this_LFP);
+K = zeros(width(PID),601);
+for i = 1:width(PID)
+	K(i,:) = FitFilter2Data(PID(i,1e4:5e4),LFP(i,1e4:5e4),[],'filter_length=600;','reg=1;');
+end
+K = K(:,1:550);
+filtertime = 1e-3*(1:length(K));
 
-% now pass it through a high pass filter with a 5 second cutoff to remove slow fluctuations:
-this_LFP = this_LFP(1:10:end);
-temp = filtfilt(ones(5e3,1)/5e3,1,this_LFP);
-this_LFP = this_LFP - temp;
-this_LFP = this_LFP(20e3:end);
-time = 1e-3*(1:length(this_LFP));
-this_PID = data(19).PID(i,:);
-this_PID = this_PID(1:10:end);
-this_PID = this_PID(20e3:end);
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(time+20,this_LFP,'k')
-fp = convolve(time,this_PID,K(:,i),filtertime);
-l = plot(time+20,fp,'r');
-legend(strcat('r^2=',oval(rsquare(fp,this_LFP))))
+figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[600 600]); hold on
+clear l
+l(1) = errorShade(filtertime,mean2(K(orn==1,:)),std(K(orn==1,:)),'Color',[1 0 0]);
+l(2) = errorShade(filtertime,mean2(K(orn==2,:)),std(K(orn==2,:)),'Color',[0 0 1]);
+legend(l,{'ORN 1','ORN 2'},'Location','southeast')
+xlabel('Filter Lag (s)')
+ylabel('Filter Amplitude')
 
 PrettyFig;
 
@@ -192,112 +157,35 @@ if being_published
 	delete(gcf)
 end
 
+
 %%
-% How good are the predictions? The following figure shows the coefficient of determination for each of the trials:
+% How well do these filters perform? To assess this, we make linear predictions on a trial-wise basis and then compare the linear predictions to the data. 
 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-
-for i = 1:width(data(19).voltage)
-	this_LFP = data(19).voltage(i,:);
-	% filter to remove spikes
-	[~,this_LFP] = filter_trace(this_LFP);
-
-	% now pass it through a high pass filter with a 5 second cutoff to remove slow fluctuations:
-	this_LFP = this_LFP(1:10:end);
-	temp = filtfilt(ones(5e3,1)/5e3,1,this_LFP);
-	this_LFP = this_LFP - temp;
-	this_LFP = this_LFP(20e3:end);
-	time = 1e-3*(1:length(this_LFP));
-	this_PID = data(19).PID(i,:);
-	this_PID = this_PID(1:10:end);
-	this_PID = this_PID(20e3:end);
-	fp = convolve(time,this_PID,K(:,i),filtertime);
-	r2 = rsquare(fp,this_LFP);
-	plot(i,r2,'k+')
+LFP_pred = LFP*NaN;
+for i = 1:length(orn)
+	LFP_pred(i,:) = filter(K(i,:),1,PID(i,:));
+	LFP_pred(i,:) = LFP_pred(i,:) - mean(LFP_pred(i,:));
+	LFP_pred(i,:) = LFP_pred(i,:)/std(LFP_pred(i,:));
+	r(i) = rsquare(LFP_pred(i,1e4:4e4),LFP(i,1e4:4e4));
 end
-xlabel('Trial')
-ylabel('r^2')
+
+figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+subplot(2,1,1), hold on
+clear l
+l(1) = errorShade(time,mean2(LFP),std(LFP),'Color',[0 0 0]);
+l(2) = errorShade(time,mean2(LFP_pred),std(LFP_pred),'Color',[1 0 0]);
+legend(l,{'mean LFP','Linear Prediction'})
+xlabel('Time (s)')
+ylabel('LFP (norm)')
+set(gca,'XLim',[10 40])
+
+subplot(2,1,2), hold on
+plot(find(orn==1),r(find(orn==1)),'r-+')
+plot(find(orn==2),r(find(orn==2)),'b-+')
+legend({'ORN 1','ORN 2'},'Location','southeast')
 set(gca,'YLim',[0 1])
-PrettyFig;
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-%% 
-% Maybe the prediction is poor because the LFP measurement is noisy. What if average all the LFPs, and then calculate the filters? 
-
-mean_LFP = 0*this_LFP;
-mean_PID = 0*this_PID;
-for i = 1:width(data(19).voltage)
-	this_LFP = data(19).voltage(i,:);
-	% filter to remove spikes
-	[~,this_LFP] = filter_trace(this_LFP);
-
-	% now pass it through a high pass filter with a 5 second cutoff to remove slow fluctuations:
-	this_LFP = this_LFP(1:10:end);
-	temp = filtfilt(ones(5e3,1)/5e3,1,this_LFP);
-	this_LFP = this_LFP - temp;
-	this_LFP = this_LFP(20e3:end);
-	time = 1e-3*(1:length(this_LFP));
-	this_PID = data(19).PID(i,:);
-	this_PID = this_PID(1:10:end);
-	this_PID = this_PID(20e3:end);
-	mean_PID = mean_PID + this_PID;
-	mean_LFP = mean_LFP + this_LFP;
-end
-mean_LFP = mean_LFP/width(data(19).voltage);
-mean_PID = mean_PID/width(data(19).voltage);
-all_K = FindBestFilter(mean_PID,mean_LFP,[],'regmax=1;','regmin=1;','filter_length=600;');
-all_K = all_K(30:500,:);
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(time+20,mean_LFP,'k')
-hold on
-LFP_pred = convolve(time,mean_PID,all_K,filtertime);
-l = plot(time+20,LFP_pred,'r');
-legend(l,strcat('r^2=',oval(rsquare(LFP_pred,mean_LFP))));
-xlabel('Time (s)')
-ylabel('LFP (a.u.)')
-PrettyFig;
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-%% Linear Models for firing rate
-% Why is the LFP so hard to predict with a linear model? What if we extract a filter for the firing rates directly from the PID?
-
-K_Pf = zeros(1001,width(data(19).PID));
-fp = NaN*f;
-for i = 1:width(f)
-	this_PID = data(19).PID(i,:);
-	this_PID = this_PID(1:10:end);
-	this_PID = this_PID(20e3:end);
-	[K_Pf(:,i),~,filtertime] = FindBestFilter(this_PID,f(20e3:end,i),[],'regmax=1;','regmin=1;','filter_length=1000;','use_cache=0;');
-end
-
-K_Pf = K_Pf(70:570,:);
-filtertime = filtertime(70:570);
-
-for i = 1:width(f)
-	this_PID = data(19).PID(i,:);
-	this_PID = this_PID(1:10:end);
-	this_PID = this_PID(20e3:end);
-	fp(20e3:end,i) = convolve(time(20e3:end),this_PID,K_Pf(:,i),filtertime);
-	temp = fit(fp(20e3:end-100,i),f(20e3:end-100,i),'poly1');
-	fp(:,i) = temp(fp(:,i));	
-end
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(t,mean2(f),'k')
-l = plot(t,mean2(fp),'r');
-legend(l,strcat('r^2=',oval(rsquare(mean2(f),mean2(fp)))))
-set(gca,'XLim',[20 60])
-ylabel('Firing Rate (Hz)')
-xlabel('Time (s)')
+xlabel('Trial #')
+ylabel('r^2')
 
 PrettyFig;
 
@@ -305,9 +193,6 @@ if being_published
 	snapnow
 	delete(gcf)
 end
-
-%%
-% So, for some unknown reason, we can't predict the firing rates of the neuron very well. Something is weird about this, so it's hard to know what's going on with the LFP. 
 
 %% Comparison of LFP and firing rates for odor and light
 % How does the LFP get translated into firing? Here, we measure from flies expressing ReaChR in the ab3A neuron and activate that neuron with both light and odour. We then compare the LFP and the firing rate:

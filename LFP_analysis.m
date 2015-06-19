@@ -177,17 +177,15 @@ end
 
 LFP_pred = LFP*NaN;
 for i = 1:length(orn)
-	LFP_pred(i,:) = filter(K_PL(i,:),1,PID(i,:));
-	LFP_pred(i,:) = LFP_pred(i,:) - mean(LFP_pred(i,:));
-	LFP_pred(i,:) = LFP_pred(i,:)/std(LFP_pred(i,:));
+	LFP_pred(i,:) = convolve(time,PID(i,:),K_PL(i,:),filtertime);
 	r(i) = rsquare(LFP_pred(i,1e4:4e4),LFP(i,1e4:4e4));
 end
 
 figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
 subplot(2,1,1), hold on
 clear l
-l(1) = errorShade(time,mean2(LFP),std(LFP),'Color',[0 0 0]);
-l(2) = errorShade(time,mean2(LFP_pred),std(LFP_pred),'Color',[1 0 0]);
+l(1) = errorShade(time,mean2(LFP)/std(mean2(LFP)),std(LFP),'Color',[0 0 0]);
+l(2) = errorShade(time,mean2(LFP_pred)/std(nonnans(mean2(LFP_pred))),std(LFP_pred),'Color',[1 0 0]);
 legend(l,{'mean LFP','Linear Prediction'})
 xlabel('Time (s)')
 ylabel('LFP (norm)')

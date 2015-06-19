@@ -121,8 +121,8 @@ time = 1e-3*(1:length(LFP));
 
 figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
 subplot(2,1,1), hold on
-l(1) = errorShade(time,mean2(PID(orn==1,:)),std(PID(orn==1,:)),'Color',[1 0 0],'SubSample',10);
-l(2) = errorShade(time,mean2(PID(orn==2,:)),std(PID(orn==2,:)),'Color',[0 0 1],'SubSample',10);
+l(1) = errorShade(time,mean2(PID(orn==1,:)),std(PID(orn==1,:)),'Color',[1 0 0],'SubSample',50);
+l(2) = errorShade(time,mean2(PID(orn==2,:)),std(PID(orn==2,:)),'Color',[0 0 1],'SubSample',50);
 set(gca,'XLim',[10 40])
 ylabel('PID (V)')
 legend(l,{'ORN 1','ORN 2'})
@@ -155,7 +155,7 @@ for i = 1:width(PID)
 end
 K_PL = K_PL(:,50:550);
 filtertime = 1e-3*(1:length(K_PL));
-filtertime = filtertime  + offset*1e-3;
+filtertime = filtertime  + (offset+50)*1e-3;
 
 % LFP -> firing rate
 K_Lf = zeros(width(PID),601);

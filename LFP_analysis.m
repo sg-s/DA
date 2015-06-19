@@ -112,7 +112,7 @@ for i = 1:width(PID)
 	LFP(i,:) = filter_trace(LFP(i,:),5000,10);
 end
 
-% remove mean and divide by standard deviation
+% remove mean 
 for i = 1:width(PID)
 	LFP(i,:) = LFP(i,:) -  mean(LFP(i,:));
 end
@@ -121,8 +121,8 @@ time = 1e-3*(1:length(LFP));
 
 figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
 subplot(2,1,1), hold on
-l(1) = errorShade(time,mean2(PID(orn==1,:)),std(PID(orn==1,:)),'Color',[1 0 0]);
-l(2) = errorShade(time,mean2(PID(orn==2,:)),std(PID(orn==2,:)),'Color',[0 0 1]);
+l(1) = errorShade(time,mean2(PID(orn==1,:)),std(PID(orn==1,:)),'Color',[1 0 0],'SubSample',10);
+l(2) = errorShade(time,mean2(PID(orn==2,:)),std(PID(orn==2,:)),'Color',[0 0 1],'SubSample',10);
 set(gca,'XLim',[10 40])
 ylabel('PID (V)')
 legend(l,{'ORN 1','ORN 2'})
@@ -144,26 +144,59 @@ end
 %%
 % This is a very clean dataset, and we see that the LFP is fairly reproducible, even between neurons. In this treatment, we ignore the absolute value of the LFP, by removing the mean and dividing through by the standard deviation. 
 
-%% PID -> LFP filters
-% Can a simple linear filter predict the LFP? In this section, we extract linear filters on a trial-wise basis.
+%% Linear filters
+% Can a simple linear filter predict the LFP or the firing rate? In this section, we extract linear filters on a trial-wise basis for all combinations: from the PID to the LFP, from the PID to the firing rate, and from the LFP to the firing rate. 
 
+% PID -> LFP
 K_PL = zeros(width(PID),601);
 offset = -100;
 for i = 1:width(PID)
 	K_PL(i,:) = FitFilter2Data(PID(i,1e4-offset:5e4-offset),LFP(i,1e4:5e4),[],'filter_length=600;','reg=1;');
 end
-K_PL = K_PL(:,1:550);
+K_PL = K_PL(:,50:550);
 filtertime = 1e-3*(1:length(K_PL));
 filtertime = filtertime  + offset*1e-3;
 
-figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+% LFP -> firing rate
+K_Lf = zeros(width(PID),601);
+offset = -100;
+for i = 1:width(PID)
+	K_Lf(i,:) = FitFilter2Data(LFP(i,1e4-offset:5e4-offset),fA(1e4:5e4,i),[],'filter_length=600;','reg=1;');
+end
+K_Lf = K_Lf(:,50:550);
+
+% PID -> firing rate
+K_Pf = zeros(width(PID),601);
+offset = -100;
+for i = 1:width(PID)
+	K_Pf(i,:) = FitFilter2Data(PID(i,1e4-offset:5e4-offset),fA(1e4:5e4,i),[],'filter_length=600;','reg=1;');
+end
+K_Pf = K_Pf(:,50:550);
+
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,3,1), hold on
 clear l
 l(1) = errorShade(filtertime,mean2(K_PL(orn==1,:)),std(K_PL(orn==1,:)),'Color',[1 0 0]);
 l(2) = errorShade(filtertime,mean2(K_PL(orn==2,:)),std(K_PL(orn==2,:)),'Color',[0 0 1]);
 legend(l,{'ORN 1','ORN 2'},'Location','southeast')
 xlabel('Filter Lag (s)')
 ylabel('Filter Amplitude')
-title('PID -> LFP')
+title('PID \rightarrow LFP')
+
+subplot(1,3,2), hold on
+l(1) = errorShade(filtertime,mean2(K_Lf(orn==1,:)),std(K_Lf(orn==1,:)),'Color',[1 0 0]);
+l(2) = errorShade(filtertime,mean2(K_Lf(orn==2,:)),std(K_Lf(orn==2,:)),'Color',[0 0 1]);
+legend(l,{'ORN 1','ORN 2'},'Location','southeast')
+xlabel('Filter Lag (s)')
+title('LFP \rightarrow Firing Rate')
+
+subplot(1,3,3), hold on
+l(1) = errorShade(filtertime,mean2(K_Pf(orn==1,:)),std(K_Pf(orn==1,:)),'Color',[1 0 0]);
+l(2) = errorShade(filtertime,mean2(K_Pf(orn==2,:)),std(K_Pf(orn==2,:)),'Color',[0 0 1]);
+legend(l,{'ORN 1','ORN 2'},'Location','northeast')
+xlabel('Filter Lag (s)')
+title('PID \rightarrow Firing Rate','interpreter','tex')
 
 PrettyFig;
 
@@ -185,8 +218,8 @@ end
 figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
 subplot(2,1,1), hold on
 clear l
-l(1) = errorShade(time,mean2(LFP)/std(mean2(LFP)),std(LFP),'Color',[0 0 0]);
-l(2) = errorShade(time,mean2(LFP_pred)/std(nonnans(mean2(LFP_pred))),std(LFP_pred),'Color',[1 0 0]);
+l(1) = errorShade(time,mean2(LFP)/std(mean2(LFP)),std(LFP),'Color',[0 0 0],'SubSample',10);
+l(2) = errorShade(time,mean2(LFP_pred)/std(nonnans(mean2(LFP_pred))),std(LFP_pred),'Color',[1 0 0],'SubSample',10);
 legend(l,{'mean LFP','Linear Prediction'})
 xlabel('Time (s)')
 ylabel('LFP (norm)')
@@ -207,65 +240,6 @@ if being_published
 	delete(gcf)
 end
 
-
-%% LFP -> Firing Rate Filters 
-% In this section we see how predictive the LFP is of the firing rate. We attempt to back out filters from the LFP to the firing rate, a la Nagel and Wilson. 
-
-% build filters
-K_Lf = zeros(width(PID),601);
-offset = -100;
-for i = 1:width(PID)
-	K_Lf(i,:) = FitFilter2Data(LFP(i,1e4-offset:5e4-offset),fA(1e4:5e4,i),[],'filter_length=600;','reg=1;');
-end
-K_Lf = K_Lf(:,10:550);
-filtertime = 1e-3*(1:length(K_Lf));
-filtertime = filtertime  + (offset+10)*1e-3;
-
-figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-clear l
-l(1) = errorShade(filtertime,mean2(K_Lf(orn==1,:)),std(K_Lf(orn==1,:)),'Color',[1 0 0]);
-l(2) = errorShade(filtertime,mean2(K_Lf(orn==2,:)),std(K_Lf(orn==2,:)),'Color',[0 0 1]);
-legend(l,{'ORN 1','ORN 2'},'Location','southeast')
-xlabel('Filter Lag (s)')
-ylabel('Filter Amplitude')
-title('LFP->Firing Rate')
-
-PrettyFig;
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-
-%% PID -> Firing Rate Filters 
-% Now we back out filters from the PID to the firing rates like we always do. 
-
-% build filters
-K_Pf = zeros(width(PID),601);
-offset = -100;
-for i = 1:width(PID)
-	K_Pf(i,:) = FitFilter2Data(PID(i,1e4-offset:5e4-offset),fA(1e4:5e4,i),[],'filter_length=600;','reg=1;');
-end
-K_Pf = K_Pf(:,50:550);
-filtertime = 1e-3*(1:length(K_Pf));
-filtertime = filtertime  + (offset+50)*1e-3;
-
-figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
-clear l
-l(1) = errorShade(filtertime,mean2(K_Pf(orn==1,:)),std(K_Pf(orn==1,:)),'Color',[1 0 0]);
-l(2) = errorShade(filtertime,mean2(K_Pf(orn==2,:)),std(K_Pf(orn==2,:)),'Color',[0 0 1]);
-legend(l,{'ORN 1','ORN 2'},'Location','southeast')
-xlabel('Filter Lag (s)')
-ylabel('Filter Amplitude')
-title('PID->Firing Rate')
-
-PrettyFig;
-
-if being_published
-	snapnow
-	delete(gcf)
-end
 
 
 %% Comparison of LFP and firing rates for odor and light

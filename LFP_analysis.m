@@ -19,27 +19,6 @@ tic
 
 load('/local-data/DA-paper/LFP/2015_05_15_CS_F1_ab3_8_LFP_low_DC_gain1000.mat')
 
-%% LFP response to pulses
-% In the following figure, we present pulses of odor and record the LFP in response to these: 
-
-figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[700 700]); hold on
-ax(1) = subplot(2,1,1); hold on
-ax(2) = subplot(2,1,2); hold on
-time = 1e-4*(1:length(data(10).PID));
-plot(ax(1),time,mean2(data(10).PID),'b')
-plot(ax(2),time,mean2(data(10).voltage),'b')
-plot(ax(1),time,mean2(data(11).PID),'r')
-plot(ax(2),time,mean2(data(11).voltage),'r')
-ylabel(ax(2),'LFP (mV)')
-ylabel(ax(1),'Odor stimulus (V)')
-xlabel(ax(2),'Time (s)')
-
-PrettyFig;
-
-if being_published
-	snapnow
-	delete(gcf)
-end
 
 %% Long-timescale changes in LFP in response to odor onsets
 % When we start a 60-second odor flicker, we observe that the LFP changes very slowly in response to the overall increase in the odor stimulus: 
@@ -73,7 +52,7 @@ end
 
 
 %% LFP responses to a flickering odour stimulus
-% In the following figure we analyse the response of the LFP from two neurons to a flickering odour stimulus. The following figure shows the stimulus and the PID from the dataset. We bandpass the LFP to remove slow fluctuations that we don't care about, and remove spikes. 
+% In the following figure we analyse the response of the LFP from two neurons to a flickering odour stimulus. The following figure shows the stimulus and the PID from the dataset. We bandpass the LFP to remove slow fluctuations that we don't care about, and to remove spikes. 
 
 load('/local-data/DA-paper/LFP/2015_06_16_RR_F4_ab3_11_EA.mat')
 PID = data(22).PID;
@@ -142,7 +121,7 @@ end
 
 
 %%
-% This is a very clean dataset, and we see that the LFP is fairly reproducible, even between neurons. In this treatment, we ignore the absolute value of the LFP, by removing the mean and dividing through by the standard deviation. 
+% This is a very clean dataset, and we see that the LFP is fairly reproducible, even between neurons. In this treatment, we ignore the absolute value of the LFP by removing the mean.
 
 %% Linear filters
 % Can a simple linear filter predict the LFP or the firing rate? In this section, we extract linear filters on a trial-wise basis for all combinations: from the PID to the LFP, from the PID to the firing rate, and from the LFP to the firing rate. 

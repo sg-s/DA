@@ -78,9 +78,13 @@ end
 load('/local-data/DA-paper/LFP/2015_06_16_RR_F4_ab3_11_EA.mat')
 PID = data(22).PID;
 LFP = data(22).voltage;
-rm_this = 3;
+time = 1e-4*(1:length(LFP));
+fA = spiketimes2f(spikes(22).A,time,1e-3);
+t = 1e-3*(1:length(fA));
+rm_this=find(sum(fA)==0);
 PID(rm_this,:) = [];
 LFP(rm_this,:) = [];
+fA(:,rm_this) = [];
 PID = PID(:,1:10:end);
 LFP = LFP(:,1:10:end);
 orn = ones(width(PID),1);
@@ -88,10 +92,19 @@ orn = ones(width(PID),1);
 load('/local-data/DA-paper/LFP/2015_06_16_RR_F4_ab3_12_EA.mat')
 PID2 = data(22).PID;
 LFP2 = data(22).voltage;
+time = 1e-4*(1:length(LFP2));
+fA2 = spiketimes2f(spikes(22).A,time,1e-3);
 PID2 = PID2(:,1:10:end);
 LFP2 = LFP2(:,1:10:end);
+
+rm_this=find(sum(fA2)==0);
+PID2(rm_this,:) = [];
+LFP2(rm_this,:) = [];
+fA2(:,rm_this) = [];
+
 PID = [PID; PID2];
 LFP = [LFP; LFP2];
+fA = [fA fA2];
 orn = [orn; 2*ones(width(PID2),1)];
 
 % bandpass
@@ -102,7 +115,6 @@ end
 % remove mean and divide by standard deviation
 for i = 1:width(PID)
 	LFP(i,:) = LFP(i,:) -  mean(LFP(i,:));
-	LFP(i,:) = LFP(i,:)/std(LFP(i,:));
 end
 
 time = 1e-3*(1:length(LFP));
@@ -135,17 +147,19 @@ end
 %% PID -> LFP filters
 % Can a simple linear filter predict the LFP? In this section, we extract linear filters on a trial-wise basis.
 
-K = zeros(width(PID),601);
+K_PL = zeros(width(PID),601);
+offset = -100;
 for i = 1:width(PID)
-	K(i,:) = FitFilter2Data(PID(i,1e4:5e4),LFP(i,1e4:5e4),[],'filter_length=600;','reg=1;');
+	K_PL(i,:) = FitFilter2Data(PID(i,1e4-offset:5e4-offset),LFP(i,1e4:5e4),[],'filter_length=600;','reg=1;');
 end
-K = K(:,1:550);
-filtertime = 1e-3*(1:length(K));
+K_PL = K_PL(:,1:550);
+filtertime = 1e-3*(1:length(K_PL));
+filtertime = filtertime  + offset*1e-3;
 
 figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
 clear l
-l(1) = errorShade(filtertime,mean2(K(orn==1,:)),std(K(orn==1,:)),'Color',[1 0 0]);
-l(2) = errorShade(filtertime,mean2(K(orn==2,:)),std(K(orn==2,:)),'Color',[0 0 1]);
+l(1) = errorShade(filtertime,mean2(K_PL(orn==1,:)),std(K_PL(orn==1,:)),'Color',[1 0 0]);
+l(2) = errorShade(filtertime,mean2(K_PL(orn==2,:)),std(K_PL(orn==2,:)),'Color',[0 0 1]);
 legend(l,{'ORN 1','ORN 2'},'Location','southeast')
 xlabel('Filter Lag (s)')
 ylabel('Filter Amplitude')
@@ -163,7 +177,7 @@ end
 
 LFP_pred = LFP*NaN;
 for i = 1:length(orn)
-	LFP_pred(i,:) = filter(K(i,:),1,PID(i,:));
+	LFP_pred(i,:) = filter(K_PL(i,:),1,PID(i,:));
 	LFP_pred(i,:) = LFP_pred(i,:) - mean(LFP_pred(i,:));
 	LFP_pred(i,:) = LFP_pred(i,:)/std(LFP_pred(i,:));
 	r(i) = rsquare(LFP_pred(i,1e4:4e4),LFP(i,1e4:4e4));
@@ -195,7 +209,62 @@ if being_published
 end
 
 
-%% 
+%% LFP -> Firing Rate Filters 
+% In this section we see how predictive the LFP is of the firing rate. We attempt to back out filters from the LFP to the firing rate, a la Nagel and Wilson. 
+
+% build filters
+K_Lf = zeros(width(PID),601);
+offset = -100;
+for i = 1:width(PID)
+	K_Lf(i,:) = FitFilter2Data(LFP(i,1e4-offset:5e4-offset),fA(1e4:5e4,i),[],'filter_length=600;','reg=1;');
+end
+K_Lf = K_Lf(:,1:550);
+filtertime = 1e-3*(1:length(K_Lf));
+filtertime = filtertime  + offset*1e-3;
+
+figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+clear l
+l(1) = errorShade(filtertime,mean2(K_Lf(orn==1,:)),std(K_Lf(orn==1,:)),'Color',[1 0 0]);
+l(2) = errorShade(filtertime,mean2(K_Lf(orn==2,:)),std(K_Lf(orn==2,:)),'Color',[0 0 1]);
+legend(l,{'ORN 1','ORN 2'},'Location','southeast')
+xlabel('Filter Lag (s)')
+ylabel('Filter Amplitude')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%% PID -> Firing Rate Filters 
+% Now we back out filters from the PID to the firing rates like we always do. 
+
+% build filters
+K_Pf = zeros(width(PID),601);
+offset = -100;
+for i = 1:width(PID)
+	K_Pf(i,:) = FitFilter2Data(PID(i,1e4-offset:5e4-offset),fA(1e4:5e4,i),[],'filter_length=600;','reg=1;');
+end
+K_Pf = K_Pf(:,1:550);
+filtertime = 1e-3*(1:length(K_Pf));
+filtertime = filtertime  + offset*1e-3;
+
+figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+clear l
+l(1) = errorShade(filtertime,mean2(K_Pf(orn==1,:)),std(K_Pf(orn==1,:)),'Color',[1 0 0]);
+l(2) = errorShade(filtertime,mean2(K_Pf(orn==2,:)),std(K_Pf(orn==2,:)),'Color',[0 0 1]);
+legend(l,{'ORN 1','ORN 2'},'Location','southeast')
+xlabel('Filter Lag (s)')
+ylabel('Filter Amplitude')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 
 %% Comparison of LFP and firing rates for odor and light

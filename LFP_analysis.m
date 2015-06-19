@@ -96,7 +96,7 @@ orn = [orn; 2*ones(width(PID2),1)];
 
 % bandpass
 for i = 1:width(PID)
-	LFP(i,:) = filter_trace(LFP(i,:),1000,10);
+	LFP(i,:) = filter_trace(LFP(i,:),5000,10);
 end
 
 % remove mean and divide by standard deviation
@@ -142,7 +142,7 @@ end
 K = K(:,1:550);
 filtertime = 1e-3*(1:length(K));
 
-figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[600 600]); hold on
+figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
 clear l
 l(1) = errorShade(filtertime,mean2(K(orn==1,:)),std(K(orn==1,:)),'Color',[1 0 0]);
 l(2) = errorShade(filtertime,mean2(K(orn==2,:)),std(K(orn==2,:)),'Color',[0 0 1]);
@@ -194,13 +194,17 @@ if being_published
 	delete(gcf)
 end
 
+
+%% 
+
+
 %% Comparison of LFP and firing rates for odor and light
 % How does the LFP get translated into firing? Here, we measure from flies expressing ReaChR in the ab3A neuron and activate that neuron with both light and odour. We then compare the LFP and the firing rate:
 
-load('/local-data/DA-paper/reachr/2015_05_18_RR_F2_ab3_2_EA_2.mat')
+load('/local-data/DA-paper/LFP/2015_05_18_RR_F2_ab3_2_EA_2.mat')
 
 haz_data =  [4 6 7 10];
-figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[700 700]); hold on
+figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
 for i = 1:length(haz_data)
 	subplot(length(haz_data),2,2*(i-1)+1), hold on
 	oktrials = setdiff(1:width(data(haz_data(i)).voltage),spikes(haz_data(i)).discard);

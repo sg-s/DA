@@ -163,6 +163,7 @@ l(2) = errorShade(filtertime,mean2(K_PL(orn==2,:)),std(K_PL(orn==2,:)),'Color',[
 legend(l,{'ORN 1','ORN 2'},'Location','southeast')
 xlabel('Filter Lag (s)')
 ylabel('Filter Amplitude')
+title('PID -> LFP')
 
 PrettyFig;
 
@@ -216,9 +217,9 @@ offset = -100;
 for i = 1:width(PID)
 	K_Lf(i,:) = FitFilter2Data(LFP(i,1e4-offset:5e4-offset),fA(1e4:5e4,i),[],'filter_length=600;','reg=1;');
 end
-K_Lf = K_Lf(:,1:550);
+K_Lf = K_Lf(:,10:550);
 filtertime = 1e-3*(1:length(K_Lf));
-filtertime = filtertime  + offset*1e-3;
+filtertime = filtertime  + (offset+10)*1e-3;
 
 figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
 clear l
@@ -227,6 +228,7 @@ l(2) = errorShade(filtertime,mean2(K_Lf(orn==2,:)),std(K_Lf(orn==2,:)),'Color',[
 legend(l,{'ORN 1','ORN 2'},'Location','southeast')
 xlabel('Filter Lag (s)')
 ylabel('Filter Amplitude')
+title('LFP->Firing Rate')
 
 PrettyFig;
 
@@ -245,9 +247,9 @@ offset = -100;
 for i = 1:width(PID)
 	K_Pf(i,:) = FitFilter2Data(PID(i,1e4-offset:5e4-offset),fA(1e4:5e4,i),[],'filter_length=600;','reg=1;');
 end
-K_Pf = K_Pf(:,1:550);
+K_Pf = K_Pf(:,50:550);
 filtertime = 1e-3*(1:length(K_Pf));
-filtertime = filtertime  + offset*1e-3;
+filtertime = filtertime  + (offset+50)*1e-3;
 
 figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
 clear l
@@ -256,6 +258,7 @@ l(2) = errorShade(filtertime,mean2(K_Pf(orn==2,:)),std(K_Pf(orn==2,:)),'Color',[
 legend(l,{'ORN 1','ORN 2'},'Location','southeast')
 xlabel('Filter Lag (s)')
 ylabel('Filter Amplitude')
+title('PID->Firing Rate')
 
 PrettyFig;
 
@@ -279,7 +282,7 @@ for i = 1:length(haz_data)
 	for j = oktrials
 		this_v= data(haz_data(i)).voltage(j,:);
 		this_v(1:3e4) = [];
-		[~,this_v] = filter_trace(this_v);
+		[~,this_v] = filter_trace(this_v,1000,Inf);
 		this_v = this_v - mean(this_v(1:1e4));
 		V = [this_v; V];
 	end

@@ -290,7 +290,60 @@ if being_published
 	delete(gcf)
 end
 
+%% ORN 1, but not ORN 2, shows "true" fast gain control  
+% To demonstrate that this is really fast adaptation, we fit a nonlinearity to account for residuals and repeat the analysis: 
+figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+
+
+clear ph
+ph(3) = subplot(2,2,1); hold on
+ph(4) = subplot(2,2,2); hold on
+
+
+r = mean2(fA(:,orn==1));
+s = mean2(PID(orn==1,:));
+pred = mean2(fp(:,orn==1));
+s = s(1e4:55e3);
+r = r(1e4:55e3);
+pred = pred(1e4:55e3);
+temp = fit(pred(:),r(:),'poly5');
+pred = temp(pred);
+
+[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',r,'prediction',pred,'stimulus',s,'time',1e-3*(1:length(r)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(11),'use_cache',1,'engine',@GainAnalysis5);
+title(ph(4),'ORN 1 Firing Rate')
+
+clear ph
+ph(3) = subplot(2,2,3); hold on
+ph(4) = subplot(2,2,4); hold on
+
+hl_min = .1;
+hl_max = 10;
+history_lengths = logspace(log10(hl_min),log10(hl_max),30);
+
+r = mean2(fA(:,orn==2));
+s = mean2(PID(orn==2,:));
+pred = mean2(fp(:,orn==2));
+s = s(1e4:55e3);
+r = r(1e4:55e3);
+pred = pred(1e4:55e3);
+temp = fit(pred(:),r(:),'poly5');
+pred = temp(pred);
+
+[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',r,'prediction',pred,'stimulus',s,'time',1e-3*(1:length(r)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(11),'use_cache',1,'engine',@GainAnalysis5);
+title(ph(4),'ORN 2 Firing Rate')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 %%
+% Since a static nonlinearity can account for nearly all the putative gain changes we see in ORN 2, we cannot conclude that what we see is truly a "dynamical" adaptation. However, in ORN 1, a static nonlinearity cannot account for these gain changes, which means the most parsimonious explanation for what we see if a fast gain change. 
+
+
+%% Fast gain control in LFP
 % Now, we repeat the analysis, but check if we can see the signature of fast gain control in the LFP: 
 
 
@@ -309,9 +362,9 @@ history_lengths = logspace(log10(hl_min),log10(hl_max),30);
 r = mean2(LFP(orn==1,:));
 s = mean2(PID(orn==1,:));
 pred = mean2(LFP_pred(orn==1,:));
-s(1:1e4) = [];
-pred(1:1e4) = [];
-r(1:1e4) = [];
+s = s(1e4:55e3);
+r = r(1e4:55e3);
+pred = pred(1e4:55e3);
 
 [p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',r,'prediction',pred,'stimulus',s,'time',1e-3*(1:length(r)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(11),'use_cache',1,'engine',@GainAnalysis5);
 title(ph(4),'ORN 1 LFP')
@@ -330,9 +383,69 @@ history_lengths = logspace(log10(hl_min),log10(hl_max),30);
 r = mean2(LFP(orn==2,:));
 s = mean2(PID(orn==2,:));
 pred = mean2(LFP_pred(orn==2,:));
-s(1:1e4) = [];
-pred(1:1e4) = [];
-r(1:1e4) = [];
+s = s(1e4:55e3);
+r = r(1e4:55e3);
+pred = pred(1e4:55e3);
+
+[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',r,'prediction',pred,'stimulus',s,'time',1e-3*(1:length(r)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(11),'use_cache',1,'engine',@GainAnalysis5);
+title(ph(4),'ORN 2 LFP')
+xlabel(ph(3),'LFP (prediction)')
+ylabel(ph(3),'LFP (data)')
+set(ph(3),'XLim',[min(pred) max(pred)],'YLim',[min(r) max(r)])
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%% LFP does not show evidence for fast gain control
+% It looks like the green and red points don't overlap for the LFP, as they do for the firing rate. Also, all the points seem to lie on one nonlinear function. What if we fit a non-linearity to the residuals of the linear LFP prediction? Do we still see fast gain control? 
+
+
+figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+
+% gain analysis -- linear model
+
+clear ph
+ph(3) = subplot(2,2,1); hold on
+ph(4) = subplot(2,2,2); hold on
+
+hl_min = .1;
+hl_max = 10;
+history_lengths = logspace(log10(hl_min),log10(hl_max),30);
+
+r = mean2(LFP(orn==1,:));
+s = mean2(PID(orn==1,:));
+pred = mean2(LFP_pred(orn==1,:));
+s = s(1e4:55e3);
+r = r(1e4:55e3);
+pred = pred(1e4:55e3);
+temp = fit(pred(:),r(:),'poly5');
+pred = temp(pred);
+
+[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',r,'prediction',pred,'stimulus',s,'time',1e-3*(1:length(r)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(11),'use_cache',1,'engine',@GainAnalysis5);
+title(ph(4),'ORN 1 LFP')
+xlabel(ph(3),'LFP (prediction)')
+ylabel(ph(3),'LFP (data)')
+set(ph(3),'XLim',[min(pred) max(pred)],'YLim',[min(r) max(r)])
+
+clear ph
+ph(3) = subplot(2,2,3); hold on
+ph(4) = subplot(2,2,4); hold on
+
+hl_min = .1;
+hl_max = 10;
+history_lengths = logspace(log10(hl_min),log10(hl_max),30);
+
+r = mean2(LFP(orn==2,:));
+s = mean2(PID(orn==2,:));
+pred = mean2(LFP_pred(orn==2,:));
+s = s(1e4:55e3);
+r = r(1e4:55e3);
+pred = pred(1e4:55e3);
+temp = fit(pred(:),r(:),'poly5');
+pred = temp(pred);
 
 [p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',r,'prediction',pred,'stimulus',s,'time',1e-3*(1:length(r)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(11),'use_cache',1,'engine',@GainAnalysis5);
 title(ph(4),'ORN 2 LFP')

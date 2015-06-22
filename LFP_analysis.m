@@ -191,6 +191,14 @@ end
 LFP_pred = LFP*NaN;
 for i = 1:length(orn)
 	LFP_pred(i,:) = convolve(time,PID(i,:),K_PL(i,:),filtertime);
+
+	% correct for some trivial scaling
+	a = LFP_pred(i,:);
+	b = LFP(i,:);
+	temp  = isnan(a) | isnan(b);
+	temp = fit(a(~temp)',b(~temp)','poly1'); 
+	LFP_pred(i,:) = temp(LFP_pred(i,:));
+
 	r(i) = rsquare(LFP_pred(i,1e4:4e4),LFP(i,1e4:4e4));
 end
 
@@ -212,6 +220,125 @@ set(gca,'YLim',[0 1])
 xlabel('Trial #')
 ylabel('r^2')
 
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%% Fast Adaptation
+% Do we see fast adaptation in this data set? First we check that we see the signature of fast gain control in the firing rate of the neuron. In the following figure, we show that both neurons in this dataset show signs of fast gain control:
+
+
+figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+
+% make linear predictions
+fp = fA*NaN;
+for i = 1:length(orn)
+	fp(:,i) = convolve(time,PID(i,:),K_Pf(i,:),filtertime);
+	% correct for some trivial scaling
+	a = fp(:,i);
+	b = fA(:,i);
+	temp  = isnan(a) | isnan(b);
+	temp = fit(a(~temp),b(~temp),'poly1'); 
+	fp(:,i) = temp(fp(:,i));
+end
+
+% gain analysis -- linear model
+
+clear ph
+ph(3) = subplot(2,2,1); hold on
+ph(4) = subplot(2,2,2); hold on
+
+hl_min = .1;
+hl_max = 10;
+history_lengths = logspace(log10(hl_min),log10(hl_max),30);
+
+r = mean2(fA(:,orn==1));
+s = mean2(PID(orn==1,:));
+pred = mean2(fp(:,orn==1));
+s(1:1e4) = [];
+pred(1:1e4) = [];
+r(1:1e4) = [];
+
+[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',r,'prediction',pred,'stimulus',s,'time',1e-3*(1:length(r)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(11),'use_cache',1,'engine',@GainAnalysis5);
+title(ph(4),'ORN 1 Firing Rate')
+
+clear ph
+ph(3) = subplot(2,2,3); hold on
+ph(4) = subplot(2,2,4); hold on
+
+hl_min = .1;
+hl_max = 10;
+history_lengths = logspace(log10(hl_min),log10(hl_max),30);
+
+r = mean2(fA(:,orn==2));
+s = mean2(PID(orn==2,:));
+pred = mean2(fp(:,orn==2));
+s(1:1e4) = [];
+pred(1:1e4) = [];
+r(1:1e4) = [];
+
+[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',r,'prediction',pred,'stimulus',s,'time',1e-3*(1:length(r)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(11),'use_cache',1,'engine',@GainAnalysis5);
+title(ph(4),'ORN 2 Firing Rate')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% Now, we repeat the analysis, but check if we can see the signature of fast gain control in the LFP: 
+
+
+figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+
+% gain analysis -- linear model
+
+clear ph
+ph(3) = subplot(2,2,1); hold on
+ph(4) = subplot(2,2,2); hold on
+
+hl_min = .1;
+hl_max = 10;
+history_lengths = logspace(log10(hl_min),log10(hl_max),30);
+
+r = mean2(LFP(orn==1,:));
+s = mean2(PID(orn==1,:));
+pred = mean2(LFP_pred(orn==1,:));
+s(1:1e4) = [];
+pred(1:1e4) = [];
+r(1:1e4) = [];
+
+[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',r,'prediction',pred,'stimulus',s,'time',1e-3*(1:length(r)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(11),'use_cache',1,'engine',@GainAnalysis5);
+title(ph(4),'ORN 1 LFP')
+xlabel(ph(3),'LFP (prediction)')
+ylabel(ph(3),'LFP (data)')
+set(ph(3),'XLim',[min(pred) max(pred)],'YLim',[min(r) max(r)])
+
+clear ph
+ph(3) = subplot(2,2,3); hold on
+ph(4) = subplot(2,2,4); hold on
+
+hl_min = .1;
+hl_max = 10;
+history_lengths = logspace(log10(hl_min),log10(hl_max),30);
+
+r = mean2(LFP(orn==2,:));
+s = mean2(PID(orn==2,:));
+pred = mean2(LFP_pred(orn==2,:));
+s(1:1e4) = [];
+pred(1:1e4) = [];
+r(1:1e4) = [];
+
+[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',r,'prediction',pred,'stimulus',s,'time',1e-3*(1:length(r)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(11),'use_cache',1,'engine',@GainAnalysis5);
+title(ph(4),'ORN 2 LFP')
+xlabel(ph(3),'LFP (prediction)')
+ylabel(ph(3),'LFP (data)')
+set(ph(3),'XLim',[min(pred) max(pred)],'YLim',[min(r) max(r)])
 PrettyFig;
 
 if being_published

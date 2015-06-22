@@ -239,7 +239,7 @@ for i = 1:length(history_lengths)
 			set(plothere(3),'box','on')
 			set(plothere(3),'XLim',[min(f)-1,max(f)+1],'YLim',[min(f)-1,max(f)+1])
 
-			titlestr = strcat('\tau_h=',mat2str(history_lengths(i)),'s  gof:');
+			titlestr = strcat('\tau_h=',oval(history_lengths(i)),'s  gof:');
 			titlestr = strcat(titlestr, '{\color{green}',oval(low_gof(i),2),'},');
 			titlestr = strcat(titlestr, '{\color{red}',oval(high_gof(i),2),'}');
 
@@ -366,7 +366,7 @@ if length(plothere) == 4
 
 	set(plothere(4),'box','on','XLim',[0 max(history_lengths)])
 	xlabel(plothere(4),'History Length (s)','FontSize',20)
-	ylabel(plothere(4),'Slope data/prediction (gain)','FontSize',20)
+	ylabel(plothere(4),'Relative Gain','FontSize',20)
 else
 	sig_low = p_low<0.05;
 end

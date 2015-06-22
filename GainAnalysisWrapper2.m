@@ -93,6 +93,7 @@ end
 
 % clean up a little and ignore NaNs
 rm_this = [find(isnan(response)); find(isnan(prediction)) ];
+
 x.response(rm_this) = [];
 x.prediction(rm_this) = [];
 x.stimulus(rm_this) = [];

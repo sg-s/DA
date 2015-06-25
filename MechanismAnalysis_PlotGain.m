@@ -42,8 +42,14 @@ ss = 20; % subsample for plot
 fmax = 0;
 subplot(1,nplots,gainplot), hold on
 plot([0 100],[0 100],'k--')
+
+% find which part of the trace we can use
+rm_this=(any(isnan(resp')));
+resp(rm_this,:) = [];
+stim(rm_this,:) = [];
+
+% figure out which is the response with no background
 resp0 = resp(:,paradigm == 1);
-resp0(1:1e4,:) = [];
 if width(resp0) > 1
 	resp0 = mean2(resp0);
 end
@@ -56,7 +62,6 @@ for i = 2:length(ParadigmNames)
 	if width(temp)>1
 		temp  =mean2(temp);
 	end
-	temp(1:1e4,:) = [];
 	plot(resp0(1:ss:end),temp(1:ss:end),'.','Color',c(i,:));
 	fmax = max([fmax max(resp0) max(temp)]);
 

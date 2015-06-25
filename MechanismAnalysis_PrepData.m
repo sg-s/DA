@@ -38,9 +38,39 @@ for i = 1:length(haz_data)
 
 	temp_stim(:,rm_this) = [];
 	temp(:,rm_this) = [];
+
+	% censor parts of the trace, if need be. 
+	if isfield(spikes,'use_trace_fragment')
+		if ~isempty(spikes(haz_data(i)).use_trace_fragment)
+			if width(spikes(haz_data(i)).use_trace_fragment) < width(temp)
+				disp('46')
+				keyboard
+			else
+				if any(rm_this)
+					censor_this = ~spikes(haz_data(i)).use_trace_fragment(:,~rm_this);
+					censor_this = censor_this(:,1:10:end);
+				else
+					censor_this = ~spikes(haz_data(i)).use_trace_fragment;
+					censor_this = censor_this(:,1:10:end);
+				end
+				if length(censor_this) ~= length(temp) || width(censor_this) ~= width(temp)
+					disp('57--mismatch')
+					keyboard
+				else
+					temp(censor_this) = NaN;
+				end
+			end
+		end
+	end
 	
 	% add to fA
-	resp = [resp temp];
+	try
+		resp = [resp temp];
+	catch
+		disp(datapath)
+		disp('56')
+		keyboard
+	end
 	paradigm = [paradigm (i + p_offset)*(ones(1,width(temp)))];
 
 	stim = [stim temp_stim];

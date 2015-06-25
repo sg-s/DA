@@ -131,7 +131,7 @@ end
 odour_flicker = alldata;
 clear alldata
 
-datapath =  ('/local-data/DA-paper/reachr/light flicker + odour background/2015_04_17_RR_F2_ab3_1_EA_1mM_4days.mat');
+datapath =  ('/local-data/DA-paper/reachr/light-flicker-odour-background/2015_04_17_RR_F2_ab3_1_EA_1mM_4days.mat');
 haz_data = [18:20];
 [stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,[],[],{},[],1);
 alldata(1).stim = stim;

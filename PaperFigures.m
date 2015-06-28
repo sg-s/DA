@@ -213,7 +213,8 @@ gsf = std(y)/std(x);
 
 gain = NaN(8,13);
 mean_stim = NaN(8,13);
-for i = 1:8 % iterate over all paradigms 
+mean_resp = NaN(8,13);
+for i = [1 6] % iterate over all paradigms 
 	for j = 1:13
 		if width(MSG_data(i,j).stim) > 1
 			y = MSG_data(i,j).resp; % average over all neurons 
@@ -233,6 +234,7 @@ for i = 1:8 % iterate over all paradigms
 			temp=fit(x(:),y(:),'poly1');
 			gain(i,j) = temp.p1;
 			mean_stim(i,j) = mean(mean([MSG_data(i,j).stim]));
+			mean_resp(i,j) = mean(mean([MSG_data(i,j).resp]));
 
 			% get the units of gain right
 			gain(i,j) = gain(i,j)*gsf;
@@ -248,6 +250,7 @@ for i = 1:8 % iterate over all paradigms
 end
 
 mean_stim = mean_stim(~isnan(mean_stim));
+mean_resp = mean_resp(~isnan(mean_resp));
 gain = gain(~isnan(gain));
 
 

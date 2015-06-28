@@ -22,130 +22,59 @@ tic
 %% Responses to Odour Flicker with Light Backgrounds
 % In the following figures, we present flickering odour stimuli to and record their responses to the odour with and without an additional light activation. Each figure corresponds to data from one neuron. 
 
-datapath = '/local-data/DA-paper/reachr/odour flicker+light background/2015_04_16_RR_F1_ab3_1_EA_1mM.mat';
-haz_data = [16:19];
+allfiles = dir('/local-data/DA-paper/reachr/odour-flicker-light-background/2015_*.mat');
+% allfiles([2 3 4 10]) = [];
+odour_flicker = [];
+for i = 1:length(allfiles)
+	datapath  = strcat('/local-data/DA-paper/reachr/odour-flicker-light-background/',allfiles(i).name);
+	[stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,[],[],[],{},[],0);
 
-PID = [];
-fA = [];
-ParadigmNames = {};
-paradigm = [];
+	odour_flicker(i).stim = stim;
+	odour_flicker(i).resp = resp;
+	odour_flicker(i).ParadigmNames = ParadigmNames;
+	odour_flicker(i).paradigm = paradigm;
+	% MechanismAnalysis_PlotGain(stim,resp,ParadigmNames,paradigm,0);
+	% PrettyFig();
 
-[stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,[],[],{},[],0);
-alldata(1).stim = stim;
-alldata(1).resp = resp;
-alldata(1).ParadigmNames = ParadigmNames;
-alldata(1).paradigm = paradigm;
-MechanismAnalysis_PlotGain(stim,resp,ParadigmNames,paradigm,0);
-
-
-PrettyFig();
-
-
-
-if being_published
-	snapnow
-	delete(gcf)
+	% if being_published
+	% 	snapnow
+	% 	delete(gcf)
+	% end
 end
-
-
-%%
-% Here's another neuron:
-
-datapath = '/local-data/DA-paper/reachr/odour flicker+light background/2015_04_16_RR_F2_ab3_1_EA_1mM.mat';
-haz_data = [16 18];
-
-PID = [];
-fA = [];
-ParadigmNames = {};
-paradigm = [];
-
-[stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,[],[],{},[],0);
-datapath =  ('/local-data/DA-paper/reachr/odour flicker+light background/2015_04_16_RR_F2_ab3_1_EA_1mM_2.mat');
-haz_data = [23 24];
-[stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,stim,resp,ParadigmNames,paradigm,0);
-alldata(2).stim = stim;
-alldata(2).resp = resp;
-alldata(2).ParadigmNames = ParadigmNames;
-alldata(2).paradigm = paradigm;
-MechanismAnalysis_PlotGain(stim,resp,ParadigmNames,paradigm,0);
-
-PrettyFig();
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-%%
-% Here is another neuron, where, instead of steadily supplying light, we flicker the light @100Hz in an effort to get more sustained firing from the light:
-
-
-datapath = '/local-data/DA-paper/reachr/odour flicker+light background/2015_04_28_RR_F1_ab3_2_EA_400uM.mat';
-haz_data = [14 16];
-[stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,[],[],{},[],0);
-datapath = '/local-data/DA-paper/reachr/odour flicker+light background/2015_04_28_RR_F1_ab3_2_EA_400uM_2.mat';
-
-haz_data = 21;
-[stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,stim,resp,ParadigmNames,paradigm,0);
-alldata(3).stim = stim;
-alldata(3).resp = resp;
-alldata(3).ParadigmNames = ParadigmNames;
-alldata(3).paradigm = paradigm;
-MechanismAnalysis_PlotGain(stim,resp,ParadigmNames,paradigm,0);
-
-PrettyFig();
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-%%
-% Here's the 4th neuron:
-
-datapath = '/local-data/DA-paper/reachr/odour flicker+light background/2015_04_03_ReaChR_F1_ab3_1_EA.mat';
-haz_data = [2 6 3 10];
-[stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,[],[],{},[],0);
-
-
-alldata(4).stim = stim;
-alldata(4).resp = resp;
-alldata(4).ParadigmNames = ParadigmNames;
-alldata(4).paradigm = paradigm;
-MechanismAnalysis_PlotGain(stim,resp,ParadigmNames,paradigm,0);
-
-
-PrettyFig();
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
 
 
 
 
 %% Responses of ORNs to light flicker with an odour background
-% In the following section, we do the corollary of the experiment we did before. Here, we present a flickering light stimulus, and present an odour background on top. 
-odour_flicker = alldata;
-clear alldata
+% In the following section, we do the corollary of the experiment we did before. Here, we present a flickering light stimulus, and present an odour background on top. Each of the following figures shows the response from one ab3A neuron in a w; 22a-GAL4/+; UAS-ReaChR/+ fly. 
+allfiles = dir('/local-data/DA-paper/reachr/light-flicker-odour-background/2015_*.mat');
+for i =1:length(allfiles)
+	datapath  = strcat('/local-data/DA-paper/reachr/light-flicker-odour-background/',allfiles(i).name);
+	[stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,[],[],[],{},[],1);
+
+	alldata(i).stim = stim;
+	alldata(i).resp = resp;
+	alldata(i).ParadigmNames = ParadigmNames;
+	alldata(i).paradigm = paradigm;
+	% MechanismAnalysis_PlotGain(stim,resp,ParadigmNames,paradigm,1);
+	% PrettyFig();
+
+	% if being_published
+	% 	snapnow
+	% 	delete(gcf)
+	% end
+
+end
+
+%%
+% We now summarise all the data, and compare with the odour flicker: 
+
 
 datapath =  ('/local-data/DA-paper/reachr/light-flicker-odour-background/2015_04_17_RR_F2_ab3_1_EA_1mM_4days.mat');
 haz_data = [18:20];
 [stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,[],[],{},[],1);
-alldata(1).stim = stim;
-alldata(1).resp = resp;
-alldata(1).ParadigmNames = ParadigmNames;
-alldata(1).paradigm = paradigm;
-MechanismAnalysis_PlotGain(stim,resp,ParadigmNames,paradigm,1);
 
-PrettyFig();
 
-if being_published
-	snapnow
-	delete(gcf)
-end
 
 %%
 % Here is the 2nd neuron:

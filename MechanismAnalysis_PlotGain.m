@@ -5,7 +5,15 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 function [] = MechanismAnalysis_PlotGain(stim,resp,ParadigmNames,paradigm,use_light)
-
+if isempty(resp)
+	error('resp is empty')
+end
+if isempty(stim)
+	error('stim is empty')
+end
+if length(unique(paradigm)) < 2
+	error('Need at least two paradigms to work with')
+end
 if use_light
 	figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 	nplots = 2;
@@ -57,7 +65,7 @@ L = {};
 clear l
 rel_gain = ones(length(ParadigmNames),1);
 mean_response = NaN(length(ParadigmNames),1);
-for i = 2:length(ParadigmNames)
+for i = 2:length(unique(paradigm))
 	temp = resp(:,paradigm == i);
 	if width(temp)>1
 		temp  =mean2(temp);
@@ -67,6 +75,7 @@ for i = 2:length(ParadigmNames)
 
 	% fit lines to points
 	cf = fit(resp0(:),temp(:),'poly1');
+
 	l(i)=plot(sort(resp0),cf(sort(resp0)),'Color',c(i,:));
 	L{i} = strcat('Rel. gain = ',oval(cf.p1));
 	rel_gain(i) = cf.p1;
@@ -94,7 +103,7 @@ alldata.ParadigmNames = ParadigmNames;
 alldata.paradigm = paradigm;
 subplot(1,nplots,phaseplot), hold on
 if use_light
-	GainPhasePlot(alldata,'r')
+	GainPhasePlot(alldata,'r');
 else
-	GainPhasePlot(alldata,'b')
+	GainPhasePlot(alldata,'b');
 end

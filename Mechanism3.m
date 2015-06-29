@@ -106,41 +106,7 @@ if being_published
 	delete(gcf)
 end
 
-%%
-% This looks very unclear. Why is there so much variability? Here, we plot the response histograms of each point to see if there are some pattern which can clarify this picture:
 
-figure('outerposition',[0 0 1400 800],'PaperUnits','points','PaperSize',[1400 800]); hold on
-ncols = max([length(light_flicker) length(odour_flicker)]);
-c = parula(5);
-for i = 1:length(odour_flicker)
-	subplot(2,ncols,i), hold on
-	for j = 1:length(unique(odour_flicker(i).paradigm))
-		this_resp = mean2(odour_flicker(i).resp(:,odour_flicker(i).paradigm == j));
-		if isscalar(this_resp)
-			this_resp = (odour_flicker(i).resp(:,odour_flicker(i).paradigm == j));
-		end
-		this_resp(isnan(this_resp)) = [];
-		[y,x] = hist(this_resp,50);
-		y = y/length(y); y = y/50;
-		plot(x,y,'Color',c(j,:));
-		
-	end
-end
-
-for i = 1:length(light_flicker)
-	subplot(2,ncols,i+ncols), hold on
-	for j = 1:length(unique(light_flicker(i).paradigm))
-		this_resp = mean2(light_flicker(i).resp(:,light_flicker(i).paradigm == j));
-		if isscalar(this_resp)
-			this_resp = (light_flicker(i).resp(:,light_flicker(i).paradigm == j));
-		end
-		this_resp(isnan(this_resp)) = [];
-		[y,x] = hist(this_resp,50);
-		y = y/length(y); y = y/50;
-		plot(x,y,'Color',c(j,:));
-		
-	end
-end
 
 %% Version Info
 % The file that generated this document is called:

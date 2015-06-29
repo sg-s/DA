@@ -16,14 +16,11 @@ if ~isempty(calling_func)
 end
 tic
 
-%% Higher ATR doses works
-% Titrating ATR doses and feeding durations leads to a sweetspot where the ORNs respond normally to odour and can be easily activated by light. It is very hit or miss for now, and the control paradigms for each neuron had to be hand-tuned to get it right. 
 
 %% Responses to Odour Flicker with Light Backgrounds
-% In the following figures, we present flickering odour stimuli to and record their responses to the odour with and without an additional light activation. Each figure corresponds to data from one neuron. 
+% In the following figures, we present flickering odour stimuli to and record their responses to the odour with and without an additional light activation. 
 
 allfiles = dir('/local-data/DA-paper/reachr/odour-flicker-light-background/2015_*.mat');
-% allfiles([2 3 4 10]) = [];
 odour_flicker = [];
 for i = 1:length(allfiles)
 	datapath  = strcat('/local-data/DA-paper/reachr/odour-flicker-light-background/',allfiles(i).name);
@@ -33,107 +30,116 @@ for i = 1:length(allfiles)
 	odour_flicker(i).resp = resp;
 	odour_flicker(i).ParadigmNames = ParadigmNames;
 	odour_flicker(i).paradigm = paradigm;
-	% MechanismAnalysis_PlotGain(stim,resp,ParadigmNames,paradigm,0);
-	% PrettyFig();
+	
 
-	% if being_published
-	% 	snapnow
-	% 	delete(gcf)
-	% end
+	
 end
 
+%%
+% In the following figure, we show that gain decreases as we increase the background light stimulation. The subplot on the left shows that the odour flickering stimulus that we deliver to the neuron is the same, no matter which paradigm we test, and that the odour stimulus doesn't change when we add the light. In the middle plot, we plot the firing rate trajectory without light background on the x-axis, and plot the firing rate trajectory with light background on the y-axis. The dotted line indicates unity. If the gain of the neuron changes with light background stimulation, the cloud of points will have a slope different from 1. If the gain doesn't change, but the mean firing rate is different, the cloud of points will move vertically up or down in the plot. In the third plot, we plot the mean firing rate in each paradigm (normalised to no background) on the y-axis, and the relative gain on the x-axis. 
+
+MechanismAnalysis_PlotGain(odour_flicker(1).stim,odour_flicker(1).resp,odour_flicker(1).ParadigmNames,odour_flicker(1).paradigm,0);
+PrettyFig();
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% Here is another neuron, just as before:
+
+MechanismAnalysis_PlotGain(odour_flicker(4).stim,odour_flicker(4).resp,odour_flicker(4).ParadigmNames,odour_flicker(4).paradigm,0);
+PrettyFig();
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 
 
 %% Responses of ORNs to light flicker with an odour background
 % In the following section, we do the corollary of the experiment we did before. Here, we present a flickering light stimulus, and present an odour background on top. Each of the following figures shows the response from one ab3A neuron in a w; 22a-GAL4/+; UAS-ReaChR/+ fly. 
+light_flicker = [];
 allfiles = dir('/local-data/DA-paper/reachr/light-flicker-odour-background/2015_*.mat');
 for i =1:length(allfiles)
 	datapath  = strcat('/local-data/DA-paper/reachr/light-flicker-odour-background/',allfiles(i).name);
 	[stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,[],[],[],{},[],1);
 
-	alldata(i).stim = stim;
-	alldata(i).resp = resp;
-	alldata(i).ParadigmNames = ParadigmNames;
-	alldata(i).paradigm = paradigm;
-	% MechanismAnalysis_PlotGain(stim,resp,ParadigmNames,paradigm,1);
-	% PrettyFig();
+	light_flicker(i).stim = stim;
+	light_flicker(i).resp = resp;
+	light_flicker(i).ParadigmNames = ParadigmNames;
+	light_flicker(i).paradigm = paradigm;
 
-	% if being_published
-	% 	snapnow
-	% 	delete(gcf)
-	% end
+end
 
+%%
+% Here is an example neuron:
+MechanismAnalysis_PlotGain(light_flicker(2).stim,light_flicker(2).resp,light_flicker(2).ParadigmNames,light_flicker(2).paradigm,1);
+PrettyFig();
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% Here is another neuron, just as before:
+
+MechanismAnalysis_PlotGain(light_flicker(4).stim,light_flicker(4).resp,light_flicker(4).ParadigmNames,light_flicker(4).paradigm,1);
+PrettyFig();
+if being_published
+	snapnow
+	delete(gcf)
 end
 
 %%
 % We now summarise all the data, and compare with the odour flicker: 
 
 
-datapath =  ('/local-data/DA-paper/reachr/light-flicker-odour-background/2015_04_17_RR_F2_ab3_1_EA_1mM_4days.mat');
-haz_data = [18:20];
-[stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,[],[],{},[],1);
-
-
-
-%%
-% Here is the 2nd neuron:
-
-datapath = ('/local-data/DA-paper/reachr/light flicker + odour background/2015_04_17_RR_F3_ab3_4_EA_1mM.mat');
-haz_data = [18:21];
-[stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,[],[],{},[],1);
-stim(55e3:end,:) = []; % because we lost some data here
-resp(55e3:end,:) = [];
-alldata(2).stim = stim;
-alldata(2).resp = resp;
-alldata(2).ParadigmNames = ParadigmNames;
-alldata(2).paradigm = paradigm;
-MechanismAnalysis_PlotGain(stim,resp,ParadigmNames,paradigm,1);
-
+figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+GainPhasePlot(odour_flicker,'b',1);
+GainPhasePlot(light_flicker,'r',1);
+xlabel('Relative Gain')
+ylabel('Mean Firing rate (norm)')
 PrettyFig();
-
 if being_published
 	snapnow
 	delete(gcf)
 end
 
-%% 
-% Here is a 3rd neuron, that we acquired with the LFP (not shown):
+%%
+% This looks very unclear. Why is there so much variability? Here, we plot the response histograms of each point to see if there are some pattern which can clarify this picture:
 
-datapath = ('/local-data/DA-paper/reachr/light flicker + odour background/2015_05_18_RR_F2_ab3_2_EA.mat');
-haz_data = [25 26 27 28];
-[stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,[],[],{},[],1);
-stim(1:1e4,:) = [];
-resp(1:1e4,:) = [];
-alldata(3).stim = stim;
-alldata(3).resp = resp;
-alldata(3).ParadigmNames = ParadigmNames;
-alldata(3).paradigm = paradigm;
-MechanismAnalysis_PlotGain(stim,resp,ParadigmNames,paradigm,1);
-
-PrettyFig();
-
-if being_published
-	snapnow
-	delete(gcf)
+figure('outerposition',[0 0 1400 800],'PaperUnits','points','PaperSize',[1400 800]); hold on
+ncols = max([length(light_flicker) length(odour_flicker)]);
+c = parula(5);
+for i = 1:length(odour_flicker)
+	subplot(2,ncols,i), hold on
+	for j = 1:length(unique(odour_flicker(i).paradigm))
+		this_resp = mean2(odour_flicker(i).resp(:,odour_flicker(i).paradigm == j));
+		if isscalar(this_resp)
+			this_resp = (odour_flicker(i).resp(:,odour_flicker(i).paradigm == j));
+		end
+		this_resp(isnan(this_resp)) = [];
+		[y,x] = hist(this_resp,50);
+		y = y/length(y); y = y/50;
+		plot(x,y,'Color',c(j,:));
+		
+	end
 end
 
-
-
-%%
-% In this figure, we compare the slope and the offset of each data set, in the odour flicker and the light flicker case: 
-
-figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[700 700]); hold on
-GainPhasePlot(odour_flicker,'b');
-GainPhasePlot(alldata,'r')
-ylabel('Mean Firing Rate (norm)')
-xlabel('Gain (norm)')
-
-PrettyFig();
-
-if being_published
-	snapnow
-	delete(gcf)
+for i = 1:length(light_flicker)
+	subplot(2,ncols,i+ncols), hold on
+	for j = 1:length(unique(light_flicker(i).paradigm))
+		this_resp = mean2(light_flicker(i).resp(:,light_flicker(i).paradigm == j));
+		if isscalar(this_resp)
+			this_resp = (light_flicker(i).resp(:,light_flicker(i).paradigm == j));
+		end
+		this_resp(isnan(this_resp)) = [];
+		[y,x] = hist(this_resp,50);
+		y = y/length(y); y = y/50;
+		plot(x,y,'Color',c(j,:));
+		
+	end
 end
 
 %% Version Info

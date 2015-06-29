@@ -5,7 +5,7 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [max_f, max_gain] = GainPhasePlot(alldata,c)
+function [max_f, max_gain] = GainPhasePlot(alldata,c,norm_f)
 
 
 max_f = NaN(length(alldata),1);
@@ -79,7 +79,9 @@ for i = 1:length(alldata)
 	end
 
 	% normalise firing rates
-	mean_firing_rate = mean_firing_rate/mean_firing_rate(1);
+	if norm_f
+		mean_firing_rate = mean_firing_rate/mean_firing_rate(1);
+	end
 
 	plot(gain,mean_firing_rate,'-+','Color',c)
 

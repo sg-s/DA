@@ -103,7 +103,9 @@ alldata.ParadigmNames = ParadigmNames;
 alldata.paradigm = paradigm;
 subplot(1,nplots,phaseplot), hold on
 if use_light
-	GainPhasePlot(alldata,'r');
+	GainPhasePlot(alldata,'r',1);
 else
-	GainPhasePlot(alldata,'b');
+	GainPhasePlot(alldata,'b',1);
 end
+xlabel('Relative Gain')
+ylabel('Mean Firing rate (norm)')

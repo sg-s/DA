@@ -216,7 +216,7 @@ end
 
 
 %%
-% Here we something very strange. THe LFP seems to go 180° out of phase as we move to higher concentrations. What is going on? To be very clear, we plot the stimulus and the LFP for these traces, and normalise them to visualise them together: 
+% Here we something very strange. THe LFP seems to go 180° out of phase as we move to higher concentrations. What is going on? To be very clear, we plot the stimulus and the LFP for these traces, and normalise them to visualise them togethe: (red is the LFP, and black is the PID).
 
 figure('outerposition',[0 0 1200 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
 for i = 1:length(these_paradigms)
@@ -255,6 +255,7 @@ end
 %%
 % To figure out what's going on, we back out filters from the stimulus to the LFP for each of these cases. In the following figure, we back out filters from all the data we have, and plot them colour coded by paradigm:
 
+
 K = NaN(1e3,length(orn));
 for i = 1:length(orn)
 	resp = LFP(30e3:end,i);
@@ -264,25 +265,28 @@ for i = 1:length(orn)
 		resp = filter_trace(resp,1e3,10);
 		stim = PID(30e3:end,i);
 		stim(rm_this) = [];
+		stim(1:500) = [];
+		resp(end-499:end) = [];
 		K(:,i) = FitFilter2Data(stim,resp,[],'reg=1;','filter_length=999;');
 	end
 end
 
+
 c= parula(max(paradigm)+1);
 l = [];
-figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[700 700]); hold on
+figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
 for i = 1:max(paradigm)
-	time = 1e-3*(1:500);
+	time = 1e-3*(1:501)-.2;
 	plot_this = find(paradigm == i);
 	plot_this = setdiff(plot_this,find(isnan(sum(K))));
 	if length(plot_this) > 1
-		l(i) = errorShade(time,mean2(K(1:500,plot_this)),std(K(1:500,plot_this)')/length(plot_this),'Color',c(i,:));
+		l(i) = errorShade(time,mean2(K(300:800,plot_this)),std(K(300:800,plot_this)')/length(plot_this),'Color',c(i,:));
 	else
-		l(i) = plot(time,K(1:500,plot_this),'Color',c(i,:));
+		l(i) = plot(time,K(300:800,plot_this),'Color',c(i,:));
 	end
 end
 legend(l,{AllControlParadigms.Name})
-xlabel('Time (s)')
+xlabel('Lag (s)')
 ylabel('PID \rightarrow LFP Filter')
 
 PrettyFig;
@@ -291,6 +295,8 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+
 
 
 

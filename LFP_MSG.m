@@ -19,8 +19,9 @@ tic
 % First, we show that we are able to deliver Gaussian-distributed odour stimuli, and that we are able to vary the means of the distributions of these stimuli. 
 
 PID = [];
+LFP = [];
 paradigm = [];
-fly = [];
+orn = [];
 AllControlParadigms = struct;
 AllControlParadigms.Name = '';
 AllControlParadigms.Outputs = [];
@@ -45,28 +46,55 @@ for i = 1:length(allfiles)
 
 
 			this_PID = data(j).PID;
+			this_LFP = data(j).voltage;
+
 			if length(spikes) < j
 			else
+				% censor trace use use_trace_fragment
+				use_trace_fragment = [];
+				try
+					use_trace_fragment = spikes(j).use_trace_fragment;
+				catch
+				end
+
+				if ~isempty(use_trace_fragment)
+					if width(use_trace_fragment) == width(this_PID)
+						this_LFP(~logical(use_trace_fragment)) = NaN;
+					else
+						for k = 1:width(use_trace_fragment)
+							this_LFP(k,~logical(use_trace_fragment(k,:))) = NaN;
+						end
+					end
+				end
+
+
 				rm_this = [];
 				try
 					rm_this = find(spikes(j).discard);
 				end
 				if ~isempty(rm_this)
 					this_PID(rm_this,:) = [];
+					this_LFP(rm_this,:) = [];
 				else
 
 				end
 
-				this_PID = this_PID(:,1:10:end)';
-				PID = [PID this_PID];
-				paradigm = [paradigm  this_paradigm*ones(1,width(this_PID))];
-				fly = [fly  i*ones(1,width(this_PID))];
+			
 			end
+
+			this_PID = this_PID(:,1:10:end)';
+			PID = [PID this_PID];
+			this_LFP = this_LFP(:,1:10:end)';
+			LFP = [LFP this_LFP];
+
+			paradigm = [paradigm  this_paradigm*ones(1,width(this_PID))];
+			orn = [orn  i*ones(1,width(this_PID))];
+
 		end
 	end
 end
 
-return
+
 
 % sort the paradigms sensibily
 sort_value = [];
@@ -83,6 +111,9 @@ end
 paradigm = paradigm_new;
 
 
+% throw out trials where we didn't record the LFP, for whatever reason
+not_LFP = find((max(abs(LFP))) < 0.1);
+LFP(:,not_LFP) = NaN;
 
 %%
 % The following figure shows the distribution of the inputs, for the terminal 40seconds of each 60second presentation. 
@@ -129,6 +160,97 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%% Local Field Potential
+% We now look at the LFP. Here is an example neuron, showing how the LFP changes with the different paradigms. In the following figure, we plot the raw LFP traces, downsampled to 1kHz from the actual 10kHz trace, and whose baselines (with no odour) have been set to zero. 
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+c = parula(1+length(unique(paradigm(:,orn == 7))));
+time = 1e-3*(1:length(LFP));
+for i = 1:length(c)
+	plot_this = find(orn == 7 & paradigm == i);
+	for j = 1:length(plot_this)
+		this_LFP = LFP(:,plot_this(j));
+		this_LFP = this_LFP - mean(this_LFP(1e3:5e3));
+		plot(time,this_LFP,'Color',c(i,:))
+	end
+end
+
+xlabel('Time (s)')
+ylabel('LFP (100x V)')
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%% 
+% Some things are clear from this trace: the LFPs look somewhat similar, even for very different odour concentrations. 
+
+%%
+% Since we are interested in the response of the neuron to the odour flicker, we only consider the part of the trace corresponding to the odour flicker. Furthermore, we bandpass the LFP trace to remove spikes and to remove these slow fluctuations. This data is from one neuron.
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+these_paradigms = unique(paradigm(:,orn == 7));
+c = parula(1+length(these_paradigms));
+time = 1e-3*(1:length(LFP(30e3:40e3,1))) + 30;
+for i = 1:length(these_paradigms)
+	plot_this = find(orn == 7 & paradigm == these_paradigms(i));
+	for j = 1:length(plot_this)
+		this_LFP = LFP(:,plot_this(j));
+		this_LFP = this_LFP(30e3:40e3);
+		this_LFP = filter_trace(this_LFP,1000,10);
+		plot(time,this_LFP,'Color',c(i,:))
+	end
+end
+
+xlabel('Time (s)')
+ylabel('LFP (100x V)')
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
+% Here we something very strange. THe LFP seems to go 180° out of phase as we move to higher concentrations. What is going on? To be very clear, we plot the stimulus and the LFP for these traces, and normalise them to visualise them together: 
+
+figure('outerposition',[0 0 1200 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
+for i = 1:length(these_paradigms)
+	subplot(2,3,i), hold on
+	plot_this = find(orn == 7 & paradigm == these_paradigms(i));
+	for j = 1:length(plot_this)
+		this_LFP = LFP(:,plot_this(j));
+		this_LFP = this_LFP(37e3:40e3);
+		this_LFP = filter_trace(this_LFP,1000,10);
+		this_LFP = this_LFP - mean(this_LFP);
+		this_LFP = this_LFP/std(this_LFP);
+		time = 1e-3*(1:length(this_LFP)) + 37;
+		plot(time,this_LFP,'r')
+
+		this_PID = PID(:,plot_this(j));
+		this_PID = this_PID(37e3:40e3);
+		this_PID = this_PID - mean(this_PID);
+		this_PID = this_PID/std(this_PID);
+		plot(time,this_PID,'k')
+
+
+	end
+	title(AllControlParadigms(these_paradigms(i)).Name)
+end
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% WTF. 
 
 %% Version Info
 % The file that generated this document is called:

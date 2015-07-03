@@ -252,6 +252,48 @@ end
 %%
 % WTF. 
 
+%%
+% To figure out what's going on, we back out filters from the stimulus to the LFP for each of these cases. In the following figure, we back out filters from all the data we have, and plot them colour coded by paradigm:
+
+K = NaN(1e3,length(orn));
+for i = 1:length(orn)
+	resp = LFP(30e3:end,i);
+	rm_this = isnan(resp);
+	resp(rm_this) = [];
+	if length(resp) 
+		resp = filter_trace(resp,1e3,10);
+		stim = PID(30e3:end,i);
+		stim(rm_this) = [];
+		K(:,i) = FitFilter2Data(stim,resp,[],'reg=1;','filter_length=999;');
+	end
+end
+
+c= parula(max(paradigm)+1);
+l = [];
+figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[700 700]); hold on
+for i = 1:max(paradigm)
+	time = 1e-3*(1:500);
+	plot_this = find(paradigm == i);
+	plot_this = setdiff(plot_this,find(isnan(sum(K))));
+	if length(plot_this) > 1
+		l(i) = errorShade(time,mean2(K(1:500,plot_this)),std(K(1:500,plot_this)')/length(plot_this),'Color',c(i,:));
+	else
+		l(i) = plot(time,K(1:500,plot_this),'Color',c(i,:));
+	end
+end
+legend(l,{AllControlParadigms.Name})
+xlabel('Time (s)')
+ylabel('PID \rightarrow LFP Filter')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
 %% Version Info
 % The file that generated this document is called:
 disp(mfilename)

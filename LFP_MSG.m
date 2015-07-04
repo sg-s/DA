@@ -119,7 +119,7 @@ LFP(:,not_LFP) = NaN;
 % The following figure shows the distribution of the inputs, for the terminal 40seconds of each 60second presentation. 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 c = parula(1+length(unique(paradigm)));
-for i = 1:length(c)
+for i = 1:length(unique(paradigm))
 	hist_this = PID(20e3:end,paradigm==i);
 	xx =  linspace(min(min(hist_this)),max(max(hist_this)),50);
 	y = NaN(sum(paradigm==i),50);

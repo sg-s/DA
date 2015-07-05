@@ -214,7 +214,7 @@ gsf = std(y)/std(x);
 gain = NaN(8,13);
 mean_stim = NaN(8,13);
 mean_resp = NaN(8,13);
-for i = [1 6] % iterate over all paradigms 
+for i = 1:8 % iterate over all paradigms 
 	for j = 1:13
 		if width(MSG_data(i,j).stim) > 1
 			y = MSG_data(i,j).resp; % average over all neurons 
@@ -248,6 +248,16 @@ for i = 1:8 % iterate over all paradigms
 		plot(axes_handles(8),mean_stim(i,j),gain(i,j),'+','Color',c(i,:));
 	end
 end
+
+% make gain phase plot
+% figure, hold on
+% for i = 1:13
+% 	g = gain(:,i)/gain(1,i);
+% 	m = mean_resp(:,i)/mean_resp(1,i);
+% 	m(isnan(m)) = [];
+% 	g(isnan(g)) = [];
+% 	plot(g,m,'-+k')
+% end
 
 mean_stim = mean_stim(~isnan(mean_stim));
 mean_resp = mean_resp(~isnan(mean_resp));

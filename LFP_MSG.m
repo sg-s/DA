@@ -285,7 +285,6 @@ end
 %% Spiking Filters
 % Do the spiking filters also show this weird inversion? To check, we back out spiking filters for all the data and check as before. The following figure shows the filters backed out for some of the lower concentrations:
 
-
 K_fA = NaN(1e3,length(orn));
 for i = 1:length(orn)
 	resp = fA(30e3:end,i);

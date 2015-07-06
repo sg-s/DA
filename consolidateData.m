@@ -36,6 +36,8 @@ if use_cache
 		paradigm = cached_data.paradigm;
 		AllControlParadigms = cached_data.AllControlParadigms;
 		paradigm_hashes = cached_data.paradigm_hashes;
+		orn = cached_data.orn;
+		return
 	end
 end
 
@@ -132,4 +134,8 @@ cached_data.fA = fA;
 cached_data.paradigm = paradigm;
 cached_data.AllControlParadigms = AllControlParadigms;
 cached_data.paradigm_hashes = paradigm_hashes;
+cached_data.orn = orn;
+cache(hash,[]);
 cache(hash,cached_data);
+
+

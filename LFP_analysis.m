@@ -54,7 +54,7 @@ end
 %% LFP responses to a flickering odour stimulus
 % In the following figure we analyse the response of the LFP from two neurons to a flickering odour stimulus. The following figure shows the stimulus and the PID from the dataset. We bandpass the LFP to remove slow fluctuations that we don't care about, and to remove spikes. 
 
-load('/local-data/DA-paper/LFP/2015_06_16_RR_F4_ab3_11_EA.mat')
+load('/local-data/DA-paper/LFP/odour-flicker/2015_06_16_RR_F4_ab3_11_EA.mat')
 PID = data(22).PID;
 LFP = data(22).voltage;
 time = 1e-4*(1:length(LFP));
@@ -68,7 +68,7 @@ PID = PID(:,1:10:end);
 LFP = LFP(:,1:10:end);
 orn = ones(width(PID),1);
 
-load('/local-data/DA-paper/LFP/2015_06_16_RR_F4_ab3_12_EA.mat')
+load('/local-data/DA-paper/LFP/odour-flicker/2015_06_16_RR_F4_ab3_12_EA.mat')
 PID2 = data(22).PID;
 LFP2 = data(22).voltage;
 time = 1e-4*(1:length(LFP2));

@@ -15,88 +15,23 @@ if ~isempty(calling_func)
 end
 tic
 
+%      ######  ######## #### ##     ## ##     ## ##       ##     ##  ######  
+%     ##    ##    ##     ##  ###   ### ##     ## ##       ##     ## ##    ## 
+%     ##          ##     ##  #### #### ##     ## ##       ##     ## ##       
+%      ######     ##     ##  ## ### ## ##     ## ##       ##     ##  ######  
+%           ##    ##     ##  ##     ## ##     ## ##       ##     ##       ## 
+%     ##    ##    ##     ##  ##     ## ##     ## ##       ##     ## ##    ## 
+%      ######     ##    #### ##     ##  #######  ########  #######   ######  
+
+
 %% Stimulus Characterisation
 % First, we show that we are able to deliver Gaussian-distributed odour stimuli, and that we are able to vary the means of the distributions of these stimuli. 
 
-PID = [];
-LFP = [];
-paradigm = [];
-orn = [];
-AllControlParadigms = struct;
-AllControlParadigms.Name = '';
-AllControlParadigms.Outputs = [];
-AllControlParadigms(1) = [];
-paradigm_hashes = {};
 
-allfiles = dir('/local-data/DA-paper/LFP-MSG/*.mat');
-for i = 1:length(allfiles)
-	load(strcat('/local-data/DA-paper/LFP-MSG/',allfiles(i).name));
-	for j = 1:length(data)
-		if ~isempty(data(j).PID)
-			clear this_paradigm 
-			% figure out which control paradigm this is
-			this_hash = DataHash(ControlParadigm(j));
-			if isempty(find(strcmp(this_hash,paradigm_hashes)))
-				AllControlParadigms(end+1) = ControlParadigm(j);
-				this_paradigm = length(AllControlParadigms);
-				paradigm_hashes{end+1} = this_hash;
-			else
-				this_paradigm = find(strcmp(this_hash,paradigm_hashes));
-			end
+[PID, LFP, fA, paradigm, orn, AllControlParadigms, paradigm_hashes] = consolidateData('/local-data/DA-paper/LFP-MSG/',1);
 
 
-			this_PID = data(j).PID;
-			this_LFP = data(j).voltage;
-
-			if length(spikes) < j
-			else
-				% censor trace use use_trace_fragment
-				use_trace_fragment = [];
-				try
-					use_trace_fragment = spikes(j).use_trace_fragment;
-				catch
-				end
-
-				if ~isempty(use_trace_fragment)
-					if width(use_trace_fragment) == width(this_PID)
-						this_LFP(~logical(use_trace_fragment)) = NaN;
-					else
-						for k = 1:width(use_trace_fragment)
-							this_LFP(k,~logical(use_trace_fragment(k,:))) = NaN;
-						end
-					end
-				end
-
-
-				rm_this = [];
-				try
-					rm_this = find(spikes(j).discard);
-				end
-				if ~isempty(rm_this)
-					this_PID(rm_this,:) = [];
-					this_LFP(rm_this,:) = [];
-				else
-
-				end
-
-			
-			end
-
-			this_PID = this_PID(:,1:10:end)';
-			PID = [PID this_PID];
-			this_LFP = this_LFP(:,1:10:end)';
-			LFP = [LFP this_LFP];
-
-			paradigm = [paradigm  this_paradigm*ones(1,width(this_PID))];
-			orn = [orn  i*ones(1,width(this_PID))];
-
-		end
-	end
-end
-
-
-
-% sort the paradigms sensibily
+% sort the paradigms sensibly
 sort_value = [];
 for i = 1:length(AllControlParadigms)
 	sort_value(i) = mean(mean(AllControlParadigms(i).Outputs));
@@ -161,6 +96,15 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+% 								##       ######## ########  
+% 								##       ##       ##     ## 
+% 								##       ##       ##     ## 
+% 								##       ######   ########  
+% 								##       ##       ##        
+% 								##       ##       ##        
+% 								######## ##       ##        
+
 
 %% Local Field Potential
 % We now look at the LFP. Here is an example neuron, showing how the LFP changes with the different paradigms. In the following figure, we plot the raw LFP traces, downsampled to 1kHz from the actual 10kHz trace, and whose baselines (with no odour) have been set to zero. 
@@ -253,6 +197,15 @@ end
 %%
 % WTF. 
 
+% ##       ######## ########     ######## #### ##       ######## ######## ########   ######  
+% ##       ##       ##     ##    ##        ##  ##          ##    ##       ##     ## ##    ## 
+% ##       ##       ##     ##    ##        ##  ##          ##    ##       ##     ## ##       
+% ##       ######   ########     ######    ##  ##          ##    ######   ########   ######  
+% ##       ##       ##           ##        ##  ##          ##    ##       ##   ##         ## 
+% ##       ##       ##           ##        ##  ##          ##    ##       ##    ##  ##    ## 
+% ######## ##       ##           ##       #### ########    ##    ######## ##     ##  ######  
+
+
 %%
 % To figure out what's going on, we back out filters from the stimulus to the LFP for each of these cases. In the following figure, we back out filters from all the data we have, and plot them colour coded by paradigm:
 
@@ -328,6 +281,11 @@ end
 
 %%
 % So every ORN shows this, meaning that the problem is either some weird thing with the stimulus, or the flies are fundamentally unsound. 
+
+%% Spiking Filters
+% Do the spiking filters also show this weird inversion? To check, we back out spiking filters for all the data and check as before: 
+
+
 
 
 

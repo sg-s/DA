@@ -283,7 +283,49 @@ end
 % So every ORN shows this, meaning that the problem is either some weird thing with the stimulus, or the flies are fundamentally unsound. 
 
 %% Spiking Filters
-% Do the spiking filters also show this weird inversion? To check, we back out spiking filters for all the data and check as before: 
+% Do the spiking filters also show this weird inversion? To check, we back out spiking filters for all the data and check as before. The following figure shows the filters backed out for some of the lower concentrations:
+
+
+K_fA = NaN(1e3,length(orn));
+for i = 1:length(orn)
+	resp = fA(30e3:end,i);
+	rm_this = isnan(resp);
+	resp(rm_this) = [];
+	if length(resp) 
+		stim = PID(30e3:end,i);
+		stim(rm_this) = [];
+		stim(1:500) = [];
+		resp(end-499:end) = [];
+		K_fA(:,i) = FitFilter2Data(stim,resp,[],'reg=1;','filter_length=999;');
+	end
+end
+
+
+c= parula(max(paradigm)+1);
+l = [];
+figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
+for i = 1:4
+	time = 1e-3*(1:501)-.2;
+	plot_this = find(paradigm == i);
+	plot_this = setdiff(plot_this,find(isnan(sum(K_fA))));
+	if length(plot_this) > 1
+		l(i) = errorShade(time,mean2(K_fA(300:800,plot_this)),std(K_fA(300:800,plot_this)')/length(plot_this),'Color',c(i,:));
+	elseif length(plot_this) == 1
+		l(i) = plot(time,K_fA(300:800,plot_this),'Color',c(i,:));
+	else
+		l(i) = plot(NaN,NaN);
+	end
+end
+legend(l,{AllControlParadigms.Name})
+xlabel('Lag (s)')
+ylabel('PID \rightarrow Firing Rate')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 
 

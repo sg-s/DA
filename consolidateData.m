@@ -26,8 +26,8 @@ paradigm_hashes = {};
 allfiles = dir([pathname '*.mat']);
 
 % always be caching. 
+hash = DataHash(allfiles);
 if use_cache
-	hash = DataHash(allfiles);
 	cached_data = cache(hash);
 	if ~isempty(cached_data)
 		PID = cached_data.PID;
@@ -62,7 +62,7 @@ for i = 1:length(allfiles)
 			if length(spikes) < j
 			else
 				if ~isempty(spikes(j).A)
-					this_fA = spiketimes2f(spikes(j).A,1e-4*(1:length(spikes(j).A)),1e-3,1e-2);
+					this_fA = spiketimes2f(spikes(j).A,1e-4*(1:length(spikes(j).A)),1e-3,3e-2);
 				end
 				
 

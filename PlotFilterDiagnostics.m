@@ -1,3 +1,11 @@
+% PlotFilterDiagnostics
+% plots data from the diagnostics structure created by FitFitler2Data
+% 
+% created by Srinivas Gorur-Shandilya at 2:50 , 10 July 2015. Contact me at http://srinivas.gs/contact/
+% 
+% This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
+% To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
+
 function [] = PlotFilterDiagnostics(diagnostics,marker_size,marker_size2,font_size)
 bf = diagnostics.C.bestfilter;
 figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on

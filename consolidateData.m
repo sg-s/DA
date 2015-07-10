@@ -113,6 +113,9 @@ for i = 1:length(allfiles)
 			end
 
 			% consolidate
+			if length(this_fA) > length(this_LFP)
+				this_fA = this_fA(1:length(this_LFP),:);
+			end
 			LFP = [LFP this_LFP];
 			PID = [PID this_PID];
 			fA =  [fA  this_fA ];

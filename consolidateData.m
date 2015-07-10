@@ -23,12 +23,26 @@ AllControlParadigms.Outputs = [];
 AllControlParadigms(1) = [];
 paradigm_hashes = {};
 
+if ~strcmp(pathname(end),oss)
+	pathname = [pathname oss];
+end
+
 allfiles = dir([pathname '*.mat']);
+% remove the consolidated data from this
+rm_this = find(strcmp('consolidated_data.mat',{allfiles.name}));
+if ~isempty(rm_this)
+	allfiles(rm_this) = [];
+end
 
 % always be caching. 
 hash = DataHash(allfiles);
 if use_cache
-	cached_data = cache(hash);
+	cached_data = [];
+	try
+		cached_data = load([pathname 'consolidated_data.mat'],'cached_data');
+		cached_data = cached_data.cached_data;
+	catch
+	end
 	if ~isempty(cached_data)
 		PID = cached_data.PID;
 		LFP = cached_data.LFP;
@@ -138,7 +152,5 @@ cached_data.paradigm = paradigm;
 cached_data.AllControlParadigms = AllControlParadigms;
 cached_data.paradigm_hashes = paradigm_hashes;
 cached_data.orn = orn;
-cache(hash,[]);
-cache(hash,cached_data);
-
+save([pathname 'consolidated_data.mat'],'cached_data');
 

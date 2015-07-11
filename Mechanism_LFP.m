@@ -170,7 +170,7 @@ end
 
 
 %%
-% To figure out what's going on, we back out filters from the stimulus to the LFP for each of these cases. In the following figure, we back out filters from all the data we have, and plot them colour coded by paradigm:
+% To figure out what's going on, we back out filters from the stimulus to the LFP for each of these cases. In the following figure, we back out filters from all the data we have, and plot them colour coded by paradigm for each neuron:
 
 
 K = NaN(1e3,length(orn));
@@ -190,20 +190,92 @@ end
 
 c= parula(max(paradigm)+1);
 l = [];
-figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
-for i = 1:max(paradigm)
-	time = 1e-3*(1:501)-.2;
-	plot_this = find(paradigm == i);
-	plot_this = setdiff(plot_this,find(isnan(sum(K))));
-	if length(plot_this) > 1
-		l(i) = errorShade(time,mean2(K(300:800,plot_this)),std(K(300:800,plot_this)')/length(plot_this),'Color',c(i,:));
-	else
-		l(i) = plot(time,K(300:800,plot_this),'Color',c(i,:));
+figure('outerposition',[0 0 1300 700],'PaperUnits','points','PaperSize',[1300 700]); hold on
+for j = 1:max(orn)
+	subplot(2,3,j), hold on
+	title(['Neuron ' mat2str(j)])
+	for i = 1:max(paradigm)
+		time = 1e-3*(1:501)-.2;
+		plot_this = find(paradigm == i & orn == j);
+		plot_this = setdiff(plot_this,find(isnan(sum(K))));
+		if length(plot_this) > 1
+			l(i) = errorShade(time,mean2(K(300:800,plot_this)),std(K(300:800,plot_this)')/length(plot_this),'Color',c(i,:));
+		elseif length(plot_this) > 0
+			l(i) = plot(time,K(300:800,plot_this),'Color',c(i,:));
+		end
 	end
 end
-legend(l,{AllControlParadigms.Name})
+% legend(l,{AllControlParadigms.Name})
 xlabel('Lag (s)')
 ylabel('PID \rightarrow LFP Filter')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%% 
+% In some neurons, there is a monotonic progression in the amplitude of the filter from the smallest stimulus to the largest stimulus. In others, it is less monotonic. What causes this difference? One possibility is that pinching has an effect. In some of the data, the ORN pinches, leaving us with only the LFP (and not the spikes). To check if this is the case, we throw out all the data where the neuron pinches:
+
+pinch = mean(fA(30e3:55e3,:));
+pinch(pinch == 0) = NaN;
+pinch(isnan(pinch)) = 1;
+pinch(pinch ~= 1) = 0;
+
+c= parula(max(paradigm)+1);
+l = [];
+figure('outerposition',[0 0 1300 700],'PaperUnits','points','PaperSize',[1300 700]); hold on
+for j = 1:max(orn)
+	subplot(2,3,j), hold on
+	title(['Neuron ' mat2str(j)])
+	for i = 1:max(paradigm)
+		time = 1e-3*(1:501)-.2;
+		plot_this = find(paradigm == i & orn == j);
+		plot_this = setdiff(plot_this,find(isnan(sum(K))));
+		plot_this = setdiff(plot_this,find(pinch));
+		if length(plot_this) > 1
+			l(i) = errorShade(time,mean2(K(300:800,plot_this)),std(K(300:800,plot_this)')/length(plot_this),'Color',c(i,:));
+		elseif length(plot_this) > 0
+			l(i) = plot(time,K(300:800,plot_this),'Color',c(i,:));
+		end
+	end
+end
+% legend(l,{AllControlParadigms.Name})
+xlabel('Lag (s)')
+ylabel('PID \rightarrow LFP Filter')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% So that's not it. Perhaps we can learn something looking at the absolute value of the step in response to the step on in the odour: 
+
+c= parula(max(paradigm)+1);
+l = [];
+figure('outerposition',[0 0 1300 700],'PaperUnits','points','PaperSize',[1300 700]); hold on
+for j = 1:max(orn)
+	subplot(2,3,j), hold on
+	title(['Neuron ' mat2str(j)])
+	for i = 1:max(paradigm)
+		plot_this = find(paradigm == i & orn == j);
+		plot_this = setdiff(plot_this,find(isnan(sum(LFP))));
+		for k = plot_this
+			x = mean(PID(5.5e3:6e3,k)) - mean(PID(4.5e3:5e3,k));
+			y = mean(LFP(5.5e3:6e3,k)) - mean(LFP(1.5e3:5e3,k));
+			y = y/10;
+			plot(x,y,'o','MarkerSize',12,'Color',c(i,:))
+		end
+	end
+end
+% legend(l,{AllControlParadigms.Name})
+xlabel('Stimulus (V)')
+ylabel('LFP magnitude (V)')
 
 PrettyFig;
 

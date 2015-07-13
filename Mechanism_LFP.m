@@ -396,5 +396,5 @@ path1 = [path1 ':/usr/local/bin'];
 setenv('PATH', path1);
 
 if being_published
-	eval(strjoin({'tag -a published',which(mfilename)}))
+	unix(strjoin({'tag -a published',which(mfilename)}))
 end

@@ -34,7 +34,7 @@ tic
 % First, we show that we are able to deliver Gaussian-distributed odour stimuli, and that we are able to vary the means of the distributions of these stimuli. 
 
 
-[PID, LFP, fA, paradigm, orn, AllControlParadigms, paradigm_hashes] = consolidateData('/local-data/DA-paper/LFP-MSG/fig1-flicker/',1);
+[PID, LFP, fA, paradigm, orn, AllControlParadigms, paradigm_hashes,sequence] = consolidateData('/local-data/DA-paper/LFP-MSG/fig1-flicker/',1);
 
 
 % sort the paradigms sensibly
@@ -76,10 +76,11 @@ end
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 c = parula(1+length(unique(paradigm)));
 for i = 1:length(unique(paradigm))
-	hist_this = PID(30e3:55e3,paradigm==i);
+	hist_this = PID(45e3:55e3,paradigm==i);
+	%hist_this = mean2(hist_this);
 	xx =  linspace(min(min(hist_this)),max(max(hist_this)),50);
-	y = NaN(sum(paradigm==i),50);
-	for j = 1:sum(paradigm==i)
+	y = NaN(width(hist_this),50);
+	for j = 1:width(hist_this)
 		y(j,:) = hist(hist_this(:,j),xx);
 		y(j,:) = y(j,:)/sum(y(j,:));
 	end
@@ -366,6 +367,55 @@ if being_published
 	delete(gcf)
 end
 
+% Fast Gain Control
+% Can we see signs of fast gain control in this dataset? For a first pass, we average over all the data for the lowest dose: 
+
+% make linear predictions of firing rates
+% fp = fA*NaN;
+% for i = 1:length(orn)
+% 	stim = PID(30e3:55e3,i);
+% 	time = 1e-3*(1:length(stim));
+% 	this_K = K3(300:800,i);
+% 	this_K = -this_K/min(this_K);
+% 	if ~any(isnan(this_K))
+
+% 		filtertime = 1e-3*(1:length(this_K)) - .2;
+
+% 		fp(30e3:55e3,i) = convolve(time,stim,this_K,filtertime);
+
+% 		% correct for some trivial scaling
+% 		a = fp(30e3:55e3,i);
+% 		b = fA(30e3:55e3,i);
+% 		temp  = isnan(a) | isnan(b);
+% 		temp = fit(a(~temp),b(~temp),'poly1'); 
+% 		fp(:,i) = temp(fp(:,i));
+% 	end
+% end
+
+
+% % gain analysis -- linear model
+
+% figure('outerposition',[0 0 700 400],'PaperUnits','points','PaperSize',[700 400]); hold on
+% clear ph
+% ph(3) = subplot(1,2,1); hold on
+% ph(4) = subplot(1,2,2); hold on
+
+% hl_min = .1;
+% hl_max = 10;
+% history_lengths = logspace(log10(hl_min),log10(hl_max),30);
+
+% resp = mean2(fA (:,paradigm == 1 & ~isnan(max(fp))));
+% stim = mean2(PID(:,paradigm == 1 & ~isnan(max(fp))));
+% pred = mean2(fp (:,paradigm == 1 & ~isnan(max(fp))));
+% rm_this = isnan(resp) | isnan(pred);
+% resp(rm_this) = [];
+% stim(rm_this) = [];
+% pred(rm_this) = [];
+
+% [p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(11),'use_cache',1,'engine',@GainAnalysis5);
+
+
+
 
 %% Version Info
 % The file that generated this document is called:
@@ -396,5 +446,5 @@ path1 = [path1 ':/usr/local/bin'];
 setenv('PATH', path1);
 
 if being_published
-	unix(strjoin({'tag -a published',which(mfilename)}))
+	unix(strjoin({'tag -a published',which(mfilename)}));
 end

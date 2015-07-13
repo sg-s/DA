@@ -9,7 +9,7 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [PID, LFP, fA, paradigm, orn, AllControlParadigms, paradigm_hashes] = consolidateData(pathname,use_cache)
+function [PID, LFP, fA, paradigm, orn, AllControlParadigms, paradigm_hashes, sequence] = consolidateData(pathname,use_cache)
 
 
 PID = [];
@@ -22,6 +22,7 @@ AllControlParadigms.Name = '';
 AllControlParadigms.Outputs = [];
 AllControlParadigms(1) = [];
 paradigm_hashes = {};
+sequence = []; % for each file. 
 
 if ~strcmp(pathname(end),oss)
 	pathname = [pathname oss];
@@ -51,13 +52,16 @@ if use_cache
 		AllControlParadigms = cached_data.AllControlParadigms;
 		paradigm_hashes = cached_data.paradigm_hashes;
 		orn = cached_data.orn;
+		sequence = cached_data.sequence;
 		return
 	end
 end
 
 for i = 1:length(allfiles)
 	load(strcat(pathname,allfiles(i).name));
+	disp(strcat(pathname,allfiles(i).name));
 	for j = 1:length(data)
+		textbar(j,length(data))
 		if ~isempty(data(j).PID)
 			clear this_paradigm 
 			% figure out which control paradigm this is
@@ -138,6 +142,13 @@ for i = 1:length(allfiles)
 			paradigm = [paradigm  this_paradigm*ones(1,width(this_PID))];
 			orn = [orn  i*ones(1,width(this_PID))];
 
+			% also add the sequence 
+			this_sequence = find(timestamps(1,:)==j);
+			if length(rm_this) 
+				this_sequence(rm_this) = [];	
+			end
+			sequence = [sequence this_sequence];
+
 		end
 	end
 end
@@ -152,5 +163,6 @@ cached_data.paradigm = paradigm;
 cached_data.AllControlParadigms = AllControlParadigms;
 cached_data.paradigm_hashes = paradigm_hashes;
 cached_data.orn = orn;
+cached_data.sequence = sequence;
 save([pathname 'consolidated_data.mat'],'cached_data');
 

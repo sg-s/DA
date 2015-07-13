@@ -160,6 +160,9 @@ if being_published
 end
 
 
+%%
+% We can clearly see that the fluctuations in the LFP decrease with increasing stimulus mean, suggesting decreasing gain. 
+
 % ##       ######## ########     ######## #### ##       ######## ######## ########   ######  
 % ##       ##       ##     ##    ##        ##  ##          ##    ##       ##     ## ##    ## 
 % ##       ##       ##     ##    ##        ##  ##          ##    ##       ##     ## ##       
@@ -172,19 +175,20 @@ end
 %%
 % To figure out what's going on, we back out filters from the stimulus to the LFP for each of these cases. In the following figure, we back out filters from all the data we have, and plot them colour coded by paradigm for each neuron:
 
-
-K = NaN(1e3,length(orn));
-for i = 1:length(orn)
-	resp = LFP(30e3:55e3,i);
-	rm_this = isnan(resp);
-	resp(rm_this) = [];
-	if length(resp) 
-		resp = filter_trace(resp,1e3,10);
-		stim = PID(30e3:55e3,i);
-		stim(rm_this) = [];
-		stim(1:500) = [];
-		resp(end-499:end) = [];
-		K(:,i) = FitFilter2Data(stim,resp,[],'reg=1;','filter_length=999;');
+if ~exist('K','var')
+	K = NaN(1e3,length(orn));
+	for i = 1:length(orn)
+		resp = LFP(30e3:55e3,i);
+		rm_this = isnan(resp);
+		resp(rm_this) = [];
+		if length(resp) 
+			resp = filter_trace(resp,1e3,10);
+			stim = PID(30e3:55e3,i);
+			stim(rm_this) = [];
+			stim(1:500) = [];
+			resp(end-499:end) = [];
+			K(:,i) = FitFilter2Data(stim,resp,[],'reg=1;','filter_length=999;');
+		end
 	end
 end
 
@@ -276,6 +280,164 @@ end
 % legend(l,{AllControlParadigms.Name})
 xlabel('Stimulus (V)')
 ylabel('LFP magnitude (V)')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% Perhaps these unexpected changes are due to unexpected stimulus values. In the following figure, we plot the absolute value of the magnitude of the filter vs. the mean stimulus in each trial. 
+
+mean_stim = NaN*orn;
+LFP_filter_height = NaN*orn;
+
+for i = 1:length(orn)
+	mean_stim(i) = mean(PID(30e3:55e3,i));
+	LFP_filter_height(i) = -min(K(400:600,i));
+end
+
+
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+for i = 1:max(orn)
+	plot(mean_stim(orn==i),LFP_filter_height(orn==i),'k+')
+end
+
+
+%% Relative Gain Changes in LFP
+% Can we also directly estimate gain changes by comparing the LFP responses to the no background case to the LFP responses to the background? 
+
+% LFP_gain = NaN*orn;
+% mean_stim = NaN*orn;
+% for i = 1:length(orn)
+% 	% determine if this is a baseline trial or not
+% 	if paradigm(i) == 1
+% 		% baseline trial, skip
+% 		LFP_gain(i) = 1;
+
+% 	else
+% 		% not a baseline trial. find the matching baseline trial
+% 		resp0 = LFP(30e3:55e3,orn == orn(i) & paradigm == 1);
+% 		LFP_gain(orn == i & paradigm == 1) = 1;
+% 		rm_this = isnan(sum(resp0));
+% 		resp0(:,rm_this) = [];
+% 		if width(resp0) > 1
+% 			resp0 = mean2(resp0);
+% 		end
+
+% 		resp = LFP(30e3:55e3,i);
+% 		if any(isnan(resp))
+% 		else
+% 			ff = fit(resp0(:),resp(:),'poly1');
+% 			LFP_gain(i) = ff.p1;
+% 		end
+% 	end
+% 	mean_stim(i) = mean(PID(30e3:55e3,i));
+% end
+
+% figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% for i = 1:max(orn)
+% 	plot(mean_stim(orn==i),LFP_gain(orn==i),'k-+')
+% end
+
+%% LFP -> Firing Filters
+% We now back out filters from the LFP to the firing rate for each trial, where possible. 
+
+
+if ~exist('K2','var')
+	K2 = NaN(1e3,length(orn));
+	for i = 1:length(orn)
+		resp = fA(30e3:55e3,i);
+		stim = LFP(30e3:55e3,i);
+		rm_this = isnan(resp) | isnan(stim);
+		resp(rm_this) = [];
+		stim(rm_this) = [];
+		if length(resp) 
+			stim = filter_trace(stim,1e3,10);
+			stim(1:500) = [];
+			resp(end-499:end) = [];
+			K2(:,i) = FitFilter2Data(stim,resp,[],'reg=1;','filter_length=999;');
+		end
+	end
+end
+
+
+c= parula(max(paradigm)+1);
+l = [];
+figure('outerposition',[0 0 1300 700],'PaperUnits','points','PaperSize',[1300 700]); hold on
+for j = 1:max(orn)
+	subplot(2,3,j), hold on
+	title(['Neuron ' mat2str(j)])
+	for i = 1:max(paradigm)
+		time = 1e-3*(1:501)-.2;
+		plot_this = find(paradigm == i & orn == j);
+		plot_this = setdiff(plot_this,find(isnan(sum(K))));
+		if length(plot_this) > 1
+			l(i) = errorShade(time,mean2(K2(300:800,plot_this)),std(K(300:800,plot_this)')/length(plot_this),'Color',c(i,:));
+		elseif length(plot_this) > 0
+			l(i) = plot(time,K2(300:800,plot_this),'Color',c(i,:));
+		end
+	end
+end
+% legend(l,{AllControlParadigms.Name})
+xlabel('Lag (s)')
+ylabel('LFP \rightarrow Firing Filter')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% While the data is spotty, it looks like the magnitude of the filter does not change much. 
+
+
+%% Stimulus -> Firing Filters
+% Finally, we  back out filters from the stimulus to the firing rate for each trial, where possible. 
+
+
+if ~exist('K3','var')
+	K3 = NaN(1e3,length(orn));
+	for i = 1:length(orn)
+		resp = fA(30e3:55e3,i);
+		stim = PID(30e3:55e3,i);
+		rm_this = isnan(resp) | isnan(stim);
+		resp(rm_this) = [];
+		stim(rm_this) = [];
+		if length(resp) 
+			stim(1:500) = [];
+			resp(end-499:end) = [];
+			K3(:,i) = FitFilter2Data(stim,resp,[],'reg=1;','filter_length=999;');
+		end
+	end
+end
+
+
+c= parula(max(paradigm)+1);
+l = [];
+figure('outerposition',[0 0 1300 700],'PaperUnits','points','PaperSize',[1300 700]); hold on
+for j = 1:max(orn)
+	subplot(2,3,j), hold on
+	title(['Neuron ' mat2str(j)])
+	for i = 1:max(paradigm)
+		time = 1e-3*(1:501)-.2;
+		plot_this = find(paradigm == i & orn == j);
+		plot_this = setdiff(plot_this,find(isnan(sum(K))));
+		if length(plot_this) > 1
+			l(i) = errorShade(time,mean2(K3(300:800,plot_this)),std(K(300:800,plot_this)')/length(plot_this),'Color',c(i,:));
+		elseif length(plot_this) > 0
+			l(i) = plot(time,K3(300:800,plot_this),'Color',c(i,:));
+		end
+	end
+end
+% legend(l,{AllControlParadigms.Name})
+xlabel('Lag (s)')
+ylabel('Stimulus \rightarrow Firing Filter')
 
 PrettyFig;
 

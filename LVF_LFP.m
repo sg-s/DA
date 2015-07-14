@@ -52,8 +52,9 @@ figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 50
 l(1) = errorShade(time(1:10:end),mean2(PID(1:10:end,:)),sem(PID(1:10:end,:)),'Color',[0 0 1]);
 l(2) = errorShade(time(1:10:end),mean2(newPID(1:10:end,:)),sem(newPID(1:10:end,:)),'Color',[1 0 0]);
 xlabel('Time (s)')
+ylabel('PID (V)')
 set(gca,'XLim',[20 60])
-legend(l,{'Old stimulus','New Stimulus'})
+legend(l,{'January 28 2015','July 14 2015'})
 
 PrettyFig;
 
@@ -72,7 +73,8 @@ figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 50
 l(1) = errorShade(time(1:10:end),mean2(PID(1:10:end,:)),sem(PID(1:10:end,:)),'Color',[0 0 1]);
 l(2) = errorShade(time(1:10:end),ff(mean2(newPID(1:10:end,:))),sem(newPID(1:10:end,:)),'Color',[1 0 0]);
 xlabel('Time (s)')
-legend(l,{'Old stimulus','New Rescaled'})
+ylabel('PID (V)')
+legend(l,{'January 28 2015','July 14 2015 Rescaled'})
 set(gca,'XLim',[20 60])
 PrettyFig;
 

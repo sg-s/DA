@@ -264,6 +264,11 @@ for i = 1:length(history_lengths)
 	end	
 end
 
+% normalise by the mean gain change
+low_slopes = low_slopes./all_slopes;
+high_slopes = high_slopes./all_slopes;
+all_slopes = 1;	
+
 if length(plothere) == 4
 	% plot to summary figure
 	handles.horz_line = plot(plothere(4),history_lengths,all_slopes*ones(1,length(history_lengths)),'k'); hold on
@@ -277,6 +282,8 @@ end
 %    ##     ## ##     ## ##     ##    ##          ##    ##    ##   ##   ######### ##        
 %    ##     ## ##     ## ##     ##    ##    ##    ##    ##    ##    ##  ##     ## ##        
 %    ########   #######   #######     ##     ######     ##    ##     ## ##     ## ##        
+
+
 
 
 % bootstrap slopes
@@ -297,6 +304,7 @@ end
 % high_slopes2.data(~v) = NaN;
 
 	
+
 
 
 % this is where we plot the history length plot

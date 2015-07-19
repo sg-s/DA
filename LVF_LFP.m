@@ -84,24 +84,13 @@ if being_published
 end
 
 %% Example Data
-% How does the neuron respond to this stimulus? Does the LFP and/or firing rates show evidence for fast gain control? In the following figure, we plot the stimulus, LFP and the response from one example neuron. The shading shows the standard error of the mean:
+% How does the neuron respond to this stimulus? Does the LFP and/or firing rates show evidence for fast gain control? In the following figure, we plot the stimulus, LFP and the response from all the neurons in the dataset. The shading shows the standard error of the mean. Each neuron is in a different colour. 
 
 p = '/local-data/DA-paper/large-variance-flicker/LFP/';
 [PID, LFP, fA, paradigm, orn, AllControlParadigms, paradigm_hashes,sequence] = consolidateData(p,1);
 
-% sort the paradigms sensibly
-sort_value = [];
-for i = 1:length(AllControlParadigms)
-	sort_value(i) = mean(mean(AllControlParadigms(i).Outputs));
-end
-
-[~,idx] = sort(sort_value);
-AllControlParadigms = AllControlParadigms(idx);
-paradigm_new = paradigm*NaN;
-for i = 1:length(idx)
-	paradigm_new(paradigm == idx(i)) = i;
-end
-paradigm = paradigm_new;
+% set to NaN firing rates that are 0
+fA(:,max(fA) == 0) = NaN;
 
 % throw out trials where we didn't record the LFP, for whatever reason
 not_LFP = 0*orn;
@@ -113,25 +102,39 @@ LFP(:,not_LFP< 0.5) = NaN;
 % filter the LFP
 filteredLFP = LFP;
 for i = 1:width(LFP)
-	filteredLFP(:,i) = 10*filter_trace(LFP(:,i),1000,10);
+	a = find(~isnan(LFP(:,i)),1,'first');
+	z = find(~isnan(LFP(:,i)),1,'last');
+	if isempty(a)
+		a = 1;
+	end
+	if isempty(z)
+		z = length(LFP);
+	end
+	filteredLFP(a:z,i) = 10*filter_trace(LFP(a:z,i),1000,10);
 end
 
 figure('outerposition',[0 0 900 700],'PaperUnits','points','PaperSize',[900 700]); hold on
-subplot(3,1,1), hold on
+clear a
+for i = 1:3
+	a(i) = subplot(3,1,i); hold on
+	set(a(i),'XLim',[20 50])
+end
 time = 1e-3*(1:length(PID));
-errorShade(time,mean2(PID(:,orn==1)),sem(PID(:,orn==1)),'Color',[0 0 0]);
-set(gca,'XLim',[20 50])
-ylabel('Stimulus (V)')
-
-subplot(3,1,2), hold on
-errorShade(time,mean2(filteredLFP(:,orn==1)),sem(filteredLFP(:,orn==1)),'Color',[0 0 0]);
-set(gca,'XLim',[20 50])
-ylabel('LFP (mV)')
-
-subplot(3,1,3), hold on
-errorShade(time,mean2(fA(:,orn==1)),sem(fA(:,orn==1)),'Color',[0 0 0]);
-set(gca,'XLim',[20 50])
-ylabel('Firing Rate (Hz)')
+c = parula(length(unique(orn))+1);
+for i = 1:length(unique(orn))
+	example_orn = i;
+	axes(a(1))
+	errorShade(time,mean2(PID(:,orn==example_orn)),sem(PID(:,orn==example_orn)),'Color',c(i,:),'SubSample',50);
+	axes(a(2))
+	errorShade(time,mean2(filteredLFP(:,orn==example_orn)),sem(filteredLFP(:,orn==example_orn)),'Color',c(i,:),'SubSample',50);
+	axes(a(3))
+	errorShade(time,mean2(fA(:,orn==example_orn)),sem(fA(:,orn==example_orn)),'Color',c(i,:),'SubSample',50);
+	
+end
+ylabel(a(1),'Stimulus (V)')
+ylabel(a(2),'\DeltaLFP (mV)')
+ylabel(a(3),'Firing Rate (Hz)')
+ set(a(2),'YLim',[-4 2.5])
 
 PrettyFig;
 
@@ -141,80 +144,73 @@ if being_published
 end
 
 %% Example Filters
-% We now extract all possible filters from this dataset:
+% We now extract all possible filters from this dataset, for each neuron: 
 
+% K -- PID -> LFP filter
 if ~exist('K','var')
-	K = NaN(1e3,length(orn));
-	for i = 1:length(orn)
-		resp = filteredLFP(20e3:55e3,i);
-		rm_this = isnan(resp);
-		resp(rm_this) = [];
-		if length(resp) 
-			stim = PID(20e3:55e3,i);
-			stim(rm_this) = [];
-			stim(1:400) = [];
-			resp(end-399:end) = [];
-			K(:,i) = FitFilter2Data(stim,resp,[],'reg=1;','filter_length=999;');
-		end
+	K = NaN(1e3,length(unique(orn)));
+	for i = 1:length(unique(orn))
+		resp = mean2(filteredLFP(20e3:55e3,orn==i));
+		stim = mean2(PID(20e3:55e3,orn==i));
+		stim(1:400) = [];
+		resp(end-399:end) = [];
+		temp = FitFilter2Data(stim,resp,[],'reg=1;','filter_length=1399;');
+		% throw out 200ms on either end
+		temp(1:200) = [];
+		temp(end-199:end) = [];
+		K(:,i) = temp;
 	end
 end
 
 if ~exist('K2','var')
-	K2 = NaN(1e3,length(orn));
-	for i = 1:length(orn)
-		resp = fA(20e3:55e3,i);
-		stim = filteredLFP(20e3:55e3,i);
-		rm_this = isnan(resp) | isnan(stim);
-		resp(rm_this) = [];
-		stim(rm_this) = [];
-		if length(resp) 
-			stim = filter_trace(stim,1e3,10);
-			stim(1:400) = [];
-			resp(end-399:end) = [];
-			K2(:,i) = FitFilter2Data(stim,resp,[],'reg=1;','filter_length=999;');
-		end
+	K2 = NaN(1e3,length(unique(orn)));
+	for i = 1:length(unique(orn))
+		stim = mean2(filteredLFP(20e3:55e3,orn==i));
+		resp = mean2(fA(20e3:55e3,orn==i));
+		stim(1:400) = [];
+		resp(end-399:end) = [];
+		temp = FitFilter2Data(stim,resp,[],'reg=1;','filter_length=1399;');
+		% throw out 200ms on either end
+		temp(1:200) = [];
+		temp(end-199:end) = [];
+		K2(:,i) = temp;
 	end
 end
 
 if ~exist('K3','var')
-	K3 = NaN(1e3,length(orn));
-	for i = 1:length(orn)
-		resp = fA(20e3:55e3,i);
-		stim = PID(20e3:55e3,i);
-		rm_this = isnan(resp) | isnan(stim);
-		resp(rm_this) = [];
-		stim(rm_this) = [];
-		if length(resp) & sum(resp) > 0
-			stim(1:400) = [];
-			resp(end-399:end) = [];
-			K3(:,i) = FitFilter2Data(stim,resp,[],'reg=1;','filter_length=999;');
-		end
+	K3 = NaN(1e3,length(unique(orn)));
+	for i = 1:length(unique(orn))
+		stim = mean2(PID(20e3:55e3,orn==i));
+		resp = mean2(fA(20e3:55e3,orn==i));
+		stim(1:400) = [];
+		resp(end-399:end) = [];
+		temp = FitFilter2Data(stim,resp,[],'reg=1;','filter_length=1399;');
+		% throw out 200ms on either end
+		temp(1:200) = [];
+		temp(end-199:end) = [];
+		K3(:,i) = temp;
 	end
 end
 
-figure('outerposition',[0 0 1400 450],'PaperUnits','points','PaperSize',[1400 450]); hold on
+figure('outerposition',[0 0 1400 450],'PaperUnits','points','PaperSize',[1400 550]); hold on
+clear a
+for i = 1:3
+	a(i) = subplot(1,3,i); hold on
+	xlabel('Lag (s)')
+end
+filtertime = 1e-3*(1:length(K)) - .2;
+for i = 1:width(K)
+	axes(a(1))
+	plot(filtertime,K)
+	axes(a(2))
+	plot(filtertime,K2)
+	axes(a(3))
+	plot(filtertime,K3)
 
-subplot(1,3,1), hold on
-title('PID \rightarrow LFP Filter')
-time = 1e-3*(1:501)-.1;
-plot_this = find(orn == 1);
-plot_this = setdiff(plot_this,find(isnan(sum(K))));
-errorShade(time,mean2(K(300:800,plot_this)),sem(K(300:800,plot_this)));
-xlabel('Lag (s)')
-
-subplot(1,3,2), hold on
-title('LFP \rightarrow Firing rate Filter')
-plot_this = find(orn == 1);
-plot_this = setdiff(plot_this,find(isnan(sum(K2))));
-errorShade(time,mean2(K2(300:800,plot_this)),sem(K2(300:800,plot_this)));
-xlabel('Lag (s)')
-
-subplot(1,3,3), hold on
-title('PID \rightarrow Firing rate Filter')
-plot_this = find(orn == 1);
-plot_this = setdiff(plot_this,find(isnan(sum(K3))));
-errorShade(time,mean2(K3(300:800,plot_this)),sem(K3(300:800,plot_this)));
-xlabel('Lag (s)')
+end
+title(a(1),'PID \rightarrow LFP Filter')
+title(a(2),'LFP \rightarrow Firing rate Filter')
+title(a(3),'PID \rightarrow Firing rate Filter')
 
 PrettyFig;
 
@@ -227,80 +223,79 @@ end
 % First, we check if we see evidence for fast gain control in the firing rate output of the neuron. 
 
 
-% make linear predictions of the LFP and the response
-fp = fA*NaN;
-for i = 1:length(orn)
-	filtertime = 1e-3*(1:501)-.1;
-	this_K = K3(300:800,i);
-	fp(:,i) = convolve(time,PID(:,i),this_K,filtertime);
+
+% make LN predictions of the LFP and the response
+fp = NaN(length(fA),length(unique(orn)));
+for i = 1:length(unique(orn))
+	filtertime = 1e-3*(1:1e3)-.2;
+	fp(:,i) = convolve(time,mean2(PID(:,orn==i)),K3(:,i),filtertime);
 	% correct for some trivial scaling
 	a = fp(:,i);
-	b = fA(:,i);
+	b = mean2(fA(:,orn == i));
 	temp  = isnan(a) | isnan(b);
 	temp = fit(a(~temp),b(~temp),'poly1'); 
 	fp(:,i) = temp(fp(:,i));
 end
 
-LFP_pred = filteredLFP*NaN;
-for i = 1:length(orn)
-	filtertime = 1e-3*(1:501)-.1;
-	this_K = K(300:800,i);
-	if ~any(isnan(this_K))
-		LFP_pred(:,i) = convolve(time,PID(:,i),this_K,filtertime);
-		% correct for some trivial scaling
-		a = LFP_pred(:,i);
-		b = filteredLFP(:,i);
-		temp  = isnan(a) | isnan(b);
-		temp = fit(a(~temp),b(~temp),'poly1'); 
-		LFP_pred(:,i) = temp(LFP_pred(:,i));
-	end
+LFP_pred = NaN(length(fA),length(unique(orn)));
+for i = 1:length(unique(orn))
+	filtertime = 1e-3*(1:1e3)-.2;
+	LFP_pred(:,i) = convolve(time,mean2(PID(:,orn==i)),K(:,i),filtertime);
+	% correct for some trivial scaling
+	a = LFP_pred(:,i);
+	b = mean2(filteredLFP(:,orn == i));
+	temp  = isnan(a) | isnan(b);
+	temp = fit(a(~temp),b(~temp),'poly7'); 
+	LFP_pred(:,i) = temp(LFP_pred(:,i));
 end
 
-% gain analysis -- LN model
-figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+for i = 1:length(unique(orn))
 
-% first we do the firing rates
-clear ph
-ph(3) = subplot(2,2,1); hold on
-ph(4) = subplot(2,2,2); hold on
+	% gain analysis -- LN model
+	figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
 
-hl_min = .1;
-hl_max = 10;
-history_lengths = logspace(log10(hl_min),log10(hl_max),30);
+	% first we do the firing rates
+	clear ph
+	ph(3) = subplot(2,2,1); hold on
+	ph(4) = subplot(2,2,2); hold on
 
-resp = mean2(fA(:,orn==1));
-stim = mean2(PID(:,orn==1,:));
-pred = mean2(fp(:,orn==1));
-stim = stim(20e3:55e3);
-pred = pred(20e3:55e3);
-resp = resp(20e3:55e3);
+	hl_min = .1;
+	hl_max = 10;
+	history_lengths = logspace(log10(hl_min),log10(hl_max),30);
 
-temp = fit(pred(:),resp(:),'poly5');
-pred = temp(pred);
+	resp = mean2(fA(:,orn==i));
+	stim = mean2(PID(:,orn==i));
+	pred = (fp(:,i));
 
-[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(7),'use_cache',1,'engine',@GainAnalysis5);
-title(ph(4),'ORN 1 Firing Rate')
+	stim = stim(20e3:55e3);
+	pred = pred(20e3:55e3);
+	resp = resp(20e3:55e3);
 
-% now do the same for the LFP
-ph(3) = subplot(2,2,3); hold on
-ph(4) = subplot(2,2,4); hold on
+	history_lengths = findValidHistoryLengths(1e-3,stim,pred,resp,30,.33);
 
-resp = mean2(filteredLFP(:,orn==1));
-pred = mean2(LFP_pred(:,orn==1));
-pred = pred(20e3:55e3);
-resp = resp(20e3:55e3);
+	[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'use_cache',1,'engine',@GainAnalysis5,'example_history_length',history_lengths(11));
+	title(ph(4),['ORN ',mat2str(i),' Firing Rate'])
 
-temp = fit(pred(:),resp(:),'poly5');
-pred = temp(pred);
+	% now do the same for the LFP
+	ph(3) = subplot(2,2,3); hold on
+	ph(4) = subplot(2,2,4); hold on
 
-[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(7),'use_cache',1,'engine',@GainAnalysis5);
-title(ph(4),'ORN 1 LFP')
+	resp = mean2(filteredLFP(:,orn==i));
+	pred = LFP_pred(:,i);
+	pred = pred(20e3:55e3);
+	resp = resp(20e3:55e3);
 
-PrettyFig;
+	[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(11),'use_cache',1,'engine',@GainAnalysis5);
+	title(ph(4),['ORN ',mat2str(i),' LFP'])
+	xlabel(ph(3),'LFP (pred)')
+	ylabel(ph(3),'LFP (data)')
 
-if being_published
-	snapnow
-	delete(gcf)
+	PrettyFig;
+
+	if being_published
+		snapnow
+		delete(gcf)
+	end
 end
 
 %% Version Info

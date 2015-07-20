@@ -164,6 +164,29 @@ for i = 1:length(s)
 	pred(:,i) =  ff(pred(:,i));
 end
 
+figure('outerposition',[0 0 1400 800],'PaperUnits','points','PaperSize',[1400 800]); hold on
+for i = 1:length(s)
+	clear ph
+	ph(3) = subplot(2,length(s),i); hold on
+	ph(4) = subplot(2,length(s),length(s)+i); hold on
+
+	hl_min = .1;
+	hl_max = 10;
+	history_lengths = logspace(log10(hl_min),log10(hl_max),30);
+
+	history_lengths = findValidHistoryLengths(1e-3,PID,pred(:,i),resp(:,i),30,.33);
+
+	[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',resp(:,i),'prediction',pred(:,i),'stimulus',PID,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'use_cache',1,'engine',@GainAnalysis5,'example_history_length',history_lengths(11));
+
+end
+
+PrettyFig()
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 %% Positive Controls
 % Now, we check the ability of the analysis method to detect fast gain control in data from a model that explicitly assumes fast gain control (i.e., the DA model). The following figure shows the parameters of the DA model used to generate synthetic data. We also vary the B parameter (which has no visible effects on the filters, but varies the contribution of the $K_z$ filter)

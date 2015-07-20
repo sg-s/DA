@@ -8,7 +8,7 @@
 
 function [history_lengths] = findValidHistoryLengths(dt,stim,pred,resp,n_points,frac);
 
-overlap_fraction = .5;
+overlap_fraction = .1;
 
 % prepare the data
 x.stimulus = stim;
@@ -26,8 +26,8 @@ p = NaN(2,length(history_lengths));
 [p,low_slopes,high_slopes,low_gof,high_gof,example_plot,extra_variables] = GainAnalysis5(x,history_lengths,example_history_length,[],p);
 
 % find the overlap
-ok1 = (extra_variables.low_max - extra_variables.high_min)./(extra_variables.low_max-extra_variables.low_min)>.5;
- ok2 = (extra_variables.low_max - extra_variables.high_min)./(extra_variables.high_max-extra_variables.high_min)>.5;
+ok1 = (extra_variables.low_max - extra_variables.high_min)./(extra_variables.low_max-extra_variables.low_min)>overlap_fraction;
+ ok2 = (extra_variables.low_max - extra_variables.high_min)./(extra_variables.high_max-extra_variables.high_min)>overlap_fraction;
  ok = ok1 & ok2;
 
  min_h = history_lengths(find(ok,1,'first'));

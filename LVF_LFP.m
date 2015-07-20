@@ -220,7 +220,7 @@ if being_published
 end
 
 %% Example Data: Fast Gain Control
-% First, we check if we see evidence for fast gain control in the firing rate output of the neuron. 
+% First, we check if we see evidence for fast gain control in the firing rate output of the neuron. In the following figure, we show the results of standard methods of gain analysis for a randomly chosen example neuron. In the following analysis, we compare the data to a LN model prediction of the data. Any evidence of fast gain control we observe here is therefore not attributable to a output non-linearity.  
 
 
 
@@ -230,10 +230,10 @@ for i = 1:length(unique(orn))
 	filtertime = 1e-3*(1:1e3)-.2;
 	fp(:,i) = convolve(time,mean2(PID(:,orn==i)),K3(:,i),filtertime);
 	% correct for some trivial scaling
-	a = fp(:,i);
-	b = mean2(fA(:,orn == i));
+	a = fp(20e3:55e3,i);
+	b = mean2(fA(20e3:55e3,orn == i));
 	temp  = isnan(a) | isnan(b);
-	temp = fit(a(~temp),b(~temp),'poly1'); 
+	temp = fit(a(~temp),b(~temp),'poly5'); 
 	fp(:,i) = temp(fp(:,i));
 end
 
@@ -249,8 +249,7 @@ for i = 1:length(unique(orn))
 	LFP_pred(:,i) = temp(LFP_pred(:,i));
 end
 
-for i = 1:length(unique(orn))
-
+for i = 1
 	% gain analysis -- LN model
 	figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
 
@@ -271,10 +270,12 @@ for i = 1:length(unique(orn))
 	pred = pred(20e3:55e3);
 	resp = resp(20e3:55e3);
 
-	history_lengths = findValidHistoryLengths(1e-3,stim,pred,resp,30,.33);
+	% history_lengths = findValidHistoryLengths(1e-3,stim,pred,resp,30,.33);
+	history_lengths = logspace(-1,1,30);
 
-	[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'use_cache',1,'engine',@GainAnalysis5,'example_history_length',history_lengths(11));
+	[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'use_cache',1,'engine',@GainAnalysis5);
 	title(ph(4),['ORN ',mat2str(i),' Firing Rate'])
+	set(ph(4),'XLim',[.1 10])
 
 	% now do the same for the LFP
 	ph(3) = subplot(2,2,3); hold on
@@ -285,10 +286,11 @@ for i = 1:length(unique(orn))
 	pred = pred(20e3:55e3);
 	resp = resp(20e3:55e3);
 
-	[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(11),'use_cache',1,'engine',@GainAnalysis5);
+	[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'use_cache',1,'engine',@GainAnalysis5);
 	title(ph(4),['ORN ',mat2str(i),' LFP'])
 	xlabel(ph(3),'LFP (pred)')
 	ylabel(ph(3),'LFP (data)')
+	set(ph(4),'XLim',[.1 10])
 
 	PrettyFig;
 
@@ -297,6 +299,95 @@ for i = 1:length(unique(orn))
 		delete(gcf)
 	end
 end
+
+%%
+% Now, we summarise the results from all the data, omitting the scatter plots on the left and the points where the gain is not signifcanlty different on the right. In the following figure, only the best-fit (PCA) lines to the data are shown on the left, and only the points where the gain is statistically different is shown on the right. 
+
+figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+clear a
+for i = 1:4
+	a(i) = subplot(2,2,i); hold on
+end
+history_lengths = logspace(-1,1,30);
+
+for i = 1:length(unique(orn))
+	% first we do the firing rates
+	clear ph
+	ph(3) = a(1);
+	ph(4) = a(2);
+	
+	resp = mean2(fA(:,orn==i));
+	stim = mean2(PID(:,orn==i));
+	pred = (fp(:,i));
+
+	stim = stim(20e3:55e3);
+	pred = pred(20e3:55e3);
+	resp = resp(20e3:55e3);
+
+	[p,~,~,~,~,history_lengths,handles]=GainAnalysisWrapper2('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(10),'use_cache',1,'engine',@GainAnalysis5);
+	
+
+	% cosmetics
+	h=get(ph(3),'Children');
+	rm_this = [];
+	for j = 1:length(h)
+		if strcmp(get(h(j),'Marker'),'.')
+			rm_this = [rm_this j];
+		end
+	end
+	delete(h(rm_this))
+	delete(handles.green_line)
+	delete(handles.red_line)
+	delete(handles.vert_line)
+
+
+
+	% now do the same for the LFP
+	clear ph
+	ph(3) = a(3);
+	ph(4) = a(4);
+
+	resp = mean2(filteredLFP(:,orn==i));
+	pred = LFP_pred(:,i);
+	pred = pred(20e3:55e3);
+	resp = resp(20e3:55e3);
+
+	[p,~,~,~,~,history_lengths,handles]=GainAnalysisWrapper2('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(10),'use_cache',1,'engine',@GainAnalysis5);
+	
+	% cosmetics
+	h=get(ph(3),'Children');
+	rm_this = [];
+	for j = 1:length(h)
+		if strcmp(get(h(j),'Marker'),'.')
+			rm_this = [rm_this j];
+		end
+	end
+	delete(h(rm_this))
+	delete(handles.green_line)
+	delete(handles.red_line)
+	delete(handles.vert_line)
+
+
+end
+
+set(a(2),'YLim',[0.75 1.55])
+set(a(4),'YLim',[.75 1.75])
+xlabel(a(3),'LN Prediction (mV)')
+ylabel(a(3),'LFP (mV)')
+ylabel(a(1),'Firing Rate (Hz)')
+title(a(1),'')
+title(a(3),'')
+
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% As the figure shows, fast gain control is observed in every neuron tested, and we see evidence of fast gain control both in the firing rates and in the LFP. 
 
 %% Version Info
 % The file that generated this document is called:

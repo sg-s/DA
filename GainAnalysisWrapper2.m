@@ -51,6 +51,11 @@ else
 end
 
 % check for optional arguments
+if exist('verbosity','var') 
+else
+	verbosity = 0;
+end
+
 
 if exist('history_lengths','var') 
 else
@@ -61,7 +66,7 @@ else
 
 	% make history lengths based on the correlation time of the data
 	history_lengths = (3*floor(1000*logspace(log10(ct/2),1,30)/3))/1e3;
-	if nargin < 5 || isempty(example_history_length)
+	if isempty(example_history_length)
 		example_history_length = history_lengths(10);
 	end
 end
@@ -110,6 +115,9 @@ end
 if isempty(cached_data)
 	if exist('example_history_length','var') 
 	else
+		if verbosity
+			disp('using default example histroy length')
+		end
 		example_history_length = history_lengths(10);
 	end
 	[p_LN,l,h,low_gof,high_gof,~,~,handles] = x.engine(x,history_lengths,example_history_length,ph);
@@ -119,10 +127,17 @@ if isempty(cached_data)
 	g(~p_LN(2,:)) = -Inf;
 	[~,loc]=max(g);
 	ehl = history_lengths(loc);
+
 	cache(DataHash(p_LN),ehl);
+	if verbosity
+		disp('Computing the best example history length for next time. and that is...')
+		disp(ehl)
+	end
 
 else
-	% cached data exists. let's use that 
+	if verbosity
+		disp('cached data exists. lets use that ')
+	end
 	p_LN = cached_data;
 	if exist('example_history_length','var') 
 		ehl = example_history_length;

@@ -83,8 +83,8 @@ if being_published
 	delete(gcf)
 end
 
-%% Example Data
-% How does the neuron respond to this stimulus? Does the LFP and/or firing rates show evidence for fast gain control? In the following figure, we plot the stimulus, LFP and the response from all the neurons in the dataset. The shading shows the standard error of the mean. Each neuron is in a different colour. 
+%% Summary of Data
+% How does the neuron respond to this stimulus? Does the LFP and/or firing rates show evidence for fast gain control? In the following figure, we plot the stimulus, LFP and the response from all the neurons in the dataset. The shading shows the standard error of the mean. Each neuron is in a different colour. The stimulus, the LFP and the firing rates are all highly reproducible. 
 
 p = '/local-data/DA-paper/large-variance-flicker/LFP/';
 [PID, LFP, fA, paradigm, orn, AllControlParadigms, paradigm_hashes,sequence] = consolidateData(p,1);
@@ -143,7 +143,7 @@ if being_published
 	delete(gcf)
 end
 
-%% Example Filters
+%% Summary of all Filters
 % We now extract all possible filters from this dataset, for each neuron: 
 
 % K -- PID -> LFP filter
@@ -218,6 +218,54 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%% Filter Size Analysis
+% From this coarse overview of the data, it looks like while both the PID $\larrow$ LFP and the PID $\larrow$ Firing filters vary quite a bit in amplitude, it doesn't look like the transformation from the LFP to the firing rate varies that much. To look at this a little closer, we plot the amplitudes of these three filters against each other, after throwing out one neuron which appears to be an obvious outlier:
+
+figure('outerposition',[0 0 1400 450],'PaperUnits','points','PaperSize',[1400 550]); hold on
+clear a
+for i = 1:3
+	a(i) = subplot(1,3,i); hold on
+end
+x = -min(K); y = max(K3); x(3) = []; y(3) = [];
+xlabel(a(1),'PID \rightarrow LFP Amplitude')
+ylabel(a(1),'PID \rightarrow Firing Rate Amplitude')
+
+plot(a(1),x,y,'k+')
+ff = fit(x(:),y(:),'poly1');
+l = plot(a(1),x(:),ff(x),'k');
+legend(l,['r^2 = ',oval(rsquare(x,y))],'Location','northwest')
+
+
+x = -min(K); y = -min(K2);  x(3) = []; y(3) = [];
+xlabel(a(2),'PID \rightarrow LFP Amplitude')
+ylabel(a(2),'LFP \rightarrow Firing Rate Amplitude')
+
+plot(a(2),x,y,'k+')
+ff = fit(x(:),y(:),'poly1');
+l = plot(a(2),x(:),ff(x),'k');
+legend(l,['r^2 = ',oval(rsquare(x,y))],'Location','northeast')
+
+
+x = max(K3); y = -min(K2);  x(3) = []; y(3) = [];
+xlabel(a(3),'PID \rightarrow Firing Rate Amplitude')
+ylabel(a(3),'LFP \rightarrow Firing Rate Amplitude')
+
+plot(a(3),x,y,'k+')
+ff = fit(x(:),y(:),'poly1');
+l = plot(a(3),x(:),ff(x),'k');
+legend(l,['r^2 = ',oval(rsquare(x,y))],'Location','northeast')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
+
 
 %% Example Data: Fast Gain Control
 % First, we check if we see evidence for fast gain control in the firing rate output of the neuron. In the following figure, we show the results of standard methods of gain analysis for a randomly chosen example neuron. In the following analysis, we compare the data to a LN model prediction of the data. Any evidence of fast gain control we observe here is therefore not attributable to a output non-linearity.  
@@ -373,6 +421,7 @@ end
 set(a(2),'YLim',[0.75 1.55])
 set(a(4),'YLim',[.75 1.75])
 xlabel(a(3),'LN Prediction (mV)')
+xlabel(a(1),'LN Prediction (Hz)')
 ylabel(a(3),'LFP (mV)')
 ylabel(a(1),'Firing Rate (Hz)')
 title(a(1),'')

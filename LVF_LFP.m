@@ -220,7 +220,7 @@ if being_published
 end
 
 %% Filter Size Analysis
-% From this coarse overview of the data, it looks like while both the PID $\larrow$ LFP and the PID $\larrow$ Firing filters vary quite a bit in amplitude, it doesn't look like the transformation from the LFP to the firing rate varies that much. To look at this a little closer, we plot the amplitudes of these three filters against each other, after throwing out one neuron which appears to be an obvious outlier:
+% From this coarse overview of the data, it looks like while both the PID $\rightarrow$ LFP and the PID $\rightarrow $ Firing filters vary quite a bit in amplitude, it doesn't look like the transformation from the LFP to the firing rate varies that much. To look at this a little closer, we plot the amplitudes of these three filters against each other, after throwing out one neuron which appears to be an obvious outlier:
 
 figure('outerposition',[0 0 1400 450],'PaperUnits','points','PaperSize',[1400 550]); hold on
 clear a

@@ -23,7 +23,7 @@ tic
 %%
 % The experimental setup is shown in the figure below. Breifly, a glass tube with three holes is used. The most upstream hole has a valve, and the PID is inserted into the most downstream hole. All the holes are on the same side. In some experiments, a coiled wire is inserted at the mouth of the tube (upstream) in an attempt to introduce turbulence into the airstream so that it mixes more. 
 % 
-% <</Users/sigbhu/code/da/images/2015.7.22.fig1.png>>
+% <</Users/sigbhu/code/da/images/2015-7-22-fig1.png>>
 %
 
 %%

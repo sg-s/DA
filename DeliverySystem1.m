@@ -128,8 +128,38 @@ end
 %%
 % This is much better! The distribution doesn't dramatically change with the PID position, indicating that airstream is more well-mixed than previously. The errant distribution is probably due to some initial transient instead of some systemic error. 
 
+%% Mean Shifted Gaussians
+% We now attempt to generate a variety of Gaussians using this configuration: 
 
+load('/local-data/DA-paper/MSG-construction/2015_07_22_MSG_mixer_below_valve.mat')
 
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+c = parula(length(data)+1);
+L = {};
+l = [];
+for i = 1:length(data)
+	if ~isempty(data(i).PID)
+		hist_this = data(i).PID(:,20e4:10:55e4)';
+		xx =  linspace(min(min(hist_this)),max(max(hist_this)),50);
+		y = NaN(width(hist_this),50);
+		for j = 1:width(hist_this)
+			y(j,:) = hist(hist_this(:,j),xx);
+			y(j,:) = y(j,:)/sum(y(j,:));
+		end
+		l = [l errorShade(xx,mean(y),sem(y),'Color',c(i,:),'LineWidth',5)];
+		L = [L ControlParadigm(i).Name]; 
+	end
+end
+xlabel('Stimulus (V)')
+set(gca,'XLim',[0 3.5])
+legend(l,L)
+
+PrettyFig()
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 
 

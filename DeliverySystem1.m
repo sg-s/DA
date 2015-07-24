@@ -165,10 +165,10 @@ end
 %% Generalised NLN Model to build perfect distributions. 
 % The broad goal of this section is to build a detailed, parametric model of the delivery system, and fit this to data. Then, using this model, we numerically optimise the distribution of control signals so that we get nice, Gaussian-distributed outputs from the delivery system. This effort is summarised in the following figure:
 % 
-% <</Users/sigbhu/code/da/images/2015-7-24-fig1.png>>
+% <</Users/sigbhu/code/da/images/2015-07-24-fig1.png>>
 %
 % 
-% <</Users/sigbhu/code/da/images/2015-7-24-fig2.png>>
+% <</Users/sigbhu/code/da/images/2015-07-24-fig2.png>>
 %
 
 

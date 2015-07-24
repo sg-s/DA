@@ -16,10 +16,13 @@ p.A;
 p.tau1;
 p.tau2; % filter
 p.n; 
+p.delay; % filter delay
+p.offset;
 
 p.B; 
 p.n2;
 p.k2; 
+
 
 % lower bounds
 lb.n1 = 1;
@@ -31,6 +34,7 @@ lb.n2 = 1;
 lb.k2 = eps;
 lb.n = 1;
 lb.A = 0;
+lb.delay = 0;
 
 % upper bounds
 ub.A = 1;
@@ -39,23 +43,28 @@ ub.tau2 = 201;
 ub.n = 3;
 ub.n1 = 3;
 ub.n2 = 3;
-
+ub.delay = 100;
 
 
 % input nonlinearity 
 a = hill([1 p.k1 p.n1],stim); % no need for a scale parameter because it is redundant.
 
-% filter this
-% the parameter structure should be:
-p.A;
-p.tau2;
-p.tau1;
 
 % choose the filter length wisely
 t_max = max([p.tau1 p.tau2]);
 K = filter_gamma2(1:5*t_max,p);
+
+% is there a delay? 
+p.delay = floor(p.delay);
+if p.delay > 0
+	K = [zeros(1,p.delay) K];
+end
+K = K(:);
+
 b = filter(K,1,a);
-b(b<0) = 0; % have to throw away -ve values as output nonlinearity only accepts positive values
+
+% add an offset
+b = b + p.offset;
 
 % output nonlinearity 
 r = hill([p.B p.k2 p.n2],b);

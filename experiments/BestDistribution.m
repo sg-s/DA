@@ -5,7 +5,7 @@
 % function is called dist_gamma2 and is pretty general
 % now, it takes samples from that distribution using pdfrnd
 % and constructs a control time series
-% this control time series is given to DeliverySystemModel, which returns a 
+% this control time series is given to pDeliverySystem, which returns a 
 % prediction for the PID. we convert this back into a distribution, and report that
 %
 % FitModel2Data will use this to best match a distribution. 
@@ -22,7 +22,7 @@ T = 60; 		% how long is your stimulus
 dt = 1e-4; 		% sampling time for this simulation
 tc = .1; 		% switching time
 cx = 0:1e-3:5;  % control signal domain
-px = 0:1e-3:5; % PID domain
+px = 0:1e-3:5;  % PID domain
 
 % set bounds
 lb.mu1 = 0;
@@ -69,7 +69,7 @@ end
 py=0;
 try
     % get pid prediction
-    PID_pred = DeliverySystemModel_LN(s);
+    PID_pred = pDeliverySystem(s);
 
     % get pid distribution 
     [hy,hx] = hist(PID_pred,50);

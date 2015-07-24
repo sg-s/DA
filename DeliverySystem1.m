@@ -162,6 +162,110 @@ if being_published
 end
 
 
+%% Generalised NLN Model to build perfect distributions. 
+% The broad goal of this section is to build a detailed, parametric model of the delivery system, and fit this to data. Then, using this model, we numerically optimise the distribution of control signals so that we get nice, Gaussian-distributed outputs from the delivery system. This effort is summarised in the following figure:
+% 
+% <</Users/sigbhu/code/da/images/2015-7-24-fig1.png>>
+%
+% 
+% <</Users/sigbhu/code/da/images/2015-7-24-fig2.png>>
+%
+
+
+%%
+% First, we fit our model from the control signals given to the MFC to the actual MFC flows.
+
+fit_me = data(findData(data));
+cp = ControlParadigm(findData(data));
+for i = 1:length(fit_me)
+	fit_me(i).stimulus = cp(i).Outputs(1,20e4:10:55e4);
+	fit_me(i).response = mean2(fit_me(i).MFC500(:,20e4:10:55e4));
+	fit_me(i).response(1:1e3) = NaN;
+end
+
+p = FitModel2Data(@pDeliverySystem,fit_me,'nsteps',0);
+
+figure('outerposition',[0 0 1300 700],'PaperUnits','points','PaperSize',[1300 700]); hold on
+for i = 1:length(fit_me)
+	subplot(2,3,i), hold on
+	t = 1e-3*(1:length(fit_me(i).response)) + 20;
+	plot(t,fit_me(i).response,'k');
+	pred = pDeliverySystem(fit_me(i).stimulus,p);
+	plot(t,pred,'r');
+	set(gca,'XLim',[30 40],'YLim',[0.2 2])
+	xlabel('Time (s)')
+	ylabel('Stimulus (V)')
+end
+
+PrettyFig()
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+% Now we fit the same generalised NLN model (with a different set of parameters) to account for the transformation from the MFC flows to the PID. 
+
+fit_me = data(findData(data));
+for i = 1:length(fit_me)
+	fit_me(i).stimulus = mean2(fit_me(i).MFC500(:,20e4:10:55e4));
+	fit_me(i).stimulus = (100*fit_me(i).stimulus)./(100*fit_me(i).stimulus+2000);
+	fit_me(i).response = mean2(fit_me(i).PID(:,20e4:10:55e4));
+	fit_me(i).response(1:1e3) = NaN;
+end
+
+
+
+p = FitModel2Data(@pDeliverySystem,fit_me,'nsteps',0);
+
+figure('outerposition',[0 0 1300 700],'PaperUnits','points','PaperSize',[1300 700]); hold on
+for i = 1:length(fit_me)
+	subplot(2,3,i), hold on
+	t = 1e-3*(1:length(fit_me(i).response)) + 20;
+	plot(t,fit_me(i).response,'k');
+	pred = pDeliverySystem(fit_me(i).stimulus,p);
+	plot(t,pred,'r');
+	set(gca,'XLim',[30 40],'YLim',[.2 2.5])
+	xlabel('Time (s)')
+	ylabel('Stimulus (V)')
+end
+
+PrettyFig()
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% This model seems to do pretty well. How well does this model perform in estimating the distributions of the stimulus? 
+
+figure('outerposition',[0 0 1300 700],'PaperUnits','points','PaperSize',[1300 700]); hold on
+for i = 1:length(fit_me)
+	subplot(2,3,i), hold on
+	h = fit_me(i).response(1e3:end);
+	[y,x] = hist(h,50);
+	y = y/sum(y);
+	plot(x,y,'k')
+	pred = pDeliverySystem(fit_me(i).stimulus,p);
+	[y,x] = hist(pred(1e3:end),50);
+	y = y/sum(y);
+	plot(x,y,'r')
+	xlabel('Stimulus (V)')
+	set(gca,'XLim',[0.125 2.6])
+end
+
+PrettyFig()
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% While it's not perfect, it's pretty damn good. A better fit to the data would probably need a mechanistic understanding of how the delivery system works, and how odour moves from the liquid phase to the gas phase, which I don't have. 
+
 
 %% Version Info
 % The file that generated this document is called:

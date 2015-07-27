@@ -7,12 +7,6 @@
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 function [r] = pDeliverySystem(stim,p)
 
-if nargin == 1
-	% try to get the parameters from the global workspace
-	global pDS
-	p = pDS;
-end
-
 % all parameters of this model, for clarity
 p.n1;
 p.k1;  % input non-linearity

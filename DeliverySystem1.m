@@ -245,11 +245,11 @@ figure('outerposition',[0 0 1300 700],'PaperUnits','points','PaperSize',[1300 70
 for i = 1:length(fit_me)
 	subplot(2,3,i), hold on
 	h = fit_me(i).response(1e3:end);
-	[y,x] = hist(h,50);
+	[y,x] = hist(h,0:1e-2:5);
 	y = y/sum(y);
 	plot(x,y,'k')
 	pred = pDeliverySystem(fit_me(i).stimulus,p);
-	[y,x] = hist(pred(1e3:end),50);
+	[y,x] = hist(pred(1e3:end),0:1e-2:5);
 	y = y/sum(y);
 	plot(x,y,'r')
 	xlabel('Stimulus (V)')
@@ -265,6 +265,35 @@ end
 
 %%
 % While it's not perfect, it's pretty damn good. A better fit to the data would probably need a mechanistic understanding of how the delivery system works, and how odour moves from the liquid phase to the gas phase, which I don't have. 
+
+%%
+% We now specify the target stimulus distributions that we eventually want to produce with our delivery system:
+
+clear p
+p.   mu1= 0.5;
+p.sigma1= 0.1;
+p.   mu2= 0;
+p.sigma2= 0;
+p.  xmin= 0;
+p.  xmax= 1;
+x= 0:1e-2:5; 
+
+
+c = parula(7);
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+for i = 1:6
+	ty = dist_gauss2(x,p);
+	p.mu1 = p.mu1+.4;
+	plot(x,ty,'Color',c(i,:))
+end
+xlabel('Stimulus (V)')
+
+PrettyFig()
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 
 %% Version Info

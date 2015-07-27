@@ -1,7 +1,8 @@
-% Paper Figures
-% makes all the figures for the paper
+% Poster Figures
+% makes all the figures for the poster presented at Swartz conference
 % 
-% created by Srinivas Gorur-Shandilya at 12:57 , 21 January 2015. Contact me at http://srinivas.gs/contact/
+% 
+% created by Srinivas Gorur-Shandilya at 1:02 , 27 July 2015. Contact me at http://srinivas.gs/contact/
 % 
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
@@ -17,7 +18,7 @@ tic
 
 % this determines which figures to do. 
 fig1 = true;
-fig2 = true;
+fig2 = false;
 fig3 = false;
 fig4 = false;
 fig5 = false;
@@ -33,7 +34,6 @@ fig5 = false;
 if fig1
 
 %% Figure 1: ORNs decrease gain on increasing stimulus mean
-clearvars -except being_published fig1 fig2 fig3 fig4 fig5
 fig_handle=figure('Units','pixels','outerposition',[81 5 599 871],'PaperUnits','points','PaperSize',[599 871],'Color','w','Toolbar','none');
 clf(fig_handle);
 axes_handles(1)=axes('Units','pixels','Position',[63.825 744.625 489.325 85.1]);
@@ -73,53 +73,53 @@ mean_pid = NaN(length(c),1);
 % plot lowest dose stimulus
 plot_these=find(strcmp(paradigm_names{1}, combined_data.paradigm));
 plot_this = mean2(combined_data.PID(plot_these,:));
-err = std(combined_data.PID(plot_these,:));
-err = err/sqrt(length(plot_these));
 time = dt*(1:length(plot_this));
 plot(axes_handles(1),time,plot_this,'Color',c(1,:))
-% axes(axes_handles(1))
-% shadedErrorBar(time,plot_this,err,{'Color',c(1,:)})
 ylabel(axes_handles(1),'Stimulus (V)')
 
 
 % plot lowest dose response
 plot_this = mean2(combined_data.fA(:,plot_these));
-err = std(combined_data.fA(:,plot_these)');
-err = err/sqrt(length(plot_these));
 time = dt*(1:length(plot_this));
 plot(axes_handles(2),time,plot_this,'Color',c(1,:))
 ylabel(axes_handles(2),'ORN Response (Hz)')
-% axes(axes_handles(2))
-% shadedErrorBar(time,plot_this,err,{'Color',c(1,:)})
 set(axes_handles(1),'XLim',[15 55])
 set(axes_handles(2),'XLim',[15 55])
 xlabel(axes_handles(2),'Time (s)')
 
 % load the data cut and processed
-load('MSG_per_neuron.mat','MSG_data')
+if ~exist('MSG_data','var')
+	load('MSG_per_neuron.mat','MSG_data')
 
-% back out all filters
-% for i = 1:8
-% 	for j = 1:13
-% 		if width(MSG_data(i,j).stim) > 1
-% 			this_stim = mean2(MSG_data(i,j).stim);
-% 			this_resp = mean2(MSG_data(i,j).resp);
-% 			[K, ~, filtertime_full] = FindBestFilter(this_stim,this_resp,[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
-% 			filtertime_full = filtertime_full;
-% 			filtertime = (-200:900);
-% 			K = interp1(filtertime_full,K,filtertime);
-% 			MSG_data(i,j).K = K/max(K);
-% 		end
-% 	end
-% end
+	% back out all filters
+	for i = 1:8
+		for j = 1:13
+			disp([i j])
+			if width(MSG_data(i,j).stim) > 1
+				this_stim = mean2(MSG_data(i,j).stim);
+				this_stim = this_stim - mean(this_stim);
+				this_stim = this_stim/std(this_stim);
+				this_resp = mean2(MSG_data(i,j).resp);
+				this_resp = this_resp - mean(this_resp);
+				this_resp = this_resp/std(this_resp);
+				[K, ~, filtertime_full] = FindBestFilter(this_stim,this_resp,[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
+				filtertime_full = filtertime_full;
+				filtertime = (-200:900);
+				K = interp1(filtertime_full,K,filtertime);
+				MSG_data(i,j).K = K;
+			end
+		end
+	end
+end
 % save('MSG_per_neuron.mat','MSG_data')
 
 % plot the filter for the lowest dose 
 filtertime = (-200:900)*1e-3;
-K = 0*filtertime;
+K = NaN*filtertime;
 for i = 1:13 % get all the filters for the lowest dose
 	K = [K; MSG_data(1,i).K];
 end
+K(1,:) = [];
 err = std(K);
 err = err/sqrt(width(K));
 axes(axes_handles(3))
@@ -129,12 +129,14 @@ xlabel(axes_handles(3),'Lag (s)')
 ylabel(axes_handles(3),'Filter K (norm)')
 
 % make linear predictions everywhere
+% and also calculate the r2 of each -- this will be used as weights
 for i = 1:8
 	for j = 1:13
 		if width(MSG_data(i,j).stim) > 1
 			this_stim = mean2(MSG_data(i,j).stim);
 			this_resp = mean2(MSG_data(i,j).resp);
-			MSG_data(i,j).fp = convolve(MSG_data(i,j).time,mean2(MSG_data(i,j).stim),MSG_data(i,j).K,filtertime) + mean(mean2(MSG_data(i,j).resp));
+			MSG_data(i,j).fp = convolve(MSG_data(i,j).time,mean2(MSG_data(i,j).stim),[0 0 MSG_data(i,j).K(3:end)],filtertime) ;
+			MSG_data(i,j).r2 = rsquare(MSG_data(i,j).fp,mean2(MSG_data(i,j).resp));
 		end
 	end
 end
@@ -144,15 +146,15 @@ end
 ss = 25;
 y = mean2([MSG_data(1,:).resp]);
 x = mean2([MSG_data(1,:).fp]);
-l=plot(axes_handles(4),x(1:ss:end),y(1:ss:end),'.','Color',c(1,:));
+plot(axes_handles(4),x(1:ss:end),y(1:ss:end),'.','Color',c(1,:));
 
+ff= fit(x(~isnan(x)),y(~isnan(x)),'poly1');
+l = plot(axes_handles(4),sort(x),ff(sort(x)),'r');
 
 xlabel(axes_handles(4),'K \otimes s')
 ylabel(axes_handles(4),'Response (Hz)')
 
-% add a r2 
-r = rsquare(x,y);
-legend(l,strcat('r^2=',oval(r)),'Location','northwest');
+legend(l,strcat('Gain=',oval(ff.p1),'Hz/V'),'Location','northwest');
 
 
 % plot the stimulus distributions 
@@ -214,6 +216,7 @@ gsf = std(y)/std(x);
 gain = NaN(8,13);
 mean_stim = NaN(8,13);
 mean_resp = NaN(8,13);
+w = NaN(8,13);
 for i = 1:8 % iterate over all paradigms 
 	for j = 1:13
 		if width(MSG_data(i,j).stim) > 1
@@ -237,7 +240,10 @@ for i = 1:8 % iterate over all paradigms
 			mean_resp(i,j) = mean(mean([MSG_data(i,j).resp]));
 
 			% get the units of gain right
-			gain(i,j) = gain(i,j)*gsf;
+			% gain(i,j) = gain(i,j)*gsf;
+
+			% get the weights for the each
+			w(i,j) = MSG_data(i,j).r2;
 		end
 	end	
 end
@@ -249,19 +255,10 @@ for i = 1:8 % iterate over all paradigms
 	end
 end
 
-% make gain phase plot
-% figure, hold on
-% for i = 1:13
-% 	g = gain(:,i)/gain(1,i);
-% 	m = mean_resp(:,i)/mean_resp(1,i);
-% 	m(isnan(m)) = [];
-% 	g(isnan(g)) = [];
-% 	plot(g,m,'-+k')
-% end
-
 mean_stim = mean_stim(~isnan(mean_stim));
 mean_resp = mean_resp(~isnan(mean_resp));
 gain = gain(~isnan(gain));
+w = w(~isnan(w));
 
 
 cf = fit(mean_stim(:),gain(:),'power1');
@@ -573,7 +570,6 @@ if fig3
 
 %% Figure 3: ORNs can change gain on a fast time scale 
 
-clearvars -except being_published fig1 fig2 fig3 fig4 fig5
 
 load('/local-data/DA-paper/large-variance-flicker/2015_01_28_CS_ab3_2_EA.mat')
 PID = data(4).PID;
@@ -594,7 +590,6 @@ if isempty(cached_data)
 else
 	fA = cached_data;
 end
-
 tA = 1e-3*(1:length(fA));
 PID2 = fA;
 for i = 1:width(PID2)
@@ -604,54 +599,59 @@ PID = PID2; clear PID2
 % some minor cleaning up
 PID(end,:) = PID(end-1,:); 
 
-fig_handle=figure('Units','pixels','outerposition',[100 100 1240 720],'Color','w','PaperUnits','points','PaperSize',[1240 720],'Toolbar','none');
-clf(fig_handle);
-axes_handles(1)=axes('Units','pixels','Position',[70 490 402.5 105]);
-axes_handles(2)=axes('Units','pixels','Position',[542.5 437.5 105 105]);
-axes_handles(3)=axes('Units','pixels','Position',[735 560 472.5 105]);
-axes_handles(4)=axes('Units','pixels','Position',[735 437.5 472.5 105]);
-axes_handles(5)=axes('Units','pixels','Position',[70 70 262.5 262.5]);
-axes_handles(6)=axes('Units','pixels','Position',[437.5 70 262.5 262.5]);
-axes_handles(7)=axes('Units','pixels','Position',[805 70 350 262.5]);
+tA = 1e-3*(1:length(fA));
+figure('outerposition',[0 0 1400 900],'PaperUnits','points','PaperSize',[1400 900]); hold on
+subplot(3,1,1), hold on
+plot(tA,mean2(PID),'k')
+set(gca,'XLim',[10 60])
+ylabel(gca,'Stimulus (V)')
 
-for i = 1:length(axes_handles)
-	hold(axes_handles(i),'on')
-end
-
-% set up a colour map
-c = parula(8);
-
-
-% plot stimulus
-plot(axes_handles(1),tA,mean2(PID),'k')
-set(axes_handles(1),'XLim',[10 60])
-ylabel(axes_handles(1),'Stimulus (V)')
-
-% plot response
-plot(axes_handles(3),tA,mean2(fA),'k')
-set(axes_handles(3),'XLim',[10 60],'XTickLabel',{});
-ylabel(axes_handles(3),'Firing Rate (Hz)')
-
-% extract Linear model for each trial 
-K = [];
-for i = [3:10 13:20]
-	[this_K, ~, filtertime_full] = FindBestFilter(PID(:,i),fA(:,i),[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
-	filtertime_full = filtertime_full*mean(diff(tA));
-	filtertime = 1e-3*(-200:900);
-	this_K = interp1(filtertime_full,this_K,filtertime);
-	K = [K;this_K];
-end
-
-% plot linear filter
-axes(axes_handles(2))
-plot_this = mean2(K);
-err = std(K)/sqrt(width(K));
-shadedErrorBar(filtertime,plot_this,err,{'Color',c(3,:)})
-xlabel(axes_handles(2),'Lag (s)')
-ylabel(axes_handles(2),'Filter K')
+c = parula(10);
+subplot(3,1,2), hold on
+ms = filter(ones(500,1)/500,1,mean2(PID));
+plot(tA,ms,'k')
+set(gca,'XLim',[10 60])
+ms = ms(1e4:end);
+tA = tA(1e4:end);
+temp = sort(ms);
+a = temp(floor(length(temp)/3));
+b = temp(floor(2*length(temp)/3));
+plot_this = ms;
+plot_this(ms>a) = NaN;
+plot(tA,plot_this,'Color',c(3,:))
+plot_this = ms;
+plot_this(ms<b) = NaN;
+plot(tA,plot_this,'Color',c(9,:))
 
 
 % make a linear prediction using a filter fit to the mean data (this is almost exactly the same)
+x = mean2(PID);
+y = mean2(fA);
+x = x - mean(x); x = x/std(x);
+y = y - mean(y); y = y/std(y);
+[K, ~, filtertime_full] = FindBestFilter(x,y,[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
+filtertime_full = filtertime_full*mean(diff(tA));
+filtertime = 1e-3*(-200:900);
+K = interp1(filtertime_full,K,filtertime);
+fp = convolve(tA,mean2(PID),[0 0 K(3:end)],filtertime);
+R = mean2(fA);
+
+
+% plot gain vs preceding stimulus
+[x,y] = MakeFig6G(mean2(PID),mean2(fA),fp,500);
+subplot(3,1,3), hold on
+plot(1e-3*(1:length(y)),y,'k')
+xlabel('Time (s)')
+set(gca,'XLim',[10 60])
+
+
+PrettyFig;
+
+
+
+
+
+
 [K, ~, filtertime_full] = FindBestFilter(mean2(PID),mean2(fA),[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
 filtertime_full = filtertime_full*mean(diff(tA));
 filtertime = 1e-3*(-200:900);
@@ -664,39 +664,16 @@ fp = fp*temp.p1;
 fp = fp+temp.p2;
 
 
-% plot prediction and prediction quality
-l=plot(axes_handles(4),tA,fp,'Color',c(3,:));
-r2 = rsquare(fp,mean2(fA));
-legend(l,strcat('r^2=',oval(r2)))
-ylabel(axes_handles(4),'K\otimes stimulus (Hz)')
-
-
-% gain analysis -- linear model
-ph = []; ph(3:4) = axes_handles([5 7]);
-
-hl_min = .1;
-hl_max = 10;
-history_lengths = [logspace(log10(hl_min),log10(.5),15) logspace(log10(.5),log10(10),15)];
-history_lengths = unique(history_lengths);
-
-[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',mean2(fA),'prediction',fp,'stimulus',mean2(PID),'time',tA,'ph',ph,'history_lengths',history_lengths,'example_history_length',.5,'use_cache',1,'engine',@GainAnalysis5);
-set(axes_handles(7),'XLim',[.09 11]) % to show .1 and 10 on the log scale
-
-% show the p-value
-axes(axes_handles(5))
-text(10,60,'p < 0.01')
-
-% plot gain vs preceding stimulus
-[x,y] = MakeFig6G(mean2(PID),mean2(fA),fp,500);
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,3,1), hold on
 gain_time = mean(diff(tA))*(1:length(x));
 rm_this = (isnan(x) | isnan(y));
 x(rm_this) = [];
 y(rm_this) = [];
 gain_time(rm_this) = [];
 ss = 50;
-plot(axes_handles(6),x(1:ss:end),y(1:ss:end),'k.')
-xlabel(axes_handles(6),'Stimulus in preceding 500ms')
-ylabel(axes_handles(6),'Relative gain')
+plot(x(1:ss:end),y(1:ss:end),'k.')
+
 
 % fit a Weber-scaling to these points
 [x,idx] = sort(x);
@@ -717,60 +694,27 @@ mx(1:20) = []; my(1:20) = [];
 fo = fitoptions('rat01');
 fo.StartPoint = [.4 -.08];
 ff = fit(mx(:),my(:),'rat01',fo);
-l = plot(axes_handles(6),.17:.01:max(x),ff(.17:.01:max(x)),'r');
+l = plot(.17:.01:max(x),ff(.17:.01:max(x)),'r');
 legend(l,'Weber Envelope');
 
-% plot gain
-gain = y;
-% plot(axes_handles(7),gain_time,gain,'k')
-% ylabel(axes_handles(7),'Relative Gain')
-% set(axes_handles(7),'XLim',[10 60],'YLim',[0 7])
-% xlabel(axes_handles(7),'Time (s)')
 
+% gain analysis -- linear model
+ph = []; ph(3) = subplot(1,3,2);
+ph(4) = subplot(1,3,3);
+tA = 1e-3*(1:length(fA));
+hl_min = .1;
+hl_max = 10;
+history_lengths = [logspace(log10(hl_min),log10(.5),15) logspace(log10(.5),log10(10),15)];
+history_lengths = unique(history_lengths);
 
-% link some axes
-linkaxes(axes_handles([3:4]))
+[p,~,~,~,~,history_lengths,handles]=GainAnalysisWrapper2('response',mean2(fA),'prediction',fp,'stimulus',mean2(PID),'time',tA,'ph',ph,'history_lengths',history_lengths,'example_history_length',.5,'use_cache',1,'engine',@GainAnalysis5);
+set(ph(4),'XLim',[.09 11]) % to show .1 and 10 on the log scale
 
-% fix some labels
-xlabel(axes_handles(4),'Time (s)')
-xlabel(axes_handles(1),'Time (s)')
-ylabel(axes_handles(7),'Relative Gain')
-set(axes_handles(7),'YScale','log','YTick',[0.5 1 2],'YLim',[0.4 3.5])
-set(axes_handles(4),'YLim',[0 100])
-ylabel(axes_handles(5),'Firing Rate (Hz)')
-xlabel(axes_handles(5),'K\otimes stimulus (Hz)')
-title(axes_handles(5),'')
+% show the p-value
+axes(ph(3))
+text(10,60,'p < 0.01')
 
-% Indicate regions of high and low stimulus on the stimulus
-hl = round(history_lengths(9)*1e3);
-shat = ComputeSmoothedStimulus(mean2(PID),hl);
-
-n = floor(sum(~isnan(mean2(fA)))*.33);
-shat(1:hl) = Inf; % the initial segment where we can't estimate shat is excluded
-shat(isnan(shat)) = Inf;
-shat(isnan(mean2(fA))) = Inf;
-[~, t_low] = sort(shat,'ascend');
-t_low = t_low(1:n); % this is an index
-t_low = tA(t_low); % t_low is now a time. 
- 
-shat = ComputeSmoothedStimulus(mean2(PID),hl);
-shat(1:hl) = -Inf;
-shat(isinf(shat)) = -Inf;
-shat(isnan(mean2(fA))) = -Inf;
-[~, t_high] = sort(shat,'descend');
-t_high = t_high(1:n);
-t_high  = tA(t_high);
-
-plot(axes_handles(1),t_low,1+0*t_low,'g.')
-plot(axes_handles(1),t_high,1+0*t_low,'r.')
-
-
-PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
-
-if being_published
-	snapnow
-	delete(gcf)
-end
+PrettyFig;
 
 end
 

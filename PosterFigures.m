@@ -17,9 +17,9 @@ end
 tic
 
 % this determines which figures to do. 
-fig1 = true;
+fig1 = false;
 fig2 = false;
-fig3 = false;
+fig3 = true;
 fig4 = false;
 fig5 = false;
 
@@ -693,9 +693,9 @@ mx(1:20) = []; my(1:20) = [];
 
 fo = fitoptions('rat01');
 fo.StartPoint = [.4 -.08];
-ff = fit(mx(:),my(:),'rat01',fo);
+ff = fit(x(:),y(:),'rat01',fo);
 l = plot(.17:.01:max(x),ff(.17:.01:max(x)),'r');
-legend(l,'Weber Envelope');
+legend(l,'Weber-Fechner Law');
 
 
 % gain analysis -- linear model

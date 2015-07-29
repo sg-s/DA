@@ -183,14 +183,15 @@ for i = 1:length(fit_me)
 	fit_me(i).response(1:1e3) = NaN;
 end
 
-p = FitModel2Data(@pDeliverySystem,fit_me,'nsteps',0);
+global p1
+p1 = FitModel2Data(@pDeliverySystem,fit_me,'nsteps',0);
 
 figure('outerposition',[0 0 1300 700],'PaperUnits','points','PaperSize',[1300 700]); hold on
 for i = 1:length(fit_me)
 	subplot(2,3,i), hold on
 	t = 1e-3*(1:length(fit_me(i).response)) + 20;
 	plot(t,fit_me(i).response,'k');
-	pred = pDeliverySystem(fit_me(i).stimulus,p);
+	pred = pDeliverySystem(fit_me(i).stimulus,p1);
 	plot(t,pred,'r');
 	set(gca,'XLim',[30 40],'YLim',[0.2 2])
 	xlabel('Time (s)')
@@ -216,15 +217,15 @@ for i = 1:length(fit_me)
 end
 
 
-
-p = FitModel2Data(@pDeliverySystem,fit_me,'nsteps',0);
+global p2
+p2 = FitModel2Data(@pDeliverySystem,fit_me,'nsteps',0);
 
 figure('outerposition',[0 0 1300 700],'PaperUnits','points','PaperSize',[1300 700]); hold on
 for i = 1:length(fit_me)
 	subplot(2,3,i), hold on
 	t = 1e-3*(1:length(fit_me(i).response)) + 20;
 	plot(t,fit_me(i).response,'k');
-	pred = pDeliverySystem(fit_me(i).stimulus,p);
+	pred = pDeliverySystem(fit_me(i).stimulus,p2);
 	plot(t,pred,'r');
 	set(gca,'XLim',[30 40],'YLim',[.2 2.5])
 	xlabel('Time (s)')
@@ -248,7 +249,7 @@ for i = 1:length(fit_me)
 	[y,x] = hist(h,0:1e-2:5);
 	y = y/sum(y);
 	plot(x,y,'k')
-	pred = pDeliverySystem(fit_me(i).stimulus,p);
+	pred = pDeliverySystem(fit_me(i).stimulus,p2);
 	[y,x] = hist(pred(1e3:end),0:1e-2:5);
 	y = y/sum(y);
 	plot(x,y,'r')
@@ -285,6 +286,89 @@ for i = 1:6
 	ty = dist_gauss2(x,p);
 	p.mu1 = p.mu1+.4;
 	plot(x,ty,'Color',c(i,:))
+end
+xlabel('Stimulus (V)')
+
+PrettyFig()
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% For each of these distributions, we use our detailed model of the delivery system to numerically optimise the distribution of control signals to get the best possible output distribution. The following figure shows the predicted output after optimising the input distributions: 
+
+
+% the following code was actually used to fit 
+% clear p
+% p.   mu1= 0.5;
+% p.sigma1= 0.1;
+% p.   mu2= 0;
+% p.sigma2= 0;
+% p.  xmin= 0;
+% p.  xmax= 1;
+% x= 0:1e-2:5; 
+
+% haz_data = [findData(data) 8];
+
+% for i = 1:6
+% 	clear d
+% 	d.stimulus = x;
+% 	d.response = hist(ControlParadigm(haz_data(i)).Outputs(1,20e4:10:55e4),x);
+% 	% seed with fit to ansatz distribution
+% 	pp = FitModel2Data(@dist_gamma2,d);
+
+% 	clear d
+% 	ty = dist_gauss2(x,p);
+% 	d.response = ty/max(ty);
+% 	d.stimulus = x;
+
+% 	FitModel2Data(@BestDistribution,d,'UseParallel',false,'nsteps',300,'p0',pp);
+% 	p.mu1 = p.mu1+.4;
+% end
+
+
+% recover from cache
+clear p
+p.   mu1= 0.5;
+p.sigma1= 0.1;
+p.   mu2= 0;
+p.sigma2= 0;
+p.  xmin= 0;
+p.  xmax= 1;
+
+clear pp
+py = NaN(length(x),6);
+for i = 1:6
+	ty = dist_gauss2(x,p);
+	d.response = ty/max(ty);
+	d.stimulus = x;
+
+	temp = FitModel2Data(@BestDistribution,d,'UseParallel',false,'nsteps',0);
+	pp(i) = orderfields(temp);
+	% also get the actual PID distributions
+	py(:,i) = BestDistribution(0,pp(i));
+
+	p.mu1 = p.mu1+.4;
+end
+
+
+clear p
+p.   mu1= 0.5;
+p.sigma1= 0.1;
+p.   mu2= 0;
+p.sigma2= 0;
+p.  xmin= 0;
+p.  xmax= 1;
+
+c = parula(7);
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+for i = 1:6
+	ty = dist_gauss2(x,p);
+	p.mu1 = p.mu1+.4;
+	plot(x,ty,'Color',c(i,:))
+	plot(x,py(:,i),'Color',c(i,:))
 end
 xlabel('Stimulus (V)')
 

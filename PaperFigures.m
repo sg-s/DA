@@ -17,7 +17,7 @@ tic
 
 % this determines which figures to do. 
 fig1 = true;
-fig2 = true;
+fig2 = false;
 fig3 = false;
 fig4 = false;
 fig5 = false;

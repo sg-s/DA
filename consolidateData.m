@@ -14,6 +14,7 @@ function [PID, LFP, fA, paradigm, orn, AllControlParadigms, paradigm_hashes, seq
 
 PID = [];
 LFP = [];
+spiketimes = [];
 fA = [];
 paradigm = [];
 orn = [];
@@ -81,6 +82,8 @@ for i = 1:length(allfiles)
 
 			if length(spikes) < j
 			else
+
+
 				if ~isempty(spikes(j).A)
 					this_fA = spiketimes2f(spikes(j).A,1e-4*(1:length(spikes(j).A)),1e-3,3e-2);
 				end

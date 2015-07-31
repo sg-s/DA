@@ -109,25 +109,43 @@ end
 
 
 %%
-% We also plot the probability of spiking as a function of time relative to spike. Note that this is not the same as the ISI distribution, as the ISI distribution only accounts for adjacent spikes. (A is in red, B is in blue.)
+% Now we plot the probability of B spiking conditional on a A spike, and vice versa. This is a measure of how much the two neurons affect each other. Note that this is not the same as the ISI distribution, because this depends on all spikes, not just adjacent pairs of spikes. In colours are the self-probability curves (e.g., prob. of A spike given A spike), and in black are the cross-probability curves (e.g., prob of A spike given B spike). 
 
-pA = zeros(100,width(A));
-pB = zeros(100,width(A));
+pAA = zeros(100,width(A));
+pBB = zeros(100,width(A));
+pAB = zeros(100,width(A));
+pBA = zeros(100,width(A));
 for i = 1:width(A)
-	[pA(:,i),x] = condSpikeProb(A(:,i),1,1e-2);
-	[pB(:,i),x] = condSpikeProb(B(:,i),1,1e-2);
+	[pAA(:,i),x] = condSpikeProb(A(:,i),A(:,i),1,1e-2);
+	[pBB(:,i),x] = condSpikeProb(B(:,i),B(:,i),1,1e-2);
+	[pAB(:,i),x] = condSpikeProb(A(:,i),B(:,i),1,1e-2);
+	[pBA(:,i),x] = condSpikeProb(B(:,i),A(:,i),1,1e-2);
 end
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-for i = 1:max(orn)
-	pt = orn == i;
-	shadedErrorBar(x,mean2(pA(:,pt)),sem(pA(:,pt)),{'Color',[1 0 0]});
-	shadedErrorBar(x,mean2(pB(:,pt)),sem(pB(:,pt)),{'Color',[0 0 1]});
-end
+subplot(1,2,1), hold on
+clear l
 
-xlabel('Time since last spike (s)')
-ylabel('p(spike observed)')
+temp = shadedErrorBar(x,mean2(pBB),sem(pBB),{'Color',[0 0 1]});
+l(1) = temp.mainLine;
+temp = shadedErrorBar(x,mean2(pAB),sem(pAB),{'Color',[0 0 0]});
+l(2) = temp.mainLine;
 
+legend(l,{'conditional on B spike','conditional on A spike'})
+xlabel('Time since spike (s)')
+ylabel('p(B spike observed)')
+clear l
+subplot(1,2,2), hold on
+
+temp = shadedErrorBar(x,mean2(pAA),sem(pAA),{'Color',[1 0 0]});
+l(1) = temp.mainLine;
+temp = shadedErrorBar(x,mean2(pBA),sem(pBA),{'Color',[0 0 0]});
+l(2) = temp.mainLine;
+
+legend(l,{'conditional on A spike','conditional on B spike'})
+xlabel('Time since spike (s)')
+ylabel('p(A spike observed)')
+suptitle('ab2 Sensilla')
 PrettyFig()
 
 if being_published
@@ -195,27 +213,44 @@ if being_published
 	snapnow
 	delete(gcf)
 end
-
 %%
-% Now we also plot the probability of spiking conditional on spiking. (A is in red, B is in blue.)
+% Now we plot the probability of B spiking conditional on a A spike, and vice versa. This is a measure of how much the two neurons affect each other. Note that this is not the same as the ISI distribution, because this depends on all spikes, not just adjacent pairs of spikes. In colours are the self-probability curves (e.g., prob. of A spike given A spike), and in black are the cross-probability curves (e.g., prob of A spike given B spike). 
 
-pA = zeros(100,width(A));
-pB = zeros(100,width(A));
+pAA = zeros(100,width(A));
+pBB = zeros(100,width(A));
+pAB = zeros(100,width(A));
+pBA = zeros(100,width(A));
 for i = 1:width(A)
-	[pA(:,i),x] = condSpikeProb(A(:,i),1,1e-2);
-	[pB(:,i),x] = condSpikeProb(B(:,i),1,1e-2);
+	[pAA(:,i),x] = condSpikeProb(A(:,i),A(:,i),1,1e-2);
+	[pBB(:,i),x] = condSpikeProb(B(:,i),B(:,i),1,1e-2);
+	[pAB(:,i),x] = condSpikeProb(A(:,i),B(:,i),1,1e-2);
+	[pBA(:,i),x] = condSpikeProb(B(:,i),A(:,i),1,1e-2);
 end
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-for i = 1:max(orn)
-	pt = orn == i;
-	shadedErrorBar(x,mean2(pA(:,pt)),sem(pA(:,pt)),{'Color',[1 0 0]});
-	shadedErrorBar(x,mean2(pB(:,pt)),sem(pB(:,pt)),{'Color',[0 0 1]});
-end
+subplot(1,2,1), hold on
+clear l
 
-xlabel('Time since last spike (s)')
-ylabel('p(spike observed)')
+temp = shadedErrorBar(x,mean2(pBB),sem(pBB),{'Color',[0 0 1]});
+l(1) = temp.mainLine;
+temp = shadedErrorBar(x,mean2(pAB),sem(pAB),{'Color',[0 0 0]});
+l(2) = temp.mainLine;
 
+legend(l,{'conditional on B spike','conditional on A spike'},'location','southeast')
+xlabel('Time since spike (s)')
+ylabel('p(B spike observed)')
+clear l
+subplot(1,2,2), hold on
+
+temp = shadedErrorBar(x,mean2(pAA),sem(pAA),{'Color',[1 0 0]});
+l(1) = temp.mainLine;
+temp = shadedErrorBar(x,mean2(pBA),sem(pBA),{'Color',[0 0 0]});
+l(2) = temp.mainLine;
+
+legend(l,{'conditional on A spike','conditional on B spike'},'location','southeast')
+xlabel('Time since spike (s)')
+ylabel('p(A spike observed)')
+suptitle('ab3 Sensilla')
 PrettyFig()
 
 if being_published

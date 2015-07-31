@@ -17,7 +17,7 @@ end
 tic
 
 %% Baseline Firing 
-% In this document, we carefully investigate the firing statistics of the A and B neurons at rest, i.e., with no stimulation whatsoever. We recorded from ab2 and ab3 sensilla. 
+% In this document, we carefully investigate the firing statistics of the A and B neurons at rest, i.e., with no stimulation whatsoever. We recorded from ab2 and ab3 sensilla. In this entire document, A is plotted in red, and B is plotted in blue. 
 
 A = [];
 B = [];
@@ -60,7 +60,7 @@ ab2.orn = orn;
 
 
 %% ab2 
-% First we analyse the firing properties of the ab2 sensilla at rest. The following figure shows the raster of all the spikes we are going to analyse:
+% First we analyse the firing properties of the ab2 sensilla at rest. The following figure shows the raster of all the spikes we are going to analyse. (A is in red, B is in blue.)
 
 figure('outerposition',[0 0 1500 700],'PaperUnits','points','PaperSize',[1500 700]); hold on
 raster2(A,B)
@@ -73,7 +73,7 @@ if being_published
 	delete(gcf)
 end
 
-% In the following figure, we plot the inter-spike interval (ISI) histogram for the A and the B neurons. The different lines indicate different neurons, and the shading is the s.e.m. 
+% In the following figure, we plot the inter-spike interval (ISI) histogram for the A and the B neurons. The different lines indicate different neurons, and the shading is the s.e.m. (A is in red, B is in blue.)
 
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
@@ -109,7 +109,7 @@ end
 
 
 %%
-% We also plot the probability of spiking as a function of time relative to spike. Note that this is not the same as the ISI distribution, as the ISI distribution only accounts for adjacent spikes. 
+% We also plot the probability of spiking as a function of time relative to spike. Note that this is not the same as the ISI distribution, as the ISI distribution only accounts for adjacent spikes. (A is in red, B is in blue.)
 
 pA = zeros(100,width(A));
 pB = zeros(100,width(A));
@@ -147,7 +147,7 @@ end
 
 
 %% ab3
-% Now we look at ab3. The following figure shows the raster of all the spikes we are going to analyse:
+% Now we look at ab3. The following figure shows the raster of all the spikes we are going to analyse. (A is in red, B is in blue.)
 
 A = ab3.A; B = ab3.B; orn = ab3.orn;
 
@@ -162,7 +162,7 @@ if being_published
 	delete(gcf)
 end
 
-% In the following figure, we plot the inter-spike interval (ISI) histogram for the A and the B neurons. The different lines indicate different neurons, and the shading is the s.e.m. 
+% In the following figure, we plot the inter-spike interval (ISI) histogram for the A and the B neurons. The different lines indicate different neurons, and the shading is the s.e.m. (A is in red, B is in blue.)
 
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
@@ -197,7 +197,7 @@ if being_published
 end
 
 %%
-% Now we also plot the probability of spiking conditional on spiking: 
+% Now we also plot the probability of spiking conditional on spiking. (A is in red, B is in blue.)
 
 pA = zeros(100,width(A));
 pB = zeros(100,width(A));

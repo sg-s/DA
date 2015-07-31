@@ -21,28 +21,34 @@ tic
 
 A = [];
 B = [];
+orn = [];
 pathname = '/local-data/orn/baseline-firing/ab3/';
 allfiles = dir([pathname '*.mat']);
 for i = 1:length(allfiles)
 	load(strcat(pathname,allfiles(i).name));
+	orn = [orn; i*ones(width(spikes.A),1)];
 	A = [A  spikes.A'];
 	B = [B  spikes.B'];
 end
 ab3.A = A;
 ab3.B = B;
+ab3.orn = orn;
 
 
 A = [];
 B = [];
+orn = [];
 pathname = '/local-data/orn/baseline-firing/ab2/';
 allfiles = dir([pathname '*.mat']);
 for i = 1:length(allfiles)
 	load(strcat(pathname,allfiles(i).name));
 	A = [A  spikes.A'];
+	orn = [orn; i*ones(width(spikes.A),1)];
 	B = [B  spikes.B'];
 end
 ab2.A = A;
 ab2.B = B;
+ab2.orn = orn;
 
 %    ###    ########   #######  
 %   ## ##   ##     ## ##     ## 
@@ -67,8 +73,7 @@ if being_published
 	delete(gcf)
 end
 
-% In the following figure, we plot the inter-spike interval (ISI) histogram for the A and the B neurons: 
-
+% In the following figure, we plot the inter-spike interval (ISI) histogram for the A and the B neurons. The different lines indicate different neurons, and the shading is the s.e.m. 
 
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
@@ -87,8 +92,11 @@ for i = 1:width(B)
 	hy = hy/sum(hy);
 	isiB(:,i) = hy;
 end
-errorShade(hx,mean2(isiB),sem(isiB),'Color',[0 0 1]);
-errorShade(hx,mean2(isiA),sem(isiA),'Color',[1 0 0]);
+for i = 1:max(orn)
+	pt = orn == i;
+	errorShade(hx,mean2(isiB(:,pt)),sem(isiB(:,pt)),'Color',[0 0 1]);
+	errorShade(hx,mean2(isiA(:,pt)),sem(isiA(:,pt)),'Color',[1 0 0]);
+end
 xlabel('ISI (ms)')
 ylabel('Probability')
 title('ab2')
@@ -98,6 +106,35 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+
+%%
+% We also plot the probability of spiking as a function of time relative to spike. Note that this is not the same as the ISI distribution, as the ISI distribution only accounts for adjacent spikes. 
+
+pA = zeros(100,width(A));
+pB = zeros(100,width(A));
+for i = 1:width(A)
+	[pA(:,i),x] = condSpikeProb(A(:,i),1,1e-2);
+	[pB(:,i),x] = condSpikeProb(B(:,i),1,1e-2);
+end
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+for i = 1:max(orn)
+	pt = orn == i;
+	shadedErrorBar(x,mean2(pA(:,pt)),sem(pA(:,pt)),{'Color',[1 0 0]});
+	shadedErrorBar(x,mean2(pB(:,pt)),sem(pB(:,pt)),{'Color',[0 0 1]});
+end
+
+xlabel('Time since last spike (s)')
+ylabel('p(spike observed)')
+
+PrettyFig()
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 %                             ###    ########   #######  
 %                            ## ##   ##     ## ##     ## 
@@ -112,7 +149,7 @@ end
 %% ab3
 % Now we look at ab3. The following figure shows the raster of all the spikes we are going to analyse:
 
-A = ab3.A; B = ab3.B;
+A = ab3.A; B = ab3.B; orn = ab3.orn;
 
 figure('outerposition',[0 0 1500 700],'PaperUnits','points','PaperSize',[1500 700]); hold on
 raster2(A,B)
@@ -125,7 +162,7 @@ if being_published
 	delete(gcf)
 end
 
-% In the following figure, we plot the inter-spike interval (ISI) histogram for the A and the B neurons: 
+% In the following figure, we plot the inter-spike interval (ISI) histogram for the A and the B neurons. The different lines indicate different neurons, and the shading is the s.e.m. 
 
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
@@ -144,11 +181,41 @@ for i = 1:width(B)
 	hy = hy/sum(hy);
 	isiB(:,i) = hy;
 end
-errorShade(hx,mean2(isiB),sem(isiB),'Color',[0 0 1]);
-errorShade(hx,mean2(isiA),sem(isiA),'Color',[1 0 0]);
+for i = 1:max(orn)
+	pt = orn == i;
+	errorShade(hx,mean2(isiB(:,pt)),sem(isiB(:,pt)),'Color',[0 0 1]);
+	errorShade(hx,mean2(isiA(:,pt)),sem(isiA(:,pt)),'Color',[1 0 0]);
+end
 xlabel('ISI (ms)')
 ylabel('Probability')
 title('ab3')
+PrettyFig()
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% Now we also plot the probability of spiking conditional on spiking: 
+
+pA = zeros(100,width(A));
+pB = zeros(100,width(A));
+for i = 1:width(A)
+	[pA(:,i),x] = condSpikeProb(A(:,i),1,1e-2);
+	[pB(:,i),x] = condSpikeProb(B(:,i),1,1e-2);
+end
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+for i = 1:max(orn)
+	pt = orn == i;
+	shadedErrorBar(x,mean2(pA(:,pt)),sem(pA(:,pt)),{'Color',[1 0 0]});
+	shadedErrorBar(x,mean2(pB(:,pt)),sem(pB(:,pt)),{'Color',[0 0 1]});
+end
+
+xlabel('Time since last spike (s)')
+ylabel('p(spike observed)')
+
 PrettyFig()
 
 if being_published

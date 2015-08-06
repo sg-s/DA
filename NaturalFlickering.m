@@ -1,4 +1,6 @@
-% Mahmut_Data_Analyis.m
+% Natural Flickering.m
+% analysis of responses to very widely distributed stimuli
+% 
 % this is a complete rewrite on  4:06 , 10 February 2015. 
 % 
 % created by Srinivas Gorur-Shandilya at 10:20 , 09 April 2014. Contact me at http://srinivas.gs/contact/
@@ -238,12 +240,11 @@ end
 
 
 %% Linear Fit
-% In this section we fit a linear kernel, first to the stimulus, and then to the log of the stimulus using standard methods. 
+% In this section we fit a linear kernel from the stimulus to the response. 
 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[900 500]); hold on
-subplot(1,2,1), hold on
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[900 500]); hold on
 plot([-.1 1],[0 0 ],'k--')
-[K, ~, filtertime_full] = FindBestFilter(mean2(PID),mean2(fA),[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
+[K, filtertime_full] = fitFilter2Data(mean2(PID),mean2(fA),'reg',1,'filter_length',1999,'offset',500);
 filtertime_full = filtertime_full*mean(diff(tA));
 filtertime = 1e-3*(-200:900);
 K = interp1(filtertime_full,K,filtertime);
@@ -252,18 +253,6 @@ plot(filtertime,K,'r')
 ylabel('Filter Amplitude')
 xlabel('Filter Lag (s)')
 title('Filter from stimulus')
-
-subplot(1,2,2), hold on
-plot([-.1 1],[0 0 ],'k--')
-[Klog, ~, filtertime_full] = FindBestFilter(log(mean2(PID)),mean2(fA),[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
-filtertime_full = filtertime_full*mean(diff(tA));
-filtertime = 1e-3*(-200:900);
-Klog = interp1(filtertime_full,Klog,filtertime);
-
-plot(filtertime,Klog,'r')
-ylabel('Filter Amplitude')
-xlabel('Filter Lag (s)')
-title('Filter from log stimulus')
 
 PrettyFig;
 
@@ -278,20 +267,16 @@ end
 
 % convolve with filter to make prediction
 fp = convolve(tA,mean2(PID),K,filtertime);
-fp_log = convolve(tA,log(mean2(PID)),Klog,filtertime);
 
 % correct for trivial scaling
 R = mean2(fA);
 temp =fit(fp(~(isnan(fp) | isnan(R))),R(~(isnan(fp) | isnan(R))),'poly1');
 fp = fp*temp.p1;
 fp = fp+temp.p2;
-temp =fit(fp_log(~(isnan(fp_log) | isnan(R))),R(~(isnan(fp_log) | isnan(R))),'poly1');
-fp_log = fp_log*temp.p1;
-fp_log = fp_log+temp.p2;
 
 
-figure('outerposition',[0 0 1500 800],'PaperUnits','points','PaperSize',[1500 800]); hold on
-subplot(2,4,1:3), hold on
+figure('outerposition',[0 0 1500 400],'PaperUnits','points','PaperSize',[1500 400]); hold on
+subplot(1,4,1:3), hold on
 plot(tA,mean2(fA),'k')
 l=plot(tA,fp,'r');
 r2 = rsquare(fp,mean2(fA));
@@ -299,25 +284,11 @@ legend(l,strcat('r^2=',oval(r2,2)))
 xlabel('Time (s)')
 ylabel('Firing Rate (Hz)')
 
-subplot(2,4,4), hold on
+subplot(1,4,4), hold on
 plot(filtertime,K,'r')
 xlabel('Filter Lag (s)')
 ylabel('Filter (norm.)')
 title('Filter from stimulus')
-
-subplot(2,4,5:7), hold on
-plot(tA,mean2(fA),'k')
-l=plot(tA,fp_log,'r');
-r2 = rsquare(fp_log,mean2(fA));
-legend(l,strcat('r^2=',oval(r2,2)))
-xlabel('Time (s)')
-ylabel('Firing Rate (Hz)')
-
-subplot(2,4,8), hold on
-plot(filtertime,Klog,'r')
-xlabel('Filter Lag (s)')
-ylabel('Filter (norm.)')
-title('Filter from log stimulus')
 
 PrettyFig;
 
@@ -325,6 +296,7 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
 
 %             #######  ##     ## ######## ########  ##     ## ######## 
 %            ##     ## ##     ##    ##    ##     ## ##     ##    ##    
@@ -343,34 +315,24 @@ end
 %            ##     ## ##    ## ##     ## ########    ##     ######  ####  ######  
 
 %% Output Analysis
-% In this section, we analyse the prediction of the linear kernel in some more detail. The following figure shows a plot of the linear predictions vs. the actual response. 
+% In this section, we analyse the prediction of the linear kernel in some more detail. The following figure shows a plot of the linear predictions vs. the actual response. We colour the data by the mean stimulus in the preceding 500ms. 
 
-ss = 10;
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-subplot(1,2,1), hold on
-plot(fp(1:ss:end),R(1:ss:end),'.','MarkerSize',12,'MarkerFaceColor',[0.9 0.9 0.9],'MarkerEdgeColor',[0.9 0.9 0.9])
+shat = ComputeSmoothedStimulus(mean2(PID),500);
+% shat(fp<10) = 0;
+shat = shat-min(shat);
+shat = shat/max(shat);
+shat = 1+ceil(shat*99);
+shat(isnan(shat)) = 1;
+
+ss = 1;
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+
+cc = parula(100);
+c= cc(shat,:);
+scatter(fp(1:ss:end),R(1:ss:end),[],c(1:ss:end,:),'filled')
+
 xlabel('Linear Prediction (Hz)')
 ylabel('Actual response (Hz)')
-clear p l
-p.A = 92.8611; % for normal
-p.k = 32.0745;
-p.n = 1.5221;
-fp_LN = hill(p,fp);
-l = plot(1:100,hill(p,1:100),'r');
-r2 = strcat('r^2=',oval(rsquare(fp_LN,R)));
-legend(l,r2,'Location','southeast');
-
-subplot(1,2,2), hold on
-plot(fp_log(1:ss:end),R(1:ss:end),'.','MarkerSize',12,'MarkerFaceColor',[0.9 0.9 0.9],'MarkerEdgeColor',[0.9 0.9 0.9])
-xlabel('Linear Prediction (log stim.) (Hz)')
-clear p l
-p.A =  198.3611; % for log
-p.k =  110.4495;
-p.n =  1.2975;
-fp_log_LN = hill(p,fp_log);
-l = plot(1:100,hill(p,1:100),'r');
-r2 = strcat('r^2=',oval(rsquare(fp_log_LN,R)));
-legend(l,r2,'Location','southeast');
 
 PrettyFig;
 
@@ -381,7 +343,7 @@ end
 
 
 %% 
-% We clearly see that there are large loops in this space, that cannot be fit by any static nonlinear function. These loops are characteristic signatures of a dynamical process that escapes a full description by the linear kernel. 
+% We see that each excursion has a different slope, and it looks like the slopes correspond to the stimulus in the preceding 500ms. Larger mean stimulus in the preceding 500ms is indicated by brighter colours. 
 
 %% Version Info
 % The file that generated this document is called:

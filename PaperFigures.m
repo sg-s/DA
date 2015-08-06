@@ -33,7 +33,6 @@ fig5 = false;
 if fig1
 
 %% Figure 1: ORNs decrease gain on increasing stimulus mean
-clearvars -except being_published fig1 fig2 fig3 fig4 fig5
 fig_handle=figure('Units','pixels','outerposition',[81 5 599 871],'PaperUnits','points','PaperSize',[599 871],'Color','w','Toolbar','none');
 clf(fig_handle);
 axes_handles(1)=axes('Units','pixels','Position',[63.825 744.625 489.325 85.1]);
@@ -73,53 +72,54 @@ mean_pid = NaN(length(c),1);
 % plot lowest dose stimulus
 plot_these=find(strcmp(paradigm_names{1}, combined_data.paradigm));
 plot_this = mean2(combined_data.PID(plot_these,:));
-err = std(combined_data.PID(plot_these,:));
-err = err/sqrt(length(plot_these));
 time = dt*(1:length(plot_this));
 plot(axes_handles(1),time,plot_this,'Color',c(1,:))
-% axes(axes_handles(1))
-% shadedErrorBar(time,plot_this,err,{'Color',c(1,:)})
 ylabel(axes_handles(1),'Stimulus (V)')
 
 
 % plot lowest dose response
 plot_this = mean2(combined_data.fA(:,plot_these));
-err = std(combined_data.fA(:,plot_these)');
-err = err/sqrt(length(plot_these));
 time = dt*(1:length(plot_this));
 plot(axes_handles(2),time,plot_this,'Color',c(1,:))
 ylabel(axes_handles(2),'ORN Response (Hz)')
-% axes(axes_handles(2))
-% shadedErrorBar(time,plot_this,err,{'Color',c(1,:)})
 set(axes_handles(1),'XLim',[15 55])
 set(axes_handles(2),'XLim',[15 55])
 xlabel(axes_handles(2),'Time (s)')
 
 % load the data cut and processed
 load('MSG_per_neuron.mat','MSG_data')
+% if ~exist('MSG_data','var')
+% 	load('MSG_per_neuron.mat','MSG_data')
 
-% back out all filters
-% for i = 1:8
-% 	for j = 1:13
-% 		if width(MSG_data(i,j).stim) > 1
-% 			this_stim = mean2(MSG_data(i,j).stim);
-% 			this_resp = mean2(MSG_data(i,j).resp);
-% 			[K, ~, filtertime_full] = FindBestFilter(this_stim,this_resp,[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
-% 			filtertime_full = filtertime_full;
-% 			filtertime = (-200:900);
-% 			K = interp1(filtertime_full,K,filtertime);
-% 			MSG_data(i,j).K = K/max(K);
+% 	% back out all filters
+% 	for i = 1:8
+% 		for j = 1:13
+% 			disp([i j])
+% 			if width(MSG_data(i,j).stim) > 1
+% 				this_stim = mean2(MSG_data(i,j).stim);
+% 				this_stim = this_stim - mean(this_stim);
+% 				this_stim = this_stim/std(this_stim);
+% 				this_resp = mean2(MSG_data(i,j).resp);
+% 				this_resp = this_resp - mean(this_resp);
+% 				this_resp = this_resp/std(this_resp);
+% 				[K,filtertime_full] = fitFilter2Data(this_stim,this_resp,'reg',1,'filter_length',1999,'offset',300);
+% 				filtertime_full = filtertime_full;
+% 				filtertime = (-200:800);
+% 				K = interp1(filtertime_full,K,filtertime);
+% 				MSG_data(i,j).K = K;
+% 			end
 % 		end
 % 	end
 % end
 % save('MSG_per_neuron.mat','MSG_data')
 
 % plot the filter for the lowest dose 
-filtertime = (-200:900)*1e-3;
-K = 0*filtertime;
+filtertime = (-200:800)*1e-3;
+K = NaN*filtertime;
 for i = 1:13 % get all the filters for the lowest dose
 	K = [K; MSG_data(1,i).K];
 end
+K(1,:) = [];
 err = std(K);
 err = err/sqrt(width(K));
 axes(axes_handles(3))
@@ -129,12 +129,14 @@ xlabel(axes_handles(3),'Lag (s)')
 ylabel(axes_handles(3),'Filter K (norm)')
 
 % make linear predictions everywhere
+% and also calculate the r2 of each -- this will be used as weights
 for i = 1:8
 	for j = 1:13
 		if width(MSG_data(i,j).stim) > 1
 			this_stim = mean2(MSG_data(i,j).stim);
 			this_resp = mean2(MSG_data(i,j).resp);
-			MSG_data(i,j).fp = convolve(MSG_data(i,j).time,mean2(MSG_data(i,j).stim),MSG_data(i,j).K,filtertime) + mean(mean2(MSG_data(i,j).resp));
+			MSG_data(i,j).fp = convolve(MSG_data(i,j).time,mean2(MSG_data(i,j).stim),[0 0 MSG_data(i,j).K(3:end)],filtertime) ;
+			MSG_data(i,j).r2 = rsquare(MSG_data(i,j).fp,mean2(MSG_data(i,j).resp));
 		end
 	end
 end
@@ -144,15 +146,15 @@ end
 ss = 25;
 y = mean2([MSG_data(1,:).resp]);
 x = mean2([MSG_data(1,:).fp]);
-l=plot(axes_handles(4),x(1:ss:end),y(1:ss:end),'.','Color',c(1,:));
+plot(axes_handles(4),x(1:ss:end),y(1:ss:end),'.','Color',c(1,:));
 
+ff= fit(x(~isnan(x)),y(~isnan(x)),'poly1');
+l = plot(axes_handles(4),sort(x),ff(sort(x)),'r');
 
 xlabel(axes_handles(4),'K \otimes s')
 ylabel(axes_handles(4),'Response (Hz)')
 
-% add a r2 
-r = rsquare(x,y);
-legend(l,strcat('r^2=',oval(r)),'Location','northwest');
+legend(l,strcat('Gain=',oval(ff.p1),'Hz/V'),'Location','northwest');
 
 
 % plot the stimulus distributions 
@@ -194,9 +196,11 @@ for i = 1:8 % iterate over all paradigms
 	if ~isvector(x)
 		x = mean2(x);
 	end
+
 	if ~isvector(y)
 		y = mean2(y);
 	end 
+
 	plot(axes_handles(7),x(1:ss:end),y(1:ss:end),'.','Color',c(i,:))
 end
 
@@ -204,16 +208,11 @@ xlabel(axes_handles(7),'K\otimes s')
 ylabel(axes_handles(7),'Neuron Response (Hz)')
 
 
-% get the gain scaling factor -- this is to correct for the fact that we normalised the filter heights everywhere
-x = mean2(horzcat(MSG_data(1,:).stim));
-y = mean2(horzcat(MSG_data(1,:).resp));
-gsf = std(y)/std(x);
-
 % compute gain changes on a per-neuron basis
-
 gain = NaN(8,13);
 mean_stim = NaN(8,13);
 mean_resp = NaN(8,13);
+w = NaN(8,13);
 for i = 1:8 % iterate over all paradigms 
 	for j = 1:13
 		if width(MSG_data(i,j).stim) > 1
@@ -236,8 +235,8 @@ for i = 1:8 % iterate over all paradigms
 			mean_stim(i,j) = mean(mean([MSG_data(i,j).stim]));
 			mean_resp(i,j) = mean(mean([MSG_data(i,j).resp]));
 
-			% get the units of gain right
-			gain(i,j) = gain(i,j)*gsf;
+			% get the weights for the each
+			w(i,j) = MSG_data(i,j).r2;
 		end
 	end	
 end
@@ -249,19 +248,10 @@ for i = 1:8 % iterate over all paradigms
 	end
 end
 
-% make gain phase plot
-% figure, hold on
-% for i = 1:13
-% 	g = gain(:,i)/gain(1,i);
-% 	m = mean_resp(:,i)/mean_resp(1,i);
-% 	m(isnan(m)) = [];
-% 	g(isnan(g)) = [];
-% 	plot(g,m,'-+k')
-% end
-
 mean_stim = mean_stim(~isnan(mean_stim));
 mean_resp = mean_resp(~isnan(mean_resp));
 gain = gain(~isnan(gain));
+w = w(~isnan(w));
 
 
 cf = fit(mean_stim(:),gain(:),'power1');

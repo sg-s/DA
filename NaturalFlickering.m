@@ -16,6 +16,14 @@ if ~isempty(calling_func)
 	end
 end
 
+
+%% Natural Flickering
+% In this document, we generate odor stimuli flickers over a large range, to mimic what the fly might encounter in the "real" world. The idea is that odour stimuli are very broadly distributed in intensity, and that odour stimuli arrive in whiffs and clumps of whiffs (like in Vergassola et al.). 
+
+%% Raw Data
+% In the following data we look at the raw data from this experiment. On the left are time series of the stimulus (top, ethyl acetate) and the response of the ab3A neuron. On the right, we show the pair-wise coefficient of determination between all trials, and the pairwise slope of residuals between all trials. Values close to zero in both plots indicate that a) subsequent trials are well correlated and b) there is little trial-to-trial drift in the stimulus/response. 
+
+
 load('/local-data/DA-paper/natural-flickering/mahmut-raw/2014_07_11_EA_natflick_non_period_CFM_1_ab3_1_1_all.mat')
 PID = data(2).PID;
 time = 1e-4*(1:length(PID));
@@ -51,8 +59,6 @@ end
 PID = PID2; clear PID2
 % some minor cleaning up
 PID(end,:) = PID(end-1,:); 
-
-
 
 figure('outerposition',[0 0 1400 1000],'PaperUnits','points','PaperSize',[1400 1000]); hold on
 subplot(2,9,10:14), hold on
@@ -168,17 +174,8 @@ if being_published
 	delete(gcf)
 end
 
-
-
 %%
-% In this document, we generate odor stimuli flickers over a large range, like the "natural" stimuli, but never goes to zero, so that the neuron should never silence (allowing us to accurately follow its response, and reasonably estimate instantaneous gain). 
-
-%%
-% The first figure shows the odor stimulus (ethyl acetate) presented to two ab3A neurons. Each neuron was recorded from ten times. The colormaps on the right show the coefficient of determination between pairwise trials. 
-
-
-%%
-% The following figure shows the stimulus distribution and the autocorrelation functions of the stimulus and the response. 
+% The following figure shows the odor stimulus (ethyl acetate). From left to right, we see the stimulus histogram showing the very long-tailed distribution of odour stimuli, the autocorrelation function of the stimulus, and the finally the autocorrelation function of the response. 
 
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
@@ -360,8 +357,8 @@ errorbar(mean_stim,gain,gain_err,'k+')
 
 ff = fit(mean_stim(:),gain(:),'power1','Weights',1./gain_err);
 
-l = plot(sort(mean_stim),ff(sort(mean_stim)),'r')
-L = strcat('\alpha=',oval(ff.b));
+l = plot(sort(mean_stim),ff(sort(mean_stim)),'r');
+L = strcat('y=\alpha x^{\beta}, \beta=',oval(ff.b),'. r^2=',oval(rsquare(ff(mean_stim),gain)));
 legend(l,L)
 xlabel('Mean Stimulus in preceding 500ms (V)')
 ylabel('Gain (Hz/V)')
@@ -372,9 +369,6 @@ if being_published
 	snapnow
 	delete(gcf)
 end
-
-
-
 
 
 %% Version Info

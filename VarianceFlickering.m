@@ -39,7 +39,7 @@ variances = double(rand(msteps,1) > .5);
 variances = repmat(variances,1,(T/dt)/msteps)';
 variances = variances(:);
 
-figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[700 700]); hold on
+figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
 subplot(2,1,1), hold on
 time = 1e-4*(1:length(data.PID));
 plot(time(1:100:end),100*data.MFC500(2,1:100:end),'k')
@@ -62,7 +62,7 @@ end
 % In the following figure, we plot the distributions of the control signals (left), the flow rates (middle) and the PID (right) at times when the variance is low and when the variance is high. Error bars indicate standard error of the mean.  
 
 
-figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1), hold on
 control_signals = ControlParadigm.Outputs(1,variances<0.5);
 dil = (control_signals*100)./((control_signals*100)+2000);

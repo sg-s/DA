@@ -20,7 +20,7 @@
 T = 60; % length of trial
 dt = 1e-4; % sampling rate
 tau1 = 2e-2; % 20ms, switching time of individual steps
-tau2 = 1e-1; % 100ms, switching time of variance. 
+tau2 = 5e-1; % 500ms, switching time of variance. 
 
 mean_dil = 4; % 4%
 max_dil = 7;

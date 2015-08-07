@@ -23,7 +23,7 @@ tau1 = 2e-2; % 20ms, switching time of individual steps
 tau2 = 1e-1; % 100ms, switching time of variance. 
 
 mean_dil = 4; % 4%
-max_dil = 8;
+max_dil = 7;
 min_dil = 1;
 MainFlow = 2000; % mL/min
 OdourFlow = 500; % mL/min
@@ -36,7 +36,8 @@ steps_per_epoch = nsteps/msteps;
 % set rand stream
 RandStream.setGlobalStream(RandStream('mt19937ar','Seed',1984)); 
 
-variances = rand(msteps,1);
+variances = double(rand(msteps,1) > .5);
+variances(variances ==0) = .25;
 
 ControlParadigm.Outputs  = ones(2,floor(T/dt));
 ControlParadigm.Name = 'VarianceFlickering';

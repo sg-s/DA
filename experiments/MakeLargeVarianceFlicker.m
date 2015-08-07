@@ -45,7 +45,7 @@ clear ControlParadigm
 ControlParadigm(1).Name = 'Start';
 ControlParadigm(1).Outputs = ones(2,1e4);
 baseline_V = ((main_flow*baseline_dilution)/(1-baseline_dilution))/MFC_scale;
-ControlParadigm(1).Outputs(1,:) = baseline_V;
+ControlParadigm(1).Outputs(1,:) = 0;
 
 % make the random variations
 nsteps= T/tc;
@@ -72,6 +72,8 @@ for i = 1:length(s)
 
     % add the main air
     ControlParadigm2(i).Outputs(2,:) = 1;
+    
+    ControlParadigm2(i).Outputs(1,end) = baseline_V;
     
 end
 

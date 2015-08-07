@@ -212,7 +212,7 @@ ylabel(axes_handles(7),'Neuron Response (Hz)')
 gain = NaN(8,13);
 mean_stim = NaN(8,13);
 mean_resp = NaN(8,13);
-w = NaN(8,13);
+gain_err = NaN(8,13);
 for i = 1:8 % iterate over all paradigms 
 	for j = 1:13
 		if width(MSG_data(i,j).stim) > 1
@@ -236,7 +236,8 @@ for i = 1:8 % iterate over all paradigms
 			mean_resp(i,j) = mean(mean([MSG_data(i,j).resp]));
 
 			% get the weights for the each
-			w(i,j) = MSG_data(i,j).r2;
+			temp = confint(temp);
+			gain_err(i,j) = diff(temp(:,1))/2;
 		end
 	end	
 end
@@ -244,23 +245,23 @@ end
 % show gain changes -- gain vs. mean stimulus
 for i = 1:8 % iterate over all paradigms 
 	for j = 1:13
-		plot(axes_handles(8),mean_stim(i,j),gain(i,j),'+','Color',c(i,:));
+		errorbar(axes_handles(8),mean_stim(i,j),gain(i,j),gain_err(i,j),'+','Color',c(i,:));
 	end
 end
 
 mean_stim = mean_stim(~isnan(mean_stim));
 mean_resp = mean_resp(~isnan(mean_resp));
 gain = gain(~isnan(gain));
-w = w(~isnan(w));
+gain_err = gain_err(~isnan(gain_err));
 
 
-cf = fit(mean_stim(:),gain(:),'power1');
+cf = fit(mean_stim(:),gain(:),'power1','Weights',1./gain_err);
 set(axes_handles(8),'XScale','log','YScale','log','YLim',[1 100],'XLim',[.5 3.5])
 % set(axes_handles(8),'XScale','linear','YScale','linear','YLim',[1 45],'XLim',[.5 3.5])
 xlabel(axes_handles(8),'Mean Stimulus (V)')
 ylabel(axes_handles(8),'Neuron Gain (Hz/V)')
 l(1)=plot(axes_handles(8),sort(mean_stim),cf(sort(mean_stim)),'k');
-L = strcat('\alpha=',oval(cf.b));
+L = strcat('\beta=',oval(cf.b));
 
 % fit a power law with exponent -1
 options = fitoptions(fittype('power1'));
@@ -269,7 +270,7 @@ options.Upper = [Inf -1];
 cf = fit(mean_stim(:),gain(:),'power1',options);
 l(2)=plot(axes_handles(8),sort(mean_stim),cf(sort(mean_stim)),'k--');
 
-legend(l,{L, strcat('\alpha:=-1,\beta=',oval(cf.a))} )
+legend(l,{L, strcat('\beta:=-1,\alpha=',oval(cf.a))} )
 
 PrettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=0;','FixLogY=0;')
 

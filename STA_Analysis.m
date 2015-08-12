@@ -17,10 +17,10 @@ tic
 
 
 %% STA Analysis
-% In this document we try to perform a spike-triggered analysis of the data to see if we can quantify the data without resorting to firing rates, which inherently smooth and average date. 
+% In this document we try to perform a spike-triggered analysis of the data to see if we can quantify the data without resorting to firing rates, which inherently smooth and average data. 
 
 %%
-% In the following figures, we plot the spike triggered average for two sensilla. The odour is ethyl acetate, which is presented in a flickering fashion (the data from the large variance flicker is used here). Each figure corresponds to one sensilla, and we show the analysis for both A and B neurons. 
+% In the following figures, we plot the spike triggered average for two sensilla. The odour is ethyl acetate, which is presented in a flickering fashion (the data from the large variance flicker is used here). Each figure corresponds to one sensilla, and we show the analysis for both A and B neurons. In this analysis, we normalise the stimulus by subtracting the mean and dividing through by the standard deviation. 
 
 before = 1e4;
 after = 6e3;
@@ -32,7 +32,7 @@ K = STA(spikes(4).A,data(4).PID,before,after);
 t = -before:after;
 t = t*1e-4;
 plot(t,K)
-ylabel('Stimulus (V)')
+ylabel('Stimulus (norm)')
 title('A neuron')
 
 subplot(2,1,2), hold on
@@ -41,13 +41,11 @@ K = STA(spikes(4).B,data(4).PID,before,after);
 t = -before:after;
 t = t*1e-4;
 plot(t,K)
-ylabel('Stimulus (V)')
+ylabel('Stimulus (norm)')
 title('B neuron')
 xlabel('Time relative to spike (s)')
 
 PrettyFig;
-
-return
 
 if being_published
 	snapnow
@@ -61,7 +59,7 @@ K = STA(spikes(4).A,data(4).PID,before,after);
 t = -before:after;
 t = t*1e-4;
 plot(t,K)
-ylabel('Stimulus (V)')
+ylabel('Stimulus (norm)')
 title('A neuron')
 
 subplot(2,1,2), hold on
@@ -70,7 +68,7 @@ K = STA(spikes(4).B,data(4).PID,before,after);
 t = -before:after;
 t = t*1e-4;
 plot(t,K)
-ylabel('Stimulus (V)')
+ylabel('Stimulus (norm)')
 title('B neuron')
 xlabel('Time relative to spike (s)')
 
@@ -83,7 +81,7 @@ end
 
 
 %%
-% This is some crazy stuff. Why is a spike more predictive of something that happened 600ms ago than the present? To check these crazy results, we repeat the analysis on Carlotta's flickering data. 
+% We get very clean filters without having to calculate firing rates at all. Now, we repeat the analysis on Carlotta's flickering data. 
 
 before = 1e4;
 after = 6e3;
@@ -95,7 +93,7 @@ t = -before:after;
 t = t*1e-4;
 plot(t,K)
 title(strrep(data(1).original_name,'_','-'))
-ylabel('Stimulus (V)')
+ylabel('Stimulus (norm)')
 
 subplot(2,1,2), hold on
 K = STA(data(8).spikes(1e5:end-2e5,:),data(8).fullPID(1e5:end-2e5,:),before,after);
@@ -103,7 +101,7 @@ t = -before:after;
 t = t*1e-4;
 plot(t,K)
 title(strrep(data(8).original_name,'_','-'))
-ylabel('Stimulus (V)')
+ylabel('Stimulus (norm)')
 xlabel('Time relative to spike (s)')
 
 PrettyFig;

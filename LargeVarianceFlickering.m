@@ -476,6 +476,60 @@ if being_published
 	delete(gcf)
 end
 
+%% STA Analysis
+% Can we use the spike triggered average to get at a model-free way of measuring fast gain control? In the following figure, we pull out STAs for spikes when the mean stimulus in the preceding 500ms is low (blue), or high (yellow). 
+
+% before = 1e4;
+% after = 1e4;
+% STA_low = zeros(before+after+1,width(PID));
+% STA_high = zeros(before+after+1,width(PID));
+% spikes = [];
+% for i = 1:width(PID)
+% 	stim = PID(:,i); 
+% 	stim = interp1(1e-3*(1:length(stim)),stim,time);
+% 	stim(isnan(stim)) = 0;
+% 	ms = filter(ones(3e3,1),1,stim);
+% 	temp = sort(ms(1e5:end));
+% 	a = temp(floor(length(temp)/3));
+% 	b = temp(floor(2*length(temp)/3));
+% 	t_low = ms < a;
+% 	t_high = ms > b;
+
+% 	% find STA for t_low
+% 	% throw out spikes at all times except t_low
+% 	spikes = all_spikes(i,:);
+% 	spikes(~t_low) = 0; spikes(1:1e5) = 0;
+% 	temp = STA(spikes,stim,before,after,false);
+% 	STA_low(:,i) = temp/mean(stim(t_low & time>1));
+
+% 	% find STA for t_high
+% 	spikes = all_spikes(i,:);
+% 	spikes(~t_high) = 0; spikes(1:1e5) = 0;
+% 	temp = STA(spikes,stim,before,after,false);
+% 	STA_high(:,i) = temp/mean(stim(t_high & time>1));
+
+% end
+
+
+% figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% t = -before:after;
+% t = t*1e-4;
+% c = parula(6);
+% clear l
+% l(1) = errorShade(t,mean2(STA_low),sem(STA_low),'Color',c(1,:));
+% l(2) = errorShade(t,mean2(STA_high),sem(STA_high),'Color',c(5,:));
+% xlabel('Time w.r.t spike (s)')
+% ylabel('Stimulus (norm)')
+% legend(l,{'stimulus recently low','stimulus recently high'})
+% PrettyFig;
+
+% if being_published
+% 	snapnow
+% 	delete(gcf)
+% end
+
+
+
 %% What does the gain depend on?
 % What controls gain? The stimulus, or the derivative of the stimulus, or combination thereof? To investigate this, we allow the DA model to control gain with a bilobed filter. If the lobes are of opposing signs, then this suggests that gain is controlled by the derivative of the stimulus. If the size of both lobes are the same, then this suggests that the gain is controlled just by the derivative, and the stimulus magnitude doesn't play a role. 
 

@@ -7,10 +7,14 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
+clear all
+clc
+
+
 % some core parameters 
 T = 5; % length of trial
 dt = 1e-4; % sampling rate
-tau1 = 2e-2; % 20ms, switching time of individual steps
+tau1 = 1e-2; % 20ms, switching time of individual steps
 
 mean_dil = 4; % 4%
 max_dil = 7;
@@ -24,7 +28,7 @@ nsteps = floor(T/tau1);
 % set rand stream
 RandStream.setGlobalStream(RandStream('mt19937ar','Seed',1984)); 
 
-ControlParadigm.Outputs  = ones(2,floor(T/dt));
+ControlParadigm.Outputs  = zeros(2,floor(T/dt));
 ControlParadigm.Name = 'test';
 
 a = 1;
@@ -46,6 +50,7 @@ end
 
 % make sure it off at the end
 ControlParadigm.Outputs(1,end) = 0;
+ControlParadigm.Outputs(2,end) = 0;
 
 % get the PID values
 p = input('enter P value:\n');
@@ -54,7 +59,40 @@ d = input('enter D value:\n');
 
 % run the experiment
 data = Kontroller('ControlParadigm',ControlParadigm,'RunTheseParadigms',ones(1,5),'w',1e4);
+clc
 
+% compute r2
+r2= nanmean(nanmean(rsquare(data.MFC500(:,1e4:end))));
+disp('Reproducability:')
+disp(r2)
 
+% compute autocorrelation time
+temp = [];
+for i = 1:width(data.PID)
+    [~,~,~,temp2] = FindCorrelationTime(data.MFC500(i,1e4:end));
+    temp = [temp temp2];
+end
+tau = mean(temp);
+tau = tau*1e-4;
+tau = tau*1000;
+disp('Correlation time (ms):')
+disp(tau)
 
+% error
+disp('Total error:')
+disp(mean(mean(abs(repmat(ControlParadigm.Outputs(1,1e4:5e4),5,1) - data.MFC500(:,1e4:5e4)))))
+
+% load previous values
+load('tunePID.mat')
+allP = [allP p];
+allI = [allI i];
+allD = [allD d];
+allTau = [allTau tau];
+allr2 = [allr2 r2];
+
+% save
+save('tunePID.mat','allP','allI','allD','allTau','allr2','-append')
+
+close all
+plot(data.MFC500')
 

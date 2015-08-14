@@ -18,7 +18,7 @@ tic
 % this determines which figures to do. 
 fig1 = true;
 fig2 = true;
-fig3 = false;
+fig3 = true;
 fig4 = false;
 fig5 = false;
 
@@ -323,19 +323,20 @@ end
 end
 
 
-%      ######## ####  ######   ##     ## ########  ########     #######  
-%      ##        ##  ##    ##  ##     ## ##     ## ##          ##     ## 
-%      ##        ##  ##        ##     ## ##     ## ##                 ## 
-%      ######    ##  ##   #### ##     ## ########  ######       #######  
-%      ##        ##  ##    ##  ##     ## ##   ##   ##          ##        
-%      ##        ##  ##    ##  ##     ## ##    ##  ##          ##        
-%      ##       ####  ######    #######  ##     ## ########    ######### 
+%            ######## ####  ######   ##     ## ########  ########     #######  
+%            ##        ##  ##    ##  ##     ## ##     ## ##          ##     ## 
+%            ##        ##  ##        ##     ## ##     ## ##                 ## 
+%            ######    ##  ##   #### ##     ## ########  ######       #######  
+%            ##        ##  ##    ##  ##     ## ##   ##   ##                 ## 
+%            ##        ##  ##    ##  ##     ## ##    ##  ##          ##     ## 
+%            ##       ####  ######    #######  ##     ## ########     #######  
+
 
 if fig3
 
-%% Figure 2: ORNs speed up responses on increasing stimulus mean
+%% Figure 3: ORNs speed up responses on increasing stimulus mean
 
-figure('outerposition',[0 0 1400 900],'PaperUnits','points','PaperSize',[1400 900]); hold on
+figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
 
 
 % fit parametric filters to the raw, neuron-wise filters extracted earlier 
@@ -351,12 +352,11 @@ figure('outerposition',[0 0 1400 900],'PaperUnits','points','PaperSize',[1400 90
 % 	end
 % end
 
-
 % compute peak locations of all these filters
 clear l 
 l = zeros(8,1);
 peak_loc_K = NaN(8,13);
-subplot(2,3,1), hold on
+subplot(1,3,1), hold on
 for i = 1:8
 	for j = 1:13
 		if ~isempty(MSG_data(i,j).K)
@@ -372,217 +372,104 @@ end
 
 set(gca,'XLim',[-.01 .5])
 xlabel('Lag (s)')
-ylabel('Filter')
+ylabel('Filter (norm)')
 L = paradigm_names;
 for i = 1:length(L)
 	L{i} = L{i}(strfind(L{i},'-')+1:end);
 end
 legend(l,L)
 
+before = 1e4;
+after = 5e3;
+% compute STA for all the data
+% allfiles = dir('/local-data/DA-paper/fast-flicker/orn/*.mat');
+% allSTA = [];
+% mean_stim = []; 
+% dil = [];
+% for i= 1:length(allfiles)
+% 	load(['/local-data/DA-paper/fast-flicker/orn/' allfiles(i).name])
+% 	for j = 1:length(spikes)
+% 		if length(spikes(j).A) > 1 && ~strcmp(ControlParadigm(j).Name,'end')
+% 			these_spikes = spikes(j).A(:,35e4:55e4);
+% 			this_stim = data(j).PID(:,35e4:55e4);
 
-% compute the cross-correlation coefficient for the data, on a per-neuron basis 
-subplot(2,3,2), hold on
-peak_loc_xcorr = NaN(8,13);
-peak_xcorr = NaN(8,13);
-clear l 
-l = zeros(8,1);
+% 			if isfield(spikes,'discard')
+% 				rm_this = find(spikes(j).discard);
+% 				rm_these_spikes = [];
+% 				if ~isempty(rm_this)
+% 					this_stim(rm_this,:) = [];
+% 					for k = 1:length(rm_this)
+% 						if rm_this(k) > width(these_spikes)
+% 						else
+% 							rm_these_spikes = [rm_these_spikes k];
+% 						end
+% 					end
+% 					these_spikes(rm_these_spikes,:) = [];
+% 				end
+% 			end
+
+% 			this_STA = STA(these_spikes,this_stim,before,after);
+% 			allSTA = [allSTA this_STA];
+% 			mean_stim = [mean_stim; mean(this_stim,2)];
+% 			this_dil = str2double(ControlParadigm(j).Name(strfind(ControlParadigm(j).Name,'-')+1:strfind(ControlParadigm(j).Name,'%')-1));
+% 			dil = [dil;this_dil*ones(width(this_stim),1)  ];
+% 		end
+% 	end
+% end
+% % save this
+% save('allSTA.mat','allSTA','dil','mean_stim');
+
+
+
+
+% plot the STA
+old_mean_stim = mean_stim;
+load('allSTA.mat','allSTA','dil','mean_stim');
+subplot(1,3,2), hold on
+udil = unique(dil);
 for i = 1:8
-	for j = 1:13
-		if ~isempty(MSG_data(i,j).K)
-			a = mean2(MSG_data(i,j).resp);
-			b = mean2(MSG_data(i,j).stim);
-
-			% a = a - mean(a);
-			% % a = a/std(a);
-			
-			% b = b - mean(b); 
-			% b = b/std(b);
-			% x = xcorr(a,b); % positive peak means a lags b
-
-			x = xcoeff(a,b);
-			t = dt*(1:length(x));
-			t = t-mean(t);
-			x = x/max(x);
-
-			plot(t,x,'Color',c(i,:));
-
-			[peak_xcorr(i,j),loc] = max(x);
-			peak_loc_xcorr(i,j) = t(loc);
-		end
+	temp = (allSTA(:,dil == udil(i)));
+	for j = 1:width(temp)
+		temp(:,j) = temp(:,j)/max(temp(:,j));
 	end
+	t = -after:before;
+	t = t*1e-4; 
+	errorShade(t,flipud(mean2(temp)),flipud(sem(temp)),'Color',c(i,:));
+end
+set(gca,'XLim',[-.2 .5])
+xlabel('Lag (s)')
+ylabel('STA (norm)')
+
+% find the peak of each STA
+peak_STA = NaN*mean_stim;
+for i = 1:length(mean_stim)
+	[~,loc] = max(allSTA(:,i));
+	peak_STA(i) = (1e4 - loc)/10;
 end
 
-set(gca,'XLim',[-.1 .3],'YLim',[-.5 1.1])
-xlabel('Lag (s)')
-ylabel('Cross Correlation (norm)')
+x = NaN(8,1); y = x; ex = x; ey = x;
+peak_STA(peak_STA>900) = NaN; % throw out some bullshit values
+for i = 1:8
+	x(i) = mean2(mean_stim(dil == udil(i)));
+	ex(i) = sem(mean_stim(dil == udil(i)));
+	y(i) = nanmean(peak_STA(dil == udil(i)));
+	ey(i) = sem(nonnans(peak_STA(dil == udil(i))));
+end
 
-
-subplot(2,3,3), hold on
+subplot(1,3,3), hold on
 clear l
-peak_loc_xcorr = peak_loc_xcorr(~isnan(peak_loc_xcorr));
-l(1) = plot(mean_stim(:),peak_loc_xcorr(:)/dt,'k+');
+l(1) = errorbar(x,y,ey,'k')
 peak_loc_K = peak_loc_K(~isnan(peak_loc_K));
-l(2) = plot(mean_stim(:),peak_loc_K(:)/dt,'r+');
+l(2) = plot(old_mean_stim(:),peak_loc_K(:)/dt,'r+');
 
 % calculate Spearman's rho (http://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient)
-s2 = spear(mean_stim,peak_loc_K);
-s1 = spear(mean_stim,peak_loc_xcorr);
+s2 = spear(old_mean_stim,peak_loc_K);
+s1 = spear(mean_stim,peak_STA);
 
-legend(l,{strcat('Cross correlation, \rho=',oval(s1)), strcat('Filter, \rho=',oval(s2))})
-
-
+legend(l,{strcat('STA, \rho=',oval(s1)), strcat('Filter, \rho=',oval(s2))})
+set(gca,'YLim',[-10 130])
 ylabel('Peak time (ms)')
 xlabel('Mean Stimulus (V)')
-
-
-%        ########  ##     ## ##        ######  ########  ######  
-%        ##     ## ##     ## ##       ##    ## ##       ##    ## 
-%        ##     ## ##     ## ##       ##       ##       ##       
-%        ########  ##     ## ##        ######  ######    ######  
-%        ##        ##     ## ##             ## ##             ## 
-%        ##        ##     ## ##       ##    ## ##       ##    ## 
-%        ##         #######  ########  ######  ########  ######  
-
-
-
-% now we make the plots for the pulse responses.
-clearvars -except being_published fig1 fig2 fig3 fig4 fig5
-load('/local-data/DA-paper/carlotta-martelli/fig3/abc.mat')
-
-% now do some post-processing and clean up
-
-% combine all spikes
-all_spikes = [];
-paradigm = [];
-for i = 1:length(spikes)
-	if isempty(spikes(i).discard)
-		all_spikes = vertcat(all_spikes,spikes(i).A);
-		paradigm = [paradigm i*ones(1,width(spikes(i).A))];
-	else
-		temp = spikes(i).A;
-		rm_this = find(spikes(i).discard);
-		rm_this(rm_this>width(spikes(i).discard)) = [];
-		temp(rm_this,:) = [];
-		all_spikes = vertcat(all_spikes,temp);
-		paradigm = [paradigm i*ones(1,width(temp))];
-	end
-end
-
-time = 1e-4*(1:length(all_spikes));
-
-hash = DataHash(full(all_spikes));
-cached_data = cache(hash);
-if isempty(cached_data)
-	fA = spiketimes2f(all_spikes,time);
-	cache(hash,fA);
-else
-	fA = cached_data;
-end
-
-t = 1e-3*(1:length(fA));
-
-
-% remove bizzare outliers
-rm_this(1) = 8+ find(paradigm==6,1,'first');
-rm_this(2) = 2+ find(paradigm==8,1,'first');
-rm_this = [rm_this find(max(fA)==0)];
-fA(:,rm_this) = [];
-paradigm(rm_this) = [];
-
-% combine all PID traces. the data is very spotty, so we have to be careful. 
-all_PID = [];
-paradigm_PID = [];
-for i = 1:length(spikes)
-	temp = data(i).PID;
-	temp = temp(find(temp(:,1)),:);
-	all_PID = vertcat(all_PID,temp);
-	paradigm_PID = [paradigm_PID i*ones(1,width(temp))];
-end
-all_PID = all_PID';
-
-% filter and subsample
-for i = 1:width(all_PID)
-	all_PID(:,i) = filter(ones(30,1)/30,1,all_PID(:,i));
-end
-all_PID = all_PID(1:10:end,:);
-
-% remove bizzare outliers
-rm_this = [];
-rm_this(1) = find(paradigm_PID==9,1,'first');
-rm_this(2) = find(paradigm_PID==10,1,'first');
-all_PID(:,rm_this) = [];
-paradigm_PID(rm_this) = [];
-
-% define colourmap
-c = parula(max(paradigm)+1);
-
-% plot PID
-subplot(2,3,4), hold on
-for i = 1:max(paradigm)
-	plot_these = find(paradigm_PID==i);
-	plot(t,mean2(all_PID(:,plot_these)),'Color',c(i,:));
-end
-
-set(gca,'XLim',[.5 3],'YScale','log','YLim',[7e-2 15])
-xlabel('Time (s)')
-ylabel('Stimulus (V)')
-
-
-% plot neuron responses
-subplot(2,3,5), hold on
-for i = 1:max(paradigm)
-	plot_these = find(paradigm==i);
-	plot(t,mean2(fA(:,plot_these)),'Color',c(i,:));
-end
-
-set(gca,'XLim',[.5 3])
-xlabel('Time (s)')
-ylabel('Firing rate (Hz)')
-
-
-load('PulseData.mat')
-
-% show the timing data for the DA model
-stim_half_time = NaN(1e4,1); % time it takes to go to half max
-resp_half_time = NaN(1e4,1); % time it takes to go to half max
-foreground_stim = NaN(1e4,1);
-c = 1;
-a = 1050;
-z = 1500; % nominal stimulus start and stop
-for i = 1:length(PulseData)
-	for j = 1:width(PulseData(i).stim)
-		this_stim = PulseData(i).stim(:,j);
-		foreground_stim(c) = mean(this_stim(a:z));
-		this_stim = this_stim/max(this_stim(a:z));
-		this_resp = PulseData(i).resp(:,j);
-		this_resp = this_resp -  mean(this_resp(1:a));
-		this_resp = this_resp/max(this_resp(a:z));
-		stim_half_time(c) = max([find(this_stim(a:z)>.5,1,'first') NaN]);
-		resp_half_time(c) = max([find(this_resp(a:z)>.5,1,'first') NaN]);
-		c = c+1;
-	end
-end
-stim_half_time(c:end) = [];
-resp_half_time(c:end) = [];
-resp_time = resp_half_time - stim_half_time;
-foreground_stim(c:end) = [];
-
-% clean up
-rm_this = foreground_stim < 1e-2 | resp_time < 0 | resp_time > 100;
-foreground_stim(rm_this) = [];
-resp_time(rm_this) = [];
-
-
-% plot time to peak for the data
-subplot(2,3,6), hold on
-l=plot(foreground_stim,resp_time,'k+');
-set(gca,'XScale','log','XLim',[1e-2 20],'YLim',[0 100])
-xlabel('Mean Stimulus (V)')
-ylabel('\tau_{ORN}-\tau_{PID} (ms)','interpreter','tex')
-
-% calculate the spearman rho
-s2 = spear(foreground_stim,resp_time);
-legend(l,strcat('\rho=',oval(s2)));
 
 PrettyFig;
 
@@ -601,9 +488,9 @@ end
 %       ##        ##  ##    ##  ##     ## ##    ##  ##          ##     ## 
 %       ##       ####  ######    #######  ##     ## ########     #######  
 
-if fig3
+if fig4
 
-%% Figure 3: ORNs can change gain on a fast time scale 
+%% Figure 4: ORNs can change gain on a fast time scale 
 
 clearvars -except being_published fig1 fig2 fig3 fig4 fig5
 

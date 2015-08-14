@@ -17,7 +17,7 @@ tic
 
 % this determines which figures to do. 
 fig1 = true;
-fig2 = false;
+fig2 = true;
 fig3 = false;
 fig4 = false;
 fig5 = false;
@@ -178,9 +178,6 @@ end
 end
 
 
-
-
-
 %        ######## ####  ######   ##     ## ########  ########     #######  
 %        ##        ##  ##    ##  ##     ## ##     ## ##          ##     ## 
 %        ##        ##  ##        ##     ## ##     ## ##                 ## 
@@ -189,8 +186,16 @@ end
 %        ##        ##  ##    ##  ##     ## ##    ##  ##          ##        
 %        ##       ####  ######    #######  ##     ## ########    ######### 
 
+%% Figure 2: ORN gain decreases with increasing stimulus intensity, similar to the Weber-Fechner Law
+% Odorant stimuli drawn from distributions with similar variances but increasing means (A) elicit ORN responses with decreasing variances (B). After extracting linear filters for all stimulus paradigms, a plot of the ORN response vs. the linear prediction (C) shows a systematic decrease in slope. Plotting lines to each of these clouds of points determines the neuron gain in each case. Neuron gain decreases with the mean stimulus (D). This decrease is well described by a power law with an exponent close to -1 (the Weber-Fechner Prediction). For comparison, a power law with the exponent fixed at -1 is also fitted (dashed line). 
 
 if fig2
+
+figure('outerposition',[0 0 800 700],'PaperUnits','points','PaperSize',[800 700]); hold on
+axes_handles(5) = subplot(2,2,1); hold on;
+axes_handles(6) = subplot(2,2,2); hold on;
+axes_handles(7) = subplot(2,2,3); hold on;
+axes_handles(8) = subplot(2,2,4); hold on;
 
 % plot the stimulus distributions 
 a = floor(15/dt);
@@ -204,7 +209,7 @@ for i = 1:length(paradigm_names)
 	plot(axes_handles(5),hx,hy,'Color',c(i,:));
 end
 
-xlabel(axes_handles(5),'PID (V)')
+xlabel(axes_handles(5),'Stimulus (V)')
 ylabel(axes_handles(5),'count')
 
 
@@ -291,12 +296,13 @@ gain_err = gain_err(~isnan(gain_err));
 
 
 cf = fit(mean_stim(:),gain(:),'power1','Weights',1./gain_err);
-set(axes_handles(8),'XScale','log','YScale','log','YLim',[1 100],'XLim',[.5 3.5])
+set(axes_handles(8),'XScale','log','YScale','log','YLim',[1 200],'XLim',[.5 3.5])
 % set(axes_handles(8),'XScale','linear','YScale','linear','YLim',[1 45],'XLim',[.5 3.5])
 xlabel(axes_handles(8),'Mean Stimulus (V)')
 ylabel(axes_handles(8),'Neuron Gain (Hz/V)')
 l(1)=plot(axes_handles(8),sort(mean_stim),cf(sort(mean_stim)),'k');
-L = strcat('\beta=',oval(cf.b));
+r2 = rsquare(cf(mean_stim(:)),gain(:));
+L = strcat('y = \alpha x^{\beta}, \beta= ',oval(cf.b), ',r^2 = ',oval(r2));
 
 % fit a power law with exponent -1
 options = fitoptions(fittype('power1'));
@@ -304,8 +310,8 @@ options.Lower = [-Inf -1];
 options.Upper = [Inf -1];
 cf = fit(mean_stim(:),gain(:),'power1',options);
 l(2)=plot(axes_handles(8),sort(mean_stim),cf(sort(mean_stim)),'k--');
-
-legend(l,{L, strcat('\beta:=-1,\alpha=',oval(cf.a))} )
+r2 = rsquare(cf(mean_stim(:)),gain(:));
+legend(l,{L, strcat('y = \alpha x^{-1}, \alpha= ',oval(cf.a), ', r^2 = ',oval(r2))} )
 
 PrettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=0;','FixLogY=0;')
 
@@ -325,7 +331,7 @@ end
 %      ##        ##  ##    ##  ##     ## ##    ##  ##          ##        
 %      ##       ####  ######    #######  ##     ## ########    ######### 
 
-if fig2
+if fig3
 
 %% Figure 2: ORNs speed up responses on increasing stimulus mean
 

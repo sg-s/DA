@@ -32,21 +32,14 @@ fig5 = false;
 
 if fig1
 
-%% Figure 1: ORNs decrease gain on increasing stimulus mean
-fig_handle=figure('Units','pixels','outerposition',[81 5 599 871],'PaperUnits','points','PaperSize',[599 871],'Color','w','Toolbar','none');
-clf(fig_handle);
-axes_handles(1)=axes('Units','pixels','Position',[63.825 744.625 489.325 85.1]);
-axes_handles(2)=axes('Units','pixels','Position',[63.825 616.975 489.325 106.375]);
-axes_handles(3)=axes('Units','pixels','Position',[63.825 425.5 170.2 170.2]);
-axes_handles(4)=axes('Units','pixels','Position',[382.95 425.5 170.2 170.2]);
-axes_handles(5)=axes('Units','pixels','Position',[63.825 276.575 212.75 106.375]);
-axes_handles(6)=axes('Units','pixels','Position',[340.4 276.575 212.75 106.375]);
-axes_handles(7)=axes('Units','pixels','Position',[63.825 42.55 212.75 191.475]);
-axes_handles(8)=axes('Units','pixels','Position',[340.4 42.55 212.75 191.475]);
-for i = 1:length(axes_handles)
-	hold(axes_handles(i),'on')
-end
+%% Figure 1: ORN gain can be estimated by measuring responses to Gaussian inputs
+% Gaussian odorant inputs with short correlation times (A), elicit flickering responses in ORNs that track the odorant stimulus well (B). A linear filter K can be extracted from the odorant input and the firing rate output of the neuron (C). The slope of the residuals in a plot of the firing response vs. the linear prediction (D) is defined as the gain of the ORN in this stimulus paradigm. Here, we measure the ORN gain in the linear regime: the linear filter accounts for 96% of the variance in the ORN response (red line), and adding an output nonlinearity (dotted black line), only accounts for an additional 1% of the variance in the responses. The odorant used is ethyl acetate, stimulating the ab3A neuron. Shading in all plots shows the standard error of the mean. 
 
+figure('outerposition',[0 0 800 700],'PaperUnits','points','PaperSize',[800 700]); hold on
+axes_handles(1) = subplot(7,2,1:4); hold on
+axes_handles(2) = subplot(7,2,5:8); hold on
+axes_handles(3) = subplot(7,2,[9 11 13]); hold on
+axes_handles(4) = subplot(7,2,[10 12 14]); hold on
 % load cached data
 load('MeanShiftedGaussians.mat')
 
@@ -150,12 +143,54 @@ plot(axes_handles(4),x(1:ss:end),y(1:ss:end),'.','Color',c(1,:));
 
 ff= fit(x(~isnan(x)),y(~isnan(x)),'poly1');
 l = plot(axes_handles(4),sort(x),ff(sort(x)),'r');
+L = {};
+L{1} = strcat('Gain=',oval(ff.p1),'Hz/V, r^2=',oval(rsquare(y,x)));
+
+% also fit a hill function
+rm_this = isnan(x) | isnan(y);
+x(rm_this) = []; y(rm_this) = [];
+minx = min(x);
+x = x - minx;
+clear p
+p.     A= 42.9682;
+p.     k= 1.0570;
+p.     n= 2.4301;
+p.offset= 2.9976;
+[x,idx] = sort(x); y = y(idx);
+l(2) = plot(axes_handles(4),x + minx,hill4(p,x),'k--');
+L{2} = strcat('Hill fit, r^2=',oval(rsquare(hill4(p,x),y)));
 
 xlabel(axes_handles(4),'K \otimes s')
 ylabel(axes_handles(4),'Response (Hz)')
 
-legend(l,strcat('Gain=',oval(ff.p1),'Hz/V'),'Location','northwest');
 
+legend(l,L,'Location','northwest');
+
+
+PrettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=0;','FixLogY=0;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+end
+
+
+
+
+
+%        ######## ####  ######   ##     ## ########  ########     #######  
+%        ##        ##  ##    ##  ##     ## ##     ## ##          ##     ## 
+%        ##        ##  ##        ##     ## ##     ## ##                 ## 
+%        ######    ##  ##   #### ##     ## ########  ######       #######  
+%        ##        ##  ##    ##  ##     ## ##   ##   ##          ##        
+%        ##        ##  ##    ##  ##     ## ##    ##  ##          ##        
+%        ##       ####  ######    #######  ##     ## ########    ######### 
+
+
+if fig2
 
 % plot the stimulus distributions 
 a = floor(15/dt);

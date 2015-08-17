@@ -16,11 +16,15 @@ end
 tic
 
 % this determines which figures to do. 
-fig1 = true;
-fig2 = true;
-fig3 = true;
-fig4 = false;
-fig5 = false;
+fig1 = false; 	% how we determine gain
+fig2 = false;	% weber-like gain control
+fig3 = false;	% speed-gain tradeoff
+fig4 = false;	% fast gain control
+fig5 = false;	% fast gain control widely observed
+fig6 = true; 	% natural stimuli
+fig7 = false; 	% switching experiment
+fig8 = false;	% LFP experiments
+fig9 = false; 	% models to explain this
 
 %    ######## ####  ######   ##     ## ########  ########       ##   
 %    ##        ##  ##    ##  ##     ## ##     ## ##           ####   
@@ -29,6 +33,8 @@ fig5 = false;
 %    ##        ##  ##    ##  ##     ## ##   ##   ##             ##   
 %    ##        ##  ##    ##  ##     ## ##    ##  ##             ##   
 %    ##       ####  ######    #######  ##     ## ########     ###### 
+
+clearvars -except being_published fig*
 
 if fig1
 
@@ -335,6 +341,7 @@ end
 if fig3
 
 %% Figure 3: ORNs speed up responses on increasing stimulus mean
+% ORN gain may permit responses to occur with smaller delays, as ORNs need to integrate a smaller stimulus duration to respond. Speedup in responses can be estimated using the peak times of linear filters fit to increasing mean concentrations of odorant (colours, in A). ORN response speedups with increasing stimulus mean can also be estimated in a model-free manner using the spike-triggered average (STA, B). 
 
 figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
 
@@ -480,19 +487,21 @@ end
 
 end
 
-%       ######## ####  ######   ##     ## ########  ########     #######  
-%       ##        ##  ##    ##  ##     ## ##     ## ##          ##     ## 
-%       ##        ##  ##        ##     ## ##     ## ##                 ## 
-%       ######    ##  ##   #### ##     ## ########  ######       #######  
-%       ##        ##  ##    ##  ##     ## ##   ##   ##                 ## 
-%       ##        ##  ##    ##  ##     ## ##    ##  ##          ##     ## 
-%       ##       ####  ######    #######  ##     ## ########     #######  
+%           ######## ####  ######   ##     ## ########  ########    ##        
+%           ##        ##  ##    ##  ##     ## ##     ## ##          ##    ##  
+%           ##        ##  ##        ##     ## ##     ## ##          ##    ##  
+%           ######    ##  ##   #### ##     ## ########  ######      ##    ##  
+%           ##        ##  ##    ##  ##     ## ##   ##   ##          ######### 
+%           ##        ##  ##    ##  ##     ## ##    ##  ##                ##  
+%           ##       ####  ######    #######  ##     ## ########          ##  
+
 
 if fig4
 
 %% Figure 4: ORNs can change gain on a fast time scale 
+% Sensors that control gain in response to changing stimulus statistics must do so relevant timescales: a gain control mechanism that is too slow risks saturation or insensitivity, while a gain control mechanism that is too quick to change leads to fluctuating responses. To mimic an odor signal that changes its statistics rapidly, we recorded ORN responses to a flickering stimulus with a large variance (A-B).  The linear filter extracted from this data (C) convolved with the stimulus yields a linear prediction (D). Comparing the responses (y-axis) to the linear prediction (x-axis) when the stimulus is locally low (green) vs. locally high (red) shows that neuron gain at these two times is significantly different (E). Within this single stimulus presentation, gain varies inversely with the recent stimulus (F). Repeating the analysis over a range of time scales identifies a region of sub-second timescales over which ORNs significantly change their gain in a stimulus-driven manner. The odour used is ethyl acetate, and recordings are from ab3A. The vertical line in G indicates the history length used in E. 
 
-clearvars -except being_published fig1 fig2 fig3 fig4 fig5
+clearvars -except being_published fig*
 
 load('/local-data/DA-paper/large-variance-flicker/2015_01_28_CS_ab3_2_EA.mat')
 PID = data(4).PID;
@@ -693,19 +702,21 @@ end
 
 end
 
-%      ######## ####  ######   ##     ## ########  ########    ##        
-%      ##        ##  ##    ##  ##     ## ##     ## ##          ##    ##  
-%      ##        ##  ##        ##     ## ##     ## ##          ##    ##  
-%      ######    ##  ##   #### ##     ## ########  ######      ##    ##  
-%      ##        ##  ##    ##  ##     ## ##   ##   ##          ######### 
-%      ##        ##  ##    ##  ##     ## ##    ##  ##                ##  
-%      ##       ####  ######    #######  ##     ## ########          ##  
+%   ######## ####  ######   ##     ## ########  ########    ######## 
+%   ##        ##  ##    ##  ##     ## ##     ## ##          ##       
+%   ##        ##  ##        ##     ## ##     ## ##          ##       
+%   ######    ##  ##   #### ##     ## ########  ######      #######  
+%   ##        ##  ##    ##  ##     ## ##   ##   ##                ## 
+%   ##        ##  ##    ##  ##     ## ##    ##  ##          ##    ## 
+%   ##       ####  ######    #######  ##     ## ########     ######  
 
-if fig4
+
+if fig5
 
 %% Figure 4: Gain Control is widely observed
+% The previous result showed fast gain control using ethyl acetate, a volatile odor, in ab3A, an antennal ORN. To determine if fast gain control is widely observed, and not a peculiarity of the odor-receptor combination used, I reanalyzed a published data set of ORN responses to flickering odor stimuli (from Martelli et al. J. Neuro. 2013). The data set consists of six different odors and two ORN types: one in the antenna and one in the maxillary palp. My analysis of fast gain control is self-consistent across experimental replicates (A-C), and shows that fast gain control is observed for different odors (D-F) and in two different neurons (G-I).  In each row, the first column shows the linear filter extracted from the stimulus and the response. The second column shows the principal components fit to the highest (lowest) 1/3 of stimulus filtered over some history length in red (green). The third column shows how relative gain varies at times when the filtered stimulus in in the top 1/3 (green) or bottom 1/3 (red), for various history lengths. Only significant (p<0.01) points are shown. In every dataset, significant gain control is observed on a sub-second time scale, and the gain control always acts to amplify responses to recently weak stimuli and suppress responses to recently large stimuli (red dots always below green dots in third column). 
 
-clearvars -except being_published fig1 fig2 fig3 fig4 fig5
+clearvars -except being_published fig*
 load('CMData_Gain.mat')
 load('CM_Data_filters.mat')
 combined_data_file = ('/local-data/DA-paper/carlotta-martelli/flickering-stim/data.mat');
@@ -1009,13 +1020,136 @@ end
 
 end
 
-%       ######## ####  ######   ##     ## ########  ########    ######## 
-%       ##        ##  ##    ##  ##     ## ##     ## ##          ##       
-%       ##        ##  ##        ##     ## ##     ## ##          ##       
-%       ######    ##  ##   #### ##     ## ########  ######      #######  
-%       ##        ##  ##    ##  ##     ## ##   ##   ##                ## 
-%       ##        ##  ##    ##  ##     ## ##    ##  ##          ##    ## 
-%       ##       ####  ######    #######  ##     ## ########     ######  
+%          ######## ####  ######   ##     ## ########  ########     #######  
+%          ##        ##  ##    ##  ##     ## ##     ## ##          ##     ## 
+%          ##        ##  ##        ##     ## ##     ## ##          ##        
+%          ######    ##  ##   #### ##     ## ########  ######      ########  
+%          ##        ##  ##    ##  ##     ## ##   ##   ##          ##     ## 
+%          ##        ##  ##    ##  ##     ## ##    ##  ##          ##     ## 
+%          ##       ####  ######    #######  ##     ## ########     #######  
+
+
+
+%% Figure 6: ORNs change gain rapidly to naturalistic stimuli. 
+% 
+
+clearvars -except being_published fig*
+
+if fig6
+
+
+load('/local-data/DA-paper/natural-flickering/mahmut-raw/2014_07_11_EA_natflick_non_period_CFM_1_ab3_1_1_all.mat')
+PID = data(2).PID;
+time = 1e-4*(1:length(PID));
+all_spikes = spikes(2).A;
+B_spikes = spikes(2).B;
+
+
+% A spikes --> firing rate
+hash = DataHash(full(all_spikes));
+cached_data = cache(hash);
+if isempty(cached_data)
+	fA = spiketimes2f(all_spikes,time);
+	cache(hash,fA);
+else
+	fA = cached_data;
+end
+
+tA = 1e-3*(1:length(fA));
+PID2 = fA;
+for i = 1:width(PID2)
+	PID2(:,i) = interp1(time,PID(i,:),tA);
+end
+PID = PID2; clear PID2
+% some minor cleaning up
+PID(end,:) = PID(end-1,:); 
+
+figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+subplot(2,3,1:3), hold on
+errorShade(tA(1:10:end),mean2(PID(1:10:end,:)),sem(PID(1:10:end,:)),'Color',[0 0 0]);
+set(gca,'XLim',[0 70])
+xlabel('Time (s)')
+ylabel('Stimulus (V)')
+
+subplot(2,3,4), hold on
+for i = 1:width(PID)
+	[y,x] = histcounts(PID(:,i),300);x(1) = [];
+	plot(x,y,'Color',[.5 .5 .5])
+end
+set(gca,'XScale','log','YScale','log','XLim',[.1 10])
+xlabel('Stimulus (V)')
+ylabel('count')
+
+% make a linear filter
+[K, filtertime_full] = fitFilter2Data(mean2(PID),mean2(fA),'reg',1,'filter_length',1999,'offset',500);
+filtertime_full = filtertime_full*mean(diff(tA));
+filtertime = 1e-3*(-200:900);
+K = interp1(filtertime_full,K,filtertime);
+
+% convolve with filter to make prediction
+fp = convolve(tA,mean2(PID),K,filtertime);
+
+% correct for trivial scaling
+R = mean2(fA);
+temp =fit(fp(~(isnan(fp) | isnan(R))),R(~(isnan(fp) | isnan(R))),'poly1');
+fp = fp*temp.p1;
+fp = fp+temp.p2;
+
+shat = ComputeSmoothedStimulus(mean2(PID),500);
+shat = shat-min(shat);
+shat = shat/max(shat);
+shat = 1+ceil(shat*99);
+shat(isnan(shat)) = 1;
+
+% make the output analysis plot
+subplot(2,3,5), hold on
+ss = 1;
+cc = parula(100);
+c= cc(shat,:);
+scatter(fp(1:ss:end),R(1:ss:end),[],c(1:ss:end,:),'filled')
+xlabel('Linear Prediction (Hz)')
+ylabel('Actual response (Hz)')
+
+% plot gain vs stimulus for all these whiffs
+subplot(2,3,6), hold on
+fp = convolve(tA,mean2(PID),K,filtertime);
+shat = ComputeSmoothedStimulus(mean2(PID),500);
+
+% find all excursions (defined as firing rate crossing 10Hz)
+[whiff_starts,whiff_ends] = ComputeOnsOffs(R>10);
+mean_stim = NaN*whiff_ends;
+gain = NaN*whiff_ends;
+gain_err =  NaN*whiff_ends;
+for i = 1:length(whiff_ends)
+	mean_stim(i) = mean(shat(whiff_starts(i):whiff_ends(i)));
+	ff=fit(fp(whiff_starts(i):whiff_ends(i)),R(whiff_starts(i):whiff_ends(i)),'poly1');
+	gain(i) = ff.p1;
+	temp = confint(ff);
+	gain_err(i) = diff(temp(:,1))/2;
+end
+rm_this = (abs(gain_err./gain)) > .5; % throw out points where the estimate of gain has a more than 50% error
+gain(rm_this) = [];
+gain_err(rm_this) = [];
+mean_stim(rm_this) = [];
+
+errorbar(mean_stim,gain,gain_err,'k+')
+
+ff = fit(mean_stim(:),gain(:),'power1','Weights',1./gain_err);
+
+l = plot(sort(mean_stim),ff(sort(mean_stim)),'r');
+L = strcat('y=\alpha x^{\beta}, \beta=',oval(ff.b),'. r^2=',oval(rsquare(ff(mean_stim),gain)));
+legend(l,L)
+xlabel('Mean Stimulus in preceding 500ms (V)')
+ylabel('Gain (Hz/V)')
+
+PrettyFig('fs=12;');
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+end
 
 
 %      ##     ##  #######  ########  ######## ##        ######  
@@ -1026,7 +1160,7 @@ end
 %      ##     ## ##     ## ##     ## ##       ##       ##    ## 
 %      ##     ##  #######  ########  ######## ########  ######  
 
-if fig5
+if fig9
 
 
 %% Figure 5: Models to explain observed phenomena 

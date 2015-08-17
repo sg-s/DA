@@ -24,7 +24,7 @@ fig5 = true;	% fast gain control widely observed
 fig6 = true; 	% natural stimuli
 fig7 = true; 	% switching experiment
 fig8 = true;	% LFP experiments
-fig9 = false; 	% models to explain this
+fig9 = true; 	% models to explain this
 
 %    ######## ####  ######   ##     ## ########  ########       ##   
 %    ##        ##  ##    ##  ##     ## ##     ## ##           ####   
@@ -386,7 +386,7 @@ L = paradigm_names;
 for i = 1:length(L)
 	L{i} = L{i}(strfind(L{i},'-')+1:end);
 end
-legend(l,L)
+legend(l,L);
 
 before = 1e4;
 after = 5e3;
@@ -467,7 +467,7 @@ end
 
 subplot(1,3,3), hold on
 clear l
-l(1) = errorbar(x,y,ey,'k')
+l(1) = errorbar(x,y,ey,'k');
 peak_loc_K = peak_loc_K(~isnan(peak_loc_K));
 l(2) = plot(old_mean_stim(:),peak_loc_K(:)/dt,'r+');
 

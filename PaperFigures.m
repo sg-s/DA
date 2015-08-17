@@ -16,15 +16,15 @@ end
 tic
 
 % this determines which figures to do. 
-fig1 = false; 	% how we determine gain
-fig2 = false;	% weber-like gain control
-fig3 = false;	% speed-gain tradeoff
-fig4 = false;	% fast gain control
-fig5 = false;	% fast gain control widely observed
+fig1 = true; 	% how we determine gain
+fig2 = true;	% weber-like gain control
+fig3 = true;	% speed-gain tradeoff
+fig4 = true;	% fast gain control
+fig5 = true;	% fast gain control widely observed
 fig6 = true; 	% natural stimuli
-fig7 = false; 	% switching experiment
-fig8 = false;	% LFP experiments
-fig9 = false; 	% models to explain this
+fig7 = true; 	% switching experiment
+fig8 = true;	% LFP experiments
+fig9 = true; 	% models to explain this
 
 %    ######## ####  ######   ##     ## ########  ########       ##   
 %    ##        ##  ##    ##  ##     ## ##     ## ##           ####   
@@ -39,7 +39,7 @@ clearvars -except being_published fig*
 if fig1
 
 %% Figure 1: ORN gain can be estimated by measuring responses to Gaussian inputs
-% Gaussian odorant inputs with short correlation times (A), elicit flickering responses in ORNs that track the odorant stimulus well (B). A linear filter K can be extracted from the odorant input and the firing rate output of the neuron (C). The slope of the residuals in a plot of the firing response vs. the linear prediction (D) is defined as the gain of the ORN in this stimulus paradigm. Here, we measure the ORN gain in the linear regime: the linear filter accounts for 96% of the variance in the ORN response (red line), and adding an output nonlinearity (dotted black line), only accounts for an additional 1% of the variance in the responses. The odorant used is ethyl acetate, stimulating the ab3A neuron. Shading in all plots shows the standard error of the mean. 
+% Gaussian odorant inputs with short correlation times (A), elicit flickering responses in ORNs that track the odorant stimulus well (B). A linear filter K can be extracted from the odorant input and the firing rate output of the neuron (C). The slope of the residuals in a plot of the firing response vs. the linear prediction (D) is defined as the gain of the ORN. Here, we measure the ORN gain in the linear regime: the linear filter accounts for 96% of the variance in the ORN response (red line), and adding an output nonlinearity (dotted black line), only accounts for an additional 1%. The odorant used is ethyl acetate, stimulating the ab3A neuron. Shading in all plots shows the standard error of the mean. 
 
 figure('outerposition',[0 0 800 700],'PaperUnits','points','PaperSize',[800 700]); hold on
 axes_handles(1) = subplot(7,2,1:4); hold on
@@ -72,17 +72,19 @@ mean_pid = NaN(length(c),1);
 plot_these=find(strcmp(paradigm_names{1}, combined_data.paradigm));
 plot_this = mean2(combined_data.PID(plot_these,:));
 time = dt*(1:length(plot_this));
-plot(axes_handles(1),time,plot_this,'Color',c(1,:))
+axes(axes_handles(1))
+errorShade(time,plot_this,sem(combined_data.PID(plot_these,:)),'Color',c(1,:));
 ylabel(axes_handles(1),'Stimulus (V)')
 
 
 % plot lowest dose response
 plot_this = mean2(combined_data.fA(:,plot_these));
 time = dt*(1:length(plot_this));
-plot(axes_handles(2),time,plot_this,'Color',c(1,:))
+axes(axes_handles(2))
+errorShade(time,plot_this, sem(combined_data.fA(:,plot_these)),'Color',c(1,:));
 ylabel(axes_handles(2),'ORN Response (Hz)')
-set(axes_handles(1),'XLim',[15 55])
-set(axes_handles(2),'XLim',[15 55])
+set(axes_handles(1),'XLim',[35 55])
+set(axes_handles(2),'XLim',[35 55])
 xlabel(axes_handles(2),'Time (s)')
 
 % load the data cut and processed
@@ -193,7 +195,7 @@ end
 %        ##       ####  ######    #######  ##     ## ########    ######### 
 
 %% Figure 2: ORN gain decreases with increasing stimulus intensity, similar to the Weber-Fechner Law
-% Odorant stimuli drawn from distributions with similar variances but increasing means (A) elicit ORN responses with decreasing variances (B). After extracting linear filters for all stimulus paradigms, a plot of the ORN response vs. the linear prediction (C) shows a systematic decrease in slope. Plotting lines to each of these clouds of points determines the neuron gain in each case. Neuron gain decreases with the mean stimulus (D). This decrease is well described by a power law with an exponent close to -1 (the Weber-Fechner Prediction). For comparison, a power law with the exponent fixed at -1 is also fitted (dashed line). 
+% Odorant stimuli drawn from distributions with similar variances but increasing means (A) elicit ORN responses with decreasing variances (B). After extracting linear filters for all stimulus paradigms, a plot of the ORN response vs. the linear prediction (C) shows a systematic decrease in slope. Plotting lines to each of these clouds of points determines the neuron gain in each case. Neuron gain decreases with the mean stimulus (D). This stimulus-dependent decrease in gain is well described by a power law with an exponent close to -1 (the Weber-Fechner Prediction). For comparison, a power law with the exponent fixed at -1 is also shown (dashed line). 
 
 if fig2
 
@@ -341,7 +343,7 @@ end
 if fig3
 
 %% Figure 3: ORNs speed up responses on increasing stimulus mean
-% ORN gain may permit responses to occur with smaller delays, as ORNs need to integrate a smaller stimulus duration to respond. Speedup in responses can be estimated using the peak times of linear filters fit to increasing mean concentrations of odorant (colours, in A). ORN response speedups with increasing stimulus mean can also be estimated in a model-free manner using the spike-triggered average (STA, B). 
+% ORN gain may permit responses to occur with smaller delays, as ORNs need to integrate the stimulus over a smaller duration to respond. Speedup in responses can be estimated using the peak times of linear filters fit to increasing mean concentrations of odorant (colours, in A). ORN response speedups with increasing stimulus mean can also be estimated in a model-free manner using the spike-triggered average (STA, B). Both methods suggest that response delays decrease with increasing mean stimulus (C). 
 
 figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
 
@@ -1031,7 +1033,7 @@ end
 
 
 %% Figure 6: ORNs change gain rapidly to naturalistic stimuli. 
-% 
+% Odorant stimuli in nature are thought to comprise of brief pulses of odorant, occurring in clumps of whiffs, with very broady distributed intensities. We delivered a reproducible, well-controlled odorant stimulus that mimicked these statistics to ab3A neurons (A). This stimulus was very broadly distributed (B), and elicited responses from the neuron for every whiff. By comparing the response of the neuron to a linear model, we we estimated the gain of the neuron at each whiff, and plotted the response trajectories colour-coded by the mean stimulus in the preceding 500ms (C). Neuron gain scales as an inverse power law with the mean stimulus in the preceding 500ms, changing from whiff to whiff (D).   
 
 clearvars -except being_published fig*
 
@@ -1066,19 +1068,22 @@ PID(end,:) = PID(end-1,:);
 
 figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
 subplot(2,3,1:3), hold on
-errorShade(tA(1:10:end),mean2(PID(1:10:end,:)),sem(PID(1:10:end,:)),'Color',[0 0 0]);
+errorShade(tA(1:10:end),mean2(PID(1:10:end,:)),sem(PID(1:10:end,:)),'Color',[0.2 .2 .2]);
 set(gca,'XLim',[0 70])
 xlabel('Time (s)')
 ylabel('Stimulus (V)')
 
 subplot(2,3,4), hold on
+y = zeros(300,width(PID));
 for i = 1:width(PID)
-	[y,x] = histcounts(PID(:,i),300);x(1) = [];
-	plot(x,y,'Color',[.5 .5 .5])
+	[y(:,i),x] = histcounts(PID(:,i),300);x(1) = [];
 end
+errorShade(x,mean2(y),sem(y),'Color',[.2 .2 .2]);
+warning off 
 set(gca,'XScale','log','YScale','log','XLim',[.1 10])
 xlabel('Stimulus (V)')
 ylabel('count')
+warning on
 
 % make a linear filter
 [K, filtertime_full] = fitFilter2Data(mean2(PID),mean2(fA),'reg',1,'filter_length',1999,'offset',500);
@@ -1109,6 +1114,9 @@ c= cc(shat,:);
 scatter(fp(1:ss:end),R(1:ss:end),[],c(1:ss:end,:),'filled')
 xlabel('Linear Prediction (Hz)')
 ylabel('Actual response (Hz)')
+shat = ComputeSmoothedStimulus(mean2(PID),500);
+colorbar;
+caxis([min(shat) max(shat)]);
 
 % plot gain vs stimulus for all these whiffs
 subplot(2,3,6), hold on
@@ -1152,6 +1160,27 @@ end
 end
 
 
+%             ######## ####  ######   ##     ## ########  ########          ######## 
+%             ##        ##  ##    ##  ##     ## ##     ## ##                ##    ## 
+%             ##        ##  ##        ##     ## ##     ## ##                    ##   
+%             ######    ##  ##   #### ##     ## ########  ######               ##    
+%             ##        ##  ##    ##  ##     ## ##   ##   ##                  ##     
+%             ##        ##  ##    ##  ##     ## ##    ##  ##                  ##     
+%             ##       ####  ######    #######  ##     ## ########            ##     
+
+%% Figure 7: Timescales of adaptation to step changes in mean and variance
+% Stimulus with alternating periods of low mean and high mean, keeping the variance the same (A). Neuron responses were averaged over all periods, and plotted as time since the switch from low to high mean (B). We investigated the kinetics and gain of the neuron at different points relative to the switch (coloured bars in B). 
+% 
+% <</Users/sigbhu/code/da/images/fig7.png>>
+%
+
+%% Figure 8: Local Field Potential also shows evidence of fast and slow gain control.  
+% 
+% <</Users/sigbhu/code/da/images/fig8.png>>
+%
+
+
+
 %      ##     ##  #######  ########  ######## ##        ######  
 %      ###   ### ##     ## ##     ## ##       ##       ##    ## 
 %      #### #### ##     ## ##     ## ##       ##       ##       
@@ -1163,7 +1192,8 @@ end
 if fig9
 
 
-%% Figure 5: Models to explain observed phenomena 
+%% Figure 9: Models to explain observed phenomena 
+%
 
 figure('outerposition',[0 0 1400 600],'PaperUnits','points','PaperSize',[1400 600]); hold on
 clear axes_handles

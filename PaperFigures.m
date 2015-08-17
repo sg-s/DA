@@ -24,7 +24,7 @@ fig5 = true;	% fast gain control widely observed
 fig6 = true; 	% natural stimuli
 fig7 = true; 	% switching experiment
 fig8 = true;	% LFP experiments
-fig9 = true; 	% models to explain this
+fig9 = false; 	% models to explain this
 
 %    ######## ####  ######   ##     ## ########  ########       ##   
 %    ##        ##  ##    ##  ##     ## ##     ## ##           ####   

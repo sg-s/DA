@@ -58,6 +58,24 @@ if use_cache
 	end
 end
 
+% find the longest trial in all the data. this will be the length of the combined data
+disp('Determining longest data length...')
+ll = 0;
+for i = 1:length(allfiles)
+	load(strcat(pathname,allfiles(i).name));
+	for j = 1:length(data)
+		if ~isempty(data(j).PID)
+			ll = max([ll length(data(j).PID)]);
+		end
+	end
+end
+disp('Longest trial observed is:')
+disp(ll)
+ll = ceil(ll/10);
+LFP = zeros(ll,0);
+PID = zeros(ll,0);
+fA = zeros(ll,0);
+
 for i = 1:length(allfiles)
 	load(strcat(pathname,allfiles(i).name));
 	disp(strcat(pathname,allfiles(i).name));
@@ -84,7 +102,7 @@ for i = 1:length(allfiles)
 			else
 
 
-				if ~isempty(spikes(j).A)
+				if length(spikes(j).A) > 1
 					this_fA = spiketimes2f(spikes(j).A,1e-4*(1:length(spikes(j).A)),1e-3,3e-2);
 				end
 				
@@ -133,13 +151,29 @@ for i = 1:length(allfiles)
 				this_fA = [this_fA NaN(length(this_fA),width(this_LFP) - width(this_fA))];
 			end
 
-			% consolidate
+
 			if length(this_fA) > length(this_LFP)
 				this_fA = this_fA(1:length(this_LFP),:);
 			end
-			LFP = [LFP this_LFP];
-			PID = [PID this_PID];
-			fA =  [fA  this_fA ];
+
+			if length(this_LFP) < size(LFP,1)
+				padding = NaN(size(LFP,1)-length(this_LFP),width(this_LFP));
+				this_LFP = [this_LFP; padding];
+				padding = NaN(size(PID,1)-length(this_PID),width(this_PID));
+				this_PID = [this_PID; padding];
+				padding = NaN(size(fA,1)-length(this_fA),width(this_fA));
+				this_fA = [this_fA; padding];
+			end
+
+			% consolidate
+			try
+				LFP = [LFP this_LFP];
+				PID = [PID this_PID];
+				fA =  [fA  this_fA ];
+			catch er
+				er
+				keyboard
+			end
 			
 
 			paradigm = [paradigm  this_paradigm*ones(1,width(this_PID))];

@@ -32,8 +32,8 @@ $Revision: 1.1.6.7 $  $Date: 2008/02/29 12:45:30 $
 
 \begin{document}
 
-\title{Gain Control in Olfactory Receptor Neurons}
-\author{Srinivas Gorur-Shandilya, Mahmut Demir, Damon Clark and Thierry Emonet}
+\title{Role of OBPs in ORN response dynamics}
+\author{Srinivas Gorur-Shandilya}
 \maketitle
 
     <!-- Determine if the there should be an introduction section. -->

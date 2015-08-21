@@ -36,6 +36,7 @@ paradigm = [paradigm paradigm2]; clear paradigm2
 orn = [orn orn2]; clear orn2
 geno = [geno; geno2]; clear geno2
 paradigm = paradigm(:);
+orn = orn(:);
 
 % filter the LFP
 filteredLFP = LFP;
@@ -218,6 +219,8 @@ end
 %% Firing Rate Filter Analysis
 % We now extract filters for the firing rate of each neuron, and compare the two genotypes. 
 
+
+
 % K2 -- PID -> fA filter
 K2 = cache(DataHash([PID; fA]));
 if isempty(K2);
@@ -300,6 +303,86 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%% Fast Gain Control Analysis
+% We now check for fast gain control in the two genotypes, and see if there are any differences between the two. 
+
+% make linear predictions everywhere
+time = 1e-3*(1:length(fA)); time = time(:);
+fp = NaN*LFP;
+for i = 1:length((orn))
+	if paradigm(i) == 2
+		filtertime = 1e-3*(1:1e3)-.2;
+		fp(:,i) = convolve(time,PID(:,i),K2(:,i),filtertime);
+
+		% correct for some trivial scaling
+		rm_this = isnan(fp(:,i)) | isnan(fA(:,i)) | time < 10;
+		x = fp(:,i); y = fA(:,i);
+		x(rm_this) = []; y(rm_this) = [];
+		temp = fit(x,y,'poly1');
+		fp(:,i) = temp(fp(:,i));
+	end
+end
+
+
+% gain analysis -- Linear model
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+
+% first we do the firing rates
+clear ph ax
+ax(1) = subplot(1,2,1); hold on
+ax(2) = subplot(1,2,2); hold on
+
+history_lengths = logspace(-1,1,30);
+
+for g = 1:2
+	for i = 1:max(orn(geno==g))
+
+		ph(4) = ax(g);
+
+		resp = mean2(fA (:,orn==i & geno == g & paradigm == 2));
+		stim = mean2(PID(:,orn==i & geno == g & paradigm == 2));
+		pred = mean2(fp (:,orn==i & geno == g & paradigm == 2));
+
+		try
+			stim = stim(20e3:55e3);
+			pred = pred(20e3:55e3);
+			resp = resp(20e3:55e3);
+
+			[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'use_cache',1,'engine',@GainAnalysis5);
+		end
+	end
+end
+
+
+for g = 1:2
+	h=get(ax(g),'Children');
+	rm_this = [];
+	for i = 1:length(h)
+		try
+			if  strcmp(get(h(i),'LineStyle'),'-.')
+				rm_this = [rm_this i];
+			end
+		catch
+		end
+	end
+	delete(h(rm_this))
+
+	set(ax(g),'XLim',[.1 10],'YLim',[.4 2.5])
+end
+
+title(ax(1),'CRISPR KO')
+title(ax(2),'wCS')
+
+PrettyFig()
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
 
 %% Version Info
 % The file that generated this document is called:

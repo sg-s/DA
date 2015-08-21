@@ -56,7 +56,6 @@ else
 	verbosity = 0;
 end
 
-
 if exist('history_lengths','var') 
 else
 	% find the correlation time of the stimulus
@@ -99,12 +98,13 @@ end
 % clean up a little and ignore NaNs
 rm_this = [find(isnan(response)); find(isnan(prediction)) ];
 
+assert(length(rm_this)<length(response)/2,'GainAnalysisWrapper2: It looks like most of the response/prediction are NaN.')
+
 x.response(rm_this) = [];
 x.prediction(rm_this) = [];
 x.stimulus(rm_this) = [];
 x.time(rm_this) = [];
 x.engine = engine;
-
 
 % check cache to see if we have already computed this
 hash = DataHash(x);

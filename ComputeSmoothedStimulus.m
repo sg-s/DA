@@ -15,6 +15,10 @@ switch nargin
 	case 2
 end
 
+assert(~any(isnan(hl)), 'ComputeSmoothedStimulus: History lengths are NaN.')
+assert(~any(isnan(stimulus)), 'ComputeSmoothedStimulus: History lengths are NaN.')
+
+
 shat = NaN(length(hl),length(stimulus));
 for i = 1:length(hl)
 	if hl(i) == 0

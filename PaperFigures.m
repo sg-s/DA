@@ -16,16 +16,16 @@ end
 tic
 
 % this determines which figures to do. 
-fig1 = true; 	% how we determine gain
-fig2 = true;	% weber-like gain control
-fig_supp1 = true;
+fig1 = false; 	% how we determine gain
+fig2 = false;	% weber-like gain control
+fig_supp1 = false;
 fig3 = false;	% speed-gain tradeoff
-fig4 = false;	% fast gain control
+fig4 = true;	% natualistic stimuli + fast gain control
 fig5 = false;	% fast gain control widely observed
-fig6 = false; 	% natural stimuli
-fig7 = false; 	% switching experiment
-fig8 = false;	% LFP experiments
-fig9 = false; 	% models to explain this
+fig6 = false; 	% switching experiment
+fig7 = false;	% LFP experiments
+fig8 = false; 	% models to explain this
+fig9 = false;
 
 %    ######## ####  ######   ##     ## ########  ########       ##   
 %    ##        ##  ##    ##  ##     ## ##     ## ##           ####   
@@ -34,6 +34,23 @@ fig9 = false; 	% models to explain this
 %    ##        ##  ##    ##  ##     ## ##   ##   ##             ##   
 %    ##        ##  ##    ##  ##     ## ##    ##  ##             ##   
 %    ##       ####  ######    #######  ##     ## ########     ###### 
+
+%     ##     ## ########    ###     ######  ##     ## ########  #### ##    ##  ######   
+%     ###   ### ##         ## ##   ##    ## ##     ## ##     ##  ##  ###   ## ##    ##  
+%     #### #### ##        ##   ##  ##       ##     ## ##     ##  ##  ####  ## ##        
+%     ## ### ## ######   ##     ##  ######  ##     ## ########   ##  ## ## ## ##   #### 
+%     ##     ## ##       #########       ## ##     ## ##   ##    ##  ##  #### ##    ##  
+%     ##     ## ##       ##     ## ##    ## ##     ## ##    ##   ##  ##   ### ##    ##  
+%     ##     ## ######## ##     ##  ######   #######  ##     ## #### ##    ##  ######   
+    
+%      ######      ###    #### ##    ## 
+%     ##    ##    ## ##    ##  ###   ## 
+%     ##         ##   ##   ##  ####  ## 
+%     ##   #### ##     ##  ##  ## ## ## 
+%     ##    ##  #########  ##  ##  #### 
+%     ##    ##  ##     ##  ##  ##   ### 
+%      ######   ##     ## #### ##    ## 
+
 
 clearvars -except being_published fig*
 
@@ -193,6 +210,15 @@ end
 %        ##        ##  ##    ##  ##     ## ##   ##   ##          ##        
 %        ##        ##  ##    ##  ##     ## ##    ##  ##          ##        
 %        ##       ####  ######    #######  ##     ## ########    ######### 
+
+%    ##      ## ######## ########  ######## ########      ######      ###    #### ##    ## 
+%    ##  ##  ## ##       ##     ## ##       ##     ##    ##    ##    ## ##    ##  ###   ## 
+%    ##  ##  ## ##       ##     ## ##       ##     ##    ##         ##   ##   ##  ####  ## 
+%    ##  ##  ## ######   ########  ######   ########     ##   #### ##     ##  ##  ## ## ## 
+%    ##  ##  ## ##       ##     ## ##       ##   ##      ##    ##  #########  ##  ##  #### 
+%    ##  ##  ## ##       ##     ## ##       ##    ##     ##    ##  ##     ##  ##  ##   ### 
+%     ###  ###  ######## ########  ######## ##     ##     ######   ##     ## #### ##    ## 
+
 
 %% Figure 2: ORN gain decreases with increasing stimulus intensity, similar to the Weber-Fechner Law
 % Odorant stimuli drawn from distributions with similar variances but increasing means (A) elicit ORN responses with decreasing variances (B). After extracting linear filters for all stimulus paradigms, a plot of the ORN response vs. the linear prediction (C) shows a systematic decrease in slope. Plotting lines to each of these clouds of points determines the neuron gain in each case. Neuron gain decreases with the mean stimulus (D). This stimulus-dependent decrease in gain is well described by a power law with an exponent close to -1 (the Weber-Fechner Prediction). For comparison, a power law with the exponent fixed at -1 is also shown (dashed line). 
@@ -484,6 +510,14 @@ end
 %            ##        ##  ##    ##  ##     ## ##    ##  ##          ##     ## 
 %            ##       ####  ######    #######  ##     ## ########     #######  
 
+%        ######  ########  ######## ######## ########  ##     ## ########   ######  
+%       ##    ## ##     ## ##       ##       ##     ## ##     ## ##     ## ##    ## 
+%       ##       ##     ## ##       ##       ##     ## ##     ## ##     ## ##       
+%        ######  ########  ######   ######   ##     ## ##     ## ########   ######  
+%             ## ##        ##       ##       ##     ## ##     ## ##              ## 
+%       ##    ## ##        ##       ##       ##     ## ##     ## ##        ##    ## 
+%        ######  ##        ######## ######## ########   #######  ##         ######  
+
 
 if fig3
 
@@ -641,7 +675,49 @@ end
 %           ######    ##  ##   #### ##     ## ########  ######      ##    ##  
 %           ##        ##  ##    ##  ##     ## ##   ##   ##          ######### 
 %           ##        ##  ##    ##  ##     ## ##    ##  ##                ##  
-%           ##       ####  ######    #######  ##     ## ########          ##  
+%           ##       ####  ######    #######  ##     ## ########          ## 
+
+
+
+
+
+%         ##    ##    ###    ######## ##     ## ########     ###    ##       
+%         ###   ##   ## ##      ##    ##     ## ##     ##   ## ##   ##       
+%         ####  ##  ##   ##     ##    ##     ## ##     ##  ##   ##  ##       
+%         ## ## ## ##     ##    ##    ##     ## ########  ##     ## ##       
+%         ##  #### #########    ##    ##     ## ##   ##   ######### ##       
+%         ##   ### ##     ##    ##    ##     ## ##    ##  ##     ## ##       
+%         ##    ## ##     ##    ##     #######  ##     ## ##     ## ######## 
+
+%          ######  ######## #### ##     ## ##     ## ##       #### 
+%         ##    ##    ##     ##  ###   ### ##     ## ##        ##  
+%         ##          ##     ##  #### #### ##     ## ##        ##  
+%          ######     ##     ##  ## ### ## ##     ## ##        ##  
+%               ##    ##     ##  ##     ## ##     ## ##        ##  
+%         ##    ##    ##     ##  ##     ## ##     ## ##        ##  
+%          ######     ##    #### ##     ##  #######  ######## ####
+
+
+
+
+
+
+%         ########    ###     ######  ########     ######      ###    #### ##    ## 
+%         ##         ## ##   ##    ##    ##       ##    ##    ## ##    ##  ###   ## 
+%         ##        ##   ##  ##          ##       ##         ##   ##   ##  ####  ## 
+%         ######   ##     ##  ######     ##       ##   #### ##     ##  ##  ## ## ## 
+%         ##       #########       ##    ##       ##    ##  #########  ##  ##  #### 
+%         ##       ##     ## ##    ##    ##       ##    ##  ##     ##  ##  ##   ### 
+%         ##       ##     ##  ######     ##        ######   ##     ## #### ##    ## 
+
+%          ######   #######  ##    ## ######## ########   #######  ##       
+%         ##    ## ##     ## ###   ##    ##    ##     ## ##     ## ##       
+%         ##       ##     ## ####  ##    ##    ##     ## ##     ## ##       
+%         ##       ##     ## ## ## ##    ##    ########  ##     ## ##       
+%         ##       ##     ## ##  ####    ##    ##   ##   ##     ## ##       
+%         ##    ## ##     ## ##   ###    ##    ##    ##  ##     ## ##       
+%          ######   #######  ##    ##    ##    ##     ##  #######  ######## 
+
 
 
 if fig4
@@ -650,6 +726,143 @@ if fig4
 % Sensors that control gain in response to changing stimulus statistics must do so relevant timescales: a gain control mechanism that is too slow risks saturation or insensitivity, while a gain control mechanism that is too quick to change leads to fluctuating responses. To mimic an odor signal that changes its statistics rapidly, we recorded ORN responses to a flickering stimulus with a large variance (A-B).  The linear filter extracted from this data (C) convolved with the stimulus yields a linear prediction (D). Comparing the responses (y-axis) to the linear prediction (x-axis) when the stimulus is locally low (green) vs. locally high (red) shows that neuron gain at these two times is significantly different (E). Within this single stimulus presentation, gain varies inversely with the recent stimulus (F). Repeating the analysis over a range of time scales identifies a region of sub-second timescales over which ORNs significantly change their gain in a stimulus-driven manner. The odour used is ethyl acetate, and recordings are from ab3A. The vertical line in G indicates the history length used in E. 
 
 clearvars -except being_published fig*
+
+% make figure placeholders 
+fig_handle=figure('Units','pixels','outerposition',[32 26 666 980],'PaperSize',[666 980],'Color','w','Toolbar','none','Menubar','none'); hold on
+clf(fig_handle);
+axes_handles(1)=axes('Units','pixels','Position',[49 857.5 588 98]);
+axes_handles(2)=axes('Units','pixels','Position',[49 759.5 588 98]);
+axes_handles(3)=axes('Units','pixels','Position',[49 563.5 147 147]);
+axes_handles(4)=axes('Units','pixels','Position',[269.5 563.5 171.5 147]);
+axes_handles(5)=axes('Units','pixels','Position',[490 563.5 147 147]);
+axes_handles(6)=axes('Units','pixels','Position',[49 416.5 588 98]);
+axes_handles(7)=axes('Units','pixels','Position',[49 318.5 588 98]);
+axes_handles(8)=axes('Units','pixels','Position',[49 98 147 147]);
+axes_handles(9)=axes('Units','pixels','Position',[269.5 98 147 147]);
+axes_handles(10)=axes('Units','pixels','Position',[490 98 147 147]);
+for i = 1:length(axes_handles)
+	hold(axes_handles(i),'on');
+end
+
+load('/local-data/DA-paper/natural-flickering/mahmut-raw/2014_07_11_EA_natflick_non_period_CFM_1_ab3_1_1_all.mat')
+PID = data(2).PID;
+time = 1e-4*(1:length(PID));
+all_spikes = spikes(2).A;
+B_spikes = spikes(2).B;
+
+
+% A spikes --> firing rate
+hash = DataHash(full(all_spikes));
+cached_data = cache(hash);
+if isempty(cached_data)
+	fA = spiketimes2f(all_spikes,time);
+	cache(hash,fA);
+else
+	fA = cached_data;
+end
+
+tA = 1e-3*(1:length(fA));
+PID2 = fA;
+for i = 1:width(PID2)
+	PID2(:,i) = interp1(time,PID(i,:),tA);
+end
+PID = PID2; clear PID2
+% some minor cleaning up
+PID(end,:) = PID(end-1,:); 
+
+axes(axes_handles(1)); hold on
+errorShade(tA(1:10:end),mean2(PID(1:10:end,:)),sem(PID(1:10:end,:)),'Color',[0.2 .2 .2]);
+set(axes_handles(1),'XLim',[0 70])
+ylabel('Stimulus (V)')
+
+axes(axes_handles(3));
+y = zeros(300,width(PID));
+for i = 1:width(PID)
+	[y(:,i),x] = histcounts(PID(:,i),300);x(1) = [];
+end
+errorShade(x,mean2(y),sem(y),'Color',[.2 .2 .2]);
+warning off 
+set(axes_handles(3),'XScale','log','YScale','log','XLim',[.1 10])
+xlabel('Stimulus (V)')
+ylabel('count')
+warning on
+
+% make a linear filter
+[K, filtertime_full] = fitFilter2Data(mean2(PID),mean2(fA),'reg',1,'filter_length',1999,'offset',500);
+filtertime_full = filtertime_full*mean(diff(tA));
+filtertime = 1e-3*(-200:900);
+K = interp1(filtertime_full,K,filtertime);
+
+% convolve with filter to make prediction
+fp = convolve(tA,mean2(PID),K,filtertime);
+
+% correct for trivial scaling
+R = mean2(fA);
+temp =fit(fp(~(isnan(fp) | isnan(R))),R(~(isnan(fp) | isnan(R))),'poly1');
+fp = fp*temp.p1;
+fp = fp+temp.p2;
+
+% plot the response and the prediction
+clear l
+l(1) = plot(axes_handles(2),tA,mean2(fA),'k');
+l(2) = plot(axes_handles(2),tA,fp,'r');
+legend(l,'Neuron Response',strcat('Linear Prediction, r^2=',oval(rsquare(mean2(fA),fp))),'Location','northwest');
+set(axes_handles(1),'XTick',[])
+set(axes_handles(2),'YTick',[0:50:150])
+ylabel(axes_handles(2),'Response (Hz)')
+xlabel(axes_handles(2),'Time (s)')
+
+
+shat = ComputeSmoothedStimulus(mean2(PID),500);
+shat = shat-min(shat);
+shat = shat/max(shat);
+shat = 1+ceil(shat*99);
+shat(isnan(shat)) = 1;
+
+% make the output analysis plot
+axes(axes_handles(4))
+ss = 1;
+cc = parula(100);
+c= cc(shat,:);
+scatter(fp(1:ss:end),R(1:ss:end),[],c(1:ss:end,:),'filled')
+xlabel(axes_handles(4),'Linear Prediction (Hz)')
+ylabel(axes_handles(4),'Actual response (Hz)')
+shat = ComputeSmoothedStimulus(mean2(PID),500);
+colorbar;
+caxis([min(shat) max(shat)]);
+
+% plot gain vs stimulus for all these whiffs
+axes(axes_handles(5))
+fp = convolve(tA,mean2(PID),K,filtertime);
+shat = ComputeSmoothedStimulus(mean2(PID),500);
+
+% find all excursions (defined as firing rate crossing 10Hz)
+[whiff_starts,whiff_ends] = ComputeOnsOffs(R>10);
+mean_stim = NaN*whiff_ends;
+gain = NaN*whiff_ends;
+gain_err =  NaN*whiff_ends;
+for i = 1:length(whiff_ends)
+	mean_stim(i) = mean(shat(whiff_starts(i):whiff_ends(i)));
+	ff=fit(fp(whiff_starts(i):whiff_ends(i)),R(whiff_starts(i):whiff_ends(i)),'poly1');
+	gain(i) = ff.p1;
+	temp = confint(ff);
+	gain_err(i) = diff(temp(:,1))/2;
+end
+rm_this = (abs(gain_err./gain)) > .5; % throw out points where the estimate of gain has a more than 50% error
+gain(rm_this) = [];
+gain_err(rm_this) = [];
+mean_stim(rm_this) = [];
+
+errorbar(axes_handles(5),mean_stim,gain,gain_err,'k+')
+
+ff = fit(mean_stim(:),gain(:),'power1','Weights',1./gain_err);
+
+l = plot(axes_handles(5),sort(mean_stim),ff(sort(mean_stim)),'r');
+L = strcat('y=\alpha x^{\beta}, \beta=',oval(ff.b),'. r^2=',oval(rsquare(ff(mean_stim),gain)));
+legend(l,L)
+xlabel(axes_handles(5),'Mean Stimulus in preceding 500ms (V)')
+ylabel(axes_handles(5),'Gain (Hz/V)')
+
 
 load('/local-data/DA-paper/large-variance-flicker/2015_01_28_CS_ab3_2_EA.mat')
 PID = data(4).PID;
@@ -680,33 +893,18 @@ PID = PID2; clear PID2
 % some minor cleaning up
 PID(end,:) = PID(end-1,:); 
 
-fig_handle=figure('Units','pixels','outerposition',[100 100 1240 720],'Color','w','PaperUnits','points','PaperSize',[1240 720],'Toolbar','none');
-clf(fig_handle);
-axes_handles(1)=axes('Units','pixels','Position',[70 490 402.5 105]);
-axes_handles(2)=axes('Units','pixels','Position',[542.5 437.5 105 105]);
-axes_handles(3)=axes('Units','pixels','Position',[735 560 472.5 105]);
-axes_handles(4)=axes('Units','pixels','Position',[735 437.5 472.5 105]);
-axes_handles(5)=axes('Units','pixels','Position',[70 70 262.5 262.5]);
-axes_handles(6)=axes('Units','pixels','Position',[437.5 70 262.5 262.5]);
-axes_handles(7)=axes('Units','pixels','Position',[805 70 350 262.5]);
-
-for i = 1:length(axes_handles)
-	hold(axes_handles(i),'on')
-end
-
 % set up a colour map
 c = parula(8);
 
-
 % plot stimulus
-plot(axes_handles(1),tA,mean2(PID),'k')
-set(axes_handles(1),'XLim',[10 60])
-ylabel(axes_handles(1),'Stimulus (V)')
+plot(axes_handles(6),tA,mean2(PID),'k')
+set(axes_handles(6),'XLim',[0 60],'XTick',[])
+ylabel(axes_handles(6),'Stimulus (V)')
 
 % plot response
-plot(axes_handles(3),tA,mean2(fA),'k')
-set(axes_handles(3),'XLim',[10 60],'XTickLabel',{});
-ylabel(axes_handles(3),'Firing Rate (Hz)')
+plot(axes_handles(7),tA,mean2(fA),'k')
+set(axes_handles(7),'XLim',[0 60]);
+ylabel(axes_handles(7),'Firing Rate (Hz)')
 
 % extract Linear model for each trial 
 K = [];
@@ -717,14 +915,6 @@ for i = [3:10 13:20]
 	this_K = interp1(filtertime_full,this_K,filtertime);
 	K = [K;this_K];
 end
-
-% plot linear filter
-axes(axes_handles(2))
-plot_this = mean2(K);
-err = std(K)/sqrt(width(K));
-shadedErrorBar(filtertime,plot_this,err,{'Color',c(3,:)})
-xlabel(axes_handles(2),'Lag (s)')
-ylabel(axes_handles(2),'Filter K')
 
 
 % make a linear prediction using a filter fit to the mean data (this is almost exactly the same)
@@ -741,14 +931,14 @@ fp = fp+temp.p2;
 
 
 % plot prediction and prediction quality
-l=plot(axes_handles(4),tA,fp,'Color',c(3,:));
+l=plot(axes_handles(7),tA,fp,'Color','r');
 r2 = rsquare(fp,mean2(fA));
 legend(l,strcat('r^2=',oval(r2)))
-ylabel(axes_handles(4),'K\otimes stimulus (Hz)')
+ylabel(axes_handles(7),'K\otimes stimulus (Hz)')
 
 
 % gain analysis -- linear model
-ph = []; ph(3:4) = axes_handles([5 7]);
+ph = []; ph(3:4) = axes_handles([9 10]);
 
 hl_min = .1;
 hl_max = 10;
@@ -759,7 +949,7 @@ history_lengths = unique(history_lengths);
 set(axes_handles(7),'XLim',[.09 11]) % to show .1 and 10 on the log scale
 
 % show the p-value
-axes(axes_handles(5))
+axes(axes_handles(9))
 text(10,60,'p < 0.01')
 
 % plot gain vs preceding stimulus
@@ -770,9 +960,9 @@ x(rm_this) = [];
 y(rm_this) = [];
 gain_time(rm_this) = [];
 ss = 50;
-plot(axes_handles(6),x(1:ss:end),y(1:ss:end),'k.')
-xlabel(axes_handles(6),'Stimulus in preceding 500ms')
-ylabel(axes_handles(6),'Relative gain')
+plot(axes_handles(8),x(1:ss:end),y(1:ss:end),'k.')
+xlabel(axes_handles(8),'Stimulus in preceding 500ms')
+ylabel(axes_handles(8),'Relative gain')
 
 % fit a Weber-scaling to these points
 [x,idx] = sort(x);
@@ -793,29 +983,16 @@ mx(1:20) = []; my(1:20) = [];
 fo = fitoptions('rat01');
 fo.StartPoint = [.4 -.08];
 ff = fit(mx(:),my(:),'rat01',fo);
-l = plot(axes_handles(6),.17:.01:max(x),ff(.17:.01:max(x)),'r');
-legend(l,'Weber Envelope');
-
-% plot gain
-gain = y;
-% plot(axes_handles(7),gain_time,gain,'k')
-% ylabel(axes_handles(7),'Relative Gain')
-% set(axes_handles(7),'XLim',[10 60],'YLim',[0 7])
-% xlabel(axes_handles(7),'Time (s)')
-
-
-% link some axes
-linkaxes(axes_handles([3:4]))
+l = plot(axes_handles(8),.17:.01:max(x),ff(.17:.01:max(x)),'r');
+legend(l,'y=\alpha/(\beta+x)');
 
 % fix some labels
-xlabel(axes_handles(4),'Time (s)')
-xlabel(axes_handles(1),'Time (s)')
-ylabel(axes_handles(7),'Relative Gain')
-set(axes_handles(7),'YScale','log','YTick',[0.5 1 2],'YLim',[0.4 3.5])
-set(axes_handles(4),'YLim',[0 100])
-ylabel(axes_handles(5),'Firing Rate (Hz)')
-xlabel(axes_handles(5),'K\otimes stimulus (Hz)')
-title(axes_handles(5),'')
+xlabel(axes_handles(7),'Time (s)')
+set(axes_handles(10),'YScale','log','YTick',[0.5 1 2],'YLim',[0.4 3.5])
+set(axes_handles(7),'YLim',[0 100])
+set(axes_handles(6:7),'XLim',[0 60])
+ylabel(axes_handles(7),'Response (Hz)')
+title(axes_handles(9),'')
 
 % Indicate regions of high and low stimulus on the stimulus
 hl = round(history_lengths(9)*1e3);
@@ -837,8 +1014,8 @@ shat(isnan(mean2(fA))) = -Inf;
 t_high = t_high(1:n);
 t_high  = tA(t_high);
 
-plot(axes_handles(1),t_low,1+0*t_low,'g.')
-plot(axes_handles(1),t_high,1+0*t_low,'r.')
+plot(axes_handles(6),t_low,1+0*t_low,'.','Color',c(1,:))
+plot(axes_handles(6),t_high,1+0*t_low,'.','Color',c(7,:))
 
 
 PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
@@ -857,6 +1034,25 @@ end
 %   ##        ##  ##    ##  ##     ## ##   ##   ##                ## 
 %   ##        ##  ##    ##  ##     ## ##    ##  ##          ##    ## 
 %   ##       ####  ######    #######  ##     ## ########     ######  
+
+
+
+%      ########     ###             ##      ## #### ########  ######## ##       ##    ## 
+%      ##     ##   ## ##            ##  ##  ##  ##  ##     ## ##       ##        ##  ##  
+%      ##     ##  ##   ##           ##  ##  ##  ##  ##     ## ##       ##         ####   
+%      ##     ## ##     ##          ##  ##  ##  ##  ##     ## ######   ##          ##    
+%      ##     ## #########          ##  ##  ##  ##  ##     ## ##       ##          ##    
+%      ##     ## ##     ##          ##  ##  ##  ##  ##     ## ##       ##          ##    
+%      ########  ##     ##           ###  ###  #### ########  ######## ########    ## 
+
+%       #######  ########   ######  ######## ########  ##     ## ######## ########  
+%      ##     ## ##     ## ##    ## ##       ##     ## ##     ## ##       ##     ## 
+%      ##     ## ##     ## ##       ##       ##     ## ##     ## ##       ##     ## 
+%      ##     ## ########   ######  ######   ########  ##     ## ######   ##     ## 
+%      ##     ## ##     ##       ## ##       ##   ##    ##   ##  ##       ##     ## 
+%      ##     ## ##     ## ##    ## ##       ##    ##    ## ##   ##       ##     ## 
+%       #######  ########   ######  ######## ##     ##    ###    ######## ########  
+
 
 
 if fig5
@@ -1186,122 +1382,6 @@ clearvars -except being_published fig*
 if fig6
 
 
-load('/local-data/DA-paper/natural-flickering/mahmut-raw/2014_07_11_EA_natflick_non_period_CFM_1_ab3_1_1_all.mat')
-PID = data(2).PID;
-time = 1e-4*(1:length(PID));
-all_spikes = spikes(2).A;
-B_spikes = spikes(2).B;
-
-
-% A spikes --> firing rate
-hash = DataHash(full(all_spikes));
-cached_data = cache(hash);
-if isempty(cached_data)
-	fA = spiketimes2f(all_spikes,time);
-	cache(hash,fA);
-else
-	fA = cached_data;
-end
-
-tA = 1e-3*(1:length(fA));
-PID2 = fA;
-for i = 1:width(PID2)
-	PID2(:,i) = interp1(time,PID(i,:),tA);
-end
-PID = PID2; clear PID2
-% some minor cleaning up
-PID(end,:) = PID(end-1,:); 
-
-figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
-subplot(2,3,1:3), hold on
-errorShade(tA(1:10:end),mean2(PID(1:10:end,:)),sem(PID(1:10:end,:)),'Color',[0.2 .2 .2]);
-set(gca,'XLim',[0 70])
-xlabel('Time (s)')
-ylabel('Stimulus (V)')
-
-subplot(2,3,4), hold on
-y = zeros(300,width(PID));
-for i = 1:width(PID)
-	[y(:,i),x] = histcounts(PID(:,i),300);x(1) = [];
-end
-errorShade(x,mean2(y),sem(y),'Color',[.2 .2 .2]);
-warning off 
-set(gca,'XScale','log','YScale','log','XLim',[.1 10])
-xlabel('Stimulus (V)')
-ylabel('count')
-warning on
-
-% make a linear filter
-[K, filtertime_full] = fitFilter2Data(mean2(PID),mean2(fA),'reg',1,'filter_length',1999,'offset',500);
-filtertime_full = filtertime_full*mean(diff(tA));
-filtertime = 1e-3*(-200:900);
-K = interp1(filtertime_full,K,filtertime);
-
-% convolve with filter to make prediction
-fp = convolve(tA,mean2(PID),K,filtertime);
-
-% correct for trivial scaling
-R = mean2(fA);
-temp =fit(fp(~(isnan(fp) | isnan(R))),R(~(isnan(fp) | isnan(R))),'poly1');
-fp = fp*temp.p1;
-fp = fp+temp.p2;
-
-shat = ComputeSmoothedStimulus(mean2(PID),500);
-shat = shat-min(shat);
-shat = shat/max(shat);
-shat = 1+ceil(shat*99);
-shat(isnan(shat)) = 1;
-
-% make the output analysis plot
-subplot(2,3,5), hold on
-ss = 1;
-cc = parula(100);
-c= cc(shat,:);
-scatter(fp(1:ss:end),R(1:ss:end),[],c(1:ss:end,:),'filled')
-xlabel('Linear Prediction (Hz)')
-ylabel('Actual response (Hz)')
-shat = ComputeSmoothedStimulus(mean2(PID),500);
-colorbar;
-caxis([min(shat) max(shat)]);
-
-% plot gain vs stimulus for all these whiffs
-subplot(2,3,6), hold on
-fp = convolve(tA,mean2(PID),K,filtertime);
-shat = ComputeSmoothedStimulus(mean2(PID),500);
-
-% find all excursions (defined as firing rate crossing 10Hz)
-[whiff_starts,whiff_ends] = ComputeOnsOffs(R>10);
-mean_stim = NaN*whiff_ends;
-gain = NaN*whiff_ends;
-gain_err =  NaN*whiff_ends;
-for i = 1:length(whiff_ends)
-	mean_stim(i) = mean(shat(whiff_starts(i):whiff_ends(i)));
-	ff=fit(fp(whiff_starts(i):whiff_ends(i)),R(whiff_starts(i):whiff_ends(i)),'poly1');
-	gain(i) = ff.p1;
-	temp = confint(ff);
-	gain_err(i) = diff(temp(:,1))/2;
-end
-rm_this = (abs(gain_err./gain)) > .5; % throw out points where the estimate of gain has a more than 50% error
-gain(rm_this) = [];
-gain_err(rm_this) = [];
-mean_stim(rm_this) = [];
-
-errorbar(mean_stim,gain,gain_err,'k+')
-
-ff = fit(mean_stim(:),gain(:),'power1','Weights',1./gain_err);
-
-l = plot(sort(mean_stim),ff(sort(mean_stim)),'r');
-L = strcat('y=\alpha x^{\beta}, \beta=',oval(ff.b),'. r^2=',oval(rsquare(ff(mean_stim),gain)));
-legend(l,L)
-xlabel('Mean Stimulus in preceding 500ms (V)')
-ylabel('Gain (Hz/V)')
-
-PrettyFig('fs=12;');
-
-if being_published
-	snapnow
-	delete(gcf)
-end
 
 end
 

@@ -18,6 +18,8 @@ font_size=20;
 plotid=[1 2 3 4]; %specify which plot you want
 debug = 0;
 
+c = parula(8);
+
 switch nargin 
 case 1
 	error('Need to specify which history lengths to analyse')
@@ -234,8 +236,8 @@ for i = 1:length(history_lengths)
 
 
 			plot(plothere(3),fp(1:ss:end),f(1:ss:end),'.','MarkerSize',marker_size,'MarkerFaceColor',[0.9 0.9 0.9],'MarkerEdgeColor',[0.9 0.9 0.9])
-			plot(plothere(3),fp_low(1:ss:end),f_low(1:ss:end),'.','MarkerSize',marker_size,'MarkerFaceColor',[0.5 1 0.5],'MarkerEdgeColor',[0.5 1 0.5])
-			plot(plothere(3),fp_high(1:ss:end),f_high(1:ss:end),'.','MarkerSize',marker_size,'MarkerFaceColor',[1 0.5 0.5],'MarkerEdgeColor',[1 0.5 0.5])
+			plot(plothere(3),fp_low(1:ss:end),f_low(1:ss:end),'.','MarkerSize',marker_size,'MarkerFaceColor',c(1,:),'MarkerEdgeColor',c(1,:))
+			plot(plothere(3),fp_high(1:ss:end),f_high(1:ss:end),'.','MarkerSize',marker_size,'MarkerFaceColor',c(7,:),'MarkerEdgeColor',c(7,:))
 			set(plothere(3),'box','on')
 			set(plothere(3),'XLim',[min(f)-1,max(f)+1],'YLim',[min(f)-1,max(f)+1])
 
@@ -250,13 +252,13 @@ for i = 1:length(history_lengths)
 			[xx,idx] = sort(xx);
 			y = coeff_low(2,1).*score_low(:,1); y = y+mean(f_low);
 			y = y(idx);
-			plot(plothere(3),xx,y,'g')
+			plot(plothere(3),xx,y,'Color',c(1,:))
 
 			xx = coeff_high(1,1).*score_high(:,1); xx = xx+mean(fp_high); 
 			[xx,idx] = sort(xx);
 			y = coeff_high(2,1).*score_high(:,1); y = y+mean(f_high);
 			y = y(idx);
-			plot(plothere(3),xx,y,'r')
+			plot(plothere(3),xx,y,'Color',c(7,:))
 
 			xlabel(plothere(3),'Prediction')
 			ylabel(plothere(3),'Actual neuron response')
@@ -317,8 +319,8 @@ if length(plothere) == 4
 		handles.vert_line = plot(plothere(4),[example_history_length example_history_length],yy,'k-.');
 	end
 
-	handles.green_line = plot(plothere(4),history_lengths,low_slopes2.data,'g'); hold on
-	handles.red_line = plot(plothere(4),history_lengths,high_slopes2.data,'r');
+	handles.green_line = plot(plothere(4),history_lengths,low_slopes2.data,'Color',c(1,:)); hold on
+	handles.red_line = plot(plothere(4),history_lengths,high_slopes2.data,'Color',c(7,:));
 
 	% we now perform a Holm-Bonferroni correction 
 	% (see: https://en.wikipedia.org/wiki/Holm%E2%80%93Bonferroni_method)
@@ -367,8 +369,8 @@ if length(plothere) == 4
 	p_low = p_low(idx);
 	p_high = p_high(idx);
 
-	handles.green_dots = scatter(plothere(4),history_lengths(sig_low),low_slopes2.data(sig_low),1256,'g.');
-	handles.red_dots = scatter(plothere(4),history_lengths(sig_high),high_slopes2.data(sig_high),1256,'r.');
+	handles.green_dots = scatter(plothere(4),history_lengths(sig_low),low_slopes2.data(sig_low),1256,c(1,:),'.');
+	handles.red_dots = scatter(plothere(4),history_lengths(sig_high),high_slopes2.data(sig_high),1256,c(7,:),'.');
 
 	
 

@@ -18,12 +18,13 @@ tic
 % this determines which figures to do. 
 fig1 = true; 	% how we determine gain
 fig2 = true;	% weber-like gain control
-fig3 = true;	% speed-gain tradeoff
-fig4 = true;	% fast gain control
-fig5 = true;	% fast gain control widely observed
-fig6 = true; 	% natural stimuli
-fig7 = true; 	% switching experiment
-fig8 = true;	% LFP experiments
+fig_supp1 = true;
+fig3 = false;	% speed-gain tradeoff
+fig4 = false;	% fast gain control
+fig5 = false;	% fast gain control widely observed
+fig6 = false; 	% natural stimuli
+fig7 = false; 	% switching experiment
+fig8 = false;	% LFP experiments
 fig9 = false; 	% models to explain this
 
 %    ######## ####  ######   ##     ## ########  ########       ##   
@@ -182,7 +183,6 @@ if being_published
 	delete(gcf)
 end
 
-
 end
 
 
@@ -330,6 +330,151 @@ end
 
 end
 
+%         ######  ##     ## ########  ########     ######## ####  ######         ##   
+%        ##    ## ##     ## ##     ## ##     ##    ##        ##  ##    ##      ####   
+%        ##       ##     ## ##     ## ##     ##    ##        ##  ##              ##   
+%         ######  ##     ## ########  ########     ######    ##  ##   ####       ##   
+%              ## ##     ## ##        ##           ##        ##  ##    ##        ##   
+%        ##    ## ##     ## ##        ##           ##        ##  ##    ##        ##   
+%         ######   #######  ##        ##           ##       ####  ######       ###### 
+
+%% Supplementart Figure 1
+
+
+if fig_supp1
+
+
+ac_mean = zeros(20e3+1,8);
+ac_std = zeros(20e3+1,8);
+a = [];
+for i = 1:8
+	this_ac = [];
+	for j = 1:13
+		
+		stim = (MSG_data(i,j).stim);
+		if ~isempty(stim)
+			if ~isvector(stim)
+				stim = mean2(stim);
+			end
+			[~,~,temp]=FindCorrelationTime(stim);
+			this_ac = [this_ac temp];
+		end
+	end
+	if isvector(this_ac)
+		ac_mean(:,i) = (this_ac);
+	else
+		ac_mean(:,i) = mean2(this_ac);
+	end
+	ac_std(:,i) = sem(this_ac);
+end
+
+figure('outerposition',[0 0 900 900],'PaperUnits','points','PaperSize',[900 900]); hold on
+subplot(2,2,1), hold on
+time = 1e-3*(1:length(ac_mean));
+for i = 1:8
+	errorShade(time,ac_mean(:,i),ac_std(:,i),'Color',c(i,:));
+end
+set(gca,'XScale','log')
+xlabel('Lag (s)')
+ylabel('Autocorrelation')
+title('Stimulus')
+
+ac_mean = zeros(20e3+1,8);
+ac_std = zeros(20e3+1,8);
+a = [];
+for i = 1:8
+	this_ac = [];
+	for j = 1:13
+		
+		stim = (MSG_data(i,j).resp);
+		if ~isempty(stim)
+			if ~isvector(stim)
+				stim = mean2(stim);
+			end
+			[~,~,temp]=FindCorrelationTime(stim);
+			this_ac = [this_ac temp];
+		end
+	end
+	if isvector(this_ac)
+		ac_mean(:,i) = (this_ac);
+	else
+		ac_mean(:,i) = mean2(this_ac);
+	end
+	ac_std(:,i) = sem(this_ac);
+end
+
+subplot(2,2,2), hold on
+time = 1e-3*(1:length(ac_mean));
+for i = 1:8
+	errorShade(time,ac_mean(:,i),ac_std(:,i),'Color',c(i,:));
+end
+set(gca,'XScale','log')
+xlabel('Lag (s)')
+ylabel('Autocorrelation')
+title('Response')
+
+subplot(2,2,3), hold on
+ss = 50;
+for i = 1:8 % iterate over all paradigms 
+	y = ([MSG_data(i,:).resp]);
+	x = ([MSG_data(i,:).fp]);
+	if ~isvector(x)
+		x = mean2(x);
+	end
+
+	if ~isvector(y)
+		y = mean2(y);
+	end 
+
+	plot(x(1:ss:end)+mean(y),y(1:ss:end),'.','Color',c(i,:))
+end
+
+xlabel('K\otimes s + mean(resp)')
+ylabel('Neuron Response (Hz)')
+
+% rescale by Weber law
+subplot(2,2,4), hold on
+ss = 50;
+allx = [];
+ally = [];
+for i = 1:8 % iterate over all paradigms 
+	y = ([MSG_data(i,:).resp]);
+	x = ([MSG_data(i,:).fp]);
+	s = ([MSG_data(i,:).stim]);
+	if ~isvector(x)
+		x = mean2(x);
+	end
+	if ~isvector(s)
+		s = mean2(s);
+	end
+	if ~isvector(y)
+		y = mean2(y);
+	end 
+
+	allx = [allx mean(y)+cf(mean2(s))*(x(1:ss:end))];
+	ally = [ally y(1:ss:end)];
+	plot(mean(y)+cf(mean2(s))*(x(1:ss:end)),y(1:ss:end),'.','Color',c(i,:))
+end
+allx = allx(:); ally = ally(:); 
+rm_this = isnan(allx) | isnan(ally);
+allx(rm_this) = [];
+ally(rm_this) = [];
+ft = fittype( 'hill_fit(x,A,k,n,offset)' );
+ff2 = fit(allx(:),ally(:),ft,'StartPoint',[100, 50, 2,3],'Lower',[1 eps 1 -10],'Upper',[1e4 1e3 10 10]);
+clear l
+l = plot(-5:0.1:45,ff2(-5:0.1:45),'r');
+legend(l,strcat('r^2=',oval(rsquare(allx,ff2(allx)))),'Location','northwest');
+xlabel('Rescaled Linear Prediction')
+ylabel('Neuron Response (Hz)')
+
+PrettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+end
 
 %            ######## ####  ######   ##     ## ########  ########     #######  
 %            ##        ##  ##    ##  ##     ## ##     ## ##          ##     ## 
@@ -391,8 +536,6 @@ legend(l,L);
 before = 1e4;
 after = 5e3;
 
-return
-
 % compute STA for all the data
 allfiles = dir('/local-data/DA-paper/fast-flicker/orn/*.mat');
 allSTA = [];
@@ -445,7 +588,7 @@ for i = 1:8
 		temp(:,j) = temp(:,j)/max(temp(:,j));
 	end
 	t = -after:before;
-	t = t*1e-4; 
+	t = t*1e-3; 
 	errorShade(t,flipud(mean2(temp)),flipud(sem(temp)),'Color',c(i,:));
 end
 set(gca,'XLim',[-.2 .5])

@@ -160,13 +160,6 @@ end
 %% Firing Rate Pulse Analysis
 % We now look at the firing rates in response to a long pulse. 
 
-% remove baseline
-for i = 1:length(orn)
-	if paradigm(i)==3
-		fA(:,i) = fA(:,i) - mean(fA(1:5e3,i));
-	end
-end
-
 figure('outerposition',[0 0 700 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 clear l 
 l(1) = errorShade(time(1:end-10),mean2(fA(1:end-10,geno==1 & paradigm == 3)),sem(fA(1:end-10,geno==1 & paradigm == 3)),'Color',[1 0 0]);
@@ -218,8 +211,6 @@ end
 
 %% Firing Rate Filter Analysis
 % We now extract filters for the firing rate of each neuron, and compare the two genotypes. 
-
-
 
 % K2 -- PID -> fA filter
 K2 = cache(DataHash([PID; fA]));

@@ -16,13 +16,13 @@ end
 tic
 
 % this determines which figures to do. 
-fig1 = false; 	% how we determine gain
-fig2 = false;	% weber-like gain control
-fig_supp1 = false;
-fig3 = false;	% speed-gain tradeoff
+fig1 = true; 	% how we determine gain
+fig2 = true;	% weber-like gain control
+fig_supp1 = true;
+fig3 = true;	% speed-gain tradeoff
 fig4 = true;	% natualistic stimuli + fast gain control
-fig5 = false;	% fast gain control widely observed
-fig6 = false; 	% switching experiment
+fig5 = true;	% fast gain control widely observed
+fig6 = true; 	% switching experiment
 fig7 = false;	% LFP experiments
 fig8 = false; 	% models to explain this
 fig9 = false;

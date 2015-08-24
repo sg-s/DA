@@ -702,21 +702,6 @@ end
 
 
 
-%         ########    ###     ######  ########     ######      ###    #### ##    ## 
-%         ##         ## ##   ##    ##    ##       ##    ##    ## ##    ##  ###   ## 
-%         ##        ##   ##  ##          ##       ##         ##   ##   ##  ####  ## 
-%         ######   ##     ##  ######     ##       ##   #### ##     ##  ##  ## ## ## 
-%         ##       #########       ##    ##       ##    ##  #########  ##  ##  #### 
-%         ##       ##     ## ##    ##    ##       ##    ##  ##     ##  ##  ##   ### 
-%         ##       ##     ##  ######     ##        ######   ##     ## #### ##    ## 
-
-%          ######   #######  ##    ## ######## ########   #######  ##       
-%         ##    ## ##     ## ###   ##    ##    ##     ## ##     ## ##       
-%         ##       ##     ## ####  ##    ##    ##     ## ##     ## ##       
-%         ##       ##     ## ## ## ##    ##    ########  ##     ## ##       
-%         ##       ##     ## ##  ####    ##    ##   ##   ##     ## ##       
-%         ##    ## ##     ## ##   ###    ##    ##    ##  ##     ## ##       
-%          ######   #######  ##    ##    ##    ##     ##  #######  ######## 
 
 
 
@@ -782,7 +767,7 @@ for i = 1:width(PID)
 end
 errorShade(x,mean2(y),sem(y),'Color',[.2 .2 .2]);
 warning off 
-set(axes_handles(3),'XScale','log','YScale','log','XLim',[.1 10])
+set(axes_handles(3),'XScale','log','YScale','log','XLim',[.1 10],'YTick',[1e1 1e3 1e5])
 xlabel('Stimulus (V)')
 ylabel('count')
 warning on
@@ -808,7 +793,7 @@ l(1) = plot(axes_handles(2),tA,mean2(fA),'k');
 l(2) = plot(axes_handles(2),tA,fp,'r');
 legend(l,'Neuron Response',strcat('Linear Prediction, r^2=',oval(rsquare(mean2(fA),fp))),'Location','northwest');
 set(axes_handles(1),'XTick',[])
-set(axes_handles(2),'YTick',[0:50:150])
+set(axes_handles(2),'YTick',[0:50:150],'XLim',[0 70])
 ylabel(axes_handles(2),'Response (Hz)')
 xlabel(axes_handles(2),'Time (s)')
 
@@ -856,12 +841,38 @@ mean_stim(rm_this) = [];
 errorbar(axes_handles(5),mean_stim,gain,gain_err,'k+')
 
 ff = fit(mean_stim(:),gain(:),'power1','Weights',1./gain_err);
+clear l
+l(1) = plot(axes_handles(5),sort(mean_stim),ff(sort(mean_stim)),'r');
+L{1} = ['y=\alpha x^{\beta}, \beta=', char(10), oval(ff.b),'. r^2=',oval(rsquare(ff(mean_stim),gain))];
 
-l = plot(axes_handles(5),sort(mean_stim),ff(sort(mean_stim)),'r');
-L = strcat('y=\alpha x^{\beta}, \beta=',oval(ff.b),'. r^2=',oval(rsquare(ff(mean_stim),gain)));
+options = fitoptions(fittype('power1'));
+options.Lower = [-Inf -1];
+options.Upper = [Inf -1];
+options.Weights = 1./gain_err;
+ff = fit(mean_stim(:),gain(:),'power1',options);
+l(2) = plot(axes_handles(5),sort(mean_stim),ff(sort(mean_stim)),'k--');
+L{2} = ['y=\alpha x^{-1}',char(10),'. r^2=',oval(rsquare(ff(mean_stim),gain))];
 legend(l,L)
-xlabel(axes_handles(5),'Mean Stimulus in preceding 500ms (V)')
+xlabel(axes_handles(5),'Stimulus in preceding 500ms (V)')
 ylabel(axes_handles(5),'Gain (Hz/V)')
+
+%         ########    ###     ######  ########     ######      ###    #### ##    ## 
+%         ##         ## ##   ##    ##    ##       ##    ##    ## ##    ##  ###   ## 
+%         ##        ##   ##  ##          ##       ##         ##   ##   ##  ####  ## 
+%         ######   ##     ##  ######     ##       ##   #### ##     ##  ##  ## ## ## 
+%         ##       #########       ##    ##       ##    ##  #########  ##  ##  #### 
+%         ##       ##     ## ##    ##    ##       ##    ##  ##     ##  ##  ##   ### 
+%         ##       ##     ##  ######     ##        ######   ##     ## #### ##    ## 
+
+%          ######   #######  ##    ## ######## ########   #######  ##       
+%         ##    ## ##     ## ###   ##    ##    ##     ## ##     ## ##       
+%         ##       ##     ## ####  ##    ##    ##     ## ##     ## ##       
+%         ##       ##     ## ## ## ##    ##    ########  ##     ## ##       
+%         ##       ##     ## ##  ####    ##    ##   ##   ##     ## ##       
+%         ##    ## ##     ## ##   ###    ##    ##    ##  ##     ## ##       
+%          ######   #######  ##    ##    ##    ##     ##  #######  ######## 
+
+
 
 
 load('/local-data/DA-paper/large-variance-flicker/2015_01_28_CS_ab3_2_EA.mat')
@@ -938,7 +949,7 @@ ylabel(axes_handles(7),'K\otimes stimulus (Hz)')
 
 
 % gain analysis -- linear model
-ph = []; ph(3:4) = axes_handles([9 10]);
+ph = []; ph(3:4) = axes_handles([8 9]);
 
 hl_min = .1;
 hl_max = 10;
@@ -949,7 +960,7 @@ history_lengths = unique(history_lengths);
 set(axes_handles(7),'XLim',[.09 11]) % to show .1 and 10 on the log scale
 
 % show the p-value
-axes(axes_handles(9))
+axes(axes_handles(8))
 text(10,60,'p < 0.01')
 
 % plot gain vs preceding stimulus
@@ -960,9 +971,9 @@ x(rm_this) = [];
 y(rm_this) = [];
 gain_time(rm_this) = [];
 ss = 50;
-plot(axes_handles(8),x(1:ss:end),y(1:ss:end),'k.')
-xlabel(axes_handles(8),'Stimulus in preceding 500ms')
-ylabel(axes_handles(8),'Relative gain')
+plot(axes_handles(10),x(1:ss:end),y(1:ss:end),'k.')
+xlabel(axes_handles(10),'Stimulus in preceding 500ms (V)')
+ylabel(axes_handles(10),'Relative gain')
 
 % fit a Weber-scaling to these points
 [x,idx] = sort(x);
@@ -983,16 +994,16 @@ mx(1:20) = []; my(1:20) = [];
 fo = fitoptions('rat01');
 fo.StartPoint = [.4 -.08];
 ff = fit(mx(:),my(:),'rat01',fo);
-l = plot(axes_handles(8),.17:.01:max(x),ff(.17:.01:max(x)),'r');
+l = plot(axes_handles(10),.17:.01:max(x),ff(.17:.01:max(x)),'r');
 legend(l,'y=\alpha/(\beta+x)');
 
 % fix some labels
 xlabel(axes_handles(7),'Time (s)')
-set(axes_handles(10),'YScale','log','YTick',[0.5 1 2],'YLim',[0.4 3.5])
+set(axes_handles(9),'YScale','log','YTick',[0.5 1 2],'YLim',[0.4 3.5])
 set(axes_handles(7),'YLim',[0 100])
 set(axes_handles(6:7),'XLim',[0 60])
 ylabel(axes_handles(7),'Response (Hz)')
-title(axes_handles(9),'')
+title(axes_handles(8),'')
 
 % Indicate regions of high and low stimulus on the stimulus
 hl = round(history_lengths(9)*1e3);
@@ -1018,7 +1029,7 @@ plot(axes_handles(6),t_low,1+0*t_low,'.','Color',c(1,:))
 plot(axes_handles(6),t_high,1+0*t_low,'.','Color',c(7,:))
 
 
-PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
+PrettyFig('plw=1.5;','lw=1.5;','fs=12;')
 
 if being_published
 	snapnow

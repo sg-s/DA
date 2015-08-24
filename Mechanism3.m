@@ -30,9 +30,6 @@ for i = 1:length(allfiles)
 	odour_flicker(i).resp = resp;
 	odour_flicker(i).ParadigmNames = ParadigmNames;
 	odour_flicker(i).paradigm = paradigm;
-	
-
-	
 end
 
 %%
@@ -83,8 +80,8 @@ end
 
 %%
 % Here is another neuron, just as before:
-
-MechanismAnalysis_PlotGain(light_flicker(4).stim,light_flicker(4).resp,light_flicker(4).ParadigmNames,light_flicker(4).paradigm,1);
+i=1;
+MechanismAnalysis_PlotGain(light_flicker(i).stim,light_flicker(i).resp,light_flicker(i).ParadigmNames,light_flicker(i).paradigm,1);
 PrettyFig();
 if being_published
 	snapnow
@@ -95,12 +92,20 @@ end
 % We now summarise all the data, and compare with the odour flicker: 
 
 
-figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
-GainPhasePlot(odour_flicker,'b',1);
-GainPhasePlot(light_flicker,'r',1);
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+GainPhasePlot(odour_flicker,'b',0);
 xlabel('Relative Gain')
-ylabel('Mean Firing rate (norm)')
+ylabel('Mean Firing rate (Hz)')
+title('Odour flicker, light background')
+set(gca,'XLim',[0.3 1.3],'YLim',[0 65])
+subplot(1,2,2), hold on
+GainPhasePlot(light_flicker,'r',0);
+xlabel('Relative Gain')
+title('Light flicker, odour background')
+set(gca,'XLim',[0.3 1.3],'YLim',[0 65])
 PrettyFig();
+
 if being_published
 	snapnow
 	delete(gcf)

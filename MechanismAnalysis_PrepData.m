@@ -9,6 +9,17 @@
 
 function [stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,stim,resp,ParadigmNames,paradigm,use_light)
 
+h = DataHash(whos);
+cached_data = cache(h);
+if isempty(cached_data)
+else
+	stim = cached_data.stim;
+	resp = cached_data.resp;
+	ParadigmNames = cached_data.ParadigmNames;
+	paradigm = cached_data.paradigm;
+	return
+end
+
 load(datapath);
 if isempty(paradigm)
 	p_offset = 0;
@@ -132,3 +143,11 @@ for i = 1:length(haz_data)
 
 	ParadigmNames = [ParadigmNames strrep(ControlParadigm(haz_data(i)).Name,'_','-')];
 end
+
+% cache data
+cached_data.stim = stim;
+cached_data.resp = resp;
+cached_data.paradigm = paradigm;
+cached_data.ParadigmNames = ParadigmNames;
+
+cache(h,cached_data);

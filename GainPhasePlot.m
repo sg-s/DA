@@ -22,7 +22,6 @@ for i = 1:length(alldata)
 	gain_err = gain;
 	mean_firing_rate = gain;
 	mean_firing_rate_err = gain; 
-	std_firing_rate = gain; 
 
 
 	% first grab some data about the no background case (so either odor flicker alone or light flicker alone)
@@ -37,33 +36,37 @@ for i = 1:length(alldata)
 	for j = 1:length(alldata(i).paradigm) % for each paradigm
 		temp_gain = [];
 		temp_mean_firing_rate = [];
-		temp_std_firing_rate = [];
+		ci = [];
 		for k = find(alldata(i).paradigm==j)
-			% calculate stimulus variations
-
 			y = alldata(i).resp(:,k);
 			y = y(:);
 			x = resp0(:); 
 			ff = fit(x,y,'poly1');
 			temp_gain = [temp_gain ff.p1];
+			ci_temp = confint(ff);
+			ci = [ci ci_temp(1,1)];
 			temp_mean_firing_rate = [temp_mean_firing_rate mean(y)];
-			temp_std_firing_rate = [temp_std_firing_rate std(y)];
 
 
 		end
-		mean_firing_rate(j) = mean(temp_mean_firing_rate);
+
+		if length(temp_mean_firing_rate) == 1
+			gain(j) = temp_gain;
+			gain_err(j) = temp_gain - ci;
+			
+			mean_firing_rate(j) = temp_mean_firing_rate;
+			mean_firing_rate_err(j) = std(y);
+
+		else
+
+			mean_firing_rate(j) = mean(temp_mean_firing_rate);
+			mean_firing_rate_err(j) = sem(temp_mean_firing_rate);
+
+			gain(j) = sum((1./ci.*temp_gain)/(sum(1./ci))); % weighted by error in each fit
+			gain_err(j) = sem(temp_gain);
 
 
-		stim_err (j) = std(temp_mean_firing_rate)/(sqrt(length(temp_mean_firing_rate)));
-
-		gain(j) = mean(temp_gain);
-		gain_err(j) = std(temp_gain)/(sqrt(length(temp_gain)));
-
-		std_firing_rate(j) = mean(temp_std_firing_rate);
-		
-
-
-
+		end
 	end
 
 	% save for output
@@ -81,9 +84,11 @@ for i = 1:length(alldata)
 	% normalise firing rates
 	if norm_f
 		mean_firing_rate = mean_firing_rate/mean_firing_rate(1);
+		mean_firing_rate_err = mean_firing_rate_err/mean_firing_rate(1);
 	end
 
-	plot(gain,mean_firing_rate,'-+','Color',c)
+	% also plot error bars
+	errorbarxy(gain,mean_firing_rate,gain_err,mean_firing_rate_err,c)
 
 
 end	

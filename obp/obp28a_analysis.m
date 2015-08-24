@@ -44,13 +44,11 @@ for i = 1:width(LFP)
 	if paradigm(i)==2
 		a = find(~isnan(LFP(:,i)),1,'first');
 		z = find(~isnan(LFP(:,i)),1,'last');
-		if isempty(a)
-			a = 1;
+		if isempty(a) & isempty(z)
+		else
+			filteredLFP(a:z,i) = 10*filter_trace(LFP(a:z,i),1000,10); % now in mV
 		end
-		if isempty(z)
-			z = length(LFP);
-		end
-		filteredLFP(a:z,i) = 10*filter_trace(LFP(a:z,i),1000,10); % now in mV
+		
 	end
 end
 
@@ -94,9 +92,12 @@ end
 clear ff
 for i = 1:length((orn))
 	if paradigm(i) == 2
-		x = LFP_pred(10e3:end-1e3,i);
-		y = filteredLFP(10e3:end-1e3,i); y = y-mean(y);
-		ff(i).LFP = fit(x(:),y(:),'poly5');
+		try
+			x = LFP_pred(10e3:end-1e3,i);
+			y = filteredLFP(10e3:end-1e3,i); y = y-mean(y);
+			ff(i).LFP = fit(x(:),y(:),'poly5');
+		catch
+		end
 	end
 end
 
@@ -115,7 +116,10 @@ x = -.8:0.005:.4;
 y = NaN(length(x),length(orn));
 for i = 1:length((orn))
 	if paradigm(i) == 2
-		y(:,i) = ff(i).LFP(x(:));
+		try
+			y(:,i) = ff(i).LFP(x(:));
+		catch
+		end
 	end
 end
 clear l 
@@ -254,11 +258,15 @@ if isempty(ff)
 	for i = 1:length((orn))
 		textbar(i,length(orn))
 		if paradigm(i) == 2
-			x = fp(10e3:end-1e3,i);
-			y = fA(10e3:end-1e3,i);
+			try
+				x = fp(10e3:end-1e3,i);
+				y = fA(10e3:end-1e3,i);
 
-			ft = fittype( 'hill_fit(x,A,k,n,offset)' );
-			ff(i).fA = fit(x(:),y(:),ft,'StartPoint',[100, 50, 2,3],'Lower',[1 eps 1 -10],'Upper',[1e4 1e3 10 10]);
+				ft = fittype( 'hill_fit(x,A,k,n,offset)' );
+				ff(i).fA = fit(x(:),y(:),ft,'StartPoint',[100, 50, 2,3],'Lower',[1 eps 1 -10],'Upper',[1e4 1e3 10 10]);
+			catch err
+				err
+			end
 		end
 	end
 end
@@ -279,7 +287,9 @@ x = -.5:0.005:1;
 y = NaN(length(x),length(orn));
 for i = 1:length((orn))
 	if paradigm(i) == 2
-		y(:,i) = ff(i).fA(x(:));
+		try
+			y(:,i) = ff(i).fA(x(:));
+		end
 	end
 end
 clear l 
@@ -310,8 +320,10 @@ for i = 1:length((orn))
 		rm_this = isnan(fp(:,i)) | isnan(fA(:,i)) | time < 10;
 		x = fp(:,i); y = fA(:,i);
 		x(rm_this) = []; y(rm_this) = [];
-		temp = fit(x,y,'poly1');
-		fp(:,i) = temp(fp(:,i));
+		try
+			temp = fit(x,y,'poly1');
+			fp(:,i) = temp(fp(:,i));
+		end
 	end
 end
 

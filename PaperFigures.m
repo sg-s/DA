@@ -571,40 +571,40 @@ before = 1e4;
 after = 5e3;
 
 % compute STA for all the data
-allfiles = dir('/local-data/DA-paper/fast-flicker/orn/*.mat');
-allSTA = [];
-mean_stim = []; 
-dil = [];
-for i= 1:length(allfiles)
-	load(['/local-data/DA-paper/fast-flicker/orn/' allfiles(i).name])
-	for j = 1:length(spikes)
-		if length(spikes(j).A) > 1 && ~strcmp(ControlParadigm(j).Name,'end')
-			these_spikes = spikes(j).A(:,35e4:55e4);
-			this_stim = data(j).PID(:,35e4:55e4);
+% allfiles = dir('/local-data/DA-paper/fast-flicker/orn/*.mat');
+% allSTA = [];
+% mean_stim = []; 
+% dil = [];
+% for i= 1:length(allfiles)
+% 	load(['/local-data/DA-paper/fast-flicker/orn/' allfiles(i).name])
+% 	for j = 1:length(spi`kes)
+% 		if length(spikes(j).A) > 1 && ~strcmp(ControlParadigm(j).Name,'end')
+% 			these_spikes = spikes(j).A(:,35e4:55e4);
+% 			this_stim = data(j).PID(:,35e4:55e4);
 
-			if isfield(spikes,'discard')
-				rm_this = find(spikes(j).discard);
-				rm_these_spikes = [];
-				if ~isempty(rm_this)
-					this_stim(rm_this,:) = [];
-					for k = 1:length(rm_this)
-						if rm_this(k) > width(these_spikes)
-						else
-							rm_these_spikes = [rm_these_spikes k];
-						end
-					end
-					these_spikes(rm_these_spikes,:) = [];
-				end
-			end
+% 			if isfield(spikes,'discard')
+% 				rm_this = find(spikes(j).discard);
+% 				rm_these_spikes = [];
+% 				if ~isempty(rm_this)
+% 					this_stim(rm_this,:) = [];
+% 					for k = 1:length(rm_this)
+% 						if rm_this(k) > width(these_spikes)
+% 						else
+% 							rm_these_spikes = [rm_these_spikes k];
+% 						`
+% 					end
+% 					these_spikes(rm_these_spikes,:) = [];
+% 				end
+% 			end
 
-			this_STA = STA(these_spikes,this_stim,before,after);
-			allSTA = [allSTA this_STA];
-			mean_stim = [mean_stim; mean(this_stim,2)];
-			this_dil = str2double(ControlParadigm(j).Name(strfind(ControlParadigm(j).Name,'-')+1:strfind(ControlParadigm(j).Name,'%')-1));
-			dil = [dil;this_dil*ones(width(this_stim),1)  ];
-		end
-	end
-end
+% 			this_STA = STA(these_spikes,this_stim,before,after);
+% 			allSTA = [allSTA this_STA];
+% 			mean_stim = [mean_stim; mean(this_stim,2)];
+% 			this_dil = str2double(ControlParadigm(j).Name(strfind(ControlParadigm(j).Name,'-')+1:strfind(ControlParadigm(j).Name,'%')-1));
+% 			dil = [dil;this_dil*ones(width(this_stim),1)  ];
+% 		end
+% 	end
+% end
 % save this
 % save('allSTA.mat','allSTA','dil','mean_stim');
 
@@ -713,7 +713,7 @@ if fig4
 clearvars -except being_published fig*
 
 % make figure placeholders 
-fig_handle=figure('Units','pixels','outerposition',[32 26 666 980],'PaperSize',[666 980],'Color','w','Toolbar','none','Menubar','none'); hold on
+fig_handle=figure('Units','pixels','outerposition',[32 26 666 980],'PaperSize',[670 1000],'Color','w','Toolbar','none','Menubar','none'); hold on
 clf(fig_handle);
 axes_handles(1)=axes('Units','pixels','Position',[49 857.5 588 98]);
 axes_handles(2)=axes('Units','pixels','Position',[49 759.5 588 98]);

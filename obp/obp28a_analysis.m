@@ -124,6 +124,33 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% We can also directly verify that the stimulus is the same by plotting one on top of the other:
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+clear l 
+subplot(1,3,1:2), hold on
+l(1) = errorShade(time,mean2(PID(:,geno==1 & paradigm == 2)),sem(PID(:,geno==1 & paradigm == 2)),'Color',[1 0 0]);
+l(2) = errorShade(time,mean2(PID(:,geno==2 & paradigm == 2)),sem(PID(:,geno==2 & paradigm == 2)),'Color',[0 0 1]);
+legend(l,{'CRISPR KO','wCS'})
+xlabel('Time (s)')
+ylabel('Stimulus (V)')
+
+subplot(1,3,3), hold on
+plot([0 1],[0 1],'r--')
+plot(mean2(PID(:,geno==1 & paradigm == 2)),mean2(PID(:,geno==2 & paradigm == 2)),'Color',[0 0 0]);
+xlabel('KO Stimulus (V)')
+ylabel('Control Stimulus (V)')
+
+PrettyFig()
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+
 
 %% LFP Filter Analysis
 % Now, we analyse the LFP. In the following figure, we extract LN models for the LFP in all cases, and compare the OBP knockout to a control genotype. The odour used is ethyl acetate. This data has 46 trials from 10 ORNs for the knockout case, and 52 trials from 14 ORNs for the control case. 
@@ -218,6 +245,32 @@ l(1) = errorShade(x,mean2(y(:,geno==1)),sem(y(:,geno==1)),'Color',[1 0 0]);
 l(2) = errorShade(x,mean2(y(:,geno==2)),sem(y(:,geno==2)),'Color',[0 0 1]);
 xlabel('Filter Output')
 ylabel('LFP')
+
+PrettyFig()
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%% PID Pulse Analysis
+% We now verify that the stimulus given to the KO/control is the same. 
+
+% remove baseline
+for i = 1:length(orn)
+	if paradigm(i)==3
+		PID(:,i) = PID(:,i) - mean(PID(1:5e3,i));
+	end
+end
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+clear l 
+l(1) = errorShade(time(1:end-10),mean2(PID(1:end-10,geno==1 & paradigm == 3)),sem(PID(1:end-10,geno==1 & paradigm == 3)),'Color',[1 0 0]);
+l(2) = errorShade(time(1:end-10),mean2(PID(1:end-10,geno==2 & paradigm == 3)),sem(PID(1:end-10,geno==2 & paradigm == 3)),'Color',[0 0 1]);
+legend(l,{'CRISPR KO','wCS'},'location','NorthEast')
+xlabel('Lag (s)')
+ylabel('PID (mV)')
 
 PrettyFig()
 

@@ -53,7 +53,7 @@ for i = 1:width(LFP)
 end
 
 % K -- PID -> LFP filter
-K = cache(DataHash([PID; LFP]));
+K = cache(DataHash([PID; filteredLFP]));
 if isempty(K);
 	K = NaN(1e3,length((orn)));
 	for i = 1:length((orn))

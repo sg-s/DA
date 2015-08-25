@@ -52,7 +52,7 @@ end
 %% 
 % As we can see from this example trace, even though the MFC is doing a good job keeping up with the command signal, the PID values change slowly. We now make the same plot, but averaged over all the switches. 
 
-a = 5e4+1:10e4:length(data(1).PID)
+a = 5e4+1:10e4:length(data(1).PID);
 cs = NaN(15e3,length(a));
 mfc = cs;
 pid = cs;

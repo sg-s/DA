@@ -23,10 +23,9 @@ nsteps = T/tc;
 % MFC parameters
 MFC_scale = 100; % 1V = 100mL/min
 Main_flow = 2000; %mL/min
-MFC_min = 0.05; % setpoints below this (in V) are not reliable
 
 % distribution parameters
-dilution_mean = [.5:.25:7]/100; % in percent
+dilution_mean = [3 4 5 6 7]/100; % in percent
 dilution_var = 3/100;
 
 % fix random stream
@@ -56,13 +55,6 @@ for i = 1:length(dilution_mean)
 
 	% don't leave it at a weird place
 	ControlParadigm(i).Outputs(1,end) =  mean(ControlParadigm(i).Outputs(1,:));
-    
-    % clip for sanity
-    ControlParadigm(i).Outputs(1,ControlParadigm(i).Outputs(1,:)<MFC_min) = MFC_min; 
-    
-    % step on
-    ControlParadigm(i).Outputs(1,1:5e4) = 0;
-    ControlParadigm(i).Outputs(1,5e4:12e4) = mean(ControlParadigm(i).Outputs(1,12e4:end));
 end
 
 

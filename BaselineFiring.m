@@ -1,4 +1,5 @@
 % BaselineFiring.m
+% Analysis of firing properties of ORNs at rest
 % 
 % created by Srinivas Gorur-Shandilya at 3:51 , 30 July 2015. Contact me at http://srinivas.gs/contact/
 % 

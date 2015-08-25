@@ -1,5 +1,5 @@
-% MakeMeanSwitching.m
-% makes control paradigms for Kontroller where the mean changes between 2 values, while the variance is kept constant, and this cycles over and over again. 
+% MakeVarianceSwitching.m
+% makes control paradigms for Kontroller where the variance changes between 2 values, while the mean is kept constant, and this cycles over and over again. 
 % 
 % this script assumes that there is a main air at 2L/min controlled by a
 % digital switch, and one additional MFC that is rapidly varied to achieve
@@ -29,9 +29,9 @@ m = floor(t_switch/tau); % individual setpoints / epoch
 o = floor(tau/dt); % this is how long a setpoint is held
 
 % dilution parameters
-low_mean = 3; % percent
-high_mean = 5; % percent dilution
-range = 2; % percent, below and above the mean. 
+low_var = 2; % percent
+high_var = 3; % percent dilution
+mean_dil = 3;
 
 MainFlow = 2000; % mL/min
 OdourFlow = 500; % mL/min
@@ -45,12 +45,12 @@ nrep  =5;
 
 for i = 1:nrep
 	ControlParadigm(i).Outputs  = ones(2,floor(2*T/dt));
-	ControlParadigm(i).Name = ['MeanSteps_rep_' mat2str(i)];
+	ControlParadigm(i).Name = ['VarianceSteps_rep_' mat2str(i)];
 
 	% make the low mean setpoints
 	r = rand(m*n,1);
 	r = r - .5;
-	r = r*range*2 + low_mean; % in percent of total flow
+	r = r*low_var*2 + mean_dil; % in percent of total flow
 
 	% convert into actual flow 
 	f_low = r*2000./(100-r);
@@ -61,7 +61,7 @@ for i = 1:nrep
 	% now we do the same for the high setpoints
 	r = rand(m*n,1);
 	r = r - .5;
-	r = r*range*2 + high_mean; % in percent of total flow
+	r = r*high_var*2 + mean_dil; % in percent of total flow
 
 	% convert into actual flow 
 	f_high = r*2000./(100-r);

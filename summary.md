@@ -1,5 +1,11 @@
+### [Analysis_January.m](https://github.com/sg-s/da/blob/master/Analysis_January.m)
+Dynamical Adaptation in ORNs 
 ### [Back_out_1dfilter_new.m](https://github.com/sg-s/da/blob/master/Back_out_1dfilter_new.m)
 attempt to do the baccus-style filtering to get the two dimensional
+### [BaselineFiring.m](https://github.com/sg-s/da/blob/master/BaselineFiring.m)
+
+### [BestDistribution.m](https://github.com/sg-s/da/blob/master/BestDistribution.m)
+finds best control signal distribution to achieve target stimulus distribution 
 ### [BootStrapErrorBars.m](https://github.com/sg-s/da/blob/master/BootStrapErrorBars.m)
 
 ### [BootStrapErrorBars5.m](https://github.com/sg-s/da/blob/master/BootStrapErrorBars5.m)
@@ -15,7 +21,7 @@ function [R,y,z] = DA_integrate2(S,p)
 ### [DAModel_bilobedKz.m](https://github.com/sg-s/da/blob/master/DAModel_bilobedKz.m)
 modified to have a bilobed Kz filter. 
 ### [DAModelv2.m](https://github.com/sg-s/da/blob/master/DAModelv2.m)
-function [R,y,z] = DA_integrate2(S,p)
+modified version of DA model, skips integration
 ### [DAModelv3.m](https://github.com/sg-s/da/blob/master/DAModelv3.m)
 function [R,y,z] = DA_integrate2(S,p)
 ### [DAModelv4.m](https://github.com/sg-s/da/blob/master/DAModelv4.m)
@@ -30,6 +36,8 @@ function [R,y,z] = DA_integrate2(S,p)
 function [R,y,z] = DA_integrate2(S,p,LNpred)
 ### [DGModelv1.m](https://github.com/sg-s/da/blob/master/DGModelv1.m)
 see:
+### [DeliverySystem1.m](https://github.com/sg-s/da/blob/master/DeliverySystem1.m)
+First attempt at understanding how the delivery system works
 ### [DeliverySystemModel.m](https://github.com/sg-s/da/blob/master/DeliverySystemModel.m)
 this is a model of the odour delivery system
 ### [DeliverySystemModel_LN.m](https://github.com/sg-s/da/blob/master/DeliverySystemModel_LN.m)
@@ -104,6 +112,8 @@ a better, improved version of GainAnalysis.m
 a better, improved version of GainAnalysis4.m
 ### [GainAnalysisAllData.m](https://github.com/sg-s/da/blob/master/GainAnalysisAllData.m)
 
+### [GainAnalysisCharacterisation.m](https://github.com/sg-s/da/blob/master/GainAnalysisCharacterisation.m)
+careful characterisation of the gain analysis method
 ### [GainAnalysisExample.m](https://github.com/sg-s/da/blob/master/GainAnalysisExample.m)
 
 ### [GainAnalysisWrapper.m](https://github.com/sg-s/da/blob/master/GainAnalysisWrapper.m)
@@ -138,6 +148,8 @@ LFP analysis of mean shifted gaussian odour inputs
 
 ### [LNAModel.m](https://github.com/sg-s/da/blob/master/LNAModel.m)
 the response filter is modelled by a double gamma filter (two lobed)
+### [LVF_LFP.m](https://github.com/sg-s/da/blob/master/LVF_LFP.m)
+recreates fig3 with LFP recordings
 ### [LargeVarianceFlickering.m](https://github.com/sg-s/da/blob/master/LargeVarianceFlickering.m)
 
 ### [LargeVarianceFlickering2.m](https://github.com/sg-s/da/blob/master/LargeVarianceFlickering2.m)
@@ -158,8 +170,12 @@ makes data for a plot as in fig 6H in this paper:
 this m file looks around for mat files named "dist*.mat", loads them
 ### [MakeMeanShiftedGaussians.m](https://github.com/sg-s/da/blob/master/MakeMeanShiftedGaussians.m)
 makes control paradigms for Kontroller
+### [MakeMeanSwitching.m](https://github.com/sg-s/da/blob/master/MakeMeanSwitching.m)
+makes control paradigms for Kontroller where the mean changes between 2 values, while the variance is kept constant, and this cycles over and over again. 
 ### [MakeNWRandomSignal.m](https://github.com/sg-s/da/blob/master/MakeNWRandomSignal.m)
 this script makes a random binary signal according to what Nagel and Wilson said they did in their paper
+### [MakingMSG.m](https://github.com/sg-s/da/blob/master/MakingMSG.m)
+documents attempts to construct gaussian distributed stimuli
 ### [MeanShiftedGaussians.m](https://github.com/sg-s/da/blob/master/MeanShiftedGaussians.m)
 
 ### [Mechanism3.m](https://github.com/sg-s/da/blob/master/Mechanism3.m)
@@ -170,10 +186,12 @@ in this document, we attempt to understand the mechanism behind gain adaptation
 
 ### [MechanismAnalysis_PrepData.m](https://github.com/sg-s/da/blob/master/MechanismAnalysis_PrepData.m)
 this function prepares data from the experiments investigating the mechanism of adaptation
+### [Mechanism_LFP.m](https://github.com/sg-s/da/blob/master/Mechanism_LFP.m)
+attempt to understand mechanism of slow adaptation using the LFP
 ### [NagelWilsonModel.m](https://github.com/sg-s/da/blob/master/NagelWilsonModel.m)
 specification of the Nagel-Wilson model for receptor binding, channel opening, and adptation via diffusable factor
 ### [NaturalFlickering.m](https://github.com/sg-s/da/blob/master/NaturalFlickering.m)
-this is a complete rewrite on  4:06 , 10 February 2015. 
+analysis of responses to very widely distributed stimuli
 ### [NaturalFlickering_ab2.m](https://github.com/sg-s/da/blob/master/NaturalFlickering_ab2.m)
 this is a complete rewrite on  4:06 , 10 February 2015. 
 ### [ORNsAsFracDiff.m](https://github.com/sg-s/da/blob/master/ORNsAsFracDiff.m)
@@ -226,7 +244,9 @@ set(gca,'LineWidth',2,'FontSize',20,'box','on','XScale','log')
 xlabel('r','FontSize',font_size)
 title('Gain','FontSize',font_size)
 if max(diagnostics.slope)/min(diagnostics.slope) > 100
-	### [PulsePeakAnalysis.m](https://github.com/sg-s/da/blob/master/PulsePeakAnalysis.m)
+	### [PosterFigures.m](https://github.com/sg-s/da/blob/master/PosterFigures.m)
+makes all the figures for the poster presented at Swartz conference
+### [PulsePeakAnalysis.m](https://github.com/sg-s/da/blob/master/PulsePeakAnalysis.m)
 performs Pulse-peak-Analysis of gain for a flickering stimulus dataset.
 ### [ReceptorAdaptationModel.m](https://github.com/sg-s/da/blob/master/ReceptorAdaptationModel.m)
 this is a model of ORN response where the ORN response f is given by
@@ -267,7 +287,9 @@ p.B = x(2); ### [ValidateDAParameters3.m](https://github.com/sg-s/da/blob/master
 alpha in model
 p.B = x(2); ### [ValidateXJWParameters.m](https://github.com/sg-s/da/blob/master/ValidateXJWParameters.m)
 calcium dynamics
-p.Cm = x(1); ### [XJWNeuronEuler.m](https://github.com/sg-s/da/blob/master/XJWNeuronEuler.m)
+p.Cm = x(1); ### [VarianceFlickering.m](https://github.com/sg-s/da/blob/master/VarianceFlickering.m)
+analysis of response to stimulus where variance fluctuates over time
+### [XJWNeuronEuler.m](https://github.com/sg-s/da/blob/master/XJWNeuronEuler.m)
 part of the DA project
 ### [XJWNeuronWrapper.m](https://github.com/sg-s/da/blob/master/XJWNeuronWrapper.m)
 
@@ -294,14 +316,16 @@ time = 1e-4:1e-4:T;
 dt = 3e-3;
 time2 = 0:3e-3:T;
 
-### [consolidateData.m](https://github.com/sg-s/da/blob/master/consolidateData.m)
-consolidate data accepts a path, and merges all the .mat files there into one consolidate blob
+### [condSpikeProb.m](https://github.com/sg-s/da/blob/master/condSpikeProb.m)
+spiking probability, conditional on spike
 ### [delivery_system.m](https://github.com/sg-s/da/blob/master/delivery_system.m)
 part of the DA project
 ### [delivery_system2.m](https://github.com/sg-s/da/blob/master/delivery_system2.m)
 part of the DA project
 ### [errorbar_cazzo.m](https://github.com/sg-s/da/blob/master/errorbar_cazzo.m)
   ERRORBAR(X,Y,L,U) plots the graph of vector X vs. vector Y with
+### [findValidHistoryLengths.m](https://github.com/sg-s/da/blob/master/findValidHistoryLengths.m)
+finds valid history lengths based on stimulus, prediction and response so that green and red dots have a good degree of overlap
 ### [fittingPowerLaws.m](https://github.com/sg-s/da/blob/master/fittingPowerLaws.m)
 this document looks at how we can fit power laws to data, and the errors that arise from various ways of doing things.
 ### [fra.m](https://github.com/sg-s/da/blob/master/fra.m)
@@ -315,9 +339,15 @@ remove trend in stimulus
 temp = fit(IGA_data.time(:),IGA_data.stimulus(:),'poly2');
 IGA_data.stimulus = IGA_data.stimulus - temp(IGA_data.time) + mean(IGA_data.stimulus);
 
+### [mi.m](https://github.com/sg-s/da/blob/master/mi.m)
+
+### [pDeliverySystem.m](https://github.com/sg-s/da/blob/master/pDeliverySystem.m)
+NLN-based model of Delivery System
 ### [pLNModel.m](https://github.com/sg-s/da/blob/master/pLNModel.m)
 the filter is modelled by a double gamma filter (two lobed)
 ### [pLinearModel.m](https://github.com/sg-s/da/blob/master/pLinearModel.m)
 the filter is modelled by a double gamma filter (two lobed)
+### [pNLNModel.m](https://github.com/sg-s/da/blob/master/pNLNModel.m)
+parametric NLN model, which can by fit by FitModel2Data
 ### [what_controls_gain.m](https://github.com/sg-s/da/blob/master/what_controls_gain.m)
 

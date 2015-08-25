@@ -17,12 +17,6 @@ end
 tic
 
 
-%% Analysis of OBP28a Knockout
-% In this document, we analyse the responses of ab3A in a OBP28a knockout (using Crispr). 
-
-%% LFP Filter Analysis
-% First, we analyse the LFP. In the following figure, we extract LN models for the LFP in all cases, and compare the OBP knockout to a control genotype. The odour used is ethyl acetate. 
-
 [PID, LFP, fA, paradigm, orn] = consolidateData('/local-data/obp/ko',1);
 geno = ones(length(orn),1);
 
@@ -37,6 +31,103 @@ orn = [orn orn2]; clear orn2
 geno = [geno; geno2]; clear geno2
 paradigm = paradigm(:);
 orn = orn(:);
+
+%% Analysis of OBP28a Knockout
+% In this document, we analyse the responses of ab3A in a OBP28a knockout (using Crispr). In this document, there are a total of 79 trials from 16 ORNs for the knockout, and 85 trials from 15 ORNs for the control. The total dataset contains 164 minutes of data containing 77032 spikes from the A neuron in the knockout and 77692 spikes from the A neuron in the wCS control. 
+
+%% PID Filter Analysis 
+% First, we check that the stimulus delivery is identical in the test and the control cases. The odour used is ethyl acetate. In the following figure, a NL model is extracted for every stimulus presentation. On the left, filters are shown, and on the right, output non-linearities. 
+
+load('/local-data/obp/ko/2015_08_18_crispr_F1_ab3_1_EA.mat','ControlParadigm');
+
+% K0 -- PID -> LFP filter
+K0 = cache(DataHash(PID));
+if isempty(K0);
+	K0 = NaN(1e3,length((orn)));
+	for i = 1:length((orn))
+		textbar(i,length(orn))
+		if paradigm(i) == 2
+			stim = ControlParadigm(3).Outputs(1,1e5-10:10:end);
+			stim(1:400) = [];
+			resp = (PID(10e3:end,i));
+			resp(end-399:end) = [];
+			stim = stim - mean(stim);
+			stim =  stim/std(stim);
+			resp  =resp - mean(resp);
+			resp = resp/std(resp);
+			temp = fitFilter2Data(stim(:),resp(:),'reg',1,'filter_length',1399);
+			% throw out 200ms on either end
+			temp(1:200) = [];
+			temp(end-199:end) = [];
+			K0(:,i) = temp;
+		end
+	end
+end
+% cache
+cache(DataHash(PID),K0);
+
+
+% make linear predictions everywhere
+time = 1e-3*(1:length(PID));
+PID_pred = NaN*PID;
+for i = 1:length((orn))
+	if paradigm(i) == 2
+		filtertime = 1e-3*(1:1e3)-.2;
+		PID_pred(:,i) = convolve(time,ControlParadigm(3).Outputs(1,1:10:end),K0(:,i),filtertime);
+	end
+end
+
+% fit nonlinearities everywhere
+clear ff
+for i = 1:length((orn))
+	if paradigm(i) == 2
+		try
+			x = PID_pred(10e3:end-1e3,i);
+			y = PID(10e3:end-1e3,i); y = y-mean(y);
+			ff(i).PID = fit(x(:),y(:),'poly5');
+		catch
+		end
+	end
+end
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+clear l 
+l(1) = errorShade(filtertime,mean2(K0(:,geno==1)),sem(K0(:,geno==1)),'Color',[1 0 0]);
+l(2) = errorShade(filtertime,mean2(K0(:,geno==2)),sem(K0(:,geno==2)),'Color',[0 0 1]);
+legend(l,{'CRISPR KO','wCS'})
+xlabel('Lag (s)')
+ylabel('Filter Amplitude')
+
+
+subplot(1,2,2), hold on
+x = -.3:0.005:.9;
+y = NaN(length(x),length(orn));
+for i = 1:length((orn))
+	if paradigm(i) == 2
+		try
+			y(:,i) = ff(i).PID(x(:));
+		catch
+		end
+	end
+end
+clear l 
+l(1) = errorShade(x,mean2(y(:,geno==1)),sem(y(:,geno==1)),'Color',[1 0 0]);
+l(2) = errorShade(x,mean2(y(:,geno==2)),sem(y(:,geno==2)),'Color',[0 0 1]);
+xlabel('Filter Output')
+ylabel('LFP')
+
+PrettyFig()
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%% LFP Filter Analysis
+% Now, we analyse the LFP. In the following figure, we extract LN models for the LFP in all cases, and compare the OBP knockout to a control genotype. The odour used is ethyl acetate. This data has 46 trials from 10 ORNs for the knockout case, and 52 trials from 14 ORNs for the control case. 
+
 
 % filter the LFP
 filteredLFP = LFP;
@@ -137,7 +228,7 @@ end
 
 
 %% LFP Pulse Analysis
-% We now look for differences in the LFP to a pulse of odour. 
+% We now look for differences in the LFP to a pulse of odour. In this dataset we have 14 trials from 12 ORNs in the knockout case, and 16 trials from 14 ORNs in the control case. 
 
 % remove baseline
 for i = 1:length(orn)

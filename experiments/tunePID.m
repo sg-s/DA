@@ -14,7 +14,7 @@ clc
 % some core parameters 
 T = 5; % length of trial
 dt = 1e-4; % sampling rate
-tau1 = 1e-2; % 20ms, switching time of individual steps
+tau1 = 5e-2; % 20ms, switching time of individual steps
 
 mean_dil = 4; % 4%
 max_dil = 7;

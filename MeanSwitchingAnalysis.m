@@ -73,6 +73,12 @@ end
 %% LFP Analysis
 % We now line up all the LFP signals by the switching time, and look at how the LFP changes in aggregate when we switch from a low mean stimulus to a high mean stimulus. Since the LFP drifts over time, and we don't really care about that, we construct a triggered LFP where we subtract the mean of the LFP during the low stimulus window in each epoch and then average. 
 
+% remove spikes from LFP
+for i = 1:width(LFP)
+	LFP(:,i) = filtfilt(ones(20,1),20,LFP(:,i))*10; % in mV
+end
+
+
 
 triggeredLFP = NaN(1e4,0);
 a = 20e3;
@@ -85,10 +91,75 @@ for start_here = a:10e3:z
 	end
 end
 
+% make colour scheme for block analysis
+all_offsets = [1 3 6 8];
+window_length = 2;
+
 figure('outerposition',[0 0 600 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-errorShade(1e-3*(1:length(triggeredLFP)),mean2(triggeredLFP),sem(triggeredLFP))
+c = parula(5);
+yy = mean(mean(triggeredLFP)) + mean(2*std(triggeredLFP));
+for i = 1:length(all_offsets)
+	plot([all_offsets(i) all_offsets(i)+window_length],[yy yy],'Color',c(i,:),'LineWidth',10);
+end
+
+errorShade(1e-3*(1:length(triggeredLFP)),mean2(triggeredLFP),sem(triggeredLFP));
 xlabel('Time since high \rightarrow low switch (s)')
 ylabel('\DeltaLFP (mV)')
+
+PrettyFig()
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+%  We now extract filters in two second blocks in this triggered time (starting from the time of switch from high to low). 
+
+
+K = NaN(length(all_offsets),1e3,width(PID));
+filter_length = 1200;
+offset = 200;
+for i = 1:width(PID)
+	for j = 1:length(all_offsets)
+		x = PID(:,i);
+		y = LFP(:,i);
+		OnlyThesePoints = zeros(length(PID),1);
+		a = 20e3 + all_offsets(j)*1e3;
+		z = length(LFP)-10e3;
+		for start_here = a:10e3:z
+			OnlyThesePoints(start_here:start_here+window_length*1e3) = 1;
+
+			this_stim = x(start_here-filter_length+offset:start_here-filter_length+offset+2e3);
+			this_stim = this_stim - mean(this_stim);
+			this_stim = this_stim/std(this_stim);
+			% ff = fit((1:length(this_stim))',this_stim,'poly1');
+			% this_stim = this_stim - ff(1:length(this_stim));
+			x(start_here-filter_length+offset:start_here-filter_length+offset+window_length*1e3) = this_stim;
+
+			this_resp = y(start_here:start_here+window_length*1e3);
+			this_resp = this_resp - mean(this_resp);
+			this_resp = this_resp/std(this_resp);
+			% ff = fit((1:length(this_resp))',this_resp,'poly1');
+			% this_resp = this_resp - ff(1:length(this_resp));
+			y(start_here:start_here+window_length*1e3) = this_resp;
+		end
+
+		y(~OnlyThesePoints) =  NaN;
+
+		[this_K,ft] = fitFilter2Data(x,y,'reg',1,'offset',offset,'OnlyThesePoints',logical(OnlyThesePoints),'filter_length',filter_length);
+		K(j,:,i) = this_K(100:end-102);
+		ft = ft(100:end-102);
+	end
+end
+
+figure('outerposition',[0 0 600 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+filtertime = 1e-3*ft;
+for i = 1:length(all_offsets)
+	errorShade(filtertime,mean2(squeeze(K(i,:,:))),sem(squeeze(K(i,:,:))),'Color',c(i,:));
+end
+xlabel('Filter Lag (s)')
+ylabel('Filter Amplitude')
 
 PrettyFig()
 

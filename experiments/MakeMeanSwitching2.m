@@ -12,9 +12,9 @@
 %
 % 1. (AO)   to MFC1
 % 2. (AO)   to MFC2  
-% 3. (DO)   to switch controlling main air @ 2L/min
-% 4. (DO)   to valve for MFC1
-% 5. (DO)	to valve for MFC2
+% 3. (DO)   to valve for MFC1
+% 4. (DO)   to valve for MFC2
+% 5. (DO)	to switch controlling main air @ 2L/min
 %
 % This script also assumes that the MFC is running the PD algorithm, with parameters P = 2500 and D = 10000. 
 % 
@@ -24,10 +24,10 @@
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
 % some timing parameters
-T = 100; % length of trial
+T = 200; % length of trial in seconds
 dt = 1e-4; % sampling rate
 t_switch  = 5; % time of switch, so we present each stimulus for 5 seconds
-tau = 2e-2; % 20 ms switching time, this is very fast, and the MFC will not be reproducible. 
+tau = 5e-2; % 20 ms switching time, this is very fast, and the MFC will not be reproducible. 
 
 n = floor(T/t_switch); % number of epochs
 m = floor(t_switch/tau); % individual setpoints / epoch
@@ -35,8 +35,9 @@ o = floor(tau/dt); % this is how long a setpoint is held
 
 % dilution parameters
 low_mean = 3; % percent
-high_mean = 5; % percent dilution
-range = 2; % percent, below and above the mean. 
+high_mean = 9; % percent dilution
+range = 3; % percent, below and above the mean. 
+fudge_factor = 1.5; % scale on the variance for the high setpoint
 
 MainFlow = 2000; % mL/min
 OdourFlow = 500; % mL/min
@@ -46,7 +47,7 @@ MFC_Scale = 100; % 1V= 100mL/min
 RandStream.setGlobalStream(RandStream('mt19937ar','Seed',1984)); 
 
 % make a bunch of replicates
-nrep  =5;
+nrep = 5;
 
 for i = 1:nrep
 	ControlParadigm(i).Outputs  = ones(5,floor(T/dt));
@@ -65,13 +66,15 @@ for i = 1:nrep
 
 	f_low = (repmat(f_low,1,o)');
 	f_low = f_low(:);
+    f_low(f_low<0)= 0;
+    f_low(f_low>5) = 5;
 
 	ControlParadigm(i).Outputs(1,:) = f_low;
 
 	% now we do the same for the high setpoints
 	r = rand(m*n,1);
 	r = r - .5;
-	r = r*range*2 + high_mean; % in percent of total flow
+	r = r*range*2*fudge_factor + high_mean; % in percent of total flow
 
 	% convert into actual flow 
 	f_high = r*2000./(100-r);
@@ -81,6 +84,8 @@ for i = 1:nrep
 
 	f_high = (repmat(f_high,1,o)');
 	f_high = f_high(:);
+    f_high(f_high<0) = 0;
+    f_high(f_high>5) = 5;
 
 	ControlParadigm(i).Outputs(2,:) = f_high;
 
@@ -89,9 +94,16 @@ for i = 1:nrep
 	valve = repmat([0 1],o*m,1);
 	valve = valve(:);
 	valve = repmat(valve,length(f_low)/length(valve),1);
+    
 
-	ControlParadigm(i).Outputs(4,:) = valve;
-	ControlParadigm(i).Outputs(5,:) = abs(1-valve);
+	ControlParadigm(i).Outputs(4,:) = valve;        
+	ControlParadigm(i).Outputs(3,:) = abs(1-valve);
+    
+    ControlParadigm(i).Outputs(4,1:5e4) = 0;         
+	ControlParadigm(i).Outputs(3,1:5e4) = 0;
+    
+    ControlParadigm(i).Outputs(4,end-5e4:end) = 0;         
+	ControlParadigm(i).Outputs(3,end-5e4:end) = 0;
 
 end
 

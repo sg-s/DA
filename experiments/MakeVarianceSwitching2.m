@@ -89,8 +89,8 @@ for i = 1:nrep
 	valve = valve(:);
 	valve = repmat(valve,length(f_low)/length(valve),1);
 
-	ControlParadigm(i).Outputs(4,:) = valve;
-	ControlParadigm(i).Outputs(5,:) = abs(1-valve);
+	ControlParadigm(i).Outputs(3,:) = valve;
+	ControlParadigm(i).Outputs(4,:) = abs(1-valve);
 
 
 end

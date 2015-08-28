@@ -17,10 +17,10 @@ end
 tic
 
 
-[PID, LFP, fA, paradigm, orn] = consolidateData('/local-data/obp/ko',1);
+[PID, LFP, fA, paradigm, orn,fly] = consolidateData('/local-data/obp/ko',0);
 geno = ones(length(orn),1);
 
-[PID2, LFP2, fA2, paradigm2, orn2] = consolidateData('/local-data/obp/wcs',1);
+[PID2, LFP2, fA2, paradigm2, orn2,fly2] = consolidateData('/local-data/obp/wcs',0);
 geno2 = 2*ones(length(orn2),1);
 
 PID = [PID PID2]; clear PID2
@@ -28,6 +28,7 @@ LFP = [LFP LFP2]; clear LFP2
 fA = [fA fA2]; clear fA2
 paradigm = [paradigm paradigm2]; clear paradigm2
 orn = [orn orn2]; clear orn2
+fly = [fly fly2]; clear fly2
 geno = [geno; geno2]; clear geno2
 paradigm = paradigm(:);
 orn = orn(:);

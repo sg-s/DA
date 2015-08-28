@@ -147,7 +147,7 @@ for i = 1:width(PID)
 
 		y(~OnlyThesePoints) =  NaN;
 
-		[this_K,ft] = fitFilter2Data(x,y,'reg',1,'offset',offset,'OnlyThesePoints',logical(OnlyThesePoints),'filter_length',filter_length);
+		[this_K,ft] = fitFilter2Data(x,y,'reg',1,'offset',offset,'OnlyThesePoints',logical(OnlyThesePoints),'filter_length',filter_length,'normalise',false);
 		K(j,:,i) = this_K(100:end-102);
 		ft = ft(100:end-102);
 	end
@@ -167,6 +167,99 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%% Firing Rate Analysis
+% We now perform a similar analysis, but for the firing rates. 
+
+
+triggeredfA = NaN(1e4,0);
+a = 20e3;
+z = length(LFP)-5e3;
+for start_here = a:10e3:z
+	for i = 1:width(LFP)
+		this_segment = fA(start_here:start_here+1e4-1,i);
+		this_segment = this_segment - mean(this_segment(1:5e3));
+		triggeredfA = [triggeredfA this_segment];
+	end
+end
+
+% make colour scheme for block analysis
+all_offsets = [1 3 6 8];
+window_length = 2;
+
+figure('outerposition',[0 0 600 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+c = parula(5);
+yy = mean(mean(triggeredfA)) + mean(2*std(triggeredfA));
+for i = 1:length(all_offsets)
+	plot([all_offsets(i) all_offsets(i)+window_length],[yy yy],'Color',c(i,:),'LineWidth',10);
+end
+
+errorShade(1e-3*(1:length(triggeredfA)),mean2(triggeredfA),sem(triggeredfA));
+xlabel('Time since high \rightarrow low switch (s)')
+ylabel('\Delta Firing Rate (Hz)')
+
+PrettyFig()
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+%  We now extract filters in two second blocks in this triggered time (starting from the time of switch from high to low). 
+
+
+K2 = NaN(length(all_offsets),1e3,width(PID));
+filter_length = 1200;
+offset = 200;
+for i = 1:width(PID)
+	for j = 1:length(all_offsets)
+		x = PID(:,i);
+		y = fA(:,i);
+		OnlyThesePoints = zeros(length(PID),1);
+		a = 20e3 + all_offsets(j)*1e3;
+		z = length(fA)-10e3;
+		for start_here = a:10e3:z
+			OnlyThesePoints(start_here:start_here+window_length*1e3) = 1;
+
+			this_stim = x(start_here-filter_length+offset:start_here-filter_length+offset+2e3);
+			this_stim = this_stim - mean(this_stim);
+			this_stim = this_stim/std(this_stim);
+			% ff = fit((1:length(this_stim))',this_stim,'poly1');
+			% this_stim = this_stim - ff(1:length(this_stim));
+			x(start_here-filter_length+offset:start_here-filter_length+offset+window_length*1e3) = this_stim;
+
+			this_resp = y(start_here:start_here+window_length*1e3);
+			this_resp = this_resp - mean(this_resp);
+			this_resp = this_resp/std(this_resp);
+			% ff = fit((1:length(this_resp))',this_resp,'poly1');
+			% this_resp = this_resp - ff(1:length(this_resp));
+			y(start_here:start_here+window_length*1e3) = this_resp;
+		end
+
+		y(~OnlyThesePoints) =  NaN;
+
+		[this_K,ft] = fitFilter2Data(x,y,'reg',1,'offset',offset,'OnlyThesePoints',logical(OnlyThesePoints),'filter_length',filter_length,'normalise',false);
+		K2(j,:,i) = this_K(100:end-102);
+		ft = ft(100:end-102);
+	end
+end
+
+figure('outerposition',[0 0 600 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+filtertime = 1e-3*ft;
+for i = 1:length(all_offsets)
+	errorShade(filtertime,mean2(squeeze(K2(i,:,:))),sem(squeeze(K2(i,:,:))),'Color',c(i,:));
+end
+xlabel('Filter Lag (s)')
+ylabel('Filter Amplitude')
+
+PrettyFig()
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 
 %% Version Info

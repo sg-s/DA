@@ -47,13 +47,14 @@ for i = 1:length(a)
 	end
 end
 errorShade(x,mean2(y),sem(y),'Color',[1 0 0],'Shading',0.4);
+
 x = 0:0.01:2.5;
 y = NaN(length(x),width(PID));
 a = 15e3+1:10e3:length(PID)-5e3;
 for i = 1:length(a)
 	this_start = a(i);
 	try
-		temp = PID(this_start-5e3:this_start,2);
+		temp = PID(this_start-4e3:this_start,2);
 		y(:,i) = hist(temp(1:10:end),x);
 		y(:,i) = y(:,i)/sum(y(:,i));
 	end
@@ -114,7 +115,7 @@ if being_published
 end
 
 %%
-%  We now extract filters in two second blocks in this triggered time (starting from the time of switch from high to low). 
+% We now extract filters in two second blocks in this triggered time (starting from the time of switch from high to low). 
 
 
 K = NaN(length(all_offsets),1e3,width(PID));
@@ -206,7 +207,7 @@ if being_published
 end
 
 %%
-%  We now extract filters in two second blocks in this triggered time (starting from the time of switch from high to low). 
+% We now extract LN models in two second blocks in this triggered time (starting from the time of switch from high to low). On the left are filters, and on the right are linear fits to the residuals. 
 
 
 K2 = NaN(length(all_offsets),1e3,width(PID));
@@ -288,6 +289,9 @@ for i = 1:length(all_offsets)
 	ff = fit(temp_fp,temp_fA,'poly1');
 	plot([min(temp_fp) max(temp_fp)],ff([min(temp_fp) max(temp_fp)]),'Color',c(i,:))
 end
+xlabel('Linear Prediction')
+ylabel('Neuron Firing Rate (Hz)')
+
 
 PrettyFig()
 

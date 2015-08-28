@@ -245,13 +245,49 @@ for i = 1:width(PID)
 	end
 end
 
-figure('outerposition',[0 0 600 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% make linear predictions 
+fp = NaN*fA;
+offset = 100;
+for i = 1:width(fA)
+	for j = 1:length(all_offsets)
+		x = PID(:,i);
+		y = fA(:,i);
+		y = y - mean(y);
+		y = y/std(y);
+		a = 20e3 + all_offsets(j)*1e3;
+		z = length(fA)-10e3;
+		this_pred = convolve(1e-3*(1:length(x)),x,squeeze(K2(j,:,i)),ft);
+		for start_here = a:10e3:z
+			fp(start_here:start_here+window_length*1e3,i) = this_pred(start_here:start_here+window_length*1e3);
+		end
+	end
+end
+
+% plot fp vs fA only for the first block
+reshaped_fp = reshape(fp(:,1),1e4,length(fp)/1e4);
+reshaped_fA = reshape(fA(:,1),1e4,length(fp)/1e4);
+reshaped_fp(:,1:2) = []; reshaped_fA(:,1:2) = [];
+reshaped_fp(:,end) = []; reshaped_fA(:,end) = [];
+
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
 filtertime = 1e-3*ft;
 for i = 1:length(all_offsets)
 	errorShade(filtertime,mean2(squeeze(K2(i,:,:))),sem(squeeze(K2(i,:,:))),'Color',c(i,:));
 end
 xlabel('Filter Lag (s)')
 ylabel('Filter Amplitude')
+
+subplot(1,2,2), hold on
+for i = 1:length(all_offsets)
+	temp_fp = reshaped_fp(all_offsets(i)*1e3:(all_offsets(i)+window_length)*1e3,:);
+	temp_fp = temp_fp(:);
+	temp_fA = reshaped_fA(all_offsets(i)*1e3:(all_offsets(i)+window_length)*1e3,:);
+	temp_fA = temp_fA(:);
+	ff = fit(temp_fp,temp_fA,'poly1');
+	plot([min(temp_fp) max(temp_fp)],ff([min(temp_fp) max(temp_fp)]),'Color',c(i,:))
+end
 
 PrettyFig()
 

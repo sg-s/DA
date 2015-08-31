@@ -16,11 +16,11 @@ if ~isempty(calling_func)
 end
 tic
 
-
-[PID, LFP, fA, paradigm, orn,fly] = consolidateData('/local-data/obp/ko',0);
+use_cache = 1;
+[PID, LFP, fA, paradigm, orn,fly] = consolidateData('/local-data/obp/ko',use_cache);
 geno = ones(length(orn),1);
 
-[PID2, LFP2, fA2, paradigm2, orn2,fly2] = consolidateData('/local-data/obp/wcs',0);
+[PID2, LFP2, fA2, paradigm2, orn2,fly2] = consolidateData('/local-data/obp/wcs',use_cache);
 geno2 = 2*ones(length(orn2),1);
 
 PID = [PID PID2]; clear PID2

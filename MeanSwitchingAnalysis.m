@@ -134,15 +134,15 @@ for i = 1:width(PID)
 			this_stim = x(start_here-filter_length+offset:start_here-filter_length+offset+2e3);
 			this_stim = this_stim - mean(this_stim);
 			this_stim = this_stim/std(this_stim);
-			% ff = fit((1:length(this_stim))',this_stim,'poly1');
-			% this_stim = this_stim - ff(1:length(this_stim));
+			ff = fit((1:length(this_stim))',this_stim,'poly1');
+			this_stim = this_stim - ff(1:length(this_stim));
 			x(start_here-filter_length+offset:start_here-filter_length+offset+window_length*1e3) = this_stim;
 
 			this_resp = y(start_here:start_here+window_length*1e3);
 			this_resp = this_resp - mean(this_resp);
 			this_resp = this_resp/std(this_resp);
-			% ff = fit((1:length(this_resp))',this_resp,'poly1');
-			% this_resp = this_resp - ff(1:length(this_resp));
+			ff = fit((1:length(this_resp))',this_resp,'poly1');
+			this_resp = this_resp - ff(1:length(this_resp));
 			y(start_here:start_here+window_length*1e3) = this_resp;
 		end
 
@@ -154,13 +154,59 @@ for i = 1:width(PID)
 	end
 end
 
-figure('outerposition',[0 0 600 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% make linear predictions 
+LFP_pred = NaN*fA;
+offset = 100;
+for i = 1:width(fA)
+	for j = 1:length(all_offsets)
+		x = PID(:,i);
+		a = 20e3 + all_offsets(j)*1e3;
+		z = length(fA)-10e3;
+		this_pred = convolve(1e-3*(1:length(x)),x,squeeze(K(j,:,i)),ft);
+		for start_here = a:10e3:z
+			LFP_pred(start_here:start_here+window_length*1e3,i) = this_pred(start_here:start_here+window_length*1e3);
+		end
+	end
+end
+
+
+reshaped_LFP_pred = reshape(LFP_pred(:,1),1e4,length(LFP_pred)/1e4);
+reshaped_LFP = reshape(LFP(:,1),1e4,length(LFP_pred)/1e4);
+
+% remove trend from output in order to compare it to the linear prediction. 
+for i = 1:width(reshaped_LFP)
+	for j = 1:length(all_offsets)
+		a = all_offsets(j)*1e3;
+		z = a + window_length*1e3;
+		ff = fit((1:z-a)',reshaped_LFP(a:z-1,i),'poly1');
+		reshaped_LFP(a:z-1,i) = reshaped_LFP(a:z-1,i) - ff(1:z-a);
+	end
+end
+
+reshaped_LFP_pred(:,1:2) = []; reshaped_LFP(:,1:2) = [];
+reshaped_LFP_pred(:,end) = []; reshaped_LFP(:,end) = [];
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
 filtertime = 1e-3*ft;
 for i = 1:length(all_offsets)
 	errorShade(filtertime,mean2(squeeze(K(i,:,:))),sem(squeeze(K(i,:,:))),'Color',c(i,:));
 end
 xlabel('Filter Lag (s)')
 ylabel('Filter Amplitude')
+
+
+subplot(1,2,2), hold on
+for i = 1:length(all_offsets)
+	temp_LFP_pred = reshaped_fp(all_offsets(i)*1e3:(all_offsets(i)+window_length)*1e3,:);
+	temp_LFP_pred = temp_LFP_pred(:);
+	temp_fA = reshaped_fA(all_offsets(i)*1e3:(all_offsets(i)+window_length)*1e3,:);
+	temp_fA = temp_fA(:);
+	ff = fit(temp_LFP_pred,temp_fA,'poly1');
+	plot([min(temp_LFP_pred) max(temp_LFP_pred)],ff([min(temp_LFP_pred) max(temp_LFP_pred)]),'Color',c(i,:))
+end
+xlabel('Linear Prediction')
+ylabel('\DeltaLFP (mV)')
 
 PrettyFig()
 
@@ -226,15 +272,15 @@ for i = 1:width(PID)
 			this_stim = x(start_here-filter_length+offset:start_here-filter_length+offset+2e3);
 			this_stim = this_stim - mean(this_stim);
 			this_stim = this_stim/std(this_stim);
-			% ff = fit((1:length(this_stim))',this_stim,'poly1');
-			% this_stim = this_stim - ff(1:length(this_stim));
+			ff = fit((1:length(this_stim))',this_stim,'poly1');
+			this_stim = this_stim - ff(1:length(this_stim));
 			x(start_here-filter_length+offset:start_here-filter_length+offset+window_length*1e3) = this_stim;
 
 			this_resp = y(start_here:start_here+window_length*1e3);
 			this_resp = this_resp - mean(this_resp);
 			this_resp = this_resp/std(this_resp);
-			% ff = fit((1:length(this_resp))',this_resp,'poly1');
-			% this_resp = this_resp - ff(1:length(this_resp));
+			ff = fit((1:length(this_resp))',this_resp,'poly1');
+			this_resp = this_resp - ff(1:length(this_resp));
 			y(start_here:start_here+window_length*1e3) = this_resp;
 		end
 
@@ -252,9 +298,6 @@ offset = 100;
 for i = 1:width(fA)
 	for j = 1:length(all_offsets)
 		x = PID(:,i);
-		y = fA(:,i);
-		y = y - mean(y);
-		y = y/std(y);
 		a = 20e3 + all_offsets(j)*1e3;
 		z = length(fA)-10e3;
 		this_pred = convolve(1e-3*(1:length(x)),x,squeeze(K2(j,:,i)),ft);
@@ -264,9 +307,21 @@ for i = 1:width(fA)
 	end
 end
 
-% plot fp vs fA only for the first block
+
+% fit output linear functions to all blocks
 reshaped_fp = reshape(fp(:,1),1e4,length(fp)/1e4);
 reshaped_fA = reshape(fA(:,1),1e4,length(fp)/1e4);
+
+% remove trend from firing rate in order to compare it to the linear prediction. 
+for i = 1:width(reshaped_fA)
+	for j = 1:length(all_offsets)
+		a = all_offsets(j)*1e3;
+		z = a + window_length*1e3;
+		ff = fit((1:z-a)',reshaped_fA(a:z-1,i),'poly1');
+		reshaped_fA(a:z-1,i) = reshaped_fA(a:z-1,i) - ff(1:z-a);
+	end
+end
+
 reshaped_fp(:,1:2) = []; reshaped_fA(:,1:2) = [];
 reshaped_fp(:,end) = []; reshaped_fA(:,end) = [];
 
@@ -290,7 +345,7 @@ for i = 1:length(all_offsets)
 	plot([min(temp_fp) max(temp_fp)],ff([min(temp_fp) max(temp_fp)]),'Color',c(i,:))
 end
 xlabel('Linear Prediction')
-ylabel('Neuron Firing Rate (Hz)')
+ylabel('Neuron Firing Rate (\DeltaHz)')
 
 
 PrettyFig()

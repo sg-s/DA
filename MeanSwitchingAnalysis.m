@@ -198,11 +198,11 @@ ylabel('Filter Amplitude')
 
 subplot(1,2,2), hold on
 for i = 1:length(all_offsets)
-	temp_LFP_pred = reshaped_fp(all_offsets(i)*1e3:(all_offsets(i)+window_length)*1e3,:);
+	temp_LFP_pred = reshaped_LFP_pred(all_offsets(i)*1e3:(all_offsets(i)+window_length)*1e3,:);
 	temp_LFP_pred = temp_LFP_pred(:);
-	temp_fA = reshaped_fA(all_offsets(i)*1e3:(all_offsets(i)+window_length)*1e3,:);
-	temp_fA = temp_fA(:);
-	ff = fit(temp_LFP_pred,temp_fA,'poly1');
+	temp_LFP = reshaped_LFP(all_offsets(i)*1e3:(all_offsets(i)+window_length)*1e3,:);
+	temp_LFP = temp_LFP(:);
+	ff = fit(temp_LFP_pred,temp_LFP,'poly1');
 	plot([min(temp_LFP_pred) max(temp_LFP_pred)],ff([min(temp_LFP_pred) max(temp_LFP_pred)]),'Color',c(i,:))
 end
 xlabel('Linear Prediction')

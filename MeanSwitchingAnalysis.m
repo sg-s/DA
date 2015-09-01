@@ -184,7 +184,7 @@ for i = 1:width(reshaped_LFP)
 	end
 end
 
-figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1), hold on
 filtertime = 1e-3*ft;
 for i = 1:length(all_offsets)
@@ -346,7 +346,7 @@ for i = 1:width(reshaped_fA)
 	end
 end
 
-figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1), hold on
 filtertime = 1e-3*ft;
 for i = 1:length(all_offsets)

@@ -271,7 +271,7 @@ end
 
 errorShade(1e-3*(1:length(reshaped_fA)),mean2(reshaped_fA),sem(reshaped_fA));
 xlabel('Time since high \rightarrow low switch (s)')
-ylabel('\DeltaLFP (mV)')
+ylabel('Firing Rate (\DeltaHz)')
 
 PrettyFig
 

@@ -25,58 +25,76 @@ tic
 
 
 %% Stimulus Characterisation
-% First, we show that we are able to deliver Gaussian-distributed odour stimuli, and that we are able to vary the means of the distributions of these stimuli. 
+% First, we show that we are able to deliver Gaussian-distributed odour stimuli, and that we are able to vary the means of the distributions of these stimuli. The following figure shows the mean of each stimulus drawn from each distribution (left), and the actual distributions themselves (right).  
+
+[PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData('/local-data/DA-paper/LFP-MSG/september',1);
 
 
-[PID, LFP, fA, paradigm, orn, AllControlParadigms, paradigm_hashes] = consolidateData('/local-data/DA-paper/LFP-MSG/',1);
-
+% remove baseline from all PIDs
+for i = 1:width(PID)
+	PID(:,i) = PID(:,i) - mean(PID(1:5e3,i));
+end
 
 % sort the paradigms sensibly
 sort_value = [];
 for i = 1:length(AllControlParadigms)
-	sort_value(i) = mean(mean(AllControlParadigms(i).Outputs));
+	sort_value(i) = (mean(AllControlParadigms(i).Outputs(1,:)));
 end
 
 [~,idx] = sort(sort_value);
+
+
 AllControlParadigms = AllControlParadigms(idx);
 paradigm_new = paradigm*NaN;
 for i = 1:length(idx)
-	paradigm_new(paradigm == i) = idx(i);
+	paradigm_new(paradigm == idx(i)) = i;
 end
 paradigm = paradigm_new;
+
+% remove "Flicker" from paradigm names
+for i = 1:length(AllControlParadigms)
+	AllControlParadigms(i).Name = strrep(AllControlParadigms(i).Name,'Flicker-','');
+end
 
 
 % throw out trials where we didn't record the LFP, for whatever reason
 not_LFP = find((max(abs(LFP))) < 0.1);
 LFP(:,not_LFP) = NaN;
 
-%%
-% The following figure shows the distribution of the inputs, for the terminal 40seconds of each 60second presentation. 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,4,1:3), hold on
 c = parula(1+length(unique(paradigm)));
 for i = 1:length(unique(paradigm))
-	hist_this = PID(20e3:end,paradigm==i);
+	plot_this = PID(40e3:45e3,paradigm==i);
+	time = 40+1e-3*(1:length(plot_this));
+	errorShade(time,mean(plot_this,2),sem(plot_this),'Color',c(i,:),'LineWidth',2);
+end
+ylabel('Stimulus (V)')
+xlabel('Time (s)')
+set(gca,'YLim',[0 2])
+
+subplot(1,4,4), hold on
+c = parula(1+length(unique(paradigm)));
+for i = 1:length(unique(paradigm))
+	hist_this = PID(20e3:55e3,paradigm==i);
 	xx =  linspace(min(min(hist_this)),max(max(hist_this)),50);
 	y = NaN(sum(paradigm==i),50);
 	for j = 1:sum(paradigm==i)
 		y(j,:) = hist(hist_this(:,j),xx);
 		y(j,:) = y(j,:)/sum(y(j,:));
 	end
-	% get everything on the same x axis
-	if width(y) > 1
-		errorShade(xx,mean(y),std(y)/sqrt(width(y)),'Color',c(i,:),'LineWidth',5);
-	else
-		plot(xx,y,'Color',c(i,:));
-	end
+	plot(mean2(y),(xx),'Color',c(i,:));
 end
-xlabel('Stimulus (V)')
-ylabel('p(stimulus)')
-PrettyFig;
+
+xlabel('p(stimulus)')
+set(gca,'YLim',[0 2])
+prettyFig;
 
 if being_published
 	snapnow
 	delete(gcf)
 end
+
 
 %%
 % How reproducible is the stimulus? In the following figure, we show the same stimulus from the entire dataset, over all the trails, and all the flies we have. The shading shows the standard error of the mean.
@@ -85,12 +103,12 @@ figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 50
 plot_this = PID(40e3:end,paradigm==1);
 
 time = 1e-3*(1:length(plot_this)) + 40;
-errorShade(time,mean2(plot_this),std(plot_this')/sqrt(width(plot_this)));
+errorShade(time,mean2(plot_this),std(plot_this')/sqrt(width(plot_this)),'LineWidth',1,'Color',c(1,:));
 xlabel('Time (s)')
 ylabel('PID (V)')
 title(strcat('Stimulus reproducibility: n = ',oval(width(plot_this))))
 
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
@@ -109,11 +127,12 @@ end
 %% Local Field Potential
 % We now look at the LFP. Here is an example neuron, showing how the LFP changes with the different paradigms. In the following figure, we plot the raw LFP traces, downsampled to 1kHz from the actual 10kHz trace, and whose baselines (with no odour) have been set to zero. 
 
+example_orn = 4;
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-c = parula(1+length(unique(paradigm(:,orn == 7))));
+c = parula(1+length(unique(paradigm(:,orn == example_orn))));
 time = 1e-3*(1:length(LFP));
 for i = 1:length(c)
-	plot_this = find(orn == 7 & paradigm == i);
+	plot_this = find(orn == example_orn & paradigm == i);
 	for j = 1:length(plot_this)
 		this_LFP = LFP(:,plot_this(j));
 		this_LFP = this_LFP - mean(this_LFP(1e3:5e3));
@@ -123,36 +142,34 @@ end
 
 xlabel('Time (s)')
 ylabel('LFP (100x V)')
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
 	delete(gcf)
 end
 
-%% 
-% Some things are clear from this trace: the LFPs look somewhat similar, even for very different odour concentrations. 
 
 %%
 % Since we are interested in the response of the neuron to the odour flicker, we only consider the part of the trace corresponding to the odour flicker. Furthermore, we bandpass the LFP trace to remove spikes and to remove these slow fluctuations. This data is from one neuron.
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-these_paradigms = unique(paradigm(:,orn == 7));
+these_paradigms = unique(paradigm(:,orn == example_orn));
 c = parula(1+length(these_paradigms));
-time = 1e-3*(1:length(LFP(30e3:40e3,1))) + 30;
+time = 1e-3*(1:length(LFP(10e3:55e3,1))) + 10;
 for i = 1:length(these_paradigms)
-	plot_this = find(orn == 7 & paradigm == these_paradigms(i));
+	plot_this = find(orn == example_orn & paradigm == these_paradigms(i));
 	for j = 1:length(plot_this)
 		this_LFP = LFP(:,plot_this(j));
-		this_LFP = this_LFP(30e3:40e3);
-		this_LFP = filter_trace(this_LFP,1000,10);
+		this_LFP = this_LFP(10e3:55e3);
+		this_LFP = bandPass(this_LFP,1000,10);
 		plot(time,this_LFP,'Color',c(i,:))
 	end
 end
 
 xlabel('Time (s)')
 ylabel('LFP (100x V)')
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
@@ -160,42 +177,6 @@ if being_published
 end
 
 
-%%
-% Here we something very strange. THe LFP seems to go 180° out of phase as we move to higher concentrations. What is going on? To be very clear, we plot the stimulus and the LFP for these traces, and normalise them to visualise them togethe: (red is the LFP, and black is the PID).
-
-figure('outerposition',[0 0 1200 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
-for i = 1:length(these_paradigms)
-	subplot(2,3,i), hold on
-	plot_this = find(orn == 7 & paradigm == these_paradigms(i));
-	for j = 1:length(plot_this)
-		this_LFP = LFP(:,plot_this(j));
-		this_LFP = this_LFP(37e3:40e3);
-		this_LFP = filter_trace(this_LFP,1000,10);
-		this_LFP = this_LFP - mean(this_LFP);
-		this_LFP = this_LFP/std(this_LFP);
-		time = 1e-3*(1:length(this_LFP)) + 37;
-		plot(time,this_LFP,'r')
-
-		this_PID = PID(:,plot_this(j));
-		this_PID = this_PID(37e3:40e3);
-		this_PID = this_PID - mean(this_PID);
-		this_PID = this_PID/std(this_PID);
-		plot(time,this_PID,'k')
-
-
-	end
-	title(AllControlParadigms(these_paradigms(i)).Name)
-end
-
-PrettyFig;
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-%%
-% WTF. 
 
 % ##       ######## ########     ######## #### ##       ######## ######## ########   ######  
 % ##       ##       ##     ##    ##        ##  ##          ##    ##       ##     ## ##    ## 
@@ -209,117 +190,149 @@ end
 %%
 % To figure out what's going on, we back out filters from the stimulus to the LFP for each of these cases. In the following figure, we back out filters from all the data we have, and plot them colour coded by paradigm:
 
+K = cache(dataHash([PID LFP]));
+if isempty(K)
+	K = NaN(700,length(orn));
+	for i = 1:length(orn)
+		textbar(i,length(orn))
+		resp = LFP(10e3:55e3,i);
+		rm_this = isnan(resp);
+		resp(rm_this) = [];
+		if length(resp) 
+			try
+				resp = bandPass(resp,1e3,10);
+				stim = PID(10e3:55e3,i);
+				stim(rm_this) = [];
+				stim(1:300) = [];
+				resp(end-299:end) = [];
+				[temp,filtertime] = fitFilter2Data(stim,resp,'reg',1,'filter_length',999);
+				K(:,i) = temp(201:900);
+				filtertime = filtertime(201:900);
+			catch
 
-K = NaN(1e3,length(orn));
-for i = 1:length(orn)
-	resp = LFP(30e3:end,i);
-	rm_this = isnan(resp);
-	resp(rm_this) = [];
-	if length(resp) 
-		resp = filter_trace(resp,1e3,10);
-		stim = PID(30e3:end,i);
-		stim(rm_this) = [];
-		stim(1:500) = [];
-		resp(end-499:end) = [];
-		K(:,i) = FitFilter2Data(stim,resp,[],'reg=1;','filter_length=999;');
+			end
+		end
 	end
+	cache(dataHash(LFP),K);
 end
-
 
 c= parula(max(paradigm)+1);
 l = [];
-figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
+filtertime = 1e-3*(1:length(K))-.1;
+figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
+subplot(1,10,1:5), hold on
 for i = 1:max(paradigm)
-	time = 1e-3*(1:501)-.2;
+
 	plot_this = find(paradigm == i);
 	plot_this = setdiff(plot_this,find(isnan(sum(K))));
 	if length(plot_this) > 1
-		l(i) = errorShade(time,mean2(K(300:800,plot_this)),std(K(300:800,plot_this)')/length(plot_this),'Color',c(i,:));
+		l(i) = errorShade(filtertime,mean2(K(:,plot_this)),std(K(:,plot_this)')/length(plot_this),'Color',c(i,:));
 	else
-		l(i) = plot(time,K(300:800,plot_this),'Color',c(i,:));
+		l(i) = plot(time,K(:,plot_this),'Color',c(i,:));
 	end
 end
-legend(l,{AllControlParadigms.Name})
+legend(l,{AllControlParadigms.Name},'Location','southeastoutside')
 xlabel('Lag (s)')
 ylabel('PID \rightarrow LFP Filter')
 
-PrettyFig;
+subplot(1,10,7:10), hold on
+
+% make linear predictions 
+LFP_pred = NaN*LFP;
+LFP_gain = NaN*orn;
+LFP_gain_err = NaN*orn;
+a = 10e3;
+z = 55e3;
+time = 1e-3*(1:length(LFP));
+for i = 1:width(LFP)
+	LFP_pred(:,i) = convolve(time,PID(:,i),K(:,i),filtertime);
+	% fit lines to estimate gains
+	x = LFP_pred(a:z,i);
+	y = bandPass(LFP(a:z,i),1e3,10);
+	try
+		[ff,gof] = fit(x(:),y(:),'poly1');
+		LFP_gain_err(i) = 1 - gof.rsquare;
+		LFP_gain(i) = ff.p1;
+	catch
+	end
+end
+
+for i = 1:width(LFP)
+	plot(mean(PID(a:z,i)),LFP_gain(i),'+','Color',c(paradigm(i),:))
+end
+
+% fit a power law to this
+x = mean(PID(a:z,:));
+y = LFP_gain;
+rm_this = isnan(x) | isnan(LFP_gain);
+x(rm_this) = []; y(rm_this) = [];
+fo = fitoptions('rat01');
+fo.StartPoint = [.08 -.17];
+ff = fit(x(:),y(:),'power1');
+l = plot(sort(x),ff(sort(x)),'k--');
+legend(l,['y = \alpha (x^\beta) , r^2=' oval(rsquare(ff(x),y))])
+
+set(gca,'XScale','log','YScale','log')
+xlabel('Mean Stimulus (V)')
+ylabel('LFP Gain')
+
+prettyFig;
 
 if being_published
 	snapnow
 	delete(gcf)
 end
 
-%% 
-% A LFP filter with a positive lobe is unheard of. It doesn’t make any sense, and contradicts published data and our own results from other experiments. How widespread is this bizarre positive lobe? In the following figure, we break up the filters for the lowest dose into each neuron, to see if all neurons show the same crazy behaviour: 
-
-c = parula(max(orn)+1);
-l = [];
-L = {};
-figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
-for i = 1:max(orn)
-	time = 1e-3*(1:501)-.2;
-	plot_this = find(paradigm == 1 & orn == i);
-	plot_this = setdiff(plot_this,find(isnan(sum(K))));
-	if length(plot_this) > 1
-		l(i) = errorShade(time,mean2(K(300:800,plot_this)),std(K(300:800,plot_this)')/length(plot_this),'Color',c(i,:));
-	else
-		l(i) = plot(time,K(300:800,plot_this),'Color',c(i,:));
-	end
-	L{i} = strcat('ORN ',oval(i));
-end
-legend(l,L)
-xlabel('Lag (s)')
-ylabel('PID \rightarrow LFP Filter')
-
-PrettyFig;
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-%%
-% So every ORN shows this, meaning that the problem is either some weird thing with the stimulus, or the flies are fundamentally unsound. 
+return
 
 %% Spiking Filters
-% Do the spiking filters also show this weird inversion? To check, we back out spiking filters for all the data and check as before. The following figure shows the filters backed out for some of the lower concentrations:
+% We now extract filters for the neuron spiking. 
 
-K_fA = NaN(1e3,length(orn));
-for i = 1:length(orn)
-	resp = fA(30e3:end,i);
-	rm_this = isnan(resp);
-	resp(rm_this) = [];
-	if length(resp) 
-		stim = PID(30e3:end,i);
-		stim(rm_this) = [];
-		stim(1:500) = [];
-		resp(end-499:end) = [];
-		K_fA(:,i) = FitFilter2Data(stim,resp,[],'reg=1;','filter_length=999;');
+K2 = cache(dataHash(fA));
+if isempty(K2)
+	K2 = NaN(700,length(orn));
+	for i = 1:length(orn)
+		textbar(i,length(orn))
+		resp = fA(10e3:55e3,i);
+		rm_this = isnan(resp);
+		resp(rm_this) = [];
+		if length(resp) 
+			try
+				stim = PID(10e3:55e3,i);
+				stim(rm_this) = [];
+				stim(1:300) = [];
+				resp(end-299:end) = [];
+				[temp,filtertime] = fitFilter2Data(stim,resp,'reg',1,'filter_length',999);
+				K2(:,i) = temp(201:900);
+				filtertime = filtertime(201:900);
+			catch
+
+			end
+		end
 	end
+	cache(dataHash(fA),K2);
 end
 
 
 c= parula(max(paradigm)+1);
 l = [];
+filtertime = 1e-3*(1:length(K2))-.1;
 figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
-for i = 1:4
-	time = 1e-3*(1:501)-.2;
+for i = 1:max(paradigm)
+
 	plot_this = find(paradigm == i);
-	plot_this = setdiff(plot_this,find(isnan(sum(K_fA))));
+	plot_this = setdiff(plot_this,find(isnan(sum(K2))));
 	if length(plot_this) > 1
-		l(i) = errorShade(time,mean2(K_fA(300:800,plot_this)),std(K_fA(300:800,plot_this)')/length(plot_this),'Color',c(i,:));
-	elseif length(plot_this) == 1
-		l(i) = plot(time,K_fA(300:800,plot_this),'Color',c(i,:));
+		l(i) = errorShade(filtertime,mean2(K2(:,plot_this)),std(K2(:,plot_this)')/length(plot_this),'Color',c(i,:));
 	else
-		l(i) = plot(NaN,NaN);
+		l(i) = plot(time,K2(:,plot_this),'Color',c(i,:));
 	end
 end
-legend(l,{AllControlParadigms.Name})
+legend(l,{AllControlParadigms.Name},'Location','southeast')
 xlabel('Lag (s)')
-ylabel('PID \rightarrow Firing Rate')
+ylabel('PID \rightarrow Firing Filter')
 
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow

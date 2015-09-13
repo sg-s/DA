@@ -15,6 +15,9 @@ if ~isempty(calling_func)
 end
 tic
 
+%% LFP Analysis of Mean Shifted Gaussians
+% This document analyses how the LFP varies with Gaussian-distributed stimuli with similar variances but different means. Previously, we showed that the ORN firing rate compresses with increasing mean stimulus, similar to what the Weber-Fechner Law predicts. Here, we do the same for the LFP. 
+
 %      ######  ######## #### ##     ## ##     ## ##       ##     ##  ######  
 %     ##    ##    ##     ##  ###   ### ##     ## ##       ##     ## ##    ## 
 %     ##          ##     ##  #### #### ##     ## ##       ##     ## ##       
@@ -97,7 +100,7 @@ end
 
 
 %%
-% How reproducible is the stimulus? In the following figure, we show the same stimulus from the entire dataset, over all the trails, and all the flies we have. The shading shows the standard error of the mean.
+% How reproducible is the stimulus? In the following figure, we show the same stimulus from the entire dataset, over all the trails, and all the flies we have. The shading shows the standard error of the mean. It might be too small to see clearly. 
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 plot_this = PID(40e3:end,paradigm==1);
@@ -125,7 +128,11 @@ end
 
 
 %% Local Field Potential
-% We now look at the LFP. Here is an example neuron, showing how the LFP changes with the different paradigms. In the following figure, we plot the raw LFP traces, downsampled to 1kHz from the actual 10kHz trace, and whose baselines (with no odour) have been set to zero. 
+% We now look at the LFP. Here is an example neuron, showing how the LFP changes with the different paradigms. In the following figure, we plot the raw LFP traces, downsampled to 1kHz from the actual 10kHz trace, and whose baselines (with no odour) have been set to zero. This figure shows all the features of the phenomenology we are interested in: 
+% 
+% # The maximum absolute value of the LFP scales with the magnitude of the stimulus applied (yellow traces are lower than blue traces)
+% # LFP gain at high stimuli is lower than LFP gain at low stimuli (standard deviation of yellow traces is less than that of blue traces)
+% # Gain controls happens over the course of the experiment. At t=10s, the yellow trace still responds to the Gaussian distributed flicker, but at t>40s, those fluctuations have been damped out. 
 
 example_orn = 4;
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
@@ -241,6 +248,9 @@ subplot(1,10,7:10), hold on
 LFP_pred = NaN*LFP;
 LFP_gain = NaN*orn;
 LFP_gain_err = NaN*orn;
+PID_err = NaN*orn;
+
+
 a = 10e3;
 z = 55e3;
 time = 1e-3*(1:length(LFP));
@@ -251,24 +261,25 @@ for i = 1:width(LFP)
 	y = bandPass(LFP(a:z,i),1e3,10);
 	try
 		[ff,gof] = fit(x(:),y(:),'poly1');
-		LFP_gain_err(i) = 1 - gof.rsquare;
 		LFP_gain(i) = ff.p1;
+		% get the weights for the each
+		temp = confint(ff);
+		LFP_gain_err(i) = diff(temp(:,1))/2;
 	catch
 	end
 end
 
 for i = 1:width(LFP)
-	plot(mean(PID(a:z,i)),LFP_gain(i),'+','Color',c(paradigm(i),:))
+	errorbar(mean(PID(a:z,i)),LFP_gain(i),LFP_gain_err(i),'+','Color',c(paradigm(i),:))
 end
 
 % fit a power law to this
 x = mean(PID(a:z,:));
 y = LFP_gain;
-rm_this = isnan(x) | isnan(LFP_gain);
-x(rm_this) = []; y(rm_this) = [];
-fo = fitoptions('rat01');
-fo.StartPoint = [.08 -.17];
-ff = fit(x(:),y(:),'power1');
+z = LFP_gain_err;
+rm_this = isnan(x) | isnan(LFP_gain) | isnan(LFP_gain_err);
+x(rm_this) = []; y(rm_this) = []; z(rm_this) = [];
+ff = fit(x(:),y(:),'power1','Weights',1./z);
 l = plot(sort(x),ff(sort(x)),'k--');
 legend(l,['y = \alpha (x^\beta) , r^2=' oval(rsquare(ff(x),y))])
 
@@ -283,7 +294,78 @@ if being_published
 	delete(gcf)
 end
 
-return
+%         ########  ##    ## ##    ##    ###    ##     ## ####  ######   ######  
+%         ##     ##  ##  ##  ###   ##   ## ##   ###   ###  ##  ##    ## ##    ## 
+%         ##     ##   ####   ####  ##  ##   ##  #### ####  ##  ##       ##       
+%         ##     ##    ##    ## ## ## ##     ## ## ### ##  ##  ##        ######  
+%         ##     ##    ##    ##  #### ######### ##     ##  ##  ##             ## 
+%         ##     ##    ##    ##   ### ##     ## ##     ##  ##  ##    ## ##    ## 
+%         ########     ##    ##    ## ##     ## ##     ## ####  ######   ######  
+        
+        
+%          #######  ########     ######      ###    #### ##    ## 
+%         ##     ## ##          ##    ##    ## ##    ##  ###   ## 
+%         ##     ## ##          ##         ##   ##   ##  ####  ## 
+%         ##     ## ######      ##   #### ##     ##  ##  ## ## ## 
+%         ##     ## ##          ##    ##  #########  ##  ##  #### 
+%         ##     ## ##          ##    ##  ##     ##  ##  ##   ### 
+%          #######  ##           ######   ##     ## #### ##    ## 
+
+%% Dynamics of Gain Control
+% In this section we analyse how gain varies as a function of time, for each of the paradigms, for all neurons. We are trying to quantify the effect we saw before, which was that gain seems to decrease over time as we present the stimulus. In this section, we estimate the gain in 5 second non-overlapping blocks.
+
+a = 5;
+z = 50;
+window_length = 5;
+
+assert(isint((z-a)/window_length),'Choose parameters so that you have an integer number of bins');
+
+sliding_LFP_gain = NaN((z-a)/window_length,width(PID));
+
+
+for i = 1:width(PID)
+	for j = a:5:z
+		x = LFP_pred(j*1e3:(j+window_length)*1e3,i);
+		y = LFP(j*1e3:(j+window_length)*1e3,i);
+		try
+			ff = fit(x(:),y(:),'poly1');
+			sliding_LFP_gain(floor(j/window_length),i) = ff.p1;
+		catch
+		end
+	end
+end
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+for i = 1:max(paradigm)
+	temp=nanmean(sliding_LFP_gain(:,paradigm==i),2);
+	n = width(sliding_LFP_gain(:,paradigm==i));
+	temp2=nanstd(sliding_LFP_gain(:,paradigm==i)')/(sqrt(n));
+	errorbar((a:window_length:z)+window_length/2,temp,temp2,'Color',c(i,:))
+end
+ylabel('Gain (mV/V)')
+xlabel('Time (s)')
+
+subplot(1,2,2), hold on
+for i = 1:max(paradigm)
+	temp=nanmean(sliding_LFP_gain(:,paradigm==i),2);
+	temp = temp/temp(1);
+	n = width(sliding_LFP_gain(:,paradigm==i));
+	temp2=nanstd(sliding_LFP_gain(:,paradigm==i)')/(sqrt(n));
+	errorbar((a:window_length:z)+window_length/2,temp,temp2,'Color',c(i,:))
+end
+ylabel('Gain (norm)')
+xlabel('Time (s)')
+
+prettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
 
 %% Spiking Filters
 % We now extract filters for the neuron spiking. 

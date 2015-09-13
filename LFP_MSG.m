@@ -281,7 +281,7 @@ rm_this = isnan(x) | isnan(LFP_gain) | isnan(LFP_gain_err);
 x(rm_this) = []; y(rm_this) = []; z(rm_this) = [];
 ff = fit(x(:),y(:),'power1','Weights',1./z);
 l = plot(sort(x),ff(sort(x)),'k--');
-legend(l,['y = \alpha (x^\beta) , r^2=' oval(rsquare(ff(x),y))])
+legend(l,['y = \alpha (x^\beta) ,\beta = ', oval(ff.b)  ,' ,r^2=' oval(rsquare(ff(x),y))])
 
 set(gca,'XScale','log','YScale','log')
 xlabel('Mean Stimulus (V)')
@@ -365,12 +365,19 @@ if being_published
 end
 
 
+%    ######## #### ########  #### ##    ##  ######       ######      ###    #### ##    ## 
+%    ##        ##  ##     ##  ##  ###   ## ##    ##     ##    ##    ## ##    ##  ###   ## 
+%    ##        ##  ##     ##  ##  ####  ## ##           ##         ##   ##   ##  ####  ## 
+%    ######    ##  ########   ##  ## ## ## ##   ####    ##   #### ##     ##  ##  ## ## ## 
+%    ##        ##  ##   ##    ##  ##  #### ##    ##     ##    ##  #########  ##  ##  #### 
+%    ##        ##  ##    ##   ##  ##   ### ##    ##     ##    ##  ##     ##  ##  ##   ### 
+%    ##       #### ##     ## #### ##    ##  ######       ######   ##     ## #### ##    ## 
 
 
-%% Spiking Filters
-% We now extract filters for the neuron spiking. 
+%% Gain in Firing rate
+% We now repeat the same analysis, but this time for the firing rates. 
 
-K2 = cache(dataHash(fA));
+K2 = cache(dataHash([fA PID]));
 if isempty(K2)
 	K2 = NaN(700,length(orn));
 	for i = 1:length(orn)
@@ -396,10 +403,11 @@ if isempty(K2)
 end
 
 
-c= parula(max(paradigm)+1);
+c = parula(max(paradigm)+1);
 l = [];
 filtertime = 1e-3*(1:length(K2))-.1;
-figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
+figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
+subplot(1,10,1:5), hold on
 for i = 1:max(paradigm)
 
 	plot_this = find(paradigm == i);
@@ -410,9 +418,54 @@ for i = 1:max(paradigm)
 		l(i) = plot(time,K2(:,plot_this),'Color',c(i,:));
 	end
 end
-legend(l,{AllControlParadigms.Name},'Location','southeast')
+legend(l,{AllControlParadigms.Name},'Location','southeastoutside')
 xlabel('Lag (s)')
 ylabel('PID \rightarrow Firing Filter')
+
+subplot(1,10,7:10), hold on
+
+% make linear predictions 
+fA_pred = NaN*fA;
+fA_gain = NaN*orn;
+fA_gain_err = NaN*orn;
+PID_err = NaN*orn;
+
+
+a = 10e3;
+z = 55e3;
+time = 1e-3*(1:length(fA));
+for i = 1:width(fA)
+	fA_pred(:,i) = convolve(time,PID(:,i),K2(:,i),filtertime);
+	% fit lines to estimate gains
+	x = fA_pred(a:z,i);
+	y = fA(a:z,i);
+	try
+		[ff,gof] = fit(x(:),y(:),'poly1');
+		fA_gain(i) = ff.p1;
+		% get the weights for the each
+		temp = confint(ff);
+		fA_gain_err(i) = diff(temp(:,1))/2;
+	catch
+	end
+end
+
+for i = 1:width(fA)
+	errorbar(mean(PID(a:z,i)),fA_gain(i),fA_gain_err(i),'+','Color',c(paradigm(i),:))
+end
+
+% fit a power law to this
+x = mean(PID(a:z,:));
+y = fA_gain;
+z = fA_gain_err;
+rm_this = isnan(x) | isnan(fA_gain) | isnan(fA_gain_err);
+x(rm_this) = []; y(rm_this) = []; z(rm_this) = [];
+ff = fit(x(:),y(:),'power1','Weights',1./z);
+l = plot(sort(x),ff(sort(x)),'k--');
+legend(l,['y = \alpha (x^\beta) ,\beta = ', oval(ff.b)  ,' ,r^2=' oval(rsquare(ff(x),y))])
+
+set(gca,'XScale','log','YScale','log')
+xlabel('Mean Stimulus (V)')
+ylabel('Firing rate Gain (Hz/V)')
 
 prettyFig;
 
@@ -421,8 +474,77 @@ if being_published
 	delete(gcf)
 end
 
+%         ########  ##    ## ##    ##    ###    ##     ## ####  ######   ######  
+%         ##     ##  ##  ##  ###   ##   ## ##   ###   ###  ##  ##    ## ##    ## 
+%         ##     ##   ####   ####  ##  ##   ##  #### ####  ##  ##       ##       
+%         ##     ##    ##    ## ## ## ##     ## ## ### ##  ##  ##        ######  
+%         ##     ##    ##    ##  #### ######### ##     ##  ##  ##             ## 
+%         ##     ##    ##    ##   ### ##     ## ##     ##  ##  ##    ## ##    ## 
+%         ########     ##    ##    ## ##     ## ##     ## ####  ######   ######  
+        
+        
+%          #######  ########     ######      ###    #### ##    ## 
+%         ##     ## ##          ##    ##    ## ##    ##  ###   ## 
+%         ##     ## ##          ##         ##   ##   ##  ####  ## 
+%         ##     ## ######      ##   #### ##     ##  ##  ## ## ## 
+%         ##     ## ##          ##    ##  #########  ##  ##  #### 
+%         ##     ## ##          ##    ##  ##     ##  ##  ##   ### 
+%          #######  ##           ######   ##     ## #### ##    ## 
+
+%% Dynamics of Gain Control in Firing Rates
+% We now repeat the block-wise analysis of gain like we did with the LFP. Briefly, we are calculating the gain in the ORN firing rate in 5-second blocks, to see if there is a change in gain over the time course of the experiment (or not). 
+
+a = 5;
+z = 50;
+window_length = 5;
+
+assert(isint((z-a)/window_length),'Choose parameters so that you have an integer number of bins');
+
+sliding_fA_gain = NaN((z-a)/window_length,width(PID));
 
 
+for i = 1:width(PID)
+	for j = a:5:z
+		x = fA_pred(j*1e3:(j+window_length)*1e3,i);
+		y = fA(j*1e3:(j+window_length)*1e3,i);
+		try
+			ff = fit(x(:),y(:),'poly1');
+			sliding_fA_gain(floor(j/window_length),i) = ff.p1;
+		catch
+		end
+	end
+end
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+for i = 1:max(paradigm)
+	temp=nanmean(sliding_fA_gain(:,paradigm==i),2);
+	n = width(sliding_fA_gain(:,paradigm==i));
+	temp2=nanstd(sliding_fA_gain(:,paradigm==i)')/(sqrt(n));
+	errorbar((a:window_length:z)+window_length/2,temp,temp2,'Color',c(i,:))
+end
+ylabel('Gain (Hz/V)')
+xlabel('Time (s)')
+
+subplot(1,2,2), hold on
+for i = 1:max(paradigm)
+	temp=nanmean(sliding_fA_gain(:,paradigm==i),2);
+	
+	n = width(sliding_fA_gain(:,paradigm==i));
+	temp2=nanstd(sliding_fA_gain(:,paradigm==i)')/(sqrt(n));
+	temp2 = temp2/temp(1);
+	temp = temp/temp(1);
+	errorbar((a:window_length:z)+window_length/2,temp,temp2,'Color',c(i,:))
+end
+ylabel('Gain (norm)')
+xlabel('Time (s)')
+
+prettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 
 %% Version Info

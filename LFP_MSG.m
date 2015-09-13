@@ -220,7 +220,7 @@ if isempty(K)
 			end
 		end
 	end
-	cache(dataHash(LFP),K);
+	cache(dataHash([PID LFP]),K);
 end
 
 c= parula(max(paradigm)+1);
@@ -399,7 +399,7 @@ if isempty(K2)
 			end
 		end
 	end
-	cache(dataHash(fA),K2);
+	cache(dataHash([fA PID]),K2);
 end
 
 
@@ -554,7 +554,7 @@ disp(mfilename)
 %%
 % and its md5 hash is:
 Opt.Input = 'file';
-disp(DataHash(strcat(mfilename,'.m'),Opt))
+disp(dataHash(strcat(mfilename,'.m'),Opt))
 
 %%
 % This file should be in this commit:

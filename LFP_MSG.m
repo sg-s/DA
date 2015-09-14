@@ -118,6 +118,146 @@ if being_published
 	delete(gcf)
 end
 
+
+%    ######## #### ########  #### ##    ##  ######       ######      ###    #### ##    ## 
+%    ##        ##  ##     ##  ##  ###   ## ##    ##     ##    ##    ## ##    ##  ###   ## 
+%    ##        ##  ##     ##  ##  ####  ## ##           ##         ##   ##   ##  ####  ## 
+%    ######    ##  ########   ##  ## ## ## ##   ####    ##   #### ##     ##  ##  ## ## ## 
+%    ##        ##  ##   ##    ##  ##  #### ##    ##     ##    ##  #########  ##  ##  #### 
+%    ##        ##  ##    ##   ##  ##   ### ##    ##     ##    ##  ##     ##  ##  ##   ### 
+%    ##       #### ##     ## #### ##    ##  ######       ######   ##     ## #### ##    ## 
+
+
+%% Gain in Firing rate
+% We now look at how the firing rate gain changes with changes in the mean of the stimulus. We want to check if we can reproduce our earlier results, where we showed that the gain of the firing rates goes down with increasing mean stimulus, and is well fit by a power law with exponent close to -1. 
+
+a = 10e3; z = 55e3;
+[K2,fA_pred,fA_gain,fA_gain_err] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
+
+ss = 50;
+c = parula(max(paradigm)+1);
+l = [];
+filtertime = 1e-3*(1:length(K2))-.1;
+figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
+subplot(1,10,1:5), hold on
+for i = 1:max(paradigm)
+	plot_this = find(paradigm == i);
+	plot_this = setdiff(plot_this,find(isnan(sum(K2))));
+	x = mean2(fA_pred(a:z,plot_this));
+	y = mean2(fA(a:z,plot_this));
+	l(i) = plot(x(1:ss:end),y(1:ss:end),'.','Color',c(i,:));
+end
+
+legend(l,{AllControlParadigms.Name},'Location','southeastoutside')
+xlabel('Linear Prediction')
+ylabel('Firing rate (Hz)')
+
+subplot(1,10,7:10), hold on
+
+for i = 1:width(fA)
+	errorbar(mean(PID(a:z,i)),fA_gain(i),fA_gain_err(i),'+','Color',c(paradigm(i),:))
+end
+
+% fit a power law to this
+x = mean(PID(a:z,:)); x = x(:);
+y = fA_gain(:);
+e = fA_gain_err(:);
+rm_this = isnan(x) | isnan(y) | isnan(e);
+x(rm_this) = []; y(rm_this) = []; e(rm_this) = [];
+ff = fit(x(:),y(:),'power1','Weights',1./e);
+l = plot(sort(x),ff(sort(x)),'k--');
+legend(l,['y = \alpha (x^\beta) ,\beta = ', oval(ff.b)  ,' ,r^2=' oval(rsquare(ff(x),y))])
+
+set(gca,'XScale','log','YScale','log','YLim',[10 200])
+xlabel('Mean Stimulus (V)')
+ylabel('Firing rate Gain (Hz/V)')
+
+prettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% So this is very nice, as we can get the same result all over again, and the exponent of the fit is also very close to the old value, and very close to the theoretical prediction (-1). 
+
+%         ########  ##    ## ##    ##    ###    ##     ## ####  ######   ######  
+%         ##     ##  ##  ##  ###   ##   ## ##   ###   ###  ##  ##    ## ##    ## 
+%         ##     ##   ####   ####  ##  ##   ##  #### ####  ##  ##       ##       
+%         ##     ##    ##    ## ## ## ##     ## ## ### ##  ##  ##        ######  
+%         ##     ##    ##    ##  #### ######### ##     ##  ##  ##             ## 
+%         ##     ##    ##    ##   ### ##     ## ##     ##  ##  ##    ## ##    ## 
+%         ########     ##    ##    ## ##     ## ##     ## ####  ######   ######  
+        
+        
+%          #######  ########     ######      ###    #### ##    ## 
+%         ##     ## ##          ##    ##    ## ##    ##  ###   ## 
+%         ##     ## ##          ##         ##   ##   ##  ####  ## 
+%         ##     ## ######      ##   #### ##     ##  ##  ## ## ## 
+%         ##     ## ##          ##    ##  #########  ##  ##  #### 
+%         ##     ## ##          ##    ##  ##     ##  ##  ##   ### 
+%          #######  ##           ######   ##     ## #### ##    ## 
+
+%% Dynamics of Gain Control in Firing Rates
+% In this section we analyse how gain varies as a function of time, for each of the paradigms, for all neurons. We want to see if the ORN firing rate gain varies as a function of time during the time course of each stimulus presentation. 
+
+a = 5;
+z = 50;
+window_length = 5;
+
+assert(isint((z-a)/window_length),'Choose parameters so that you have an integer number of bins');
+
+sliding_fA_gain = NaN((z-a)/window_length,width(PID));
+
+
+for i = 1:width(PID)
+	for j = a:5:z
+		x = fA_pred(j*1e3:(j+window_length)*1e3,i);
+		y = fA(j*1e3:(j+window_length)*1e3,i);
+		try
+			ff = fit(x(:),y(:),'poly1');
+			sliding_fA_gain(floor(j/window_length),i) = ff.p1;
+		catch
+		end
+	end
+end
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+for i = 1:max(paradigm)
+	temp=nanmean(sliding_fA_gain(:,paradigm==i),2);
+	n = width(sliding_fA_gain(:,paradigm==i));
+	temp2=nanstd(sliding_fA_gain(:,paradigm==i)')/(sqrt(n));
+	errorbar((a:window_length:z)+window_length/2,temp,temp2,'Color',c(i,:))
+end
+ylabel('Gain (Hz/V)')
+xlabel('Time (s)')
+
+subplot(1,2,2), hold on
+for i = 1:max(paradigm)
+	temp=nanmean(sliding_fA_gain(:,paradigm==i),2);
+	
+	n = width(sliding_fA_gain(:,paradigm==i));
+	temp2=nanstd(sliding_fA_gain(:,paradigm==i)')/(sqrt(n));
+	temp2 = temp2/temp(1);
+	temp = temp/temp(1);
+	errorbar((a:window_length:z)+window_length/2,temp,temp2,'Color',c(i,:))
+end
+ylabel('Gain (norm)')
+xlabel('Time (s)')
+
+prettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% As we can see, the ORN gain doesn't change much over the time course of each stimulus trial, which means that gain control happens almost instantaneously on presentation of the stimulus (or rather, within the first 5 seconds). 
+
+
 % 								##       ######## ########  
 % 								##       ##       ##     ## 
 % 								##       ##       ##     ## 
@@ -315,141 +455,6 @@ if being_published
 	snapnow
 	delete(gcf)
 end
-
-
-%    ######## #### ########  #### ##    ##  ######       ######      ###    #### ##    ## 
-%    ##        ##  ##     ##  ##  ###   ## ##    ##     ##    ##    ## ##    ##  ###   ## 
-%    ##        ##  ##     ##  ##  ####  ## ##           ##         ##   ##   ##  ####  ## 
-%    ######    ##  ########   ##  ## ## ## ##   ####    ##   #### ##     ##  ##  ## ## ## 
-%    ##        ##  ##   ##    ##  ##  #### ##    ##     ##    ##  #########  ##  ##  #### 
-%    ##        ##  ##    ##   ##  ##   ### ##    ##     ##    ##  ##     ##  ##  ##   ### 
-%    ##       #### ##     ## #### ##    ##  ######       ######   ##     ## #### ##    ## 
-
-
-%% Gain in Firing rate
-% We now repeat the same analysis, but this time for the firing rates. 
-
-a = 10e3; z = 55e3;
-[K2,fA_pred,fA_gain,fA_gain_err] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
-
-c = parula(max(paradigm)+1);
-l = [];
-filtertime = 1e-3*(1:length(K2))-.1;
-figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
-subplot(1,10,1:5), hold on
-for i = 1:max(paradigm)
-
-	plot_this = find(paradigm == i);
-	plot_this = setdiff(plot_this,find(isnan(sum(K2))));
-	if length(plot_this) > 1
-		l(i) = errorShade(filtertime,mean2(K2(:,plot_this)),std(K2(:,plot_this)')/length(plot_this),'Color',c(i,:));
-	else
-		l(i) = plot(time,K2(:,plot_this),'Color',c(i,:));
-	end
-end
-legend(l,{AllControlParadigms.Name},'Location','southeastoutside')
-xlabel('Lag (s)')
-ylabel('PID \rightarrow Firing Filter')
-
-subplot(1,10,7:10), hold on
-
-for i = 1:width(fA)
-	errorbar(mean(PID(a:z,i)),fA_gain(i),fA_gain_err(i),'+','Color',c(paradigm(i),:))
-end
-
-% fit a power law to this
-x = mean(PID(a:z,:)); x = x(:);
-y = fA_gain(:);
-e = fA_gain_err(:);
-rm_this = isnan(x) | isnan(y) | isnan(e);
-x(rm_this) = []; y(rm_this) = []; e(rm_this) = [];
-ff = fit(x(:),y(:),'power1','Weights',1./e);
-l = plot(sort(x),ff(sort(x)),'k--');
-legend(l,['y = \alpha (x^\beta) ,\beta = ', oval(ff.b)  ,' ,r^2=' oval(rsquare(ff(x),y))])
-
-set(gca,'XScale','log','YScale','log')
-xlabel('Mean Stimulus (V)')
-ylabel('Firing rate Gain (Hz/V)')
-
-prettyFig;
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-%         ########  ##    ## ##    ##    ###    ##     ## ####  ######   ######  
-%         ##     ##  ##  ##  ###   ##   ## ##   ###   ###  ##  ##    ## ##    ## 
-%         ##     ##   ####   ####  ##  ##   ##  #### ####  ##  ##       ##       
-%         ##     ##    ##    ## ## ## ##     ## ## ### ##  ##  ##        ######  
-%         ##     ##    ##    ##  #### ######### ##     ##  ##  ##             ## 
-%         ##     ##    ##    ##   ### ##     ## ##     ##  ##  ##    ## ##    ## 
-%         ########     ##    ##    ## ##     ## ##     ## ####  ######   ######  
-        
-        
-%          #######  ########     ######      ###    #### ##    ## 
-%         ##     ## ##          ##    ##    ## ##    ##  ###   ## 
-%         ##     ## ##          ##         ##   ##   ##  ####  ## 
-%         ##     ## ######      ##   #### ##     ##  ##  ## ## ## 
-%         ##     ## ##          ##    ##  #########  ##  ##  #### 
-%         ##     ## ##          ##    ##  ##     ##  ##  ##   ### 
-%          #######  ##           ######   ##     ## #### ##    ## 
-
-%% Dynamics of Gain Control in Firing Rates
-% We now repeat the block-wise analysis of gain like we did with the LFP. Briefly, we are calculating the gain in the ORN firing rate in 5-second blocks, to see if there is a change in gain over the time course of the experiment (or not). 
-
-a = 5;
-z = 50;
-window_length = 5;
-
-assert(isint((z-a)/window_length),'Choose parameters so that you have an integer number of bins');
-
-sliding_fA_gain = NaN((z-a)/window_length,width(PID));
-
-
-for i = 1:width(PID)
-	for j = a:5:z
-		x = fA_pred(j*1e3:(j+window_length)*1e3,i);
-		y = fA(j*1e3:(j+window_length)*1e3,i);
-		try
-			ff = fit(x(:),y(:),'poly1');
-			sliding_fA_gain(floor(j/window_length),i) = ff.p1;
-		catch
-		end
-	end
-end
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-subplot(1,2,1), hold on
-for i = 1:max(paradigm)
-	temp=nanmean(sliding_fA_gain(:,paradigm==i),2);
-	n = width(sliding_fA_gain(:,paradigm==i));
-	temp2=nanstd(sliding_fA_gain(:,paradigm==i)')/(sqrt(n));
-	errorbar((a:window_length:z)+window_length/2,temp,temp2,'Color',c(i,:))
-end
-ylabel('Gain (Hz/V)')
-xlabel('Time (s)')
-
-subplot(1,2,2), hold on
-for i = 1:max(paradigm)
-	temp=nanmean(sliding_fA_gain(:,paradigm==i),2);
-	
-	n = width(sliding_fA_gain(:,paradigm==i));
-	temp2=nanstd(sliding_fA_gain(:,paradigm==i)')/(sqrt(n));
-	temp2 = temp2/temp(1);
-	temp = temp/temp(1);
-	errorbar((a:window_length:z)+window_length/2,temp,temp2,'Color',c(i,:))
-end
-ylabel('Gain (norm)')
-xlabel('Time (s)')
-
-prettyFig;
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
 
 %% Version Info
 % The file that generated this document is called:

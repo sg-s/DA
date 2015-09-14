@@ -131,6 +131,7 @@ end
 %% Gain in Firing rate
 % We now look at how the firing rate gain changes with changes in the mean of the stimulus. We want to check if we can reproduce our earlier results, where we showed that the gain of the firing rates goes down with increasing mean stimulus, and is well fit by a power law with exponent close to -1. 
 
+
 a = 10e3; z = 55e3;
 [K2,fA_pred,fA_gain,fA_gain_err] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
 
@@ -143,8 +144,14 @@ subplot(1,10,1:5), hold on
 for i = 1:max(paradigm)
 	plot_this = find(paradigm == i);
 	plot_this = setdiff(plot_this,find(isnan(sum(K2))));
+	y = fA(a:z,plot_this);
+	my = mean(mean(y));
+	for j = 1:width(y)
+		y(:,j) = y(:,j) - mean(y(:,j));
+	end
+	y= y+my;
+	y = mean2(y);
 	x = mean2(fA_pred(a:z,plot_this));
-	y = mean2(fA(a:z,plot_this));
 	l(i) = plot(x(1:ss:end),y(1:ss:end),'.','Color',c(i,:));
 end
 
@@ -335,28 +342,34 @@ end
 
 
 %%
-% To figure out what's going on, we back out filters from the stimulus to the LFP for each of these cases. In the following figure, we back out filters from all the data we have, and plot them colour coded by paradigm:
+% To figure out what's going on, we back out filters from the stimulus to the LFP for each of these cases, make linear predictions, and then estimate gain, just like we did with the firing rates. 
 
 a = 10e3; z = 55e3;
 [K1,LFP_pred,LFP_gain,LFP_gain_err] = extractFilters(PID,LFP,'band_pass_y',true,'use_cache',true,'a',a,'z',z);
 
+ss  =50;
 c= parula(max(paradigm)+1);
 l = [];
 filtertime = 1e-3*(1:length(K1))-.1;
 figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
 subplot(1,10,1:5), hold on
 for i = 1:max(paradigm)
-
 	plot_this = find(paradigm == i);
 	plot_this = setdiff(plot_this,find(isnan(sum(K1))));
-	if length(plot_this) > 1
-		l(i) = errorShade(filtertime,mean2(K1(:,plot_this)),std(K1(:,plot_this)')/length(plot_this),'Color',c(i,:));
-	else
-		l(i) = plot(time,K1(:,plot_this),'Color',c(i,:));
+	y = LFP(a:z,plot_this);
+	my = mean(mean(y));
+	for j = 1:width(y)
+		y(:,j) = bandPass(y(:,j),1e3,10);
+		% y(:,j) = y(:,j) - mean(y(:,j));
 	end
+	y= y+my;
+	y = mean2(y);
+	x = mean2(LFP_pred(a:z,plot_this));
+	
+	l(i) = plot(x(1:ss:end),y(1:ss:end),'.','Color',c(i,:));
 end
 legend(l,{AllControlParadigms.Name},'Location','southeastoutside')
-xlabel('Lag (s)')
+xlabel('Linear Prediction')
 ylabel('PID \rightarrow LFP Filter')
 
 subplot(1,10,7:10), hold on

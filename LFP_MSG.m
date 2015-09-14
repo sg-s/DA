@@ -197,45 +197,22 @@ end
 %%
 % To figure out what's going on, we back out filters from the stimulus to the LFP for each of these cases. In the following figure, we back out filters from all the data we have, and plot them colour coded by paradigm:
 
-K = cache(dataHash([PID LFP]));
-if isempty(K)
-	K = NaN(700,length(orn));
-	for i = 1:length(orn)
-		textbar(i,length(orn))
-		resp = LFP(10e3:55e3,i);
-		rm_this = isnan(resp);
-		resp(rm_this) = [];
-		if length(resp) 
-			try
-				resp = bandPass(resp,1e3,10);
-				stim = PID(10e3:55e3,i);
-				stim(rm_this) = [];
-				stim(1:300) = [];
-				resp(end-299:end) = [];
-				[temp,filtertime] = fitFilter2Data(stim,resp,'reg',1,'filter_length',999);
-				K(:,i) = temp(201:900);
-				filtertime = filtertime(201:900);
-			catch
-
-			end
-		end
-	end
-	cache(dataHash([PID LFP]),K);
-end
+a = 10e3; z = 55e3;
+[K1,LFP_pred,LFP_gain,LFP_gain_err] = extractFilters(PID,LFP,'band_pass_y',true,'use_cache',true,'a',a,'z',z);
 
 c= parula(max(paradigm)+1);
 l = [];
-filtertime = 1e-3*(1:length(K))-.1;
+filtertime = 1e-3*(1:length(K1))-.1;
 figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
 subplot(1,10,1:5), hold on
 for i = 1:max(paradigm)
 
 	plot_this = find(paradigm == i);
-	plot_this = setdiff(plot_this,find(isnan(sum(K))));
+	plot_this = setdiff(plot_this,find(isnan(sum(K1))));
 	if length(plot_this) > 1
-		l(i) = errorShade(filtertime,mean2(K(:,plot_this)),std(K(:,plot_this)')/length(plot_this),'Color',c(i,:));
+		l(i) = errorShade(filtertime,mean2(K1(:,plot_this)),std(K1(:,plot_this)')/length(plot_this),'Color',c(i,:));
 	else
-		l(i) = plot(time,K(:,plot_this),'Color',c(i,:));
+		l(i) = plot(time,K1(:,plot_this),'Color',c(i,:));
 	end
 end
 legend(l,{AllControlParadigms.Name},'Location','southeastoutside')
@@ -244,42 +221,17 @@ ylabel('PID \rightarrow LFP Filter')
 
 subplot(1,10,7:10), hold on
 
-% make linear predictions 
-LFP_pred = NaN*LFP;
-LFP_gain = NaN*orn;
-LFP_gain_err = NaN*orn;
-PID_err = NaN*orn;
-
-
-a = 10e3;
-z = 55e3;
-time = 1e-3*(1:length(LFP));
-for i = 1:width(LFP)
-	LFP_pred(:,i) = convolve(time,PID(:,i),K(:,i),filtertime);
-	% fit lines to estimate gains
-	x = LFP_pred(a:z,i);
-	y = bandPass(LFP(a:z,i),1e3,10);
-	try
-		[ff,gof] = fit(x(:),y(:),'poly1');
-		LFP_gain(i) = ff.p1;
-		% get the weights for the each
-		temp = confint(ff);
-		LFP_gain_err(i) = diff(temp(:,1))/2;
-	catch
-	end
-end
-
 for i = 1:width(LFP)
 	errorbar(mean(PID(a:z,i)),LFP_gain(i),LFP_gain_err(i),'+','Color',c(paradigm(i),:))
 end
 
 % fit a power law to this
-x = mean(PID(a:z,:));
-y = LFP_gain;
-z = LFP_gain_err;
-rm_this = isnan(x) | isnan(LFP_gain) | isnan(LFP_gain_err);
-x(rm_this) = []; y(rm_this) = []; z(rm_this) = [];
-ff = fit(x(:),y(:),'power1','Weights',1./z);
+x = mean(PID(a:z,:)); x = x(:);
+y = LFP_gain(:);
+e = LFP_gain_err(:);
+rm_this = isnan(x) | isnan(y) | isnan(e);
+x(rm_this) = []; y(rm_this) = []; e(rm_this) = [];
+ff = fit(x(:),y(:),'power1','Weights',1./e);
 l = plot(sort(x),ff(sort(x)),'k--');
 legend(l,['y = \alpha (x^\beta) ,\beta = ', oval(ff.b)  ,' ,r^2=' oval(rsquare(ff(x),y))])
 
@@ -377,31 +329,8 @@ end
 %% Gain in Firing rate
 % We now repeat the same analysis, but this time for the firing rates. 
 
-K2 = cache(dataHash([fA PID]));
-if isempty(K2)
-	K2 = NaN(700,length(orn));
-	for i = 1:length(orn)
-		textbar(i,length(orn))
-		resp = fA(10e3:55e3,i);
-		rm_this = isnan(resp);
-		resp(rm_this) = [];
-		if length(resp) 
-			try
-				stim = PID(10e3:55e3,i);
-				stim(rm_this) = [];
-				stim(1:300) = [];
-				resp(end-299:end) = [];
-				[temp,filtertime] = fitFilter2Data(stim,resp,'reg',1,'filter_length',999);
-				K2(:,i) = temp(201:900);
-				filtertime = filtertime(201:900);
-			catch
-
-			end
-		end
-	end
-	cache(dataHash([fA PID]),K2);
-end
-
+a = 10e3; z = 55e3;
+[K2,fA_pred,fA_gain,fA_gain_err] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
 
 c = parula(max(paradigm)+1);
 l = [];
@@ -424,42 +353,17 @@ ylabel('PID \rightarrow Firing Filter')
 
 subplot(1,10,7:10), hold on
 
-% make linear predictions 
-fA_pred = NaN*fA;
-fA_gain = NaN*orn;
-fA_gain_err = NaN*orn;
-PID_err = NaN*orn;
-
-
-a = 10e3;
-z = 55e3;
-time = 1e-3*(1:length(fA));
-for i = 1:width(fA)
-	fA_pred(:,i) = convolve(time,PID(:,i),K2(:,i),filtertime);
-	% fit lines to estimate gains
-	x = fA_pred(a:z,i);
-	y = fA(a:z,i);
-	try
-		[ff,gof] = fit(x(:),y(:),'poly1');
-		fA_gain(i) = ff.p1;
-		% get the weights for the each
-		temp = confint(ff);
-		fA_gain_err(i) = diff(temp(:,1))/2;
-	catch
-	end
-end
-
 for i = 1:width(fA)
 	errorbar(mean(PID(a:z,i)),fA_gain(i),fA_gain_err(i),'+','Color',c(paradigm(i),:))
 end
 
 % fit a power law to this
-x = mean(PID(a:z,:));
-y = fA_gain;
-z = fA_gain_err;
-rm_this = isnan(x) | isnan(fA_gain) | isnan(fA_gain_err);
-x(rm_this) = []; y(rm_this) = []; z(rm_this) = [];
-ff = fit(x(:),y(:),'power1','Weights',1./z);
+x = mean(PID(a:z,:)); x = x(:);
+y = fA_gain(:);
+e = fA_gain_err(:);
+rm_this = isnan(x) | isnan(y) | isnan(e);
+x(rm_this) = []; y(rm_this) = []; e(rm_this) = [];
+ff = fit(x(:),y(:),'power1','Weights',1./e);
 l = plot(sort(x),ff(sort(x)),'k--');
 legend(l,['y = \alpha (x^\beta) ,\beta = ', oval(ff.b)  ,' ,r^2=' oval(rsquare(ff(x),y))])
 

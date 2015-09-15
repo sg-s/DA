@@ -100,13 +100,13 @@ end
 
 
 %%
-% How reproducible is the stimulus? In the following figure, we show the same stimulus from the entire dataset, over all the trails, and all the flies we have. The shading shows the standard error of the mean. It might be too small to see clearly. 
+% How reproducible is the stimulus? In the following figure, we show the same stimulus from the entire dataset, over all the trails, and all the flies we have. Each trace is stimulus presented to a different ORN. 
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 plot_this = PID(40e3:end,paradigm==1);
 
 time = 1e-3*(1:length(plot_this)) + 40;
-errorShade(time,mean2(plot_this),std(plot_this')/sqrt(width(plot_this)),'LineWidth',1,'Color',c(1,:));
+plot(time,plot_this(:,[1:5 7:9]),'LineWidth',1,'Color',c(1,:));
 xlabel('Time (s)')
 ylabel('PID (V)')
 title(strcat('Stimulus reproducibility: n = ',oval(width(plot_this))))

@@ -499,7 +499,7 @@ end
 
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-errorShade((a:sliding_window:z)+sliding_window/2,sliding_LFP_exponent,sliding_LFP_exponent_err)
+errorShade((a:sliding_window:z)+sliding_window/2,sliding_LFP_exponent,sliding_LFP_exponent_err);
 ylabel('Exponent of Weber Fit')
 xlabel('Time (s)')
 

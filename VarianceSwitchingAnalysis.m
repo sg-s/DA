@@ -136,11 +136,15 @@ end
 % How different are the means of the stimulus in the two epochs? 
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-errorbar(1,mean(mean(reshaped_PID(5e3:end,:))),std(mean(reshaped_PID(5e3:end,:))),'b')
-errorbar(2,mean(mean(reshaped_PID(1:5e3,:))),std(mean(reshaped_PID(1:5e3,:))),'r')
-set(gca,'XTick',[1 2],'XTickLabel',{'Low Variance','High Variance'},'XMinorTick','off','YLim',[0 .6])
+plot(0.01*randn(width(reshaped_PID),1) + 2, mean(reshaped_PID(5e3:end,:)),'x','Color','b')
+errorbar(2,mean(mean(reshaped_PID(5e3:end,:))),std(mean(reshaped_PID(5e3:end,:))),'k')
+plot(0.01*randn(width(reshaped_PID),1) + 1, mean(reshaped_PID(1:5e3,:)),'x','Color','r')
+errorbar(1,mean(mean(reshaped_PID(1:5e3,:))),std(mean(reshaped_PID(1:5e3,:))),'k')
+set(gca,'XLim',[.5 2.5],'XTick',[1 2],'XTickLabel',{'High Variance','Low Variance'},'XMinorTick','off','YLim',[0 .6])
+
 ylabel('Mean Stimulus (V)')
 prettyFig
+set(gca,'XMinorTick','off')
 
 if being_published
 	snapnow
@@ -262,7 +266,7 @@ for j = 1:length(all_offsets)
 	end
 	x = j + 0.1*randn(width(reshaped_LFP),1);
 	plot(x,r2(:,j),'+','Color',c(j,:));
-	L{j} = ['t= ' oval(all_offsets(j)) 's'];
+	L{j} = [oval(all_offsets(j)) '-' oval(all_offsets(j)+window_length) 's'];
 end
 set(gca,'XTick',[1:4],'XTickLabel',L)
 ylabel('r^2')
@@ -277,7 +281,9 @@ for j = 1:length(all_offsets)
 	x = (LFP_pred(a:z,r2(:,1) > .5));
 	y = (reshaped_LFP(a:z,r2(:,1) > .5));
 	x = x(:); y = y(:);
-	plotPieceWiseLinear(x,y,'Color',c(j,:),'nbins',30)
+	handles(j) = plotPieceWiseLinear(x,y,'Color',c(j,:),'nbins',30);
+	delete(handles(j).shade)
+	delete(handles(j).line(2:3))
 end
 
 xlabel('Linear Prediction')

@@ -1,0 +1,7 @@
+*.mat
+*pdf
+*tex
+*.DS_Store
+poster/
+*.key
+*html*

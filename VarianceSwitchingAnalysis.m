@@ -277,7 +277,7 @@ for j = 1:length(all_offsets)
 	x = (LFP_pred(a:z,r2(:,1) > .5));
 	y = (reshaped_LFP(a:z,r2(:,1) > .5));
 	x = x(:); y = y(:);
-	plotPieceWiseLinear(x,y,'Color',c(j,:))
+	plotPieceWiseLinear(x,y,'Color',c(j,:),'nbins',30)
 end
 
 xlabel('Linear Prediction')
@@ -387,40 +387,58 @@ xlabel('Filter Lag (s)')
 ylabel('Filter Amplitude')
 
 subplot(1,3,2), hold on
-L = {};
-r2 = NaN(width(fp),length(all_offsets));
-for j = 1:length(all_offsets)
-	a = all_offsets(j)*sr;
-	z = window_length*1e3 + a;
-	for i = 1:width(fp)
-		try
-			r2(i,j) = rsquare(fp(a:z,i),reshaped_fA(a:z,i));
-		catch
-		end
-	end
-	x = j + 0.1*randn(width(reshaped_fA),1);
-	plot(x,r2(:,j),'+','Color',c(j,:));
-	L{j} = ['t= ' oval(all_offsets(j)) 's'];
-end
-set(gca,'XTick',[1:4],'XTickLabel',L)
-ylabel('r^2')
-title('Linear Prediction Quality')
-
-% plot responses when prediction is good
-subplot(1,3,3), hold on
 for j = 1:length(all_offsets)
 	a = all_offsets(j)*sr;
 	z = window_length*1e3 + a;
 
-	x = (fp(a:z,r2(:,1) > .5));
-	y = (reshaped_fA(a:z,r2(:,1) > .5));
+	x = fp(a:z,:);
+	y = reshaped_fA(a:z,:);
 	x = x(:); y = y(:);
-	ff = fit(x,y,'poly1');
-	plot(linspace(min(x),max(x),30),ff(linspace(min(x),max(x),30)),'Color',c(j,:))
+	handles(j) = plotPieceWiseLinear(x,y,'Color',c(j,:),'nbins',30);
+	delete(handles(j).shade)
+	delete(handles(j).line(2:3))
 end
 
 xlabel('Linear Prediction')
 ylabel('Firing rate (Hz)')
+
+subplot(1,3,3), hold on
+% seed_p.       A= 90.7124;
+% seed_p.       k= 0.9428;
+% seed_p.y_offset= -1.3130;
+% seed_p.x_offset= 0.6865;
+% seed_p.       n= 3.1016;
+
+% nbins = 10;
+% n = zeros(length(all_offsets),nbins);
+% block_size = floor(width(x)/nbins);
+
+% for j = 1:length(all_offsets)
+% 	a = all_offsets(j)*sr;
+% 	z = window_length*1e3 + a;
+% 	x = fp(a:z,:);
+% 	y = reshaped_fA(a:z,:);
+% 	for i = 1:nbins
+% 		disp([j i])
+% 		aa = block_size*(i-1) + 1;
+% 		zz = aa + block_size;
+% 		d.stimulus = x(:,aa:zz);
+% 		d.response = y(:,aa:zz);
+% 		p = fitModel2Data(@hill5,d,'nsteps',50,'UseParallel',false,'Display','none','make_plot',false,'p0',seed_p);
+% 		n(j,i) = p.n;
+% 	end
+% end
+
+n= cache(dataHash([reshaped_fA fp]));
+clear L
+for i = 1:length(all_offsets)
+	errorbar(i,mean(n(i,:)),std(n(i,:))/2,'Color',c(i,:),'LineWidth',4)
+	plot(.05*randn(length(n(i,:)),1) + i*ones(length(n(i,:)),1),n(i,:),'x','Color',c(i,:))
+	L{i} = [oval(all_offsets(i)) '-' oval(all_offsets(i)+window_length) 's'];
+end
+ylabel('Mean Hill exponent')
+set(gca,'XTick',[1:length(all_offsets)],'XTickLabel',L,'XLim',[0.7 4.1],'XMinorTick','off')
+
 
 prettyFig()
 

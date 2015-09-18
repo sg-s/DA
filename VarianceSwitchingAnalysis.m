@@ -133,7 +133,7 @@ if being_published
 end
 
 %%
-% How different are the means of the stimulus in the two epochs? 
+% It looks as though the mean in the low-variance epoch is a little higher. Is this true? How different are the means of the stimulus in the two epochs? 
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 plot(0.01*randn(width(reshaped_PID),1) + 2, mean(reshaped_PID(5e3:end,:)),'x','Color','b')
@@ -156,7 +156,7 @@ end
 
 
 %% LFP Analysis
-% We now line up all the LFP signals by the switching time, and look at how the LFP changes in aggregate when we switch from a low variance stimulus to a high variance stimulus. Since the LFP drifts over time, and we don't really care about that, we construct a triggered LFP where we subtract the mean of the LFP during the low stimulus window in each epoch and then average. In the following figure, the trends are entirely due to the change in the stimulus. What can be seen clearly is that the variance of the LFP changes. 
+% We now line up all the LFP signals by the switching time, and look at how the LFP changes in aggregate when we switch from a low variance stimulus to a high variance stimulus. We band pass the LFP to remove spikes and slow fluctuations irrelevant to this analysis. In the following figure, we plot all the traces, together with the mean. We can clearly see that the variance of the LFP follows the variance of the stimulus well, and decreases quickly when we switch to the low variance stimulus. 
 
 
 % make colour scheme for block analysis
@@ -187,7 +187,7 @@ end
 
 
 %%
-% We now extract filters in two second blocks in this triggered time (starting from the time of switch from high to low). 
+% We now extract filters in two second blocks in this triggered time (starting from the time of switch from high to low). In the following figure, we show the filters we extract on the left, with error bars. The middle panel shows how good the filter we extract from each segment is in predicting the LFP. The plot on the right shows the residuals of the data and the linear prediction: changes in slope of this plot correspond to changes in gain at the LFP level. 
 
 % let's try to pull out filters from every epoch
 sr = 1e3; % sampling rate, Hz
@@ -306,11 +306,11 @@ end
 
 
 %% Firing Rate Analysis
-% We now perform a similar analysis, but for the firing rates. 
+% We now perform a similar analysis, but for the firing rates. First, we trigger all the firing rates by the low-high variance switch, and look at the data. In the following figure, all the traces are plotted in grey, with the mean superimposed in black. 
 
 figure('outerposition',[0 0 600 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 c = parula(5);
-yy = mean(mean(reshaped_fA)) + mean(3*std(reshaped_fA));
+yy = nanmean(nanmean(reshaped_fA)) + nanmean(4*nanstd(reshaped_fA));
 for i = 1:length(all_offsets)
 	plot([all_offsets(i) all_offsets(i)+window_length],[yy yy],'Color',c(i,:),'LineWidth',10);
 end
@@ -329,7 +329,7 @@ end
 
 
 %%
-% We now extract LN models in two second blocks in this triggered time (starting from the time of switch from high to low). On the left are filters, and on the right are linear fits to the residuals. 
+% We now extract LN models in two second blocks in this triggered time (starting from the time of switch from high to low), just like we did with the LFP. In  the figure below, we plot the filters we extract on the left, the residuals showing the output non-linearities in the middle, and exponents of Hill fits on the right. We can clearly see that the slope of the static non-linearity in the middle is higher when the variance is low. In the panel on the right, we quantify this apparent gain increase. 
 
 % let's try to pull out filters from every epoch
 sr = 1e3; % sampling rate, Hz
@@ -452,6 +452,9 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%%
+% Here we show that by switching between a low- and a high-variance stimulus, the neuron appears to increase its firing gain during the low-variance stimulus, even though we don't see a similar increase in gain in the LFP. 
 
 
 %% Version Info

@@ -23,27 +23,28 @@ tic
 %% Stimulus
 % In the following figure, we show what the stimulus looks like. Even though the distributions look very nice (on the right), with similar means and very different variances, we see from an inspection of the actual trial that there exists a positive trend when the variance is high, and a negative trend when the variance is low. 
 
-p = '/local-data/switching/variance/use-this';
+p = '/local-data/DA-paper/switching/variance/v2/';
 [PID, LFP, fA, paradigm, orn] = consolidateData(p,1);
 
-analyse_these = 7:9;
-global_start = 4e4; % 40 seconds
+global_start = 40e3; % 40 seconds
+global_end = length(PID) - 5e3; 
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,4,1:3), hold on
 time = 1e-3*(1:length(PID));
-plot(time,PID(:,analyse_these(1)),'k');
-set(gca,'XLim',[30 100])
+plot(time,PID(:,1),'k');
+set(gca,'XLim',[40 100])
 xlabel('Time (s)')
 ylabel('Stimulus (V)')
 
 subplot(1,4,4), hold on
-x = 0:0.05:1.5;
+x = 0:0.01:1.5;
 y = NaN(length(x),width(PID));
 
-for i = analyse_these
+for i = 1:width(PID)
 	ok = repmat([zeros(5e3,1); ones(5e3,1)],length(PID)/1e4,1);
 	ok(1:global_start) = 0; % toss the first 40 seconds
+	ok(global_end:end) = 0;
 	% trim to where we have data
 	z = find(isnan(PID(:,i)),1,'first');
 	ok(z:end) = 0; ok = logical(ok);
@@ -53,7 +54,7 @@ for i = analyse_these
 end
 errorShade(x,nanmean(y,2),sem(y),'Color',[0 0 1],'Shading',0.4);
 
-for i = analyse_these
+for i = 1:width(PID)
 	ok = repmat([ones(5e3,1); zeros(5e3,1)],length(PID)/1e4,1);
 	ok(1:global_start) = 0; % toss the first 40 seconds
 	% trim to where we have data
@@ -67,20 +68,18 @@ errorShade(x,nanmean(y,2),sem(y),'Color',[1 0 0],'Shading',0.4);
 xlabel('Stimulus (V)')
 ylabel('Probability')
 
-PrettyFig()
+prettyFig()
 
 if being_published
 	snapnow
 	delete(gcf)
 end
 
-
 %% LFP Analysis
 % We now line up all the LFP signals by the switching time, and look at how the LFP changes in aggregate when we switch from a low variance stimulus to a high variance stimulus. Since the LFP drifts over time, and we don't really care about that, we construct a triggered LFP where we subtract the mean of the LFP during the low stimulus window in each epoch and then average. In the following figure, the trends are entirely due to the change in the stimulus. What can be seen clearly is that the variance of the LFP changes. 
 
-
 % remove spikes from LFP
-for i = analyse_these
+for i = 1:width(PID)
 	a = find(~isnan(LFP(:,i)),1,'first');
 	z = find(~isnan(LFP(:,i)),1,'last');
 	LFP(a:z,i) = filtfilt(ones(20,1),20,LFP(a:z,i))*10; % in mV
@@ -88,24 +87,25 @@ end
 
 % reshape the LFP signals
 block_length = 1e4;
-reshaped_LFP = LFP(global_start:end-1e4-1,analyse_these);
+reshaped_LFP = LFP(global_start:end-1e4-1,1:width(PID));
 reshaped_LFP = reshape(reshaped_LFP,block_length,width(reshaped_LFP)*length(reshaped_LFP)/block_length);
 
 % also reshape the PID
-reshaped_PID = PID(global_start:end-1e4-1,analyse_these);
+reshaped_PID = PID(global_start:end-1e4-1,1:width(PID));
 reshaped_PID = reshape(reshaped_PID,block_length,width(reshaped_PID)*length(reshaped_PID)/block_length);
 
 % reshape the firing rate signals
-reshaped_fA = fA(global_start:end-1e4-1,analyse_these);
+reshaped_fA = fA(global_start:end-1e4-1,1:width(PID));
 reshaped_fA = reshape(reshaped_fA,block_length,width(reshaped_fA)*length(reshaped_fA)/block_length);
 
 
-% throw our NaNs
+% throw our NaNs globally. so we're throwing out epochs where the data is incomplete
 rm_this = isnan(sum(reshaped_LFP));
 reshaped_LFP(:,rm_this) = [];
 reshaped_PID(:,rm_this) = [];
+reshaped_fA(:,rm_this) = [];
 
-% remove a mean from the first epoch
+% remove a mean from the first epoch half (because we don't care about slow trends)
 for i = 1:width(reshaped_LFP)
 	reshaped_LFP(:,i) = reshaped_LFP(:,i) - mean(reshaped_LFP(1:5e3,i));
 end
@@ -118,16 +118,16 @@ window_length = 2;
 
 figure('outerposition',[0 0 600 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 c = parula(5);
-yy = mean(mean(reshaped_LFP)) + mean(5*std(reshaped_LFP));
+yy = mean(mean(reshaped_LFP)) + mean(1*std(reshaped_LFP));
 for i = 1:length(all_offsets)
 	plot([all_offsets(i) all_offsets(i)+window_length],[yy yy],'Color',c(i,:),'LineWidth',10);
 end
 
-plot(1e-3*(1:length(reshaped_LFP)),reshaped_LFP);
+errorShade(1e-3*(1:length(reshaped_LFP)),mean2(reshaped_LFP),sem(reshaped_LFP));
 xlabel('Time since high \rightarrow low switch (s)')
 ylabel('\DeltaLFP (mV)')
 
-PrettyFig
+prettyFig
 
 if being_published
 	snapnow
@@ -140,7 +140,7 @@ end
 
 % let's try to pull out filters from every epoch
 sr = 1e3; % sampling rate, Hz
-K = cache(DataHash([reshaped_LFP,reshaped_PID]));
+K = cache(dataHash([reshaped_LFP,reshaped_PID]));
 ft = -99:700;
 if isempty(K)
 	K = NaN(length(all_offsets),filter_length-offset,width(reshaped_LFP));
@@ -154,26 +154,31 @@ if isempty(K)
 			a = 1+ all_offsets(j)*sr - filter_length + offset;
 			z = all_offsets(j)*sr + offset + window_length*sr;
 			this_stim = reshaped_PID(a:z,i);
-			ff = fit((1:length(this_stim))',this_stim,'poly1');
-			this_stim = this_stim - ff(1:length(this_stim));
+			% ff = fit((1:length(this_stim))',this_stim,'poly1');
+			% this_stim = this_stim - ff(1:length(this_stim));
 			x(a:z) = this_stim;
 
 			a = all_offsets(j)*sr;
 			z = a + window_length*sr;
 			this_resp = reshaped_LFP(a:z,i);
-			ff = fit((1:length(this_resp))',this_resp,'poly1');
-			this_resp = this_resp - ff(1:length(this_resp));
+			% ff = fit((1:length(this_resp))',this_resp,'poly1');
+			% this_resp = this_resp - ff(1:length(this_resp));
 			y(a:z) = this_resp;
 
-			otp = false(length(y),1);
+			otp = false(length(y),1); % only these points
 			otp(a:z) = true;
 
-			[this_K,ft] = fitFilter2Data(x,y,'reg',1,'offset',offset,'OnlyThesePoints',otp,'filter_length',filter_length);
-			K(j,:,i) = this_K(100:end-102);
-			ft = ft(100:end-102);
+			try
+				[this_K,ft] = fitFilter2Data(x,y,'reg',1,'offset',offset,'OnlyThesePoints',otp,'filter_length',filter_length);
+				K(j,:,i) = this_K(100:end-102);
+				ft = ft(100:end-102);
+			catch err
+				disp(i)
+				disp(err)
+			end
 		end
 	end
-	cache(DataHash([reshaped_LFP,reshaped_PID]),K);
+	cache(dataHash([reshaped_LFP,reshaped_PID]),K);
 end
 
 
@@ -191,14 +196,14 @@ for i = 1:width(reshaped_LFP)
 end
 
 % remove trend from output in order to compare it to the linear prediction. 
-for i = 1:width(reshaped_LFP)
-	for j = 1:length(all_offsets)
-		a = all_offsets(j)*1e3;
-		z = a + window_length*1e3;
-		ff = fit((1:z-a)',reshaped_LFP(a:z-1,i),'poly1');
-		reshaped_LFP(a:z-1,i) = reshaped_LFP(a:z-1,i) - ff(1:z-a);
-	end
-end
+% for i = 1:width(reshaped_LFP)
+% 	for j = 1:length(all_offsets)
+% 		a = all_offsets(j)*1e3;
+% 		z = a + window_length*1e3;
+% 		ff = fit((1:z-a)',reshaped_LFP(a:z-1,i),'poly1');
+% 		reshaped_LFP(a:z-1,i) = reshaped_LFP(a:z-1,i) - ff(1:z-a);
+% 	end
+% end
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1), hold on
@@ -242,12 +247,13 @@ end
 xlabel('Linear Prediction')
 ylabel('\DeltaLFP (mV)')
 
-PrettyFig()
+prettyFig()
 
 if being_published
 	snapnow
 	delete(gcf)
 end
+
 
 % ######## #### ########  #### ##    ##  ######      ########     ###    ######## ########  ######  
 % ##        ##  ##     ##  ##  ###   ## ##    ##     ##     ##   ## ##      ##    ##       ##    ## 
@@ -260,12 +266,6 @@ end
 
 %% Firing Rate Analysis
 % We now perform a similar analysis, but for the firing rates. 
-
-
-% remove a mean from the first epoch
-for i = 1:width(reshaped_fA)
-	reshaped_fA(:,i) = reshaped_fA(:,i) - mean(reshaped_fA(1:5e3,i));
-end
 
 % make colour scheme for block analysis
 filter_length = 1000;
@@ -284,7 +284,7 @@ errorShade(1e-3*(1:length(reshaped_fA)),mean2(reshaped_fA),sem(reshaped_fA));
 xlabel('Time since high \rightarrow low switch (s)')
 ylabel('Firing Rate (\DeltaHz)')
 
-PrettyFig
+prettyFig
 
 if being_published
 	snapnow
@@ -297,7 +297,7 @@ end
 
 % let's try to pull out filters from every epoch
 sr = 1e3; % sampling rate, Hz
-K2 = cache(DataHash([reshaped_fA,reshaped_PID]));
+K2 = cache(dataHash([reshaped_fA,reshaped_PID]));
 if isempty(K2)
 	K2 = NaN(length(all_offsets),filter_length-offset,width(reshaped_fA));
 	for i = 1:width(reshaped_fA)
@@ -310,26 +310,29 @@ if isempty(K2)
 			a = 1+ all_offsets(j)*sr - filter_length + offset;
 			z = all_offsets(j)*sr + offset + window_length*sr;
 			this_stim = reshaped_PID(a:z,i);
-			ff = fit((1:length(this_stim))',this_stim,'poly1');
-			this_stim = this_stim - ff(1:length(this_stim));
+			% ff = fit((1:length(this_stim))',this_stim,'poly1');
+			% this_stim = this_stim - ff(1:length(this_stim));
 			x(a:z) = this_stim;
 
 			a = all_offsets(j)*sr;
 			z = a + window_length*sr;
 			this_resp = reshaped_fA(a:z,i);
-			ff = fit((1:length(this_resp))',this_resp,'poly1');
-			this_resp = this_resp - ff(1:length(this_resp));
+			% ff = fit((1:length(this_resp))',this_resp,'poly1');
+			% this_resp = this_resp - ff(1:length(this_resp));
 			y(a:z) = this_resp;
 
 			otp = false(length(y),1);
 			otp(a:z) = true;
 
-			[this_K2,ft] = fitFilter2Data(x,y,'reg',1,'offset',offset,'OnlyThesePoints',otp,'filter_length',filter_length);
-			K2(j,:,i) = this_K2(100:end-102);
-			ft = ft(100:end-102);
+			try 
+				[this_K2,ft] = fitFilter2Data(x,y,'reg',1,'offset',offset,'OnlyThesePoints',otp,'filter_length',filter_length);
+				K2(j,:,i) = this_K2(100:end-102);
+				ft = ft(100:end-102);
+			catch
+			end
 		end
 	end
-	cache(DataHash([reshaped_fA,reshaped_PID]),K2);
+	cache(dataHash([reshaped_fA,reshaped_PID]),K2);
 end
 
 
@@ -347,14 +350,14 @@ for i = 1:width(reshaped_fA)
 end
 
 % remove trend from output in order to compare it to the linear prediction. 
-for i = 1:width(reshaped_fA)
-	for j = 1:length(all_offsets)
-		a = all_offsets(j)*1e3;
-		z = a + window_length*1e3;
-		ff = fit((1:z-a)',reshaped_fA(a:z-1,i),'poly1');
-		reshaped_fA(a:z-1,i) = reshaped_fA(a:z-1,i) - ff(1:z-a);
-	end
-end
+% for i = 1:width(reshaped_fA)
+% 	for j = 1:length(all_offsets)
+% 		a = all_offsets(j)*1e3;
+% 		z = a + window_length*1e3;
+% 		ff = fit((1:z-a)',reshaped_fA(a:z-1,i),'poly1');
+% 		reshaped_fA(a:z-1,i) = reshaped_fA(a:z-1,i) - ff(1:z-a);
+% 	end
+% end
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1), hold on
@@ -372,7 +375,10 @@ for j = 1:length(all_offsets)
 	a = all_offsets(j)*sr;
 	z = window_length*1e3 + a;
 	for i = 1:width(fp)
-		r2(i,j) = rsquare(fp(a:z,i),reshaped_fA(a:z,i));
+		try
+			r2(i,j) = rsquare(fp(a:z,i),reshaped_fA(a:z,i));
+		catch
+		end
 	end
 	x = j + 0.1*randn(width(reshaped_fA),1);
 	plot(x,r2(:,j),'+','Color',c(j,:));
@@ -396,9 +402,9 @@ for j = 1:length(all_offsets)
 end
 
 xlabel('Linear Prediction')
-ylabel('Firing Rate (\DeltaHz)')
+ylabel('Firing Rate (Hz)')
 
-PrettyFig()
+prettyFig()
 
 if being_published
 	snapnow
@@ -415,7 +421,7 @@ disp(mfilename)
 %%
 % and its md5 hash is:
 Opt.Input = 'file';
-disp(DataHash(strcat(mfilename,'.m'),Opt))
+disp(dataHash(strcat(mfilename,'.m'),Opt))
 
 %%
 % This file should be in this commit:

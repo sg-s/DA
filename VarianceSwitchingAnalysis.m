@@ -21,7 +21,7 @@ tic
 % In this document, we analyse the responses of ORNs to stimuli where we rapidly switch from two ensembles of stimuli, differing only in their means. 
 
 %% Stimulus
-% In the following figure, we show what the stimulus looks like. Even though the distributions look very nice (on the right), with similar means and very different variances, we see from an inspection of the actual trial that there exists a positive trend when the variance is high, and a negative trend when the variance is low. 
+% In the following figure, we show what the stimulus looks like. On the right, we show the distributions of the stimulus in the two cases. For some reason, the distribution when the variance is high is no longer a nice looking Gaussian, even though that was what we had when we tested it. 
 
 p = '/local-data/DA-paper/switching/variance/v2/';
 [PID, LFP, fA, paradigm, orn] = consolidateData(p,1);
@@ -75,14 +75,14 @@ if being_published
 	delete(gcf)
 end
 
-%% LFP Analysis
-% We now line up all the LFP signals by the switching time, and look at how the LFP changes in aggregate when we switch from a low variance stimulus to a high variance stimulus. Since the LFP drifts over time, and we don't really care about that, we construct a triggered LFP where we subtract the mean of the LFP during the low stimulus window in each epoch and then average. In the following figure, the trends are entirely due to the change in the stimulus. What can be seen clearly is that the variance of the LFP changes. 
+%%
+% To look at this more closely, we trigger the stimulus by epoch, and plot the mean stimulus over all the data. 
 
-% remove spikes from LFP
-for i = 1:width(PID)
+% bandpass to remove spikes and slow fluctuations
+for i = 1:width(LFP)
 	a = find(~isnan(LFP(:,i)),1,'first');
 	z = find(~isnan(LFP(:,i)),1,'last');
-	LFP(a:z,i) = filtfilt(ones(20,1),20,LFP(a:z,i))*10; % in mV
+	LFP(a:z,i) = bandPass(LFP(a:z,i),1000,10)*10; % now in mV
 end
 
 % reshape the LFP signals
@@ -105,10 +105,35 @@ reshaped_LFP(:,rm_this) = [];
 reshaped_PID(:,rm_this) = [];
 reshaped_fA(:,rm_this) = [];
 
-% remove a mean from the first epoch half (because we don't care about slow trends)
-for i = 1:width(reshaped_LFP)
-	reshaped_LFP(:,i) = reshaped_LFP(:,i) - mean(reshaped_LFP(1:5e3,i));
+
+% make colour scheme for block analysis
+filter_length = 1000;
+offset = 200;
+all_offsets = [1 3 5.8 7.8];
+window_length = 2;
+
+figure('outerposition',[0 0 600 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+c = parula(5);
+yy = mean(mean(reshaped_PID)) + mean(1*std(reshaped_PID));
+for i = 1:length(all_offsets)
+	plot([all_offsets(i) all_offsets(i)+window_length],[yy yy],'Color',c(i,:),'LineWidth',10);
 end
+
+plot(1e-3*(1:length(reshaped_PID)),(reshaped_PID),'Color',[.5 .5 .5]);
+plot(1e-3*(1:length(reshaped_PID)),mean2(reshaped_PID),'Color','k','LineWidth',3);
+xlabel('Time since high \rightarrow low switch (s)')
+ylabel('Mean Stimulus (V)')
+
+prettyFig
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%% LFP Analysis
+% We now line up all the LFP signals by the switching time, and look at how the LFP changes in aggregate when we switch from a low variance stimulus to a high variance stimulus. Since the LFP drifts over time, and we don't really care about that, we construct a triggered LFP where we subtract the mean of the LFP during the low stimulus window in each epoch and then average. In the following figure, the trends are entirely due to the change in the stimulus. What can be seen clearly is that the variance of the LFP changes. 
+
 
 % make colour scheme for block analysis
 filter_length = 1000;
@@ -123,7 +148,8 @@ for i = 1:length(all_offsets)
 	plot([all_offsets(i) all_offsets(i)+window_length],[yy yy],'Color',c(i,:),'LineWidth',10);
 end
 
-errorShade(1e-3*(1:length(reshaped_LFP)),mean2(reshaped_LFP),sem(reshaped_LFP));
+plot(1e-3*(1:length(reshaped_LFP)),(reshaped_LFP),'Color',[.5 .5 .5]);
+plot(1e-3*(1:length(reshaped_LFP)),mean2(reshaped_LFP),'Color','k','LineWidth',3);
 xlabel('Time since high \rightarrow low switch (s)')
 ylabel('\DeltaLFP (mV)')
 
@@ -151,7 +177,7 @@ if isempty(K)
 			x = NaN(length(reshaped_PID),1);
 			y = x;
 
-			a = 1+ all_offsets(j)*sr - filter_length + offset;
+			a = 1 + all_offsets(j)*sr - filter_length + offset;
 			z = all_offsets(j)*sr + offset + window_length*sr;
 			this_stim = reshaped_PID(a:z,i);
 			% ff = fit((1:length(this_stim))',this_stim,'poly1');
@@ -195,15 +221,6 @@ for i = 1:width(reshaped_LFP)
 	end
 end
 
-% remove trend from output in order to compare it to the linear prediction. 
-% for i = 1:width(reshaped_LFP)
-% 	for j = 1:length(all_offsets)
-% 		a = all_offsets(j)*1e3;
-% 		z = a + window_length*1e3;
-% 		ff = fit((1:z-a)',reshaped_LFP(a:z-1,i),'poly1');
-% 		reshaped_LFP(a:z-1,i) = reshaped_LFP(a:z-1,i) - ff(1:z-a);
-% 	end
-% end
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1), hold on
@@ -254,7 +271,6 @@ if being_published
 	delete(gcf)
 end
 
-
 % ######## #### ########  #### ##    ##  ######      ########     ###    ######## ########  ######  
 % ##        ##  ##     ##  ##  ###   ## ##    ##     ##     ##   ## ##      ##    ##       ##    ## 
 % ##        ##  ##     ##  ##  ####  ## ##           ##     ##  ##   ##     ##    ##       ##       
@@ -267,12 +283,6 @@ end
 %% Firing Rate Analysis
 % We now perform a similar analysis, but for the firing rates. 
 
-% make colour scheme for block analysis
-filter_length = 1000;
-offset = 200;
-all_offsets = [1 3 5.8 7.8];
-window_length = 2;
-
 figure('outerposition',[0 0 600 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 c = parula(5);
 yy = mean(mean(reshaped_fA)) + mean(3*std(reshaped_fA));
@@ -280,7 +290,8 @@ for i = 1:length(all_offsets)
 	plot([all_offsets(i) all_offsets(i)+window_length],[yy yy],'Color',c(i,:),'LineWidth',10);
 end
 
-errorShade(1e-3*(1:length(reshaped_fA)),mean2(reshaped_fA),sem(reshaped_fA));
+plot(1e-3*(1:length(reshaped_fA)),(reshaped_fA),'Color',[.5 .5 .5]);
+plot(1e-3*(1:length(reshaped_fA)),mean2(reshaped_fA),'Color','k','LineWidth',3);
 xlabel('Time since high \rightarrow low switch (s)')
 ylabel('Firing Rate (\DeltaHz)')
 
@@ -295,9 +306,11 @@ end
 %%
 % We now extract LN models in two second blocks in this triggered time (starting from the time of switch from high to low). On the left are filters, and on the right are linear fits to the residuals. 
 
+offset = 200;
 % let's try to pull out filters from every epoch
 sr = 1e3; % sampling rate, Hz
 K2 = cache(dataHash([reshaped_fA,reshaped_PID]));
+ft = -99:700;
 if isempty(K2)
 	K2 = NaN(length(all_offsets),filter_length-offset,width(reshaped_fA));
 	for i = 1:width(reshaped_fA)
@@ -307,28 +320,24 @@ if isempty(K2)
 			x = NaN(length(reshaped_PID),1);
 			y = x;
 
-			a = 1+ all_offsets(j)*sr - filter_length + offset;
+			a = 1 + all_offsets(j)*sr - filter_length + offset;
 			z = all_offsets(j)*sr + offset + window_length*sr;
-			this_stim = reshaped_PID(a:z,i);
-			% ff = fit((1:length(this_stim))',this_stim,'poly1');
-			% this_stim = this_stim - ff(1:length(this_stim));
-			x(a:z) = this_stim;
+			x(a:z) = reshaped_PID(a:z,i);
 
 			a = all_offsets(j)*sr;
 			z = a + window_length*sr;
-			this_resp = reshaped_fA(a:z,i);
-			% ff = fit((1:length(this_resp))',this_resp,'poly1');
-			% this_resp = this_resp - ff(1:length(this_resp));
-			y(a:z) = this_resp;
+			y(a:z) = reshaped_fA(a:z,i);
 
-			otp = false(length(y),1);
+			otp = false(length(y),1); % only these points
 			otp(a:z) = true;
 
-			try 
+			try
 				[this_K2,ft] = fitFilter2Data(x,y,'reg',1,'offset',offset,'OnlyThesePoints',otp,'filter_length',filter_length);
 				K2(j,:,i) = this_K2(100:end-102);
 				ft = ft(100:end-102);
-			catch
+			catch err
+				disp(i)
+				disp(err)
 			end
 		end
 	end
@@ -338,7 +347,6 @@ end
 
 % make linear predictions on the detrended data
 fp = NaN*reshaped_fA;
-offset = 100;
 for i = 1:width(reshaped_fA)
 	for j = 1:length(all_offsets)
 		a = all_offsets(j)*1e3;
@@ -349,15 +357,6 @@ for i = 1:width(reshaped_fA)
 	end
 end
 
-% remove trend from output in order to compare it to the linear prediction. 
-% for i = 1:width(reshaped_fA)
-% 	for j = 1:length(all_offsets)
-% 		a = all_offsets(j)*1e3;
-% 		z = a + window_length*1e3;
-% 		ff = fit((1:z-a)',reshaped_fA(a:z-1,i),'poly1');
-% 		reshaped_fA(a:z-1,i) = reshaped_fA(a:z-1,i) - ff(1:z-a);
-% 	end
-% end
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1), hold on
@@ -402,7 +401,7 @@ for j = 1:length(all_offsets)
 end
 
 xlabel('Linear Prediction')
-ylabel('Firing Rate (Hz)')
+ylabel('Firing rate (Hz)')
 
 prettyFig()
 
@@ -410,8 +409,6 @@ if being_published
 	snapnow
 	delete(gcf)
 end
-
-
 
 
 %% Version Info

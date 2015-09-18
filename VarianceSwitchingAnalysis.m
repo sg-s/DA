@@ -210,7 +210,6 @@ end
 
 % make linear predictions on the detrended data
 LFP_pred = NaN*reshaped_LFP;
-offset = 100;
 for i = 1:width(reshaped_LFP)
 	for j = 1:length(all_offsets)
 		a = all_offsets(j)*1e3;
@@ -306,7 +305,6 @@ end
 %%
 % We now extract LN models in two second blocks in this triggered time (starting from the time of switch from high to low). On the left are filters, and on the right are linear fits to the residuals. 
 
-offset = 200;
 % let's try to pull out filters from every epoch
 sr = 1e3; % sampling rate, Hz
 K2 = cache(dataHash([reshaped_fA,reshaped_PID]));
@@ -341,6 +339,7 @@ if isempty(K2)
 			end
 		end
 	end
+	cache(dataHash([reshaped_fA,reshaped_PID]),[]);
 	cache(dataHash([reshaped_fA,reshaped_PID]),K2);
 end
 

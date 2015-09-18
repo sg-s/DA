@@ -114,13 +114,14 @@ window_length = 2;
 
 figure('outerposition',[0 0 600 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 c = parula(5);
-yy = mean(mean(reshaped_PID)) + mean(1*std(reshaped_PID));
+yy = mean(mean(reshaped_PID)) + mean(5*std(reshaped_PID));
 for i = 1:length(all_offsets)
 	plot([all_offsets(i) all_offsets(i)+window_length],[yy yy],'Color',c(i,:),'LineWidth',10);
 end
 
-plot(1e-3*(1:length(reshaped_PID)),(reshaped_PID),'Color',[.5 .5 .5]);
-plot(1e-3*(1:length(reshaped_PID)),mean2(reshaped_PID),'Color','k','LineWidth',3);
+ss = 10;
+plot(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,1:ss:end),'Color',[.5 .5 .5 .5]);
+plot(1e-3*(1:length(reshaped_PID)),mean2(reshaped_PID),'Color','k','LineWidth',4);
 xlabel('Time since high \rightarrow low switch (s)')
 ylabel('Mean Stimulus (V)')
 
@@ -143,13 +144,14 @@ window_length = 2;
 
 figure('outerposition',[0 0 600 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 c = parula(5);
-yy = mean(mean(reshaped_LFP)) + mean(1*std(reshaped_LFP));
+yy = mean(mean(reshaped_LFP)) + mean(5*std(reshaped_LFP));
 for i = 1:length(all_offsets)
 	plot([all_offsets(i) all_offsets(i)+window_length],[yy yy],'Color',c(i,:),'LineWidth',10);
 end
 
-plot(1e-3*(1:length(reshaped_LFP)),(reshaped_LFP),'Color',[.5 .5 .5]);
-plot(1e-3*(1:length(reshaped_LFP)),mean2(reshaped_LFP),'Color','k','LineWidth',3);
+
+plot(1e-3*(1:length(reshaped_LFP)),reshaped_LFP(:,1:ss:end),'Color',[.5 .5 .5 .5]);
+plot(1e-3*(1:length(reshaped_LFP)),mean2(reshaped_LFP),'Color','k','LineWidth',4);
 xlabel('Time since high \rightarrow low switch (s)')
 ylabel('\DeltaLFP (mV)')
 
@@ -289,10 +291,10 @@ for i = 1:length(all_offsets)
 	plot([all_offsets(i) all_offsets(i)+window_length],[yy yy],'Color',c(i,:),'LineWidth',10);
 end
 
-plot(1e-3*(1:length(reshaped_fA)),(reshaped_fA),'Color',[.5 .5 .5]);
-plot(1e-3*(1:length(reshaped_fA)),mean2(reshaped_fA),'Color','k','LineWidth',3);
+plot(1e-3*(1:length(reshaped_fA)),reshaped_fA(:,1:ss:end),'Color',[.5 .5 .5 .5]);
+plot(1e-3*(1:length(reshaped_fA)),mean2(reshaped_fA),'Color','k','LineWidth',4);
 xlabel('Time since high \rightarrow low switch (s)')
-ylabel('Firing Rate (\DeltaHz)')
+ylabel('Firing Rate (Hz)')
 
 prettyFig
 

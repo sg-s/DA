@@ -132,6 +132,25 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% How different are the means of the stimulus in the two epochs? 
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+errorbar(1,mean(mean(reshaped_PID(5e3:end,:))),std(mean(reshaped_PID(5e3:end,:))),'b')
+errorbar(2,mean(mean(reshaped_PID(1:5e3,:))),std(mean(reshaped_PID(1:5e3,:))),'r')
+set(gca,'XTick',[1 2],'XTickLabel',{'Low Variance','High Variance'},'XMinorTick','off','YLim',[0 .6])
+ylabel('Mean Stimulus (V)')
+prettyFig
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% We can see that despite our best efforts, the means are not the same in the two cases. Since the mean is higher in the low variance case, and if this small mean change contributes to gain change, we hypothesise from our earlier results that the gain in the low variance case will be lower than the gain in the high variance case. In the following sections, we see if this is the case or not. 
+
+
 %% LFP Analysis
 % We now line up all the LFP signals by the switching time, and look at how the LFP changes in aggregate when we switch from a low variance stimulus to a high variance stimulus. Since the LFP drifts over time, and we don't really care about that, we construct a triggered LFP where we subtract the mean of the LFP during the low stimulus window in each epoch and then average. In the following figure, the trends are entirely due to the change in the stimulus. What can be seen clearly is that the variance of the LFP changes. 
 
@@ -258,8 +277,7 @@ for j = 1:length(all_offsets)
 	x = (LFP_pred(a:z,r2(:,1) > .5));
 	y = (reshaped_LFP(a:z,r2(:,1) > .5));
 	x = x(:); y = y(:);
-	ff = fit(x,y,'poly1');
-	plot(linspace(min(x),max(x),30),ff(linspace(min(x),max(x),30)),'Color',c(j,:))
+	plotPieceWiseLinear(x,y,'Color',c(j,:))
 end
 
 xlabel('Linear Prediction')

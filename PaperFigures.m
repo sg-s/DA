@@ -713,7 +713,8 @@ if fig4
 clearvars -except being_published fig*
 
 % make figure placeholders 
-fig_handle=figure('Units','pixels','outerposition',[32 26 666 980],'PaperSize',[670 1000],'Color','w','Toolbar','none','Menubar','none'); hold on
+fig_handle=figure('Units','pixels','outerposition',[32 26 666 980],'PaperSize',[670 1000],'Color','w'); 
+% ,'Toolbar','none','Menubar','none'); hold on
 clf(fig_handle);
 axes_handles(1)=axes('Units','pixels','Position',[49 857.5 588 98]);
 axes_handles(2)=axes('Units','pixels','Position',[49 759.5 588 98]);
@@ -737,7 +738,7 @@ B_spikes = spikes(2).B;
 
 
 % A spikes --> firing rate
-hash = DataHash(full(all_spikes));
+hash = dataHash(full(all_spikes));
 cached_data = cache(hash);
 if isempty(cached_data)
 	fA = spiketimes2f(all_spikes,time);
@@ -822,7 +823,7 @@ fp = convolve(tA,mean2(PID),K,filtertime);
 shat = ComputeSmoothedStimulus(mean2(PID),500);
 
 % find all excursions (defined as firing rate crossing 10Hz)
-[whiff_starts,whiff_ends] = ComputeOnsOffs(R>10);
+[whiff_starts,whiff_ends] = computeOnsOffs(R>10);
 mean_stim = NaN*whiff_ends;
 gain = NaN*whiff_ends;
 gain_err =  NaN*whiff_ends;
@@ -886,7 +887,7 @@ all_spikes = vertcat(all_spikes,spikes(4).A);
 B_spikes = vertcat(B_spikes,spikes(4).B);
 
 % A spikes --> firing rate
-hash = DataHash(full(all_spikes));
+hash = dataHash(full(all_spikes));
 cached_data = cache(hash);
 if isempty(cached_data)
 	fA = spiketimes2f(all_spikes,time);
@@ -917,19 +918,9 @@ plot(axes_handles(7),tA,mean2(fA),'k')
 set(axes_handles(7),'XLim',[0 60]);
 ylabel(axes_handles(7),'Firing Rate (Hz)')
 
-% extract Linear model for each trial 
-K = [];
-for i = [3:10 13:20]
-	[this_K, ~, filtertime_full] = FindBestFilter(PID(:,i),fA(:,i),[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
-	filtertime_full = filtertime_full*mean(diff(tA));
-	filtertime = 1e-3*(-200:900);
-	this_K = interp1(filtertime_full,this_K,filtertime);
-	K = [K;this_K];
-end
-
 
 % make a linear prediction using a filter fit to the mean data (this is almost exactly the same)
-[K, ~, filtertime_full] = FindBestFilter(mean2(PID),mean2(fA),[],'regmax=1;','regmin=1;','filter_length=1999;','offset=500;');
+[K, filtertime_full] = fitFilter2Data(mean2(PID),mean2(fA),'reg',1,'filter_length',1999,'offset',500);
 filtertime_full = filtertime_full*mean(diff(tA));
 filtertime = 1e-3*(-200:900);
 K = interp1(filtertime_full,K,filtertime);
@@ -2133,7 +2124,7 @@ disp(mfilename)
 %%
 % and its md5 hash is:
 Opt.Input = 'file';
-disp(DataHash(strcat(mfilename,'.m'),Opt))
+disp(dataHash(strcat(mfilename,'.m'),Opt))
 
 %%
 % This file should be in this commit:

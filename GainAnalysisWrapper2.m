@@ -107,7 +107,7 @@ x.time(rm_this) = [];
 x.engine = engine;
 
 % check cache to see if we have already computed this
-hash = DataHash(x);
+hash = dataHash(x);
 cached_data = cache(hash);
 if ~use_cache
 	cached_data = [];
@@ -128,7 +128,7 @@ if isempty(cached_data)
 	[~,loc]=max(g);
 	ehl = history_lengths(loc);
 
-	cache(DataHash(p_LN),ehl);
+	cache(dataHash(p_LN),ehl);
 	if verbosity
 		disp('Computing the best example history length for next time. and that is...')
 		disp(ehl)
@@ -142,7 +142,7 @@ else
 	if exist('example_history_length','var') 
 		ehl = example_history_length;
 	else
-		ehl = cache(DataHash(p_LN));
+		ehl = cache(dataHash(p_LN));
 	end
 	[p_LN,l,h,low_gof,high_gof,~,~,handles] = x.engine(x,history_lengths,ehl,ph,p_LN);
 end

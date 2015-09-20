@@ -256,30 +256,12 @@ xlabel('Filter Lag (s)')
 ylabel('Filter Amplitude')
 
 subplot(1,3,2), hold on
-L = {};
-r2 = NaN(width(LFP_pred),length(all_offsets));
-for j = 1:length(all_offsets)
-	a = all_offsets(j)*sr;
-	z = window_length*1e3 + a;
-	for i = 1:width(LFP_pred)
-		r2(i,j) = rsquare(LFP_pred(a:z,i),reshaped_LFP(a:z,i));
-	end
-	x = j + 0.1*randn(width(reshaped_LFP),1);
-	plot(x,r2(:,j),'+','Color',c(j,:));
-	L{j} = [oval(all_offsets(j)) '-' oval(all_offsets(j)+window_length) 's'];
-end
-set(gca,'XTick',[1:4],'XTickLabel',L)
-ylabel('r^2')
-title('Linear Prediction Quality')
-
-% plot responses when prediction is good
-subplot(1,3,3), hold on
 for j = 1:length(all_offsets)
 	a = all_offsets(j)*sr;
 	z = window_length*1e3 + a;
 
-	x = (LFP_pred(a:z,r2(:,1) > .5));
-	y = (reshaped_LFP(a:z,r2(:,1) > .5));
+	x = LFP_pred(a:z,:);
+	y = reshaped_LFP(a:z,:);
 	x = x(:); y = y(:);
 	handles(j) = plotPieceWiseLinear(x,y,'Color',c(j,:),'nbins',30);
 	delete(handles(j).shade)
@@ -289,7 +271,32 @@ end
 xlabel('Linear Prediction')
 ylabel('\DeltaLFP (mV)')
 
+subplot(1,3,3), hold on
+n = NaN(width(reshaped_PID),length(all_offsets));
+for i = 1:width(reshaped_PID)
+	for j = 1:length(all_offsets)
+		a = all_offsets(j)*sr;
+		z = window_length*1e3 + a;
+		x = LFP_pred(a:z,i);
+		y = reshaped_LFP(a:z,i);
+		try
+			ff = fit(x(:),y(:),'poly1');
+			n(i,j) = ff.p1;
+		catch
+		end
+	end
+end
+
+clear L
+for i = 1:length(all_offsets)
+	errorbar(i,mean2(n(:,i)),sem(n(:,i)),'Color',c(i,:),'LineWidth',4)
+	plot(.05*randn(length(n(:,i)),1) + i*ones(length(n(:,i)),1),n(:,i),'x','Color',c(i,:))
+	L{i} = [oval(all_offsets(i)) '-' oval(all_offsets(i)+window_length) 's'];
+end
+ylabel('LFP Gain (mV/V)')
 prettyFig()
+set(gca,'XTick',[1:length(all_offsets)],'XTickLabel',L,'XLim',[0.7 4.1],'XMinorTick','off')
+set(gca,'XTickLabelRotation',45)
 
 if being_published
 	snapnow
@@ -442,11 +449,10 @@ for i = 1:length(all_offsets)
 	plot(.05*randn(length(n(i,:)),1) + i*ones(length(n(i,:)),1),n(i,:),'x','Color',c(i,:))
 	L{i} = [oval(all_offsets(i)) '-' oval(all_offsets(i)+window_length) 's'];
 end
-ylabel('Mean Hill exponent')
-set(gca,'XTick',[1:length(all_offsets)],'XTickLabel',L,'XLim',[0.7 4.1],'XMinorTick','off')
-
-
+ylabel('Hill exponent')
 prettyFig()
+set(gca,'XTick',[1:length(all_offsets)],'XTickLabel',L,'XLim',[0.7 4.1],'XMinorTick','off')
+set(gca,'XTickLabelRotation',45)
 
 if being_published
 	snapnow

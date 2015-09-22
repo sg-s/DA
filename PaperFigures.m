@@ -16,11 +16,11 @@ end
 tic
 
 % this determines which figures to do. 
-fig1 = false; 	% how we determine gain
-fig2 = false;	% weber-like gain control
+fig1 = true; 	% how we determine gain
+fig2 = true;	% weber-like gain control
 fig_supp1 = false;
 fig3 = false;	% speed-gain tradeoff
-fig4 = true;	% natualistic stimuli + fast gain control
+fig4 = false;	% natualistic stimuli + fast gain control
 fig5 = false;	% fast gain control widely observed
 fig6 = false; 	% switching experiment
 fig7 = false;	% LFP experiments
@@ -93,17 +93,7 @@ time = dt*(1:length(plot_this));
 axes(axes_handles(1))
 errorShade(time,plot_this,sem(combined_data.PID(plot_these,:)),'Color',c(1,:));
 ylabel(axes_handles(1),'Stimulus (V)')
-
-
-% plot lowest dose response
-plot_this = mean2(combined_data.fA(:,plot_these));
-time = dt*(1:length(plot_this));
-axes(axes_handles(2))
-errorShade(time,plot_this, sem(combined_data.fA(:,plot_these)),'Color',c(1,:));
-ylabel(axes_handles(2),'ORN Response (Hz)')
-set(axes_handles(1),'XLim',[35 55])
-set(axes_handles(2),'XLim',[35 55])
-xlabel(axes_handles(2),'Time (s)')
+set(axes_handles(1),'XLim',[45 55])
 
 % load the data cut and processed
 load('MSG_per_neuron.mat','MSG_data')
@@ -165,6 +155,18 @@ end
 ss = 25;
 y = mean2([MSG_data(1,:).resp]);
 x = mean2([MSG_data(1,:).fp]);
+time = 35+1e-3*(1:length([MSG_data(1,:).fp]));
+
+
+[ax,plot1,plot2] = plotyy(axes_handles(2),time,y,time,x);
+set(ax(1),'XLim',[45 55])
+set(ax(2),'XLim',[45 55])
+set(plot1,'Color',c(1,:))
+set(plot2,'Color','r')
+ylabel(ax(1),'ORN Response (Hz)')
+ylabel(ax(2),'Linear Prediction')
+set(axes_handles(2),'box','off')
+
 plot(axes_handles(4),x(1:ss:end),y(1:ss:end),'.','Color',c(1,:));
 
 ff= fit(x(~isnan(x)),y(~isnan(x)),'poly1');
@@ -186,14 +188,13 @@ p.offset= 2.9976;
 l(2) = plot(axes_handles(4),x + minx,hill4(p,x),'k--');
 L{2} = strcat('Hill fit, r^2=',oval(rsquare(hill4(p,x),y)));
 
+
 xlabel(axes_handles(4),'K \otimes s')
 ylabel(axes_handles(4),'Response (Hz)')
 
-
 legend(l,L,'Location','northwest');
 
-
-PrettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=0;','FixLogY=0;')
+prettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=0;','FixLogY=0;')
 
 if being_published
 	snapnow
@@ -347,7 +348,9 @@ l(2)=plot(axes_handles(8),sort(mean_stim),cf(sort(mean_stim)),'k--');
 r2 = rsquare(cf(mean_stim(:)),gain(:));
 legend(l,{L, strcat('y = \alpha x^{-1}, \alpha= ',oval(cf.a), ', r^2 = ',oval(r2))} )
 
-PrettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=0;','FixLogY=0;')
+prettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=0;','FixLogY=0;')
+
+return
 
 if being_published
 	snapnow
@@ -382,7 +385,7 @@ for i = 1:8
 			if ~isvector(stim)
 				stim = mean2(stim);
 			end
-			[~,~,temp]=FindCorrelationTime(stim);
+			[~,~,temp]=findCorrelationTime(stim);
 			this_ac = [this_ac temp];
 		end
 	end
@@ -417,7 +420,7 @@ for i = 1:8
 			if ~isvector(stim)
 				stim = mean2(stim);
 			end
-			[~,~,temp]=FindCorrelationTime(stim);
+			[~,~,temp]=findCorrelationTime(stim);
 			this_ac = [this_ac temp];
 		end
 	end
@@ -485,15 +488,15 @@ allx = allx(:); ally = ally(:);
 rm_this = isnan(allx) | isnan(ally);
 allx(rm_this) = [];
 ally(rm_this) = [];
-ft = fittype( 'hill_fit(x,A,k,n,offset)' );
-ff2 = fit(allx(:),ally(:),ft,'StartPoint',[100, 50, 2,3],'Lower',[1 eps 1 -10],'Upper',[1e4 1e3 10 10]);
+ff2 = fit(allx(:),ally(:),'poly1');
 clear l
 l = plot(-5:0.1:45,ff2(-5:0.1:45),'r');
-legend(l,strcat('r^2=',oval(rsquare(allx,ff2(allx)))),'Location','northwest');
+
+legend(l,strcat('r^2=',oval(rsquare(ally,ff2(allx)))),'Location','northwest');
 xlabel('Rescaled Linear Prediction')
 ylabel('Neuron Response (Hz)')
 
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
@@ -660,7 +663,7 @@ set(gca,'YLim',[-10 130])
 ylabel('Peak time (ms)')
 xlabel('Mean Stimulus (V)')
 
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
@@ -857,6 +860,8 @@ legend(l,L)
 xlabel(axes_handles(5),'Stimulus in preceding 500ms (V)')
 ylabel(axes_handles(5),'Gain (Hz/V)')
 
+return
+
 %         ########    ###     ######  ########     ######      ###    #### ##    ## 
 %         ##         ## ##   ##    ##    ##       ##    ##    ## ##    ##  ###   ## 
 %         ##        ##   ##  ##          ##       ##         ##   ##   ##  ####  ## 
@@ -919,22 +924,25 @@ set(axes_handles(7),'XLim',[0 60]);
 ylabel(axes_handles(7),'Firing Rate (Hz)')
 
 
-% make a linear prediction using a filter fit to the mean data (this is almost exactly the same)
-[K, filtertime_full] = fitFilter2Data(mean2(PID),mean2(fA),'reg',1,'filter_length',1999,'offset',500);
-filtertime_full = filtertime_full*mean(diff(tA));
-filtertime = 1e-3*(-200:900);
-K = interp1(filtertime_full,K,filtertime);
-K = K/max(K);
-fp = convolve(tA,mean2(PID),K,filtertime);
-R = mean2(fA);
-temp =fit(fp(~(isnan(fp) | isnan(R))),R(~(isnan(fp) | isnan(R))),'poly1');
-fp = fp*temp.p1;
-fp = fp+temp.p2;
+% make linear predictions trial by trial
+K = NaN(1e3,width(PID));
+for i = 1:width(PID)
+	[this_K, filtertime_full] = fitFilter2Data(PID(10e3:end,i),fA(10e3:end,i),'reg',1,'filter_length',1200,'offset',200);
+	K(:,i) = this_K(100:end-101);
+	filtertime = filtertime_full(100:end-101);
+end
 
+fp = NaN*fA;
+for i = 1:width(fA)
+	fp(:,i) = convolve(tA,PID(:,i),K(:,i),filtertime);
+	% correct for some trivial scaling
+	ff = fit(fp(10e3:55e3,i),fA(10e3:55e3,i),'poly1');
+	fp(:,i) = ff(fp(:,i));
+end
 
 % plot prediction and prediction quality
-l=plot(axes_handles(7),tA,fp,'Color','r');
-r2 = rsquare(fp,mean2(fA));
+l = plot(axes_handles(7),tA,mean2(fp),'Color','r');
+r2 = rsquare(mean2(fp),mean2(fA));
 legend(l,strcat('r^2=',oval(r2)))
 ylabel(axes_handles(7),'K\otimes stimulus (Hz)')
 
@@ -947,7 +955,11 @@ hl_max = 10;
 history_lengths = [logspace(log10(hl_min),log10(.5),15) logspace(log10(.5),log10(10),15)];
 history_lengths = unique(history_lengths);
 
-[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',mean2(fA),'prediction',fp,'stimulus',mean2(PID),'time',tA,'ph',ph,'history_lengths',history_lengths,'example_history_length',.5,'use_cache',1,'engine',@GainAnalysis5);
+resp = mean2(fA(10e3:55e3,[3:10 13:20]));
+pred = mean2(fp(10e3:55e3,[3:10 13:20]));
+time = tA(10e3:55e3);
+
+[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',resp,'prediction',pred,'stimulus',mean2(PID),'time',time,'ph',ph,'history_lengths',history_lengths,'example_history_length',.5,'use_cache',false,'engine',@GainAnalysis5);
 set(axes_handles(7),'XLim',[.09 11]) % to show .1 and 10 on the log scale
 
 % show the p-value
@@ -1020,7 +1032,7 @@ plot(axes_handles(6),t_low,1+0*t_low,'.','Color',c(1,:))
 plot(axes_handles(6),t_high,1+0*t_low,'.','Color',c(7,:))
 
 
-PrettyFig('plw=1.5;','lw=1.5;','fs=12;')
+prettyFig('plw=1.5;','lw=1.5;','fs=12;')
 
 if being_published
 	snapnow
@@ -1353,7 +1365,7 @@ title(axes_handles(8),'')
 
 
 
-PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
+prettyFig('plw=1.5;','lw=1.5;','fs=14;')
 
 ylabel(axes_handles(1),'Exp. Replicates','FontSize',20)
 ylabel(axes_handles(7),'Diff. ORNs','FontSize',20)
@@ -2108,7 +2120,7 @@ s = rsquare(a,b);
 legend(l,strcat('r^2=',oval(s)));
 
 
-PrettyFig('plw=1.5;','lw=1.5;','fs=14;')
+prettyFig('plw=1.5;','lw=1.5;','fs=14;')
 
 if being_published
 	snapnow

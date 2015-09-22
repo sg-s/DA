@@ -33,7 +33,7 @@ temp.stimulus = stimulus;
 temp.response = response;
 temp.prediction = prediction;
 temp.history_length = history_length;
-hash = DataHash(temp);
+hash = dataHash(temp);
 cached_data = cache(hash);
 if ~isempty(cached_data)
 	x = cached_data.x;

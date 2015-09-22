@@ -6,6 +6,7 @@
 % options (and defualts are:)
 %
 % band_pass_y 	: 	false
+% band_pass_y	: 	false
 % filter_length :  	700
 % filter_offset	: 	100
 % use_cache		: 	true
@@ -21,6 +22,7 @@ function [K, prediction, gain, gain_err] = extractFilters(X,Y,varargin)
 
 % defaults
 band_pass_y 	= false;
+band_pass_x 	= false;
 filter_length 	= 700;
 filter_offset 	= 100;
 filter_buffer 	= 300;
@@ -75,6 +77,9 @@ if isempty(K)
 			try
 				if band_pass_y
 					resp = bandPass(resp,1e3,10);
+				end
+				if band_pass_x
+					stim = bandPass(stim,1e3,10);
 				end
 				stim = X(a:z,i);
 				stim(rm_this) = [];

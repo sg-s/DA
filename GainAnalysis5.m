@@ -300,15 +300,6 @@ else
 
 end
 
-% throw out all invalid data
-% v = (validity.H < 0.1 & validity.R_low > .5 & validity.R_high > .5 & validity.low_gof > .8 & validity.high_gof > .8);
-% low_slopes2.data(~v) = NaN;
-% high_slopes2.data(~v) = NaN;
-
-	
-
-
-
 % this is where we plot the history length plot
 if length(plothere) == 4
 	hold(plothere(4),'on')

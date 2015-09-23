@@ -357,8 +357,6 @@ for this_neuron = 1:max(reshaped_orn)
 	end
 end
 
-
-
 % ######## #### ########  #### ##    ##  ######      ########     ###    ######## ########  ######  
 % ##        ##  ##     ##  ##  ###   ## ##    ##     ##     ##   ## ##      ##    ##       ##    ## 
 % ##        ##  ##     ##  ##  ####  ## ##           ##     ##  ##   ##     ##    ##       ##       
@@ -420,7 +418,7 @@ if isempty(K2)
 		end
 	end
 	cache(dataHash([reshaped_fA,reshaped_PID]),[]);
-	cache(dataHash([reshaped_fA,reshaped_PID]),K);
+	cache(dataHash([reshaped_fA,reshaped_PID]),K2);
 end
 
 
@@ -437,7 +435,7 @@ for i = 1:width(reshaped_fA)
 end
 
 % compute the slopes
-n= cache(dataHash([reshaped_fA fp]));
+n = cache(dataHash([reshaped_fA fp]));
 if isempty(n)
 	nbins = 30;
 	n = NaN(length(all_offsets),nbins);
@@ -464,10 +462,6 @@ if isempty(n)
 			ft = fittype('poly1');
 			ff = fit(data.x(11:20),data.y(11:20),ft,'Weights',1./data.ye(11:20));
 			n(j,i) = ff.p1;
-
-			% ft = fittype('hill4(x,A,k,n,y_offset)');
-			% ff = fit(data.x(:),data.y(:),ft,'StartPoint',[100, .5, 4 ,0],'Lower',[1 0 1 -10],'Upper',[1e3 100 10 10],'Robust','on','MaxFunEvals',2e3,'MaxIter',2e3,'Display','off','Weights',1./data.ye);
-			% n(j,i) = ff.n;
 		end
 	end
 	cache(dataHash([reshaped_fA fp]),[]);

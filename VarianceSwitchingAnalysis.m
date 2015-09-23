@@ -192,7 +192,6 @@ end
 %%
 % We now extract filters in two second blocks in this triggered time (starting from the time of switch from high to low). In the following figure, we show the filters we extract on the left, with error bars. The middle panel shows how good the filter we extract from each segment is in predicting the LFP. The plot on the right shows the residuals of the data and the linear prediction: changes in slope of this plot correspond to changes in gain at the LFP level. 
 
-return
 
 % let's try to pull out filters from every epoch
 sr = 1e3; % sampling rate, Hz
@@ -236,6 +235,25 @@ for i = 1:width(reshaped_LFP)
 	end
 end
 
+% compute the slopes
+n = NaN(width(reshaped_PID),length(all_offsets));
+for i = 1:width(reshaped_PID)
+	for j = 1:length(all_offsets)
+		a = all_offsets(j)*sr;
+		z = window_length*1e3 + a;
+		x = LFP_pred(a:z,i);
+		y = reshaped_LFP(a:z,i);
+		rm_this = isnan(x) | isnan(y);
+		x(rm_this) = [];
+		y(rm_this) = [];
+		try
+			ff = fit(x(:),y(:),'poly1');
+			n(i,j) = ff.p1;
+		catch
+		end
+	end
+end
+
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1), hold on
@@ -263,24 +281,6 @@ xlabel('Linear Prediction')
 ylabel('\DeltaLFP (mV)')
 
 subplot(1,3,3), hold on
-n = NaN(width(reshaped_PID),length(all_offsets));
-for i = 1:width(reshaped_PID)
-	for j = 1:length(all_offsets)
-		a = all_offsets(j)*sr;
-		z = window_length*1e3 + a;
-		x = LFP_pred(a:z,i);
-		y = reshaped_LFP(a:z,i);
-		rm_this = isnan(x) | isnan(y);
-		x(rm_this) = [];
-		y(rm_this) = [];
-		try
-			ff = fit(x(:),y(:),'poly1');
-			n(i,j) = ff.p1;
-		catch
-		end
-	end
-end
-
 clear L
 for i = 1:length(all_offsets)
 	errorbar(i,mean2(n(:,i)),sem(n(:,i)),'Color',c(i,:),'LineWidth',4)
@@ -399,37 +399,28 @@ sr = 1e3; % sampling rate, Hz
 K2 = cache(dataHash([reshaped_fA,reshaped_PID]));
 ft = -99:700;
 if isempty(K2)
+	filter_length = 1000;
+	offset = 200;
 	K2 = NaN(length(all_offsets),filter_length-offset,width(reshaped_fA));
 	for i = 1:width(reshaped_fA)
 		textbar(i,width(reshaped_PID))
 		for j = 1:length(all_offsets)
-
-			x = NaN(length(reshaped_PID),1);
-			y = x;
-
-			a = 1 + all_offsets(j)*sr - filter_length + offset;
-			z = all_offsets(j)*sr + offset + window_length*sr;
-			x(a:z) = reshaped_PID(a:z,i);
-
 			a = all_offsets(j)*sr;
-			z = a + window_length*sr;
-			y(a:z) = reshaped_fA(a:z,i);
+			z = min([length(reshaped_PID) all_offsets(j)*sr + offset + window_length*sr]);
 
-			otp = false(length(y),1); % only these points
-			otp(a:z) = true;
-
+			stim = reshaped_PID(:,i);
+			resp = NaN*reshaped_fA(:,i);
+			resp(a:z) = reshaped_fA(a:z,i);
 			try
-				[this_K2,ft] = fitFilter2Data(x,y,'reg',1,'offset',offset,'OnlyThesePoints',otp,'filter_length',filter_length);
-				K2(j,:,i) = this_K2(100:end-102);
-				ft = ft(100:end-102);
-			catch err
-				disp(i)
-				disp(err)
+				[this_K,ft] = fitFilter2Data(stim,resp,'reg',1,'offset',offset,'filter_length',filter_length);
+				K2(j,:,i) = this_K(100:end-101);
+				ft = ft(100:end-101);
+			catch 
 			end
 		end
 	end
 	cache(dataHash([reshaped_fA,reshaped_PID]),[]);
-	cache(dataHash([reshaped_fA,reshaped_PID]),K2);
+	cache(dataHash([reshaped_fA,reshaped_PID]),K);
 end
 
 
@@ -441,14 +432,52 @@ for i = 1:width(reshaped_fA)
 		z = a + window_length*1e3;
 		x = reshaped_PID(:,i);
 		this_pred = convolve(1e-3*(1:length(x)),x,squeeze(K2(j,:,i)),ft);
-		fp(a:z,i) = this_pred(a:z)  - mean(this_pred(a:z));
+		fp(a:z,i) = this_pred(a:z)  - nanmean(this_pred(a:z));
 	end
+end
+
+% compute the slopes
+n= cache(dataHash([reshaped_fA fp]));
+if isempty(n)
+	nbins = 30;
+	n = NaN(length(all_offsets),nbins);
+	block_size = floor(width(reshaped_PID)/nbins);
+
+	for j = 1:length(all_offsets)
+		a = all_offsets(j)*sr;
+		z = window_length*1e3 + a;
+		x = fp(a:z,:);
+		y = reshaped_fA(a:z,:);
+		for i = 1:nbins
+			disp([j i])
+			aa = block_size*(i-1) + 1;
+			zz = aa + block_size;
+			xx = x(:,aa:zz);
+			yy = y(:,aa:zz);
+			xx = xx(:); yy = yy(:);
+			rm_this = isnan(xx) | isnan(yy);
+			xx(rm_this) = []; yy(rm_this) = [];
+			[~,data] = plotPieceWiseLinear(xx,yy,'make_plot',false,'nbins',30);
+			data.x = data.x - min(min(fp));
+
+			% fit straight lines to the middle sections
+			ft = fittype('poly1');
+			ff = fit(data.x(11:20),data.y(11:20),ft,'Weights',1./data.ye(11:20));
+			n(j,i) = ff.p1;
+
+			% ft = fittype('hill4(x,A,k,n,y_offset)');
+			% ff = fit(data.x(:),data.y(:),ft,'StartPoint',[100, .5, 4 ,0],'Lower',[1 0 1 -10],'Upper',[1e3 100 10 10],'Robust','on','MaxFunEvals',2e3,'MaxIter',2e3,'Display','off','Weights',1./data.ye);
+			% n(j,i) = ff.n;
+		end
+	end
+	cache(dataHash([reshaped_fA fp]),[]);
+	cache(dataHash([reshaped_fA fp]),n);
 end
 
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1), hold on
-filtertime = 1e-3*ft;
+filtertime = 1e-3*(1:length(K2)) - .1;
 for i = 1:length(all_offsets)
 	errorShade(filtertime,mean2(squeeze(K2(i,:,:))),sem(squeeze(K2(i,:,:))),'Color',c(i,:));
 end
@@ -463,7 +492,7 @@ for j = 1:length(all_offsets)
 	x = fp(a:z,:);
 	y = reshaped_fA(a:z,:);
 	x = x(:); y = y(:);
-	handles(j) = plotPieceWiseLinear(x,y,'Color',c(j,:),'nbins',30);
+	handles(j) = plotPieceWiseLinear(x,y,'Color',c(j,:),'nbins',30,'trim_end',true);
 	delete(handles(j).shade)
 	delete(handles(j).line(2:3))
 end
@@ -472,40 +501,13 @@ xlabel('Linear Prediction')
 ylabel('Firing rate (Hz)')
 
 subplot(1,3,3), hold on
-% seed_p.       A= 90.7124;
-% seed_p.       k= 0.9428;
-% seed_p.y_offset= -1.3130;
-% seed_p.x_offset= 0.6865;
-% seed_p.       n= 3.1016;
-
-% nbins = 10;
-% n = zeros(length(all_offsets),nbins);
-% block_size = floor(width(x)/nbins);
-
-% for j = 1:length(all_offsets)
-% 	a = all_offsets(j)*sr;
-% 	z = window_length*1e3 + a;
-% 	x = fp(a:z,:);
-% 	y = reshaped_fA(a:z,:);
-% 	for i = 1:nbins
-% 		disp([j i])
-% 		aa = block_size*(i-1) + 1;
-% 		zz = aa + block_size;
-% 		d.stimulus = x(:,aa:zz);
-% 		d.response = y(:,aa:zz);
-% 		p = fitModel2Data(@hill5,d,'nsteps',50,'UseParallel',false,'Display','none','make_plot',false,'p0',seed_p);
-% 		n(j,i) = p.n;
-% 	end
-% end
-
-n= cache(dataHash([reshaped_fA fp]));
 clear L
 for i = 1:length(all_offsets)
-	errorbar(i,mean(n(i,:)),std(n(i,:))/2,'Color',c(i,:),'LineWidth',4)
 	plot(.05*randn(length(n(i,:)),1) + i*ones(length(n(i,:)),1),n(i,:),'x','Color',c(i,:))
 	L{i} = [oval(all_offsets(i)) '-' oval(all_offsets(i)+window_length) 's'];
+	errorbar(i,mean(n(i,:)),std(n(i,:))/2,'Color','k','LineWidth',4)
 end
-ylabel('Hill exponent')
+ylabel('Gain (Hz/V)')
 prettyFig()
 set(gca,'XTick',[1:length(all_offsets)],'XTickLabel',L,'XLim',[0.7 4.1],'XMinorTick','off')
 set(gca,'XTickLabelRotation',45)
@@ -518,6 +520,17 @@ end
 %%
 % Here we show that by switching between a low- and a high-variance stimulus, the neuron appears to increase its firing gain during the low-variance stimulus, even though we don't see a similar increase in gain in the LFP. 
 
+%% 
+% Are the gains significantly different? The following matrix show the p-values that the null hypothesis can be rejected (i.e.,the probability that the gains being compared are the same) for all combinations of the four epochs:
+
+p = ones(length(all_offsets));
+for i = 1:length(all_offsets)-1
+	for j = i+1:length(all_offsets)
+		[~,p(i,j)] = kstest2(n(i,:),n(j,:));
+	end
+end
+
+disp(p)
 
 %% Version Info
 % The file that generated this document is called:

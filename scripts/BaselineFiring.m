@@ -7,12 +7,13 @@
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
 
-% this code determines if this function is being called by publish() or not
 calling_func = dbstack;
 being_published = 0;
 if ~isempty(calling_func)
 	if find(strcmp('publish',{calling_func.name}))
 		being_published = 1;
+		unix(['tag -a publish-failed ',which(mfilename)]);
+		unix(['tag -r published ',which(mfilename)]);
 	end
 end
 tic
@@ -67,7 +68,7 @@ figure('outerposition',[0 0 1500 700],'PaperUnits','points','PaperSize',[1500 70
 raster2(A,B)
 xlabel('Time (s)')
 title('ab2')
-PrettyFig('plw=.5;')
+prettyFig('plw=.5;')
 
 if being_published
 	snapnow
@@ -101,7 +102,7 @@ end
 xlabel('ISI (ms)')
 ylabel('Probability')
 title('ab2')
-PrettyFig()
+prettyFig()
 
 if being_published
 	snapnow
@@ -147,7 +148,7 @@ legend(l,{'conditional on A spike','conditional on B spike'})
 xlabel('Time since spike (s)')
 ylabel('p(A spike observed)')
 suptitle('ab2 Sensilla')
-PrettyFig()
+prettyFig()
 
 if being_published
 	snapnow
@@ -174,7 +175,7 @@ figure('outerposition',[0 0 1500 700],'PaperUnits','points','PaperSize',[1500 70
 raster2(A,B)
 xlabel('Time (s)')
 title('ab3')
-PrettyFig('plw=.5;')
+prettyFig('plw=.5;')
 
 if being_published
 	snapnow
@@ -208,7 +209,7 @@ end
 xlabel('ISI (ms)')
 ylabel('Probability')
 title('ab3')
-PrettyFig()
+prettyFig()
 
 if being_published
 	snapnow
@@ -252,7 +253,7 @@ legend(l,{'conditional on A spike','conditional on B spike'},'location','southea
 xlabel('Time since spike (s)')
 ylabel('p(A spike observed)')
 suptitle('ab3 Sensilla')
-PrettyFig()
+prettyFig()
 
 if being_published
 	snapnow
@@ -270,7 +271,7 @@ disp(mfilename)
 %%
 % and its md5 hash is:
 Opt.Input = 'file';
-disp(DataHash(strcat(mfilename,'.m'),Opt))
+disp(dataHash(strcat(mfilename,'.m'),Opt))
 
 %%
 % This file should be in this commit:
@@ -292,5 +293,7 @@ path1 = [path1 ':/usr/local/bin'];
 setenv('PATH', path1);
 
 if being_published
-	unix(strjoin({'tag -a published',which(mfilename)}));
+	unix(['tag -a published ',which(mfilename)]);
+	unix(['tag -r publish-failed ',which(mfilename)]);
 end
+

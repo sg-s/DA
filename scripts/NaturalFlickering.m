@@ -13,9 +13,11 @@ being_published = 0;
 if ~isempty(calling_func)
 	if find(strcmp('publish',{calling_func.name}))
 		being_published = 1;
+		unix(['tag -a publish-failed ',which(mfilename)]);
+		unix(['tag -r published ',which(mfilename)]);
 	end
 end
-
+tic
 
 %% Natural Flickering
 % In this document, we generate odor stimuli flickers over a large range, to mimic what the fly might encounter in the "real" world. The idea is that odour stimuli are very broadly distributed in intensity, and that odour stimuli arrive in whiffs and clumps of whiffs (like in Vergassola et al.). 
@@ -32,7 +34,7 @@ B_spikes = spikes(2).B;
 
 
 % A spikes --> firing rate
-hash = DataHash(full(all_spikes));
+hash = dataHash(full(all_spikes));
 cached_data = cache(hash);
 if isempty(cached_data)
 	fA = spiketimes2f(all_spikes,time);
@@ -42,7 +44,7 @@ else
 end
 
 % B spikes --> firing rate
-hash = DataHash(full(B_spikes));
+hash = dataHash(full(B_spikes));
 cached_data = cache(hash);
 if isempty(cached_data)
 	fB = spiketimes2f(B_spikes,time);
@@ -107,7 +109,7 @@ axis image
 axis off
 title(strcat('mean slope = ',oval(mean(s(~isnan(s))),2)))
 
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
@@ -127,7 +129,7 @@ ylabel('Firing Rate (A) (Hz)')
 set(gca,'YLim',[0 120])
 
 subplot(2,8,7:8), hold on
-hash = DataHash(fA);
+hash = dataHash(fA);
 cached_data = cache(hash);
 if isempty(cached_data)
 	r2 = rsquare(fA);
@@ -151,7 +153,7 @@ ylabel('Firing Rate (B) (Hz)')
 set(gca,'YLim',[0 120])
 
 subplot(2,8,15:16), hold on
-hash = DataHash(fB);
+hash = dataHash(fB);
 cached_data = cache(hash);
 if isempty(cached_data)
 	r2 = rsquare(fB);
@@ -167,7 +169,7 @@ axis off
 title(strcat('mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
 
 
-PrettyFig();
+prettyFig();
 
 if being_published
 	snapnow
@@ -193,7 +195,7 @@ title('Stimulus Histogram')
 subplot(1,3,2), hold on
 a = [];
 for i = 1:width(PID)
-	[~,~,c,temp]=FindCorrelationTime(PID(:,i));
+	[~,~,c,temp] = findCorrelationTime(PID(:,i));
 	a = [a temp];
 	l=plot(1:3e3,c(1:3e3));
 end
@@ -207,7 +209,7 @@ title('Stimulus')
 subplot(1,3,3), hold on
 a = [];
 for i = 1:width(fA)
-	[~,~,c,temp]=FindCorrelationTime(fA(:,i));
+	[~,~,c,temp] = findCorrelationTime(fA(:,i));
 	a = [a temp];
 	l=plot(1:3e3,c(1:3e3));
 end
@@ -218,7 +220,7 @@ ylabel('Autocorrelation')
 legend(l,strcat('\tau=',oval(a),'ms'))
 set(gca,'XScale','log')
 
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
@@ -251,7 +253,7 @@ ylabel('Filter Amplitude')
 xlabel('Filter Lag (s)')
 title('Filter from stimulus')
 
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
@@ -287,7 +289,7 @@ xlabel('Filter Lag (s)')
 ylabel('Filter (norm.)')
 title('Filter from stimulus')
 
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
@@ -314,7 +316,7 @@ end
 %% Output Analysis
 % In this section, we analyse the prediction of the linear kernel in some more detail. The following figure shows a plot of the linear predictions vs. the actual response. We colour the data by the mean stimulus in the preceding 500ms.  We see that each excursion has a different slope, and it looks like the slopes correspond to the stimulus in the preceding 500ms. Larger mean stimulus in the preceding 500ms is indicated by brighter colours. In the second subplot, we plot the gain of each of these excursions vs the mean stimulus in the preceding 500ms. The red line is a power-law fit, and the exponent is mentioned in the fit legend. 
 
-shat = ComputeSmoothedStimulus(mean2(PID),500);
+shat = computeSmoothedStimulus(mean2(PID),500);
 % shat(fp<10) = 0;
 shat = shat-min(shat);
 shat = shat/max(shat);
@@ -334,10 +336,10 @@ ylabel('Actual response (Hz)')
 
 subplot(1,2,2), hold on
 fp = convolve(tA,mean2(PID),K,filtertime);
-shat = ComputeSmoothedStimulus(mean2(PID),500);
+shat = computeSmoothedStimulus(mean2(PID),500);
 
 % find all excursions (defined as firing rate crossing 10Hz)
-[whiff_starts,whiff_ends] = ComputeOnsOffs(R>10);
+[whiff_starts,whiff_ends] = computeOnsOffs(R>10);
 mean_stim = NaN*whiff_ends;
 gain = NaN*whiff_ends;
 gain_err =  NaN*whiff_ends;
@@ -355,15 +357,16 @@ mean_stim(rm_this) = [];
 
 errorbar(mean_stim,gain,gain_err,'k+')
 
-ff = fit(mean_stim(:),gain(:),'power1','Weights',1./gain_err);
+ff = fit(mean_stim(:),gain(:),'power1','Weights',1./gain_err,'Lower',[-Inf -1],'Upper',[Inf -1]);
 
 l = plot(sort(mean_stim),ff(sort(mean_stim)),'r');
-L = strcat('y=\alpha x^{\beta}, \beta=',oval(ff.b),'. r^2=',oval(rsquare(ff(mean_stim),gain)));
+L = strcat('y=\alpha x^{-1}. r^2=',oval(rsquare(ff(mean_stim),gain)));
 legend(l,L)
 xlabel('Mean Stimulus in preceding 500ms (V)')
 ylabel('Gain (Hz/V)')
+set(gca,'YLim',[0 140])
 
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
@@ -378,7 +381,7 @@ disp(mfilename)
 %%
 % and its md5 hash is:
 Opt.Input = 'file';
-disp(DataHash(strcat(mfilename,'.m'),Opt))
+disp(dataHash(strcat(mfilename,'.m'),Opt))
 
 %%
 % This file should be in this commit:
@@ -387,5 +390,21 @@ if ~status
 	disp(m)
 end
 
+t = toc;
+
+%% 
+% This document was built in: 
+disp(strcat(oval(t,3),' seconds.'))
+
+% tag the file as being published 
+% add homebrew path
+path1 = getenv('PATH');
+path1 = [path1 ':/usr/local/bin'];
+setenv('PATH', path1);
+
+if being_published
+	unix(['tag -a published ',which(mfilename)]);
+	unix(['tag -r publish-failed ',which(mfilename)]);
+end
 
 	

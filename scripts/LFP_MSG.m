@@ -11,6 +11,8 @@ being_published = 0;
 if ~isempty(calling_func)
 	if find(strcmp('publish',{calling_func.name}))
 		being_published = 1;
+		unix(['tag -a publish-failed ',which(mfilename)]);
+		unix(['tag -r published ',which(mfilename)]);
 	end
 end
 tic
@@ -514,41 +516,37 @@ end
 % In this section we analyse the transformation from the LFP to the firing, and see how gain here varies with the stimulus. 
 
 a = 10e3; z = 55e3;
-[K3,fA_pred,fA_gain,fA_gain_err] = extractFilters(LFP,fA,'band_pass_x',true,'use_cache',true,'a',a,'z',z);
+[K3,fA_pred,fA_gain,fA_gain_err] = extractFilters(-LFP,fA,'band_pass_x',true,'use_cache',true,'a',a,'z',z);
 
 ss  =50;
 c= parula(max(paradigm)+1);
 l = [];
 filtertime = 1e-3*(1:length(K3))-.1;
+
 figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
 subplot(1,10,1:5), hold on
 for i = 1:max(paradigm)
 	plot_this = find(paradigm == i);
 	plot_this = setdiff(plot_this,find(isnan(sum(K3))));
-	y = LFP(a:z,plot_this);
-	my = mean(mean(y));
-	for j = 1:width(y)
-		y(:,j) = bandPass(y(:,j),1e3,10);
-	end
-	y= y+my;
+	y = fA(a:z,plot_this);
 	y = mean2(y);
-	x = mean2(LFP_pred(a:z,plot_this));
+	x = mean2(fA_pred(a:z,plot_this));
 	
 	l(i) = plot(x(1:ss:end),y(1:ss:end),'.','Color',c(i,:));
 end
 legend(l,{AllControlParadigms.Name},'Location','southeastoutside')
-xlabel('Linear Prediction')
-ylabel('LFP (mV)')
+xlabel('-Linear Prediction')
+ylabel('Firing Rate (Hz)')
 
 subplot(1,10,7:10), hold on
 
 for i = 1:width(LFP)
-	errorbar(mean(PID(a:z,i)),LFP_gain(i),LFP_gain_err(i),'+','Color',c(paradigm(i),:))
+	errorbar(mean(PID(a:z,i)),abs(fA_gain(i)),fA_gain_err(i),'+','Color',c(paradigm(i),:))
 end
 
 x = mean(PID(a:z,:)); x = x(:);
-y = LFP_gain(:);
-e = LFP_gain_err(:);
+y =abs(fA_gain(:));
+e = fA_gain_err(:);
 rm_this = isnan(x) | isnan(y) | isnan(e);
 x(rm_this) = []; y(rm_this) = []; e(rm_this) = [];
 ff = fit(x(:),y(:),'power1','Weights',1./e);
@@ -559,17 +557,17 @@ L{1} = ['y = \alpha (x^\beta) ,\beta = ', oval(ff.b)  ,' ,r^2=' oval(rsquare(ff(
 
 
 fo = fitoptions('power1');
-fo.Upper = [NaN -1];
-fo.Lower = [NaN -1];
+fo.Upper = [NaN 1];
+fo.Lower = [NaN 1];
 fo.Weights = 1./e;
 ff = fit(x(:),y(:),'power1',fo);
 l(2) = plot(sort(x),ff(sort(x)),'k');
-L{2} = ['y = \alpha (x^\beta) ,\beta := -1 ,r^2=' oval(rsquare(ff(x),y))];
+L{2} = ['y = \alpha (x^\beta) ,\beta := 1 ,r^2=' oval(rsquare(ff(x),y))];
 
 legend(l,L)
 set(gca,'XScale','log','YScale','log')
 xlabel('Mean Stimulus (V)')
-ylabel('LFP Gain')
+ylabel('LFP ->Firing Gain')
 
 prettyFig;
 
@@ -596,7 +594,19 @@ if ~status
 end
 
 t = toc;
+
 %% 
 % This document was built in: 
 disp(strcat(oval(t,3),' seconds.'))
+
+% tag the file as being published 
+% add homebrew path
+path1 = getenv('PATH');
+path1 = [path1 ':/usr/local/bin'];
+setenv('PATH', path1);
+
+if being_published
+	unix(['tag -a published ',which(mfilename)]);
+	unix(['tag -r publish-failed ',which(mfilename)]);
+end
 

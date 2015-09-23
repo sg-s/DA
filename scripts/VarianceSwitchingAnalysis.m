@@ -13,7 +13,7 @@ being_published = 0;
 if ~isempty(calling_func)
 	if find(strcmp('publish',{calling_func.name}))
 		being_published = 1;
-		unix(['tag -a publish-failed ',which(mfilename)]));
+		unix(['tag -a publish-failed ',which(mfilename)]);
 	end
 end
 tic
@@ -586,5 +586,5 @@ path1 = [path1 ':/usr/local/bin'];
 setenv('PATH', path1);
 
 if being_published
-	unix(['tag -a published ',which(mfilename)]));
+	unix(['tag -a published ',which(mfilename)]);
 end

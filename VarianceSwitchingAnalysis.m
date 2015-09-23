@@ -447,7 +447,6 @@ if isempty(n)
 		x = fp(a:z,:);
 		y = reshaped_fA(a:z,:);
 		for i = 1:nbins
-			disp([j i])
 			aa = block_size*(i-1) + 1;
 			zz = aa + block_size;
 			xx = x(:,aa:zz);

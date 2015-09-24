@@ -20,15 +20,11 @@ case 0
 case 1
 	error('Not enough input arguments')
 case 2
-	if ~isvector(S)
-		error('First argument should be a vector')
-	end
-	if ~isstruct(p)
-		error('Second argument should be a structure')
-	end
+	assert(isvector(S),'First argument should be a vector')
+	assert(isstruct(p),'Second argument should be a structure')
 end
 
-% specify bounds for FitModel2Data
+% specify bounds for fitModel2Data
 lb.A = 1; lb.B = 1; lb.C = 0 ; 
 lb.tau_y = 1; lb.tau_z = 1;
 

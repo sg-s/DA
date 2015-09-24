@@ -543,6 +543,7 @@ if being_published
 	delete(gcf)
 end
 
+
 %%
 % Here we show that by switching between a low- and a high-variance stimulus, the neuron appears to increase its firing gain during the low-variance stimulus, even though we don't see a similar increase in gain in the LFP. 
 
@@ -557,6 +558,30 @@ for i = 1:length(all_offsets)-1
 end
 
 disp(p)
+
+%% DA Model
+% Can the DA model account for gain changes with contrast? Here we fit the DA Model on a neuron-by-neuron basis to all the data. 
+
+%   p0.   s0= -0.3061;
+%   p0.  n_z= 2;
+%   p0.tau_z= 66.8750;
+%   p0.  n_y= 2;
+%   p0.tau_y= 21.0674;
+%   p0.    C= 0.0031;
+%   p0.    A= 201.7656;
+%   p0.    B= 2.1406;
+
+% for this_orn = 1:max(orn)
+% 	clear d
+% 	these_paradigms = find(orn==this_orn);
+% 	for i = 1:length(these_paradigms)
+% 		d(i).stimulus = PID(:,these_paradigms(i));
+% 		d(i).response = fA(:,these_paradigms(i));
+% 	end
+% 	p(i) = fitModel2Data(@DAModelv2,d,'p0',p0)
+% end
+
+
 
 %% Version Info
 % The file that generated this document is called:

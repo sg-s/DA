@@ -17,6 +17,22 @@ install fitFilter2Data
 install fitModel2Data
 ```
 
+## tag
+
+Scripts assume you are running Mac OS X. Scripts also use `tag` to tag scripts when they successfully make a PDF. Install `tag` using 
+
+```bash
+brew install tag
+```
+
+## Latex
+
+You should have latex (Tex Live 2013+) installed. Check with:
+
+```bash
+latex --version
+```
+
 ## Contents
 
 * `experiments` contains scripts and functions to make experimental control paradigms. These control paradigms are config files for Kontroller
@@ -25,7 +41,7 @@ install fitModel2Data
 * `janelia-poster` contains scripts to make some figures for a poster presented at the Swartz conference, together with the actual poster. 
 * `scripts` contains all scripts that analyse various aspects of the problem. 
 * `src` contains functions that are essential to this project, but not general-purpose enough to be moved to other projects. Make sure you add this to your path. 
-* `html` contains all PDFs made by any script in this repository
+* `pdfs` contains all PDFs made by any script in this repository
 
 ## Tests
 

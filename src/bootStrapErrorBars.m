@@ -11,7 +11,7 @@
 % x.stimulus -- the stimulus
 % x.time -- a time vector (uniformly spaced)
 % all these vectors are equally long
-function [low_slopes, high_slopes, p] = BootStrapErrorBars5(x,history_lengths,fraction,low_slopes,high_slopes)
+function [low_slopes, high_slopes, p] = bootStrapErrorBars(x,history_lengths,fraction,low_slopes,high_slopes)
 
 % unpack data
 f = x.response(:);
@@ -25,7 +25,7 @@ hl = round(history_lengths/dt);
 
 
 % compute shat
-shat = ComputeSmoothedStimulus(stimulus,hl);
+shat = computeSmoothedStimulus(stimulus,hl);
 
 % parameters
 nrep = 100; % how many times do we bootstrap the data?

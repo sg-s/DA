@@ -10,6 +10,8 @@ being_published = 0;
 if ~isempty(calling_func)
 	if find(strcmp('publish',{calling_func.name}))
 		being_published = 1;
+		unix(['tag -a publish-failed ',which(mfilename)]);
+		unix(['tag -r published ',which(mfilename)]);
 	end
 end
 tic
@@ -36,7 +38,7 @@ ylabel('Output')
 subplot(2,8,7:8), hold on
 plot(1e-3*(1:length(K)),K,'r')
 
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
@@ -89,7 +91,7 @@ legend({'Coherence','toolbox result'})
 set(gca,'YLim',[0 1.1],'XLim',[0 500])
 ylabel('Coherence')
 xlabel('Frequency (Hz)')
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
@@ -112,7 +114,7 @@ plot(Khat,'r')
 plot(Khat2,'b')
 xlabel('Filter lag (ms)')
 legend('Actual Filter','IFFT(H)','Rev.Corr. Filter')
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
@@ -141,7 +143,7 @@ ylabel('Output')
 subplot(2,8,7:8), hold on
 plot(1e-3*(1:length(K)),K,'r')
 
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
@@ -194,7 +196,7 @@ legend({'Coherence','toolbox result'})
 set(gca,'YLim',[0 1.1],'XLim',[.1 500],'XScale','log')
 ylabel('Coherence')
 xlabel('Frequency (Hz)')
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
@@ -221,7 +223,7 @@ plot(Khat2,'b')
 plot(K_toolbox,'g')
 xlabel('Filter lag (ms)')
 legend('Actual Filter','IFFT(H)','Rev.Corr. Filter','K_{toolbox}')
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
@@ -279,7 +281,7 @@ legend({'toolbox result','Smoothed Coherence'})
 set(gca,'YLim',[0 1.1],'XLim',[0 500])
 ylabel('Coherence')
 xlabel('Frequency (Hz)')
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
@@ -306,7 +308,7 @@ plot(Khat2,'b')
 plot(K_toolbox,'g')
 xlabel('Filter lag (ms)')
 legend('Actual Filter','IFFT(H)','Rev.Corr. Filter','IFFT(toolbox)')
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
@@ -357,7 +359,7 @@ legend({'toolbox result','Smoothed coherence'},'Location','southwest')
 set(gca,'YLim',[0 1.1],'XLim',[0 250],'XScale','log')
 ylabel('Coherence')
 xlabel('Frequency (Hz)')
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
@@ -481,12 +483,13 @@ set(gca,'XScale','log')
 legend('Smoothed Coherence','toolbox')
 ylabel('Coherence')
 
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
 	delete(gcf)
 end
+
 
 
 %% Version Info
@@ -496,7 +499,7 @@ disp(mfilename)
 %%
 % and its md5 hash is:
 Opt.Input = 'file';
-disp(DataHash(strcat(mfilename,'.m'),Opt))
+disp(dataHash(strcat(mfilename,'.m'),Opt))
 
 %%
 % This file should be in this commit:
@@ -506,8 +509,18 @@ if ~status
 end
 
 t = toc;
+
 %% 
 % This document was built in: 
 disp(strcat(oval(t,3),' seconds.'))
 
+% tag the file as being published 
+% add homebrew path
+path1 = getenv('PATH');
+path1 = [path1 ':/usr/local/bin'];
+setenv('PATH', path1);
 
+if being_published
+	unix(['tag -a published ',which(mfilename)]);
+	unix(['tag -r publish-failed ',which(mfilename)]);
+end

@@ -78,7 +78,7 @@ hl = round(history_lengths/dt);
 
 
 % compute shat(the smoothed stimulus)
-shat = ComputeSmoothedStimulus(stimulus,hl);
+shat = computeSmoothedStimulus(stimulus,hl);
 
 % make data vectors
 low_slopes = NaN*history_lengths;
@@ -294,7 +294,7 @@ if nargin > 4 % we specify the p-values
 	high_slopes2.data = high_slopes;
 	
 else
-	[low_slopes2, high_slopes2,p] = BootStrapErrorBars5(x,history_lengths,frac,low_slopes,high_slopes);
+	[low_slopes2, high_slopes2,p] = bootStrapErrorBars(x,history_lengths,frac,low_slopes,high_slopes);
 
 	p_low = p; p_high = p;
 

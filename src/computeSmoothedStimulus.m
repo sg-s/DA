@@ -1,22 +1,22 @@
-% ComputeSmoothedStimulus
+% computeSmoothedStimulus
 % part of the DA project
 % 
 % created by Srinivas Gorur-Shandilya at 10:20 , 09 April 2014. Contact me at http://srinivas.gs/contact/
 % 
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
-function [shat] = ComputeSmoothedStimulus(stimulus,hl)
+function [shat] = computeSmoothedStimulus(stimulus,hl)
 switch nargin 
 	case 0
-		help ComputeSmoothedStimulus
+		help computeSmoothedStimulus
 		return
 	case 1
 		error('Not enough input arguments')
 	case 2
 end
 
-assert(~any(isnan(hl)), 'ComputeSmoothedStimulus: History lengths are NaN.')
-assert(~any(isnan(stimulus)), 'ComputeSmoothedStimulus: History lengths are NaN.')
+assert(~any(isnan(hl)), 'computeSmoothedStimulus: History lengths are NaN.')
+assert(~any(isnan(stimulus)), 'computeSmoothedStimulus: History lengths are NaN.')
 
 
 shat = NaN(length(hl),length(stimulus));

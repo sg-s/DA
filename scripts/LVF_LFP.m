@@ -7,13 +7,13 @@
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
 
-
-% this code determines if this function is being called by publish() or not
 calling_func = dbstack;
 being_published = 0;
 if ~isempty(calling_func)
 	if find(strcmp('publish',{calling_func.name}))
 		being_published = 1;
+		unix(['tag -a publish-failed ',which(mfilename)]);
+		unix(['tag -r published ',which(mfilename)]);
 	end
 end
 tic
@@ -56,7 +56,7 @@ ylabel('PID (V)')
 set(gca,'XLim',[20 60])
 legend(l,{'January 28 2015','July 14 2015'})
 
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
@@ -76,7 +76,7 @@ xlabel('Time (s)')
 ylabel('PID (V)')
 legend(l,{'January 28 2015','July 14 2015 Rescaled'})
 set(gca,'XLim',[20 60])
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
@@ -110,7 +110,10 @@ for i = 1:width(LFP)
 	if isempty(z)
 		z = length(LFP);
 	end
-	filteredLFP(a:z,i) = 10*filter_trace(LFP(a:z,i),1000,10);
+	try
+		filteredLFP(a:z,i) = 10*bandPass(LFP(a:z,i),1000,10);
+	catch
+	end
 end
 
 figure('outerposition',[0 0 900 700],'PaperUnits','points','PaperSize',[900 700]); hold on
@@ -136,7 +139,7 @@ ylabel(a(2),'\DeltaLFP (mV)')
 ylabel(a(3),'Firing Rate (Hz)')
  set(a(2),'YLim',[-4 2.5])
 
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
@@ -152,9 +155,7 @@ if ~exist('K','var')
 	for i = 1:length(unique(orn))
 		resp = mean2(filteredLFP(20e3:55e3,orn==i));
 		stim = mean2(PID(20e3:55e3,orn==i));
-		stim(1:400) = [];
-		resp(end-399:end) = [];
-		temp = FitFilter2Data(stim,resp,[],'reg=1;','filter_length=1399;');
+		temp = fitFilter2Data(stim,resp,'reg',1,'filter_length',1400,'offset',400);
 		% throw out 200ms on either end
 		temp(1:200) = [];
 		temp(end-199:end) = [];
@@ -167,9 +168,7 @@ if ~exist('K2','var')
 	for i = 1:length(unique(orn))
 		stim = mean2(filteredLFP(20e3:55e3,orn==i));
 		resp = mean2(fA(20e3:55e3,orn==i));
-		stim(1:400) = [];
-		resp(end-399:end) = [];
-		temp = FitFilter2Data(stim,resp,[],'reg=1;','filter_length=1399;');
+		temp = fitFilter2Data(stim,resp,'reg',1,'filter_length',1400,'offset',400);
 		% throw out 200ms on either end
 		temp(1:200) = [];
 		temp(end-199:end) = [];
@@ -182,9 +181,7 @@ if ~exist('K3','var')
 	for i = 1:length(unique(orn))
 		stim = mean2(PID(20e3:55e3,orn==i));
 		resp = mean2(fA(20e3:55e3,orn==i));
-		stim(1:400) = [];
-		resp(end-399:end) = [];
-		temp = FitFilter2Data(stim,resp,[],'reg=1;','filter_length=1399;');
+		temp = fitFilter2Data(stim,resp,'reg',1,'filter_length',1400,'offset',400);
 		% throw out 200ms on either end
 		temp(1:200) = [];
 		temp(end-199:end) = [];
@@ -212,57 +209,12 @@ title(a(1),'PID \rightarrow LFP Filter')
 title(a(2),'LFP \rightarrow Firing rate Filter')
 title(a(3),'PID \rightarrow Firing rate Filter')
 
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
 	delete(gcf)
 end
-
-%% Filter Size Analysis
-% From this coarse overview of the data, it looks like while both the PID $\rightarrow$ LFP and the PID $\rightarrow $ Firing filters vary quite a bit in amplitude, it doesn't look like the transformation from the LFP to the firing rate varies that much. To look at this a little closer, we plot the amplitudes of these three filters against each other, after throwing out one neuron which appears to be an obvious outlier:
-
-figure('outerposition',[0 0 1400 450],'PaperUnits','points','PaperSize',[1400 550]); hold on
-clear a
-for i = 1:3
-	a(i) = subplot(1,3,i); hold on
-end
-x = -min(K); y = max(K3); x(3) = []; y(3) = [];
-xlabel(a(1),'PID \rightarrow LFP Amplitude')
-ylabel(a(1),'PID \rightarrow Firing Rate Amplitude')
-
-plot(a(1),x,y,'k+')
-ff = fit(x(:),y(:),'poly1');
-l = plot(a(1),x(:),ff(x),'k');
-legend(l,['r^2 = ',oval(rsquare(x,y))],'Location','northwest')
-
-
-x = -min(K); y = -min(K2);  x(3) = []; y(3) = [];
-xlabel(a(2),'PID \rightarrow LFP Amplitude')
-ylabel(a(2),'LFP \rightarrow Firing Rate Amplitude')
-
-plot(a(2),x,y,'k+')
-ff = fit(x(:),y(:),'poly1');
-l = plot(a(2),x(:),ff(x),'k');
-legend(l,['r^2 = ',oval(rsquare(x,y))],'Location','northeast')
-
-
-x = max(K3); y = -min(K2);  x(3) = []; y(3) = [];
-xlabel(a(3),'PID \rightarrow Firing Rate Amplitude')
-ylabel(a(3),'LFP \rightarrow Firing Rate Amplitude')
-
-plot(a(3),x,y,'k+')
-ff = fit(x(:),y(:),'poly1');
-l = plot(a(3),x(:),ff(x),'k');
-legend(l,['r^2 = ',oval(rsquare(x,y))],'Location','northeast')
-
-PrettyFig;
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
 
 
 
@@ -321,7 +273,7 @@ for i = 1
 	% history_lengths = findValidHistoryLengths(1e-3,stim,pred,resp,30,.33);
 	history_lengths = logspace(-1,1,30);
 
-	[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'use_cache',1,'engine',@GainAnalysis5);
+	[p,~,~,~,~,history_lengths]=gainAnalysisWrapper('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'use_cache',1,'engine',@gainAnalysis);
 	title(ph(4),['ORN ',mat2str(i),' Firing Rate'])
 	set(ph(4),'XLim',[.1 10])
 
@@ -334,13 +286,13 @@ for i = 1
 	pred = pred(20e3:55e3);
 	resp = resp(20e3:55e3);
 
-	[p,~,~,~,~,history_lengths]=GainAnalysisWrapper2('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'use_cache',1,'engine',@GainAnalysis5);
+	[p,~,~,~,~,history_lengths]=gainAnalysisWrapper('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'use_cache',1,'engine',@gainAnalysis);
 	title(ph(4),['ORN ',mat2str(i),' LFP'])
 	xlabel(ph(3),'LFP (pred)')
 	ylabel(ph(3),'LFP (data)')
 	set(ph(4),'XLim',[.1 10])
 
-	PrettyFig;
+	prettyFig;
 
 	if being_published
 		snapnow
@@ -372,7 +324,7 @@ for i = 1:length(unique(orn))
 	pred = pred(20e3:55e3);
 	resp = resp(20e3:55e3);
 
-	[p,~,~,~,~,history_lengths,handles]=GainAnalysisWrapper2('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(10),'use_cache',1,'engine',@GainAnalysis5);
+	[p,~,~,~,~,history_lengths,handles]=gainAnalysisWrapper('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(10),'use_cache',1,'engine',@gainAnalysis);
 	
 
 	% cosmetics
@@ -400,7 +352,7 @@ for i = 1:length(unique(orn))
 	pred = pred(20e3:55e3);
 	resp = resp(20e3:55e3);
 
-	[p,~,~,~,~,history_lengths,handles]=GainAnalysisWrapper2('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(10),'use_cache',1,'engine',@GainAnalysis5);
+	[p,~,~,~,~,history_lengths,handles] = gainAnalysisWrapper('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(10),'use_cache',1,'engine',@gainAnalysis);
 	
 	% cosmetics
 	h=get(ph(3),'Children');
@@ -428,7 +380,7 @@ title(a(1),'')
 title(a(3),'')
 
 
-PrettyFig;
+prettyFig;
 
 if being_published
 	snapnow
@@ -445,7 +397,7 @@ disp(mfilename)
 %%
 % and its md5 hash is:
 Opt.Input = 'file';
-disp(DataHash(strcat(mfilename,'.m'),Opt))
+disp(dataHash(strcat(mfilename,'.m'),Opt))
 
 %%
 % This file should be in this commit:
@@ -467,5 +419,6 @@ path1 = [path1 ':/usr/local/bin'];
 setenv('PATH', path1);
 
 if being_published
-	unix(strjoin({'tag -a published',which(mfilename)}));
+	unix(['tag -a published ',which(mfilename)]);
+	unix(['tag -r publish-failed ',which(mfilename)]);
 end

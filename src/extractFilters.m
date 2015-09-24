@@ -73,25 +73,28 @@ if isempty(K)
 		resp = Y(a:z,i);
 		rm_this = isnan(resp);
 		resp(rm_this) = [];
+
 		if length(resp) 
 			try
 				if band_pass_y
 					resp = bandPass(resp,1e3,10);
 				end
+				
+				stim = X(a:z,i);
+				stim(rm_this) = [];
 				if band_pass_x
 					stim = bandPass(stim,1e3,10);
 				end
-				stim = X(a:z,i);
-				stim(rm_this) = [];
-				stim(1:(filter_buffer/2 + filter_offset)) = [];
-				resp(end-(filter_buffer/2 + filter_offset)+1:end) = [];
-				temp = fitFilter2Data(stim,resp,'reg',1,'filter_length',filter_length+filter_buffer-1);
+
+				temp = fitFilter2Data(stim,resp,'reg',1,'filter_length',filter_length+filter_buffer,'offset',filter_offset+filter_buffer/2);
+
 				K(:,i) = temp(1+(filter_buffer/2):end-(filter_buffer/2));
 			catch err
 				
 			end
 		end
 	end
+	cache(dataHash([X Y]),[]);
 	cache(dataHash([X Y]),K);
 end
 

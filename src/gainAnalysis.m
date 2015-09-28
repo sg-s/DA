@@ -109,7 +109,6 @@ for i = 1:length(history_lengths)
 
 	this_shat = shat(i,:);
 
-
 	% find times when smoothed stim (this_shat) is in lowest 10%
 	this_shat(1:hl(i)) = Inf; % the initial segment where we can't estimate shat is excluded
 	this_shat(isnan(this_shat)) = Inf;

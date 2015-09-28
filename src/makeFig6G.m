@@ -1,4 +1,4 @@
-% MakeFig6G.m
+% makeFig6G.m
 % computes instantenous gain vs. preceding stimulus intensity, as in fig 6G in this paper:
 % http://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1003289
 % 
@@ -6,9 +6,9 @@
 % 
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
-function [x,y] = MakeFig6G(stimulus,response,prediction,history_length)
+function [x,y] = makeFig6G(stimulus,response,prediction,history_length)
 if ~nargin
-	help MakeFig6G
+	help makeFig6G
 	return
 end
 if ~isvector(stimulus) || ~isvector(response) || ~isvector(prediction)

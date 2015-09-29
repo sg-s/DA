@@ -9,6 +9,10 @@
 
 % this code determines if this function is being called by publish() or not
 calling_func = dbstack;
+% add homebrew path
+path1 = getenv('PATH');
+path1 = [path1 ':/usr/local/bin'];
+setenv('PATH', path1);
 being_published = 0;
 if ~isempty(calling_func)
 	if find(strcmp('publish',{calling_func.name}))
@@ -570,10 +574,6 @@ t = toc;
 disp(strcat(oval(t,3),' seconds.'))
 
 % tag the file as being published 
-% add homebrew path
-path1 = getenv('PATH');
-path1 = [path1 ':/usr/local/bin'];
-setenv('PATH', path1);
 
 if being_published
 	unix(['tag -a published ',which(mfilename)]);

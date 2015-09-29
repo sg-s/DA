@@ -5,7 +5,12 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-
+% add homebrew path
+path1 = getenv('PATH');
+if isempty(strfind(path1,[':/usr/local/bin']))
+    path1 = [path1 ':usr/local/bin'];
+end
+setenv('PATH', path1);
 
 % this code determines if this function is being called 
 calling_func = dbstack;
@@ -420,11 +425,6 @@ t = toc;
 disp(strcat(oval(t,3),' seconds.'))
 
 % tag the file as being published 
-% add homebrew path
-path1 = getenv('PATH');
-path1 = [path1 ':/usr/local/bin'];
-setenv('PATH', path1);
-
 if being_published
 	unix(['tag -a published ',which(mfilename)]);
 	unix(['tag -r publish-failed ',which(mfilename)]);

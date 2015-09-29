@@ -5,6 +5,12 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
+% add homebrew path
+path1 = getenv('PATH');
+if isempty(strfind(path1,[':/usr/local/bin']))
+    path1 = [path1 ':usr/local/bin'];
+end
+setenv('PATH', path1);
 
 % this code determines if this function is being called 
 calling_func = dbstack;
@@ -83,7 +89,7 @@ plot_these=find(strcmp(paradigm_names{1}, combined_data.paradigm));
 plot_this = mean2(combined_data.PID(plot_these,:));
 time = dt*(1:length(plot_this));
 axes(axes_handles(1))
-errorShade(time,plot_this,sem(combined_data.PID(plot_these,:)),'Color',c(1,:));
+errorShade(time,plot_this,sem(combined_data.PID(plot_these,:)'),'Color',c(1,:));
 ylabel(axes_handles(1),'Stimulus (V)')
 set(axes_handles(1),'XLim',[45 55])
 
@@ -681,11 +687,6 @@ t = toc;
 disp(strcat(oval(t,3),' seconds.'))
 
 % tag the file as being published 
-% add homebrew path
-path1 = getenv('PATH');
-path1 = [path1 ':/usr/local/bin'];
-setenv('PATH', path1);
-
 if being_published
 	unix(['tag -a published ',which(mfilename)]);
 	unix(['tag -r publish-failed ',which(mfilename)]);

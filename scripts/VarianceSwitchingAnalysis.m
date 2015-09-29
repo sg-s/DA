@@ -160,15 +160,24 @@ end
 % We can see that despite our best efforts, the means are not the same in the two cases. Since the mean is higher in the low variance case, and if this small mean change contributes to gain change, we hypothesise from our earlier results that the gain in the low variance case will be lower than the gain in the high variance case. In the following sections, we see if this is the case or not. 
 
 
+%                  ##       ######## ########  
+%                  ##       ##       ##     ## 
+%                  ##       ##       ##     ## 
+%                  ##       ######   ########  
+%                  ##       ##       ##        
+%                  ##       ##       ##        
+%                  ######## ##       ##        
+
+
 %% LFP Analysis
 % We now line up all the LFP signals by the switching time, and look at how the LFP changes in aggregate when we switch from a low variance stimulus to a high variance stimulus. We band pass the LFP to remove spikes and slow fluctuations irrelevant to this analysis. In the following figure, we plot all the traces, together with the mean. We can clearly see that the variance of the LFP follows the variance of the stimulus well, and decreases quickly when we switch to the low variance stimulus. 
 
 
 % make colour scheme for block analysis
 filter_length = 1000;
-offset = 200;
-all_offsets = [0:0.1:1 2:5 5.1:0.1:6 7:10];
-window_length = 2;
+offset = 200; % for the filter, not the nonlinearity
+all_offsets = [0:0.1:10];
+window_length = 1; % this is calculated around the offset
 
 time = 1e-3*(1:length(reshaped_LFP));
 figure('outerposition',[0 0 600 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
@@ -199,99 +208,74 @@ end
 % We now extract filters in two second blocks in this triggered time (starting from the time of switch from high to low). In the following figure, we show the filters we extract on the left, with error bars. The middle panel shows how good the filter we extract from each segment is in predicting the LFP. The plot on the right shows the residuals of the data and the linear prediction: changes in slope of this plot correspond to changes in gain at the LFP level. 
 
 
-% let's try to pull out filters from every epoch
+% we are going to calculate only one filter/epoch
 sr = 1e3; % sampling rate, Hz
-K = cache(dataHash([reshaped_LFP(:); reshaped_PID(:); all_offsets(:)]));
-
-ft = -99:700;
-if isempty(K)
+if exist('.cache/VSA_K.mat','file') == 2
+	load('.cache/VSA_K.mat','K')
+else
 	filter_length = 1000;
 	offset = 200;
-	K = NaN(length(all_offsets),filter_length-offset,width(reshaped_LFP));
+	K = NaN(2,filter_length-offset,width(reshaped_LFP));
 	for i = 1:width(reshaped_LFP)
 		textbar(i,width(reshaped_PID))
-		for j = 1:length(all_offsets)
-			a = floor(all_offsets(j)*sr) + 1;
-			z = floor(all_offsets(j)*sr + offset + window_length*sr) + 1;
 
-			stim = reshaped_PID(:,i);
-			resp = reshaped_LFP(:,i);
+		% calculate filter for large variance epoch
+		stim = reshaped_PID(:,i);
+		resp = reshaped_LFP(:,i);
 
-			resp = circshift(resp,length(resp) - z);
-			stim = circshift(stim,length(stim) - z);
+		resp(1:1e3) = NaN;
+		resp(5e3:end)= NaN;
 
-			resp(1:length(resp)-(z-a)) = NaN;
+		try
+			[this_K,ft] = fitFilter2Data(stim,resp,'reg',1,'offset',offset,'filter_length',filter_length);
+			K(1,:,i) = this_K(100:end-101);
+		catch 
+		end
 
-			try
-				[this_K,ft] = fitFilter2Data(stim,resp,'reg',1,'offset',offset,'filter_length',filter_length);
-				K(j,:,i) = this_K(100:end-101);
-				ft = ft(100:end-101);
-			catch 
-			end
+		% calculate filter for low variance epoch
+		stim = reshaped_PID(:,i);
+		resp = reshaped_LFP(:,i);
+
+		resp(1:6e3) = NaN;
+
+		try
+			[this_K,ft] = fitFilter2Data(stim,resp,'reg',1,'offset',offset,'filter_length',filter_length);
+			K(2,:,i) = this_K(100:end-101);
+		catch 
 		end
 	end
-	cache(dataHash([reshaped_LFP(:); reshaped_PID(:); all_offsets(:)]),[]);
-	cache(dataHash([reshaped_LFP(:); reshaped_PID(:); all_offsets(:)]),K);
+	mkdir('.cache')
+	save('.cache/VSA_K.mat','K')
 end
-
-
-% equalise the filter amplitudes by L2 norm
-filter_sizes = NaN(width(reshaped_LFP),4);
-for i = 1:length(all_offsets)
-	for j = 1:width(reshaped_LFP)
-		filter_sizes(j,i) = sqrt(sum((K(i,:,j)).^2));
-	end
-end
-mean_filter_size = nanmean(nanmean(filter_sizes));
-
-for i = 1:length(all_offsets)
-	for j = 1:width(reshaped_LFP)
-		A = sum(K(i,:,j).^2);
-		A = 1./sqrt(A);
-		K(i,:,j) = K(i,:,j)*A;
-	end
-end
-K = K*mean_filter_size;
-
-% make linear predictions on the detrended data using a mean filter averaged over all cases
+	
+% make linear predictions on the de-trended data using a mean filter averaged over all cases
 K_mean = mean(squeeze(mean(K,1)),2);
-
-LFP_offset_data = cache(dataHash(K_mean(:)));
-if isempty(LFP_offset_data)
-	LFP_offset_data = struct;
-	for i = 1:width(reshaped_LFP)
-		textbar(i,width(reshaped_LFP))
-		for j = 1:length(all_offsets)
-
-			a = floor(all_offsets(j)*sr) + 1;
-			z = floor(all_offsets(j)*sr + offset + window_length*sr) + 1;
-
-			stim = reshaped_PID(:,i);
-			resp = reshaped_LFP(:,i);
-
-			resp = circshift(resp,length(resp) - z);
-			stim = circshift(stim,length(stim) - z);
-			pred = convolve(1e-3*(1:length(x)),stim,K_mean,ft);
-
-			LFP_offset_data(i,j).resp = resp(length(resp)-window_length*sr:end);
-			LFP_offset_data(i,j).stim = stim(length(resp)-window_length*sr:end);
-			LFP_offset_data(i,j).pred = pred(length(resp)-window_length*sr:end);
-			
-		end
-	end
-	cache(dataHash(K_mean(:)),[]);
-	cache(dataHash(K_mean(:)),LFP_offset_data);
+ft = -99:700;
+LFP_pred = NaN*reshaped_LFP;
+for i = 1:width(reshaped_LFP)
+	LFP_pred(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K_mean,ft);
 end
 
 % compute the slopes
-n = cache(dataHash(LFP_offset_data));
-if isempty(n)
+if exist('.cache/VSA_LFP_slopes.mat','file') == 2
+	load('.cache/VSA_LFP_slopes.mat','LFP_slopes')
+else
 	n = NaN(width(reshaped_PID),length(all_offsets));
 	for i = 1:width(reshaped_PID)
 		textbar(i,width(reshaped_LFP))
 		for j = 1:length(all_offsets)
-			x = LFP_offset_data(i,j).pred;
-			y = LFP_offset_data(i,j).resp;
+			x = LFP_pred(:,i);
+			y = reshaped_LFP(:,i);
+
+			a = round(1e3*(all_offsets(j) - window_length/2));
+			z = round(1e3*(all_offsets(j) + window_length/2));
+
+			x = circshift(x,length(x) - z );
+			y = circshift(y,length(y) - z );
+
+			x = x(end-window_length*1e3:end);
+			y = y(end-window_length*1e3:end);
+
 			rm_this = isnan(x) | isnan(y);
 			x(rm_this) = [];
 			y(rm_this) = [];
@@ -302,8 +286,7 @@ if isempty(n)
 			end
 		end
 	end
-	cache(dataHash(LFP_offset_data),[]);
-	cache(dataHash(LFP_offset_data),n);
+	save('.cache/VSA_LFP_slopes.mat','n')
 end
 
 
@@ -311,40 +294,32 @@ figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 50
 subplot(1,3,1), hold on
 filtertime = 1e-3*ft;
 clear l
+L = {'K_{high}','K_{low}'};
 
-L = {'H_{early}','H_{late}','L_{early}','L_{late}'};
-
-% high early
-ci = floor(length(c)*((mean(all_offsets(all_offsets<1))*sr)/length(reshaped_LFP))); % correct color
-l(1) = plot(filtertime,mean(squeeze(mean((K(all_offsets<1,:,:)),1)),2),'Color',c(ci,:));
-
-% high late
-ci = floor(length(c)*((mean(all_offsets(all_offsets>1 & all_offsets<5))*sr)/length(reshaped_LFP))); % correct color
-l(2) = plot(filtertime,mean(squeeze(mean((K(all_offsets>1 & all_offsets<5,:,:)),1)),2),'Color',c(ci,:));
-
-% low early
-ci = floor(length(c)*((mean(all_offsets(all_offsets>5 & all_offsets<6))*sr)/length(reshaped_LFP))); % correct color
-l(3) = plot(filtertime,mean(squeeze(mean((K(all_offsets>5 & all_offsets<6,:,:)),1)),2),'Color',c(ci,:));
-
-% low late
-ci = floor(length(c)*((mean(all_offsets(all_offsets>6))*sr)/length(reshaped_LFP))); % correct color
-l(4) = plot(filtertime,mean(squeeze(mean((K(all_offsets>6,:,:)),1)),2),'Color',c(ci,:));
+% high and low variance
+l(1) = plot(filtertime,mean(squeeze(mean((K(1,:,:)),1)),2),'Color',c(100,:));
+l(2) = plot(filtertime,mean(squeeze(mean((K(2,:,:)),1)),2),'Color',c(250,:));
 legend(l,L,'Location','southeast')
 
-for j = 1:length(all_offsets)
-	ci = max([1 floor(length(c)*(all_offsets(j)*sr)/length(reshaped_LFP))]);
-	
-end
 xlabel('Filter Lag (s)')
 ylabel('Filter Amplitude')
 
 subplot(1,3,2), hold on
-for j = 1:length(all_offsets)
-	x = [LFP_offset_data(:,j).pred];
-	y = [LFP_offset_data(:,j).resp];
-	x = x(:); y = y(:);
+for j = 1:5:length(all_offsets)
+	x = LFP_pred;
+	y = reshaped_LFP;
+
+	a = round(1e3*(all_offsets(j) - window_length/2));
+	z = round(1e3*(all_offsets(j) + window_length/2));
+
+	x = circshift(x,length(x) - z,1);
+	y = circshift(y,length(y) - z,1);
+
+	x = x(end-window_length*1e3:end,:);
+	y = y(end-window_length*1e3:end,:);
+
 	ci = max([1 floor(length(c)*(all_offsets(j)*sr)/length(reshaped_LFP))]);
-	handles(j) = plotPieceWiseLinear(x,y,'Color',c(ci,:),'nbins',30);
+	handles(j) = plotPieceWiseLinear(x(:),y(:),'Color',c(ci,:),'nbins',30);
 	delete(handles(j).shade)
 	delete(handles(j).line(2:3))
 end
@@ -355,14 +330,13 @@ ylabel('\DeltaLFP (mV)')
 subplot(1,3,3), hold on
 % fake a colourbar
 yy0 = 3.2;
-c = parula(300);
 for i = 1:length(c)
 	xx = time([floor(length(time)*(i/length(c))) floor(length(time)*(i/length(c)))]);
 	yy = [yy0  yy0*1.01];
 	plot(xx,yy,'Color',c(i,:),'LineWidth',4)
 end
 
-errorbar(all_offsets,mean(n),sem(n'),'k')
+errorShade(all_offsets,mean(n),sem(n'),'Color','k');
 
 set(gca,'YLim',[2 3.5])
 ylabel('LFP Gain (mV/V)')
@@ -377,63 +351,6 @@ if being_published
 end
 
 
-%% 
-% To look into this, and other features of the data more carefully, we repeat the analysis, but on a neuron-by-neuron basis: 
-
-% ##    ## ######## ##     ## ########   #######  ##    ##    ##      ## ####  ######  ######## 
-% ###   ## ##       ##     ## ##     ## ##     ## ###   ##    ##  ##  ##  ##  ##    ## ##       
-% ####  ## ##       ##     ## ##     ## ##     ## ####  ##    ##  ##  ##  ##  ##       ##       
-% ## ## ## ######   ##     ## ########  ##     ## ## ## ##    ##  ##  ##  ##   ######  ######   
-% ##  #### ##       ##     ## ##   ##   ##     ## ##  ####    ##  ##  ##  ##        ## ##       
-% ##   ### ##       ##     ## ##    ##  ##     ## ##   ###    ##  ##  ##  ##  ##    ## ##       
-% ##    ## ########  #######  ##     ##  #######  ##    ##     ###  ###  ####  ######  ######## 
-
-for this_neuron = 1:max(reshaped_orn)
-	figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
-	subplot(1,3,1), hold on
-	filtertime = 1e-3*ft;
-	for i = 1:length(all_offsets)
-		errorShade(filtertime,mean2(squeeze(K(i,:,reshaped_orn==this_neuron))),sem(squeeze(K(i,:,reshaped_orn==this_neuron))),'Color',c(i,:));
-	end
-	xlabel('Filter Lag (s)')
-	ylabel('Filter Amplitude')
-	title(['Neuron # ' oval(this_neuron)])
-
-	subplot(1,3,2), hold on
-	for j = 1:length(all_offsets)
-		a = all_offsets(j)*sr;
-		z = window_length*1e3 + a;
-
-		x = LFP_pred(a:z,reshaped_orn==this_neuron);
-		y = reshaped_LFP(a:z,reshaped_orn==this_neuron);
-		x = x(:); y = y(:);
-		handles(j) = plotPieceWiseLinear(x,y,'Color',c(j,:),'nbins',30);
-		delete(handles(j).shade)
-		delete(handles(j).line(2:3))
-	end
-
-	xlabel('Linear Prediction')
-	ylabel('\DeltaLFP (mV)')
-
-	subplot(1,3,3), hold on
-	clear L
-	for i = 1:length(all_offsets)
-		
-		plot(.05*randn(length(n(reshaped_orn==this_neuron,i)),1) + i*ones(length(n(reshaped_orn==this_neuron,i)),1),n(reshaped_orn==this_neuron,i),'x','Color',c(i,:))
-		L{i} = [oval(all_offsets(i)) '-' oval(all_offsets(i)+window_length) 's'];
-		errorbar(i,mean2(n(reshaped_orn==this_neuron,i)),sem(n(reshaped_orn==this_neuron,i)),'Color','k','LineWidth',4)
-	end
-	ylabel('LFP Gain (mV/V)')
-	prettyFig()
-	set(gca,'XTick',[1:length(all_offsets)],'XTickLabel',L,'XLim',[0.7 4.1],'XMinorTick','off')
-	set(gca,'XTickLabelRotation',45)
-
-	if being_published
-		snapnow
-		delete(gcf)
-	end
-end
-
 % ######## #### ########  #### ##    ##  ######      ########     ###    ######## ########  ######  
 % ##        ##  ##     ##  ##  ###   ## ##    ##     ##     ##   ## ##      ##    ##       ##    ## 
 % ##        ##  ##     ##  ##  ####  ## ##           ##     ##  ##   ##     ##    ##       ##       
@@ -446,11 +363,16 @@ end
 %% Firing Rate Analysis
 % We now perform a similar analysis, but for the firing rates. First, we trigger all the firing rates by the low-high variance switch, and look at the data. In the following figure, all the traces are plotted in grey, with the mean superimposed in black. 
 
+time = 1e-3*(1:length(reshaped_fA));
 figure('outerposition',[0 0 600 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-c = parula(5);
-yy = nanmean(nanmean(reshaped_fA)) + nanmean(4*nanstd(reshaped_fA));
-for i = 1:length(all_offsets)
-	plot([all_offsets(i) all_offsets(i)+window_length],[yy yy],'Color',c(i,:),'LineWidth',10);
+
+% fake a colourbar
+yy0 = nanmean(nanmean(reshaped_fA)) + 10*nanstd(nanmean(reshaped_fA));
+c = parula(300);
+for i = 1:length(c)
+	xx = time([floor(length(time)*(i/length(c))) floor(length(time)*(i/length(c)))]);
+	yy = [yy0  yy0*1.01];
+	plot(xx,yy,'Color',c(i,:),'LineWidth',4)
 end
 
 plot(1e-3*(1:length(reshaped_fA)),reshaped_fA(:,1:ss:end),'Color',[.5 .5 .5 .5]);
@@ -469,134 +391,152 @@ end
 %%
 % We now extract LN models in two second blocks in this triggered time (starting from the time of switch from high to low), just like we did with the LFP. In  the figure below, we plot the filters we extract on the left, the residuals showing the output non-linearities in the middle, and exponents of Hill fits on the right. We can clearly see that the slope of the static non-linearity in the middle is higher when the variance is low. In the panel on the right, we quantify this apparent gain increase. 
 
-% let's try to pull out filters from every epoch
+
+% we are going to calculate only one filter/epoch
 sr = 1e3; % sampling rate, Hz
-K2 = cache(dataHash([reshaped_fA,reshaped_PID]));
-ft = -99:700;
-if isempty(K2)
+if exist('.cache/VSA_K2.mat','file') == 2
+	load('.cache/VSA_K2.mat','K2')
+else
 	filter_length = 1000;
 	offset = 200;
-	K2 = NaN(length(all_offsets),filter_length-offset,width(reshaped_fA));
+	K2 = NaN(2,filter_length-offset,width(reshaped_fA));
 	for i = 1:width(reshaped_fA)
 		textbar(i,width(reshaped_PID))
-		for j = 1:length(all_offsets)
-			a = all_offsets(j)*sr;
-			z = min([length(reshaped_PID) all_offsets(j)*sr + offset + window_length*sr]);
 
-			stim = reshaped_PID(:,i);
-			resp = NaN*reshaped_fA(:,i);
-			resp(a:z) = reshaped_fA(a:z,i);
-			try
-				[this_K,ft] = fitFilter2Data(stim,resp,'reg',1,'offset',offset,'filter_length',filter_length);
-				K2(j,:,i) = this_K(100:end-101);
-				ft = ft(100:end-101);
-			catch 
-			end
+		% calculate filter for large variance epoch
+		stim = reshaped_PID(:,i);
+		resp = reshaped_fA(:,i);
+
+		resp(1:1e3) = NaN;
+		resp(5e3:end)= NaN;
+
+		try
+			[this_K2,ft] = fitFilter2Data(stim,resp,'reg',1,'offset',offset,'filter_length',filter_length);
+			K2(1,:,i) = this_K2(100:end-101);
+		catch 
+		end
+
+		% calculate filter for low variance epoch
+		stim = reshaped_PID(:,i);
+		resp = reshaped_fA(:,i);
+
+		resp(1:6e3) = NaN;
+
+		try
+			[this_K2,ft] = fitFilter2Data(stim,resp,'reg',1,'offset',offset,'filter_length',filter_length);
+			K2(2,:,i) = this_K2(100:end-101);
+		catch 
 		end
 	end
-	cache(dataHash([reshaped_fA,reshaped_PID]),[]);
-	cache(dataHash([reshaped_fA,reshaped_PID]),K2);
-end
-
-% equalise the filter amplitudes by L2 norm
-filter_sizes = NaN(width(reshaped_fA),4);
-for i = 1:length(all_offsets)
-	for j = 1:width(reshaped_fA)
-		filter_sizes(j,i) = sum((K2(i,:,j)).^2);
-	end
-end
-mean_filter_size = nanmean(nanmean(filter_sizes));
-for i = 1:length(all_offsets)
-	for j = 1:width(reshaped_fA)
-		sf = sqrt(mean_filter_size/sum(K2(i,:,j).^2));
-		K2(i,:,j) = K2(i,:,j)*sf;
-	end
+	mkdir('.cache')
+	save('.cache/VSA_K2.mat','K2')
 end
 
 
-
-% make linear predictions on the detrended data
-fp = NaN*reshaped_fA;
+% make linear predictions on the de-trended data using a mean filter averaged over all cases
+K2_mean = nanmean(squeeze(nanmean(K2,1)),2);
+ft = -99:700;
+fA_pred = NaN*reshaped_fA;
 for i = 1:width(reshaped_fA)
-	for j = 1:length(all_offsets)
-		a = all_offsets(j)*1e3;
-		z = a + window_length*1e3;
-		x = reshaped_PID(:,i);
-		this_pred = convolve(1e-3*(1:length(x)),x,squeeze(K2(j,:,i)),ft);
-		fp(a:z,i) = this_pred(a:z)  - nanmean(this_pred(a:z));
-	end
+	fA_pred(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K2_mean,ft);
 end
 
 % compute the slopes
-n = cache(dataHash([reshaped_fA fp]));
-if isempty(n)
-	nbins = 30;
-	n = NaN(length(all_offsets),nbins);
-	block_size = floor(width(reshaped_PID)/nbins);
+if exist('.cache/VSA_fA_slopes.mat','file') == 2
+	load('.cache/VSA_fA_slopes.mat','fA_slopes')
+else
+	n = NaN(width(reshaped_PID),length(all_offsets));
+	for i = 1:width(reshaped_PID)
+		textbar(i,width(reshaped_fA))
+		for j = 1:length(all_offsets)
+			x = fA_pred(:,i);
+			y = reshaped_fA(:,i);
 
-	for j = 1:length(all_offsets)
-		a = all_offsets(j)*sr;
-		z = window_length*1e3 + a;
-		x = fp(a:z,:);
-		y = reshaped_fA(a:z,:);
-		for i = 1:nbins
-			aa = block_size*(i-1) + 1;
-			zz = aa + block_size;
-			xx = x(:,aa:zz);
-			yy = y(:,aa:zz);
-			xx = xx(:); yy = yy(:);
-			rm_this = isnan(xx) | isnan(yy);
-			xx(rm_this) = []; yy(rm_this) = [];
-			[~,data] = plotPieceWiseLinear(xx,yy,'make_plot',false,'nbins',30);
-			data.x = data.x - min(min(fp));
+			a = round(1e3*(all_offsets(j) - window_length/2));
+			z = round(1e3*(all_offsets(j) + window_length/2));
 
-			% fit straight lines to the middle sections
-			ft = fittype('poly1');
-			ff = fit(data.x(11:20),data.y(11:20),ft,'Weights',1./data.ye(11:20));
-			n(j,i) = ff.p1;
+			x = circshift(x,length(x) - z );
+			y = circshift(y,length(y) - z );
+
+			x = x(end-window_length*1e3:end);
+			y = y(end-window_length*1e3:end);
+
+			rm_this = isnan(x) | isnan(y);
+			x(rm_this) = [];
+			y(rm_this) = [];
+
+			y = y(x > 0.33*max(x) & x < .66*max(x));
+			x = x(x > 0.33*max(x) & x < .66*max(x));
+
+			try
+				ff = fit(x(:),y(:),'poly1');
+				n(i,j) = ff.p1;
+			catch
+			end
 		end
 	end
-	cache(dataHash([reshaped_fA fp]),[]);
-	cache(dataHash([reshaped_fA fp]),n);
+	save('.cache/VSA_fA_slopes.mat','n')
 end
 
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1), hold on
-filtertime = 1e-3*(1:length(K2)) - .1;
-for i = 1:length(all_offsets)
-	errorShade(filtertime,mean2(squeeze(K2(i,:,:))),sem(squeeze(K2(i,:,:))),'Color',c(i,:));
-end
+filtertime = 1e-3*ft;
+clear l
+L = {'K_{high}','K_{low}'};
+
+% high and low variance
+l(1) = plot(filtertime,nanmean(squeeze(nanmean((K2(1,:,:)),1)),2),'Color',c(100,:));
+l(2) = plot(filtertime,nanmean(squeeze(nanmean((K2(2,:,:)),1)),2),'Color',c(250,:));
+legend(l,L,'Location','southeast')
+
 xlabel('Filter Lag (s)')
 ylabel('Filter Amplitude')
 
 subplot(1,3,2), hold on
-for j = 1:length(all_offsets)
-	a = all_offsets(j)*sr;
-	z = window_length*1e3 + a;
+for j = 1:5:length(all_offsets)
+	x = fA_pred;
+	y = reshaped_fA;
 
-	x = fp(a:z,:);
-	y = reshaped_fA(a:z,:);
+	a = round(1e3*(all_offsets(j) - window_length/2));
+	z = round(1e3*(all_offsets(j) + window_length/2));
+
+	x = circshift(x,length(x) - z,1);
+	y = circshift(y,length(y) - z,1);
+
+	x = x(end-window_length*1e3:end,:);
+	y = y(end-window_length*1e3:end,:);
+
 	x = x(:); y = y(:);
-	handles(j) = plotPieceWiseLinear(x,y,'Color',c(j,:),'nbins',30,'trim_end',true);
+	rm_this = isnan(x) | isnan(y);
+
+
+	ci = max([1 floor(length(c)*(all_offsets(j)*sr)/length(reshaped_LFP))]);
+	handles(j) = plotPieceWiseLinear(x(~rm_this),y(~rm_this),'Color',c(ci,:),'nbins',30);
 	delete(handles(j).shade)
 	delete(handles(j).line(2:3))
 end
 
-xlabel('Linear Prediction')
-ylabel('Firing rate (Hz)')
+xlabel('Projected Stimulus')
+ylabel('\DeltaLFP (mV)')
 
 subplot(1,3,3), hold on
-clear L
-for i = 1:length(all_offsets)
-	plot(.05*randn(length(n(i,:)),1) + i*ones(length(n(i,:)),1),n(i,:),'x','Color',c(i,:))
-	L{i} = [oval(all_offsets(i)) '-' oval(all_offsets(i)+window_length) 's'];
-	errorbar(i,mean(n(i,:)),std(n(i,:))/2,'Color','k','LineWidth',4)
+% fake a colourbar
+yy0 = 105;
+for i = 1:length(c)
+	xx = time([floor(length(time)*(i/length(c))) floor(length(time)*(i/length(c)))]);
+	yy = [yy0  yy0*1.01];
+	plot(xx,yy,'Color',c(i,:),'LineWidth',4)
 end
-ylabel('Gain (Hz/V)')
+
+errorShade(all_offsets,nanmean(n),sem(n'),'Color','k');
+
+set(gca,'YLim',[50 120])
+ylabel('Firing Gain (Hz/V)')
+xlabel('Time since switch (s)')
+
 prettyFig()
-set(gca,'XTick',[1:length(all_offsets)],'XTickLabel',L,'XLim',[0.7 4.1],'XMinorTick','off')
-set(gca,'XTickLabelRotation',45)
+
 
 if being_published
 	snapnow
@@ -604,42 +544,6 @@ if being_published
 end
 
 
-%%
-% Here we show that by switching between a low- and a high-variance stimulus, the neuron appears to increase its firing gain during the low-variance stimulus, even though we don't see a similar increase in gain in the LFP. 
-
-%% 
-% Are the gains significantly different? The following matrix show the p-values that the null hypothesis can be rejected (i.e.,the probability that the gains being compared are the same) for all combinations of the four epochs:
-
-p = ones(length(all_offsets));
-for i = 1:length(all_offsets)-1
-	for j = i+1:length(all_offsets)
-		[~,p(i,j)] = kstest2(n(i,:),n(j,:));
-	end
-end
-
-disp(p)
-
-%% DA Model
-% Can the DA model account for gain changes with contrast? Here we fit the DA Model on a neuron-by-neuron basis to all the data. 
-
-%   p0.   s0= -0.3061;
-%   p0.  n_z= 2;
-%   p0.tau_z= 66.8750;
-%   p0.  n_y= 2;
-%   p0.tau_y= 21.0674;
-%   p0.    C= 0.0031;
-%   p0.    A= 201.7656;
-%   p0.    B= 2.1406;
-
-% for this_orn = 1:max(orn)
-% 	clear d
-% 	these_paradigms = find(orn==this_orn);
-% 	for i = 1:length(these_paradigms)
-% 		d(i).stimulus = PID(:,these_paradigms(i));
-% 		d(i).response = fA(:,these_paradigms(i));
-% 	end
-% 	p(i) = fitModel2Data(@DAModelv2,d,'p0',p0)
-% end
 
 
 

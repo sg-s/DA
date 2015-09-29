@@ -258,7 +258,7 @@ end
 
 % compute the slopes
 if exist('.cache/VSA_LFP_slopes.mat','file') == 2
-	load('.cache/VSA_LFP_slopes.mat','LFP_slopes')
+	load('.cache/VSA_LFP_slopes.mat','n')
 else
 	n = NaN(width(reshaped_PID),length(all_offsets));
 	for i = 1:width(reshaped_PID)
@@ -443,7 +443,7 @@ end
 
 % compute the slopes
 if exist('.cache/VSA_fA_slopes.mat','file') == 2
-	load('.cache/VSA_fA_slopes.mat','fA_slopes')
+	load('.cache/VSA_fA_slopes.mat','n')
 else
 	n = NaN(width(reshaped_PID),length(all_offsets));
 	for i = 1:width(reshaped_PID)

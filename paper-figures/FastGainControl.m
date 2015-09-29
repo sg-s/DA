@@ -25,19 +25,6 @@ end
 tic
 
 
-
-%           ######## ####  ######   ##     ## ########  ########    ##        
-%           ##        ##  ##    ##  ##     ## ##     ## ##          ##    ##  
-%           ##        ##  ##        ##     ## ##     ## ##          ##    ##  
-%           ######    ##  ##   #### ##     ## ########  ######      ##    ##  
-%           ##        ##  ##    ##  ##     ## ##   ##   ##          ######### 
-%           ##        ##  ##    ##  ##     ## ##    ##  ##                ##  
-%           ##       ####  ######    #######  ##     ## ########          ## 
-
-
-
-
-
 %         ##    ##    ###    ######## ##     ## ########     ###    ##       
 %         ###   ##   ## ##      ##    ##     ## ##     ##   ## ##   ##       
 %         ####  ##  ##   ##     ##    ##     ## ##     ##  ##   ##  ##       
@@ -112,7 +99,7 @@ for i = 1:width(PID)
 	[y(:,i),x] = histcounts(PID(:,i),300);x(1) = [];
 end
 errorShade(x,mean2(y),sem(y),'Color',[.2 .2 .2]);
-warning off 
+warning off % because there are some -ve values on the log scale
 set(axes_handles(3),'XScale','log','YScale','log','XLim',[.1 10],'YTick',[1e1 1e3 1e5])
 xlabel('Stimulus (V)')
 ylabel('count')
@@ -241,6 +228,11 @@ for i = 1:length(axes_handles)
 	hold(axes_handles(i),'on');
 end
 
+movePlot(axes_handles(1),'up',.03)
+movePlot(axes_handles(2),'up',.04)
+movePlot(axes_handles(3),'down',.02)
+movePlot(axes_handles(4),'down',.02)
+movePlot(axes_handles(5),'down',.02)
 
 load('/local-data/DA-paper/large-variance-flicker/2015_01_28_CS_ab3_2_EA.mat')
 PID = data(4).PID;
@@ -279,17 +271,15 @@ plot(axes_handles(1),tA,mean2(PID),'k')
 set(axes_handles(1),'XLim',[0 60],'XTick',[])
 ylabel(axes_handles(1),'Stimulus (V)')
 
-% make linear predictions trial by trial
-K = NaN(1e3,width(PID));
-for i = 1:width(PID)
-	[this_K, filtertime_full] = fitFilter2Data(PID(10e3:end,i),fA(10e3:end,i),'reg',1,'filter_length',1200,'offset',200);
-	K(:,i) = this_K(100:end-101);
-	filtertime = filtertime_full(100:end-101);
-end
+% make linear predictions for the whole experiment
+K = NaN(1e3,1);
+[this_K, filtertime_full] = fitFilter2Data(mean2(PID(10e3:end,:)),mean2(fA(10e3:end,:)),'reg',1,'filter_length',1200,'offset',200);
+K = this_K(100:end-101);
+filtertime = filtertime_full(100:end-101);
 
 fp = NaN*fA;
 for i = 1:width(fA)
-	fp(:,i) = convolve(tA,PID(:,i),K(:,i),filtertime);
+	fp(:,i) = convolve(tA,PID(:,i),K,filtertime);
 end
 
 clear l
@@ -325,49 +315,24 @@ ylabel(axes_handles(4),'ORN Response (Hz)')
 
 % show the p-value
 axes(axes_handles(4))
-text(10,60,'p < 0.01')
+text(-.2,60,'p < 0.01')
+title(axes_handles(4),[])
 
 % plot gain vs preceding stimulus
-[x,y] = makeFig6G(mean2(PID),mean2(fA),fp,500);
+[x,y] = makeFig6G(mean2(PID),mean2(fA),mean2(fp),500);
 gain_time = mean(diff(tA))*(1:length(x));
 rm_this = (isnan(x) | isnan(y));
 x(rm_this) = [];
 y(rm_this) = [];
 gain_time(rm_this) = [];
 ss = 50;
-plot(axes_handles(10),x(1:ss:end),y(1:ss:end),'k.')
-xlabel(axes_handles(10),'Stimulus in preceding 500ms (V)')
-ylabel(axes_handles(10),'Relative gain')
-
-% fit a Weber-scaling to these points
-[x,idx] = sort(x);
-y = y(idx);
-% get equal bins in x
-my = NaN(100,1); mx = my;
-a = 1;
-ss = floor(length(x)/length(my));
-for i = 1:length(my)-1
-	z = a+ss;
-	my(i) = max(y(a:z));
-	mx(i) = mean(x(a:z));
-	a = z;
-end
-my(end) = []; mx(end) = [];
-mx(1:20) = []; my(1:20) = [];
-
-fo = fitoptions('rat01');
-fo.StartPoint = [.4 -.08];
-ff = fit(mx(:),my(:),'rat01',fo);
-l = plot(axes_handles(10),.17:.01:max(x),ff(.17:.01:max(x)),'r');
-legend(l,'y=\alpha/(\beta+x)');
+plot(axes_handles(3),x(1:ss:end),y(1:ss:end)/mean(y),'k.')
+xlabel(axes_handles(3),'Stimulus in preceding 500ms (V)')
+ylabel(axes_handles(3),'Relative gain')
+set(axes_handles(3),'YLim',[0 3.5])
 
 % fix some labels
-xlabel(axes_handles(7),'Time (s)')
-set(axes_handles(9),'YScale','log','YTick',[0.5 1 2],'YLim',[0.4 3.5])
-set(axes_handles(7),'YLim',[0 100])
-set(axes_handles(6:7),'XLim',[0 60])
-ylabel(axes_handles(7),'Response (Hz)')
-title(axes_handles(8),'')
+set(axes_handles(5),'YScale','log','YTick',[0.5 1 2],'YLim',[0.4 2.5],'XLim',[0.09 10.1])
 
 % Indicate regions of high and low stimulus on the stimulus
 hl = round(history_lengths(9)*1e3);
@@ -389,11 +354,11 @@ shat(isnan(mean2(fA))) = -Inf;
 t_high = t_high(1:n);
 t_high  = tA(t_high);
 
-plot(axes_handles(6),t_low,1+0*t_low,'.','Color',c(1,:))
-plot(axes_handles(6),t_high,1+0*t_low,'.','Color',c(7,:))
+plot(axes_handles(1),t_low,1+0*t_low,'.','Color',c(1,:))
+plot(axes_handles(1),t_high,1+0*t_low,'.','Color',c(7,:))
 
 
-prettyFig('plw=1.5;','lw=1.5;','fs=12;')
+prettyFig('plw=1.5;','lw=1.5;','fs=14;','FixLogX=1;')
 
 if being_published
 	snapnow

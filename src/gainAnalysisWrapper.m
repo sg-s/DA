@@ -121,6 +121,7 @@ if isempty(cached_data)
 		example_history_length = history_lengths(10);
 	end
 	[p_LN,l,h,low_gof,high_gof,~,~,handles] = x.engine(x,history_lengths,example_history_length,ph);
+	cache(hash,[]);
 	cache(hash,p_LN);
 	% also cache the example history length
 	g = l-h;
@@ -128,6 +129,7 @@ if isempty(cached_data)
 	[~,loc]=max(g);
 	ehl = history_lengths(loc);
 
+	cache(dataHash(p_LN),[]);
 	cache(dataHash(p_LN),ehl);
 	if verbosity
 		disp('Computing the best example history length for next time. and that is...')

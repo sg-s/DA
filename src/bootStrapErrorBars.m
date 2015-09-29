@@ -23,7 +23,6 @@ t = x.time(:);
 dt = mean(diff(t));
 hl = round(history_lengths/dt);
 
-
 % compute shat
 shat = computeSmoothedStimulus(stimulus,hl);
 
@@ -106,9 +105,6 @@ for i = 1:length(hl) % for each history length
 		coeff = pca([fp_high f_high]);
 		temp(j) = coeff(2,1)/coeff(1,1);
 
-		% if temp(j) < 0
-		% 	temp(j) = coeff(2,2)/coeff(2,1)
-		% end
 
 	end
 	clear j

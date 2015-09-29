@@ -12,7 +12,7 @@ if ~nargin
 	return
 end
 if ~isvector(stimulus) || ~isvector(response) || ~isvector(prediction)
-	error('First two argumnets should be vectors')
+	error('First three arguments should be vectors')
 else
 	stimulus = stimulus(:);
 	response =  response(:);

@@ -58,6 +58,12 @@ axes_handles(3) = subplot(10,3,[19:3:28]);
 axes_handles(4) = subplot(10,3,[20:3:29]);
 axes_handles(5) = subplot(10,3,[21:3:30]);
 
+movePlot(axes_handles(1),'up',.03)
+movePlot(axes_handles(2),'up',.04)
+movePlot(axes_handles(3),'down',.02)
+movePlot(axes_handles(4),'down',.02)
+movePlot(axes_handles(5),'down',.02)
+
 for i = 1:length(axes_handles)
 	hold(axes_handles(i),'on');
 end
@@ -170,10 +176,6 @@ mean_stim(rm_this) = [];
 
 errorbar(axes_handles(5),mean_stim,gain,gain_err,'k+')
 
-% ff = fit(mean_stim(:),gain(:),'power1','Weights',1./gain_err);
-% clear l
-% l(1) = plot(axes_handles(5),sort(mean_stim),ff(sort(mean_stim)),'r');
-% L{1} = ['y=\alpha x^{\beta}, \beta=', char(10), oval(ff.b),'. r^2=',oval(rsquare(ff(mean_stim),gain))];
 
 options = fitoptions(fittype('power1'));
 options.Lower = [-Inf -1];
@@ -181,7 +183,7 @@ options.Upper = [Inf -1];
 options.Weights = 1./gain_err;
 ff = fit(mean_stim(:),gain(:),'power1',options);
 l(1) = plot(axes_handles(5),sort(mean_stim),ff(sort(mean_stim)),'r');
-L{1} = ['y=\alpha x^{-1}',char(10),'. r^2=',oval(rsquare(ff(mean_stim),gain))];
+L{1} = ['y=\alpha x^{-1}',char(10),'r^2=',oval(rsquare(ff(mean_stim),gain))];
 legend(l,L)
 xlabel(axes_handles(5),'Stimulus in preceding 500ms (V)')
 ylabel(axes_handles(5),'Gain (Hz/V)')
@@ -189,6 +191,7 @@ ylabel(axes_handles(5),'Gain (Hz/V)')
 % cosmetic fixes
 set(axes_handles(1),'XTick',[])
 set(axes_handles(4),'XLim',[min(fp) max(fp)])
+set(axes_handles(5),'YLim',[0 150])
 
 prettyFig('plw=2;','lw=2;','fs=12;')
 
@@ -332,7 +335,7 @@ ylabel(axes_handles(3),'Relative gain')
 set(axes_handles(3),'YLim',[0 3.5])
 
 % fix some labels
-set(axes_handles(5),'YScale','log','YTick',[0.5 1 2],'YLim',[0.4 2.5],'XLim',[0.09 10.1])
+set(axes_handles(5),'YScale','log','YTick',[0.5 1 2],'YLim',[0.4 2.5],'XLim',[0.09 10.1],'YMinorTick','on')
 
 % Indicate regions of high and low stimulus on the stimulus
 hl = round(history_lengths(9)*1e3);

@@ -13,6 +13,7 @@ calling_func = dbstack;
 path1 = getenv('PATH');
 path1 = [path1 ':/usr/local/bin'];
 setenv('PATH', path1);
+
 being_published = 0;
 if ~isempty(calling_func)
 	if find(strcmp('publish',{calling_func.name}))
@@ -547,9 +548,64 @@ if being_published
 	delete(gcf)
 end
 
+%% Optimal Coding
+% In this section we investigate the idea that the ORN is doing something like optimal coding, i.e., matching its I/O curve to the statistics of the input. 
 
+figure('outerposition',[0 0 600 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
+ax(1) = subplot(2,1,1); hold on
+ax(2) = subplot(2,1,2); hold on
+xlabel(ax(2),'Projected Stimulus')
+ylabel(ax(2),'Normalised Response')
+ylabel(ax(1),'Stimulus Probability')
 
+% high variance
+temp = fA_pred(1e3:5e3,:); temp = temp(:);
+[y,x] = hist(temp,30);
+y = y/sum(y);
+l(1) = plot(ax(1),x,y,'r');
+plot(ax(2),x,cumsum(y),'r--');
 
+x = fA_pred(1e3:5e3,:);
+y = reshaped_fA(1e3:5e3,:);
+
+x = x(:); y = y(:);
+rm_this = isnan(x) | isnan(y);
+
+[~,data] = plotPieceWiseLinear(x(~rm_this),y(~rm_this),'Color',c(ci,:),'nbins',30,'make_plot',false);
+data.y = data.y/max(data.y);
+plot(ax(2),data.x,data.y,'r')
+
+% low variance
+temp = fA_pred(6e3:end,:); temp = temp(:);
+[y,x] = hist(temp,30);
+y = y/sum(y);
+l(2) = plot(ax(1),x,y,'b');
+plot(ax(2),x,cumsum(y),'b--');
+
+x = fA_pred(6e3:end,:);
+y = reshaped_fA(6e3:end,:);
+
+x = x(:); y = y(:);
+rm_this = isnan(x) | isnan(y);
+
+[~,data] = plotPieceWiseLinear(x(~rm_this),y(~rm_this),'Color',c(ci,:),'nbins',30,'make_plot',false);
+data.y = data.y/max(data.y);
+plot(ax(2),data.x,data.y,'b')
+
+legend(l,{'High Variance','Low Variance'})
+
+% fake some plots for a nice legend
+l(1) = plot(ax(2),NaN,NaN,'k--');
+l(2) = plot(ax(2),NaN,NaN,'k');
+L = {'Prediction','Data'};
+legend(l,L,'Location','southeast')
+
+prettyFig()
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %% Version Info
 % The file that generated this document is called:
@@ -574,7 +630,6 @@ t = toc;
 disp(strcat(oval(t,3),' seconds.'))
 
 % tag the file as being published 
-
 if being_published
 	unix(['tag -a published ',which(mfilename)]);
 	unix(['tag -r publish-failed ',which(mfilename)]);

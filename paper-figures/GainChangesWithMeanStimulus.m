@@ -434,22 +434,39 @@ title('Response')
 
 subplot(2,2,3), hold on
 ss = 50;
+all_x = []; all_y = [];
 for i = 1:8 % iterate over all paradigms 
 	y = ([MSG_data(i,:).resp]);
+	s = ([MSG_data(i,:).stim]);
 	x = ([MSG_data(i,:).fp]);
 	if ~isvector(x)
 		x = mean2(x);
+	end
+
+	if ~isvector(s)
+		s = mean2(s);
 	end
 
 	if ~isvector(y)
 		y = mean2(y);
 	end 
 
-	plot(x(1:ss:end)+mean(y),y(1:ss:end),'.','Color',c(i,:))
+	all_x = [all_x; x+mean(s)];
+	all_y = [all_y; y];
+	plot(x(1:ss:end)+mean(s),y(1:ss:end),'.','Color',c(i,:))
 end
 
-xlabel('K\otimes s + mean(resp)')
+p.A= 34.4229;
+p.k= 0.7455;
+p.n= 1.5538;
+L = ['Hill fit, r^2=' oval(rsquare(all_x,hill(all_x,p)))];
+all_x = nonnans(sort(all_x(:)));
+all_x = linspace(all_x(1),all_x(end),100);
+l = plot(all_x,hill(all_x,p),'r');
+legend(l,L,'Location','southeast')
+xlabel('Projected Stimulus')
 ylabel('Neuron Response (Hz)')
+
 
 % rescale by Weber law
 subplot(2,2,4), hold on
@@ -483,7 +500,7 @@ clear l
 l = plot(-5:0.1:45,ff2(-5:0.1:45),'r');
 
 legend(l,strcat('r^2=',oval(rsquare(ally,ff2(allx)))),'Location','northwest');
-xlabel('Rescaled Linear Prediction')
+xlabel('Stimulus Rescaled by Weber Law')
 ylabel('Neuron Response (Hz)')
 
 prettyFig;

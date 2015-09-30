@@ -360,7 +360,7 @@ end
 %        ##    ## ##     ## ##        ##           ##        ##  ##    ##        ##   
 %         ######   #######  ##        ##           ##       ####  ######       ###### 
 
-%% Supplementart Figure 1
+%% Supplementary Figure 1
 
 
 ac_mean = zeros(20e3+1,8);

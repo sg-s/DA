@@ -145,6 +145,7 @@ axes(axes_handles(4))
 ss = 1;
 cc = parula(100);
 c= cc(shat,:);
+% scatter(fp(1:ss:end),R(1:ss:end),[],'k','filled')
 scatter(fp(1:ss:end),R(1:ss:end),[],c(1:ss:end,:),'filled')
 xlabel(axes_handles(4),'Projected Stimulus')
 ylabel(axes_handles(4),'Actual response (Hz)')
@@ -154,8 +155,6 @@ caxis([min(shat) max(shat)]);
 
 % plot gain vs stimulus for all these whiffs
 axes(axes_handles(5))
-fp = convolve(tA,mean2(PID),K,filtertime);
-shat = computeSmoothedStimulus(mean2(PID),500);
 
 % find all excursions (defined as firing rate crossing 10Hz)
 [whiff_starts,whiff_ends] = computeOnsOffs(R>10);
@@ -199,8 +198,6 @@ if being_published
 	snapnow
 	delete(gcf)
 end
-
-
 
 %         ########    ###     ######  ########     ######      ###    #### ##    ## 
 %         ##         ## ##   ##    ##    ##       ##    ##    ## ##    ##  ###   ## 

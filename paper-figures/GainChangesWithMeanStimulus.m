@@ -451,15 +451,15 @@ for i = 1:8 % iterate over all paradigms
 		y = mean2(y);
 	end 
 
-	all_x = [all_x; x+mean(s)];
-	all_y = [all_y; y];
+	all_x = [all_x x+mean(s)];
+	all_y = [all_y y];
 	plot(x(1:ss:end)+mean(s),y(1:ss:end),'.','Color',c(i,:))
 end
 
 p.A= 34.4229;
 p.k= 0.7455;
 p.n= 1.5538;
-L = ['Hill fit, r^2=' oval(rsquare(all_x,hill(all_x,p)))];
+L = ['Hill fit, r^2=' oval(rsquare(all_y(:),hill(all_x(:),p)))];
 all_x = nonnans(sort(all_x(:)));
 all_x = linspace(all_x(1),all_x(end),100);
 l = plot(all_x,hill(all_x,p),'r');

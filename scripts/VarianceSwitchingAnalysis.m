@@ -30,8 +30,8 @@ tic
 %% Stimulus
 % In the following figure, we show what the stimulus looks like. On the right, we show the distributions of the stimulus in the two cases. For some reason, the distribution when the variance is high is no longer a nice looking Gaussian, even though that was what we had when we tested it. 
 
-p = '/local-data/DA-paper/switching/variance/v2/';
-[PID, LFP, fA, paradigm, orn] = consolidateData(p,1);
+path_name = '/local-data/DA-paper/switching/variance/v2/';
+[PID, LFP, fA, paradigm, orn] = consolidateData(path_name,1);
 
 global_start = 40e3; % 40 seconds
 global_end = length(PID) - 5e3; 
@@ -105,6 +105,27 @@ reshaped_PID = reshape(reshaped_PID,block_length,width(reshaped_PID)*length(resh
 reshaped_fA = fA(global_start:end-1e4-1,1:width(PID));
 reshaped_fA = reshape(reshaped_fA,block_length,width(reshaped_fA)*length(reshaped_fA)/block_length);
 
+% make predictions everywhere using the DA model
+p.tau_z =  101.2500;
+p.tau_y =  25.9219;
+p.  n_y =  2;
+p.  n_z =  2;
+p.    A =  221.5312;
+p.    B =  2.7343;
+p.    C =  0.0076;
+p.   s0 =  -0.3125;
+
+DA_pred = NaN*fA;
+for i = 1:width(fA)
+	DA_pred(:,i) = DAModelv2(PID(:,i),p);
+end
+
+reshaped_DA = DA_pred(global_start:end-1e4-1,1:width(PID));
+reshaped_DA = reshape(reshaped_DA,block_length,width(reshaped_DA)*length(reshaped_DA)/block_length);
+
+
+
+
 % also reshape the orn ID
 reshaped_orn = repmat(orn,length(global_start:length(PID)-1e4-1)/block_length,1);
 reshaped_orn = reshaped_orn(:);
@@ -114,6 +135,7 @@ rm_this = isnan(sum(reshaped_LFP));
 reshaped_LFP(:,rm_this) = [];
 reshaped_PID(:,rm_this) = [];
 reshaped_fA(:,rm_this) = [];
+reshaped_DA(:,rm_this) = [];
 reshaped_orn(rm_this) = [];
 
 % make colour scheme for block analysis
@@ -523,7 +545,7 @@ for j = 1:5:length(all_offsets)
 end
 
 xlabel('Projected Stimulus')
-ylabel('\DeltaLFP (mV)')
+ylabel('Firing Rate (Hz)')
 
 subplot(1,3,3), hold on
 % fake a colourbar
@@ -601,6 +623,96 @@ L = {'Prediction','Data'};
 legend(l,L,'Location','southeast')
 
 prettyFig()
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%% DA Model Predictions
+% In this section, we fit the DA model to the data and see if it can account for the change in gain with variance. 
+
+% compute the slopes
+if exist('.cache/VSA_DA_slopes.mat','file') == 2
+	load('.cache/VSA_DA_slopes.mat','n')
+else
+	n = NaN(width(reshaped_PID),length(all_offsets));
+	for i = 1:width(reshaped_PID)
+		textbar(i,width(reshaped_DA))
+		for j = 1:length(all_offsets)
+			x = reshaped_DA(:,i);
+			y = reshaped_fA(:,i);
+
+			a = round(1e3*(all_offsets(j) - window_length/2));
+			z = round(1e3*(all_offsets(j) + window_length/2));
+
+			x = circshift(x,length(x) - z );
+			y = circshift(y,length(y) - z );
+
+			x = x(end-window_length*1e3:end);
+			y = y(end-window_length*1e3:end);
+
+			rm_this = isnan(x) | isnan(y);
+			x(rm_this) = [];
+			y(rm_this) = [];
+
+			y = y(x > 0.33*max(x) & x < .66*max(x));
+			x = x(x > 0.33*max(x) & x < .66*max(x));
+
+			try
+				ff = fit(x(:),y(:),'poly1');
+				n(i,j) = ff.p1;
+			catch
+			end
+		end
+	end
+	save('.cache/VSA_DA_slopes.mat','n')
+end
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+for j = 1:5:length(all_offsets)
+	x = reshaped_DA;
+	y = reshaped_fA;
+
+	a = round(1e3*(all_offsets(j) - window_length/2));
+	z = round(1e3*(all_offsets(j) + window_length/2));
+
+	x = circshift(x,length(x) - z,1);
+	y = circshift(y,length(y) - z,1);
+
+	x = x(end-window_length*1e3:end,:);
+	y = y(end-window_length*1e3:end,:);
+
+	x = x(:); y = y(:);
+	rm_this = isnan(x) | isnan(y);
+
+
+	ci = max([1 floor(length(c)*(all_offsets(j)*sr)/length(reshaped_LFP))]);
+	handles(j) = plotPieceWiseLinear(x(~rm_this),y(~rm_this),'Color',c(ci,:),'nbins',30);
+	delete(handles(j).shade)
+	delete(handles(j).line(2:3))
+end
+
+xlabel('DA Prediction')
+ylabel('Firing rate (Hz)')
+
+subplot(1,2,2), hold on
+% fake a colourbar
+yy0 = 2.4;
+for i = 1:length(c)
+	xx = time([floor(length(time)*(i/length(c))) floor(length(time)*(i/length(c)))]);
+	yy = [yy0  yy0*1.01];
+	plot(xx,yy,'Color',c(i,:),'LineWidth',4)
+end
+
+errorShade(all_offsets,nanmean(n),sem(n'),'Color','k');
+
+ylabel('Gain w.r.t DA Model')
+xlabel('Time since switch (s)')
+
+prettyFig()
+
 
 if being_published
 	snapnow

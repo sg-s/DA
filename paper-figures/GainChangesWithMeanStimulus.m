@@ -387,8 +387,8 @@ for i = 1:8
 	ac_std(:,i) = sem(this_ac);
 end
 
-figure('outerposition',[0 0 900 900],'PaperUnits','points','PaperSize',[900 900]); hold on
-subplot(2,2,1), hold on
+figure('outerposition',[0 0 1100 900],'PaperUnits','points','PaperSize',[1100 900]); hold on
+subplot(3,2,1), hold on
 time = 1e-3*(1:length(ac_mean));
 for i = 1:8
 	errorShade(time,ac_mean(:,i),ac_std(:,i),'Color',c(i,:));
@@ -422,7 +422,7 @@ for i = 1:8
 	ac_std(:,i) = sem(this_ac);
 end
 
-subplot(2,2,2), hold on
+subplot(3,2,2), hold on
 time = 1e-3*(1:length(ac_mean));
 for i = 1:8
 	errorShade(time,ac_mean(:,i),ac_std(:,i),'Color',c(i,:));
@@ -432,7 +432,7 @@ xlabel('Lag (s)')
 ylabel('Autocorrelation')
 title('Response')
 
-subplot(2,2,3), hold on
+subplot(3,2,3), hold on
 ss = 50;
 all_x = []; all_y = [];
 for i = 1:8 % iterate over all paradigms 
@@ -467,9 +467,36 @@ legend(l,L,'Location','southeast')
 xlabel('Projected Stimulus')
 ylabel('Neuron Response (Hz)')
 
+% show non-linearities to each cloud
+clear p
+subplot(3,2,4), hold on
+for i = 1:8 % iterate over all paradigms 
+	y = ([MSG_data(i,:).resp]);
+	s = ([MSG_data(i,:).stim]);
+	x = ([MSG_data(i,:).fp]);
+	if ~isvector(x)
+		x = mean2(x);
+	end
+
+	if ~isvector(s)
+		s = mean2(s);
+	end
+
+	if ~isvector(y)
+		y = mean2(y);
+	end 
+
+	clear d
+	d.stimulus = x + mean(s);
+	d.response = y;
+	p(i) = fitModel2Data(@hill,d,'nsteps',0);
+	plot(all_x(all_x<max(d.stimulus)),hill(all_x(all_x<max(d.stimulus)),p(i)),'Color',c(i,:))
+end
+xlabel('Projected Stimulus')
+ylabel('Neuron Response (Hz)')
 
 % rescale by Weber law
-subplot(2,2,4), hold on
+subplot(3,2,5), hold on
 ss = 50;
 allx = [];
 ally = [];
@@ -503,7 +530,7 @@ legend(l,strcat('r^2=',oval(rsquare(ally,ff2(allx)))),'Location','northwest');
 xlabel('Stimulus Rescaled by Weber Law')
 ylabel('Neuron Response (Hz)')
 
-prettyFig;
+prettyFig('fs=20;');
 
 if being_published
 	snapnow

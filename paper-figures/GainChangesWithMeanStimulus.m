@@ -84,12 +84,13 @@ c = parula(length(paradigm_names)+1);
 
 mean_pid = NaN(length(c),1);
 
-% plot lowest dose stimulus
-plot_these=find(strcmp(paradigm_names{1}, combined_data.paradigm));
+% plot some stimulus
+example_dose = 3;
+plot_these=find(strcmp(paradigm_names{example_dose}, combined_data.paradigm));
 plot_this = mean2(combined_data.PID(plot_these,:));
 time = dt*(1:length(plot_this));
 axes(axes_handles(1))
-errorShade(time,plot_this,sem(combined_data.PID(plot_these,:)'),'Color',c(1,:));
+plot(time,plot_this,'Color',c(example_dose,:));
 ylabel(axes_handles(1),'Stimulus (V)')
 set(axes_handles(1),'XLim',[45 55])
 
@@ -122,15 +123,9 @@ load('../data/MSG_per_neuron.mat','MSG_data')
 
 % plot the filter for the lowest dose 
 filtertime = (-200:800)*1e-3;
-K = NaN*filtertime;
-for i = 1:13 % get all the filters for the lowest dose
-	K = [K; MSG_data(1,i).K];
-end
-K(1,:) = [];
-err = std(K);
-err = err/sqrt(width(K));
+K = reshape([MSG_data(example_dose,:).K],1001,length([MSG_data(example_dose,:).K])/1001);
 axes(axes_handles(3))
-shadedErrorBar(filtertime,mean2(K),err,{'Color',c(1,:)})
+shadedErrorBar(filtertime,mean2(K),sem(K),{'Color',c(example_dose,:)})
 set(axes_handles(3),'XLim',[min(filtertime) max(filtertime)])
 xlabel(axes_handles(3),'Lag (s)')
 ylabel(axes_handles(3),'Filter K (norm)')
@@ -149,45 +144,45 @@ for i = 1:8
 end
 
 
-% plot linear prediction vs. data for the lowest dose. 
+% plot linear prediction vs. data for the example dose. 
 ss = 25;
-y = mean2([MSG_data(1,:).resp]);
-x = mean2([MSG_data(1,:).fp]);
-time = 35+1e-3*(1:length([MSG_data(1,:).fp]));
+y = mean2([MSG_data(example_dose,:).resp]);
+x = mean2([MSG_data(example_dose,:).fp]);
+time = 35+1e-3*(1:length([MSG_data(example_dose,:).fp]));
 
 
 [ax,plot1,plot2] = plotyy(axes_handles(2),time,y,time,x);
 set(ax(1),'XLim',[45 55])
-set(ax(2),'XLim',[45 55])
-set(plot1,'Color',c(1,:))
+set(ax(2),'XLim',[45 55],'YLim',[-.7 .8 ])
+set(plot1,'Color',c(example_dose,:))
 set(plot2,'Color','r')
 ylabel(ax(1),'ORN Response (Hz)')
-ylabel(ax(2),'Linear Prediction')
+ylabel(ax(2),'Projected Stimulus')
 set(axes_handles(2),'box','off')
 
-plot(axes_handles(4),x(1:ss:end),y(1:ss:end),'.','Color',c(1,:));
+plot(axes_handles(4),x(1:ss:end),y(1:ss:end),'.','Color',c(example_dose,:));
 
 ff= fit(x(~isnan(x)),y(~isnan(x)),'poly1');
 l = plot(axes_handles(4),sort(x),ff(sort(x)),'r');
 L = {};
 L{1} = strcat('Gain=',oval(ff.p1),'Hz/V, r^2=',oval(rsquare(y,x)));
 
-% also fit a hill function
-rm_this = isnan(x) | isnan(y);
-x(rm_this) = []; y(rm_this) = [];
-minx = min(x);
-x = x - minx;
-clear p
-p.     A= 42.9682;
-p.     k= 1.0570;
-p.     n= 2.4301;
-p.y_offset= 2.9976;
-[x,idx] = sort(x); y = y(idx);
-l(2) = plot(axes_handles(4),x + minx,hill4(x,p),'k--');
-L{2} = strcat('Hill fit, r^2=',oval(rsquare(hill4(x,p),y)));
+% % also fit a hill function
+% rm_this = isnan(x) | isnan(y);
+% x(rm_this) = []; y(rm_this) = [];
+% minx = min(x);
+% x = x - minx;
+% clear p
+% p.     A= 42.9682;
+% p.     k= 1.0570;
+% p.     n= 2.4301;
+% p.y_offset= 2.9976;
+% [x,idx] = sort(x); y = y(idx);
+% l(2) = plot(axes_handles(4),x + minx,hill4(x,p),'k--');
+% L{2} = strcat('Hill fit, r^2=',oval(rsquare(hill4(x,p),y)));
 
 
-xlabel(axes_handles(4),'K \otimes s')
+xlabel(axes_handles(4),'Projected Stimulus')
 ylabel(axes_handles(4),'Response (Hz)')
 
 legend(l,L,'Location','northwest');
@@ -199,7 +194,7 @@ if being_published
 	delete(gcf)
 end
 
-
+return
 
 
 %        ######## ####  ######   ##     ## ########  ########     #######  

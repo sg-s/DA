@@ -307,42 +307,37 @@ for i = 1:8 % iterate over all paradigms
 			mean_stim(i,j) = mean(mean([MSG_data(i,j).stim]));
 			mean_resp(i,j) = mean(mean([MSG_data(i,j).resp]));
 
-			% get the weights for the each
-			temp = confint(temp);
-			gain_err(i,j) = diff(temp(:,1))/2;
 		end
 	end	
 end
 
+% calculate the gain error as the standard deviation over each paradigm
+gain_err = nanstd(gain');
+gain_err(gain_err == 0) = Inf;
+
 % show gain changes -- gain vs. mean stimulus
-for i = 1:8 % iterate over all paradigms 
-	for j = 1:13
-		errorbar(axes_handles(8),mean_stim(i,j),gain(i,j),gain_err(i,j),'+','Color',c(i,:));
-	end
+axis(axes_handles(8));
+for i = 1:8
+	plot((mean_stim(i,:)),(gain(i,:)),'+','Color',c(i,:));
 end
 
-mean_stim = mean_stim(~isnan(mean_stim));
-mean_resp = mean_resp(~isnan(mean_resp));
-gain = gain(~isnan(gain));
-gain_err = gain_err(~isnan(gain_err));
 
-
-cf = fit(mean_stim(:),gain(:),'power1','Weights',1./gain_err);
+cf = fit(nanmean(mean_stim')',nanmean(gain')','power1','Weights',1./gain_err(:));
 set(axes_handles(8),'XScale','log','YScale','log','YLim',[1 200],'XLim',[.5 3.5])
-% set(axes_handles(8),'XScale','linear','YScale','linear','YLim',[1 45],'XLim',[.5 3.5])
 xlabel(axes_handles(8),'Mean Stimulus (V)')
 ylabel(axes_handles(8),'Neuron Gain (Hz/V)')
-l(1)=plot(axes_handles(8),sort(mean_stim),cf(sort(mean_stim)),'k');
-r2 = rsquare(cf(mean_stim(:)),gain(:));
+l(1)=plot(axes_handles(8),nanmean(mean_stim')',cf(nanmean(mean_stim')'),'k');
+r2 = rsquare(nonnans(gain),cf(nonnans(mean_stim)));
 L = strcat('y = \alpha x^{\beta}, \beta= ',oval(cf.b), ',r^2 = ',oval(r2));
 
 % fit a power law with exponent -1
 options = fitoptions(fittype('power1'));
 options.Lower = [-Inf -1];
 options.Upper = [Inf -1];
-cf = fit(mean_stim(:),gain(:),'power1',options);
-l(2)=plot(axes_handles(8),sort(mean_stim),cf(sort(mean_stim)),'k--');
-r2 = rsquare(cf(mean_stim(:)),gain(:));
+options.Weights = 1./gain_err(:);
+cf = fit(nanmean(mean_stim')',nanmean(gain')','power1',options);
+l(2)=plot(axes_handles(8),nanmean(mean_stim')',cf(nanmean(mean_stim')'),'k--');
+r2 = rsquare(nonnans(gain),cf(nonnans(mean_stim)));
 legend(l,{L, strcat('y = \alpha x^{-1}, \alpha= ',oval(cf.a), ', r^2 = ',oval(r2))} )
 
 prettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=0;','FixLogY=0;')

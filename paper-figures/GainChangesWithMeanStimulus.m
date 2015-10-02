@@ -194,7 +194,6 @@ if being_published
 	delete(gcf)
 end
 
-return
 
 
 %        ######## ####  ######   ##     ## ########  ########     #######  
@@ -217,15 +216,27 @@ return
 %% Figure 2: ORN gain decreases with increasing stimulus intensity, similar to the Weber-Fechner Law
 % Odorant stimuli drawn from distributions with similar variances but increasing means (A) elicit ORN responses with decreasing variances (B). After extracting linear filters for all stimulus paradigms, a plot of the ORN response vs. the linear prediction (C) shows a systematic decrease in slope. Plotting lines to each of these clouds of points determines the neuron gain in each case. Neuron gain decreases with the mean stimulus (D). This stimulus-dependent decrease in gain is well described by a power law with an exponent close to -1 (the Weber-Fechner Prediction). For comparison, a power law with the exponent fixed at -1 is also shown (dashed line). 
 
+figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
+clear ax
+ax(1) = subplot(3,10,1:8);
+ax(2) = subplot(3,10,9:10);
+ax(3) = subplot(3,10,11:18);
+ax(4) = subplot(3,10,19:20);
 
-figure('outerposition',[0 0 800 700],'PaperUnits','points','PaperSize',[800 700]); hold on
-axes_handles(5) = subplot(2,2,1); hold on;
-axes_handles(6) = subplot(2,2,2); hold on;
-axes_handles(7) = subplot(2,2,3); hold on;
-axes_handles(8) = subplot(2,2,4); hold on;
+ax(5) = subplot(3,3,7); 
+ax(6) = subplot(3,3,8);
+ax(7) = subplot(3,3,9);
+for i = 1:length(ax)
+	hold(ax(i),'on');
+end  
+
+% plot all the stimuli
+for i = 1:8
+	plot(ax(1),MSG_data(1,1).time,mean2([MSG_data(i,:).stim]),'Color',c(i,:))
+end
 
 % plot the stimulus distributions 
-a = floor(15/dt);
+a = floor(35/dt);
 z = floor(55/dt);
 
 for i = 1:length(paradigm_names)
@@ -233,26 +244,18 @@ for i = 1:length(paradigm_names)
 	plot_hist = (combined_data.PID(plot_these,a:z));
 	[hy,hx]  = hist(plot_hist(:),50);
 	hy = hy/length(plot_these);
-	plot(axes_handles(5),hx,hy,'Color',c(i,:));
+	hy = hy/sum(hy);
+	plot(ax(2),hy,hx,'Color',c(i,:));
 end
 
-xlabel(axes_handles(5),'Stimulus (V)')
-ylabel(axes_handles(5),'count')
-
-
-% plot the response distributions 
-a = floor(15/dt);
-z = floor(55/dt);
-
-for i = 1:length(paradigm_names)
-	temp =  [MSG_data(i,:).resp];
-	temp = mean2(temp);
-	[hy,hx]  = hist(temp,50);
-	plot(axes_handles(6),hx,hy,'Color',c(i,:));
+% plot the responses
+for i = 1:8
+	temp = [MSG_data(i,:).resp];
+	plot(ax(3),MSG_data(1,1).time,mean2(temp),'Color',c(i,:));
+	[hx,hy] = hist(mean2(temp),30);
+	hx = hx/sum(hx);
+	plot(ax(4),hx,hy,'Color',c(i,:));
 end
-
-xlabel(axes_handles(6),'Response (Hz)')
-ylabel(axes_handles(6),'count')
 
 
 % show gain changes for all paradigms -- average over neurons 
@@ -268,11 +271,8 @@ for i = 1:8 % iterate over all paradigms
 		y = mean2(y);
 	end 
 
-	plot(axes_handles(7),x(1:ss:end),y(1:ss:end),'.','Color',c(i,:))
+	plot(ax(5),x(1:ss:end),y(1:ss:end),'.','Color',c(i,:))
 end
-
-xlabel(axes_handles(7),'K\otimes s')
-ylabel(axes_handles(7),'Neuron Response (Hz)')
 
 
 % compute gain changes on a per-neuron basis
@@ -311,17 +311,15 @@ gain_err = nanstd(gain');
 gain_err(gain_err == 0) = Inf;
 
 % show gain changes -- gain vs. mean stimulus
-axis(axes_handles(8));
 for i = 1:8
-	plot((mean_stim(i,:)),(gain(i,:)),'+','Color',c(i,:));
+	plot(ax(6),(mean_stim(i,:)),(gain(i,:)),'+','Color',c(i,:));
 end
 
 
 cf = fit(nanmean(mean_stim')',nanmean(gain')','power1','Weights',1./gain_err(:));
-set(axes_handles(8),'XScale','log','YScale','log','YLim',[1 200],'XLim',[.5 3.5])
-xlabel(axes_handles(8),'Mean Stimulus (V)')
-ylabel(axes_handles(8),'Neuron Gain (Hz/V)')
-l(1)=plot(axes_handles(8),nanmean(mean_stim')',cf(nanmean(mean_stim')'),'k');
+
+
+l(1)=plot(ax(6),nanmean(mean_stim')',cf(nanmean(mean_stim')'),'k');
 r2 = rsquare(nonnans(gain),cf(nonnans(mean_stim)));
 L = strcat('y = \alpha x^{\beta}, \beta= ',oval(cf.b), ',r^2 = ',oval(r2));
 
@@ -331,9 +329,64 @@ options.Lower = [-Inf -1];
 options.Upper = [Inf -1];
 options.Weights = 1./gain_err(:);
 cf = fit(nanmean(mean_stim')',nanmean(gain')','power1',options);
-l(2)=plot(axes_handles(8),nanmean(mean_stim')',cf(nanmean(mean_stim')'),'k--');
+l(2)=plot(ax(6),nanmean(mean_stim')',cf(nanmean(mean_stim')'),'k--');
 r2 = rsquare(nonnans(gain),cf(nonnans(mean_stim)));
-legend(l,{L, strcat('y = \alpha x^{-1}, \alpha= ',oval(cf.a), ', r^2 = ',oval(r2))} )
+legend(l,{L, strcat('y = \alpha x^{-1}, \alpha= ',oval(cf.a), ', r^2 = ',oval(r2))},'Location','northoutside')
+
+% rescale by Weber law
+ss = 50;
+allx = [];
+ally = [];
+for i = 1:8 % iterate over all paradigms 
+	y = ([MSG_data(i,:).resp]);
+	x = ([MSG_data(i,:).fp]);
+	s = ([MSG_data(i,:).stim]);
+	if ~isvector(x)
+		x = mean2(x);
+	end
+	if ~isvector(s)
+		s = mean2(s);
+	end
+	if ~isvector(y)
+		y = mean2(y);
+	end 
+
+	allx = [allx mean(y)+cf(mean2(s))*(x(1:ss:end))];
+	ally = [ally y(1:ss:end)];
+	plot(ax(7),mean(y)+cf(mean2(s))*(x(1:ss:end)),y(1:ss:end),'.','Color',c(i,:))
+end
+allx = allx(:); ally = ally(:); 
+rm_this = isnan(allx) | isnan(ally);
+allx(rm_this) = [];
+ally(rm_this) = [];
+ff2 = fit(allx(:),ally(:),'poly1');
+clear l
+l = plot(ax(7),-5:0.1:45,ff2(-5:0.1:45),'r');
+legend(l,strcat('r^2=',oval(rsquare(ally,ff2(allx)))),'Location','northwest');
+
+
+% cosmetics
+set(ax(1),'XLim',[45 55],'YLim',[0 4.5])
+set(ax(2),'YLim',[0 4.5],'YTick',[])
+
+set(ax(3),'XLim',[45 55],'YLim',[0 40])
+set(ax(4),'YLim',[0 40],'YTick',[])
+set(ax(6),'XScale','log','YScale','log','YLim',[1 50],'XLim',[.5 3.5])
+set(ax(7),'XLim',[0 50],'YLim',[0 50])
+
+ylabel(ax(1),'Stimulus (V)')
+ylabel(ax(3),'ORN Response (Hz)')
+xlabel(ax(3),'Time (s)')
+xlabel(ax(4),'Probability')
+xlabel(ax(5),'Projected Stimulus')
+ylabel(ax(5),'ORN Response (Hz)')
+xlabel(ax(6),'Mean Stimulus (V)')
+ylabel(ax(6),'Neuron Gain (Hz/V)')
+
+xlabel(ax(7),[' Projected Stimulus ' char(10) 'Rescaled by Weber Law'])
+ylabel(ax(7),'Neuron Response (Hz)')
+
+
 
 prettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=0;','FixLogY=0;')
 
@@ -341,6 +394,8 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+return
 
 %         ######  ##     ## ########  ########     ######## ####  ######         ##   
 %        ##    ## ##     ## ##     ## ##     ##    ##        ##  ##    ##      ####   
@@ -485,40 +540,9 @@ end
 xlabel('Projected Stimulus')
 ylabel('Neuron Response (Hz)')
 
-% rescale by Weber law
-subplot(3,2,5), hold on
-ss = 50;
-allx = [];
-ally = [];
-for i = 1:8 % iterate over all paradigms 
-	y = ([MSG_data(i,:).resp]);
-	x = ([MSG_data(i,:).fp]);
-	s = ([MSG_data(i,:).stim]);
-	if ~isvector(x)
-		x = mean2(x);
-	end
-	if ~isvector(s)
-		s = mean2(s);
-	end
-	if ~isvector(y)
-		y = mean2(y);
-	end 
 
-	allx = [allx mean(y)+cf(mean2(s))*(x(1:ss:end))];
-	ally = [ally y(1:ss:end)];
-	plot(mean(y)+cf(mean2(s))*(x(1:ss:end)),y(1:ss:end),'.','Color',c(i,:))
-end
-allx = allx(:); ally = ally(:); 
-rm_this = isnan(allx) | isnan(ally);
-allx(rm_this) = [];
-ally(rm_this) = [];
-ff2 = fit(allx(:),ally(:),'poly1');
-clear l
-l = plot(-5:0.1:45,ff2(-5:0.1:45),'r');
 
-legend(l,strcat('r^2=',oval(rsquare(ally,ff2(allx)))),'Location','northwest');
-xlabel('Stimulus Rescaled by Weber Law')
-ylabel('Neuron Response (Hz)')
+
 
 prettyFig('fs=20;');
 

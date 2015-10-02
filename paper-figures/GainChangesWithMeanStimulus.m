@@ -395,7 +395,6 @@ if being_published
 	delete(gcf)
 end
 
-return
 
 %         ######  ##     ## ########  ########     ######## ####  ######         ##   
 %        ##    ## ##     ## ##     ## ##     ##    ##        ##  ##    ##      ####   
@@ -407,77 +406,8 @@ return
 
 %% Supplementary Figure 1
 
-
-ac_mean = zeros(20e3+1,8);
-ac_std = zeros(20e3+1,8);
-a = [];
-for i = 1:8
-	this_ac = [];
-	for j = 1:13
-		
-		stim = (MSG_data(i,j).stim);
-		if ~isempty(stim)
-			if ~isvector(stim)
-				stim = mean2(stim);
-			end
-			[~,~,temp]=findCorrelationTime(stim);
-			this_ac = [this_ac temp];
-		end
-	end
-	if isvector(this_ac)
-		ac_mean(:,i) = (this_ac);
-	else
-		ac_mean(:,i) = mean2(this_ac);
-	end
-	ac_std(:,i) = sem(this_ac);
-end
-
-figure('outerposition',[0 0 1100 900],'PaperUnits','points','PaperSize',[1100 900]); hold on
-subplot(3,2,1), hold on
-time = 1e-3*(1:length(ac_mean));
-for i = 1:8
-	errorShade(time,ac_mean(:,i),ac_std(:,i),'Color',c(i,:));
-end
-set(gca,'XScale','log')
-xlabel('Lag (s)')
-ylabel('Autocorrelation')
-title('Stimulus')
-
-ac_mean = zeros(20e3+1,8);
-ac_std = zeros(20e3+1,8);
-a = [];
-for i = 1:8
-	this_ac = [];
-	for j = 1:13
-		
-		stim = (MSG_data(i,j).resp);
-		if ~isempty(stim)
-			if ~isvector(stim)
-				stim = mean2(stim);
-			end
-			[~,~,temp]=findCorrelationTime(stim);
-			this_ac = [this_ac temp];
-		end
-	end
-	if isvector(this_ac)
-		ac_mean(:,i) = (this_ac);
-	else
-		ac_mean(:,i) = mean2(this_ac);
-	end
-	ac_std(:,i) = sem(this_ac);
-end
-
-subplot(3,2,2), hold on
-time = 1e-3*(1:length(ac_mean));
-for i = 1:8
-	errorShade(time,ac_mean(:,i),ac_std(:,i),'Color',c(i,:));
-end
-set(gca,'XScale','log')
-xlabel('Lag (s)')
-ylabel('Autocorrelation')
-title('Response')
-
-subplot(3,2,3), hold on
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
 ss = 50;
 all_x = []; all_y = [];
 for i = 1:8 % iterate over all paradigms 
@@ -509,12 +439,14 @@ all_x = nonnans(sort(all_x(:)));
 all_x = linspace(all_x(1),all_x(end),100);
 l = plot(all_x,hill(all_x,p),'r');
 legend(l,L,'Location','southeast')
-xlabel('Projected Stimulus')
+xlabel(['Projected Stimulus +' char(10) 'mean stimulus'])
 ylabel('Neuron Response (Hz)')
+set(gca,'XLim',[0 5],'YLim',[0 45])
+
 
 % show non-linearities to each cloud
 clear p
-subplot(3,2,4), hold on
+subplot(1,2,2), hold on
 for i = 1:8 % iterate over all paradigms 
 	y = ([MSG_data(i,:).resp]);
 	s = ([MSG_data(i,:).stim]);
@@ -537,12 +469,9 @@ for i = 1:8 % iterate over all paradigms
 	p(i) = fitModel2Data(@hill,d,'nsteps',0);
 	plot(all_x(all_x<max(d.stimulus)),hill(all_x(all_x<max(d.stimulus)),p(i)),'Color',c(i,:))
 end
-xlabel('Projected Stimulus')
+set(gca,'XLim',[0 5],'YLim',[0 45])
+xlabel(['Projected Stimulus +' char(10) 'mean stimulus'])
 ylabel('Neuron Response (Hz)')
-
-
-
-
 
 prettyFig('fs=20;');
 
@@ -550,7 +479,6 @@ if being_published
 	snapnow
 	delete(gcf)
 end
-
 
 %            ######## ####  ######   ##     ## ########  ########     #######  
 %            ##        ##  ##    ##  ##     ## ##     ## ##          ##     ## 
@@ -571,7 +499,79 @@ end
 %% Figure 3: ORNs speed up responses on increasing stimulus mean
 % ORN gain may permit responses to occur with smaller delays, as ORNs need to integrate the stimulus over a smaller duration to respond. Speedup in responses can be estimated using the peak times of linear filters fit to increasing mean concentrations of odorant (colours, in A). ORN response speedups with increasing stimulus mean can also be estimated in a model-free manner using the spike-triggered average (STA, B). Both methods suggest that response delays decrease with increasing mean stimulus (C). 
 
-figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
+figure('outerposition',[0 0 1100 800],'PaperUnits','points','PaperSize',[1100 800]); hold on
+subplot(2,2,1), hold on
+
+ac_mean = zeros(20e3+1,8);
+ac_std = zeros(20e3+1,8);
+a = [];
+for i = 1:8
+	this_ac = [];
+	for j = 1:13
+		
+		stim = (MSG_data(i,j).stim);
+		if ~isempty(stim)
+			if ~isvector(stim)
+				stim = mean2(stim);
+			end
+			[~,~,temp]=findCorrelationTime(stim);
+			this_ac = [this_ac temp];
+		end
+	end
+	if isvector(this_ac)
+		ac_mean(:,i) = (this_ac);
+	else
+		ac_mean(:,i) = mean2(this_ac);
+	end
+	ac_std(:,i) = sem(this_ac);
+end
+
+time = 1e-3*(1:length(ac_mean));
+for i = 1:8
+	[~,si(i)] = errorShade(time,ac_mean(:,i),ac_std(:,i),'Color',c(i,:));
+end
+for i = 1:8
+	uistack(si(i), 'bottom')
+end
+set(gca,'XScale','log','XLim',[5e-3 2],'YLim',[-.4 1])
+xlabel('Lag (s)')
+ylabel('Stimulus Autocorrelation')
+
+ac_mean = zeros(20e3+1,8);
+ac_std = zeros(20e3+1,8);
+a = [];
+for i = 1:8
+	this_ac = [];
+	for j = 1:13
+		
+		stim = (MSG_data(i,j).resp);
+		if ~isempty(stim)
+			if ~isvector(stim)
+				stim = mean2(stim);
+			end
+			[~,~,temp]=findCorrelationTime(stim);
+			this_ac = [this_ac temp];
+		end
+	end
+	if isvector(this_ac)
+		ac_mean(:,i) = (this_ac);
+	else
+		ac_mean(:,i) = mean2(this_ac);
+	end
+	ac_std(:,i) = sem(this_ac);
+end
+
+subplot(2,2,2), hold on
+time = 1e-3*(1:length(ac_mean));
+for i = 1:8
+	[~,si(i)] = errorShade(time,ac_mean(:,i),ac_std(:,i),'Color',c(i,:));
+end
+for i = 1:8
+	uistack(si(i), 'bottom')
+end
+set(gca,'XScale','log','XLim',[5e-3 2],'YLim',[-.4 1])
+xlabel('Lag (s)')
+ylabel('Response Autocorrelation')
 
 
 % fit parametric filters to the raw, neuron-wise filters extracted earlier 
@@ -581,17 +581,19 @@ figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 50
 % 			d.stimulus = MSG_data(i,j).K(200:end);
 % 			d.response = MSG_data(i,j).K(200:end);
 % 			for k = 1:5
-% 				MSG_data(i,j).p = FitModel2Data(@FitFilter,d,MSG_data(i,j).p);
+% 				MSG_data(i,j).p = fitModel2Data(@FitFilter,d,MSG_data(i,j).p);
 % 			end
 % 		end
 % 	end
 % end
 
+% show filter speedups
+subplot(2,3,4), hold on
+
 % compute peak locations of all these filters
 clear l 
 l = zeros(8,1);
 peak_loc_K = NaN(8,13);
-subplot(1,3,1), hold on
 for i = 1:8
 	for j = 1:13
 		if ~isempty(MSG_data(i,j).K)
@@ -656,12 +658,12 @@ after = 5e3;
 % save('allSTA.mat','allSTA','dil','mean_stim');
 
 
-
-
 % plot the STA
+subplot(2,3,5), hold on
+
 old_mean_stim = mean_stim;
 load('../data/allSTA.mat','allSTA','dil','mean_stim');
-subplot(1,3,2), hold on
+
 udil = unique(dil);
 for i = 1:8
 	temp = (allSTA(:,dil == udil(i)));
@@ -692,14 +694,14 @@ for i = 1:8
 	ey(i) = sem(nonnans(peak_STA(dil == udil(i))));
 end
 
-subplot(1,3,3), hold on
+subplot(2,3,6), hold on
 clear l
 l(1) = errorbar(x,y,ey,'k');
 peak_loc_K = peak_loc_K(~isnan(peak_loc_K));
-l(2) = plot(old_mean_stim(:),peak_loc_K(:)/dt,'r+');
+l(2) = plot(nonnans(old_mean_stim(:)),peak_loc_K(:)/dt,'r+');
 
 % calculate Spearman's rho (http://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient)
-s2 = spear(old_mean_stim,peak_loc_K);
+s2 = spear(nonnans(old_mean_stim),peak_loc_K);
 s1 = spear(mean_stim,peak_STA);
 
 legend(l,{strcat('STA, \rho=',oval(s1)), strcat('Filter, \rho=',oval(s2))})
@@ -707,7 +709,7 @@ set(gca,'YLim',[-10 130])
 ylabel('Peak time (ms)')
 xlabel('Mean Stimulus (V)')
 
-prettyFig;
+prettyFig('fs=20;');
 
 if being_published
 	snapnow

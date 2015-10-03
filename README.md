@@ -1,4 +1,4 @@
-# Dynamical Adaptation in ORNs
+π# Dynamical Adaptation in ORNs
 
 This repository contains all code written for this project. Everything is written in MATLAB.
 

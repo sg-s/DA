@@ -6,7 +6,7 @@
 % 
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
-function [x,y] = makeFig6G(stimulus,response,prediction,history_length)
+function [x,y,e] = makeFig6G(stimulus,response,prediction,history_length)
 if ~nargin
 	help makeFig6G
 	return
@@ -35,11 +35,12 @@ temp.prediction = prediction;
 temp.history_length = history_length;
 hash = dataHash(temp);
 cached_data = cache(hash);
-if ~isempty(cached_data)
-	x = cached_data.x;
-	y = cached_data.y;
-	return
-end
+% if ~isempty(cached_data)
+% 	x = cached_data.x;
+% 	y = cached_data.y;
+% 	e = cached_data.e;
+% 	return
+% end
 
 x = NaN*stimulus;
 y = NaN*stimulus;
@@ -48,8 +49,9 @@ parfor i = (history_length+1):length(stimulus)
 	x(i) = mean(stimulus(i-history_length:i));
 	if any(isnan(prediction(i-history_length:i))) || any(isnan(response(i-history_length:i)))
 	else
-		cf = fit(prediction(i-history_length:i),response(i-history_length:i),'Poly1');
+		[cf,gof] = fit(prediction(i-history_length:i),response(i-history_length:i),'Poly1');
 		y(i) = cf.p1;
+		e(i) = gof.rsquare;
 	end
 
 end
@@ -57,5 +59,7 @@ end
 clear temp
 temp.x = x;
 temp.y = y;
+temp.e = e;
+cache(hash,[])
 cache(hash,temp);
 

@@ -2,6 +2,25 @@
 
 This repository contains all code written for this project. Everything is written in MATLAB.
 
+## List of Figures
+
+1. Gain control in ORN responses to naturalistic Inputs
+2. White noise characterisation of gain 
+3. Weber-like scaling 
+4. Responses speed up with increasing mean stimulus
+5. Fast gain control
+6. Fast gain control is broadly observed
+7. LFP also shows gain control 
+8. Gain control with contrast changes
+9. Gain change without odorant binding (ReaChR experiments)
+10. DA model fits to data
+
+### Supplementary Figures
+
+1. No one nonlinearity can account for gain changes with mean stimulus
+2. Fast gain control cannot be explained by a static output non-linearity 
+3. 
+
 ## Installation
 
 Install using my package manager:

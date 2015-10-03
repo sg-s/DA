@@ -106,7 +106,12 @@ gain = NaN(width(Y),1);
 gain_err = gain;
 
 for i = 1:width(X)
-	prediction(:,i) = convolve(time,X(:,i),K(:,i),filtertime);
+
+	if band_pass_x
+		prediction(:,i) = convolve(time,bandPass(X(:,i),1e3,10),K(:,i),filtertime);
+	else
+		prediction(:,i) = convolve(time,X(:,i),K(:,i),filtertime);
+	end
 	% fit lines to estimate gains
 	x = prediction(a:z,i);
 	if band_pass_y

@@ -572,6 +572,7 @@ subplot(2,3,4), hold on
 clear l 
 l = zeros(8,1);
 peak_loc_K = NaN(8,13);
+mean_stim_K = NaN(8,13);
 for i = 1:8
 	for j = 1:13
 		if ~isempty(MSG_data(i,j).K)
@@ -580,6 +581,9 @@ for i = 1:8
 			l(i)=plot(filtertime,K2,'Color',c(i,:));
 			[~,loc] = max(K2);
 			peak_loc_K(i,j) = filtertime(loc);
+
+			mean_stim_K(i,j) = mean(mean(MSG_data(i,j).stim));
+
 		end
 	end
 end
@@ -597,14 +601,16 @@ legend(l,L);
 before = 1e4;
 after = 5e3;
 
-% compute STA for all the data
+% % compute STA for all the data
 % allfiles = dir('/local-data/DA-paper/fast-flicker/orn/*.mat');
 % allSTA = [];
 % mean_stim = []; 
 % dil = [];
 % for i= 1:length(allfiles)
 % 	load(['/local-data/DA-paper/fast-flicker/orn/' allfiles(i).name])
-% 	for j = 1:length(spi`kes)
+% 	disp(['/local-data/DA-paper/fast-flicker/orn/' allfiles(i).name])
+% 	for j = 1:length(spikes)
+% 		textbar(j,length(spikes))
 % 		if length(spikes(j).A) > 1 && ~strcmp(ControlParadigm(j).Name,'end')
 % 			these_spikes = spikes(j).A(:,35e4:55e4);
 % 			this_stim = data(j).PID(:,35e4:55e4);
@@ -618,29 +624,38 @@ after = 5e3;
 % 						if rm_this(k) > width(these_spikes)
 % 						else
 % 							rm_these_spikes = [rm_these_spikes k];
-% 						`
+% 						end
 % 					end
 % 					these_spikes(rm_these_spikes,:) = [];
 % 				end
 % 			end
 
-% 			this_STA = STA(these_spikes,this_stim,before,after);
-% 			allSTA = [allSTA this_STA];
 % 			mean_stim = [mean_stim; mean(this_stim,2)];
 % 			this_dil = str2double(ControlParadigm(j).Name(strfind(ControlParadigm(j).Name,'-')+1:strfind(ControlParadigm(j).Name,'%')-1));
 % 			dil = [dil;this_dil*ones(width(this_stim),1)  ];
+
+% 			% choose regularisation based on dilution
+
+% 			this_STA = STA(these_spikes,this_stim,'normalise',true,'regulariseParameter',100,'before',before,'after',after);
+% 			allSTA = [allSTA this_STA];
+			
 % 		end
 % 	end
 % end
-% save this
-% save('allSTA.mat','allSTA','dil','mean_stim');
+% % normalise all of them
+% for i = 1:width(allSTA)
+% 	allSTA(:,i) = allSTA(:,i)/max(allSTA(:,i));
+% end
+
+% % save this
+% save('.cache/allSTA.mat','allSTA','dil','mean_stim');
 
 
 % plot the STA
 subplot(2,3,5), hold on
 
 old_mean_stim = mean_stim;
-load('../data/allSTA.mat','allSTA','dil','mean_stim');
+load('.cache/allSTA.mat','allSTA','dil','mean_stim');
 
 udil = unique(dil);
 for i = 1:8
@@ -648,8 +663,7 @@ for i = 1:8
 	for j = 1:width(temp)
 		temp(:,j) = temp(:,j)/max(temp(:,j));
 	end
-	t = -after:before;
-	t = t*1e-3; 
+	t = 1e-3*(1:length(temp)) - .44;
 	errorShade(t,flipud(mean2(temp)),flipud(sem(temp)),'Color',c(i,:));
 end
 set(gca,'XLim',[-.2 .5])
@@ -660,7 +674,7 @@ ylabel('STA (norm)')
 peak_STA = NaN*mean_stim;
 for i = 1:length(mean_stim)
 	[~,loc] = max(allSTA(:,i));
-	peak_STA(i) = (1e4 - loc)/10;
+	peak_STA(i) = (1e3 - loc) + 60;
 end
 
 x = NaN(8,1); y = x; ex = x; ey = x;
@@ -675,11 +689,11 @@ end
 subplot(2,3,6), hold on
 clear l
 l(1) = errorbar(x,y,ey,'k');
-peak_loc_K = peak_loc_K(~isnan(peak_loc_K));
-l(2) = plot(nonnans(old_mean_stim(:)),peak_loc_K(:)/dt,'r+');
+
+l(2) = plot(nonnans(mean_stim_K(:)),nonnans(peak_loc_K(:)/dt),'r+');
 
 % calculate Spearman's rho (http://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient)
-s2 = spear(nonnans(old_mean_stim),peak_loc_K);
+s2 = spear(nonnans(mean_stim_K(:)),nonnans(peak_loc_K(:)));
 s1 = spear(mean_stim,peak_STA);
 
 legend(l,{strcat('STA, \rho=',oval(s1)), strcat('Filter, \rho=',oval(s2))})

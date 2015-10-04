@@ -153,11 +153,16 @@ end
 
 
 c = parula(5);
-figure('outerposition',[0 0 500 900],'PaperUnits','points','PaperSize',[500 900]); hold on
+figure('outerposition',[0 0 500 800],'PaperUnits','points','PaperSize',[500 800]); hold on
 ax(1) = subplot(5,2,1:2); hold on
 for i = 3:10
 	ax(i-1) = subplot(5,2,i);
 	hold(ax(i-1),'on')
+end
+
+% move all plots to the top
+for i = 1:9
+	movePlot(ax(i),'up',.05);
 end
 
 % show the stimulus on top

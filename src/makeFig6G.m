@@ -35,12 +35,12 @@ temp.prediction = prediction;
 temp.history_length = history_length;
 hash = dataHash(temp);
 cached_data = cache(hash);
-% if ~isempty(cached_data)
-% 	x = cached_data.x;
-% 	y = cached_data.y;
-% 	e = cached_data.e;
-% 	return
-% end
+if ~isempty(cached_data)
+	x = cached_data.x;
+	y = cached_data.y;
+	e = cached_data.e;
+	return
+end
 
 x = NaN*stimulus;
 y = NaN*stimulus;

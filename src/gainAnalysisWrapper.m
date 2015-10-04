@@ -98,7 +98,7 @@ end
 % clean up a little and ignore NaNs
 rm_this = [find(isnan(response)); find(isnan(prediction)) ];
 
-assert(length(rm_this)<length(response)/2,'GainAnalysisWrapper2: It looks like most of the response/prediction are NaN.')
+assert(length(rm_this)<length(response)/2,'gainAnalysisWrapper: It looks like most of the response/prediction are NaN.')
 
 x.response(rm_this) = [];
 x.prediction(rm_this) = [];

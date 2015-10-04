@@ -45,19 +45,22 @@ tic
 %% Figure 6: Gain Control is widely observed
 % The previous result showed fast gain control using ethyl acetate, a volatile odor, in ab3A, an antennal ORN. To determine if fast gain control is widely observed, and not a peculiarity of the odor-receptor combination used, I reanalyzed a published data set of ORN responses to flickering odor stimuli (from Martelli et al. J. Neuro. 2013). The data set consists of six different odors and two ORN types: one in the antenna and one in the maxillary palp. My analysis of fast gain control is self-consistent across experimental replicates (A-C), and shows that fast gain control is observed for different odors (D-F) and in two different neurons (G-I).  In each row, the first column shows the linear filter extracted from the stimulus and the response. The second column shows the principal components fit to the highest (lowest) 1/3 of stimulus filtered over some history length in red (green). The third column shows how relative gain varies at times when the filtered stimulus in in the top 1/3 (green) or bottom 1/3 (red), for various history lengths. Only significant (p<0.01) points are shown. In every dataset, significant gain control is observed on a sub-second time scale, and the gain control always acts to amplify responses to recently weak stimuli and suppress responses to recently large stimuli (red dots always below green dots in third column). 
 
-clearvars -except being_published fig*
 load('../data/CMData_Gain.mat')
 load('../data/CM_Data_filters.mat')
 combined_data_file = ('/local-data/DA-paper/carlotta-martelli/flickering-stim/data.mat');
 load(combined_data_file)
 filtertime = -200:700;
 filtertime = filtertime*1e-3;
-history_lengths = logspace(log10(.200),1,30);
+
+hl_min = .2;
+hl_max = 10;
+history_lengths = [logspace(log10(hl_min),log10(.5),15) logspace(log10(.5),log10(10),15)];
+history_lengths = unique(history_lengths);
 
 
 s = 860;
 figure('outerposition',[0 0 s s],'PaperUnits','points','PaperSize',[s s]); hold on, clear s
-axes_handles = [];
+clear axes_handles
 for i = 1:9
 	axes_handles(i) = subplot(3,3,i); hold on
 end
@@ -126,14 +129,13 @@ for i = do_these
 	% ignore very low responses
 	y(y<5) = NaN;
 
-	gainAnalysisWrapper('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph,'engine',@gainAnalysis,'use_cache',true);
+	gainAnalysisWrapper('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph,'engine',@gainAnalysis,'use_cache',true,'example_history_length',history_lengths(15));
 end
 
 
 % add a minimal legend
 h=get(ph(3),'Children');
 legend(h(1:2),{'High Stim.','Low Stim.'},'Location','northwest')
-
 
 %    ########  #### ######## ######## ######## ########  ######## ##    ## ######## 
 %    ##     ##  ##  ##       ##       ##       ##     ## ##       ###   ##    ##    
@@ -194,7 +196,7 @@ for i = do_these
 	% ignore very low responses
 	y(y<5) = NaN;
 
-	gainAnalysisWrapper('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph,'engine',@gainAnalysis,'use_cache',true);
+	gainAnalysisWrapper('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph,'engine',@gainAnalysis,'use_cache',true,'example_history_length',history_lengths(15)');
 end
 
 
@@ -202,7 +204,6 @@ end
 % add a minimal legend
 h=get(ph(3),'Children');
 legend(h(1:2),{'High Stim.','Low Stim.'},'Location','northwest')
-
 
 
 %     ########  #### ######## ######## ######## ########  ######## ##    ## ######## 
@@ -264,7 +265,7 @@ for i = do_these
 	% ignore very low responses
 	y(y<5) = NaN;
 
-	gainAnalysisWrapper('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph,'engine',@gainAnalysis,'use_cache',true);
+	gainAnalysisWrapper('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph,'engine',@gainAnalysis,'use_cache',true,'example_history_length',history_lengths(15));
 end
 
 

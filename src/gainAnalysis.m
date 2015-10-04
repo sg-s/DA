@@ -100,9 +100,6 @@ high_max = NaN*history_lengths;
 all_slopes = coeff(2,1)/coeff(1,1);
 
 
-
-
-
 n = floor(sum(~isnan(f))*frac);
 
 for i = 1:length(history_lengths)
@@ -223,7 +220,6 @@ for i = 1:length(history_lengths)
 				dothis = plothere(3);
 			end
 		end
-	
 	
 		if dothis
 

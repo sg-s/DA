@@ -556,7 +556,7 @@ for i = 1:length(c)
 	plot(xx,yy,'Color',c(i,:),'LineWidth',4)
 end
 
-errorShade(all_offsets,nanmean(n),sem(n'),'Color','k');
+errorShade(all_offsets,nanmean(n),nanstd(n)/sqrt(width(reshaped_LFP)),'Color','k');
 
 set(gca,'YLim',[50 120])
 ylabel('Firing Gain (Hz/V)')

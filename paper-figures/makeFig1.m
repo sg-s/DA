@@ -31,19 +31,17 @@ tic
 clearvars -except being_published 
 
 % make figure placeholders 
-fig_handle=figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
+fig_handle=figure('outerposition',[0 0 800 950],'PaperUnits','points','PaperSize',[800 950]); hold on
 clf(fig_handle);
-axes_handles(1) = subplot(10,3,1:9); 
-axes_handles(2) = subplot(10,3,10:18); 
-axes_handles(3) = subplot(10,3,[19:3:28]);
-axes_handles(4) = subplot(10,3,[20:3:29]);
-axes_handles(5) = subplot(10,3,[21:3:30]);
+axes_handles(1) = subplot(16,6,[1:2 7:8 13:14 19:20]); 
+axes_handles(2) = subplot(16,6,2+[1:2 7:8 13:14 19:20]); 
+axes_handles(3) = subplot(16,6,4+[1:2 7:8 13:14 19:20]); 
 
-movePlot(axes_handles(1),'up',.03)
-movePlot(axes_handles(2),'up',.04)
-movePlot(axes_handles(3),'down',.02)
-movePlot(axes_handles(4),'down',.02)
-movePlot(axes_handles(5),'down',.02)
+axes_handles(4) = subplot(16,6,25:42); 
+axes_handles(5) = subplot(16,6,43:60); 
+
+axes_handles(6) = subplot(16,6,[61:63 67:69 73:75 79:81 85:87 91:93]);
+axes_handles(7) = subplot(16,6,3+[61:63 67:69 73:75 79:81 85:87 91:93]);
 
 for i = 1:length(axes_handles)
 	hold(axes_handles(i),'on');
@@ -75,22 +73,63 @@ PID = PID2; clear PID2
 % some minor cleaning up
 PID(end,:) = PID(end-1,:); 
 
-axes(axes_handles(1)); hold on
-errorShade(tA(1:10:end),mean2(PID(1:10:end,:)),sem(PID(1:10:end,:)),'Color',[0.2 .2 .2]);
-set(axes_handles(1),'XLim',[0 70])
-ylabel('Stimulus (V)')
+% remove the baseline from the PID, and remember the error
+PID_baseline = mean(mean(PID(1:5e3,:)));
+PID_baseline_err = std(mean(PID(1:5e3,:)));
+PID = PID - PID_baseline;
 
-axes(axes_handles(3));
+
+plot(axes_handles(4),tA(1:10:end),mean2(PID(1:10:end,:)),'Color',[0.2 .2 .2]);
+set(axes_handles(4),'XLim',[0 70],'YLim',[0 7],'XTick',[])
+ylabel(axes_handles(4),'Stimulus (V)')
+
+axes(axes_handles(1));
 y = zeros(300,width(PID));
 for i = 1:width(PID)
 	[y(:,i),x] = histcounts(PID(:,i),300);x(1) = [];
+	y(:,i) = y(:,i)/sum(y(:,i));
 end
 errorShade(x,mean2(y),sem(y),'Color',[.2 .2 .2]);
 warning off % because there are some -ve values on the log scale
-set(axes_handles(3),'XScale','log','YScale','log','XLim',[.1 10],'YTick',[1e1 1e3 1e5])
-xlabel('Stimulus (V)')
-ylabel('count')
+set(axes_handles(1),'XScale','log','YScale','log','XLim',[min(x) 10],'YLim',[1e-5 1],'YTick',logspace(-5,0,6))
+xlabel(axes_handles(1),'Stimulus (V)')
+ylabel(axes_handles(1),'Probability')
 warning on
+
+
+% show the whiff durations 
+whiff_durations = [];
+for i = 1:width(PID)
+	[ons,offs] = computeOnsOffs(PID(:,i) > .024);
+	whiff_durations = [whiff_durations; offs-ons];
+end
+whiff_durations = nonzeros(whiff_durations);
+[y,x] = histcounts(whiff_durations,50); x(1)  =[];
+y = y/sum(y);
+a = 1; m = fittype('a*(x).^n');
+ff = fit(x(a:end)',y(a:end)',m,'Upper',[Inf -1.5],'Lower',[-Inf -1.5],'StartPoint',[300 -1.5]);
+plot(axes_handles(2),x,y,'k+')
+plot(axes_handles(2),x,ff(x),'r')
+set(axes_handles(2),'YScale','log','XScale','log')
+xlabel(axes_handles(2),'Whiff duration (ms)')
+
+
+% show the blank durations 
+whiff_durations = [];
+for i = 1:width(PID)
+	[ons,offs] = computeOnsOffs(PID(:,i) < .024);
+	whiff_durations = [whiff_durations; offs-ons];
+end
+whiff_durations = nonzeros(whiff_durations);
+[y,x] = histcounts(whiff_durations,50); x(1)  =[];
+y = y/sum(y);
+a = 1; m = fittype('a*(x).^n');
+ff = fit(x(a:end)',y(a:end)',m,'Upper',[Inf -1.5],'Lower',[-Inf -1.5],'StartPoint',[300 -1.5]);
+plot(axes_handles(3),x,y,'k+')
+plot(axes_handles(3),x,ff(x),'r')
+set(axes_handles(3),'YScale','log','XScale','log')
+xlabel(axes_handles(3),'Blank duration (ms)')
+
 
 % make a linear filter
 R = mean2(fA);
@@ -104,16 +143,16 @@ fp = convolve(tA,mean2(PID),K,filtertime);
 
 % plot the response and the prediction
 clear l
-[ax,plot1,plot2] = plotyy(axes_handles(2),tA,R,tA,fp);
-set(ax(1),'XLim',[0 70])
+[ax,plot1,plot2] = plotyy(axes_handles(5),tA,R,tA,fp);
+set(ax(1),'XLim',[0 70],'YLim',[0 120])
 set(ax(2),'XLim',[0 70],'YLim',[min(fp) max(fp)])
-set(plot1,'Color','k')
+set(plot1,'Color','b')
 set(plot2,'Color','r')
 ylabel(ax(1),'ORN Response (Hz)')
 ylabel(ax(2),'Projected Stimulus')
-set(axes_handles(2),'box','off')
+set(axes_handles(5),'box','off')
 legend([plot1 plot2],'Neuron Response',strcat('Projected Stimulus, r^2=',oval(rsquare(mean2(fA),fp))),'Location','northwest');
-xlabel(axes_handles(2),'Time (s)')
+
 
 shat = computeSmoothedStimulus(mean2(PID),500);
 shat = shat-min(shat);
@@ -122,20 +161,21 @@ shat = 1+ceil(shat*99);
 shat(isnan(shat)) = 1;
 
 % make the output analysis plot
-axes(axes_handles(4))
+axes(axes_handles(6))
 ss = 1;
 cc = parula(100);
 c= cc(shat,:);
 % scatter(fp(1:ss:end),R(1:ss:end),[],'k','filled')
 scatter(fp(1:ss:end),R(1:ss:end),[],c(1:ss:end,:),'filled')
-xlabel(axes_handles(4),'Projected Stimulus')
-ylabel(axes_handles(4),'Actual response (Hz)')
+xlabel(axes_handles(6),'Projected Stimulus')
+ylabel(axes_handles(6),'Actual response (Hz)')
 shat = computeSmoothedStimulus(mean2(PID),500);
-colorbar;
+ch = colorbar('east');
+set(ch,'Position',[.44 .1 .02 .1])
 caxis([min(shat) max(shat)]);
 
 % plot gain vs stimulus for all these whiffs
-axes(axes_handles(5))
+axes(axes_handles(7))
 
 % find all excursions (defined as firing rate crossing 10Hz)
 [whiff_starts,whiff_ends] = computeOnsOffs(R>10);
@@ -154,7 +194,7 @@ gain(rm_this) = [];
 gain_err(rm_this) = [];
 mean_stim(rm_this) = [];
 
-errorbar(axes_handles(5),mean_stim,gain,gain_err,'k+')
+errorbar(axes_handles(7),mean_stim,gain,gain_err,'k+')
 
 
 options = fitoptions(fittype('power1'));
@@ -162,18 +202,38 @@ options.Lower = [-Inf -1];
 options.Upper = [Inf -1];
 options.Weights = 1./gain_err;
 ff = fit(mean_stim(:),gain(:),'power1',options);
-l(1) = plot(axes_handles(5),sort(mean_stim),ff(sort(mean_stim)),'r');
+l(1) = plot(axes_handles(7),sort(mean_stim),ff(sort(mean_stim)),'r');
 L{1} = ['y=\alpha x^{-1}',char(10),'r^2=',oval(rsquare(ff(mean_stim),gain))];
 legend(l,L)
-xlabel(axes_handles(5),'Stimulus in preceding 500ms (V)')
-ylabel(axes_handles(5),'Gain (Hz/V)')
+xlabel(axes_handles(7),'Stimulus in preceding 500ms (V)')
+ylabel(axes_handles(7),'Gain (Hz/V)')
+
 
 % cosmetic fixes
-set(axes_handles(1),'XTick',[])
-set(axes_handles(4),'XLim',[min(fp) max(fp)])
-set(axes_handles(5),'YLim',[0 150])
+movePlot(axes_handles(1),'up',.05)
+movePlot(axes_handles(2),'up',.05)
+movePlot(axes_handles(3),'up',.05)
 
-prettyFig('plw=2;','lw=2;','fs=12;')
+movePlot(axes_handles(1),'left',.02)
+movePlot(axes_handles(3),'right',.02)
+
+movePlot(axes_handles(4),'up',.025)
+movePlot(axes_handles(5),'up',.025)
+
+movePlot(axes_handles(6),'down',.025)
+movePlot(axes_handles(7),'down',.025)
+movePlot(axes_handles(6),'left',.025)
+movePlot(axes_handles(7),'right',.025)
+
+
+
+set(axes_handles(2),'XLim',[50 5000])
+set(axes_handles(1),'XLim',[1e-2 10])
+xlabel(axes_handles(5),'Time (s)')
+set(axes_handles(6),'XLim',[min(fp) max(fp)])
+set(axes_handles(7),'YLim',[0 150])
+
+prettyFig('plw=1.5;','lw=1;','fs=12;')
 
 if being_published
 	snapnow

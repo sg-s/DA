@@ -72,8 +72,32 @@ plot(axes_handles(1),MSG_data(1,1).time(1:ss:end),x(1:ss:end),'Color',c(1,:));
 plot(axes_handles(1),MSG_data(1,1).time(1:ss:end),y(1:ss:end),'Color',c(8,:));
 plot(axes_handles(2),[0 45],[0 45],'k--')
 plot(axes_handles(2),x(1:ss:end),y(1:ss:end),'.','Color',c(8,:));
-set(axes_handles(2),'XLim',[0 45],'YLim',[0 45])
-set(axes_handles(1),'XLim',[35 55])
+
+% compute gains for each light case, per trial
+gain = NaN(8,1);
+gain_err = NaN(8,1);
+mean_stim = NaN(8,1);
+for i = 1:8
+	this_gain = [];
+	this_stim = [];
+	y = [MSG_data(i,:).resp];
+	s = [MSG_data(i,:).stim];
+	for j = 1:width(y)
+		ff = fit(x,y(:,j),'Poly1');
+		this_gain = [this_gain ff.p1];
+		this_stim  =[this_stim mean2(s(:,j))];
+	end
+	gain(i) =  mean(this_gain);
+	gain_err(i) = std(this_gain)/sqrt(length(this_gain));
+	mean_stim(i) = mean(this_stim);
+end
+
+mean_stim(2:3) = [];
+gain(2:3) = [];
+gain_err(2:3) = [];
+
+axes(axes_handles(3))
+errorbar(mean_stim,gain,gain_err,'k.')
 
 %  #######  ########   #######  ########          ##       ####  ######   ##     ## ######## 
 % ##     ## ##     ## ##     ## ##     ##         ##        ##  ##    ##  ##     ##    ##    
@@ -102,11 +126,11 @@ y = mean2(fA(:,light_V == 3.5));
 time = 1e-3*(1:length(x));
 plot(axes_handles(4),time,x,'Color',c(1,:))
 plot(axes_handles(4),time,y,'Color',c(8,:))
-set(axes_handles(4),'XLim',[35 55])
+
 
 plot(axes_handles(5),[0 45],[0 45],'k--')
 plot(axes_handles(5),x(20e3:ss:end),y(20e3:ss:end),'.','Color',c(8,:))
-set(axes_handles(5),'XLim',[0 45],'YLim',[0 45])
+
 
 % remove some junk
 light_V(light_V == 4) = NaN;
@@ -172,11 +196,11 @@ y = mean2(fA(:,odour_V == .5));
 time = 1e-3*(1:length(x));
 plot(axes_handles(7),time,x,'Color',c(1,:))
 plot(axes_handles(7),time,y,'Color',c(8,:))
-set(axes_handles(7),'XLim',[35 55])
+
 
 plot(axes_handles(8),[0 45],[0 45],'k--')
 plot(axes_handles(8),x(20e3:ss:end),y(20e3:ss:end),'.','Color',c(8,:))
-set(axes_handles(8),'XLim',[0 45],'YLim',[0 45])
+
 
 % compute gains for each light case, per trial
 gain = NaN*paradigm;
@@ -211,28 +235,32 @@ axes(axes_handles(9))
 errorbar(measured_odour(n>4),all_gain(n>4),all_gain_err(n>4),'k.')
 
 % cosmetics, labels, etc. 
+set(axes_handles(1),'XLim',[35 55])
 ylabel(axes_handles(1),'Response (Hz)')
 
+set(axes_handles(2),'XLim',[0 45],'YLim',[0 45])
 xlabel(axes_handles(2),'Response (Hz)')
 ylabel(axes_handles(2),['Response to' char(10) 'stimulus + background (Hz)'])
 
 ylabel(axes_handles(3),'Relative Gain')
 xlabel(axes_handles(3),'Background odour (V)')
 
+set(axes_handles(4),'XLim',[35 55])
 ylabel(axes_handles(4),'Response (Hz)')
 
+set(axes_handles(5),'XLim',[0 45],'YLim',[0 45])
 xlabel(axes_handles(5),'Response (Hz)')
 ylabel(axes_handles(5),['Response to' char(10) 'stimulus + background (Hz)'])
-
-
 
 set(axes_handles(6),'XLim',[-.1 4],'YLim',[.2 1.2])
 ylabel(axes_handles(6),'Relative Gain')
 xlabel(axes_handles(6),'Background light (V)')
 
+set(axes_handles(7),'XLim',[35 55])
 xlabel(axes_handles(7),'Time (s)')
 ylabel(axes_handles(7),'Response (Hz)')
 
+set(axes_handles(8),'XLim',[0 45],'YLim',[0 45])
 xlabel(axes_handles(8),'Response (Hz)')
 ylabel(axes_handles(8),['Response to' char(10) 'stimulus + background (Hz)'])
 

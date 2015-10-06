@@ -1,24 +1,30 @@
 % makes a phase plot of mean firing rate vs. slope for experiments where we use light and odor, one flickering and one constant. 
+% usage:
+% gainPhasePlot(alldata,c,norm_f)
+% where
+% alldata is a structure array, with each element coming from one neuron.
 % 
 % created by Srinivas Gorur-Shandilya at 10:34 , 01 May 2015. Contact me at http://srinivas.gs/contact/
 % 
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [max_f, max_gain] = GainPhasePlot(alldata,c,norm_f)
+function [max_f, max_gain] = gainPhasePlot(alldata,c,norm_f)
 
 
-max_f = NaN(length(alldata),1);
-max_gain = NaN(length(alldata),1);
+mean_f = NaN(length(alldata),1);
+rel_gain = NaN(length(alldata),1);
+rel_gain_err = NaN(length(alldata),1);
 
-for i = 1:length(alldata)
+
+for i = 1:length(alldata) % for each neuron
 
 	% find which part of the trace we can use
 	rm_this=(any(isnan(alldata(i).resp')));
 	alldata(i).resp(rm_this,:) = [];
 	alldata(i).stim(rm_this,:) = [];
 
-	gain = NaN(length(unique(alldata(i).paradigm)),1);
+	gain = NaN(length(unique(alldata(i).paradigm)),1); % gain for each paradigm
 	gain_err = gain;
 	mean_firing_rate = gain;
 	mean_firing_rate_err = gain; 
@@ -26,10 +32,20 @@ for i = 1:length(alldata)
 
 	% first grab some data about the no background case (so either odor flicker alone or light flicker alone)
 	resp0= alldata(i).resp(:,alldata(i).paradigm==1);
-	stim0= alldata(i).stim(:,alldata(i).paradigm==1);
 	if width(resp0) > 1
 		resp0 = mean2(resp0);
-		stim0 = mean2(stim0);
+	end
+
+	all_paradigms = unique(alldata(i).paradigm);
+
+	for j = 1:length(all_paradigms)
+		this_paradigm  = all_paradigms(j);
+
+		resp = alldata(i).resp(:,alldata(i).paradigm == this_paradigm);
+		if width(resp) > 1
+			resp = mean2(resp);
+		end
+
 	end
 
 	
@@ -37,7 +53,9 @@ for i = 1:length(alldata)
 		temp_gain = [];
 		temp_mean_firing_rate = [];
 		ci = [];
-		for k = find(alldata(i).paradigm==j)
+		do_these_paradigms = find(alldata(i).paradigm==j);
+		for k = 1:length(do_these_paradigms)
+			this_paradigm = do
 			y = alldata(i).resp(:,k);
 			y = y(:);
 			x = resp0(:); 

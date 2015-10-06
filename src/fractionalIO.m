@@ -17,9 +17,7 @@ stim = stim(:);
 resp = resp(:);
 K = K(:);
 
-x = (stim - mean(stim))./mean(stim);
-y = (resp - mean(resp))./mean(resp);
+x = convolve(time,stim,K,filtertime) + nanmean(stim);
 
-x = convolve(time,x,K,filtertime);
-
-
+x = (x - nanmean(x))./nanmean(x);
+y = (resp - nanmean(resp))./nanmean(resp);

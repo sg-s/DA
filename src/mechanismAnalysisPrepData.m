@@ -7,9 +7,9 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [stim,resp,ParadigmNames,paradigm] = MechanismAnalysis_PrepData(datapath,haz_data,stim,resp,ParadigmNames,paradigm,use_light)
+function [stim,resp,ParadigmNames,paradigm] = mechanismAnalysisPrepData(datapath,haz_data,stim,resp,ParadigmNames,paradigm,use_light)
 
-h = DataHash(whos);
+h = dataHash(whos);
 cached_data = cache(h);
 if isempty(cached_data)
 else

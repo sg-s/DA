@@ -374,6 +374,76 @@ if being_published
 end
 
 
+%% DA Model fit to data
+% Can the DA model explain this data accurately? Specifically, can it account for the changing gain in each whiff? In the following figure, we show the response together with the best-fit DA Model prediction. In the subplot on the right, we repeat the whiff-by-whiff analysis, showing how the DA model accounts for changing gain in the response. 
+
+figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[700 700]); hold on
+subplot(2,2,1:2), hold on
+clear d
+d.response = mean2(fA);
+d.stimulus = mean2(PID);
+p = fitModel2Data(@DAModelv2,d,'nsteps',0);
+fp = DAModelv2(mean2(PID),p);
+clear l L
+time = 1e-3*(1:length(fp));
+l(1) = plot(time,mean2(fA),'k');
+l(2) = plot(time,fp,'r');
+xlabel('Time (s)')
+ylabel('Response')
+L{1} = 'ORN Response';
+L{2} = ['DA Model Fit, r^2 = ' oval(rsquare(fp,mean2(fA)))];
+legend(l,L)
+
+subplot(2,2,3), hold on
+shat = computeSmoothedStimulus(mean2(PID),500);
+% shat(fp<10) = 0;
+shat = shat-min(shat);
+shat = shat/max(shat);
+shat = 1+ceil(shat*99);
+shat(isnan(shat)) = 1;
+
+ss = 1;
+cc = parula(100);
+c= cc(shat,:);
+R = mean2(fA);
+scatter(fp(1:ss:end),R(1:ss:end),[],c(1:ss:end,:),'filled')
+set(gca,'XLim',[0 115],'YLim',[0 115])
+xlabel('DA Model Prediction (Hz)')
+ylabel('ORN Response (Hz)')
+
+subplot(2,2,4), hold on
+shat = computeSmoothedStimulus(mean2(PID),500);
+
+% find all excursions (defined as firing rate crossing 10Hz)
+[whiff_starts,whiff_ends] = computeOnsOffs(R>10);
+mean_stim = NaN*whiff_ends;
+gain = NaN*whiff_ends;
+gain_err =  NaN*whiff_ends;
+for i = 1:length(whiff_ends)
+	mean_stim(i) = mean(shat(whiff_starts(i):whiff_ends(i)));
+	ff=fit(fp(whiff_starts(i):whiff_ends(i)),R(whiff_starts(i):whiff_ends(i)),'poly1');
+	gain(i) = ff.p1;
+	temp = confint(ff);
+	gain_err(i) = diff(temp(:,1))/2;
+end
+rm_this = (abs(gain_err./gain)) > .5; % throw out points where the estimate of gain has a more than 50% error
+gain(rm_this) = [];
+gain_err(rm_this) = [];
+mean_stim(rm_this) = [];
+
+plot(mean_stim,gain,'k+')
+ylabel('Relative Gain')
+set(gca,'YLim',[0.3 4])
+xlabel('Mean Stimulus in preceding 500ms (V)')
+
+prettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
 %% Version Info
 % The file that generated this document is called:
 disp(mfilename)

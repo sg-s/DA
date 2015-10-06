@@ -1,4 +1,4 @@
-% DAModel.m
+% DAModelv2.m
 % modified version of DA model, skips integration
 % [R,y,z,Ky,Kz] = DAModelv2(S,p)
 % function takes argument of stimulus and a parameter set and implements the DA

@@ -148,7 +148,7 @@ set(ax(1),'XLim',[0 70],'YLim',[0 120])
 set(ax(2),'XLim',[0 70],'YLim',[min(fp) max(fp)])
 set(plot1,'Color','b')
 set(plot2,'Color','r')
-ylabel(ax(1),'ORN Response (Hz)')
+ylabel(ax(1),'ab3A Response (Hz)')
 ylabel(ax(2),'Projected Stimulus')
 set(axes_handles(5),'box','off')
 legend([plot1 plot2],'Neuron Response',strcat('Projected Stimulus, r^2=',oval(rsquare(mean2(fA),fp))),'Location','northwest');
@@ -168,7 +168,7 @@ c= cc(shat,:);
 % scatter(fp(1:ss:end),R(1:ss:end),[],'k','filled')
 scatter(fp(1:ss:end),R(1:ss:end),[],c(1:ss:end,:),'filled')
 xlabel(axes_handles(6),'Projected Stimulus')
-ylabel(axes_handles(6),'Actual response (Hz)')
+ylabel(axes_handles(6),'ab3A response (Hz)')
 shat = computeSmoothedStimulus(mean2(PID),500);
 ch = colorbar('east');
 set(ch,'Position',[.44 .1 .02 .1])
@@ -194,7 +194,7 @@ gain(rm_this) = [];
 gain_err(rm_this) = [];
 mean_stim(rm_this) = [];
 
-errorbar(axes_handles(7),mean_stim,gain,gain_err,'k+')
+l(1) = plot(axes_handles(7),mean_stim,gain,'k+')
 
 
 options = fitoptions(fittype('power1'));
@@ -202,12 +202,86 @@ options.Lower = [-Inf -1];
 options.Upper = [Inf -1];
 options.Weights = 1./gain_err;
 ff = fit(mean_stim(:),gain(:),'power1',options);
-l(1) = plot(axes_handles(7),sort(mean_stim),ff(sort(mean_stim)),'r');
-L{1} = ['y=\alpha x^{-1}',char(10),'r^2=',oval(rsquare(ff(mean_stim),gain))];
-legend(l,L)
+plot(axes_handles(7),sort(mean_stim),ff(sort(mean_stim)),'r');
+% L{1} = ['y=\alpha x^{-1}',char(10),'r^2=',oval(rsquare(ff(mean_stim),gain))];
+% legend(l,L)
+
+
+
+% now also add ab2 data
+load('/local-data/DA-paper/natural-flickering/mahmut-raw/2014_07_11_EA_natflick_non_period_CFM_1_ab2_1_1_all.mat')
+PID = data(2).PID;
+time = 1e-4*(1:length(PID));
+all_spikes = spikes(2).A;
+B_spikes = spikes(2).B;
+
+
+% A spikes --> firing rate
+hash = dataHash(full(all_spikes));
+cached_data = cache(hash);
+if isempty(cached_data)
+	fA = spiketimes2f(all_spikes,time);
+	cache(hash,fA);
+else
+	fA = cached_data;
+end
+
+tA = 1e-3*(1:length(fA));
+PID2 = fA;
+for i = 1:width(PID2)
+	PID2(:,i) = interp1(time,PID(i,:),tA);
+end
+PID = PID2; clear PID2
+% some minor cleaning up
+PID(end,:) = PID(end-1,:); 
+
+% remove the baseline from the PID, and remember the error
+PID_baseline = mean(mean(PID(1:5e3,:)));
+PID_baseline_err = std(mean(PID(1:5e3,:)));
+PID = PID - PID_baseline;
+
+% make a linear filter
+R = mean2(fA);
+[K, filtertime_full] = fitFilter2Data(mean2(PID),R,'reg',1,'filter_length',1999,'offset',500);
+filtertime_full = filtertime_full*mean(diff(tA));
+filtertime = 1e-3*(-200:900);
+K = interp1(filtertime_full,K,filtertime);
+
+% convolve with filter to make prediction
+fp = convolve(tA,mean2(PID),K,filtertime);
+
+shat = computeSmoothedStimulus(mean2(PID),500);
+
+% find all excursions (defined as firing rate crossing 10Hz)
+[whiff_starts,whiff_ends] = computeOnsOffs(R>10);
+mean_stim = NaN*whiff_ends;
+gain = NaN*whiff_ends;
+gain_err =  NaN*whiff_ends;
+for i = 1:length(whiff_ends)
+	mean_stim(i) = mean(shat(whiff_starts(i):whiff_ends(i)));
+	ff=fit(fp(whiff_starts(i):whiff_ends(i)),R(whiff_starts(i):whiff_ends(i)),'poly1');
+	gain(i) = ff.p1;
+	temp = confint(ff);
+	gain_err(i) = diff(temp(:,1))/2;
+end
+rm_this = (abs(gain_err./gain)) > .5 | gain < 0; % throw out points where the estimate of gain has a more than 50% error
+gain(rm_this) = [];
+gain_err(rm_this) = [];
+mean_stim(rm_this) = [];
+
+l(2) = plot(axes_handles(7),mean_stim,gain,'ko');
+
+% fit a inverse relationship
+options = fitoptions(fittype('power1'));
+options.Lower = [-Inf -1];
+options.Upper = [Inf -1];
+options.Weights = 1./gain_err;
+ff = fit(mean_stim(:),gain(:),'power1',options);
+plot(axes_handles(7),sort(mean_stim),ff(sort(mean_stim)),'r');
+
+legend(l,{'ab3A','ab2A'},'Location','southwest')
 xlabel(axes_handles(7),'Stimulus in preceding 500ms (V)')
 ylabel(axes_handles(7),'Gain (Hz/V)')
-
 
 % cosmetic fixes
 movePlot(axes_handles(1),'up',.05)
@@ -230,8 +304,9 @@ movePlot(axes_handles(7),'right',.025)
 set(axes_handles(2),'XLim',[50 5000])
 set(axes_handles(1),'XLim',[1e-2 10])
 xlabel(axes_handles(5),'Time (s)')
-set(axes_handles(6),'XLim',[min(fp) max(fp)])
-set(axes_handles(7),'YLim',[0 150])
+set(axes_handles(6),'XLim',[-.1 10])
+set(axes_handles(7),'YLim',[0 max(gain)],'YScale','log','XScale','log','XLim',[.001 10])
+
 
 prettyFig('plw=1.5;','lw=1;','fs=12;')
 

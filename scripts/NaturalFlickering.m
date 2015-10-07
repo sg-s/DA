@@ -373,6 +373,14 @@ if being_published
 	delete(gcf)
 end
 
+%       ########     ###       ##     ##  #######  ########  ######## ##       
+%       ##     ##   ## ##      ###   ### ##     ## ##     ## ##       ##       
+%       ##     ##  ##   ##     #### #### ##     ## ##     ## ##       ##       
+%       ##     ## ##     ##    ## ### ## ##     ## ##     ## ######   ##       
+%       ##     ## #########    ##     ## ##     ## ##     ## ##       ##       
+%       ##     ## ##     ##    ##     ## ##     ## ##     ## ##       ##       
+%       ########  ##     ##    ##     ##  #######  ########  ######## ######## 
+
 
 %% DA Model fit to data
 % Can the DA model explain this data accurately? Specifically, can it account for the changing gain in each whiff? In the following figure, we show the response together with the best-fit DA Model prediction. In the subplot on the right, we repeat the whiff-by-whiff analysis, showing how the DA model accounts for changing gain in the response. 

@@ -32,8 +32,14 @@ for i = 1:10
 end
 
 % get the insets
-inset(1) = axes();
+inset(1) = axes(); % to show natural flickering vs. linear prediction
 set(inset(1),'Position',[.2 .6 .05 .12],'box','on','XTickLabel',{},'YTickLabel',{})
+
+inset(2) = axes();
+set(inset(2),'Position',[.688 .795 .05 .12],'box','on','XTickLabel',{},'YTickLabel',{})
+
+inset(3) = axes();
+set(inset(3),'Position',[.688 .322 .05 .12],'box','on','XTickLabel',{},'YTickLabel',{})
 
 %       ##    ##    ###    ######## ##     ## ########     ###    ##       
 %       ###   ##   ## ##      ##    ##     ## ##     ##   ## ##   ##       
@@ -212,6 +218,9 @@ for i = 1:8
 	plot(axes_handles(2),all_x(all_x<max(x)),hill(all_x(all_x<max(x)),p(i)),'Color',c(i,:))
 end
 
+xlabel(axes_handles(2),'Projected Stimulus (V)')
+ylabel(axes_handles(2),'Output of nonlinearity (Hz)')
+
 % plot the gain of the neuron vs mean stimulus
 % compute gain changes on a per-neuron basis
 gain = NaN(8,13);
@@ -264,17 +273,13 @@ for i = 1:8 % iterate over all paradigms
 	end	
 end
 
-% normalise all gains
-gain = gain./nanmean(gain(1,:));
-gain_LN = gain_LN./nanmean(gain_LN(1,:));
-
 % show gain changes -- gain vs. mean stimulus
 for i = 1:8
 	plot(axes_handles(7),(mean_stim(i,:)),(gain(i,:)),'+','Color',c(i,:));
 end
 
-axes(axes_handles(7))
-errorbar(nanmean(mean_stim'),nanmean(gain_LN'),nanstd(gain_LN'),'k')
+% axes(axes_handles(7))
+% errorbar(nanmean(mean_stim'),nanmean(gain_LN'),nanstd(gain_LN'),'k')
 set(axes_handles(7),'YScale','log','XScale','log')
 
 % now compute gains for the DA model fit to this data
@@ -319,10 +324,158 @@ for i = 1:8 % iterate over all paradigms
 	end	
 end
 
-gain_DA = gain_DA./nanmean(gain_DA(1,:));
+plot(axes_handles(7),mean_stim(:),gain_DA(:),'r+')
+xlabel(axes_handles(7),'Mean Stimulus (V)')
+ylabel(axes_handles(7),'ORN Gain (Hz/V)')
 
-axes(axes_handles(7))
-errorbar(nanmean(mean_stim'),nanmean(gain_DA'),nanstd(gain_DA'),'r')
+
+%       ########    ###     ######  ########     ######      ###    #### ##    ## 
+%       ##         ## ##   ##    ##    ##       ##    ##    ## ##    ##  ###   ## 
+%       ##        ##   ##  ##          ##       ##         ##   ##   ##  ####  ## 
+%       ######   ##     ##  ######     ##       ##   #### ##     ##  ##  ## ## ## 
+%       ##       #########       ##    ##       ##    ##  #########  ##  ##  #### 
+%       ##       ##     ## ##    ##    ##       ##    ##  ##     ##  ##  ##   ### 
+%       ##       ##     ##  ######     ##        ######   ##     ## #### ##    ## 
+      
+%        ######   #######  ##    ## ######## ########   #######  ##       
+%       ##    ## ##     ## ###   ##    ##    ##     ## ##     ## ##       
+%       ##       ##     ## ####  ##    ##    ##     ## ##     ## ##       
+%       ##       ##     ## ## ## ##    ##    ########  ##     ## ##       
+%       ##       ##     ## ##  ####    ##    ##   ##   ##     ## ##       
+%       ##    ## ##     ## ##   ###    ##    ##    ##  ##     ## ##       
+%        ######   #######  ##    ##    ##    ##     ##  #######  ######## 
+
+clearvars -except inset axes_handles being_published
+
+% the following code was copied from an old commit-- go over this carefully 
+
+load('/local-data/DA-paper/large-variance-flicker/2015_01_28_CS_ab3_2_EA.mat')
+PID = data(4).PID;
+time = 1e-4*(1:length(PID));
+all_spikes = spikes(4).A;
+B_spikes = spikes(4).B;
+load('/local-data/DA-paper/large-variance-flicker/2015_01_28_CS_ab3_3_EA.mat')
+PID = vertcat(PID,data(4).PID);
+all_spikes = vertcat(all_spikes,spikes(4).A);
+B_spikes = vertcat(B_spikes,spikes(4).B);
+
+% A spikes --> firing rate
+hash = dataHash(full(all_spikes));
+cached_data = cache(hash);
+if isempty(cached_data)
+	fA = spiketimes2f(all_spikes,time);
+	cache(hash,fA);
+else
+	fA = cached_data;
+end
+
+tA = 1e-3*(1:length(fA));
+PID2 = fA;
+for i = 1:width(PID2)
+	PID2(:,i) = interp1(time,PID(i,:),tA);
+end
+PID = PID2; clear PID2
+% some minor cleaning up
+PID(end,:) = PID(end-1,:); 
+
+% extract LN model
+[K, filtertime_full] = fitFilter2Data(mean2(PID),mean2(fA),'reg',1,'filter_length',1999,'offset',500);
+filtertime_full = filtertime_full*mean(diff(tA));
+filtertime = 1e-3*(-200:900);
+K = interp1(filtertime_full,K,filtertime);
+
+fp = convolve(tA,mean2(PID),K,filtertime);
+R = mean2(fA);
+temp =fit(fp(~(isnan(fp) | isnan(R))),R(~(isnan(fp) | isnan(R))),'poly1');
+fp = fp*temp.p1;
+fp = fp+temp.p2;
+
+clear p
+p.A = 57.1534;
+p.k = 23.6690;
+p.n = 2.9341;
+fp_hill = hill(p,fp);
+
+
+% gain analysis -- LN model
+clear ph
+ph(4) = axes_handles(4);
+ph(3) = inset(2);
+
+hl_min = .1;
+hl_max = 10;
+history_lengths = [logspace(log10(hl_min),log10(.5),15) logspace(log10(.5),log10(10),15)];
+history_lengths = unique(history_lengths);
+
+resp = mean2(fA(10e3:55e3,[3:10 13:20]));
+pred = fp_hill(10e3:55e3);
+time = 1e-3*(1:length(resp));
+stim = mean2(PID(10e3:55e3,[3:10 13:20]));
+
+[p,~,~,~,~,history_lengths]=gainAnalysisWrapper('response',resp,'prediction',pred,'stimulus',stim,'time',time,'ph',ph,'history_lengths',history_lengths,'example_history_length',.5,'use_cache',true,'engine',@gainAnalysis);
+
+ylabel(axes_handles(4),'Gain cf. LN model')
+title(axes_handles(4),'')
+title(inset(2),'')
+set(inset(2),'XScale','linear','XTickLabel','','YTickLabel','')
+xlabel(inset(2),'LN Prediction')
+ylabel(inset(2),'ORN Response')
+set(axes_handles(4),'YLim',[0.5 2])
+
+% thin some of the scatter points
+lines = get(inset(2),'Children');
+delete(lines(5))
+
+warning off
+lines(3).YData = lines(3).YData(1:5:end);
+lines(3).XData = lines(3).XData(1:5:end);
+lines(4).YData = lines(4).YData(1:5:end);
+lines(4).XData = lines(4).XData(1:5:end);
+warning on
+
+% gain aanlysis -- DA model
+clear p
+p.tau_z = 127.2500;
+p.tau_y = 23.8316;
+p.  n_y = 2;
+p.  n_z = 2;
+p.    A = 729.0620;
+p.    B = 13.8476;
+p.    C = 0.5972;
+p.   s0 = -0.1682;
+fp_DA = DAModelv2(mean2(PID(10e3:55e3,[3:10 13:20])),p);
+
+% gain analysis -- DA model
+clear ph
+ph(4) = axes_handles(9);
+ph(3) = inset(3);
+
+resp = mean2(fA(10e3:55e3,[3:10 13:20]));
+pred = fp_DA;
+time = 1e-3*(1:length(resp));
+stim = mean2(PID(10e3:55e3,[3:10 13:20]));
+
+[p,~,~,~,~,history_lengths] = gainAnalysisWrapper('response',resp,'prediction',pred,'stimulus',stim,'time',time,'ph',ph,'history_lengths',history_lengths,'example_history_length',.5,'use_cache',true,'engine',@gainAnalysis);
+
+ylabel(axes_handles(9),'Gain cf. DA model')
+title(axes_handles(9),'')
+title(inset(3),'')
+set(inset(3),'XScale','linear','XTickLabel','','YTickLabel','')
+xlabel(inset(3),'DA Prediction')
+ylabel(inset(3),'ORN Response')
+set(axes_handles(9),'YLim',[0.5 2])
+
+% thin some of the scatter points
+lines = get(inset(3),'Children');
+delete(lines(5))
+
+warning off
+lines(3).YData = lines(3).YData(1:5:end);
+lines(3).XData = lines(3).XData(1:5:end);
+lines(4).YData = lines(4).YData(1:5:end);
+lines(4).XData = lines(4).XData(1:5:end);
+warning on
+
 
 prettyFig('fs=18;','lw=1.5;')
 
@@ -330,6 +483,7 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
 
 
 %% Version Info

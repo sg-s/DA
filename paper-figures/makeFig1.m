@@ -194,7 +194,7 @@ gain(rm_this) = [];
 gain_err(rm_this) = [];
 mean_stim(rm_this) = [];
 
-l(1) = plot(axes_handles(7),mean_stim,gain,'k+')
+l(1) = plot(axes_handles(7),mean_stim,gain,'k+');
 
 
 options = fitoptions(fittype('power1'));

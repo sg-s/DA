@@ -12,6 +12,9 @@ lb.tau1 = 1;
 lb.tau2 = 1;
 lb.n = 1;
 lb.A = 0;
+ub.tau1 = 1e2;
+ub.tau2 = 1e3;
+
 
 % show parameters for readability
 p.n;

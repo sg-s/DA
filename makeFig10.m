@@ -277,25 +277,48 @@ end
 for i = 1:8
 	plot(axes_handles(7),(mean_stim(i,:)),(gain(i,:)),'+','Color',c(i,:));
 end
-
-% axes(axes_handles(7))
-% errorbar(nanmean(mean_stim'),nanmean(gain_LN'),nanstd(gain_LN'),'k')
 set(axes_handles(7),'YScale','log','XScale','log')
 
-% now compute gains for the DA model fit to this data
 
+% fit a DA model to all the data
+% clear d
+% for j = 2
+% 	clear d c
+% 	c = 1;
+% 	for i = 1:8
+% 		if ~isempty(MSG_data(i,j).stim)
+% 			stim = ([MSG_data(i,j).stim]);
+% 			resp = ([MSG_data(i,j).resp]);
+% 			if width(stim) > 1
+% 				d(c).stimulus = mean2(stim);
+% 				d(c).response = mean2(resp);
+% 			else
+% 				d(c).stimulus = (stim);
+% 				d(c).response = (resp);
+% 			end
+% 			d(c).response(1:1e3) = NaN;
+% 			c = c+1;
+			
+% 		end
+% 	end
+% 	p(j) = fitModel2Data(@DAModelv2,d,'nsteps',300,'p0',p(j));
+% end
 load('../data/DA_Fit_to_MSG.mat')
-% compute all the model predictions 
-for i = 1:8 % there are 8 paradimgs in the MSG data
-	for j = 1:13 % there are 13 neurons
-		if ~isempty(p(j).A) && width(MSG_data(i,j).stim) > 1
-			for k = 1:width(MSG_data(i,j).stim)
-				MSG_data(i,j).fp_DA(:,k) = DAModelv2(MSG_data(i,j).stim(:,k),p(j));
+
+% make DA prediction everywhere
+for i = 1:8
+	for j = 1:13
+		if ~isempty(MSG_data(i,j).stim)
+			stim = ([MSG_data(i,j).stim]);
+			if width(stim)>1
+				stim = mean2(stim);
 			end
+			MSG_data(i,j).fp_DA = DAModelv2(stim,p(j));
 		end
 	end
 end
 
+% now compute gains for the DA model fit to this data
 gain_DA = NaN(8,13);
 for i = 1:8 % iterate over all paradigms 
 	for j = 1:13
@@ -327,6 +350,85 @@ end
 plot(axes_handles(7),mean_stim(:),gain_DA(:),'r+')
 xlabel(axes_handles(7),'Mean Stimulus (V)')
 ylabel(axes_handles(7),'ORN Gain (Hz/V)')
+
+%       ######## #### ##       ######## ######## ########  
+%       ##        ##  ##          ##    ##       ##     ## 
+%       ##        ##  ##          ##    ##       ##     ## 
+%       ######    ##  ##          ##    ######   ########  
+%       ##        ##  ##          ##    ##       ##   ##   
+%       ##        ##  ##          ##    ##       ##    ##  
+%       ##       #### ########    ##    ######## ##     ## 
+      
+%        ######  ########  ######## ######## ########  ##     ## ########   ######  
+%       ##    ## ##     ## ##       ##       ##     ## ##     ## ##     ## ##    ## 
+%       ##       ##     ## ##       ##       ##     ## ##     ## ##     ## ##       
+%        ######  ########  ######   ######   ##     ## ##     ## ########   ######  
+%             ## ##        ##       ##       ##     ## ##     ## ##              ## 
+%       ##    ## ##        ##       ##       ##     ## ##     ## ##        ##    ## 
+%        ######  ##        ######## ######## ########   #######  ##         ######  
+
+
+
+% compute peak locations of all these filters
+clear l 
+l = zeros(8,1);
+peak_loc_K = NaN(8,13);
+mean_stim_K = NaN(8,13);
+for i = 1:8
+	for j = 1:13
+		if ~isempty(MSG_data(i,j).K)
+			K2 = pFilter(MSG_data(i,j).K(200:end),MSG_data(i,j).p);
+			filtertime = 1e-3*(1:length(K2));
+			l(i)=plot(axes_handles(3),filtertime,K2,'Color',c(i,:));
+			[~,loc] = max(K2);
+			peak_loc_K(i,j) = filtertime(loc);
+			mean_stim_K(i,j) = mean(mean(MSG_data(i,j).stim));
+		end
+	end
+end
+
+set(axes_handles(3),'XLim',[-.01 .5])
+xlabel(axes_handles(3),'Lag (s)')
+ylabel(axes_handles(3),'Filter (norm)')
+L = paradigm_names;
+for i = 1:length(L)
+	L{i} = L{i}(strfind(L{i},'-')+1:end);
+end
+legend(l,L);
+
+
+% extract filters for each case 
+for i = 1:8
+	for j = 1:13
+		if ~isempty(MSG_data(i,j).stim)
+			stim = ([MSG_data(i,j).stim]);
+			if width(stim)>1
+				stim = mean2(stim);
+			end
+			MSG_data(i,j).K_DA = fitFilter2Data(stim,MSG_data(i,j).fp_DA,'reg',1);
+		end
+	end
+end
+
+% find filter peaks for each neuron, for each paradigm 
+peak_loc_K_DA = NaN(8,13);
+for i = 1:8
+	for j = 1:13
+		if ~isempty(MSG_data(i,j).K_DA)
+			K2 = MSG_data(i,j).K_DA;
+			filtertime = 1e-3*(1:length(K2));
+			[~,peak_loc_K_DA(i,j)] = max(K2);
+		end
+	end
+end
+
+clear l
+l(1) = plot(axes_handles(8),nonnans(mean_stim_K(:)),nonnans(peak_loc_K(:)*1e3),'k+');
+l(2) = plot(axes_handles(8),mean_stim_K(~isnan(peak_loc_K_DA)),nonnans(peak_loc_K_DA(:)),'r+');
+
+set(axes_handles(8),'YLim',[30 120])
+xlabel(axes_handles(8),'Mean Stimulus (V)')
+ylabel(axes_handles(8),'Peak Time (ms)')
 
 
 %       ########    ###     ######  ########     ######      ###    #### ##    ## 

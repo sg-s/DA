@@ -85,7 +85,7 @@ orn(bad_trials) = [];
 % band pass all the LFP
 filtered_LFP = LFP;
 for i = 1:width(LFP)
-	filtered_LFP(:,i) = 100*bandPass(LFP(:,i),1000,10); % now in mV
+	filtered_LFP(:,i) = 10*bandPass(LFP(:,i),1000,10); % now in mV
 end
 
 figure('outerposition',[0 0 1600 800],'PaperUnits','points','PaperSize',[1600 800]); hold on
@@ -225,8 +225,187 @@ set(axes_handles(3),'XScale','log','YScale','log')
 xlabel(axes_handles(3),'Mean Stimulus (V)')
 ylabel(axes_handles(3),'ORN Gain (Hz/V)')
 
+%    ########    ###     ######  ########     ######      ###    #### ##    ## 
+%    ##         ## ##   ##    ##    ##       ##    ##    ## ##    ##  ###   ## 
+%    ##        ##   ##  ##          ##       ##         ##   ##   ##  ####  ## 
+%    ######   ##     ##  ######     ##       ##   #### ##     ##  ##  ## ## ## 
+%    ##       #########       ##    ##       ##    ##  #########  ##  ##  #### 
+%    ##       ##     ## ##    ##    ##       ##    ##  ##     ##  ##  ##   ### 
+%    ##       ##     ##  ######     ##        ######   ##     ## #### ##    ## 
 
-prettyFig('fs=15;')
+%     ######   #######  ##    ## ######## ########   #######  ##       
+%    ##    ## ##     ## ###   ##    ##    ##     ## ##     ## ##       
+%    ##       ##     ## ####  ##    ##    ##     ## ##     ## ##       
+%    ##       ##     ## ## ## ##    ##    ########  ##     ## ##       
+%    ##       ##     ## ##  ####    ##    ##   ##   ##     ## ##       
+%    ##    ## ##     ## ##   ###    ##    ##    ##  ##     ## ##       
+%     ######   #######  ##    ##    ##    ##     ##  #######  ######## 
+
+clearvars -except axes_handles being_published
+
+p = '/local-data/DA-paper/large-variance-flicker/LFP/';
+[PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes]  = consolidateData(p,1);
+
+
+% set to NaN firing rates that are 0
+fA(:,max(fA) == 0) = NaN;
+
+% throw out trials where we didn't record the LFP, for whatever reason
+not_LFP = 0*orn;
+for i = 1:width(LFP)
+	not_LFP(i) = abs(mean2(LFP(:,i)));
+end
+LFP(:,not_LFP< 0.5) = NaN;
+
+% filter the LFP
+filteredLFP = LFP;
+for i = 1:width(LFP)
+	a = find(~isnan(LFP(:,i)),1,'first');
+	z = find(~isnan(LFP(:,i)),1,'last');
+	if isempty(a)
+		a = 1;
+	end
+	if isempty(z)
+		z = length(LFP);
+	end
+	try
+		filteredLFP(a:z,i) = 10*bandPass(LFP(a:z,i),1000,10);
+	catch
+	end
+end
+
+% extract LFP filters
+if ~exist('K','var')
+	K = NaN(1e3,length(unique(orn)));
+	for i = 1:length(unique(orn))
+		resp = mean2(filteredLFP(20e3:55e3,orn==i));
+		stim = mean2(PID(20e3:55e3,orn==i));
+		temp = fitFilter2Data(stim,resp,'reg',1,'filter_length',1400,'offset',400);
+		% throw out 200ms on either end
+		temp(1:200) = [];
+		temp(end-199:end) = [];
+		K(:,i) = temp;
+	end
+end
+
+% extract fA filters
+if ~exist('K3','var')
+	K3 = NaN(1e3,length(unique(orn)));
+	for i = 1:length(unique(orn))
+		stim = mean2(PID(20e3:55e3,orn==i));
+		resp = mean2(fA(20e3:55e3,orn==i));
+		temp = fitFilter2Data(stim,resp,'reg',1,'filter_length',1400,'offset',400);
+		% throw out 200ms on either end
+		temp(1:200) = [];
+		temp(end-199:end) = [];
+		K3(:,i) = temp;
+	end
+end
+
+% make LN predictions of the LFP and the response
+time = 1e-3*(1:length(PID));
+fp = NaN(length(fA),length(unique(orn)));
+for i = 1:length(unique(orn))
+	filtertime = 1e-3*(1:1e3)-.2;
+	fp(:,i) = convolve(time,mean2(PID(:,orn==i)),K3(:,i),filtertime);
+	% correct for some trivial scaling
+	a = fp(20e3:55e3,i);
+	b = mean2(fA(20e3:55e3,orn == i));
+	temp  = isnan(a) | isnan(b);
+	temp = fit(a(~temp),b(~temp),'poly5'); 
+	fp(:,i) = temp(fp(:,i));
+end
+
+LFP_pred = NaN(length(fA),length(unique(orn)));
+for i = 1:length(unique(orn))
+	filtertime = 1e-3*(1:1e3)-.2;
+	LFP_pred(:,i) = convolve(time,mean2(PID(:,orn==i)),K(:,i),filtertime);
+	% correct for some trivial scaling
+	a = LFP_pred(:,i);
+	b = mean2(filteredLFP(:,orn == i));
+	temp  = isnan(a) | isnan(b);
+	temp = fit(a(~temp),b(~temp),'poly7'); 
+	LFP_pred(:,i) = temp(LFP_pred(:,i));
+end
+
+history_lengths = logspace(-1,1,30);
+
+for i = 1:length(unique(orn))
+	% first we do the firing rates
+	clear ph
+	ph(3) = axes_handles(6);
+	ph(4) = axes_handles(7);
+	
+	resp = mean2(fA(:,orn==i));
+	stim = mean2(PID(:,orn==i));
+	pred = (fp(:,i));
+
+	stim = stim(20e3:55e3);
+	pred = pred(20e3:55e3);
+	resp = resp(20e3:55e3);
+
+	[p,~,~,~,~,history_lengths,handles]=gainAnalysisWrapper('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(10),'use_cache',1,'engine',@gainAnalysis);
+	
+
+	% cosmetics
+	h=get(ph(3),'Children');
+	rm_this = [];
+	for j = 1:length(h)
+		if strcmp(get(h(j),'Marker'),'.')
+			rm_this = [rm_this j];
+		end
+	end
+	delete(h(rm_this))
+	delete(handles.green_line)
+	delete(handles.red_line)
+	delete(handles.vert_line)
+
+	set(handles.red_dots,'SizeData',516)
+	set(handles.green_dots,'SizeData',516)
+
+
+	% now do the same for the LFP
+	clear ph
+	ph(3) = axes_handles(4);
+	ph(4) = axes_handles(5);
+
+	resp = mean2(filteredLFP(:,orn==i));
+	pred = LFP_pred(:,i);
+	pred = pred(20e3:55e3);
+	resp = resp(20e3:55e3);
+
+	[p,~,~,~,~,history_lengths,handles] = gainAnalysisWrapper('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(10),'use_cache',1,'engine',@gainAnalysis);
+	
+	% cosmetics
+	h=get(ph(3),'Children');
+	rm_this = [];
+	for j = 1:length(h)
+		if strcmp(get(h(j),'Marker'),'.')
+			rm_this = [rm_this j];
+		end
+	end
+	delete(h(rm_this))
+	delete(handles.green_line)
+	delete(handles.red_line)
+	delete(handles.vert_line)
+
+	set(handles.red_dots,'SizeData',516)
+	set(handles.green_dots,'SizeData',516)
+end
+
+
+set(axes_handles(5),'XLim',[.1 10])
+set(axes_handles(7),'XLim',[.1 10])
+
+title(axes_handles(4),'')
+ylabel(axes_handles(4),'\DeltaLFP (mV)')
+xlabel(axes_handles(4),'LN prediction (mV)')
+
+title(axes_handles(6),'')
+ylabel(axes_handles(6),'Firing Rate (Hz)')
+xlabel(axes_handles(6),'LN prediction (Hz)')
+
+prettyFig('fs=15;','lw=1.5;','plw=2;')
 
 if being_published
 	snapnow

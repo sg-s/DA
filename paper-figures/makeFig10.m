@@ -520,8 +520,7 @@ ylabel(axes_handles(4),'Gain cf. LN model')
 title(axes_handles(4),'')
 title(inset(2),'')
 set(inset(2),'XScale','linear','XTickLabel','','YTickLabel','')
-xlabel(inset(2),'LN Prediction')
-ylabel(inset(2),'ORN Response')
+
 set(axes_handles(4),'YLim',[0.5 2])
 
 % thin some of the scatter points
@@ -563,8 +562,7 @@ ylabel(axes_handles(9),'Gain cf. DA model')
 title(axes_handles(9),'')
 title(inset(3),'')
 set(inset(3),'XScale','linear','XTickLabel','','YTickLabel','')
-xlabel(inset(3),'DA Prediction')
-ylabel(inset(3),'ORN Response')
+
 set(axes_handles(9),'YLim',[0.5 2])
 
 % thin some of the scatter points
@@ -580,6 +578,12 @@ warning on
 
 
 prettyFig('fs=18;','lw=1.5;')
+
+inset_font_size = 13;
+xlabel(inset(2),'LN Prediction','FontSize',inset_font_size)
+ylabel(inset(2),'ORN Response','FontSize',inset_font_size)
+xlabel(inset(3),'DA Prediction','FontSize',inset_font_size)
+ylabel(inset(3),'ORN Response','FontSize',inset_font_size)
 
 if being_published
 	snapnow

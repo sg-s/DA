@@ -66,7 +66,10 @@ K = [];
 if use_cache
 	K = cache(dataHash([X Y]));
 end
+
 if isempty(K)
+	disp('cache miss:')
+	disp(dataHash([X Y]))
 	K = NaN(filter_length,width(X));
 	for i = 1:width(X)
 		textbar(i,width(X))
@@ -96,6 +99,8 @@ if isempty(K)
 	end
 	cache(dataHash([X Y]),[]);
 	cache(dataHash([X Y]),K);
+	disp('Writing to cache with key:')
+	dataHash([X Y])
 end
 
 % make the linear prediction and compute the gain

@@ -197,15 +197,10 @@ mean_stim(rm_this) = [];
 l(1) = plot(axes_handles(7),mean_stim,gain,'k+');
 
 
-options = fitoptions(fittype('power1'));
-options.Lower = [-Inf -1];
-options.Upper = [Inf -1];
-options.Weights = 1./gain_err;
-ff = fit(mean_stim(:),gain(:),'power1',options);
-plot(axes_handles(7),sort(mean_stim),ff(sort(mean_stim)),'r');
-% L{1} = ['y=\alpha x^{-1}',char(10),'r^2=',oval(rsquare(ff(mean_stim),gain))];
-% legend(l,L)
-
+% save this for a later fit
+mean_stim_ab3 = mean_stim;
+gain_ab3 = gain;
+gain_err_ab3 = gain_err;
 
 
 % now also add ab2 data
@@ -271,13 +266,13 @@ mean_stim(rm_this) = [];
 
 l(2) = plot(axes_handles(7),mean_stim,gain,'ko');
 
-% fit a inverse relationship
+% fit a inverse relationship to all the data
 options = fitoptions(fittype('power1'));
 options.Lower = [-Inf -1];
 options.Upper = [Inf -1];
-options.Weights = 1./gain_err;
-ff = fit(mean_stim(:),gain(:),'power1',options);
-plot(axes_handles(7),sort(mean_stim),ff(sort(mean_stim)),'r');
+options.Weights = 1./[gain_err; gain_err_ab3];
+ff = fit([mean_stim; mean_stim_ab3],[gain; gain_ab3],'power1',options);
+plot(axes_handles(7),sort([mean_stim; mean_stim_ab3]),ff(sort([mean_stim; mean_stim_ab3])),'r');
 
 legend(l,{'ab3A','ab2A'},'Location','southwest')
 xlabel(axes_handles(7),'Stimulus in preceding 500ms (V)')
@@ -308,7 +303,9 @@ set(axes_handles(6),'XLim',[-.1 10])
 set(axes_handles(7),'YLim',[0 max(gain)],'YScale','log','XScale','log','XLim',[.001 10])
 
 
-prettyFig('plw=1.5;','lw=1;','fs=12;')
+prettyFig('plw=1.5;','lw=1.5;','fs=12;')
+
+legend('boxoff')
 
 if being_published
 	snapnow

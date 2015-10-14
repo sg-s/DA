@@ -366,8 +366,6 @@ for i = 1:length(unique(orn))
 	delete(handles.green_line)
 	delete(handles.red_line)
 	delete(handles.vert_line)
-
-
 end
 
 set(a(2),'YLim',[0.75 1.55])

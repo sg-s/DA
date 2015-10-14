@@ -160,20 +160,6 @@ l = plot(axes_handles(4),sort(x),ff(sort(x)),'r');
 L = {};
 L{1} = strcat('Gain=',oval(ff.p1),'Hz/V, r^2=',oval(rsquare(y,x)));
 
-% % also fit a hill function
-% rm_this = isnan(x) | isnan(y);
-% x(rm_this) = []; y(rm_this) = [];
-% minx = min(x);
-% x = x - minx;
-% clear p
-% p.     A= 42.9682;
-% p.     k= 1.0570;
-% p.     n= 2.4301;
-% p.y_offset= 2.9976;
-% [x,idx] = sort(x); y = y(idx);
-% l(2) = plot(axes_handles(4),x + minx,hill4(x,p),'k--');
-% L{2} = strcat('Hill fit, r^2=',oval(rsquare(hill4(x,p),y)));
-
 
 xlabel(axes_handles(4),'Projected Stimulus')
 ylabel(axes_handles(4),'Response (Hz)')
@@ -181,6 +167,15 @@ ylabel(axes_handles(4),'Response (Hz)')
 legend(l,L,'Location','northwest');
 
 prettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=0;','FixLogY=0;')
+
+legend('boxoff')
+
+movePlot(axes_handles(3),'down',.03)
+movePlot(axes_handles(4),'down',.03)
+movePlot(axes_handles(1),'up',.06)
+movePlot(axes_handles(2),'up',.03)
+
+xlabel(axes_handles(2),'Time (s)')
 
 if being_published
 	snapnow
@@ -316,7 +311,7 @@ options.Weights = 1./gain_err(:);
 cf = fit(nanmean(mean_stim')',nanmean(gain')','power1',options);
 l(2)=plot(ax(6),nanmean(mean_stim')',cf(nanmean(mean_stim')'),'k--');
 r2 = rsquare(nonnans(gain),cf(nonnans(mean_stim)));
-legend(l,{L, strcat('y = \alpha x^{-1}, \alpha= ',oval(cf.a), ', r^2 = ',oval(r2))},'Location','northoutside')
+% legend(l,{L, strcat('y = \alpha x^{-1}, \alpha= ',oval(cf.a), ', r^2 = ',oval(r2))},'Location','northoutside')
 
 % rescale by Weber law
 ss = 50;
@@ -347,7 +342,7 @@ ally(rm_this) = [];
 ff2 = fit(allx(:),ally(:),'poly1');
 clear l
 l = plot(ax(7),-5:0.1:45,ff2(-5:0.1:45),'r');
-legend(l,strcat('r^2=',oval(rsquare(ally,ff2(allx)))),'Location','northwest');
+% legend(l,strcat('r^2=',oval(rsquare(ally,ff2(allx)))),'Location','northwest');
 
 
 % cosmetics
@@ -389,81 +384,80 @@ end
 %        ##    ## ##     ## ##        ##           ##        ##  ##    ##        ##   
 %         ######   #######  ##        ##           ##       ####  ######       ###### 
 
-%% Supplementary Figure 1
+% %% Supplementary Figure 1
+% figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% subplot(1,2,1), hold on
+% ss = 50;
+% all_x = []; all_y = [];
+% for i = 1:8 % iterate over all paradigms 
+% 	y = ([MSG_data(i,:).resp]);
+% 	s = ([MSG_data(i,:).stim]);
+% 	x = ([MSG_data(i,:).fp]);
+% 	if ~isvector(x)
+% 		x = mean2(x);
+% 	end
 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-subplot(1,2,1), hold on
-ss = 50;
-all_x = []; all_y = [];
-for i = 1:8 % iterate over all paradigms 
-	y = ([MSG_data(i,:).resp]);
-	s = ([MSG_data(i,:).stim]);
-	x = ([MSG_data(i,:).fp]);
-	if ~isvector(x)
-		x = mean2(x);
-	end
+% 	if ~isvector(s)
+% 		s = mean2(s);
+% 	end
 
-	if ~isvector(s)
-		s = mean2(s);
-	end
+% 	if ~isvector(y)
+% 		y = mean2(y);
+% 	end 
 
-	if ~isvector(y)
-		y = mean2(y);
-	end 
+% 	all_x = [all_x x+mean(s)];
+% 	all_y = [all_y y];
+% 	plot(x(1:ss:end)+mean(s),y(1:ss:end),'.','Color',c(i,:))
+% end
 
-	all_x = [all_x x+mean(s)];
-	all_y = [all_y y];
-	plot(x(1:ss:end)+mean(s),y(1:ss:end),'.','Color',c(i,:))
-end
-
-p.A= 34.4229;
-p.k= 0.7455;
-p.n= 1.5538;
-L = ['Hill fit, r^2=' oval(rsquare(all_y(:),hill(all_x(:),p)))];
-all_x = nonnans(sort(all_x(:)));
-all_x = linspace(all_x(1),all_x(end),100);
-l = plot(all_x,hill(all_x,p),'r');
-legend(l,L,'Location','southeast')
-xlabel(['Projected Stimulus +' char(10) 'mean stimulus'])
-ylabel('Neuron Response (Hz)')
-set(gca,'XLim',[0 5],'YLim',[0 45])
+% p.A= 34.4229;
+% p.k= 0.7455;
+% p.n= 1.5538;
+% L = ['Hill fit, r^2=' oval(rsquare(all_y(:),hill(all_x(:),p)))];
+% all_x = nonnans(sort(all_x(:)));
+% all_x = linspace(all_x(1),all_x(end),100);
+% l = plot(all_x,hill(all_x,p),'r');
+% legend(l,L,'Location','southeast')
+% xlabel(['Projected Stimulus +' char(10) 'mean stimulus'])
+% ylabel('Neuron Response (Hz)')
+% set(gca,'XLim',[0 5],'YLim',[0 45])
 
 
-% show non-linearities to each cloud
-clear p
-subplot(1,2,2), hold on
-for i = 1:8 % iterate over all paradigms 
-	y = ([MSG_data(i,:).resp]);
-	s = ([MSG_data(i,:).stim]);
-	x = ([MSG_data(i,:).fp]);
-	if ~isvector(x)
-		x = mean2(x);
-	end
+% % show non-linearities to each cloud
+% clear p
+% subplot(1,2,2), hold on
+% for i = 1:8 % iterate over all paradigms 
+% 	y = ([MSG_data(i,:).resp]);
+% 	s = ([MSG_data(i,:).stim]);
+% 	x = ([MSG_data(i,:).fp]);
+% 	if ~isvector(x)
+% 		x = mean2(x);
+% 	end
 
-	if ~isvector(s)
-		s = mean2(s);
-	end
+% 	if ~isvector(s)
+% 		s = mean2(s);
+% 	end
 
-	if ~isvector(y)
-		y = mean2(y);
-	end 
+% 	if ~isvector(y)
+% 		y = mean2(y);
+% 	end 
 
-	clear d
-	d.stimulus = x + mean(s);
-	d.response = y;
-	p(i) = fitModel2Data(@hill,d,'nsteps',0);
-	plot(all_x(all_x<max(d.stimulus)),hill(all_x(all_x<max(d.stimulus)),p(i)),'Color',c(i,:))
-end
-set(gca,'XLim',[0 5],'YLim',[0 45])
-xlabel(['Projected Stimulus +' char(10) 'mean stimulus'])
-ylabel('Neuron Response (Hz)')
+% 	clear d
+% 	d.stimulus = x + mean(s);
+% 	d.response = y;
+% 	p(i) = fitModel2Data(@hill,d,'nsteps',0);
+% 	plot(all_x(all_x<max(d.stimulus)),hill(all_x(all_x<max(d.stimulus)),p(i)),'Color',c(i,:))
+% end
+% set(gca,'XLim',[0 5],'YLim',[0 45])
+% xlabel(['Projected Stimulus +' char(10) 'mean stimulus'])
+% ylabel('Neuron Response (Hz)')
 
-prettyFig('fs=20;');
+% prettyFig('fs=20;');
 
-if being_published
-	snapnow
-	delete(gcf)
-end
+% if being_published
+% 	snapnow
+% 	delete(gcf)
+% end
 
 
 %        ######  ########  ######## ######## ########  ##     ## ########   ######  
@@ -478,7 +472,8 @@ end
 % ORN gain may permit responses to occur with smaller delays, as ORNs need to integrate the stimulus over a smaller duration to respond. Speedup in responses can be estimated using the peak times of linear filters fit to increasing mean concentrations of odorant (colours, in A). ORN response speedups with increasing stimulus mean can also be estimated in a model-free manner using the spike-triggered average (STA, B). Both methods suggest that response delays decrease with increasing mean stimulus (C). 
 
 figure('outerposition',[0 0 1100 800],'PaperUnits','points','PaperSize',[1100 800]); hold on
-subplot(2,2,1), hold on
+clear axes_handles
+axes_handles(1) = subplot(2,2,1); hold on
 
 ac_mean = zeros(20e3+1,8);
 ac_std = zeros(20e3+1,8);
@@ -539,7 +534,7 @@ for i = 1:8
 	ac_std(:,i) = sem(this_ac);
 end
 
-subplot(2,2,2), hold on
+axes_handles(2) = subplot(2,2,2); hold on
 time = 1e-3*(1:length(ac_mean));
 for i = 1:8
 	[~,si(i)] = errorShade(time,ac_mean(:,i),ac_std(:,i),'Color',c(i,:));
@@ -566,7 +561,7 @@ ylabel('Response Autocorrelation')
 % end
 
 % show filter speedups
-subplot(2,3,4), hold on
+axes_handles(3) = subplot(2,2,3); hold on
 
 % compute peak locations of all these filters
 clear l 
@@ -598,10 +593,11 @@ for i = 1:length(L)
 end
 legend(l,L);
 
-before = 1e4;
-after = 5e3;
 
 % % compute STA for all the data
+% before = 1e4;
+% after = 5e3;
+
 % allfiles = dir('/local-data/DA-paper/fast-flicker/orn/*.mat');
 % allSTA = [];
 % mean_stim = []; 
@@ -634,9 +630,7 @@ after = 5e3;
 % 			this_dil = str2double(ControlParadigm(j).Name(strfind(ControlParadigm(j).Name,'-')+1:strfind(ControlParadigm(j).Name,'%')-1));
 % 			dil = [dil;this_dil*ones(width(this_stim),1)  ];
 
-% 			% choose regularisation based on dilution
-
-% 			this_STA = STA(these_spikes,this_stim,'normalise',true,'regulariseParameter',100,'before',before,'after',after);
+% 			this_STA = STA(these_spikes,this_stim,'normalise',true,'regulariseParameter',1,'before',before,'after',after);
 % 			allSTA = [allSTA this_STA];
 			
 % 		end
@@ -651,57 +645,60 @@ after = 5e3;
 % save('.cache/allSTA.mat','allSTA','dil','mean_stim');
 
 
-% plot the STA
-subplot(2,3,5), hold on
+% % plot the STA
+% subplot(2,3,5), hold on
 
-old_mean_stim = mean_stim;
-load('.cache/allSTA.mat','allSTA','dil','mean_stim');
+% old_mean_stim = mean_stim;
+% load('.cache/allSTA.mat','allSTA','dil','mean_stim');
 
-udil = unique(dil);
-for i = 1:8
-	temp = (allSTA(:,dil == udil(i)));
-	for j = 1:width(temp)
-		temp(:,j) = temp(:,j)/max(temp(:,j));
-	end
-	t = 1e-3*(1:length(temp)) - .44;
-	errorShade(t,flipud(mean2(temp)),flipud(sem(temp)),'Color',c(i,:));
-end
-set(gca,'XLim',[-.2 .5])
-xlabel('Lag (s)')
-ylabel('STA (norm)')
+% udil = unique(dil);
+% for i = 1:8
+% 	temp = (allSTA(:,dil == udil(i)));
+% 	for j = 1:width(temp)
+% 		temp(:,j) = temp(:,j)/max(temp(:,j));
+% 	end
+% 	t = 1e-3*(1:length(temp)) - .44;
+% 	errorShade(t,flipud(mean2(temp)),flipud(sem(temp)),'Color',c(i,:));
+% end
+% set(gca,'XLim',[-.2 .5])
+% xlabel('Lag (s)')
+% ylabel('STA (norm)')
 
-% find the peak of each STA
-peak_STA = NaN*mean_stim;
-for i = 1:length(mean_stim)
-	[~,loc] = max(allSTA(:,i));
-	peak_STA(i) = (1e3 - loc) + 60;
-end
+% % find the peak of each STA
+% peak_STA = NaN*mean_stim;
+% for i = 1:length(mean_stim)
+% 	[~,loc] = max(allSTA(:,i));
+% 	peak_STA(i) = (1e3 - loc) + 60;
+% end
 
-x = NaN(8,1); y = x; ex = x; ey = x;
-peak_STA(peak_STA>900) = NaN; % throw out some bullshit values
-for i = 1:8
-	x(i) = mean2(mean_stim(dil == udil(i)));
-	ex(i) = sem(mean_stim(dil == udil(i)));
-	y(i) = nanmean(peak_STA(dil == udil(i)));
-	ey(i) = sem(nonnans(peak_STA(dil == udil(i))));
-end
+% x = NaN(8,1); y = x; ex = x; ey = x;
+% peak_STA(peak_STA>900) = NaN; % throw out some bullshit values
+% for i = 1:8
+% 	x(i) = mean2(mean_stim(dil == udil(i)));
+% 	ex(i) = sem(mean_stim(dil == udil(i)));
+% 	y(i) = nanmean(peak_STA(dil == udil(i)));
+% 	ey(i) = sem(nonnans(peak_STA(dil == udil(i))));
+% end
 
-subplot(2,3,6), hold on
-clear l
-l(1) = errorbar(x,y,ey,'k');
+axes_handles(4) = subplot(2,2,4); hold on
 
-l(2) = plot(nonnans(mean_stim_K(:)),nonnans(peak_loc_K(:)/dt),'r+');
+
+l = errorbar(nanmean(mean_stim'),1e3*nanmean(peak_loc_K'),1e3*nanstd(peak_loc_K')./sqrt(sum(~isnan(peak_loc_K)')),'k.');
+
 
 % calculate Spearman's rho (http://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient)
 s2 = spear(nonnans(mean_stim_K(:)),nonnans(peak_loc_K(:)));
-s1 = spear(mean_stim,peak_STA);
 
-legend(l,{strcat('STA, \rho=',oval(s1)), strcat('Filter, \rho=',oval(s2))})
-set(gca,'YLim',[-10 130])
+legend(l,{strcat('\rho=',oval(s2))})
+set(gca,'YLim',[20 130])
 ylabel('Peak time (ms)')
 xlabel('Mean Stimulus (V)')
 
 prettyFig('fs=20;');
+
+set(axes_handles(1),'XTick',[1e-2 1e-1 1e0 ])
+set(axes_handles(2),'XTick',[1e-2 1e-1 1e0 ])
+
 
 if being_published
 	snapnow

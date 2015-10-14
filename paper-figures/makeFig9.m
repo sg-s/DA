@@ -162,7 +162,14 @@ for i = 1:length(all_light_V)
 end
 
 axes(axes_handles(6))
-errorbar(all_light_V,all_gain,all_gain_err,'k.')
+
+% convert light voltage into power
+load('/local-data/DA-paper/LED_calibration_data.mat','V','lux');
+ff = fit(V(:),lux(:),'smoothingspline');
+light_power = ff(all_light_V);
+light_power(light_power<0) = 0;
+
+errorbar(light_power,all_gain,all_gain_err,'k.')
 
 
 % ##       ####  ######   ##     ## ########          #######  ########   #######  ########  
@@ -252,9 +259,9 @@ set(axes_handles(5),'XLim',[0 45],'YLim',[0 45])
 xlabel(axes_handles(5),'Response (Hz)')
 ylabel(axes_handles(5),['Response to' char(10) 'stimulus + background (Hz)'])
 
-set(axes_handles(6),'XLim',[-.1 4],'YLim',[.2 1.2])
+set(axes_handles(6),'XLim',[-10 200],'YLim',[.2 1.2])
 ylabel(axes_handles(6),'Relative Gain')
-xlabel(axes_handles(6),'Background light (V)')
+xlabel(axes_handles(6),'Background light (\muW)')
 
 set(axes_handles(7),'XLim',[35 55])
 xlabel(axes_handles(7),'Time (s)')

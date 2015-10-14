@@ -144,17 +144,17 @@ text(-.2,60,'p < 0.01')
 title(axes_handles(4),[])
 
 % plot gain vs preceding stimulus
-[x,y,e] = makeFig6G(mean2(PID),mean2(fA),mean2(fp),500);
-gain_time = mean(diff(tA))*(1:length(x));
-rm_this = (isnan(x) | isnan(y));
+[x,y] = makeFig6G(mean2(PID),mean2(fA),mean2(fp),500);
+rm_this = (isnan(x) | isnan(y)) | x < .2;
 x(rm_this) = [];
 y(rm_this) = [];
-gain_time(rm_this) = [];
 ss = 50;
-plot(axes_handles(3),x(1:ss:end),y(1:ss:end)/mean(y),'k.')
+axes(axes_handles(3))
+plotPieceWiseLinear(x,y,'nbins',50);
+% plot(axes_handles(3),x(1:ss:end),y(1:ss:end)/mean(y),'k.')
 xlabel(axes_handles(3),'Stimulus in preceding 500ms (V)')
-ylabel(axes_handles(3),'Relative gain')
-set(axes_handles(3),'YLim',[0 3.5])
+ylabel(axes_handles(3),'Inst. Gain (Hz/V)')
+set(axes_handles(3),'YScale','log','XScale','log','YTick',[10 100 1000],'YLim',[10 1000])
 
 % fix some labels
 set(axes_handles(5),'YScale','log','YTick',[0.5 1 2],'YLim',[0.4 2.5],'XLim',[0.09 10.1],'YMinorTick','on')

@@ -152,8 +152,11 @@ else
 end
 
 
-c = parula(5);
-figure('outerposition',[0 0 500 800],'PaperUnits','points','PaperSize',[500 800]); hold on
+c = (parula(5));
+temp = c(4,:);
+c(4,:) = c(1,:);
+c(1,:) = temp;
+figure('outerposition',[0 0 600 1000],'PaperUnits','points','PaperSize',[600 1000]); hold on
 ax(1) = subplot(5,2,1:2); hold on
 for i = 3:10
 	ax(i-1) = subplot(5,2,i);
@@ -162,7 +165,7 @@ end
 
 % move all plots to the top
 for i = 1:9
-	movePlot(ax(i),'up',.05);
+	movePlot(ax(i),'up',.03);
 end
 
 % show the stimulus on top
@@ -170,7 +173,7 @@ time = 1e-3*(1:length(PID));
 time = time(global_start:global_start+40e3);
 y = PID(global_start:global_start+40e3,1);
 ss = 50;
-plot(ax(1),time(1:ss:end),y(1:ss:end),'k')
+plot(ax(1),time(1:ss:end),y(1:ss:end),'k','LineWidth',1.1)
 
 %                  ##       ######## ########  
 %                  ##       ##       ##     ## 
@@ -185,7 +188,7 @@ plot(ax(1),time(1:ss:end),y(1:ss:end),'k')
 ss=  10;
 time = 1e-3*(1:length(reshaped_LFP));
 plot(ax(2),time,reshaped_LFP(:,1:ss:end),'Color',[.5 .5 .5 .5]);
-plot(ax(2),time,mean2(reshaped_LFP),'Color','k','LineWidth',4);
+plot(ax(2),time,mean2(reshaped_LFP),'Color','k','LineWidth',2);
 
 
 
@@ -202,12 +205,12 @@ K_low = mean(squeeze(mean((K(2,:,:)),1)),2);
 K_high = K_high*sqrt(1/sum(K_high.^2));
 K_low = K_low*sqrt(1/sum(K_low.^2));
 
-l(1) = plot(ax(4),filtertime,K_high,'Color',c(1,:));
-l(2) = plot(ax(4),filtertime,K_low,'Color',c(4,:));
+l(1) = plot(ax(4),filtertime,K_high,'Color',c(1,:),'LineWidth',2.1);
+l(2) = plot(ax(4),filtertime,K_low,'Color',c(4,:),'LineWidth',2.1);
 legend(l,L,'Location','southeast')
 
 
-for j = 1:length(all_offsets)
+for j = [1 4]
 	x = LFP_pred;
 	y = reshaped_LFP;
 
@@ -224,14 +227,19 @@ for j = 1:length(all_offsets)
 	rm_this = isnan(x) | isnan(y);
 
 
-	ci = max([1 floor(length(c)*(all_offsets(j)*sr)/length(reshaped_LFP))]);
+	if j == 1
+		ci = 1;
+	else
+		ci = 4;
+	end
+
 	[~,data] = plotPieceWiseLinear(x(~rm_this),y(~rm_this),'make_plot',false,'nbins',30);
-	plot(ax(6),data.x,data.y,'Color',c(j,:))
+	plot(ax(6),data.x,data.y,'Color',c(ci,:),'LineWidth',3)
 end
 
 % show how gain changes with time
 all_offsets = [0:0.1:10];
-errorShade(ax(8),all_offsets,nanmean(n),nanstd(n)/sqrt(width(reshaped_fA)),'Color','k');
+[lhl, shl]= errorShade(ax(8),all_offsets,nanmean(n),nanstd(n)/sqrt(width(reshaped_fA)),'Color','k');
 
 
 
@@ -339,7 +347,7 @@ end
 ss=  10;
 time = 1e-3*(1:length(reshaped_fA));
 plot(ax(3),time,reshaped_fA(:,1:ss:end),'Color',[.5 .5 .5 .5]);
-plot(ax(3),time,mean2(reshaped_fA),'Color','k','LineWidth',4);
+plot(ax(3),time,mean2(reshaped_fA),'Color','k','LineWidth',2);
 
 
 % show the fA filters
@@ -355,12 +363,12 @@ K_low = nanmean(squeeze(nanmean((K2(2,:,:)),1)),2);
 K_high = K_high*sqrt(1/sum(K_high.^2));
 K_low = K_low*sqrt(1/sum(K_low.^2));
 
-l(1) = plot(ax(5),filtertime,K_high,'Color',c(1,:));
-l(2) = plot(ax(5),filtertime,K_low,'Color',c(4,:));
+l(1) = plot(ax(5),filtertime,K_high,'Color',c(1,:),'LineWidth',2.1);
+l(2) = plot(ax(5),filtertime,K_low,'Color',c(4,:),'LineWidth',2.1);
 legend(l,L,'Location','northeast')
 
 all_offsets = [1 3 6 8];
-for j = 1:length(all_offsets)
+for j = [1 4]
 	x = fA_pred;
 	y = reshaped_fA;
 
@@ -376,15 +384,18 @@ for j = 1:length(all_offsets)
 	x = x(:); y = y(:);
 	rm_this = isnan(x) | isnan(y);
 
-
-	ci = max([1 floor(length(c)*(all_offsets(j)*sr)/length(reshaped_fA))]);
+	if j == 1
+		ci = 1;
+	else
+		ci = 4;
+	end
 	[~,data] = plotPieceWiseLinear(x(~rm_this),y(~rm_this),'make_plot',false,'nbins',30);
-	plot(ax(7),data.x,data.y,'Color',c(j,:))
+	plot(ax(7),data.x,data.y,'Color',c(ci,:),'LineWidth',3)
 end
 
 % show how gain changes with time
 all_offsets = [0:0.1:10];
-errorShade(ax(9),all_offsets,nanmean(n),nanstd(n)/sqrt(width(reshaped_fA)),'Color','k');
+[lhf, shf]= errorShade(ax(9),all_offsets,nanmean(n),nanstd(n)/sqrt(width(reshaped_fA)),'Color','k');
 
 
 
@@ -427,8 +438,12 @@ set(ax(9),'YLim',[50 120])
 ylabel(ax(9),'ORN Gain (Hz/V)')
 xlabel(ax(9),'Time since switch (s)')
 
+prettyFig('fs=12;','plw=1.5;','lw=1.5;')
 
-prettyFig('fs=12;','plw=1;','lw=1.5;')
+for i = 1:length(lhl)
+	set(lhl(i),'LineWidth',2)
+	set(lhf(i),'LineWidth',2)
+end
 
 if being_published
 	snapnow

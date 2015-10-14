@@ -156,7 +156,8 @@ end
 
 ff = fit(xx(:),yy(:),'power1','Weights',ww);
 clear l
-l(1) = plot(axes_handles(2),sort(xx),ff(sort(xx)),'k--');
+
+l(1) = plot(axes_handles(2),sort(mean(PID(a:z,:))),ff(sort(mean(PID(a:z,:)))),'k--');
 L = {};
 L{1} = ['y = \alpha x^{', oval(ff.b), '}'];
 
@@ -165,7 +166,7 @@ fo.Upper = [NaN -1];
 fo.Lower = [NaN -1];
 fo.Weights = ww;
 ff = fit(xx(:),yy(:),'power1',fo);
-l(2) = plot(axes_handles(2),sort(xx),ff(sort(xx)),'k');
+l(2) = plot(axes_handles(2),sort(mean(PID(a:z,:))),ff(sort(mean(PID(a:z,:)))),'k');
 L{2} = ['y = \alpha x^{', oval(ff.b), '}'];
 
 legend(l,L)
@@ -206,7 +207,7 @@ end
 
 ff = fit(xx(:),yy(:),'power1','Weights',ww);
 clear l
-l(1) = plot(axes_handles(3),sort(xx),ff(sort(xx)),'k--');
+l(1) = plot(axes_handles(3),sort(mean(PID(a:z,:))),ff(sort(mean(PID(a:z,:)))),'k--');
 L = {};
 L{1} = ['y = \alpha x^{', oval(ff.b), '}'];
 
@@ -216,7 +217,7 @@ fo.Upper = [NaN -1];
 fo.Lower = [NaN -1];
 fo.Weights = ww;
 ff = fit(xx(:),yy(:),'power1',fo);
-l(2) = plot(axes_handles(3),sort(xx),ff(sort(xx)),'k');
+l(2) = plot(axes_handles(3),sort(mean(PID(a:z,:))),ff(sort(mean(PID(a:z,:)))),'k');
 L{2} = ['y = \alpha x^{', oval(ff.b), '}'];
 
 legend(l,L)

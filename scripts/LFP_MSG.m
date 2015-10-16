@@ -225,49 +225,6 @@ end
 % So this is very nice, as we can get the same result all over again, and the exponent of the fit is also very close to the old value, and very close to the theoretical prediction (-1).  
 
 
-%% Fractional Changes
-% In this section, we look at the I/O curve of the neuron in a different way: we plot the fractional changes in responses vs. the fractional changes in the (projected) stimulus. The point of doing this is to get at an estimate of the gain in a dimensionless way, so we can compare gain across different systems, for example, we can compare PID->ORN gain to PID->LFP gain.  
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-subplot(1,2,1), hold on
-time = 1e-3*(0:z-a);
-L = {};
-frac_gain = [];
-frac_gain_err = [];
-mean_stim = [];
-for i = 1:max(paradigm)
-	x = NaN(length(time),sum(paradigm==i));
-	y = NaN(length(time),sum(paradigm==i));
-	do_these = find(paradigm ==i);
-	this_frac_gain = [];
-	for j = 1:length(do_these)
-		[x(:,j),y(:,j)] = fractionalIO(time,PID(a:z,do_these(j)),fA(a:z,do_these(j)),filtertime,K2(:,do_these(j)));
-		[~,data] = plotPieceWiseLinear(x(:,j),y(:,j),'make_plot',false,'nbins',50);
-		ff = fit(data.x,data.y,'poly1');
-		this_frac_gain = [this_frac_gain ff.p1];
-	end
-	[~,data] = plotPieceWiseLinear(nanmean(x'),nanmean(y'),'make_plot',false,'nbins',50);
-	plot(data.x,data.y,'Color',c(i,:))
-	frac_gain(i) = mean(this_frac_gain);
-	frac_gain_err(i) = sem(this_frac_gain);
-	mean_stim(i) = mean(mean(PID(a:z,paradigm ==i)));
-end
-xlabel(['Fractional Projected' char(10) 'Stimulus Change'])
-ylabel('Fractional Response Change')
-
-subplot(1,2,2), hold on
-errorbar(mean_stim,frac_gain,frac_gain_err,'k')
-xlabel('Mean Stimulus (V)')
-ylabel('Dimensionless Gain')
-
-prettyFig;
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-
 
 % 								##       ######## ########  
 % 								##       ##       ##     ## 
@@ -488,6 +445,102 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%     ######## ########     ###     ######  ######## ####  #######  ##    ##    ###    ##       
+%     ##       ##     ##   ## ##   ##    ##    ##     ##  ##     ## ###   ##   ## ##   ##       
+%     ##       ##     ##  ##   ##  ##          ##     ##  ##     ## ####  ##  ##   ##  ##       
+%     ######   ########  ##     ## ##          ##     ##  ##     ## ## ## ## ##     ## ##       
+%     ##       ##   ##   ######### ##          ##     ##  ##     ## ##  #### ######### ##       
+%     ##       ##    ##  ##     ## ##    ##    ##     ##  ##     ## ##   ### ##     ## ##       
+%     ##       ##     ## ##     ##  ######     ##    ####  #######  ##    ## ##     ## ######## 
+    
+%      ######  ##     ##    ###    ##    ##  ######   ########  ######  
+%     ##    ## ##     ##   ## ##   ###   ## ##    ##  ##       ##    ## 
+%     ##       ##     ##  ##   ##  ####  ## ##        ##       ##       
+%     ##       ######### ##     ## ## ## ## ##   #### ######    ######  
+%     ##       ##     ## ######### ##  #### ##    ##  ##             ## 
+%     ##    ## ##     ## ##     ## ##   ### ##    ##  ##       ##    ## 
+%      ######  ##     ## ##     ## ##    ##  ######   ########  ######  
+    
+% %% Fractional Changes
+% In this section, we look at the I/O curve of the neuron in a different way: we plot the fractional changes in responses vs. the fractional changes in the (projected) stimulus. The point of doing this is to get at an estimate of the gain in a dimensionless way, so we can compare gain across different systems, for example, we can compare PID->LFP gain to LFP->ORN gain.  
+
+
+% remove baseline from the LFP
+for i = 1:width(LFP)
+	LFP(:,i) = LFP(:,i) - mean(LFP(1:5e3,i));
+end
+
+z = 20e3;
+figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
+clear axes_handles axes_handles2
+for casei = 1:3
+	axes_handles(casei) = subplot(2,3,casei); hold on
+	
+
+	time = 1e-3*(0:z-a);
+	frac_gain = [];
+	frac_gain_err = [];
+	mean_stim = [];
+	mean_LFP = [];
+
+
+	for i = 1:max(paradigm)
+		x = NaN(length(time),sum(paradigm==i));
+		y = NaN(length(time),sum(paradigm==i));
+		do_these = find(paradigm ==i);
+		this_frac_gain = [];
+		for j = 1:length(do_these)
+			this_lfp = filtered_LFP(a:z,do_these(j));
+			mean_LFP(i,j) = - mean(LFP(a:z,do_these(j)));
+			this_lfp = this_lfp + mean_LFP(i,j);
+
+			switch casei 
+			case 1
+				[x(:,j),y(:,j)] = fractionalIO(time,PID(a:z,do_these(j)),this_lfp,filtertime,K1(:,do_these(j)));
+			case 2
+				[x(:,j),y(:,j)] = fractionalIO(time,this_lfp,fA(a:z,do_these(j)),filtertime,K3(:,do_these(j)));
+				y(:,j) = -y(:,j);
+			case 3
+				[x(:,j),y(:,j)] = fractionalIO(time,PID(a:z,do_these(j)),fA(a:z,do_these(j)),filtertime,K2(:,do_these(j)));
+			end
+				
+			[~,data] = plotPieceWiseLinear(x(:,j),y(:,j),'make_plot',false,'nbins',50);
+			ff = fit(data.x,data.y,'poly1');
+			this_frac_gain = [this_frac_gain ff.p1];
+		end
+		[~,data] = plotPieceWiseLinear(nanmean(x'),nanmean(y'),'make_plot',false,'nbins',50);
+		plot(data.x,data.y,'Color',c(i,:))
+		frac_gain(i) = mean(this_frac_gain);
+		frac_gain_err(i) = sem(this_frac_gain);
+		mean_stim(i) = mean(mean(PID(a:z,paradigm ==i)));
+	end
+
+	axes_handles2(casei) = subplot(2,3,casei+3); hold on
+	errorbar(mean_stim,frac_gain,frac_gain_err,'k')
+	xlabel('Mean Stimulus (V)')
+	ylabel('Gain')
+end
+
+title(axes_handles(1),'Stimulus \rightarrow LFP')
+title(axes_handles(2),'LFP \rightarrow Firing')
+title(axes_handles(3),'Stimulus \rightarrow Firing')
+
+xlabel(axes_handles(1),['Fractional Projected' char(10) 'Stimulus Change'])
+xlabel(axes_handles(2),['Fractional Projected' char(10) 'LFP Change'])
+xlabel(axes_handles(3),['Fractional Projected' char(10) 'Stimulus Change'])
+
+ylabel(axes_handles(1),['Fractional LFP Change'])
+ylabel(axes_handles(2),['Fractional Firing Change'])
+ylabel(axes_handles(3),['Fractional Firing Change'])
+
+prettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 
 %% Version Info

@@ -77,6 +77,8 @@ plot(axes_handles(2),x(1:ss:end),y(1:ss:end),'.','Color',c(8,:));
 gain = NaN(8,1);
 gain_err = NaN(8,1);
 mean_stim = NaN(8,1);
+all_gain = [];
+all_stim = [];
 for i = 1:8
 	this_gain = [];
 	this_stim = [];
@@ -87,6 +89,8 @@ for i = 1:8
 		this_gain = [this_gain ff.p1];
 		this_stim  =[this_stim mean2(s(:,j))];
 	end
+	all_gain = [all_gain this_gain];
+	all_stim = [all_stim this_stim];
 	gain(i) =  mean(this_gain);
 	gain_err(i) = std(this_gain)/sqrt(length(this_gain));
 	mean_stim(i) = mean(this_stim);
@@ -97,6 +101,7 @@ gain(2:3) = [];
 gain_err(2:3) = [];
 
 axes(axes_handles(3))
+% plot(all_stim,all_gain,'k+')
 errorbar(mean_stim,gain,gain_err,'k.')
 
 %  #######  ########   #######  ########          ##       ####  ######   ##     ## ######## 
@@ -169,6 +174,9 @@ ff = fit(V(:),lux(:),'smoothingspline');
 light_power = ff(all_light_V);
 light_power(light_power<0) = 0;
 
+% light_power = ff(light_V);
+% light_power(light_power<0) = 0;
+% plot(axes_handles(6),light_power,gain,'k+')
 errorbar(light_power,all_gain,all_gain_err,'k.')
 
 
@@ -249,6 +257,7 @@ set(axes_handles(2),'XLim',[0 45],'YLim',[0 45])
 xlabel(axes_handles(2),'Foreground Response (Hz)')
 ylabel(axes_handles(2),['Response to' char(10) 'stimulus + background (Hz)'])
 
+set(axes_handles(3),'YLim',[0 1.2])
 ylabel(axes_handles(3),'Relative Gain')
 xlabel(axes_handles(3),'Background odour (V)')
 
@@ -259,7 +268,7 @@ set(axes_handles(5),'XLim',[0 45],'YLim',[0 45])
 xlabel(axes_handles(5),'Foreground Response (Hz)')
 ylabel(axes_handles(5),['Response to' char(10) 'stimulus + background (Hz)'])
 
-set(axes_handles(6),'XLim',[-10 200],'YLim',[.2 1.2])
+set(axes_handles(6),'XLim',[-10 200],'YLim',[0 1.2])
 ylabel(axes_handles(6),'Relative Gain')
 xlabel(axes_handles(6),'Light Power @ 627nm (\muW)')
 
@@ -271,7 +280,7 @@ set(axes_handles(8),'XLim',[0 45],'YLim',[0 45])
 xlabel(axes_handles(8),'Foreground Response (Hz)')
 ylabel(axes_handles(8),['Response to' char(10) 'stimulus + background (Hz)'])
 
-set(axes_handles(9),'XLim',[-.01 .6],'YLim',[.2 1.2])
+set(axes_handles(9),'XLim',[-.01 .6],'YLim',[0 1.2])
 ylabel(axes_handles(9),'Relative Gain')
 xlabel(axes_handles(9),'Background odour (V)')
 

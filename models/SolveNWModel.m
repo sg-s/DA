@@ -85,7 +85,7 @@ T(T<throw_away) = [];
 
 % pass the voltage through the "spike filter"
 t = 1:50; % in ms
-K= normpdf(t,10,3).*(-8e-3*t+.0812);
+K = normpdf(t,10,3).*(-8e-3*t+.0812);
 K = K/max(K);
 K = K*20;
 % interpolate to get a uniform sampling, and to match the sampling of the "spike filter"

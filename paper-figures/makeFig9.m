@@ -246,7 +246,7 @@ set(axes_handles(1),'XLim',[35 55])
 ylabel(axes_handles(1),'Response (Hz)')
 
 set(axes_handles(2),'XLim',[0 45],'YLim',[0 45])
-xlabel(axes_handles(2),'Response (Hz)')
+xlabel(axes_handles(2),'Foreground Response (Hz)')
 ylabel(axes_handles(2),['Response to' char(10) 'stimulus + background (Hz)'])
 
 ylabel(axes_handles(3),'Relative Gain')
@@ -256,19 +256,19 @@ set(axes_handles(4),'XLim',[35 55])
 ylabel(axes_handles(4),'Response (Hz)')
 
 set(axes_handles(5),'XLim',[0 45],'YLim',[0 45])
-xlabel(axes_handles(5),'Response (Hz)')
+xlabel(axes_handles(5),'Foreground Response (Hz)')
 ylabel(axes_handles(5),['Response to' char(10) 'stimulus + background (Hz)'])
 
 set(axes_handles(6),'XLim',[-10 200],'YLim',[.2 1.2])
 ylabel(axes_handles(6),'Relative Gain')
-xlabel(axes_handles(6),'Background light (\muW)')
+xlabel(axes_handles(6),'Light Power @ 627nm (\muW)')
 
 set(axes_handles(7),'XLim',[35 55])
 xlabel(axes_handles(7),'Time (s)')
 ylabel(axes_handles(7),'Response (Hz)')
 
 set(axes_handles(8),'XLim',[0 45],'YLim',[0 45])
-xlabel(axes_handles(8),'Response (Hz)')
+xlabel(axes_handles(8),'Foreground Response (Hz)')
 ylabel(axes_handles(8),['Response to' char(10) 'stimulus + background (Hz)'])
 
 set(axes_handles(9),'XLim',[-.01 .6],'YLim',[.2 1.2])

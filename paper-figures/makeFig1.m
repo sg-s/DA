@@ -83,6 +83,12 @@ plot(axes_handles(4),tA(1:10:end),mean2(PID(1:10:end,:)),'Color',[0.2 .2 .2]);
 set(axes_handles(4),'XLim',[0 70],'YLim',[0 7],'XTick',[])
 ylabel(axes_handles(4),'Stimulus (V)')
 
+% make an inset showing details of stimulus reproducibility 
+inset(1) = axes(); % to show natural flickering vs. linear prediction
+set(inset(1),'Position',[.58 .62 .18 .08],'box','on','XTickLabel',{},'YTickLabel',{})
+plot(inset(1),PID(26e3:29e3,:))
+set(inset(1),'XLim',[1 3e3],'XTick',[],'YTick',[],'YLim',[0 7])
+
 axes(axes_handles(1));
 y = zeros(300,width(PID));
 for i = 1:width(PID)

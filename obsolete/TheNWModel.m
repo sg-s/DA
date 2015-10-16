@@ -135,7 +135,7 @@ disp(p)
 %%
 % The only changes are a very small increase to $k_{a}$, to prevent a runaway reaction, and adjusting the arbitrary constant we add to the firing rate output. We also speed up the dynamics of the diffusible factor $D$, as we expect the adaptation from this happens on a timescale similar to that of the response dynamics. 
 
-load('NWtestdata.mat','o','t');
+load('../data/NWtestdata.mat','o','t');
 [f_this,T] = SolveNWModel(t,o,p,[]);
 f = interp1(T,f_this,t);
 f(f<0) = 0;

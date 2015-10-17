@@ -92,6 +92,7 @@ if isempty(K)
 				temp = fitFilter2Data(stim,resp,'reg',1,'filter_length',filter_length+filter_buffer,'offset',filter_offset+filter_buffer/2);
 
 				K(:,i) = temp(1+(filter_buffer/2):end-(filter_buffer/2));
+
 			catch err
 				
 			end

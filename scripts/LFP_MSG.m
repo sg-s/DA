@@ -542,6 +542,111 @@ if being_published
 end
 
 
+%%
+% If what we're seeing here is true, this means that fractional changes in the LFP get smaller and smaller as the odor concentration goes up, and the ORN firing somehow undoes that. To check if what we're seeing is actually meaningful, we plot the distribution of the stimulus, LFP and the firing rate in each of these cases, but we normalise the distribution at the lowest dose in all three measures to be the same, so we can compare relative changes. 
+
+a = 30e3; z = 50e3;
+
+% do the stimulus
+PID_bin_edges = -6:.25:6;
+temp = PID(a:z,:);
+PID_hist = NaN(48,width(PID));
+% remove mean
+for i = 1:width(temp)
+	temp(:,i) = temp(:,i) - mean(temp(:,i));
+end
+% divide by the standard deviation when there is no background
+ms = mean(std(temp(:,paradigm==1))); % mean standard deviation
+temp = temp/ms;
+for i = 1:width(temp)
+	PID_hist(:,i) = histcounts(temp(:,i),PID_bin_edges);
+	PID_hist(:,i) = PID_hist(:,i)/sum(PID_hist(:,i));
+end
+% calculate the widths
+for i = 1:max(paradigm)
+	w = (std(temp(:,paradigm==i)));
+	PID_width(i) = mean(w);
+	PID_width_err(i) = sem(w);
+end
+
+
+% now do the LFP
+LFP_bin_edges = -6:.25:6;
+temp = filtered_LFP(a:z,:);
+LFP_hist = NaN(48,width(filtered_LFP));
+% divide by the standard deviation when there is no background
+ms = mean(std(temp(:,paradigm==1))); % mean standard deviation
+temp = temp/ms;
+for i = 1:width(temp)
+	LFP_hist(:,i) = histcounts(temp(:,i),LFP_bin_edges);
+	LFP_hist(:,i) = LFP_hist(:,i)/sum(LFP_hist(:,i));
+end
+% calculate the widths
+for i = 1:max(paradigm)
+	w = (std(temp(:,paradigm==i)));
+	LFP_width(i) = mean(w);
+	LFP_width_err(i) = sem(w);
+end
+
+% do the response
+fA_bin_edges = -6:.25:6;
+temp = fA(a:z,:);
+fA_hist = NaN(48,width(fA));
+% remove mean
+for i = 1:width(temp)
+	temp(:,i) = temp(:,i) - mean(temp(:,i));
+end
+% divide by the standard deviation when there is no background
+ms = mean(std(temp(:,paradigm==1))); % mean standard deviation
+temp = temp/ms;
+for i = 1:width(temp)
+	fA_hist(:,i) = histcounts(temp(:,i),fA_bin_edges);
+	fA_hist(:,i) = fA_hist(:,i)/sum(fA_hist(:,i));
+end
+% calculate the widths
+for i = 1:max(paradigm)
+	w = (std(temp(:,paradigm==i)));
+	fA_width(i) = mean(w);
+	fA_width_err(i) = sem(w);
+end
+
+figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
+subplot(2,2,1), hold on
+PID_bin_edges = PID_bin_edges(1:end-1) + mean(diff(PID_bin_edges));
+for i = 1:max(paradigm)
+	plot(PID_bin_edges,mean(PID_hist(:,paradigm==i)'),'Color',c(i,:))
+end
+title('Stimulus distributions')
+
+subplot(2,2,2), hold on
+LFP_bin_edges = LFP_bin_edges(1:end-1) + mean(diff(LFP_bin_edges));
+for i = 1:max(paradigm)
+	plot(LFP_bin_edges,mean(LFP_hist(:,paradigm==i)'),'Color',c(i,:))
+end
+title('LFP distributions')
+
+subplot(2,2,3), hold on
+fA_bin_edges = fA_bin_edges(1:end-1) + mean(diff(fA_bin_edges));
+for i = 1:max(paradigm)
+	plot(fA_bin_edges,mean(fA_hist(:,paradigm==i)'),'Color',c(i,:))
+end
+title('Firing distributions')
+
+subplot(2,2,4), hold on
+errorbar(mean_stim,PID_width,PID_width_err,'k')
+errorbar(mean_stim,LFP_width,LFP_width_err,'r')
+errorbar(mean_stim,fA_width,fA_width_err,'b')
+legend({'Stimulus','LFP','Firing'})
+set(gca,'YLim',[0 3])
+ylabel('Rel. width of response dist.')
+xlabel('Mean Stimulus (V)')
+prettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 %% Version Info
 % The file that generated this document is called:

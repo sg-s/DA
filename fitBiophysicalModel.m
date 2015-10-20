@@ -15,13 +15,9 @@ d.stimulus = stim;
 d.response = resp;
 d.response(1:1e3) = NaN;
 
-% fit the biophysical model first using just receptor activities
-global model_output
-model_output = 1;
-d.response = d.response - nanmin(d.response);
-d.response = d.response / nanmax(d.response);
+
 p = getModelParameters(@biophysicalModelEuler);
-p = fitModel2Data(@biophysicalModelEuler,d,'p0',p,'nsteps',200);
+p = fitModel2Data(@biophysicalModelv2,d,'p0',p,'nsteps',200);
 
 
 

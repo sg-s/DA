@@ -30,7 +30,7 @@ tic
 %% Simple Biophysical Model 
 % The first model we will do is a simple biophysical model involving receptor binding, a slow diffusible factor, and a static output nonlinearity:
 % 
-% <</code/da/models/biophysical_model.tiff>>
+% <</code/da/models/biophysical_model.png>>
 %
 
 
@@ -63,6 +63,24 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%% Dynamical Adaptation Model
+% In this section we do the same analysis for a reduced version of the DA model, which consists of two filters, one dividing the other. 
+
+
+clear p
+p.    s0= -0.3502;
+p.   n_z= 2;
+p. tau_z= 165.5000;
+p.   n_y= 2;
+p. tau_y= 27.0156;
+p.     C= 0.2001;
+p.     A= 357.2305;
+p.     B= 14.4248;
+
+characteriseModel(@DAModelv2,p,data)
+
+prettyFig('fs=14;')
 
 
 %% Version Info

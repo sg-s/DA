@@ -32,7 +32,7 @@ subplot(4,1,2:3), hold on
 c = parula(length(data)+1);
 for i = 1:length(data)
 	data(i).prediction = modelname(data(i).stimulus,p);
-	plot(time,data(i).prediction,'Color',c(i,:))
+	plot(time(5e3:end),data(i).prediction(5e3:end),'Color',c(i,:))
 end
 set(gca,'XLim',[5 20])
 xlabel('Time (s)')

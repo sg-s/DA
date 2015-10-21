@@ -52,7 +52,7 @@ p.kb = p.kb*dt;
 p.a = p.a*dt;
 p.b = p.b*dt;
 
-S  = S*p.stim_scale;
+S = S*p.stim_scale;
 
 
 for i = 2:length(S)

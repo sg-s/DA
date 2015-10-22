@@ -25,7 +25,7 @@ l = plot(time,R,'r');
 L = ['r^2=' oval(rsquare(data(1).response(2e3:end),R(2e3:end)))];
 legend(l,L)
 ylabel('Response (Hz)')
-set(gca,'XLim',[5 20],'YLim',[min(response)-5 max(response)+5])
+set(gca,'XLim',[5 20],'YLim',[min(data(1).response)-5 max(data(1).response)+5])
 title(char(modelname))
 
 subplot(4,1,2:3), hold on

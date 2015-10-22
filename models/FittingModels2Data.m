@@ -27,6 +27,65 @@ tic
 %% Fitting Models to Data
 % In this document we fit some models to data we have, and study if these models can account for gain and kinetics we observe in the data. 
 
+load('/code/da/data/MSG_per_neuron')
+
+% convert data into a nicer format
+clear data
+for i = 1:8
+	data(i).stimulus = mean2([MSG_data(i,:).stim]);
+	data(i).response = mean2([MSG_data(i,:).resp]);
+end
+
+%% Integral Feedback Model
+% This model comes from the eLife paper on ORN responses in larvae, where the authors show that it performs well for very non-Gaussian odor stimuli (odor ramps, etc). This is how it looks:
+% 
+% <</code/da/models/elife-model.png>>
+%
+
+
+clear p
+p.   b1= 4.3862;
+p.   b2= 0.1238;
+p.   b3= 9.9415e-04;
+p.   b4= 0.2937;
+p.   b5= 0.0087;
+p.   a2= 0.0011;
+p.theta= 0.6676;
+p.   a3= 0.2984;
+
+characteriseModel(@IFB,p,data)
+
+prettyFig('fs=14;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%% Incoherent Feed-Forward Model
+% This also comes from the same paper.
+
+clear p
+p.   b1 = 9.9004;
+p.   b2 = 6.5817;
+p.   b3 = 0.0052;
+p.   b4 = 0.2777;
+p.   b5 = 0.0092;
+p.   a1 = 5.4297;
+p.   a2 = 0.0028;
+p.theta = 0.4964;
+
+characteriseModel(@IFF,p,data)
+
+prettyFig('fs=14;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
 %% Simple Biophysical Model 
 % The first model we will do is a simple biophysical model involving receptor binding, a slow diffusible factor, and a static output nonlinearity:
 % 
@@ -47,13 +106,6 @@ p.hill_A = 44.7539;
 p.hill_n = 6.2676;
 p.hill_k = 0.3300;
 p.     n = 2.3000;
-
-% convert data into a nicer format
-clear data
-for i = 1:8
-	data(i).stimulus = mean2([MSG_data(i,:).stim]);
-	data(i).response = mean2([MSG_data(i,:).resp]);
-end
 
 characteriseModel(@biophysicalModelv2,p,data)
 

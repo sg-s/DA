@@ -171,7 +171,7 @@ axes(axes_handles(6))
 ss = 1;
 cc = parula(100);
 c= cc(shat,:);
-% scatter(fp(1:ss:end),R(1:ss:end),[],'k','filled')
+scatter(fp(1:ss:end),R(1:ss:end),[],'k','filled')
 scatter(fp(1:ss:end),R(1:ss:end),[],c(1:ss:end,:),'filled')
 xlabel(axes_handles(6),'Projected Stimulus')
 ylabel(axes_handles(6),'ab3A response (Hz)')
@@ -207,7 +207,6 @@ l(1) = plot(axes_handles(7),mean_stim,gain,'k+');
 mean_stim_ab3 = mean_stim;
 gain_ab3 = gain;
 gain_err_ab3 = gain_err;
-
 
 % now also add ab2 data
 load('/local-data/DA-paper/natural-flickering/mahmut-raw/2014_07_11_EA_natflick_non_period_CFM_1_ab2_1_1_all.mat')

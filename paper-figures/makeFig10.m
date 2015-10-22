@@ -179,6 +179,8 @@ ylabel(axes_handles(6),'Gain (Hz/V)')
 set(axes_handles(6),'YLim',[0 165])
 legend(l,{'ORN Response','DA Model'})
 
+return
+
 %       ##      ## ######## ########  ######## ########          
 %       ##  ##  ## ##       ##     ## ##       ##     ##         
 %       ##  ##  ## ##       ##     ## ##       ##     ##         

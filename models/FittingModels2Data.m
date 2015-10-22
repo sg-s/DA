@@ -36,6 +36,7 @@ for i = 1:8
 	data(i).response = mean2([MSG_data(i,:).resp]);
 end
 
+
 %% Integral Feedback Model
 % This model comes from the eLife paper on ORN responses in larvae, where the authors show that it performs well for very non-Gaussian odor stimuli (odor ramps, etc). This is how it looks:
 % 
@@ -85,6 +86,53 @@ if being_published
 	delete(gcf)
 end
 
+%% Dynamical Adaptation Model
+% In this section we do the same analysis for a reduced version of the DA model, which consists of two filters, one dividing the other. 
+
+
+clear p
+p.    s0= -0.3502;
+p.   n_z= 2;
+p. tau_z= 165.5000;
+p.   n_y= 2;
+p. tau_y= 27.0156;
+p.     C= 0.2001;
+p.     A= 357.2305;
+p.     B= 14.4248;
+
+characteriseModel(@DAModelv2,p,data)
+
+prettyFig('fs=14;')
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
+%% Methylation-Binding Model
+% In this model, we consider receptors that can be bound to receptors or unbound, and can be methylated or unmethylated. We then write an abstract representation of the fraction of receptors bound and methylated:
+%
+% <</code/da/models/biophysical-model-v4.png>>
+%
+
+clear p
+p.    sb =  1.0601e+04;
+p.    sm =  585.1269;
+p.    kb =  0.4404;
+p.    km =  5.8281;
+p.hill_A =  488.8477;
+p.hill_k =  0.5152;
+p. theta =  0.2584;
+
+characteriseModel(@biophysicalModelv4,p,data)
+
+prettyFig('fs=14;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %% Simple Biophysical Model 
 % The first model we will do is a simple biophysical model involving receptor binding, a slow diffusible factor, and a static output nonlinearity:
@@ -116,23 +164,8 @@ if being_published
 	delete(gcf)
 end
 
-%% Dynamical Adaptation Model
-% In this section we do the same analysis for a reduced version of the DA model, which consists of two filters, one dividing the other. 
 
 
-clear p
-p.    s0= -0.3502;
-p.   n_z= 2;
-p. tau_z= 165.5000;
-p.   n_y= 2;
-p. tau_y= 27.0156;
-p.     C= 0.2001;
-p.     A= 357.2305;
-p.     B= 14.4248;
-
-characteriseModel(@DAModelv2,p,data)
-
-prettyFig('fs=14;')
 
 
 %% Version Info

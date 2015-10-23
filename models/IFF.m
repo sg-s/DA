@@ -17,7 +17,7 @@ function [y,u] = IFF(S,p)
     %    b5: 0.0092
     %    a1: 5.4297
     %    a2: 0.0028
-    % theta: 0.4964
+    % theta: 0.4964    
 
 % define all parameters
 p.b1;
@@ -49,8 +49,6 @@ ub.theta = 30;
 ub.b2 = 10;
 ub.b3 = 10;
 ub.b4 = 10;
-
-
 
 
 % define initial condition

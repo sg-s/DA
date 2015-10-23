@@ -7,7 +7,7 @@
 
 % add homebrew path
 path1 = getenv('PATH');
-if isempty(strfind(path1,[':/usr/local/bin']))
+if isempty(strfind(path1,':/usr/local/bin'))
     path1 = [path1 ':/usr/local/bin'];
 end
 setenv('PATH', path1);
@@ -31,6 +31,7 @@ load('/code/da/data/MSG_per_neuron')
 
 % convert data into a nicer format
 clear data
+data = struct(8);
 for i = 1:8
 	data(i).stimulus = mean2([MSG_data(i,:).stim]);
 	data(i).response = mean2([MSG_data(i,:).resp]);

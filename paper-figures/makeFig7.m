@@ -139,7 +139,6 @@ for i = 1:width(LFP)
 	plot(axes_handles(2),mean(PID(a:z,i)),LFP_gain(i),'+','Color',c(paradigm(i),:))
 end
 
-
 x = mean(PID(a:z,:)); x = x(:);
 y = LFP_gain(:);
 

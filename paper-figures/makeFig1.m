@@ -8,7 +8,7 @@
 
 % add homebrew path
 path1 = getenv('PATH');
-if isempty(strfind(path1,[':/usr/local/bin']))
+if isempty(strfind(path1,':/usr/local/bin'))
     path1 = [path1 ':/usr/local/bin'];
 end
 setenv('PATH', path1);
@@ -51,7 +51,6 @@ load('/local-data/DA-paper/natural-flickering/mahmut-raw/2014_07_11_EA_natflick_
 PID = data(2).PID;
 time = 1e-4*(1:length(PID));
 all_spikes = spikes(2).A;
-B_spikes = spikes(2).B;
 
 
 % A spikes --> firing rate
@@ -75,7 +74,6 @@ PID(end,:) = PID(end-1,:);
 
 % remove the baseline from the PID, and remember the error
 PID_baseline = mean(mean(PID(1:5e3,:)));
-PID_baseline_err = std(mean(PID(1:5e3,:)));
 PID = PID - PID_baseline;
 
 
@@ -83,11 +81,11 @@ plot(axes_handles(4),tA(1:10:end),mean2(PID(1:10:end,:)),'Color',[0.2 .2 .2]);
 set(axes_handles(4),'XLim',[0 70],'YLim',[0 7],'XTick',[])
 ylabel(axes_handles(4),'Stimulus (V)')
 
-% make an inset showing details of stimulus reproducibility 
-inset(1) = axes(); % to show natural flickering vs. linear prediction
-set(inset(1),'Position',[.58 .62 .18 .08],'box','on','XTickLabel',{},'YTickLabel',{})
-plot(inset(1),PID(26e3:29e3,:))
-set(inset(1),'XLim',[1 3e3],'XTick',[],'YTick',[],'YLim',[0 7])
+% % make an inset showing details of stimulus reproducibility 
+% inset(1) = axes(); % to show natural flickering vs. linear prediction
+% set(inset(1),'Position',[.58 .62 .18 .08],'box','on','XTickLabel',{},'YTickLabel',{})
+% plot(inset(1),PID(27e3:29e3,:),'Color',[.5 .5 .5])
+% set(inset(1),'XLim',[1 1e3],'XTick',[],'YTick',[],'YLim',[0 7])
 
 axes(axes_handles(1));
 y = zeros(300,width(PID));
@@ -104,10 +102,10 @@ warning on
 
 
 % show the whiff durations 
-whiff_durations = [];
+whiff_durations = []; 
 for i = 1:width(PID)
 	[ons,offs] = computeOnsOffs(PID(:,i) > .024);
-	whiff_durations = [whiff_durations; offs-ons];
+	whiff_durations =  [whiff_durations; offs-ons];
 end
 whiff_durations = nonzeros(whiff_durations);
 [y,x] = histcounts(whiff_durations,50); x(1)  =[];
@@ -124,7 +122,7 @@ xlabel(axes_handles(2),'Whiff duration (ms)')
 whiff_durations = [];
 for i = 1:width(PID)
 	[ons,offs] = computeOnsOffs(PID(:,i) < .024);
-	whiff_durations = [whiff_durations; offs-ons];
+	whiff_durations =  [whiff_durations; offs-ons];
 end
 whiff_durations = nonzeros(whiff_durations);
 [y,x] = histcounts(whiff_durations,50); x(1)  =[];
@@ -204,9 +202,12 @@ l(1) = plot(axes_handles(7),mean_stim,gain,'k+');
 
 
 % save this for a later fit
-mean_stim_ab3 = mean_stim;
-gain_ab3 = gain;
-gain_err_ab3 = gain_err;
+ab3.mean_stim = mean_stim;
+ab3.gain = gain;
+ab3.gain_err = gain_err;
+ab3.R = R;
+ab3.fp = fp;
+ab3.PID = mean2(PID);
 
 % now also add ab2 data
 load('/local-data/DA-paper/natural-flickering/mahmut-raw/2014_07_11_EA_natflick_non_period_CFM_1_ab2_1_1_all.mat')
@@ -275,9 +276,9 @@ l(2) = plot(axes_handles(7),mean_stim,gain,'ko');
 options = fitoptions(fittype('power1'));
 options.Lower = [-Inf -1];
 options.Upper = [Inf -1];
-options.Weights = 1./[gain_err; gain_err_ab3];
-ff = fit([mean_stim; mean_stim_ab3],[gain; gain_ab3],'power1',options);
-plot(axes_handles(7),sort([mean_stim; mean_stim_ab3]),ff(sort([mean_stim; mean_stim_ab3])),'r');
+options.Weights = 1./[gain_err; ab3.gain_err];
+ff = fit([mean_stim; ab3.mean_stim],[gain; ab3.gain],'power1',options);
+plot(axes_handles(7),sort([mean_stim; ab3.mean_stim]),ff(sort([mean_stim; ab3.mean_stim])),'r');
 
 legend(l,{'ab3A','ab2A'},'Location','southwest')
 xlabel(axes_handles(7),'Stimulus in preceding 500ms (V)')
@@ -304,7 +305,7 @@ movePlot(axes_handles(7),'right',.025)
 set(axes_handles(2),'XLim',[50 5000])
 set(axes_handles(1),'XLim',[1e-2 10])
 xlabel(axes_handles(5),'Time (s)')
-set(axes_handles(6),'XLim',[-.1 10])
+set(axes_handles(6),'XLim',[-.1 5])
 set(axes_handles(7),'YLim',[0 max(gain)],'YScale','log','XScale','log','XLim',[.001 10])
 
 

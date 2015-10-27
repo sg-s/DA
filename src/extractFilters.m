@@ -125,6 +125,8 @@ for i = 1:width(X)
 	else
 		y = Y(a:z,i);
 	end
+	rm_this = isnan(x) | isnan(y);
+	x(rm_this) = []; y(rm_this) = [];
 	try
 		[ff,gof] = fit(x(:),y(:),'poly1');
 		gain(i) = ff.p1;

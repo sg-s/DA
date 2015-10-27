@@ -31,7 +31,7 @@ load('/code/da/data/MSG_per_neuron')
 
 % convert data into a nicer format
 clear data
-data = struct(8);
+data = struct;
 for i = 1:8
 	data(i).stimulus = mean2([MSG_data(i,:).stim]);
 	data(i).response = mean2([MSG_data(i,:).resp]);

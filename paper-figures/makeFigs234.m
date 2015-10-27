@@ -7,7 +7,7 @@
 
 % add homebrew path
 path1 = getenv('PATH');
-if isempty(strfind(path1,[':/usr/local/bin']))
+if isempty(strfind(path1,':/usr/local/bin'))
     path1 = [path1 ':/usr/local/bin'];
 end
 setenv('PATH', path1);
@@ -259,7 +259,6 @@ end
 gain = NaN(8,13);
 mean_stim = NaN(8,13);
 mean_resp = NaN(8,13);
-gain_err = NaN(8,13);
 for i = 1:8 % iterate over all paradigms 
 	for j = 1:13
 		if width(MSG_data(i,j).stim) > 1
@@ -287,7 +286,7 @@ for i = 1:8 % iterate over all paradigms
 end
 
 % calculate the gain error as the standard deviation over each paradigm
-gain_err = nanstd(gain');
+gain_err = nanstd(gain,2);
 gain_err(gain_err == 0) = Inf;
 
 % show gain changes -- gain vs. mean stimulus
@@ -296,20 +295,20 @@ for i = 1:8
 end
 
 
-cf = fit(nanmean(mean_stim')',nanmean(gain')','power1','Weights',1./gain_err(:));
+cf = fit(nanmean(mean_stim,2),nanmean(gain,2),'power1','Weights',1./gain_err(:));
 
 
-l(1)=plot(ax(6),nanmean(mean_stim')',cf(nanmean(mean_stim')'),'k');
-r2 = rsquare(nonnans(gain),cf(nonnans(mean_stim)));
-L = strcat('y = \alpha x^{\beta}, \beta= ',oval(cf.b), ',r^2 = ',oval(r2));
+l(1)=plot(ax(6),nanmean(mean_stim,2),cf(nanmean(mean_stim,2)),'k');
+% r2 = rsquare(nonnans(gain),cf(nonnans(mean_stim)));
+% L = strcat('y = \alpha x^{\beta}, \beta= ',oval(cf.b), ',r^2 = ',oval(r2));
 
 % fit a power law with exponent -1
 options = fitoptions(fittype('power1'));
 options.Lower = [-Inf -1];
 options.Upper = [Inf -1];
 options.Weights = 1./gain_err(:);
-cf = fit(nanmean(mean_stim')',nanmean(gain')','power1',options);
-l(2)=plot(ax(6),nanmean(mean_stim')',cf(nanmean(mean_stim')'),'k--');
+cf = fit(nanmean(mean_stim,2),nanmean(gain,2),'power1',options);
+l(2)=plot(ax(6),nanmean(mean_stim,2),cf(nanmean(mean_stim,2)),'k--');
 r2 = rsquare(nonnans(gain),cf(nonnans(mean_stim)));
 % legend(l,{L, strcat('y = \alpha x^{-1}, \alpha= ',oval(cf.a), ', r^2 = ',oval(r2))},'Location','northoutside')
 
@@ -477,7 +476,7 @@ axes_handles(1) = subplot(2,2,1); hold on
 
 ac_mean = zeros(20e3+1,8);
 ac_std = zeros(20e3+1,8);
-a = [];
+clear a
 for i = 1:8
 	this_ac = [];
 	for j = 1:13

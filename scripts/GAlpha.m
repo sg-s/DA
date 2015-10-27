@@ -26,104 +26,184 @@ end
 tic
 
 
-%% Stimulus
-% In this section we show the stimulus. 
+%% Comparison with old experiments
+% In this section we show the stimulus and the LFP and compare them to an older experiment where we did the same thing with CS flies. The following figure shows that the stimulus is approximately the same, but the LFP are quite different:
 
-[PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData('/local-data/DA-paper/g-alpha/rnai',1);
+[alldata(1).PID, alldata(1).LFP, alldata(1).fA, alldata(1).paradigm, alldata(1).orn, alldata(1).fly, alldata(1).AllControlParadigms, alldata(1).paradigm_hashes] = consolidateData('/local-data/DA-paper/g-alpha/rnai',1);
+alldata(1).genotype = 'UAS-g-alpha-RNAi-22a-gal4';
+
+[alldata(2).PID, alldata(2).LFP, alldata(2).fA, alldata(2).paradigm, alldata(2).orn, alldata(2).fly, alldata(2).AllControlParadigms, alldata(2).paradigm_hashes] = consolidateData('/local-data/DA-paper/LFP-MSG/september',1);
+alldata(2).genotype = 'CS';
 
 
+for ai = 1:length(alldata)
+	% remove baseline from all PIDs
+	for i = 1:width(alldata(ai).PID)
+		alldata(ai).PID(:,i) = alldata(ai).PID(:,i) - mean(alldata(ai).PID(1:5e3,i));
+	end
 
-% remove baseline from all PIDs
-for i = 1:width(PID)
-	PID(:,i) = PID(:,i) - mean(PID(1:5e3,i));
+	% remove baseline from all LFPs
+	for i = 1:width(alldata(ai).LFP)
+		alldata(ai).LFP(:,i) = alldata(ai).LFP(:,i) - mean(alldata(ai).LFP(1:5e3,i));
+	end
+
+	% sort the paradigms sensibly
+	sort_value = [];
+	for i = 1:length(alldata(ai).AllControlParadigms)
+		sort_value(i) = (mean(alldata(ai).AllControlParadigms(i).Outputs(1,:)));
+	end
+
+	[~,idx] = sort(sort_value);
+
+
+	alldata(ai).AllControlParadigms = alldata(ai).AllControlParadigms(idx);
+	alldata(ai).paradigm_hashes = alldata(ai).paradigm_hashes(idx);
+	paradigm_new = alldata(ai).paradigm*NaN;
+	for i = 1:length(idx)
+		paradigm_new(alldata(ai).paradigm == idx(i)) = i;
+	end
+	alldata(ai).paradigm = paradigm_new;
+
+	% remove "Flicker" from paradigm names
+	for i = 1:length(alldata(ai).AllControlParadigms)
+		alldata(ai).AllControlParadigms(i).Name = strrep(alldata(ai).AllControlParadigms(i).Name,'Flicker-','');
+	end
+
+
+	% throw out trials where we didn't record the LFP, for whatever reason
+	not_LFP = find((max(abs(alldata(ai).LFP))) < 0.1);
+	alldata(ai).LFP(:,not_LFP) = NaN;
+
+	% throw out trials where i think we lost the neuron
+	lost_neuron = ones(width(alldata(ai).LFP),1);
+	for i = 1:width(alldata(ai).LFP)
+		temp = alldata(ai).LFP(50e3:60e3,i);
+		lost_neuron(i) = nanstd(temp);
+	end
+	alldata(ai).LFP(:,lost_neuron<.1) = NaN;
+
+
+	% throw our bad traces
+	bad_trials = isnan(sum(alldata(ai).LFP));
+	alldata(ai).LFP(:,bad_trials) = [];
+	alldata(ai).PID(:,bad_trials) = [];
+	alldata(ai).fA(:,bad_trials) = [];
+	alldata(ai).paradigm(bad_trials) = [];
+	alldata(ai).orn(bad_trials) = [];
+
+	% band pass all the LFP
+	alldata(ai).filtered_LFP = alldata(ai).LFP;
+	for i = 1:width(alldata(ai).LFP)
+		alldata(ai).filtered_LFP(:,i) = bandPass(alldata(ai).LFP(:,i),1000,10);
+	end
 end
 
-% remove baseline from all LFPs
-for i = 1:width(LFP)
-	LFP(:,i) = LFP(:,i) - mean(LFP(1:5e3,i));
-end
+all_paradigm_hashes = unique([alldata.paradigm_hashes]');
+c = parula(1+length(all_paradigm_hashes));
 
-% sort the paradigms sensibly
-sort_value = [];
-for i = 1:length(AllControlParadigms)
-	sort_value(i) = (mean(AllControlParadigms(i).Outputs(1,:)));
-end
-
-[~,idx] = sort(sort_value);
-
-
-AllControlParadigms = AllControlParadigms(idx);
-paradigm_new = paradigm*NaN;
-for i = 1:length(idx)
-	paradigm_new(paradigm == idx(i)) = i;
-end
-paradigm = paradigm_new;
-
-% remove "Flicker" from paradigm names
-for i = 1:length(AllControlParadigms)
-	AllControlParadigms(i).Name = strrep(AllControlParadigms(i).Name,'Flicker-','');
-end
-
-
-% throw out trials where we didn't record the LFP, for whatever reason
-not_LFP = find((max(abs(LFP))) < 0.1);
-LFP(:,not_LFP) = NaN;
-
-% throw out trials where i think we lost the neuron
-lost_neuron = ones(width(LFP),1);
-for i = 1:width(LFP)
-	temp = LFP(50e3:60e3,i);
-	lost_neuron(i) = nanstd(temp);
-end
-LFP(:,lost_neuron<.1) = NaN;
-
-
-% throw our bad traces
-bad_trials = isnan(sum(LFP));
-LFP(:,bad_trials) = [];
-PID(:,bad_trials) = [];
-fA(:,bad_trials) = [];
-paradigm(bad_trials) = [];
-orn(bad_trials) = [];
-
-% band pass all the LFP
-filtered_LFP = LFP;
-for i = 1:width(LFP)
-	filtered_LFP(:,i) = bandPass(LFP(:,i),1000,10);
-end
-
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-subplot(1,4,1:3), hold on
-c = parula(1+length(unique(paradigm)));
-for i = 1:length(unique(paradigm))
-	plot_this = PID(40e3:45e3,paradigm==i);
-	time = 40+1e-3*(1:length(plot_this));
-	plot(time,mean(plot_this,2),'Color',c(i,:),'LineWidth',2);
+figure('outerposition',[0 0 1200 900],'PaperUnits','points','PaperSize',[1200 900]); hold on
+subplot(2,2,1), hold on
+ai = 1; ss = 10;
+for i = 1:length(all_paradigm_hashes)
+	this_hash = all_paradigm_hashes{i};
+	this_paradigm = find(strcmp(alldata(ai).paradigm_hashes,this_hash));
+	plot_this = alldata(ai).PID(1:ss:end,alldata(ai).paradigm==this_paradigm);
+	time = 1e-2*(1:length(plot_this));
+	plot(time,mean(plot_this,2),'Color',c(this_paradigm,:),'LineWidth',2);
 end
 ylabel('Stimulus (V)')
 xlabel('Time (s)')
 set(gca,'YLim',[0 2.5])
+title('UAS-G_{\alpha-S}-RNAi;Or22a-GAL4')
 
-subplot(1,4,4), hold on
-c = parula(1+length(unique(paradigm)));
-for i = 1:length(unique(paradigm))
-	hist_this = PID(20e3:55e3,paradigm==i);
-	xx =  linspace(min(min(hist_this)),max(max(hist_this)),50);
-	y = NaN(sum(paradigm==i),50);
-	for j = 1:sum(paradigm==i)
-		y(j,:) = hist(hist_this(:,j),xx);
-		y(j,:) = y(j,:)/sum(y(j,:));
-	end
-	if width(y)> 1
-		plot(mean2(y),(xx),'Color',c(i,:));
-	else
-		plot(y,xx,'Color',c(i,:))
+subplot(2,2,2), hold on
+ai = 2;
+for i = 1:length(all_paradigm_hashes)
+	this_hash = all_paradigm_hashes{i};
+	this_paradigm = find(strcmp(alldata(ai).paradigm_hashes,this_hash));
+	if ~isempty(this_paradigm)
+		plot_this = alldata(ai).PID(1:ss:end,alldata(ai).paradigm==this_paradigm);
+		time = 1e-2*(1:length(plot_this));
+		plot(time,mean(plot_this,2),'Color',c(this_paradigm,:),'LineWidth',2);
 	end
 end
-
-xlabel('p(stimulus)')
+ylabel('Stimulus (V)')
+xlabel('Time (s)')
 set(gca,'YLim',[0 2.5])
+title('Canton S')
+
+subplot(2,2,3), hold on
+ai = 1;
+for i = 1:length(all_paradigm_hashes)
+	this_hash = all_paradigm_hashes{i};
+	this_paradigm = find(strcmp(alldata(ai).paradigm_hashes,this_hash));
+	if ~isempty(this_paradigm)
+		plot_this = alldata(ai).LFP(1:ss:end,alldata(ai).paradigm==this_paradigm);
+		time = 1e-2*(1:length(plot_this));
+		plot(time,mean(plot_this,2),'Color',c(this_paradigm,:),'LineWidth',2);
+	end
+end
+ylabel('LFP (mV)')
+xlabel('Time (s)')
+set(gca,'YLim',[-4 1])
+
+subplot(2,2,4), hold on
+ai = 2;
+for i = 1:length(all_paradigm_hashes)
+	this_hash = all_paradigm_hashes{i};
+	this_paradigm = find(strcmp(alldata(ai).paradigm_hashes,this_hash));
+	if ~isempty(this_paradigm)
+		plot_this = alldata(ai).LFP(1:ss:end,alldata(ai).paradigm==this_paradigm);
+		time = 1e-2*(1:length(plot_this));
+		plot(time,mean(plot_this,2),'Color',c(this_paradigm,:),'LineWidth',2);
+	end
+end
+ylabel('LFP (mV)')
+xlabel('Time (s)')
+set(gca,'YLim',[-4 1])
+
+prettyFig('fs=14;');
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% It looks like the RNAi-knockdown is more sensitive (so the LFP deflections are bigger), but also that a slow timescale in the CS (the rate of adaptation to the overall step) becomes much slower (i.e., see that the lowest dose elicits a almost perfect adaptation in the CS, but there is hardly any step adaptation in the RNAi mutant). 
+
+%%
+% To see this more clearly, we compare the LFP responses paradigm by paradigm. 
+
+figure('outerposition',[0 0 1400 900],'PaperUnits','points','PaperSize',[1400 900]); hold on
+common_paradigms = intersect(alldata(1).paradigm_hashes,alldata(2).paradigm_hashes);
+% sort by increasing order
+n = length(common_paradigms);
+conc = zeros(n,1);
+for i = 1:n
+	this_hash = common_paradigms{i};
+	this_paradigm = find(strcmp(alldata(1).paradigm_hashes,this_hash));
+	conc(i) = this_paradigm;
+end
+[~,idx] = sort(conc);
+common_paradigms = common_paradigms(idx);
+
+for i = 1:n
+	autoPlot(n,i); hold on
+	this_hash = common_paradigms{i};
+	this_paradigm = find(strcmp(alldata(2).paradigm_hashes,this_hash));
+	plot_this = alldata(2).LFP(1:ss:end,alldata(2).paradigm==this_paradigm);
+	time = 1e-2*(1:length(plot_this));
+	plot(time,mean(plot_this,2),'Color','k','LineWidth',2);
+
+	this_paradigm = find(strcmp(alldata(1).paradigm_hashes,this_hash));
+	plot_this = alldata(1).LFP(1:ss:end,alldata(1).paradigm==this_paradigm);
+	time = 1e-2*(1:length(plot_this));
+	plot(time,mean(plot_this,2),'Color','r','LineWidth',2);
+
+	title(alldata(1).AllControlParadigms(this_paradigm).Name)
+end
+
 prettyFig('fs=14;');
 
 if being_published
@@ -132,72 +212,31 @@ if being_published
 end
 
 %% LFP Gain
-% In this section we analyse the gain in the LFP
+% In this section we analyse the gain in the LFP and compare it to the wild type. 
 
 
 a = 10e3; z = 50e3;
-[K1,LFP_pred,LFP_gain,LFP_gain_err] = extractFilters(PID,filtered_LFP,'use_cache',true,'a',a,'z',z);
-
-
-ss  =50;
-c= parula(max(paradigm)+1);
-l = [];
-filtertime = 1e-3*(1:length(K1))-.1;
-figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
-subplot(1,10,1:5), hold on
-for i = 1:max(paradigm)
-	plot_this = find(paradigm == i);
-	plot_this = setdiff(plot_this,find(isnan(sum(K1))));
-	y = filtered_LFP(a:z,plot_this);
-	if width(y) > 1
-		y = mean2(y);
-		x = mean2(LFP_pred(a:z,plot_this));
-	end
-	
-	l(i) = plot(x(1:ss:end),y(1:ss:end),'.','Color',c(i,:));
-end
-legend(l,{AllControlParadigms.Name},'Location','southeastoutside')
-xlabel('Linear Prediction')
-ylabel('\DeltaLFP (mV)')
-
-subplot(1,10,7:10), hold on
-for i = 1:width(LFP)
-	plot(mean(PID(a:z,i)),LFP_gain(i),'+','Color',c(paradigm(i),:))
+for ai = 1:length(alldata)
+	[alldata(ai).K1,alldata(ai).LFP_pred,alldata(ai).LFP_gain,alldata(ai).LFP_gain_err] = extractFilters(alldata(ai).PID,alldata(ai).filtered_LFP,'use_cache',true,'a',a,'z',z);
 end
 
-% x = mean(PID(a:z,:)); x = x(:);
-% y = LFP_gain(:);
 
-% xx = NaN(length(unique(paradigm)),1);
-% yy = NaN(length(unique(paradigm)),1);
-% ww = NaN(length(unique(paradigm)),1);
+figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+ai = 1;
+clear l
+for i = 1:width(alldata(ai).LFP)
+	l(ai) = plot(mean(alldata(ai).PID(a:z,i)),alldata(ai).LFP_gain(i),'+','Color','r');
+end
 
-% for i = 1:length(yy)
-% 	xx(i) = mean(x(paradigm==i));
-% 	yy(i) = mean(y(paradigm==i));
-% 	ww(i) = 1./sem(y(paradigm==i));
-% end
-% ww(isinf(ww)) = max(ww(~isinf(ww)));
+ai = 2;
+for i = 1:width(alldata(ai).LFP)
+	l(ai) = plot(mean(alldata(ai).PID(a:z,i)),alldata(ai).LFP_gain(i),'+','Color','k');
+end
 
-% ff = fit(xx(:),yy(:),'power1','Weights',ww);
-% clear l
-% l(1) = plot(sort(xx),ff(sort(xx)),'k--');
-% L = {};
-% L{1} = ['y = \alpha (x^\beta) ,\beta = ', oval(ff.b),', r^2=' oval(rsquare(ff(x),y))];
-
-
-% fo = fitoptions('power1');
-% fo.Upper = [NaN -1];
-% fo.Lower = [NaN -1];
-% fo.Weights = ww;
-% ff = fit(xx(:),yy(:),'power1',fo);
-% l(2) = plot(sort(xx),ff(sort(xx)),'k');
-% L{2} = ['y = \alpha (x^\beta) ,\beta := -1, r^2=' oval(rsquare(ff(x),y))];
-
-% legend(l,L)
 set(gca,'XScale','log','YScale','log')
 xlabel('Mean Stimulus (V)')
 ylabel('LFP Gain (mV/V)')
+legend(l,{'UAS-g-alpha-RNAi-22a-gal4','CS'})
 set(gca,'YLim',[.1 5])
 
 prettyFig;

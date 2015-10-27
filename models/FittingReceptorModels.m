@@ -37,6 +37,9 @@ data = struct;
 data(1).stimulus = mean2([MSG_data(1,:).stim]);
 data(1).response = mean2([MSG_data(1,:).resp]);
 for i = 2:8
+	%data(i).stimulus = mean2([MSG_data(i,:).stim]);
+	%data(i).response = mean2([MSG_data(i,:).resp]);
+	%data(i).response(1:5e3) = NaN;
 	data(i).stimulus = mean(mean([MSG_data(i,:).stim])) + mean2([MSG_data(1,:).stim]);
 end
 
@@ -82,6 +85,25 @@ p. hill_A = 1.1878e+03;
 p. hill_K = 0.5805;
 
 characteriseModel(@simpleReceptorModelv2,p,data);
+
+prettyFig('fs=14;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%% 
+% For completeness, we consider a model where the binding rate decreases with increasing odor stimulus. As we predicted, this model no longer shows response speedups with increasing stimuli. In fact, because the diffusible factor scales with the stimulus, the response timescale is stimulus-independent. 
+clear p
+p.    r_b = 0.0099;
+p.    r_d = 0.0156;
+p.theta_b = 1.0239;
+p.theta_d = 0.0820;
+p. hill_A = 1.5150e+03;
+p. hill_K = 0.5772;
+
+characteriseModel(@simpleReceptorModelv3,p,data);
 
 prettyFig('fs=14;')
 

@@ -246,6 +246,49 @@ if being_published
 	delete(gcf)
 end
 
+%% Kinetics 
+% In this section, we check if there are any kinetics changes in the mutant, and compare them to the WT. 
+
+a = 30e3; z = 50e3;
+for ai = 1:length(alldata)
+	alldata(ai).tau = NaN(width(alldata(ai).PID),1);
+	for i = 1:width(alldata(ai).PID)
+		x = alldata(ai).PID(a:z,i);
+		x = x - mean(x);
+		y = alldata(ai).filtered_LFP(a:z,i);
+		y = y - mean(y);
+		temp = xcorr(x,y);
+		[~,loc] = min(temp);
+		alldata(ai).tau(i) = 20e3 - loc;
+	end
+end
+
+figure('outerposition',[0 0 600 500],'PaperUnits','points','PaperSize',[600 500]); hold on
+ai = 1;
+for i = 1:max(alldata(ai).paradigm)
+	mean_stim = mean(mean(alldata(ai).PID(a:z,alldata(ai).paradigm==i)));
+	mean_tau = mean(alldata(ai).tau(alldata(ai).paradigm==i));
+	tau_err = sem(alldata(ai).tau(alldata(ai).paradigm==i));
+	errorbar(mean_stim,mean_tau,tau_err,'r')
+end
+
+ai = 2;
+for i = 1:max(alldata(ai).paradigm)
+	mean_stim = mean(mean(alldata(ai).PID(a:z,alldata(ai).paradigm==i)));
+	mean_tau = mean(alldata(ai).tau(alldata(ai).paradigm==i));
+	tau_err = sem(alldata(ai).tau(alldata(ai).paradigm==i));
+	errorbar(mean_stim,mean_tau,tau_err,'k')
+end
+
+xlabel('Mean Stimulus (V)')
+ylabel('Response delay (ms)')
+
+prettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %% Version Info
 % The file that generated this document is called:

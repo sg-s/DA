@@ -446,98 +446,82 @@ if being_published
 	delete(gcf)
 end
 
-%           ########  ########       #######  
-%           ##     ## ##     ##     ##     ## 
-%           ##     ## ##     ##            ## 
-%           ########  ########       #######  
-%           ##        ##     ##            ## 
-%           ##        ##     ##     ##     ## 
-%           ##        ########       #######  
+%          ##    ## #### ##    ## ######## ######## ####  ######   ######  
+%          ##   ##   ##  ###   ## ##          ##     ##  ##    ## ##    ## 
+%          ##  ##    ##  ####  ## ##          ##     ##  ##       ##       
+%          #####     ##  ## ## ## ######      ##     ##  ##        ######  
+%          ##  ##    ##  ##  #### ##          ##     ##  ##             ## 
+%          ##   ##   ##  ##   ### ##          ##     ##  ##    ## ##    ## 
+%          ##    ## #### ##    ## ########    ##    ####  ######   ######  
 
 
-%%
-% OK. So the exponent is definitely not -1. Perhaps this is because the LFP is getting messed up from the signals from other sensilla? To rule this out, we repeated this experiment, but using a differnet odorant (isoamyl acetate) to excite the pb3B neuron. In the following, the gain scaling properties of the LFP of the pb3 sensilla are analysed: 
+%% Kinetics 
+% In this section, we check if there are any kinetics changes in the LFP (black) and the firing rate (red). The following figure shows the response delays (as measured via cross correlation) from the PID, LFP and the firing rates. Bizarrely, the firing rates precede the LFP, which we actually see in the data. 
 
-[pb3_PID, pb3_LFP, ~, pb3_paradigm, pb3_orn, pb3_fly, pb3_AllControlParadigms] = consolidateData('/local-data/DA-paper/palp/pb3/',1);
+a = 30e3; z = 50e3;
+tau_LFP = NaN(width(PID),1);
+tau_fA = NaN(width(PID),1);
+tau_LFP_fA = NaN(width(PID),1);
+for i = 1:width(PID)
+	x = PID(a:z,i);
+	x = x - mean(x); x = x/std(x);
+	y = filtered_LFP(a:z,i);
+	y = y - mean(y); y = y/std(y);
+	y = -y;
+	temp = xcorr(x,y);
+	[~,loc] = max(temp);
+	tau_LFP(i) = z-a - loc;
 
+	y = fA(a:z,i);
+	y = y - mean(y); y = y/std(y);
+	temp = xcorr(x,y);
+	[~,loc] = max(temp);
+	tau_fA(i) = z-a - loc;
 
-% remove baseline from all PIDs
-for i = 1:width(pb3_PID)
-	pb3_PID(:,i) = pb3_PID(:,i) - mean(pb3_PID(1:5e3,i));
+	x = filtered_LFP(a:z,i);
+	x = x - mean(x); x = x/std(x); x = -x;
+
+	temp = xcorr(x,y);
+	[~,loc] = max(temp);
+	tau_LFP_fA(i) = z-a - loc;
+
 end
 
-% sort the paradigms sensibly
-sort_value = [];
-for i = 1:length(pb3_AllControlParadigms)
-	sort_value(i) = (mean(pb3_AllControlParadigms(i).Outputs(1,:)));
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,3,1), hold on
+for i = 1:max(paradigm)
+	mean_stim = mean(mean(PID(a:z,paradigm==i)));
+	mean_tau = mean(tau_LFP(paradigm==i));
+	tau_err = sem(tau_LFP(paradigm==i));
+	errorbar(mean_stim,mean_tau,tau_err,'k')
 end
-
-[~,idx] = sort(sort_value);
-pb3_AllControlParadigms = pb3_AllControlParadigms(idx);
-paradigm_new = pb3_paradigm*NaN;
-for i = 1:length(idx)
-	paradigm_new(pb3_paradigm == idx(i)) = i;
-end
-pb3_paradigm = paradigm_new;
-
-% remove "Flicker" from paradigm names
-for i = 1:length(pb3_AllControlParadigms)
-	pb3_AllControlParadigms(i).Name = strrep(pb3_AllControlParadigms(i).Name,'Flicker-','');
-end
-
-% throw out trials where we didn't record the LFP, for whatever reason
-not_LFP = find((max(abs(pb3_LFP))) < 0.1);
-pb3_LFP(:,not_LFP) = NaN;
-
-% throw our bad traces
-bad_trials =  (isnan(sum(pb3_LFP)));
-pb3_LFP(:,bad_trials) = [];
-pb3_PID(:,bad_trials) = [];
-pb3_paradigm(bad_trials) = [];
-pb3_orn(bad_trials) = [];
-
-% band pass all the LFP
-for i = 1:width(pb3_LFP)
-	pb3_LFP(:,i) = bandPass(pb3_LFP(:,i),1000,10);
-end
-
-a = 10e3; z = 50e3;
-[pb3_K,pb3_LFP_pred,pb3_LFP_gain,pb3_LFP_gain_err] = extractFilters(pb3_PID,pb3_LFP,'use_cache',true,'a',a,'z',z);
-
-figure('outerposition',[0 0 800 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(nanmean(pb3_PID(a:z,:)),pb3_LFP_gain,'k+')
-
-x = mean(pb3_PID(a:z,:)); x = x(:);
-y = pb3_LFP_gain(:);
-
-xx = NaN(length(unique(pb3_paradigm)),1);
-yy = NaN(length(unique(pb3_paradigm)),1);
-ww = NaN(length(unique(pb3_paradigm)),1);
-
-for i = 1:length(yy)
-	xx(i) = mean(x(pb3_paradigm==i));
-	yy(i) = mean(y(pb3_paradigm==i));
-	ww(i) = 1./sem(y(pb3_paradigm==i));
-end
-ww(isinf(ww)) = max(ww(~isinf(ww)));
-ff = fit(xx(:),yy(:),'power1','Weights',ww);
-clear l
-l(1) = plot(sort(xx),ff(sort(xx)),'k--');
-L = {};
-L{1} = ['y = \alpha (x^\beta) ,\beta = ', oval(ff.b) ,' , r^2=' oval(rsquare(ff(x),y))];
-
-fo = fitoptions('power1');
-fo.Upper = [NaN -1];
-fo.Lower = [NaN -1];
-fo.Weights = ww;
-ff = fit(xx(:),yy(:),'power1',fo);
-l(2) = plot(sort(xx),ff(sort(xx)),'k');
-L{2} = ['y = \alpha (x^\beta) ,\beta := -1, r^2=' oval(rsquare(ff(x),y))];
-
-legend(l,L,'Location','eastoutside')
-set(gca,'XScale','log','YScale','log','XLim',[.05 .3],'YLim',[min(pb3_LFP_gain)/2 max(pb3_LFP_gain)*2])
+title('PID\rightarrow LFP')
+ylabel('Response delay (ms)')
 xlabel('Mean Stimulus (V)')
-ylabel('LFP Gain (mV/V)')
+set(gca,'YLim',[0 250])
+
+subplot(1,3,2), hold on
+for i = 1:max(paradigm)
+	mean_stim = mean(mean(PID(a:z,paradigm==i)));
+	mean_tau = mean(tau_fA(paradigm==i));
+	tau_err = sem(tau_fA(paradigm==i));
+	errorbar(mean_stim,mean_tau,tau_err,'r')
+end
+title('PID\rightarrow Firing')
+xlabel('Mean Stimulus (V)')
+set(gca,'YLim',[0 250])
+
+
+subplot(1,3,3), hold on
+for i = 1:max(paradigm)
+	mean_stim = mean(mean(PID(a:z,paradigm==i)));
+	mean_tau = mean(tau_LFP_fA(paradigm==i));
+	tau_err = sem(tau_LFP_fA(paradigm==i));
+	errorbar(mean_stim,mean_tau,tau_err,'r')
+end
+title('LFP\rightarrow Firing')
+xlabel('Mean Stimulus (V)')
 
 prettyFig;
 
@@ -545,6 +529,7 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
 
 %     ######## ########     ###     ######  ######## ####  #######  ##    ##    ###    ##       
 %     ##       ##     ##   ## ##   ##    ##    ##     ##  ##     ## ###   ##   ## ##   ##       

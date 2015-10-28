@@ -254,11 +254,12 @@ for ai = 1:length(alldata)
 	alldata(ai).tau = NaN(width(alldata(ai).PID),1);
 	for i = 1:width(alldata(ai).PID)
 		x = alldata(ai).PID(a:z,i);
-		x = x - mean(x);
+		x = x - mean(x); x = x/std(x);
 		y = alldata(ai).filtered_LFP(a:z,i);
-		y = y - mean(y);
+		y = y - mean(y); y = y/std(y);
+		y = -y;
 		temp = xcorr(x,y);
-		[~,loc] = min(temp);
+		[~,loc] = max(temp);
 		alldata(ai).tau(i) = 20e3 - loc;
 	end
 end

@@ -556,6 +556,7 @@ for i = 1:width(LFP)
 	LFP(:,i) = LFP(:,i) - mean(LFP(1:5e3,i));
 end
 
+a = 10e3;
 z = 20e3;
 figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
 clear axes_handles axes_handles2

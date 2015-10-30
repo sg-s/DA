@@ -27,6 +27,16 @@ tic
 %% Variance Switching Analysis
 % In this document, we analyse the responses of ORNs to stimuli where we rapidly switch from two ensembles of stimuli, differing only in their means. 
 
+
+%     ######  ######## #### ##     ## ##     ## ##       ##     ##  ######  
+%    ##    ##    ##     ##  ###   ### ##     ## ##       ##     ## ##    ## 
+%    ##          ##     ##  #### #### ##     ## ##       ##     ## ##       
+%     ######     ##     ##  ## ### ## ##     ## ##       ##     ##  ######  
+%          ##    ##     ##  ##     ## ##     ## ##       ##     ##       ## 
+%    ##    ##    ##     ##  ##     ## ##     ## ##       ##     ## ##    ## 
+%     ######     ##    #### ##     ##  #######  ########  #######   ######  
+
+
 %% Stimulus
 % In the following figure, we show what the stimulus looks like. On the right, we show the distributions of the stimulus in the two cases. For some reason, the distribution when the variance is high is no longer a nice looking Gaussian, even though that was what we had when we tested it. 
 
@@ -718,6 +728,73 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+
+%     ####  ######  ####     ######  ########  ######## 
+%      ##  ##    ##  ##     ##    ## ##     ## ##       
+%      ##  ##        ##     ##       ##     ## ##       
+%      ##   ######   ##     ##       ##     ## ######   
+%      ##        ##  ##     ##       ##     ## ##       
+%      ##  ##    ##  ##     ##    ## ##     ## ##       
+%     ####  ######  ####     ######  ########  ##       
+
+%% Spike Train Statistics
+% In this section, we look at the statistics of the spike trains, and see if the distribution of the inter-spike intervals is different in the two cases. Here, we see they are different, which means that they do not adapt perfectly to the two cases. In other words, there are differences in the spike train statistics between low and high variance. (This in contrast to what Brenner, Bialek and van Steveninck saw). 
+
+path_name = '/local-data/DA-paper/switching/variance/v2/';
+all_spikes = sparse(2000000,15);
+allfiles = dir([path_name '*Variance*.mat']);
+c = 1;
+for i = 1:length(allfiles)
+	textbar(i,length(allfiles))
+	clear spikes
+	load([path_name allfiles(i).name])
+	for j = 1:length(spikes)
+		if ~isempty(spikes(j).A)
+			for k = 1:width(spikes(j).A)
+				if sum(spikes(j).A(k,:)) > 10 && max(diff(find(spikes(j).A(k,:))))*1e-4 < 5  && max((find(spikes(j).A(k,:))))*1e-4 > 190
+					all_spikes(:,c) = spikes(j).A(k,:);
+					c = c + 1;
+				end
+			end
+		end
+	end
+end
+
+% lose the ends
+all_spikes = all_spikes(20e4:end-10e4-1,:);
+s = (ControlParadigm(2).Outputs(3,20e4:end-10e4-1));
+
+% compute ISIs everywhere
+lo_isi = zeros(250,width(all_spikes));
+hi_isi = zeros(250,width(all_spikes));
+for i = 1:width(all_spikes)
+	isi = 1e-4*diff(find(all_spikes(s == 0,i)));
+	isi = isi/mean(isi);
+	[y,x] = histcounts(isi,0:1e-2:2.5);
+	y = y/sum(y);
+	lo_isi(:,i) = y;
+
+	isi = 1e-4*diff(find(all_spikes(s == 1,i)));
+	isi = isi/mean(isi);
+	[y,x] = histcounts(isi,0:1e-2:2.5);
+	y = y/sum(y);
+	hi_isi(:,i) = y;
+end
+
+figure, hold on
+errorShade(x(2:end),mean2(hi_isi),sem(hi_isi),'Color',[1 0 0]);
+errorShade(x(2:end),mean2(lo_isi),sem(lo_isi),'Color',[0 0 1]);
+xlabel('ISI (units of mean ISI)')
+ylabel('Probability')
+prettyFig()
+
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 %% Version Info
 % The file that generated this document is called:

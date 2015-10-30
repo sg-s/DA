@@ -26,8 +26,8 @@ lb.r_b = 0;
 lb.r_d = 0;
 lb.theta_b = 0;
 lb.theta_d = 0;
-ub.theta_b = 10;
-ub.theta_d = 10;
+ub.theta_b = 50;
+ub.theta_d = 50;
 
 lb.hill_A = 0;
 lb.hill_K = 0;
@@ -49,7 +49,7 @@ for i = 2:length(S)
 		b(i) = 1;
 	end
 
-	fx = p.r_d*S(i-1) - p.r_d*p.theta_d*d(i-1);
+	fx = p.r_d*(S(i-1)) - p.r_d*p.theta_d*d(i-1);
 
 	d(i) = d(i-1) + fx;
 

@@ -1,6 +1,7 @@
 % simpleReceptorModelv4.m
 % simple model of receptor binding and unbinding +
 % diffusible factor that increases the rate of unbinding 
+% also another term to help with contrast sensitivity
 % 
 % created by Srinivas Gorur-Shandilya at 11:19 , 26 October 2015. Contact me at http://srinivas.gs/contact/
 % 
@@ -16,6 +17,7 @@ p.r_d; % diffusible factor rate
 % ratio constants
 p.theta_b;
 p.theta_d;
+p.theta_c; % c for contrast
 
 % output nonlinearity 
 p.hill_A;
@@ -28,20 +30,18 @@ lb.theta_b = 0;
 lb.theta_d = 0;
 ub.theta_b = 10;
 ub.theta_d = 10;
+lb.theta_c = 0;
+ub.theta_c = 10;
 
 lb.hill_A = 0;
 lb.hill_K = 0;
 ub.hill_K = 1;
 
-lb.n = 0;
-ub.n = 4;
-
-
 
 b = 0*S;
 d = 0*S;
 
-Sp = S.^p.n;
+Sp = S;
 
 for i = 2:length(S)
 	fx = (1-b(i-1))*p.r_b*S(i)/(1+d(i-1)) - b(i-1)*p.r_b*p.theta_b;
@@ -55,7 +55,7 @@ for i = 2:length(S)
 		b(i) = 1;
 	end
 
-	fx = p.r_d*(Sp(i-1)) - p.r_d*p.theta_d*d(i-1);
+	fx = p.r_d*(Sp(i-1)) + p.r_d*p.theta_c*(Sp(i-1)^2) - p.r_d*p.theta_d*d(i-1);
 
 	d(i) = d(i-1) + fx;
 

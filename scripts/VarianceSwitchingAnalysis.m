@@ -782,7 +782,7 @@ for i = 1:width(all_spikes)
 	hi_isi(:,i) = y;
 end
 
-figure('outerposition',[0 0 800 500],'PaperUnits','points','PaperSize',[600 500]); hold on
+figure('outerposition',[0 0 600 500],'PaperUnits','points','PaperSize',[800 500]); hold on
 errorShade(x(2:end),mean2(hi_isi),sem(hi_isi),'Color',[1 0 0]);
 errorShade(x(2:end),mean2(lo_isi),sem(lo_isi),'Color',[0 0 1]);
 xlabel('ISI (units of mean ISI)')

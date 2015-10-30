@@ -214,8 +214,7 @@ end
 %% LFP Gain
 % In this section we analyse the gain in the LFP and compare it to the wild type. 
 
-
-a = 30e3; z = 50e3;
+a = 20e3; z = 50e3;
 for ai = 1:length(alldata)
 	[alldata(ai).K1,alldata(ai).LFP_pred,alldata(ai).LFP_gain,alldata(ai).LFP_gain_err] = extractFilters(alldata(ai).PID,alldata(ai).filtered_LFP,'use_cache',true,'a',a,'z',z);
 end
@@ -246,12 +245,45 @@ if being_published
 	delete(gcf)
 end
 
+
+%% Firing Rate Gain
+% In this section, we compare the gain in the firing rate. 
+
+for ai = 1:length(alldata)
+	[alldata(ai).K2,alldata(ai).fA_pred,alldata(ai).fA_gain,alldata(ai).fA_gain_err] = extractFilters(alldata(ai).PID,alldata(ai).fA,'use_cache',true,'a',a,'z',z);
+end
+
+
+figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+ai = 1;
+clear l
+for i = 1:width(alldata(ai).fA)
+	l(ai) = plot(mean(alldata(ai).PID(a:z,i)),alldata(ai).fA_gain(i),'+','Color','r');
+end
+
+ai = 2;
+for i = 1:width(alldata(ai).fA)
+	l(ai) = plot(mean(alldata(ai).PID(a:z,i)),alldata(ai).fA_gain(i),'+','Color','k');
+end
+
+set(gca,'XScale','log','YScale','log')
+xlabel('Mean Stimulus (V)')
+ylabel('Firing Gain (Hz/V)')
+legend(l,{'UAS-PTX-22a-gal4','CS'})
+
+prettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
 %% Kinetics 
 % In this section, we check if there are any kinetics changes in the mutant, and compare them to the WT. 
 
-a = 30e3; z = 50e3;
 for ai = 1:length(alldata)
-	alldata(ai).tau = NaN(width(alldata(ai).PID),1);
+	alldata(ai).tau_LFP = NaN(width(alldata(ai).PID),1);
 	for i = 1:width(alldata(ai).PID)
 		x = alldata(ai).PID(a:z,i);
 		x = x - mean(x); x = x/std(x);
@@ -260,29 +292,64 @@ for ai = 1:length(alldata)
 		y = -y;
 		temp = xcorr(x,y);
 		[~,loc] = max(temp);
-		alldata(ai).tau(i) = 20e3 - loc;
+		alldata(ai).tau_LFP(i) = z - a - loc;
+
+		y = alldata(ai).fA(a:z,i);
+		y = y - mean(y); y = y/std(y);
+
+		temp = xcorr(x,y);
+		[~,loc] = max(temp);
+		alldata(ai).tau_fA(i) = z - a - loc;
 	end
 end
 
-figure('outerposition',[0 0 600 500],'PaperUnits','points','PaperSize',[600 500]); hold on
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
 ai = 1;
 for i = 1:max(alldata(ai).paradigm)
 	mean_stim = mean(mean(alldata(ai).PID(a:z,alldata(ai).paradigm==i)));
-	mean_tau = mean(alldata(ai).tau(alldata(ai).paradigm==i));
-	tau_err = sem(alldata(ai).tau(alldata(ai).paradigm==i));
-	errorbar(mean_stim,mean_tau,tau_err,'r')
+	mean_tau = mean(alldata(ai).tau_LFP(alldata(ai).paradigm==i));
+	tau_LFP_err = sem(alldata(ai).tau_LFP(alldata(ai).paradigm==i));
+	errorbar(mean_stim,mean_tau,tau_LFP_err,'r')
 end
 
 ai = 2;
 for i = 1:max(alldata(ai).paradigm)
 	mean_stim = mean(mean(alldata(ai).PID(a:z,alldata(ai).paradigm==i)));
-	mean_tau = mean(alldata(ai).tau(alldata(ai).paradigm==i));
-	tau_err = sem(alldata(ai).tau(alldata(ai).paradigm==i));
-	errorbar(mean_stim,mean_tau,tau_err,'k')
+	mean_tau = mean(alldata(ai).tau_LFP(alldata(ai).paradigm==i));
+	tau_LFP_err = sem(alldata(ai).tau_LFP(alldata(ai).paradigm==i));
+	errorbar(mean_stim,mean_tau,tau_LFP_err,'k')
 end
 
 xlabel('Mean Stimulus (V)')
-ylabel('Response delay (ms)')
+ylabel('LFP delay (ms)')
+
+subplot(1,2,2), hold on
+ai = 1;
+for i = 1:max(alldata(ai).paradigm)
+	these_tau = alldata(ai).tau_fA(alldata(ai).paradigm==i);
+	these_tau(these_tau<0) = [];
+	these_tau(these_tau>10e3) = [];
+	mean_stim = mean(mean(alldata(ai).PID(a:z,alldata(ai).paradigm==i)));
+	mean_tau = mean(these_tau);
+	tau_fA_err = sem(these_tau);
+	errorbar(mean_stim,mean_tau,tau_fA_err,'r')
+end
+
+ai = 2;
+for i = 1:max(alldata(ai).paradigm)
+	these_tau = alldata(ai).tau_fA(alldata(ai).paradigm==i);
+	these_tau(these_tau<0) = [];
+	these_tau(these_tau>10e3) = [];
+	mean_stim = mean(mean(alldata(ai).PID(a:z,alldata(ai).paradigm==i)));
+	mean_tau = mean(these_tau);
+	tau_fA_err = sem(these_tau);
+	errorbar(mean_stim,mean_tau,tau_fA_err,'k')
+end
+
+
+xlabel('Mean Stimulus (V)')
+ylabel('Firing delay (ms)')
 
 prettyFig;
 

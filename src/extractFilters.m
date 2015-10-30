@@ -63,13 +63,21 @@ assert(iseven(filter_buffer),'filter_buffer should be an even number')
 
 % back out the filters
 K = [];
+clear temp
+temp.X = X;
+temp.Y = Y;
+temp.a = a; temp.z = z;
+temp.filter_buffer = filter_buffer;
+temp.filter_length = filter_length;
+temp.filter_offset = filter_offset;
+hash = dataHash(temp);
 if use_cache
-	K = cache(dataHash([X Y]));
+	K = cache(hash);
 end
 
 if isempty(K)
 	disp('cache miss:')
-	disp(dataHash([X Y]))
+	disp(hash)
 	K = NaN(filter_length,width(X));
 	for i = 1:width(X)
 		textbar(i,width(X))
@@ -98,10 +106,10 @@ if isempty(K)
 			end
 		end
 	end
-	cache(dataHash([X Y]),[]);
-	cache(dataHash([X Y]),K);
+	cache(hash,[]);
+	cache(hash,K);
 	disp('Writing to cache with key:')
-	dataHash([X Y])
+	disp(hash)
 end
 
 % make the linear prediction and compute the gain

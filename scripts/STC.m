@@ -13,6 +13,7 @@ filter_length = .5; % seconds
 dt = 1e-3;
 
 % hash the inputs
+spikes = full(spikes);
 temp.filter_length = filter_length;
 temp.dt = dt;
 temp.spikes = spikes;

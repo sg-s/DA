@@ -581,54 +581,106 @@ if being_published
 end
 
 %% Optimal Coding
-% In this section we investigate the idea that the ORN is doing something like optimal coding, i.e., matching its I/O curve to the statistics of the input. 
+% In this section we investigate the idea that the ORN is doing something like optimal coding, i.e., matching its I/O curve to the statistics of the input. In the following figure, we show the stimulus distribution, (once the stimulus is projected through the linear filter) in the top row. We see that the stimulus distribution when the variance is high is broader than when the variance is low (which makes sense).
 
-figure('outerposition',[0 0 600 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
-ax(1) = subplot(2,1,1); hold on
-ax(2) = subplot(2,1,2); hold on
+%%
+% In the bottom row, we compare the integral of these distributions to the actual stimulus-response curve (dashed lines). The error bars in this figure are the standard error of the mean, and are mostly too small to see. All curves are significantly different from each other (K-S test), but it is clear that ORN's I/O curve seems to be changing to be more like the optimal curve. 
+
+figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1300 800]); hold on
+ax(1) = subplot(2,2,1); hold on
+ax(2) = subplot(2,2,3); hold on
 xlabel(ax(2),'Projected Stimulus')
 ylabel(ax(2),'Normalised Response')
 ylabel(ax(1),'Stimulus Probability')
 
 % high variance
-temp = fA_pred(1e3:5e3,:); temp = temp(:);
-[y,x] = hist(temp,30);
-y = y/sum(y);
-l(1) = plot(ax(1),x,y,'r');
-plot(ax(2),x,cumsum(y),'r--');
+temp = fA_pred(1e3:5e3,:); 
+x = -1:.05:1;
+y = NaN(length(x)-1,width(temp)); 
+cy = y;
+for i = 1:width(temp)
+	y(:,i) = histcounts(temp(:,i),x);
+	y(:,i) = y(:,i)/sum(y(:,i));
+	cy(:,i) = cumsum(y(:,i));
+end
+errorShade(ax(1),x(2:end),mean(y,2),sem(y'),'Color','r');
 
+% plot integral -- theoretical prediction for best coding
+line_handle1 = errorShade(ax(2),x(2:end),mean(cy,2),sem(cy'),'Color',[1 0 0],'Shading',s);
+
+% now plot the actual i/o curve
 x = fA_pred(1e3:5e3,:);
 y = reshaped_fA(1e3:5e3,:);
+rm_this = (isnan(sum(y)) | isnan(sum(x)));
+x(:,rm_this) = []; y(:,rm_this) = []; cy(:,rm_this)= [];
+all_x = -1:.05:1;
+all_y = NaN(length(all_x),width(y));
+for i = 1:width(x)
+	[~,data] = plotPieceWiseLinear(x(:,i),y(:,i),'nbins',40,'make_plot',false);
+	data.y = data.y/max(data.y);
+	all_y(:,i) = interp1(data.x,data.y,all_x);
+end
 
-x = x(:); y = y(:);
-rm_this = isnan(x) | isnan(y);
+hv.y = all_y;
+hv.cy = cy;
 
-[~,data] = plotPieceWiseLinear(x(~rm_this),y(~rm_this),'Color',c(ci,:),'nbins',30,'make_plot',false);
-data.y = data.y/max(data.y);
-plot(ax(2),data.x,data.y,'r')
+% plot data
+[line_handle2, shade_handle2] = errorShade(ax(2),all_x,nanmean(all_y,2),sem(all_y'),'Color',[1 0 0],'Shading',s);
+set(line_handle2(1),'LineStyle','--')
+set(line_handle2(2),'LineStyle','--')
+set(line_handle2(3),'LineStyle','--')
+uistack(shade_handle2,'bottom')
+uistack(line_handle1,'top')
 
-% low variance
-temp = fA_pred(6e3:end,:); temp = temp(:);
-[y,x] = hist(temp,30);
-y = y/sum(y);
-l(2) = plot(ax(1),x,y,'b');
-plot(ax(2),x,cumsum(y),'b--');
+% now do low variance case
+ax(1) = subplot(2,2,2); hold on
+ax(2) = subplot(2,2,4); hold on
+xlabel(ax(2),'Projected Stimulus')
+ylabel(ax(2),'Normalised Response')
+ylabel(ax(1),'Stimulus Probability')
 
-x = fA_pred(6e3:end,:);
-y = reshaped_fA(6e3:end,:);
+temp = fA_pred(6e3:9e3,:); 
+x = -1:.05:1;
+y = NaN(length(x)-1,width(temp)); 
+cy = y;
+for i = 1:width(temp)
+	y(:,i) = histcounts(temp(:,i),x);
+	y(:,i) = y(:,i)/sum(y(:,i));
+	cy(:,i) = cumsum(y(:,i));
+end
+errorShade(ax(1),x(2:end),mean(y,2),sem(y'),'Color','b','Shading',s);
 
-x = x(:); y = y(:);
-rm_this = isnan(x) | isnan(y);
+% plot integral -- theoretical prediction for best coding
+line_handle1 = errorShade(ax(2),x(2:end),mean(cy,2),sem(cy'),'Color',[0 0 1],'Shading',s);
 
-[~,data] = plotPieceWiseLinear(x(~rm_this),y(~rm_this),'Color',c(ci,:),'nbins',30,'make_plot',false);
-data.y = data.y/max(data.y);
-plot(ax(2),data.x,data.y,'b')
+% now plot the actual i/o curve
+x = fA_pred(6e3:9e3,:);
+y = reshaped_fA(6e3:9e3,:);
+rm_this = (isnan(sum(y)) | isnan(sum(x)));
+x(:,rm_this) = []; y(:,rm_this) = []; cy(:,rm_this)= [];
+all_x = -1:.05:1;
+all_y = NaN(length(all_x),width(y));
+for i = 1:width(x)
+	[~,data] = plotPieceWiseLinear(x(:,i),y(:,i),'nbins',40,'make_plot',false);
+	data.y = data.y/max(data.y);
+	all_y(:,i) = interp1(data.x,data.y,all_x);
+end
 
-legend(l,{'High Variance','Low Variance'})
+
+lv.y = all_y;
+lv.cy = cy;
+
+% plot data
+[line_handle2, shade_handle2] = errorShade(ax(2),all_x,nanmean(all_y,2),sem(all_y'),'Color',[0 0 1],'Shading',s);
+set(line_handle2(1),'LineStyle','--')
+set(line_handle2(2),'LineStyle','--')
+set(line_handle2(3),'LineStyle','--')
+uistack(shade_handle2,'bottom')
+uistack(line_handle1,'top')
 
 % fake some plots for a nice legend
-l(1) = plot(ax(2),NaN,NaN,'k--');
-l(2) = plot(ax(2),NaN,NaN,'k');
+l(1) = plot(ax(2),NaN,NaN,'k');
+l(2) = plot(ax(2),NaN,NaN,'k--');
 L = {'Prediction','Data'};
 legend(l,L,'Location','southeast')
 

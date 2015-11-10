@@ -41,7 +41,7 @@ tic
 % In the following figure, we show what the stimulus looks like. On the right, we show the distributions of the stimulus in the two cases. For some reason, the distribution when the variance is high is no longer a nice looking Gaussian, even though that was what we had when we tested it. 
 
 path_name = '/local-data/DA-paper/switching/variance/v2/';
-[PID, LFP, fA, paradigm, orn] = consolidateData(path_name,1);
+[PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, ~, ~, spikes] = consolidateData(path_name,true);
 
 global_start = 40e3; % 40 seconds
 global_end = length(PID) - 5e3; 
@@ -69,7 +69,7 @@ for i = 1:width(PID)
 	y(:,i) = y(:,i)/sum(y(:,i));
 
 end
-errorShade(x,nanmean(y,2),sem(y),'Color',[0 0 1],'Shading',0.4);
+errorShade(x,nanmean(y,2),sem(y'),'Color',[0 0 1],'Shading',0.4);
 
 for i = 1:width(PID)
 	ok = repmat([ones(5e3,1); zeros(5e3,1)],length(PID)/1e4,1);
@@ -81,7 +81,7 @@ for i = 1:width(PID)
 	y(:,i) = y(:,i)/sum(y(:,i));
 
 end
-errorShade(x,nanmean(y,2),sem(y),'Color',[1 0 0],'Shading',0.4);
+errorShade(x,nanmean(y,2),sem(y'),'Color',[1 0 0],'Shading',0.4);
 xlabel('Stimulus (V)')
 ylabel('Probability')
 
@@ -115,38 +115,27 @@ reshaped_PID = reshape(reshaped_PID,block_length,width(reshaped_PID)*length(resh
 reshaped_fA = fA(global_start:end-1e4-1,1:width(PID));
 reshaped_fA = reshape(reshaped_fA,block_length,width(reshaped_fA)*length(reshaped_fA)/block_length);
 
-% make predictions everywhere using the DA model
-p.tau_z =  101.2500;
-p.tau_y =  25.9219;
-p.  n_y =  2;
-p.  n_z =  2;
-p.    A =  221.5312;
-p.    B =  2.7343;
-p.    C =  0.0076;
-p.   s0 =  -0.3125;
-
-DA_pred = NaN*fA;
-for i = 1:width(fA)
-	DA_pred(:,i) = DAModelv2(PID(:,i),p);
-end
-
-reshaped_DA = DA_pred(global_start:end-1e4-1,1:width(PID));
-reshaped_DA = reshape(reshaped_DA,block_length,width(reshaped_DA)*length(reshaped_DA)/block_length);
-
-
-
 
 % also reshape the orn ID
 reshaped_orn = repmat(orn,length(global_start:length(PID)-1e4-1)/block_length,1);
 reshaped_orn = reshaped_orn(:);
+
+
+all_spikes = spikes';
+
+% lose the ends
+all_spikes = all_spikes(40e4:end-10e4-1,:);
+
+% reshape them nicely
+all_spikes = reshape(all_spikes,10e4,width(all_spikes)*length(all_spikes)/10e4);
 
 % throw our NaNs globally. so we're throwing out epochs where the data is incomplete
 rm_this = isnan(sum(reshaped_LFP));
 reshaped_LFP(:,rm_this) = [];
 reshaped_PID(:,rm_this) = [];
 reshaped_fA(:,rm_this) = [];
-reshaped_DA(:,rm_this) = [];
 reshaped_orn(rm_this) = [];
+all_spikes(:,rm_this) = [];
 
 % make colour scheme for block analysis
 filter_length = 1000;
@@ -373,7 +362,7 @@ for i = 1:length(c)
 	plot(xx,yy,'Color',c(i,:),'LineWidth',4)
 end
 
-errorShade(all_offsets,mean(n),sem(n'),'Color','k');
+errorShade(all_offsets,mean(n),sem(n),'Color','k');
 
 set(gca,'YLim',[2 3.5])
 ylabel('LFP Gain (mV/V)')
@@ -580,6 +569,23 @@ if being_published
 	delete(gcf)
 end
 
+%        #######  ########  ######## #### ##     ##    ###    ##       
+%       ##     ## ##     ##    ##     ##  ###   ###   ## ##   ##       
+%       ##     ## ##     ##    ##     ##  #### ####  ##   ##  ##       
+%       ##     ## ########     ##     ##  ## ### ## ##     ## ##       
+%       ##     ## ##           ##     ##  ##     ## ######### ##       
+%       ##     ## ##           ##     ##  ##     ## ##     ## ##       
+%        #######  ##           ##    #### ##     ## ##     ## ######## 
+
+%         ######   #######  ########  #### ##    ##  ######   
+%       ##    ## ##     ## ##     ##  ##  ###   ## ##    ##  
+%       ##       ##     ## ##     ##  ##  ####  ## ##        
+%       ##       ##     ## ##     ##  ##  ## ## ## ##   #### 
+%       ##       ##     ## ##     ##  ##  ##  #### ##    ##  
+%       ##    ## ##     ## ##     ##  ##  ##   ### ##    ##  
+%        ######   #######  ########  #### ##    ##  ######   
+
+
 %% Optimal Coding
 % In this section we investigate the idea that the ORN is doing something like optimal coding, i.e., matching its I/O curve to the statistics of the input. In the following figure, we show the stimulus distribution, (once the stimulus is projected through the linear filter) in the top row. We see that the stimulus distribution when the variance is high is broader than when the variance is low (which makes sense).
 
@@ -592,6 +598,8 @@ ax(2) = subplot(2,2,3); hold on
 xlabel(ax(2),'Projected Stimulus')
 ylabel(ax(2),'Normalised Response')
 ylabel(ax(1),'Stimulus Probability')
+
+s = .5; % shading opacity
 
 % high variance
 temp = fA_pred(1e3:5e3,:); 
@@ -691,95 +699,6 @@ if being_published
 	delete(gcf)
 end
 
-%% DA Model Predictions
-% In this section, we fit the DA model to the data and see if it can account for the change in gain with variance. 
-
-% compute the slopes
-if exist('.cache/VSA_DA_slopes.mat','file') == 2
-	load('.cache/VSA_DA_slopes.mat','n')
-else
-	n = NaN(width(reshaped_PID),length(all_offsets));
-	for i = 1:width(reshaped_PID)
-		textbar(i,width(reshaped_DA))
-		for j = 1:length(all_offsets)
-			x = reshaped_DA(:,i);
-			y = reshaped_fA(:,i);
-
-			a = round(1e3*(all_offsets(j) - window_length/2));
-			z = round(1e3*(all_offsets(j) + window_length/2));
-
-			x = circshift(x,length(x) - z );
-			y = circshift(y,length(y) - z );
-
-			x = x(end-window_length*1e3:end);
-			y = y(end-window_length*1e3:end);
-
-			rm_this = isnan(x) | isnan(y);
-			x(rm_this) = [];
-			y(rm_this) = [];
-
-			y = y(x > 0.33*max(x) & x < .66*max(x));
-			x = x(x > 0.33*max(x) & x < .66*max(x));
-
-			try
-				ff = fit(x(:),y(:),'poly1');
-				n(i,j) = ff.p1;
-			catch
-			end
-		end
-	end
-	save('.cache/VSA_DA_slopes.mat','n')
-end
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-subplot(1,2,1), hold on
-for j = 1:5:length(all_offsets)
-	x = reshaped_DA;
-	y = reshaped_fA;
-
-	a = round(1e3*(all_offsets(j) - window_length/2));
-	z = round(1e3*(all_offsets(j) + window_length/2));
-
-	x = circshift(x,length(x) - z,1);
-	y = circshift(y,length(y) - z,1);
-
-	x = x(end-window_length*1e3:end,:);
-	y = y(end-window_length*1e3:end,:);
-
-	x = x(:); y = y(:);
-	rm_this = isnan(x) | isnan(y);
-
-
-	ci = max([1 floor(length(c)*(all_offsets(j)*sr)/length(reshaped_LFP))]);
-	handles(j) = plotPieceWiseLinear(x(~rm_this),y(~rm_this),'Color',c(ci,:),'nbins',30);
-	delete(handles(j).shade)
-	delete(handles(j).line(2:3))
-end
-
-xlabel('DA Prediction')
-ylabel('Firing rate (Hz)')
-
-subplot(1,2,2), hold on
-% fake a colourbar
-yy0 = 2.4;
-for i = 1:length(c)
-	xx = time([floor(length(time)*(i/length(c))) floor(length(time)*(i/length(c)))]);
-	yy = [yy0  yy0*1.01];
-	plot(xx,yy,'Color',c(i,:),'LineWidth',4)
-end
-
-errorShade(all_offsets,nanmean(n),sem(n'),'Color','k');
-
-ylabel('Gain w.r.t DA Model')
-xlabel('Time since switch (s)')
-
-prettyFig()
-
-
-if being_published
-	snapnow
-	delete(gcf)
-end
 
 
 %     ####  ######  ####     ######  ########  ######## 
@@ -793,54 +712,49 @@ end
 %% Spike Train Statistics
 % In this section, we look at the statistics of the spike trains, and see if the distribution of the inter-spike intervals is different in the two cases. Here, we see they are different, which means that they do not adapt perfectly to the two cases. In other words, there are differences in the spike train statistics between low and high variance. (This in contrast to what Brenner, Bialek and van Steveninck saw). 
 
-path_name = '/local-data/DA-paper/switching/variance/v2/';
-all_spikes = sparse(2000000,15);
-allfiles = dir([path_name '*Variance*.mat']);
-c = 1;
-for i = 1:length(allfiles)
-	textbar(i,length(allfiles))
-	clear spikes
-	load([path_name allfiles(i).name])
-	for j = 1:length(spikes)
-		if ~isempty(spikes(j).A)
-			for k = 1:width(spikes(j).A)
-				if sum(spikes(j).A(k,:)) > 10 && max(diff(find(spikes(j).A(k,:))))*1e-4 < 5  && max((find(spikes(j).A(k,:))))*1e-4 > 190
-					all_spikes(:,c) = spikes(j).A(k,:);
-					c = c + 1;
-				end
-			end
-		end
-	end
-end
-
-% lose the ends
-all_spikes = all_spikes(20e4:end-10e4-1,:);
-s = (ControlParadigm(2).Outputs(3,20e4:end-10e4-1));
+%%
+% In the following figure, we first show the raw rasters in the high and low variance case (which are clearly obvious), and the follow that with a distribution of the ISI distributions. 
 
 % compute ISIs everywhere
-lo_isi = zeros(250,width(all_spikes));
-hi_isi = zeros(250,width(all_spikes));
+x = 0:5e-4:.2;
+lo_isi = zeros(length(x)-1,width(all_spikes));
+hi_isi = zeros(length(x)-1,width(all_spikes));
+mean_lo_isi = zeros(width(all_spikes),1);
+mean_hi_isi = zeros(width(all_spikes),1);
 for i = 1:width(all_spikes)
-	isi = 1e-4*diff(find(all_spikes(s == 0,i)));
-	isi = isi/mean(isi);
-	[y,x] = histcounts(isi,0:1e-2:2.5);
+	isi = 1e-4*diff(find(all_spikes(6e4:9e4,i)));
+	y = histcounts(isi,x);
 	y = y/sum(y);
 	lo_isi(:,i) = y;
+	mean_lo_isi(i) = mean(isi);
 
-	isi = 1e-4*diff(find(all_spikes(s == 1,i)));
-	isi = isi/mean(isi);
-	[y,x] = histcounts(isi,0:1e-2:2.5);
+	isi = 1e-4*diff(find(all_spikes(1e4:4e4,i)));
+	y = histcounts(isi,x);
 	y = y/sum(y);
 	hi_isi(:,i) = y;
+	mean_hi_isi(i) = mean(isi);
 end
+x = x(1:end-1) + mean(diff(x));
 
-figure('outerposition',[0 0 600 500],'PaperUnits','points','PaperSize',[800 500]); hold on
-errorShade(x(2:end),mean2(hi_isi),sem(hi_isi),'Color',[1 0 0]);
-errorShade(x(2:end),mean2(lo_isi),sem(lo_isi),'Color',[0 0 1]);
+figure('outerposition',[0 0 1100 900],'PaperUnits','points','PaperSize',[1100 900]); hold on
+subplot(2,2,1:2), hold on
+raster2(all_spikes(:,10:80),[],0,'k');
+ylabel('Trial #')
+xlabel('Time since switch (s)')
+
+subplot(2,2,3), hold on
+errorShade(x,nanmean(hi_isi,2),sem(hi_isi'),'Color',[1 0 0]);
+errorShade(x,nanmean(lo_isi,2),sem(lo_isi'),'Color',[0 0 1]);
+xlabel('ISI (s)')
+ylabel('Probability')
+
+subplot(2,2,4), hold on
+errorShade(x/nanmean(mean_hi_isi),nanmean(hi_isi,2),sem(hi_isi'),'Color',[1 0 0]);
+errorShade(x/nanmean(mean_lo_isi),nanmean(lo_isi,2),sem(lo_isi'),'Color',[0 0 1]);
 xlabel('ISI (units of mean ISI)')
 ylabel('Probability')
-prettyFig()
 
+prettyFig('plw=1;')
 
 if being_published
 	snapnow

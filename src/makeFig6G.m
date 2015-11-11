@@ -42,6 +42,9 @@ if ~isempty(cached_data)
 	return
 end
 
+disp('cache miss:')
+disp(hash)
+
 x = NaN*stimulus;
 y = NaN*stimulus;
 

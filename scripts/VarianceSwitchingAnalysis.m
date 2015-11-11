@@ -748,6 +748,7 @@ errorShade(x,nanmean(lo_isi,2),sem(lo_isi'),'Color',[0 0 1]);
 xlabel('ISI (s)')
 ylabel('Probability')
 
+
 subplot(2,2,4), hold on
 errorShade(x/nanmean(mean_hi_isi),nanmean(hi_isi,2),sem(hi_isi'),'Color',[1 0 0]);
 errorShade(x/nanmean(mean_lo_isi),nanmean(lo_isi,2),sem(lo_isi'),'Color',[0 0 1]);

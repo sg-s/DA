@@ -118,7 +118,7 @@ load('../data/MSG_per_neuron.mat','MSG_data')
 filtertime = (-200:800)*1e-3;
 K = reshape([MSG_data(example_dose,:).K],1001,length([MSG_data(example_dose,:).K])/1001);
 axes(axes_handles(3))
-shadedErrorBar(filtertime,mean2(K),sem(K),{'Color',c(example_dose,:)})
+shadedErrorBar(filtertime,mean2(K),sem(K'),{'Color',c(example_dose,:)})
 set(axes_handles(3),'XLim',[min(filtertime) max(filtertime)])
 xlabel(axes_handles(3),'Lag (s)')
 ylabel(axes_handles(3),'Filter K (norm)')
@@ -161,7 +161,7 @@ L = {};
 L{1} = strcat('Gain=',oval(ff.p1),'Hz/V, r^2=',oval(rsquare(y,x)));
 
 
-xlabel(axes_handles(4),'Projected Stimulus')
+xlabel(axes_handles(4),'Projected Stimulus (V)')
 ylabel(axes_handles(4),'Response (Hz)')
 
 legend(l,L,'Location','northwest');
@@ -239,21 +239,30 @@ end
 
 
 % show gain changes for all paradigms -- average over neurons 
-ss = 50;
+ss = 100;
+all_x = 0:0.1:10;
+load('.cache/hill_fits_MSG.mat')
+axes(ax(5)), hold(ax(5),'on')
 for i = 1:8 % iterate over all paradigms 
 	y = ([MSG_data(i,:).resp]);
 	x = ([MSG_data(i,:).fp]);
+	s = ([MSG_data(i,:).stim]);
 	if ~isvector(x)
 		x = mean2(x);
+		
+	end
+	if ~isvector(s)
+		s = mean2(s);
 	end
 
 	if ~isvector(y)
 		y = mean2(y);
 	end 
 
-	plot(ax(5),x(1:ss:end),y(1:ss:end),'.','Color',c(i,:))
-end
+	%plot(ax(5),mean(s)+x(1:ss:end),y(1:ss:end),'.','Color',c(i,:))
+	plotPieceWiseLinear(x+mean(s),y,'nbins',40,'Color',c(i,:));
 
+end
 
 % compute gain changes on a per-neuron basis
 gain = NaN(8,13);
@@ -286,7 +295,7 @@ for i = 1:8 % iterate over all paradigms
 end
 
 % calculate the gain error as the standard deviation over each paradigm
-gain_err = nanstd(gain,2);
+gain_err = nanstd(gain');
 gain_err(gain_err == 0) = Inf;
 
 % show gain changes -- gain vs. mean stimulus
@@ -316,6 +325,7 @@ r2 = rsquare(nonnans(gain),cf(nonnans(mean_stim)));
 ss = 50;
 allx = [];
 ally = [];
+axes(ax(7)), hold(ax(7),'on')
 for i = 1:8 % iterate over all paradigms 
 	y = ([MSG_data(i,:).resp]);
 	x = ([MSG_data(i,:).fp]);
@@ -332,7 +342,13 @@ for i = 1:8 % iterate over all paradigms
 
 	allx = [allx mean(y)+cf(mean2(s))*(x(1:ss:end))];
 	ally = [ally y(1:ss:end)];
-	plot(ax(7),mean(y)+cf(mean2(s))*(x(1:ss:end)),y(1:ss:end),'.','Color',c(i,:))
+	%plot(ax(7),mean(y)+cf(mean2(s))*(x(1:ss:end)),y(1:ss:end),'.','Color',c(i,:))
+
+	x = mean(y)+cf(mean2(s))*(x);
+
+	plotPieceWiseLinear(x,y,'nbins',40,'Color',c(i,:));
+
+
 end
 allx = allx(:); ally = ally(:); 
 rm_this = isnan(allx) | isnan(ally);
@@ -357,13 +373,13 @@ ylabel(ax(1),'Stimulus (V)')
 ylabel(ax(3),'ORN Response (Hz)')
 xlabel(ax(3),'Time (s)')
 xlabel(ax(4),'Probability')
-xlabel(ax(5),'Projected Stimulus')
+xlabel(ax(5),'Projected Stimulus (V)')
 ylabel(ax(5),'ORN Response (Hz)')
 xlabel(ax(6),'Mean Stimulus (V)')
-ylabel(ax(6),'Neuron Gain (Hz/V)')
+ylabel(ax(6),'ORN Gain (Hz/V)')
 
 xlabel(ax(7),[' Projected Stimulus ' char(10) 'Rescaled by Weber Law'])
-ylabel(ax(7),'Neuron Response (Hz)')
+ylabel(ax(7),'ORN Response (Hz)')
 
 
 
@@ -374,7 +390,7 @@ if being_published
 	delete(gcf)
 end
 
-
+return
 %         ######  ##     ## ########  ########     ######## ####  ######         ##   
 %        ##    ## ##     ## ##     ## ##     ##    ##        ##  ##    ##      ####   
 %        ##       ##     ## ##     ## ##     ##    ##        ##  ##              ##   

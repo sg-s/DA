@@ -93,7 +93,7 @@ for i = 1:width(PID)
 	[y(:,i),x] = histcounts(PID(:,i),300);x(1) = [];
 	y(:,i) = y(:,i)/sum(y(:,i));
 end
-errorShade(x,mean2(y),sem(y),'Color',[.2 .2 .2]);
+errorShade(x,mean2(y),sem(y'),'Color',[.2 .2 .2]);
 warning off % because there are some -ve values on the log scale
 set(axes_handles(1),'XScale','log','YScale','log','XLim',[min(x) 10],'YLim',[1e-5 1],'YTick',logspace(-5,0,6))
 xlabel(axes_handles(1),'Stimulus (V)')
@@ -153,10 +153,8 @@ set(ax(2),'XLim',[0 70],'YLim',[min(fp) max(fp)])
 set(plot1,'Color','b')
 set(plot2,'Color','r')
 ylabel(ax(1),'ab3A Response (Hz)')
-ylabel(ax(2),'Projected Stimulus')
+ylabel(ax(2),'Projected Stimulus (V)')
 set(axes_handles(5),'box','off')
-legend([plot1 plot2],'Neuron Response',strcat('Projected Stimulus, r^2=',oval(rsquare(mean2(fA),fp))),'Location','northwest');
-
 
 shat = computeSmoothedStimulus(mean2(PID),500);
 shat = shat-min(shat);
@@ -171,7 +169,7 @@ cc = parula(100);
 c= cc(shat,:);
 scatter(fp(1:ss:end),R(1:ss:end),[],'k','filled')
 scatter(fp(1:ss:end),R(1:ss:end),[],c(1:ss:end,:),'filled')
-xlabel(axes_handles(6),'Projected Stimulus')
+xlabel(axes_handles(6),'Projected Stimulus (V)')
 ylabel(axes_handles(6),'ab3A response (Hz)')
 shat = computeSmoothedStimulus(mean2(PID),500);
 ch = colorbar('east');
@@ -312,6 +310,36 @@ set(axes_handles(7),'YLim',[0 max(gain)],'YScale','log','XScale','log','XLim',[.
 prettyFig('plw=1.5;','lw=1.5;','fs=12;')
 
 legend('boxoff')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+% also make a supplementary figure 
+figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[700 700]); hold on
+
+shat = computeSmoothedStimulus(mean2(PID),500);
+shat = shat-min(shat);
+shat = shat/max(shat);
+shat = 1+ceil(shat*99);
+shat(isnan(shat)) = 1;
+
+% make the output analysis plot
+ss = 1;
+cc = parula(100);
+c= cc(shat,:);
+scatter(fp(1:ss:end),R(1:ss:end),[],'k','filled')
+scatter(fp(1:ss:end),R(1:ss:end),[],c(1:ss:end,:),'filled')
+xlabel('Projected Stimulus (V)')
+ylabel('ab2A response (Hz)')
+shat = computeSmoothedStimulus(mean2(PID),500);
+ch = colorbar('east');
+set(ch,'Position',[.74 .2 .05 .2])
+caxis([min(shat) max(shat)]);
+set(gca,'XLim',[-.15 4])
+prettyFig
 
 if being_published
 	snapnow

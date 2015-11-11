@@ -7,7 +7,7 @@
 
 % add homebrew path
 path1 = getenv('PATH');
-if isempty(strfind(path1,[':/usr/local/bin']))
+if isempty(strfind(path1,':/usr/local/bin'))
     path1 = [path1 ':/usr/local/bin'];
 end
 setenv('PATH', path1);
@@ -110,10 +110,12 @@ end
 clear l
 R = mean2(fA);
 [ax,plot1,plot2] = plotyy(axes_handles(2),tA,R,tA,mean2(fp));
-set(ax(1),'XLim',[0 60],'YLim',[min(mean2(fA)) 2*max(mean2(fA))])
+set(ax(1),'XLim',[0 60],'YLim',[min(mean2(fA)) 1.3*max(mean2(fA))])
 set(ax(2),'XLim',[0 60],'YLim',[min(mean2(fp)) max(mean2(fp))])
+set(ax(2),'YTick',[-.1:.1:.5])
 set(plot1,'Color','k')
 set(plot2,'Color','r')
+set(ax(1),'YColor',[0 0 0])
 ylabel(ax(1),'ORN Response (Hz)')
 ylabel(ax(2),'Projected Stimulus')
 set(axes_handles(2),'box','off')
@@ -135,12 +137,12 @@ stim = mean2(PID(10e3:55e3,[3:10 13:20]));
 [p,~,~,~,~,history_lengths]=gainAnalysisWrapper('response',resp,'prediction',pred,'stimulus',stim,'time',time,'ph',ph,'history_lengths',history_lengths,'example_history_length',.5,'use_cache',true,'engine',@gainAnalysis);
 set(axes_handles(5),'XLim',[.09 11]) % to show .1 and 10 on the log scale
 set(axes_handles(4),'XLim',[min(pred) max(pred)])
-xlabel(axes_handles(4),'Projected Stimulus')
+xlabel(axes_handles(4),'Projected Stimulus (V)')
 ylabel(axes_handles(4),'ORN Response (Hz)')
 
 % show the p-value
 axes(axes_handles(4))
-text(-.2,60,'p < 0.01')
+text(-.1,60,'p < 0.01')
 title(axes_handles(4),[])
 
 % plot gain vs preceding stimulus
@@ -150,8 +152,7 @@ x(rm_this) = [];
 y(rm_this) = [];
 ss = 50;
 axes(axes_handles(3))
-plotPieceWiseLinear(x,y,'nbins',50);
-% plot(axes_handles(3),x(1:ss:end),y(1:ss:end)/mean(y),'k.')
+plotPieceWiseLinear(x,y,'nbins',50,'use_std',true);
 xlabel(axes_handles(3),'Stimulus in preceding 500ms (V)')
 ylabel(axes_handles(3),'Inst. Gain (Hz/V)')
 set(axes_handles(3),'YScale','log','XScale','log','YTick',[10 100 1000],'YLim',[10 1000])
@@ -190,6 +191,45 @@ if being_published
 	delete(gcf)
 end
 
+%% Supplementary Figure: LN models cannot account for this
+
+fp = mean2(fp);
+temp =fit(fp(~(isnan(fp) | isnan(R))),R(~(isnan(fp) | isnan(R))),'poly1');
+fp = fp*temp.p1;
+fp = fp+temp.p2;
+
+clear p
+p.A = 57.1534;
+p.k = 23.6690;
+p.n = 2.9341;
+fp_hill = hill(p,fp);
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ph(3) = subplot(1,2,1); hold on
+ph(4) = subplot(1,2,2); hold on
+
+hl_min = .1;
+hl_max = 10;
+history_lengths = [logspace(log10(hl_min),log10(.5),15) logspace(log10(.5),log10(10),15)];
+history_lengths = unique(history_lengths);
+
+resp = mean2(fA(10e3:55e3,[3:10 13:20]));
+pred = (fp_hill(10e3:55e3));
+time = 1e-3*(1:length(resp));
+stim = mean2(PID(10e3:55e3,[3:10 13:20]));
+
+[p,~,~,~,~,history_lengths]=gainAnalysisWrapper('response',resp,'prediction',pred,'stimulus',stim,'time',time,'ph',ph,'history_lengths',history_lengths,'example_history_length',.5,'use_cache',true,'engine',@gainAnalysis);
+set(ph(4),'XLim',[.09 11]) % to show .1 and 10 on the log scale
+set(ph(3),'XLim',[min(pred) mean(max(fA))],'YLim',[min(pred) mean(max(fA))])
+xlabel(ph(3),'LN Prediction (Hz)')
+ylabel(ph(3),'ORN Response (Hz)')
+title(ph(3),'')
+prettyFig('FixLogX=1;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %% Version Info
 % The file that generated this document is called:

@@ -8,7 +8,7 @@
 
 % add homebrew path
 path1 = getenv('PATH');
-if isempty(strfind(path1,[':/usr/local/bin']))
+if isempty(strfind(path1,':/usr/local/bin'))
     path1 = [path1 ':/usr/local/bin'];
 end
 setenv('PATH', path1);
@@ -153,6 +153,10 @@ legend(h(1:2),{'High Stim.','Low Stim.'},'Location','northwest')
 %    ##   ### ##       ##     ## ##    ##  ##     ## ##   ### ##    ## 
 %    ##    ## ########  #######  ##     ##  #######  ##    ##  ######  
 
+% add new ab2 data
+p = '/local-data/DA-paper/large-variance-flicker/ab2';
+[PID, ~, fA, paradigm, orn, fly] = consolidateData(p,true);
+
 
 do_these = [11 17];
 l = [];
@@ -261,9 +265,6 @@ for i = do_these
 	y(rm_this) = [];
 	temp = fit(x,y,'poly1');
 	prediction = prediction*temp.p1;
-
-	% ignore very low responses
-	y(y<5) = NaN;
 
 	gainAnalysisWrapper('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph,'engine',@gainAnalysis,'use_cache',true,'example_history_length',history_lengths(15));
 end

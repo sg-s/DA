@@ -30,6 +30,7 @@ dt 				= 1e-3;
 use_cache = true;
 a = 1;
 z = length(X);
+reg_factor = 1;
 
 if ~nargin
 	help extractFilters
@@ -97,7 +98,7 @@ if isempty(K)
 					stim = bandPass(stim,1e3,10);
 				end
 
-				temp = fitFilter2Data(stim,resp,'reg',1,'filter_length',filter_length+filter_buffer,'offset',filter_offset+filter_buffer/2);
+				temp = fitFilter2Data(stim,resp,'reg',reg_factor,'filter_length',filter_length+filter_buffer,'offset',filter_offset+filter_buffer/2);
 
 				K(:,i) = temp(1+(filter_buffer/2):end-(filter_buffer/2));
 

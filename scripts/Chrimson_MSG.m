@@ -64,8 +64,8 @@ r = NaN*paradigm; m = NaN*paradigm;
 light_s = NaN*paradigm; light_m = NaN*paradigm;
 for i = 1:length(paradigm)
 	temp = AllControlParadigms(paradigm(i)).Name;
-	r(i) = light_power_fit(str2double(temp(3:strfind(temp,'_')-1)));
-	m(i) = light_power_fit(str2double(temp(strfind(temp,'_')+3:end)));
+	r(i) = (str2double(temp(3:strfind(temp,'_')-1)));
+	m(i) = (str2double(temp(strfind(temp,'_')+3:end)));
 	LED(:,i) = light_power_fit(AllControlParadigms(paradigm(i)).Outputs(1,1:10:end));
 	light_s(i) = std(LED(a:z,i));
 	light_m(i) = mean(LED(a:z,i));
@@ -77,7 +77,7 @@ end
 
 
 % extract filters
-[K,fp,gain,gain_err] = extractFilters(LED,fA,'use_cache',false,'a',a,'z',z);
+[K,fp,gain,gain_err] = extractFilters(LED,fA,'use_cache',true,'a',a,'z',z);
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 nplots = length(unique(r));

@@ -143,6 +143,18 @@ light_V(light_V == .8) = NaN;
 light_V(light_V == 1.1) = NaN;
 light_V(light_V == 1.2) = NaN;
 
+% clean up LFP
+LFP(:,nanmean(LFP)<1) = NaN;
+for i = 1:width(LFP)
+	a = find(~isnan(LFP(:,i)),1,'first');
+	z = find(~isnan(LFP(:,i)),1,'last');
+	try
+		LFP(a:z,i) = bandPass(LFP(a:z,i),1000,10);
+	end
+end
+
+return
+
 % compute gains for each light case, per trial
 gain = NaN*paradigm;
 for i = 1:length(paradigm)

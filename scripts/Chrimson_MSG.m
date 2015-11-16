@@ -79,12 +79,12 @@ end
 % extract filters
 [K,fp,gain,gain_err] = extractFilters(LED,fA,'use_cache',true,'a',a,'z',z);
 
-figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
-nplots = length(unique(r));
-all_r = unique(r);
-for i = 1:nplots
-	autoPlot(nplots,i); hold on
-	plot_this = r == all_r(i);
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot_these_orns = [3];
+for i = 1:length(plot_these_orns)
+
+	this_orn = plot_these_orns(i);
+	plot_this = r == 1 & orn == this_orn;
 	mean_stims = unique(m(plot_this));
 	c = parula(length(mean_stims)+1);
 	for j = 1:length(mean_stims)
@@ -99,12 +99,13 @@ for i = 1:nplots
 		if ~isvector(y)
 			y = mean2(y);
 		end
-		x = x(a:z); y = y(a:z);
-		plotPieceWiseLinear(x,y,'nbins',30,'Color',c(j,:));
+		try
+			x = x(a:z); y = y(a:z);
+			plotPieceWiseLinear(x,y,'nbins',30,'Color',c(j,:));
+		end
 	end
 	xlabel('Projected Light Power (\muW)')
 	ylabel('ORN Response (Hz)')
-	title(['\sigma = ' oval(mean(light_s(plot_this))) ' \muW^2'])
 end
 prettyFig()
 
@@ -116,21 +117,19 @@ end
 %%
 % We can clearly see that the I/O curves change. In the following plot, we compare how gain changes with the mean of the input: 
 
-figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
-nplots = length(unique(r));
-all_r = unique(r);
-for i = 1:nplots
-	autoPlot(nplots,i); hold on
-	plot_this = r == all_r(i);
-	mean_stim = light_m(plot_this);
-	g = gain(plot_this);
-	plot(mean_stim,g,'k+')
-	title(['\sigma = ' oval(mean(light_s(plot_this))) ' \muW^2'])
-	xlabel('Mean Light (\muW)')
-	ylabel('Gain (Hz/\muW)')
-	set(gca,'XScale','log','YScale','log')
-end
-
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot_this = r == 1;
+mean_stim = light_m(plot_this);
+g = gain(plot_this);
+plot(mean_stim,g,'k+')
+xlabel('Mean Light (\muW)')
+ylabel('Gain (Hz/\muW)')
+set(gca,'XScale','log','YScale','log')
+mean_stim = mean_stim(~isnan(g));
+g = g(~isnan(g));
+ff = fit(mean_stim(:),g(:),'power1');%,'Lower',[-Inf -1],'Upper',[Inf -1]);
+plot([min(mean_stim) max(mean_stim)],ff([min(mean_stim) max(mean_stim)]),'r')
+title(['\alpha = ' oval(ff.b)])
 prettyFig()
 
 if being_published

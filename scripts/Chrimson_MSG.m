@@ -80,7 +80,7 @@ end
 [K,fp,gain,gain_err] = extractFilters(LED,fA,'use_cache',true,'a',a,'z',z);
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot_these_orns = [3];
+plot_these_orns = 3;
 for i = 1:length(plot_these_orns)
 
 	this_orn = plot_these_orns(i);
@@ -102,6 +102,7 @@ for i = 1:length(plot_these_orns)
 		try
 			x = x(a:z); y = y(a:z);
 			plotPieceWiseLinear(x,y,'nbins',30,'Color',c(j,:));
+		catch
 		end
 	end
 	xlabel('Projected Light Power (\muW)')

@@ -34,7 +34,6 @@ for i = 1:length(data)
 	data(i).prediction = modelname(data(i).stimulus,p);
 end
 
-
 % extract filters in all cases
 K = zeros(700,length(data));
 for i = 1:length(data)
@@ -42,6 +41,7 @@ for i = 1:length(data)
 	data(i).linear_prediction = prediction;
 	data(i).gain = gain;
 	data(i).gain_err = gain_err;
+	data(i).gain2 = std(data(i).prediction(a:z))/std(data(i).stimulus(a:z));
 end
 
 subplot(3,3,4), hold on
@@ -62,7 +62,10 @@ end
 options = fitoptions(fittype('power1'));
 options.Lower = [-Inf -1];
 options.Upper = [Inf -1];
-ff = fit(mean_stim,[data.gain]','power1',options);
+gain = [data.gain];
+mean_stim(isnan(gain)) = [];
+gain(isnan(gain)) = [];
+ff = fit(mean_stim(:),gain(:),'power1',options);
 plot(mean_stim,ff(mean_stim),'k--');
 
 set(gca,'XScale','log','YScale','log')

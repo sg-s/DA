@@ -40,7 +40,8 @@ for i = 2:8
 	%data(i).stimulus = mean2([MSG_data(i,:).stim]);
 	%data(i).response = mean2([MSG_data(i,:).resp]);
 	%data(i).response(1:5e3) = NaN;
-	data(i).stimulus = mean(mean([MSG_data(i,:).stim])) + mean2([MSG_data(1,:).stim]);
+	%data(i).stimulus = mean(mean([MSG_data(i,:).stim])) + mean2([MSG_data(1,:).stim]);
+	data(i).stimulus = i*.1 + mean2([MSG_data(1,:).stim]);
 end
 
 %% Minimal Receptor Model
@@ -111,6 +112,27 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%% Weber-Derived Model
+% In this section, we explicitly force the diffusible factor to depend only on the binding fraction, instead of the stimulus, as the previous assumption was a bit unrealistic. Instead, we let the rate of diffusible factor increase depend generally on the bound fraction, and impose the Weber-Fechner Law, and derive the relationship. 
+
+clear p
+   p.    r_b =  0.0204;
+   p.    r_d =  0.0239;
+   p.theta_b =  4.5938;
+   p.theta_d =  13.3594;
+   p.      k =  0.6240;
+   p.      A =  59.7812;
+   p.     R0 =  -3.4307;
+characteriseModel(@longReceptorModel,p,data);
+
+prettyFig('fs=14;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 %% Version Info
 % The file that generated this document is called:

@@ -20,15 +20,9 @@ a = 5e3;
 z = length(data(1).response);
 
 figure('outerposition',[0 0 900 1100],'PaperUnits','points','PaperSize',[900 1100]); hold on
-subplot(3,1,1), hold on
-plot(time,data(1).response,'k')
-l = plot(time,R,'r');
-L = ['r^2=' oval(rsquare(data(1).response(a:z),R(a:z)))];
-legend(l,L)
-ylabel('Response (Hz)')
-set(gca,'XLim',[a/1e3 z/1e3],'YLim',[min(data(1).response)-5 max(data(1).response)+5])
-title(char(modelname))
+suptitle(char(modelname))
 
+% generate predictions for all means
 c = parula(length(data)+1);
 for i = 1:length(data)
 	data(i).prediction = modelname(data(i).stimulus,p);
@@ -44,7 +38,7 @@ for i = 1:length(data)
 	data(i).gain2 = std(data(i).prediction(a:z))/std(data(i).stimulus(a:z));
 end
 
-subplot(3,3,4), hold on
+subplot(3,3,1), hold on
 ss  = 10;
 for i = 1:length(data)
 	plot(mean(data(i).stimulus(a:z)) + data(i).linear_prediction(a:ss:z),data(i).prediction(a:ss:z),'.','Color',c(i,:))
@@ -52,7 +46,7 @@ end
 xlabel('Projected Stimulus (V)')
 ylabel('Model Response (Hz)')
 
-subplot(3,3,5), hold on
+subplot(3,3,2), hold on
 mean_stim = zeros(length(data),1);
 for i = 1:length(data)
 	plot(mean(data(i).stimulus(a:z)),data(i).gain,'+','Color',c(i,:))
@@ -73,7 +67,7 @@ ylabel('Gain (Hz/V)')
 xlabel('Mean Stimulus (V)')
 set(gca,'XLim',[min(min([data.stimulus]))*1.9 1.1*max(max([data.stimulus]))])
 
-subplot(3,3,6), hold on
+subplot(3,3,3), hold on
 [~,loc]=max(K);
 plot(mean([data.stimulus]),loc-100,'k+')
 ylabel('Response Timescale (ms)')
@@ -96,19 +90,44 @@ for i = 1:length(contrasts)
 	contrast_data(i).gain = gain;
 end
 
-subplot(3,2,5), hold on
+subplot(3,2,3), hold on
 for i = length(contrasts):-1:1
 	plot(contrast_data(i).linear_prediction(a:ss:z),contrast_data(i).resp(a:ss:z),'.','Color',c(i,:))
 end
 xlabel('Projected Stimulus (V)')
 ylabel('Model Response (Hz)')
 
-subplot(3,2,6), hold on
+subplot(3,2,4), hold on
 for i = length(contrasts):-1:1
 	plot(std(contrast_data(i).stim),contrast_data(i).gain,'+','Color',c(i,:))
 end
 xlabel('Contrast')
 ylabel('Gain (Hz/V)')
 set(gca,'YLim',[.8*min([contrast_data.gain]) 1.2*max([contrast_data.gain])])
+
+
+% generate triangles 
+Tmax = 20;
+peak_locs = 1:2:Tmax;
+c = parula(length(peak_locs) + 1);
+ax(1) = subplot(3,2,5); hold(ax(1),'on')
+title('Triangle Stimulus')
+xlabel('Time (s)')
+ax(2) = subplot(3,2,6); hold(ax(2),'on')
+title('Model Response')
+ylabel('Response (Hz)')
+xlabel('Time (s)')
+t = 1e-3:1e-3:Tmax;
+for i = 1:length(peak_locs)
+	s = 0*t;
+	rs = 1e-3/peak_locs(i);
+	s(1:peak_locs(i)*1e3) = rs:rs:1;
+	rs = 1e-3/(Tmax-peak_locs(i));
+	s(peak_locs(i)*1e3+1:end) = 1:-rs:rs;
+	plot(ax(1),t,s,'Color',c(i,:))
+
+	r = modelname(s,p);
+	plot(ax(2),t,r,'Color',c(i,:))
+end
 
 

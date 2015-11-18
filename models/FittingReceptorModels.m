@@ -7,7 +7,11 @@
 
 
 %% Fitting Simple Receptor Models to Data
-% In this document, we look at very simple receptor models and see if they can account for 1) gain changes with mean stimulus and 2) response speedups with increasing mean stimulus. 
+% In this document, we look at very simple receptor-based and phenomenological models and see if they can account for 
+% # gain changes with mean stimulus 
+% # response speedups with increasing mean stimulus. 
+% # gain changes with stimulus contrast 
+% # responses to triangle waveforms 
 
 % add homebrew path
 path1 = getenv('PATH');
@@ -45,7 +49,14 @@ for i = 2:8
 end
 
 %% Minimal Receptor Model
-% In this model, we consider a receptor that can bind and unbind with the odorant signal. The bound fraction is converted to the firing rate using a Hill function. That's it. The reason we don't simply add on a LN model to the receptor binding is as follows:
+% In this model, we consider a receptor that can bind and unbind with the odorant signal. The bound fraction is converted to the firing rate using a Hill function. That's it. Here is the ODE governing this sytem:
+%
+% $$\dot{b} = \alpha (1-b) s(t) - \alpha \theta_{b}b $$
+% $$ r = A\frac{b^{2}}{b^2 + K_d^2} $$
+
+
+%%
+% The reason we don't simply add on a LN model to the receptor binding is as follows:
 
 %%
 % If we considered our model to be simply receptor binding, and regressed a LN model to the model prediction and the data, there are two problems. First, we would always converge to a globally attractive solution where receptor binding rates would vanish, and we would simply get back a LN model. Second, we can't use this model to generate responses to stimuli, as the LN model is not explicitly accounted for.
@@ -71,11 +82,16 @@ if being_published
 	delete(gcf)
 end
 
+
 %% Receptors with -ve Feedback
 % We now add a diffusible factor that increases the rate of receptor unbinding. We do this because this is the only consistent way of getting a negative feedback with increasing speeds on increasing stimulus. If instead we decreased the binding rate (e.g., by dividing by the diffusible factor), then responses would get slower with increasing stimulus. 
 
 %%
 % The ODE governing the diffusible factor is the simplest possible: diffusible factor grows with the stimulus, and decays linearly. We see that this extremely simple model (2 linear ODEs, 6 parameters) can show a non-trivial gain scaling that varies as a power law (close to -1), and that shows response speedups with increasing stimulus. 
+%
+% $$ \dot{b} = \alpha (1-b) s(t) - \alpha \theta_{b}b d $$
+% $$ \dot{d} = \beta s(t) - \beta \theta_{d} d  $$
+% $$ r = A\frac{b^{2}}{b^2 + K_d^2} $$ 
 
 clear p
 p.    r_b = 0.0013;
@@ -96,6 +112,11 @@ end
 
 %% 
 % For completeness, we consider a model where the binding rate decreases with increasing odor stimulus. As we predicted, this model no longer shows response speedups with increasing stimuli. In fact, because the diffusible factor scales with the stimulus, the response timescale is stimulus-independent. 
+%
+% $$ \dot{b} =\frac{\alpha (1-b) s(t) }{1+d} - \alpha \theta_{b}b $$
+% $$ \dot{d} = \beta s(t) - \beta \theta_{d} d  $$
+% $$ r = A\frac{b^{2}}{b^2 + K_d^2} $$ 
+
 clear p
 p.    r_b = 0.0099;
 p.    r_d = 0.0156;
@@ -115,23 +136,57 @@ end
 
 %% Weber-Derived Model
 % In this section, we explicitly force the diffusible factor to depend only on the binding fraction, instead of the stimulus, as the previous assumption was a bit unrealistic. Instead, we let the rate of diffusible factor increase depend generally on the bound fraction, and impose the Weber-Fechner Law, and derive the relationship. 
+% 
+% $$ \dot{b} =\alpha (1-b) s(t) - \alpha \theta_{b}b d $$
+% $$ \dot{d} = \beta \frac{1-b}{b}e^{b/k} - \beta \theta_{d} d $$
+% $$ r = A*b + C $$ 
+
+%%
+% This model has a problem when $b=0$, and the diffusible factor explodes (you can see this happen in some cases).
 
 clear p
-   p.    r_b =  0.0204;
-   p.    r_d =  0.0239;
-   p.theta_b =  4.5938;
-   p.theta_d =  13.3594;
-   p.      k =  0.6240;
-   p.      A =  59.7812;
-   p.     R0 =  -3.4307;
+p.    r_b =  0.0204;
+p.    r_d =  0.0239;
+p.theta_b =  4.5938;
+p.theta_d =  13.3594;
+p.      k =  0.6240;
+p.      A =  59.7812;
+p.     R0 =  -3.4307;
 characteriseModel(@longReceptorModel,p,data);
 
 prettyFig('fs=14;')
+
 
 if being_published
 	snapnow
 	delete(gcf)
 end
+
+
+%% DA Model
+% In this section, we fit the DA model to the data and see what it can do. The DA Model is described by:
+% $$ r(t) = \frac{\alpha K_{y}\otimes s(t)}{1+\beta K_{z}\otimes{s(t)}} $$
+
+
+clear p
+p.tau_z =  128.6250;
+p.tau_y =  27.3313;
+p.  n_y =  2;
+p.  n_z =  2;
+p.    A =  155.0387;
+p.    B =  4.8162;
+p.    C =  0.0454;
+p.   s0 =  0;
+characteriseModel(@DAModelv2,p,data);
+
+prettyFig('fs=14;')
+
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 
 %% Version Info

@@ -53,6 +53,10 @@ for i = 2:length(S)
 
 	d(i) = d(i-1) + fx;
 
+	% if d(i) > 1e3
+	% 	d(i) = d(i-1);
+	% end
+
 	if d(i) < 0
 		d(i) = 0;
 	end

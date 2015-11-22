@@ -166,7 +166,8 @@ shat(isnan(shat)) = 1;
 axes(axes_handles(6))
 ss = 1;
 cc = parula(100);
-c= cc(shat,:);
+c = cc(shat,:);
+ab3.c = c;
 scatter(fp(1:ss:end),R(1:ss:end),[],'k','filled')
 scatter(fp(1:ss:end),R(1:ss:end),[],c(1:ss:end,:),'filled')
 xlabel(axes_handles(6),'Projected Stimulus (V)')
@@ -205,6 +206,7 @@ ab3.gain = gain;
 ab3.gain_err = gain_err;
 ab3.R = R;
 ab3.fp = fp;
+ab3.K = K;
 ab3.PID = mean2(PID);
 
 % now also add ab2 data
@@ -317,8 +319,46 @@ if being_published
 end
 
 
-% also make a supplementary figure 
-figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[700 700]); hold on
+%% Supplmentary Figure
+% 
+
+figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+
+% first row: ab3A filters and projections
+subplot(2,3,1), hold on
+plot(filtertime,ab3.K,'b');
+
+% load MSG filter for ab3
+load('../data/MSG_per_neuron.mat');
+ab3.K_white = (mean2(reshape([MSG_data(1,:).K],1001,11)));
+t = 1e-3*(1:length(ab3.K_white))- .2;
+plot(t,ab3.K_white,'r')
+legend({'Nat. Stimulus Filter','White Noise filter'})
+ylabel('ab3A filter')
+xlabel('Lag (s)')
+
+ab3.fp2 = convolve(1e-3*(1:length(ab3.PID)),ab3.PID,ab3.K_white,t);
+
+subplot(2,3,3), hold on
+scatter(ab3.fp2(1:ss:end),ab3.R(1:ss:end),[],ab3.c(1:ss:end,:),'filled')
+xlabel('Projected Stimulus (V)')
+title('using white-noise filter')
+ylabel('ab3A Response (Hz)')
+set(gca,'XColor','r','XLim',[-1 14])
+
+subplot(2,3,2), hold on
+scatter(ab3.fp(1:ss:end),ab3.R(1:ss:end),[],ab3.c(1:ss:end,:),'filled')
+xlabel('Projected Stimulus (V)')
+ylabel('ab3A Response (Hz)')
+title('using nat. stimulus filter')
+set(gca,'XColor','b','XLim',[-.5 6])
+
+subplot(2,3,4), hold on
+plot(filtertime,K,'b')
+ylabel('ab2A filter')
+xlabel('Lag (s)')
+
+subplot(2,3,5), hold on
 
 shat = computeSmoothedStimulus(mean2(PID),500);
 shat = shat-min(shat);
@@ -330,21 +370,22 @@ shat(isnan(shat)) = 1;
 ss = 1;
 cc = parula(100);
 c= cc(shat,:);
-scatter(fp(1:ss:end),R(1:ss:end),[],'k','filled')
 scatter(fp(1:ss:end),R(1:ss:end),[],c(1:ss:end,:),'filled')
 xlabel('Projected Stimulus (V)')
 ylabel('ab2A response (Hz)')
 shat = computeSmoothedStimulus(mean2(PID),500);
 ch = colorbar('east');
-set(ch,'Position',[.74 .2 .05 .2])
+set(ch,'Position',[.58 .15 .02 .1])
 caxis([min(shat) max(shat)]);
-set(gca,'XLim',[-.15 4])
-prettyFig
+set(gca,'XLim',[-.15 4],'XColor','b')
+
+prettyFig('fs=12;')
 
 if being_published
 	snapnow
 	delete(gcf)
 end
+
 
 
 %% Version Info

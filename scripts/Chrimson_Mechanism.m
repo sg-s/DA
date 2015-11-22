@@ -205,7 +205,7 @@ end
 % x(x==0) = 1e-3;
 % ff = fit(x(:),y(:),'power1','Lower',[-Inf -1],'Upper',[Inf -1]);
 % plot(sort(x),ff(sort(x)),'r')
-ylabel('Gain (Hz/V)')
+ylabel('ORN Gain (Hz/V)')
 xlabel('Mean Stimulus (V)')
 
 subplot(2,2,3), hold on
@@ -222,8 +222,8 @@ for i = 1:length(plot_these_paradigms)
 	end
 	plotPieceWiseLinear(x,y,'nbins',30,'Color',c(i,:));
 end
-xlabel('Projected Stimulus (V)')
-ylabel('LFP Response (mV)')
+xlabel('Projected Odor Stimulus (V)')
+xlabel('Mean Light Power (\muW)')
 subplot(2,2,4), hold on
 x = []; y = [];
 for i = 1:length(paradigm)
@@ -238,8 +238,8 @@ end
 % x(x==0) = 1e-3;
 % ff = fit(x(:),y(:),'power1');
 % plot(sort(x),ff(sort(x)),'r')
-ylabel('Gain (mV/V)')
-xlabel('Mean Stimulus (\muW)')
+ylabel('LFP Gain (mV/V)')
+xlabel('Mean Light Power (\muW)')
 
 prettyFig()
 

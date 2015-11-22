@@ -239,7 +239,7 @@ end
 % ff = fit(x(:),y(:),'power1');
 % plot(sort(x),ff(sort(x)),'r')
 ylabel('Gain (mV/V)')
-xlabel('Mean Stimulus (V)')
+xlabel('Mean Stimulus (\muW)')
 
 prettyFig()
 

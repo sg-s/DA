@@ -114,17 +114,22 @@ end
 xlabel('Projected Stimulus (V)')
 ylabel('ORN Response (Hz)')
 subplot(2,2,2), hold on
-x = []; y = [];
+x = []; y = []; base_gain = [];
 for i = 1:length(paradigm)
 	if odour_background_paradigms(i)
 		ci = find(paradigm(i) == plot_these_paradigms);
 		plot(mean_PID(i),fA_gain(i),'+','Color',c(ci,:));
 		x = [x mean_PID(i)];
 		y = [y fA_gain(i)];
+		if ci == 1
+			base_gain = [base_gain fA_gain(i)];
+		end
 	end
 end
 set(gca,'XScale','log','YScale','log')
 ff = fit(x(:),y(:),'power1','Lower',[-Inf -1],'Upper',[Inf -1]);
+% also plot a flat line for comparison
+plot([min(x) max(x)],[mean(base_gain) mean(base_gain)],'k--')
 plot(sort(x),ff(sort(x)),'r')
 ylabel('Gain (Hz/V)')
 xlabel('Mean Stimulus (V)')
@@ -146,21 +151,25 @@ end
 xlabel('Projected Stimulus (V)')
 ylabel('LFP Response (mV)')
 subplot(2,2,4), hold on
-x = []; y = [];
+x = []; y = []; base_gain = [];
 for i = 1:length(paradigm)
 	if odour_background_paradigms(i)
 		ci = find(paradigm(i) == plot_these_paradigms);
 		plot(mean_PID(i),LFP_gain(i),'+','Color',c(ci,:));
 		x = [x mean_PID(i)];
 		y = [y LFP_gain(i)];
+		if ci == 1
+			base_gain = [base_gain LFP_gain(i)];
+		end
 	end
 end
+plot([min(x) max(x)],[mean(base_gain) mean(base_gain)],'k--')
 set(gca,'XScale','log','YScale','log')
 ff = fit(x(:),y(:),'power1');
 plot(sort(x),ff(sort(x)),'r')
 ylabel('Gain (mV/V)')
 xlabel('Mean Stimulus (V)')
-
+suptitle('Ethyl Acetate foreground and background in w;22a-GAL4/+;UAS-Chrimson/+ flies')
 prettyFig('fs=12;')
 
 if being_published
@@ -192,16 +201,20 @@ end
 xlabel('Projected Stimulus (V)')
 ylabel('ORN Response (Hz)')
 subplot(2,2,2), hold on
-x = []; y = [];
+x = []; y = []; base_gain = [];
 for i = 1:length(paradigm)
 	if light_background_paradigms(i)
 		ci = find(paradigm(i) == plot_these_paradigms);
 		plot(mean_light_power(i),fA_gain(i),'+','Color',c(ci,:));
 		x = [x mean_light_power(i)];
 		y = [y fA_gain(i)];
+		if ci == 1
+			base_gain = [base_gain fA_gain(i)];
+		end
 	end
 end
-% set(gca,'XScale','log','YScale','log')
+plot([min(x) max(x)],[mean(base_gain) mean(base_gain)],'k--')
+set(gca,'XScale','linear','YScale','log','YLim',[10 1000])
 % x(x==0) = 1e-3;
 % ff = fit(x(:),y(:),'power1','Lower',[-Inf -1],'Upper',[Inf -1]);
 % plot(sort(x),ff(sort(x)),'r')
@@ -225,22 +238,26 @@ end
 xlabel('Projected Odor Stimulus (V)')
 xlabel('Mean Light Power (\muW)')
 subplot(2,2,4), hold on
-x = []; y = [];
+x = []; y = []; base_gain = [];
 for i = 1:length(paradigm)
 	if light_background_paradigms(i)
 		ci = find(paradigm(i) == plot_these_paradigms);
 		plot(mean_light_power(i),LFP_gain(i),'+','Color',c(ci,:));
 		x = [x mean_light_power(i)];
 		y = [y LFP_gain(i)];
+		if ci == 1
+			base_gain = [base_gain LFP_gain(i)];
+		end
 	end
 end
-% set(gca,'XScale','log','YScale','log')
+plot([min(x) max(x)],[mean(base_gain) mean(base_gain)],'k--')
+set(gca,'XScale','linear','YScale','log','YLim',[1e-2 1e1])
 % x(x==0) = 1e-3;
 % ff = fit(x(:),y(:),'power1');
 % plot(sort(x),ff(sort(x)),'r')
 ylabel('LFP Gain (mV/V)')
 xlabel('Mean Light Power (\muW)')
-
+suptitle('Ethyl Acetate foreground, light background in w;22a-GAL4/+;UAS-Chrimson/+ flies')
 prettyFig('fs=12;')
 
 if being_published
@@ -248,6 +265,11 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% We don't see a similar gain scaling. Perhaps the background light isn't strong enough? But this range of background light was sufficient to induce gain control in the same ORNs when the foreground fluctuation was also light. We are also driving the ORNs so hard that they pinch, so the background light is probably quite strong. 
+
+%% 
+% One possibility is that these ORNs adapt to the background light completely, so in effect they don't see it, but this is hard to reconcile with the fact that the same ORNs show Weber-like gain control with light foreground and light background. 
 
 
 %% Version Info

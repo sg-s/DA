@@ -161,7 +161,7 @@ plot(sort(x),ff(sort(x)),'r')
 ylabel('Gain (mV/V)')
 xlabel('Mean Stimulus (V)')
 
-prettyFig()
+prettyFig('fs=12;')
 
 if being_published
 	snapnow
@@ -206,7 +206,7 @@ end
 % ff = fit(x(:),y(:),'power1','Lower',[-Inf -1],'Upper',[Inf -1]);
 % plot(sort(x),ff(sort(x)),'r')
 ylabel('ORN Gain (Hz/V)')
-xlabel('Mean Stimulus (V)')
+xlabel('Mean Light Power (\muW)')
 
 subplot(2,2,3), hold on
 plot_these_paradigms = sort(unique(paradigm(light_background_paradigms)));
@@ -241,7 +241,7 @@ end
 ylabel('LFP Gain (mV/V)')
 xlabel('Mean Light Power (\muW)')
 
-prettyFig()
+prettyFig('fs=12;')
 
 if being_published
 	snapnow

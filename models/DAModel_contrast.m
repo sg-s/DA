@@ -63,7 +63,8 @@ R = filter(Kr,1,S);
 Gm = filter(Km,1,S); 
 Gs = filter(Ks,1,S); 
 Gs = S - Gs;
-Gs(Gs<0) = 0;
+% Gs(Gs<0) = 0;
+Gs = abs(Gs);
 G = 1+ p.B*(Gm + p.C*Gs);
 
 R = p.A*R./G;

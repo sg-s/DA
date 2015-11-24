@@ -41,7 +41,9 @@ end
 subplot(3,3,1), hold on
 ss  = 10;
 for i = 1:length(data)
-	plot(mean(data(i).stimulus(a:z)) + data(i).linear_prediction(a:ss:z),data(i).prediction(a:ss:z),'.','Color',c(i,:))
+	x = mean(data(i).stimulus(a:z)) + data(i).linear_prediction(a:ss:z);
+	y = data(i).prediction(a:ss:z);
+	plotPieceWiseLinear(x,y,'nbins',30,'Color',c(i,:));
 end
 xlabel('Projected Stimulus (V)')
 ylabel('Model Response (Hz)')
@@ -92,7 +94,9 @@ end
 
 subplot(3,2,3), hold on
 for i = length(contrasts):-1:1
-	plot(contrast_data(i).linear_prediction(a:ss:z),contrast_data(i).resp(a:ss:z),'.','Color',c(i,:))
+	x = contrast_data(i).linear_prediction(a:ss:z);
+	y = contrast_data(i).resp(a:ss:z);
+	plotPieceWiseLinear(x,y,'nbins',30,'Color',c(i,:));
 end
 xlabel('Projected Stimulus (V)')
 ylabel('Model Response (Hz)')

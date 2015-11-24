@@ -202,7 +202,7 @@ p.tau_r = 27.4688;
 p.tau_m = 200;
 p.tau_s = 20;
 p.   s0 = 0;
-characteriseModel(@DAModel_contrast$,p,data);
+characteriseModel(@DAModel_contrast,p,data);
 
 prettyFig('fs=14;')
 

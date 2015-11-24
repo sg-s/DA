@@ -71,6 +71,7 @@ temp.a = a; temp.z = z;
 temp.filter_buffer = filter_buffer;
 temp.filter_length = filter_length;
 temp.filter_offset = filter_offset;
+temp.reg_factor = reg_factor;
 hash = dataHash(temp);
 if use_cache
 	K = cache(hash);

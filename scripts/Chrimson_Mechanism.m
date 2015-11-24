@@ -310,6 +310,131 @@ end
 %% 
 % One possibility is that these ORNs adapt to the background light completely, so in effect they don't see it, but this is hard to reconcile with the fact that the same ORNs show Weber-like gain control with light foreground and light background. 
 
+%% Light Flicker with Odour backgrounds.
+% We now do the complementary experiment where we have a light flicker with an odour background, and see if the gain changes with odour background. In the first round of experiments, we used ethyl acetate as the background odour. The following figure shows how the input-output curve of the ORN (calcualted vs. light) varies with the background ethyl acetate odourant. 
+
+p = '/local-data/DA-paper/Chrimson/light-odor-combinations/light-flicker/ok/';
+[PID, ~, fA, paradigm, orn, fly, AllControlParadigms] = consolidateData(p,true);
+a = 15e3; z = 45e3;
+
+rm_this = isnan(sum(fA(a:z,:))) | ~nansum(fA(a:z,:));
+fA(:,rm_this) = [];
+PID(:,rm_this) = [];
+paradigm(rm_this) = [];
+orn(rm_this) = [];
+fly(rm_this) = [];
+LED = 0*PID;
+
+% make a vector showing which odour we use, and what the concentration is. 
+% also make a LED stimulus vector
+odour = {}; conc = 0*paradigm; nominal_conc = 0*paradigm;
+for i = 1:length(paradigm)
+	if any(strfind(AllControlParadigms(paradigm(i)).Name,'back'))
+		odour{i} = '2ac';
+	end
+	if any(strfind(AllControlParadigms(paradigm(i)).Name,'2ac'))
+		odour{i} = '2ac';
+	end
+	if any(strfind(AllControlParadigms(paradigm(i)).Name,'ethanol'))
+		odour{i} = 'ethanol';
+	end
+	if str2double(AllControlParadigms(paradigm(i)).Name(end)) > 0
+		conc(i) = nanmean(PID(a:z,i));
+		nominal_conc(i)  =str2double(AllControlParadigms(paradigm(i)).Name(strfind(AllControlParadigms(paradigm(i)).Name,'=')+1:end));
+	end
+	% figure out which output is the LED  -- probably the one with the highest variance
+	[~,load_this] = max(std(AllControlParadigms(paradigm(i)).Outputs'));
+	LED(:,i) = light_power_fit(AllControlParadigms(paradigm(i)).Outputs(load_this,1:10:end));
+end
+
+[K_fA,fA_pred,fA_gain] = extractFilters(LED,fA,'use_cache',true,'a',a,'z',z);
+odour_levels = sort(unique(nominal_conc(find(strcmp(odour,'2ac')))));
+c = parula(length(odour_levels)+1);
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+x = mean(mean(LED(a:z,:))) + mean2(fA_pred(a:z,nominal_conc == 0));
+y = mean2(fA(a:z,nominal_conc == 0));
+plotPieceWiseLinear(x,y,'nbins',30,'Color',c(1,:));
+xlabel('Projected Stimulus (\muW)')
+ylabel('ORN Response (Hz)')
+for i = 2:length(odour_levels)
+	x = (fA_pred(a:z,intersect(find(nominal_conc == odour_levels(i)),find(strcmp(odour,'2ac')))));
+	y = (fA(a:z,intersect(find(nominal_conc == odour_levels(i)),find(strcmp(odour,'2ac')))));
+	if ~isvector(x)
+		x = mean2(x);
+	end
+	if ~isvector(y)
+		y = mean2(y);
+	end
+	plotPieceWiseLinear( mean(mean(LED(a:z,:))) + x,y,'nbins',30,'Color',c(i,:));
+end
+
+subplot(1,2,2), hold on
+y = fA_gain(nominal_conc == 0);
+x = 0*y;
+plot(x,y,'+','Color',c(1,:));
+for i = 2:length(odour_levels)
+	x = mean(PID(a:z,intersect(find(nominal_conc == odour_levels(i)),find(strcmp(odour,'2ac')))));
+	y = (fA_gain(intersect(find(nominal_conc == odour_levels(i)),find(strcmp(odour,'2ac')))));
+	plot(x,y,'+','Color',c(i,:));
+end
+xlabel('Ethyl acetate concentration (V)')
+ylabel('Gain (Hz/\muW)')
+set(gca,'YLim',[.05 .2])
+
+prettyFig('fs=14;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% A problem with using ethyl acetate was that the ORN was very sensitive to it, and pinched rapidly. To work around this, we instead used ethanol, which also excites the same neuron, but less effectively. This allowed us a finer control on the background activity of the neuron, and seemed to prevent pinching. 
+
+odour_levels = sort(unique(nominal_conc(find(strcmp(odour,'ethanol')))));
+c = parula(length(odour_levels)+1);
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+x = mean(mean(LED(a:z,:))) + mean2(fA_pred(a:z,nominal_conc == 0));
+y = mean2(fA(a:z,nominal_conc == 0));
+plotPieceWiseLinear(x,y,'nbins',30,'Color',c(1,:));
+xlabel('Projected Stimulus (\muW)')
+ylabel('ORN Response (Hz)')
+for i = 2:length(odour_levels)
+	x = (fA_pred(a:z,intersect(find(nominal_conc == odour_levels(i)),find(strcmp(odour,'ethanol')))));
+	y = (fA(a:z,intersect(find(nominal_conc == odour_levels(i)),find(strcmp(odour,'ethanol')))));
+	if ~isvector(x)
+		x = mean2(x);
+	end
+	if ~isvector(y)
+		y = mean2(y);
+	end
+	plotPieceWiseLinear( mean(mean(LED(a:z,:))) + x,y,'nbins',30,'Color',c(i,:));
+end
+
+subplot(1,2,2), hold on
+y = fA_gain(nominal_conc == 0);
+x = 0*y;
+plot(x,y,'+','Color',c(1,:));
+for i = 2:length(odour_levels)
+	x = mean(PID(a:z,intersect(find(nominal_conc == odour_levels(i)),find(strcmp(odour,'ethanol')))));
+	y = (fA_gain(intersect(find(nominal_conc == odour_levels(i)),find(strcmp(odour,'ethanol')))));
+	plot(x,y,'+','Color',c(i,:));
+end
+xlabel('Ethanol concentration (V)')
+ylabel('Gain (Hz/\muW)')
+set(gca,'YLim',[.05 .2])
+
+prettyFig('fs=14;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 %% Version Info
 % The file that generated this document is called:

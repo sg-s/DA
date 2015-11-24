@@ -139,9 +139,41 @@ if being_published
 end
 
 %% Gain Changes with Light contrast 
-% Now we look at how gain changes with the contrast of the light. 
+% Now we look at how gain changes with the contrast of the light. In the following figure, we plot the stimulus projected through the filter for each contrast case and show that the variance is changing while the mean stays the same. We then compute input-output curves in each of these cases, and compare them to what we would expect from optimal coding theory. 
 
-figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+
+figure('outerposition',[0 0 1400 700],'PaperUnits','points','PaperSize',[1400 700]); hold on
+ax(1) = subplot(2,2,1); hold on
+ylabel('Probability')
+ax(2) = subplot(2,2,3); hold on
+xlabel('Projected Light Stimulus (\muW)')
+ylabel('ORN Response (Hz)')
+
+contrast_levels = sort(unique(light_s(m==2)));
+c = parula(length(contrast_levels)+1);
+for i = 1:length(contrast_levels)
+	light_m = mean(mean(LED(a:z,light_s == contrast_levels(i))));
+	y = (fA(a:z,light_s == contrast_levels(i)));
+	if ~isvector(y)
+		y = mean2(y);
+	end
+	x = (fp(a:z,light_s == contrast_levels(i)));
+	x = x+ light_m;
+	if ~isvector(x)
+		x = mean2(x);
+	end
+	
+	[yy,xx] = histcounts(x,-100:600);
+	yy = yy/sum(yy);
+	plot(ax(1),xx(2:end),yy,'Color',c(i,:))
+
+	plot(ax(2),xx(2:end),cumsum(yy)*max(y),'--','Color',c(i,:))
+
+	axis(ax(2));
+	plotPieceWiseLinear(x,y,'nbins',30,'Color',c(i,:));
+end
+
+subplot(1,2,2), hold on
 plot(light_s(m==2),gain(m==2),'k+')
 xlabel('\sigma_{light}(\muW)')
 ylabel('Gain (Hz/\muW)')

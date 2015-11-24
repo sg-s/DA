@@ -55,6 +55,9 @@ p = '/local-data/DA-paper/Chrimson/light-odor-combinations/odour-flicker/';
 [PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData(p,true);
 a = 15e3; z = 55e3;
 
+% clean up the data
+fA(:,sum(fA) == 0) = NaN;
+
 % figure out which paradigms to plot
 light_background_paradigms = false(length(paradigm),1);
 odour_background_paradigms = false(length(paradigm),1);
@@ -82,7 +85,10 @@ mean_light_power(isnan(mean_light_power)) = 0;
 % filter all LFPs
 filtered_LFP = LFP;
 for i = 1:width(LFP)
-	filtered_LFP(:,i) = bandPass(LFP(:,i),1000,10);
+	try
+		filtered_LFP(:,i) = bandPass(LFP(:,i),1000,10);
+	catch
+	end
 end
 
 
@@ -95,6 +101,16 @@ end
 for i = 1:length(paradigm)
 	fA_pred(:,i) = fA_pred(:,i) + mean_PID(i);
 end
+
+
+%  #######  ########   #######  ########           #######  ########   #######  ########  
+% ##     ## ##     ## ##     ## ##     ##         ##     ## ##     ## ##     ## ##     ## 
+% ##     ## ##     ## ##     ## ##     ##         ##     ## ##     ## ##     ## ##     ## 
+% ##     ## ##     ## ##     ## ########  ####### ##     ## ##     ## ##     ## ########  
+% ##     ## ##     ## ##     ## ##   ##           ##     ## ##     ## ##     ## ##   ##   
+% ##     ## ##     ## ##     ## ##    ##          ##     ## ##     ## ##     ## ##    ##  
+%  #######  ########   #######  ##     ##          #######  ########   #######  ##     ## 
+
 
 figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[700 700]); hold on
 subplot(2,2,1), hold on
@@ -127,9 +143,11 @@ for i = 1:length(paradigm)
 	end
 end
 set(gca,'XScale','log','YScale','log')
+rm_this = isnan(x) | isnan(y);
+x(rm_this) = []; y(rm_this) = [];
 ff = fit(x(:),y(:),'power1','Lower',[-Inf -1],'Upper',[Inf -1]);
 % also plot a flat line for comparison
-plot([min(x) max(x)],[mean(base_gain) mean(base_gain)],'k--')
+plot([min(x) max(x)],[nanmean(base_gain) nanmean(base_gain)],'k--')
 plot(sort(x),ff(sort(x)),'r')
 ylabel('Gain (Hz/V)')
 xlabel('Mean Stimulus (V)')
@@ -163,8 +181,10 @@ for i = 1:length(paradigm)
 		end
 	end
 end
-plot([min(x) max(x)],[mean(base_gain) mean(base_gain)],'k--')
-set(gca,'XScale','log','YScale','log')
+plot([min(x) max(x)],[nanmean(base_gain) nanmean(base_gain)],'k--')
+set(gca,'XScale','log','YScale','log','YLim',[.05 2])
+rm_this = isnan(x) | isnan(y);
+x(rm_this) = []; y(rm_this) = [];
 ff = fit(x(:),y(:),'power1');
 plot(sort(x),ff(sort(x)),'r')
 ylabel('Gain (mV/V)')
@@ -177,8 +197,27 @@ if being_published
 	delete(gcf)
 end
 
+
 %% 
 % So it looks like we can reproduce, quantitatively, the gain scaling properties we saw in WT ORNs in these ORNs that express Chrimson. 
+
+% ##       ####  ######   ##     ## ######## 
+% ##        ##  ##    ##  ##     ##    ##    
+% ##        ##  ##        ##     ##    ##    
+% ##        ##  ##   #### #########    ##    
+% ##        ##  ##    ##  ##     ##    ##    
+% ##        ##  ##    ##  ##     ##    ##    
+% ######## ####  ######   ##     ##    ##    
+
+% ########     ###     ######  ##    ##  ######   ########   #######  ##     ## ##    ## ########  
+% ##     ##   ## ##   ##    ## ##   ##  ##    ##  ##     ## ##     ## ##     ## ###   ## ##     ## 
+% ##     ##  ##   ##  ##       ##  ##   ##        ##     ## ##     ## ##     ## ####  ## ##     ## 
+% ########  ##     ## ##       #####    ##   #### ########  ##     ## ##     ## ## ## ## ##     ## 
+% ##     ## ######### ##       ##  ##   ##    ##  ##   ##   ##     ## ##     ## ##  #### ##     ## 
+% ##     ## ##     ## ##    ## ##   ##  ##    ##  ##    ##  ##     ## ##     ## ##   ### ##     ## 
+% ########  ##     ##  ######  ##    ##  ######   ##     ##  #######   #######  ##    ## ########  
+
+
 
 %% Gain Scaling with background light
 % Now that we have established that these ORNs can change gain with supplemental odour, just like the WT ORNs, we see how they change gain to a fluctuating odour stimulus with supplemental light drive. 
@@ -213,7 +252,7 @@ for i = 1:length(paradigm)
 		end
 	end
 end
-plot([min(x) max(x)],[mean(base_gain) mean(base_gain)],'k--')
+plot([min(x) max(x)],[nanmean(base_gain) nanmean(base_gain)],'k--')
 set(gca,'XScale','linear','YScale','log','YLim',[10 1000])
 % x(x==0) = 1e-3;
 % ff = fit(x(:),y(:),'power1','Lower',[-Inf -1],'Upper',[Inf -1]);
@@ -250,7 +289,7 @@ for i = 1:length(paradigm)
 		end
 	end
 end
-plot([min(x) max(x)],[mean(base_gain) mean(base_gain)],'k--')
+plot([min(x) max(x)],[nanmean(base_gain) nanmean(base_gain)],'k--')
 set(gca,'XScale','linear','YScale','log','YLim',[1e-2 1e1])
 % x(x==0) = 1e-3;
 % ff = fit(x(:),y(:),'power1');

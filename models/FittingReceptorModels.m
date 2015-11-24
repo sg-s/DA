@@ -8,10 +8,12 @@
 
 %% Fitting Simple Receptor Models to Data
 % In this document, we look at very simple receptor-based and phenomenological models and see if they can account for 
+% 
 % # gain changes with mean stimulus 
 % # response speedups with increasing mean stimulus. 
 % # gain changes with stimulus contrast 
 % # responses to triangle waveforms 
+% 
 
 % add homebrew path
 path1 = getenv('PATH');
@@ -190,7 +192,7 @@ end
 %% DA Model with contrast adaptation
 % In this section, we modify the DA model with a contrast sensitive term as follows:
 % $$ r(t) = \frac{\alpha K_{r}\otimes s(t)}{1+\beta (K_{\mu}\otimes{s(t)} + \gamma R(K_{\sigma}\otimes{s(t)} ))} $$
-% where $ K_{r} $ is a low-pass response filter, $ K_{\mu} $ is a low pass gain filter that is sensitive to the mean and is responsible for gain scaling with mean, and $ K_{sigma} $ is a high-pass filter that is responsible for gain scaling with contrast. $R$ is the ramp function. 
+% where $K_{r}$ is a low-pass response filter, $K_{\mu}$ is a low pass gain filter that is sensitive to the mean and is responsible for gain scaling with mean, and $K_{sigma}$ is a high-pass filter that is responsible for gain scaling with contrast. $R$ is the ramp function. 
 
 clear p
 p.    A = 157.8750;
@@ -200,7 +202,7 @@ p.tau_r = 27.4688;
 p.tau_m = 200;
 p.tau_s = 20;
 p.   s0 = 0;
-characteriseModel(@DAModel_contrast,p,data);
+characteriseModel(@DAModel_contrast$,p,data);
 
 prettyFig('fs=14;')
 

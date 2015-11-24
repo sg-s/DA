@@ -187,7 +187,28 @@ if being_published
 	delete(gcf)
 end
 
+%% DA Model with contrast adaptation
+% In this section, we modify the DA model with a contrast sensitive term as follows:
+% $$ r(t) = \frac{\alpha K_{r}\otimes s(t)}{1+\beta (K_{\mu}\otimes{s(t)} + \gamma R(K_{\sigma}\otimes{s(t)} ))} $$
+% where $ K_{r} $ is a low-pass response filter, $ K_{\mu} $ is a low pass gain filter that is sensitive to the mean and is responsible for gain scaling with mean, and $ K_{sigma} $ is a high-pass filter that is responsible for gain scaling with contrast. $R$ is the ramp function. 
 
+clear p
+p.    A = 157.8750;
+p.    B = 4.4062;
+p.    C = 2;
+p.tau_r = 27.4688;
+p.tau_m = 200;
+p.tau_s = 20;
+p.   s0 = 0;
+characteriseModel(@DAModel_contrast,p,data);
+
+prettyFig('fs=14;')
+
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %% Version Info
 % The file that generated this document is called:

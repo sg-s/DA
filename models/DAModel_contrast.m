@@ -38,7 +38,7 @@ lb.tau_s = 0;
 ub.tau_r = 1000;
 ub.tau_m = 1000;
 ub.tau_s = 1000;
-ub.C = 2;
+ub.C = 10;
 
 S = (S + p.s0); 
 

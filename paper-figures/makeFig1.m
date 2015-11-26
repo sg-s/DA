@@ -309,6 +309,11 @@ set(axes_handles(6),'XLim',[-.1 5])
 set(axes_handles(7),'YLim',[0 max(gain)],'YScale','log','XScale','log','XLim',[.001 10])
 
 
+% more cosmetics
+set(ax(2),'YColor','r')
+set(ax(1),'YColor','b')
+set(axes_handles(6),'YColor','b','XColor','r')
+
 prettyFig('plw=1.5;','lw=1.5;','fs=12;')
 
 legend('boxoff')

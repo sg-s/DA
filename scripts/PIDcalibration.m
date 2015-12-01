@@ -31,7 +31,7 @@ tic
 % The way we do this is to introduce a known amount of ethyl acetate (here, 100uL) into the scintillation vial containing odour, and driving air through it at a fixed rate till we deplete all odour. Assuming that the overwhelming majority of the odourant in the vial is flushed out and measured, our problem is solved. 
 
 %% 
-% Ethyl acetate has a density of .902g/mL, so 100uL of the odourant weighs .0902 g. The molar mass of ethyl acetata is 88.11 g/mol, so 100uL of ethyl acetate contains approximately 1.023 milli moles of the compound. 
+% Ethyl acetate has a density of .902g/mL, so 100uL of the odourant weighs .0902 g. The molar mass of ethyl acetate is 88.11 g/mol, so 100uL of ethyl acetate contains approximately 1.023 milli moles of the compound. 
 
 %%
 % In the following figure, we plot the raw traces of the PID vs. time, showing how changing the flow rate changes the dynamics of odourant depletion. As we expect, higher flow rates cause quicker depletion. In the second panel, we plot the PID value as a function of the air pushed through the bottle, which we obtain by multiplying the elapsed time by the flow rate. 

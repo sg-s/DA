@@ -6,8 +6,10 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [andor_elapsed_time,elapsed_time] = metadata2timestamps(txt)
+function [andor_elapsed_time,elapsed_time,absolute_time] = metadata2timestamps(txt)
 
+
+assert(ischar(txt),'Input should be a string (char)')
 
 token = '"Andor-ElapsedTime-ms"';
 loc = strfind(txt,token);
@@ -31,4 +33,14 @@ for i = 1:length(loc)
 end
 elapsed_time = elapsed_time - elapsed_time(1);
 elapsed_time = elapsed_time*1e-3;
+
+token = '"Time":';
+loc = strfind(txt,token);
+absolute_time = NaN*loc;
+
+for i = 1:length(loc)
+	temp = txt(loc(i)+length(token)+1:loc(i)+length(token)+50);
+	absolute_time(i) = datenum((strrep(temp(1:strfind(temp,'-0500')-1),'"','')));
+end
+absolute_time = absolute_time(3:2:end);
 

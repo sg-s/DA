@@ -42,7 +42,7 @@ tic
 %
 
 %% Quantitative Analysis of Fluorescence Changes
-% In this section we analyse the time course of fluorescence changes as we present a pulse of odour to the antenna. First, we look at one example neuron:
+% In this section we analyse the time course of fluorescence changes as we present a pulse of odour to the antenna. First, we look at one example neuron. In the following figure, ethyl acetate is pulses for 5 seconds while we imaged the antenna. 
 
 load('/local-data/calcium/merged/2015_12_02_22a_GCamp6_F1_ab3_1.mat')
 

@@ -77,38 +77,40 @@ for i = 1:length(all_kontroller_files)
 			d_mean_lux = diff(mean_lux);
 			[on_size,led_on] = max(d_mean_lux);
 			[off_size,led_off] = min(d_mean_lux);
-			disp('here are the on and off sizes for the led:')
-			disp([on_size -off_size]/std(d_mean_lux));
-			image_time = andor_elapsed_time(led_on:led_off);
-			image_time = image_time - min(image_time);
+			if min([on_size -off_size]/std(d_mean_lux)) > 10
+				image_time = andor_elapsed_time(led_on:led_off);
+				image_time = image_time - min(image_time);
 
-			% combine the data
-			image_data.paradigm{end+1} = timestamps(1,j);
-			image_data.trial{end+1} = timestamps(2,j);
-			image_data.images{end+1} = images(:,:,led_on:led_off);
-			try
-				image_data.control_roi{end+1} = control_roi;
-			catch
-				image_data.control_roi{end+1} = 0;
-				warning('NO CONTROL ROI!!!. IMAGE FILE IS:')
-				disp(image_files(loc).name)
+				% combine the data
+				image_data.paradigm{end+1} = timestamps(1,j);
+				image_data.trial{end+1} = timestamps(2,j);
+				image_data.images{end+1} = images(:,:,led_on:led_off);
+				try
+					image_data.control_roi{end+1} = control_roi;
+				catch
+					image_data.control_roi{end+1} = 0;
+					warning('NO CONTROL ROI!!!. IMAGE FILE IS:')
+					disp(image_files(loc).name)
+				end
+				try
+					image_data.test_roi{end+1} = test_roi;
+				catch
+					image_data.test_roi{end+1} = 0;
+					warning('NO TEST ROI!!! image file is:')
+					disp(image_files(loc).name)
+				end
+				image_data.image_time{end+1} = image_time;
 			end
-			try
-				image_data.test_roi{end+1} = test_roi;
-			catch
-				image_data.test_roi{end+1} = 0;
-				warning('NO TEST ROI!!! image file is:')
-				disp(image_files(loc).name)
-			end
-			image_data.image_time{end+1} = image_time;
 		else
 			warning('NO IMAGE FOUND THAT MATCHES THIS TRIAL!!!')
 		end
 
 	end
 
-	disp('Converting to v7.3...')
-	save([kontroller_data_path all_kontroller_files(i).name],'data','ControlParadigm','timestamps','OutputChannelNames','SamplingRate','metadata','-v7.3');
+	% determine if this is v7.3 or not
+	convertMATFileTo73([kontroller_data_path all_kontroller_files(i).name]);
 
+
+	disp('Merging and saving all data...')
 	save([kontroller_data_path all_kontroller_files(i).name],'image_data','-append')
 end

@@ -66,12 +66,28 @@ for i = 1:length(all_kontroller_files)
 	clc
 	load([kontroller_data_path all_kontroller_files(i).name])
 	disp([kontroller_data_path all_kontroller_files(i).name])
+
+	% check if the trial info in the timestamps is not fucked
+	if length(unique(timestamps(1,:)*100 + timestamps(2,:))) ~= length(timestamps(1,:))
+		disp('Timestamps fucked. repairing...')
+		unique_paradigms = unique(timestamps(1,:));
+		for j = 1:length(unique_paradigms)
+			temp= (timestamps(2,timestamps(1,:) ==unique_paradigms(j)));
+			if length(temp) > 1
+				timestamps(2,timestamps(1,:) ==unique_paradigms(j)) = 1:length(temp);
+			end
+		end
+		disp(timestamps(1:2,:))
+	end
+
+
 	disp('Merging data...')
 	for j = 1:size(timestamps,2)
 		disp(['Paradigm: ' mat2str(timestamps(1,j))])
 		disp(['Trial # : ' mat2str(timestamps(2,j))])
 		paradigm = timestamps(1,j);
 		trial = timestamps(2,j);
+
 
 		[time_error,loc] = min(abs(timestamps(3,j) - video_starts));
 		time_error = datevec(time_error);
@@ -95,8 +111,8 @@ for i = 1:length(all_kontroller_files)
 
 				% calcualte dt for imaging
 				try
-					image_dt = length(data(paradigm).PID(trial,:))*1e-4/size(images,3);
-					t = image_dt:image_dt:length(data(paradigm).PID(trial,:))*1e-4;
+					image_dt = length(data(paradigm).PID(1,:))*1e-4/size(images,3);
+					t = image_dt:image_dt:length(data(paradigm).PID(1,:))*1e-4;
 
 					if exist('control_roi') && exist('test_roi')
 						% first make a the masks
@@ -135,6 +151,7 @@ for i = 1:length(all_kontroller_files)
 			end
 		else
 			warning('NO IMAGE FOUND THAT MATCHES THIS TRIAL!!!')
+			keyboard
 		end
 
 	end

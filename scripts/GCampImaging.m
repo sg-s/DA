@@ -42,26 +42,115 @@ tic
 %
 
 %% Quantitative Analysis of Fluorescence Changes
-% In this section we analyse the time course of fluorescence changes as we present a pulse of odour to the antenna. First, we look at one example neuron. In the following figure, ethyl acetate is pulses for 5 seconds while we imaged the antenna. 
+% In this section we analyse the time course of fluorescence changes as we present a pulse of odour to the antenna. First, we look at how Calcium levels vary with the mean odour flux presented to the antenna.  
 
-load('/local-data/calcium/merged/2015_12_02_22a_GCamp6_F1_ab3_1.mat')
 
-figure('outerposition',[0 0 600 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-clear l
-l1 = plot(data(11).GCamp_time',data(11).GCamp','b'); l1 = l1(end);
-l2 = plot(data(1).GCamp_time',data(1).GCamp_control','k'); l2 = l2(end);
-l3 = plot(data(1).GCamp_time',data(1).GCamp','r'); l3 = l3(end);
-legend([l1 l2 l3],{'Blank Pulse','Odour, control ROI','Odour, Sensilla'})
-set(gca,'XLim',[1 19],'YLim',[.9 2])
-xlabel('Time (s)')
-ylabel('Fluorescence fold change')
+% load all the data
+p = '/local-data/DA-paper/GCamp6/ephys';
+[PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes, sequence,calcium_test,calcium_control] = consolidateDataCalcium(p,1);
 
-prettyFig()
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+pulses = isnan(sum(PID));
+plot(mean(PID(9e3:10e3,pulses)),nanmean(calcium_test(9e3:10e3,pulses)),'+')
+title('Odour Pulses')
+xlabel('PID (V)')
+ylabel('Mean Fluorescence (fold change)')
+
+subplot(1,2,2), hold on
+title('Odour Flicker')
+plot(mean(PID(10e3:50e3,~pulses)),nanmean(calcium_test(10e3:50e3,~pulses)),'+')
+xlabel('PID (V)')
+
+prettyFig;
 
 if being_published
 	snapnow
 	delete(gcf)
 end
+
+%%
+% Why is there such a large variation in the odour flicker data? To look at this more carefully, we compare individual traces from an odour flicker with low mean (purple) and a odour flicker with high mean (yellow);
+
+c = parula(6);
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+t = 1e-3*(1:length(calcium_control));
+plot(t,calcium_test(:,paradigm==15),'Color',c(5,:))
+plot(t,calcium_test(:,paradigm==8),'Color',c(1,:))
+xlabel('Time (s)')
+set(gca,'XLim',[1 60]);
+ylabel('Fluorescence (fold change)')
+
+prettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%% Calcium levels vs. LFP gain
+% In this section we compare the LFP gain to the mean calcium levels. 
+
+% remove some shitty traces
+LFP(:,nanmean(LFP) > 4.5) = NaN;
+
+% band pass all the LFP
+filtered_LFP = LFP;
+for i = 1:width(LFP)
+	try
+		filtered_LFP(:,i) = bandPass(LFP(:,i),1000,10);
+	catch
+	end
+end
+
+
+a = 10e3; z = 50e3;
+[K,LFP_pred,LFP_gain] = extractFilters(PID,filtered_LFP,'use_cache',true,'a',a,'z',z);
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+plot(mean(PID(a:z,~pulses & paradigm ~= 21)),LFP_gain(~pulses & paradigm ~= 21),'+')
+xlabel('PID (V)')
+ylabel('LFP Gain (mV/V)')
+
+subplot(1,2,2), hold on
+plot(mean(calcium_test(a:z,~pulses & paradigm ~= 21)),LFP_gain(~pulses & paradigm ~= 21),'+')
+xlabel('GCamp6 Fluorescence (fold change) ')
+
+prettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%% Timescale of Calcium Kinetics
+% In this section we back out filters for the Calcium signals, to look at their timescale of kinetics. We filter the raw GCamp6 signals with a high pass filter with a 5-second cutoff. 
+
+filtered_calcium = calcium_control;
+for i = 1:length(paradigm)
+	filtered_calcium(:,i) = bandPass(calcium_test(:,30),5e3,Inf);
+end
+
+a = 20e3; z = 50e3;
+[K_Ca,Ca_pred,Ca_gain] = extractFilters(PID,filtered_calcium,'use_cache',true,'a',a,'z',z,'filter_length',1e3);
+
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+t = 1e-3*(1:length(K_Ca)) - .2;
+temp = K_Ca(:,paradigm ~= 21 & ~pulses);
+errorShade(t,mean(temp,2),sem(temp'))
+xlabel('Filter Lag (s)')
+ylabel('Filter')
+prettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 
 %% Version Info

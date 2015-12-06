@@ -34,6 +34,12 @@ for i = 1:length(all_kontroller_files)
 end
 all_kontroller_files(rm_this) = [];
 
+% convert all files to v7.3
+disp('Converting files to v7.3...')
+for i = 1:length(all_kontroller_files)
+	convertMATFileTo73([kontroller_data_path all_kontroller_files(i).name]);
+end
+
 % first make a matrix of video starts and stops for all the videos we have
 disp('Determining when each video starts and stops...')
 image_files = dir([image_path, '*.mat']);
@@ -54,22 +60,28 @@ for i = 1:length(all_kontroller_files)
 	image_data = struct;
 	image_data.paradigm = cell(1);
 	image_data.trial = cell(1);
-	image_data.images = cell(1);
 	image_data.control_roi = cell(1);
 	image_data.test_roi = cell(1);
 	image_data.image_time = cell(1);
+	clc
 	load([kontroller_data_path all_kontroller_files(i).name])
 	disp([kontroller_data_path all_kontroller_files(i).name])
 	disp('Merging data...')
 	for j = 1:size(timestamps,2)
-		disp(j)
+		disp(['Paradigm: ' mat2str(timestamps(1,j))])
+		disp(['Trial # : ' mat2str(timestamps(2,j))])
+		paradigm = timestamps(1,j);
+		trial = timestamps(2,j);
+
 		[time_error,loc] = min(abs(timestamps(3,j) - video_starts));
 		time_error = datevec(time_error);
 		time_error = time_error(end) + time_error(end-1)*60; % in seconds
 		if time_error < 30
+			disp('Match found...')
 
 			% load this video file
 			clearvars images control_roi test_roi andor_elapsed_time 
+			disp('Loading matching video...')
 			load([image_path image_files(loc).name]);
 
 			% figure out when the LED (controlled by kontroller) turned on and off
@@ -78,28 +90,48 @@ for i = 1:length(all_kontroller_files)
 			[on_size,led_on] = max(d_mean_lux);
 			[off_size,led_off] = min(d_mean_lux);
 			if min([on_size -off_size]/std(d_mean_lux)) > 10
-				image_time = andor_elapsed_time(led_on:led_off);
-				image_time = image_time - min(image_time);
+				images = images(:,:,led_on:led_off);
+				disp('Traces aligned successfully...')
 
-				% combine the data
-				image_data.paradigm{end+1} = timestamps(1,j);
-				image_data.trial{end+1} = timestamps(2,j);
-				image_data.images{end+1} = images(:,:,led_on:led_off);
+				% calcualte dt for imaging
 				try
-					image_data.control_roi{end+1} = control_roi;
+					image_dt = length(data(paradigm).PID(trial,:))*1e-4/size(images,3);
+					t = image_dt:image_dt:length(data(paradigm).PID(trial,:))*1e-4;
+
+					if exist('control_roi') && exist('test_roi')
+						% first make a the masks
+						control_roi_mask = sum(control_roi,3);
+						test_roi_mask = sum(test_roi,3);
+					else
+						warning('No Control ROI or test ROI!!')
+						control_roi_mask = NaN*images(:,:,1);
+						test_roi_mask = NaN*images(:,:,1);
+					end
+
+					roi_signals = zeros(size(images,3),1);
+					temp = images.*repmat(control_roi_mask,1,1,length(roi_signals));
+					temp = (squeeze(sum(sum(temp,1))));
+
+					% divide by the pre-stimulus mean
+					temp = temp/mean(temp(3:find(t>5,1,'first')));
+
+					% interpolate to 1ms resolution 
+					data(paradigm).GCamp6_control_roi(trial,:) = interp1(t,temp,1e-3:1e-3:max(t));
+
+					% now do the test ROI
+					roi_signals = zeros(size(images,3),1);
+					temp = images.*repmat(test_roi_mask,1,1,length(roi_signals));
+					temp = (squeeze(sum(sum(temp,1))));
+
+					% divide by the pre-stimulus mean
+					temp = temp/mean(temp(3:find(t>5,1,'first')));
+
+					% interpolate to 1ms resolution 
+					data(paradigm).GCamp6_test_roi(trial,:) = interp1(t,temp,1e-3:1e-3:max(t));
 				catch
-					image_data.control_roi{end+1} = 0;
-					warning('NO CONTROL ROI!!!. IMAGE FILE IS:')
-					disp(image_files(loc).name)
+					warning('Something went horribly wrong, kontroller data is missing!')
 				end
-				try
-					image_data.test_roi{end+1} = test_roi;
-				catch
-					image_data.test_roi{end+1} = 0;
-					warning('NO TEST ROI!!! image file is:')
-					disp(image_files(loc).name)
-				end
-				image_data.image_time{end+1} = image_time;
+
 			end
 		else
 			warning('NO IMAGE FOUND THAT MATCHES THIS TRIAL!!!')
@@ -107,10 +139,6 @@ for i = 1:length(all_kontroller_files)
 
 	end
 
-	% determine if this is v7.3 or not
-	convertMATFileTo73([kontroller_data_path all_kontroller_files(i).name]);
-
-
 	disp('Merging and saving all data...')
-	save([kontroller_data_path all_kontroller_files(i).name],'image_data','-append')
+	save([kontroller_data_path all_kontroller_files(i).name],'data','-append')
 end

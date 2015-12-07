@@ -141,7 +141,7 @@ a = 20e3; z = 50e3;
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 t = 1e-3*(1:length(K_Ca)) - .2;
 temp = K_Ca(:,paradigm ~= 21 & ~pulses);
-errorShade(t,mean(temp,2),sem(temp'))
+errorShade(t,mean(temp,2),sem(temp'));
 xlabel('Filter Lag (s)')
 ylabel('Filter')
 prettyFig;

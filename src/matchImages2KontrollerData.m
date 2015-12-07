@@ -129,7 +129,7 @@ for i = 1:length(all_kontroller_files)
 					temp = (squeeze(sum(sum(temp,1))));
 
 					% divide by the pre-stimulus mean
-					temp = temp/mean(temp(3:find(t>5,1,'first')));
+					% temp = temp/mean(temp(3:find(t>5,1,'first')));
 
 					% interpolate to 1ms resolution 
 					data(paradigm).GCamp6_control_roi(trial,:) = interp1(t,temp,1e-3:1e-3:max(t));
@@ -140,7 +140,7 @@ for i = 1:length(all_kontroller_files)
 					temp = (squeeze(sum(sum(temp,1))));
 
 					% divide by the pre-stimulus mean
-					temp = temp/mean(temp(3:find(t>5,1,'first')));
+					% temp = temp/mean(temp(3:find(t>5,1,'first')));
 
 					% interpolate to 1ms resolution 
 					data(paradigm).GCamp6_test_roi(trial,:) = interp1(t,temp,1e-3:1e-3:max(t));

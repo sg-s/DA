@@ -49,18 +49,26 @@ tic
 p = '/local-data/DA-paper/GCamp6/ephys';
 [PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes, sequence,calcium_test,calcium_control] = consolidateDataCalcium(p,1);
 
+% calculate fold change
+calcium_test_fold = calcium_test;
+calcium_control_fold = calcium_control;
+for i = 1:length(paradigm)
+	calcium_test_fold(:,i) = calcium_test(:,i)/nanmean(calcium_test(150:5000,i));
+	calcium_control_fold(:,i) = calcium_control(:,i)/nanmean(calcium_control(150:5000,i));
+end
+
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 subplot(1,2,1), hold on
 pulses = isnan(sum(PID));
-plot(mean(PID(9e3:10e3,pulses)),nanmean(calcium_test(9e3:10e3,pulses)),'+')
+plot(mean(PID(9e3:10e3,pulses)),nanmean(calcium_test_fold(9e3:10e3,pulses)),'+')
 title('Odour Pulses')
 xlabel('PID (V)')
 ylabel('Mean Fluorescence (fold change)')
 
 subplot(1,2,2), hold on
 title('Odour Flicker')
-plot(mean(PID(10e3:50e3,~pulses)),nanmean(calcium_test(10e3:50e3,~pulses)),'+')
+plot(mean(PID(10e3:50e3,~pulses)),nanmean(calcium_test_fold(10e3:50e3,~pulses)),'+')
 xlabel('PID (V)')
 
 prettyFig;
@@ -77,8 +85,8 @@ c = parula(6);
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 t = 1e-3*(1:length(calcium_control));
-plot(t,calcium_test(:,paradigm==15),'Color',c(5,:))
-plot(t,calcium_test(:,paradigm==8),'Color',c(1,:))
+plot(t,calcium_test_fold(:,paradigm==15),'Color',c(5,:))
+plot(t,calcium_test_fold(:,paradigm==8),'Color',c(1,:))
 xlabel('Time (s)')
 set(gca,'XLim',[1 60]);
 ylabel('Fluorescence (fold change)')
@@ -89,6 +97,8 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%% What is the reason for this variability? Perhaps the bleaching of the GCamp6 is somehow causing a decrease in the fold change? In the following 
 
 %% Calcium levels vs. LFP gain
 % In this section we compare the LFP gain to the mean calcium levels. 

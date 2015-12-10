@@ -101,18 +101,20 @@ for i = 1:length(all_kontroller_files)
 			load([image_path image_files(loc).name]);
 
 			% figure out when the LED (controlled by kontroller) turned on and off
-			mean_lux = (squeeze(mean(mean(images,1))));
+			mean_lux = removePointDefects(squeeze(mean(mean(images,1))));
 			d_mean_lux = diff(mean_lux);
 			[on_size,led_on] = max(d_mean_lux);
 			[off_size,led_off] = min(d_mean_lux);
-			if min([on_size -off_size]/std(d_mean_lux)) > 10
+			if min([on_size -off_size]/std(d_mean_lux)) > 7
 				images = images(:,:,led_on:led_off);
 				disp('Traces aligned successfully...')
 
 				% calcualte dt for imaging
 				try
-					image_dt = length(data(paradigm).PID(1,:))*1e-4/size(images,3);
-					t = image_dt:image_dt:length(data(paradigm).PID(1,:))*1e-4;
+					t = andor_elapsed_time(led_on:led_off);
+					t = t-t(1);
+					t = t/t(end);
+					t = t*length(data(paradigm).PID(1,:))*1e-4;
 
 					if exist('control_roi') && exist('test_roi')
 						% first make a the masks
@@ -128,9 +130,6 @@ for i = 1:length(all_kontroller_files)
 					temp = images.*repmat(control_roi_mask,1,1,length(roi_signals));
 					temp = (squeeze(sum(sum(temp,1))));
 
-					% divide by the pre-stimulus mean
-					% temp = temp/mean(temp(3:find(t>5,1,'first')));
-
 					% interpolate to 1ms resolution 
 					data(paradigm).GCamp6_control_roi(trial,:) = interp1(t,temp,1e-3:1e-3:max(t));
 
@@ -139,15 +138,14 @@ for i = 1:length(all_kontroller_files)
 					temp = images.*repmat(test_roi_mask,1,1,length(roi_signals));
 					temp = (squeeze(sum(sum(temp,1))));
 
-					% divide by the pre-stimulus mean
-					% temp = temp/mean(temp(3:find(t>5,1,'first')));
-
 					% interpolate to 1ms resolution 
 					data(paradigm).GCamp6_test_roi(trial,:) = interp1(t,temp,1e-3:1e-3:max(t));
 				catch
 					warning('Something went horribly wrong, kontroller data is missing!')
 				end
-
+			else
+				disp('Unsuccessful trial alignment?')
+				keyboard
 			end
 		else
 			warning('NO IMAGE FOUND THAT MATCHES THIS TRIAL!!!')

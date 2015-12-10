@@ -26,6 +26,105 @@ end
 tic
 
 %% Odour-induced intracellular Calcium in ORNs
+% In this document, we attempt to measure intracellular calcium levels using GCamp6, which is expressed in ab3A ORNs using the UAS-GAL4system. (We record from w;22a-GAL4/+;UAS-GCamp6/+) flies. GCamp6f has a peak time (0-peak) of ~50ms, and a decay time (1/2 time) of ~200ms. 
+
+%% Calcium Concentration with Mean Stimulus
+% First, we attempt to see if intracellular calcium levels (as measured by fold change in the flourescence) correlates with the mean of the stimulus applied. In the following figure, we plot the fold change in the GCamp6 flourescence vs. the mean stimulus applied. The additional plots show some controls. 
+
+p = '/local-data/DA-paper/GCamp6/ephys';
+[PID, ~, ~, paradigm, orn, fly, AllControlParadigms, paradigm_hashes, sequence,calcium_test,calcium_control] = consolidateDataCalcium(p,1);
+
+% first figure out which are pulses and which are not
+pulses = isnan(PID(50e3,:));
+
+% mark some data as shit
+calcium_test(:,nansum(calcium_test) == 0) = NaN;
+calcium_control(:,nansum(calcium_control) == 0) = NaN;
+
+% normalise calcium signals by pre-stimulus mean
+calcium_test_fold = calcium_test;
+calcium_control_fold = calcium_control;
+for i = 1:width(PID)
+	calcium_control_fold(:,i) = calcium_control_fold(:,i)/mean(calcium_control_fold(1e3:5e3,i));
+	calcium_test_fold(:,i) = calcium_test_fold(:,i)/mean(calcium_test_fold(1e3:5e3,i));
+end
+
+% fit exponentials to rise phases
+all_tau = NaN*paradigm;
+for i = 1:width(PID)
+	try
+		temp = calcium_test_fold(:,i);
+		[~,loc] = max(temp);
+		temp = temp(5e3+130:loc);
+		temp = temp - temp(1);
+		temp = temp/max(temp);
+		ft=fittype('1- exp(-x./tau)');
+		fo = fitoptions(ft);
+		fo.Robust = 'on';
+		fo.StartPoint = 1;
+		t = 1:length(temp);
+		ff = fit(t(:),temp(:),ft,fo);
+		all_tau(i) = ff.tau;
+	catch
+	end
+end
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,3,1), hold on
+plot(mean(PID(6e3:9e3,:)) - mean(PID(1e3:5e3,:)),mean(calcium_test_fold(6e3:9e3,:)),'r+')
+plot(mean(PID(6e3:9e3,:)) - mean(PID(1e3:5e3,:)),mean(calcium_control_fold(6e3:9e3,:)),'k+')
+xlabel('\Delta PID(V)')
+ylabel('GCamp6 flourescence (fold change)')
+
+subplot(1,3,2), hold on
+plot(mean(PID(6e3:9e3,:)) - mean(PID(1e3:5e3,:)),mean(calcium_test(1e3:5e3,:)),'r+')
+xlabel('\Delta PID(V)')
+ylabel('Pre-stimulus flourescence (a.u.)')
+
+subplot(1,3,3), hold on
+plot(mean(PID(6e3:9e3,:)) - mean(PID(1e3:5e3,:)),all_tau,'r+')
+xlabel('\Delta PID(V)')
+ylabel('\tau_{Calcium} (ms)')
+
+prettyFig('fs=20;');
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% It looks like the calcium fold change increases with stimulus amplitudes, but there are some trials where the pre-stimulus flourescene levels are very high. If we exclude those, the data looks like this:
+
+only_these = mean(calcium_test(1e3:5e3,:)) < 1e6;
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,3,1), hold on
+plot(mean(PID(6e3:9e3,only_these)) - mean(PID(1e3:5e3,only_these)),mean(calcium_test_fold(6e3:9e3,only_these)),'r+')
+plot(mean(PID(6e3:9e3,only_these)) - mean(PID(1e3:5e3,only_these)),mean(calcium_control_fold(6e3:9e3,only_these)),'k+')
+xlabel('\Delta PID(V)')
+ylabel('GCamp6 flourescence (fold change)')
+
+subplot(1,3,2), hold on
+plot(mean(PID(6e3:9e3,only_these)) - mean(PID(1e3:5e3,only_these)),mean(calcium_test(1e3:5e3,only_these)),'r+')
+xlabel('\Delta PID(V)')
+ylabel('Pre-stimulus flourescence (a.u.)')
+
+subplot(1,3,3), hold on
+plot(mean(PID(6e3:9e3,only_these)) - mean(PID(1e3:5e3,only_these)),all_tau(only_these),'r+')
+xlabel('\Delta PID(V)')
+ylabel('\tau_{Calcium} (ms)')
+
+prettyFig('fs=20;');
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+return
+
+%% Odour-induced intracellular Calcium in ORNs
 % In this document, we document our efforts to determine if intracellular Calcium levels increase on odour. We measure, simultaneously, 
 % 
 % # the odour stimulus

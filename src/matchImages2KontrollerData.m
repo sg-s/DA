@@ -128,7 +128,7 @@ for i = 1:length(all_kontroller_files)
 
 					roi_signals = zeros(size(images,3),1);
 					temp = images.*repmat(control_roi_mask,1,1,length(roi_signals));
-					temp = (squeeze(sum(sum(temp,1))));
+					temp = removePointDefects(squeeze(sum(sum(temp,1))));
 
 					% interpolate to 1ms resolution 
 					data(paradigm).GCamp6_control_roi(trial,:) = interp1(t,temp,1e-3:1e-3:max(t));
@@ -136,11 +136,17 @@ for i = 1:length(all_kontroller_files)
 					% now do the test ROI
 					roi_signals = zeros(size(images,3),1);
 					temp = images.*repmat(test_roi_mask,1,1,length(roi_signals));
-					temp = (squeeze(sum(sum(temp,1))));
+					temp = removePointDefects(squeeze(sum(sum(temp,1))));
+
+					figure, hold on
+					plot(temp)
+					drawnow
+					close all
 
 					% interpolate to 1ms resolution 
 					data(paradigm).GCamp6_test_roi(trial,:) = interp1(t,temp,1e-3:1e-3:max(t));
-				catch
+				catch er
+					disp(er.message)
 					warning('Something went horribly wrong, kontroller data is missing!')
 				end
 			else

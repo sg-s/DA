@@ -40,6 +40,10 @@ tic
 p = '/local-data/DA-paper/GCamp6/ephys/steps/';
 [PID, LPF, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes, sequence,calcium_test,calcium_control] = consolidateDataCalcium(p,1);
 
+% thierry'y comment
+aasdas = [];
+
+
 % mark some data as shit
 calcium_test(:,nansum(calcium_test) == 0) = NaN;
 calcium_control(:,nansum(calcium_control) == 0) = NaN;

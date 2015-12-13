@@ -289,8 +289,40 @@ if being_published
 	delete(gcf)
 end
 
+%% Reconstructing the gain filter
+% In the previous section, we have used a square filter whose length we varied. In this section, we generalize the analysis by parameterizing the filter shape, and finding the best parameters that can account for the observed variation in instantaneous gain. The following figure shows the best-fit filter from this case (parameterized by a sum of two gamma functions). As we can see, a purely integrating filter is chosen, with a time-scale roughly comparable to the timescale predicted by the previous analysis. 
 
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+clear q
+q.   A = 0.3585;
+q.tau1 = 161;
+q.tau2 = 166.6;
+q.   n = 2;
+K = filter_gamma2(1:2e3,q);
+plot(1e-3*(1:length(K)),K,'r')
+xlabel('Filter Lag (s)')
+ylabel('Gain filter')
 
+shat = filter(K,1,mean_pid);
+
+% fit a power law
+rm_this = isnan(inst_gain) | isnan(shat);
+temp = inst_gain(~rm_this);
+shat(rm_this) = [];
+
+subplot(1,2,2), hold on
+l= plotPieceWiseLinear(shat,temp,'nbins',50,'Color','k','use_std',true);
+legend(l.line,['\rho =' oval(spear(shat(1:10:end),temp(1:10:end)))])
+xlabel('Projected Stimulus (a.u.)')
+ylabel('Inst. Gain (Hz/V)')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %% Supplementary Figure: LN models cannot account for this
 

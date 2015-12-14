@@ -80,7 +80,7 @@ mean_pid = NaN(length(c),1);
 % plot some stimulus
 example_dose = 3;
 plot_these=find(strcmp(paradigm_names{example_dose}, combined_data.paradigm));
-plot_this = mean(combined_data.PID(plot_these,:),2);
+plot_this = mean(combined_data.PID(plot_these,:));
 time = dt*(1:length(plot_this));
 axes(axes_handles(1))
 plot(time,plot_this,'Color',c(example_dose,:));

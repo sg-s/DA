@@ -207,7 +207,7 @@ reshaped_calcium_control = reshape(reshaped_calcium_control,block_length,width(r
 figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
 subplot(2,3,1), hold on
 t = 1e-3*(1:block_length);
-plot(t,reshaped_PID,'Color',[.5 .5 .5 .1])
+plot(t,reshaped_PID,'Color',[.5 .5 .5])
 xlabel('Time since switch (s)')
 ylabel('PID (V)')
 
@@ -224,7 +224,7 @@ title(['p = ' oval(p)])
 
 subplot(2,3,2), hold on
 t = 1e-3*(1:block_length);
-plot(t,reshaped_calcium_test,'Color',[.5 .5 .5 .1])
+plot(t,reshaped_calcium_test,'Color',[.5 .5 .5])
 xlabel('Time since switch (s)')
 ylabel('Calcium Test ROI (fold change)')
 
@@ -244,7 +244,7 @@ title(['t-test p = ' oval(p)])
 
 subplot(2,3,3), hold on
 t = 1e-3*(1:block_length);
-plot(t,reshaped_calcium_control,'Color',[.5 .5 .5 .1])
+plot(t,reshaped_calcium_control,'Color',[.5 .5 .5])
 xlabel('Time since switch (s)')
 ylabel('Calcium Control (fold change)')
 

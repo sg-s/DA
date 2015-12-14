@@ -8,30 +8,31 @@
 
 function r2 = findBestGainFilter(S,p)
 
+r2 = 0;
+
 global inst_gain	
 
-% parameters
+% parameters for clarity
 p.A;
 p.tau1;
 p.tau2;
+p.n;
 
 % bounds
 ub.tau1 = 300;
 ub.tau2 = 400;
 ub.A = 1;
+ub.n = 10;
 
 lb.tau1 = 1;
 lb.tau2 = 1;
 lb.A = 0;
-
-q = p;
-q.n = 2;
+lb.n = .1;
 
 % make the filter
-K = filter_gamma2(1:2e3,q);
+K = filter_gamma2(1:2e3,p);
 
 if any(isnan(K))
-	r2 = 0;
 	return
 end
 
@@ -44,15 +45,8 @@ temp = inst_gain(~rm_this);
 shat(rm_this) = [];
 
 try
-	% ff = fit(shat(:),temp(:),'power1','StartPoint',[0 0]);
-
-	% % find best-correlation 
-	% r2 = rsquare(ff(shat),temp);
-
 	% use the Spearman rank correlation
 	r2 = abs(spear(temp(1:10:end),shat(1:10:end)));
 
 catch
-	r2 = 0;
-	return
 end

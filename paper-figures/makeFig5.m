@@ -292,14 +292,16 @@ end
 %% Reconstructing the gain filter
 % In the previous section, we have used a square filter whose length we varied. In this section, we generalize the analysis by parameterizing the filter shape, and finding the best parameters that can account for the observed variation in instantaneous gain. The following figure shows the best-fit filter from this case (parameterized by a sum of two gamma functions). As we can see, a purely integrating filter is chosen, with a time-scale roughly comparable to the timescale predicted by the previous analysis. 
 
+
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 subplot(1,2,1), hold on
-clear q
-q.   A = 0.3585;
-q.tau1 = 161;
-q.tau2 = 166.6;
-q.   n = 2;
-K = filter_gamma2(1:2e3,q);
+clear p
+p.   A = 0.0386;
+p.tau1 = 299.8428;
+p.tau2 = 300.3500;
+p.   n = 0.7266;
+
+K = filter_gamma2(1:2e3,p);
 plot(1e-3*(1:length(K)),K,'r')
 xlabel('Filter Lag (s)')
 ylabel('Gain filter')
@@ -312,7 +314,7 @@ temp = inst_gain(~rm_this);
 shat(rm_this) = [];
 
 subplot(1,2,2), hold on
-l= plotPieceWiseLinear(shat,temp,'nbins',50,'Color','k','use_std',true);
+l = plotPieceWiseLinear(shat,temp,'nbins',50,'Color','k','use_std',true);
 legend(l.line,['\rho =' oval(spear(shat(1:10:end),temp(1:10:end)))])
 xlabel('Projected Stimulus (a.u.)')
 ylabel('Inst. Gain (Hz/V)')
@@ -325,6 +327,7 @@ if being_published
 end
 
 %% Supplementary Figure: LN models cannot account for this
+% In this section we show that a static output nonlinearity cannot account for observed fast gain control. 
 
 fp = mean(fp,2);
 temp =fit(fp(~(isnan(fp) | isnan(R))),R(~(isnan(fp) | isnan(R))),'poly1');

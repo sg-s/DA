@@ -389,7 +389,6 @@ if being_published
 	delete(gcf)
 end
 
-return
 %         ######  ##     ## ########  ########     ######## ####  ######         ##   
 %        ##    ## ##     ## ##     ## ##     ##    ##        ##  ##    ##      ####   
 %        ##       ##     ## ##     ## ##     ##    ##        ##  ##              ##   
@@ -482,130 +481,132 @@ return
 %       ##    ## ##        ##       ##       ##     ## ##     ## ##        ##    ## 
 %        ######  ##        ######## ######## ########   #######  ##         ######  
 
-%% Figure 3: ORNs speed up responses on increasing stimulus mean
+% no longer doing this figure
+
+% Figure 3: ORNs speed up responses on increasing stimulus mean
 % ORN gain may permit responses to occur with smaller delays, as ORNs need to integrate the stimulus over a smaller duration to respond. Speedup in responses can be estimated using the peak times of linear filters fit to increasing mean concentrations of odorant (colours, in A). ORN response speedups with increasing stimulus mean can also be estimated in a model-free manner using the spike-triggered average (STA, B). Both methods suggest that response delays decrease with increasing mean stimulus (C). 
 
-figure('outerposition',[0 0 1100 800],'PaperUnits','points','PaperSize',[1100 800]); hold on
-clear axes_handles
-axes_handles(1) = subplot(2,2,1); hold on
+% figure('outerposition',[0 0 1100 800],'PaperUnits','points','PaperSize',[1100 800]); hold on
+% clear axes_handles
+% axes_handles(1) = subplot(2,2,1); hold on
 
-ac_mean = zeros(20e3+1,8);
-ac_std = zeros(20e3+1,8);
-clear a
-for i = 1:8
-	this_ac = [];
-	for j = 1:13
+% ac_mean = zeros(20e3+1,8);
+% ac_std = zeros(20e3+1,8);
+% clear a
+% for i = 1:8
+% 	this_ac = [];
+% 	for j = 1:13
 		
-		stim = (MSG_data(i,j).stim);
-		if ~isempty(stim)
-			if ~isvector(stim)
-				stim = mean(stim,2);
-			end
-			[~,~,temp]=findCorrelationTime(stim);
-			this_ac = [this_ac temp];
-		end
-	end
-	if isvector(this_ac)
-		ac_mean(:,i) = (this_ac);
-	else
-		ac_mean(:,i) = mean(this_ac,2);
-	end
-	ac_std(:,i) = sem(this_ac);
-end
+% 		stim = (MSG_data(i,j).stim);
+% 		if ~isempty(stim)
+% 			if ~isvector(stim)
+% 				stim = mean(stim,2);
+% 			end
+% 			[~,~,temp]=findCorrelationTime(stim);
+% 			this_ac = [this_ac temp];
+% 		end
+% 	end
+% 	if isvector(this_ac)
+% 		ac_mean(:,i) = (this_ac);
+% 	else
+% 		ac_mean(:,i) = mean(this_ac,2);
+% 	end
+% 	ac_std(:,i) = sem(this_ac);
+% end
 
-time = 1e-3*(1:length(ac_mean));
-for i = 1:8
-	[~,si(i)] = errorShade(time,ac_mean(:,i),ac_std(:,i),'Color',c(i,:));
-end
-for i = 1:8
-	uistack(si(i), 'bottom')
-end
-set(gca,'XScale','log','XLim',[5e-3 2],'YLim',[-.4 1])
-xlabel('Lag (s)')
-ylabel('Stimulus Autocorrelation')
+% time = 1e-3*(1:length(ac_mean));
+% for i = 1:8
+% 	[~,si(i)] = errorShade(time,ac_mean(:,i),ac_std(:,i),'Color',c(i,:));
+% end
+% for i = 1:8
+% 	uistack(si(i), 'bottom')
+% end
+% set(gca,'XScale','log','XLim',[5e-3 2],'YLim',[-.4 1])
+% xlabel('Lag (s)')
+% ylabel('Stimulus Autocorrelation')
 
-ac_mean = zeros(20e3+1,8);
-ac_std = zeros(20e3+1,8);
-a = [];
-for i = 1:8
-	this_ac = [];
-	for j = 1:13
+% ac_mean = zeros(20e3+1,8);
+% ac_std = zeros(20e3+1,8);
+% a = [];
+% for i = 1:8
+% 	this_ac = [];
+% 	for j = 1:13
 		
-		stim = (MSG_data(i,j).resp);
-		if ~isempty(stim)
-			if ~isvector(stim)
-				stim = mean(stim,2);
-			end
-			[~,~,temp]=findCorrelationTime(stim);
-			this_ac = [this_ac temp];
-		end
-	end
-	if isvector(this_ac)
-		ac_mean(:,i) = (this_ac);
-	else
-		ac_mean(:,i) = mean(this_ac,2);
-	end
-	ac_std(:,i) = sem(this_ac);
-end
+% 		stim = (MSG_data(i,j).resp);
+% 		if ~isempty(stim)
+% 			if ~isvector(stim)
+% 				stim = mean(stim,2);
+% 			end
+% 			[~,~,temp]=findCorrelationTime(stim);
+% 			this_ac = [this_ac temp];
+% 		end
+% 	end
+% 	if isvector(this_ac)
+% 		ac_mean(:,i) = (this_ac);
+% 	else
+% 		ac_mean(:,i) = mean(this_ac,2);
+% 	end
+% 	ac_std(:,i) = sem(this_ac);
+% end
 
-axes_handles(2) = subplot(2,2,2); hold on
-time = 1e-3*(1:length(ac_mean));
-for i = 1:8
-	[~,si(i)] = errorShade(time,ac_mean(:,i),ac_std(:,i),'Color',c(i,:));
-end
-for i = 1:8
-	uistack(si(i), 'bottom')
-end
-set(gca,'XScale','log','XLim',[5e-3 2],'YLim',[-.4 1])
-xlabel('Lag (s)')
-ylabel('Response Autocorrelation')
+% axes_handles(2) = subplot(2,2,2); hold on
+% time = 1e-3*(1:length(ac_mean));
+% for i = 1:8
+% 	[~,si(i)] = errorShade(time,ac_mean(:,i),ac_std(:,i),'Color',c(i,:));
+% end
+% for i = 1:8
+% 	uistack(si(i), 'bottom')
+% end
+% set(gca,'XScale','log','XLim',[5e-3 2],'YLim',[-.4 1])
+% xlabel('Lag (s)')
+% ylabel('Response Autocorrelation')
 
 
-% fit parametric filters to the raw, neuron-wise filters extracted earlier 
+% % fit parametric filters to the raw, neuron-wise filters extracted earlier 
+% % for i = 1:8
+% % 	for j = 1:13
+% % 		if ~isempty(MSG_data(i,j).K)
+% % 			d.stimulus = MSG_data(i,j).K(200:end);
+% % 			d.response = MSG_data(i,j).K(200:end);
+% % 			for k = 1:5
+% % 				MSG_data(i,j).p = fitModel2Data(@FitFilter,d,MSG_data(i,j).p);
+% % 			end
+% % 		end
+% % 	end
+% % end
+
+% % show filter speedups
+% axes_handles(3) = subplot(2,2,3); hold on
+
+% % compute peak locations of all these filters
+% clear l 
+% l = zeros(8,1);
+% peak_loc_K = NaN(8,13);
+% mean_stim_K = NaN(8,13);
 % for i = 1:8
 % 	for j = 1:13
 % 		if ~isempty(MSG_data(i,j).K)
-% 			d.stimulus = MSG_data(i,j).K(200:end);
-% 			d.response = MSG_data(i,j).K(200:end);
-% 			for k = 1:5
-% 				MSG_data(i,j).p = fitModel2Data(@FitFilter,d,MSG_data(i,j).p);
-% 			end
+% 			K2 = pFilter(MSG_data(i,j).K(200:end),MSG_data(i,j).p);
+% 			filtertime = 1e-3*(1:length(K2));
+% 			l(i)=plot(filtertime,K2,'Color',c(i,:));
+% 			[~,loc] = max(K2);
+% 			peak_loc_K(i,j) = filtertime(loc);
+
+% 			mean_stim_K(i,j) = mean(mean(MSG_data(i,j).stim));
+
 % 		end
 % 	end
 % end
 
-% show filter speedups
-axes_handles(3) = subplot(2,2,3); hold on
 
-% compute peak locations of all these filters
-clear l 
-l = zeros(8,1);
-peak_loc_K = NaN(8,13);
-mean_stim_K = NaN(8,13);
-for i = 1:8
-	for j = 1:13
-		if ~isempty(MSG_data(i,j).K)
-			K2 = pFilter(MSG_data(i,j).K(200:end),MSG_data(i,j).p);
-			filtertime = 1e-3*(1:length(K2));
-			l(i)=plot(filtertime,K2,'Color',c(i,:));
-			[~,loc] = max(K2);
-			peak_loc_K(i,j) = filtertime(loc);
-
-			mean_stim_K(i,j) = mean(mean(MSG_data(i,j).stim));
-
-		end
-	end
-end
-
-
-set(gca,'XLim',[-.01 .5])
-xlabel('Lag (s)')
-ylabel('Filter (norm)')
-L = paradigm_names;
-for i = 1:length(L)
-	L{i} = L{i}(strfind(L{i},'-')+1:end);
-end
-legend(l,L);
+% set(gca,'XLim',[-.01 .5])
+% xlabel('Lag (s)')
+% ylabel('Filter (norm)')
+% L = paradigm_names;
+% for i = 1:length(L)
+% 	L{i} = L{i}(strfind(L{i},'-')+1:end);
+% end
+% legend(l,L);
 
 
 % % compute STA for all the data
@@ -694,37 +695,37 @@ legend(l,L);
 % 	ey(i) = sem(nonnans(peak_STA(dil == udil(i))));
 % end
 
-axes_handles(4) = subplot(2,2,4); hold on
+% axes_handles(4) = subplot(2,2,4); hold on
 
 
-l = errorbar(nanmean(mean_stim'),1e3*nanmean(peak_loc_K'),1e3*nanstd(peak_loc_K')./sqrt(sum(~isnan(peak_loc_K)')),'k.');
+% l = errorbar(nanmean(mean_stim'),1e3*nanmean(peak_loc_K'),1e3*nanstd(peak_loc_K')./sqrt(sum(~isnan(peak_loc_K)')),'k.');
 
 
-% calculate Spearman's rho (http://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient)
-s2 = spear(nonnans(mean_stim_K(:)),nonnans(peak_loc_K(:)));
+% % calculate Spearman's rho (http://en.wikipedia.org/wiki/Spearman%27s_rank_correlation_coefficient)
+% s2 = spear(nonnans(mean_stim_K(:)),nonnans(peak_loc_K(:)));
 
-legend(l,{strcat('\rho=',oval(s2))})
-set(gca,'YLim',[20 130])
-ylabel('Peak time (ms)')
-xlabel('Mean Stimulus (V)')
+% legend(l,{strcat('\rho=',oval(s2))})
+% set(gca,'YLim',[20 130])
+% ylabel('Peak time (ms)')
+% xlabel('Mean Stimulus (V)')
 
-prettyFig('fs=20;');
+% prettyFig('fs=20;');
 
-set(axes_handles(1),'XTick',[1e-2 1e-1 1e0 ])
-set(axes_handles(2),'XTick',[1e-2 1e-1 1e0 ])
+% set(axes_handles(1),'XTick',[1e-2 1e-1 1e0 ])
+% set(axes_handles(2),'XTick',[1e-2 1e-1 1e0 ])
 
 
-if being_published
-	snapnow
-	delete(gcf)
-end
+% if being_published
+% 	snapnow
+% 	delete(gcf)
+% end
 
-prettyFig()
+% prettyFig()
 
-if being_published
-	snapnow
-	delete(gcf)
-end
+% if being_published
+% 	snapnow
+% 	delete(gcf)
+% end
 
 
 %% Version Info

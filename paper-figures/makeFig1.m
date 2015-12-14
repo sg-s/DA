@@ -26,9 +26,12 @@ end
 tic
 
 
-%% Figure 1
+%% Figure 1: Gain changes with a naturalistic stimulus
+% 
 
 clearvars -except being_published 
+
+scatter_size = 12;
 
 % make figure placeholders 
 fig_handle=figure('outerposition',[0 0 800 950],'PaperUnits','points','PaperSize',[800 950]); hold on
@@ -77,7 +80,7 @@ PID_baseline = mean(mean(PID(1:5e3,:)));
 PID = PID - PID_baseline;
 
 
-plot(axes_handles(4),tA(1:10:end),mean2(PID(1:10:end,:)),'Color',[0.2 .2 .2]);
+plot(axes_handles(4),tA(1:10:end),mean(PID(1:10:end,:),2),'Color',[0.2 .2 .2]);
 set(axes_handles(4),'XLim',[0 70],'YLim',[0 7],'XTick',[])
 ylabel(axes_handles(4),'Stimulus (V)')
 
@@ -93,7 +96,7 @@ for i = 1:width(PID)
 	[y(:,i),x] = histcounts(PID(:,i),300);x(1) = [];
 	y(:,i) = y(:,i)/sum(y(:,i));
 end
-errorShade(x,mean2(y),sem(y'),'Color',[.2 .2 .2]);
+errorShade(x,mean(y,2),sem(y'),'Color',[.2 .2 .2]);
 warning off % because there are some -ve values on the log scale
 set(axes_handles(1),'XScale','log','YScale','log','XLim',[min(x) 10],'YLim',[1e-5 1],'YTick',logspace(-5,0,6))
 xlabel(axes_handles(1),'Stimulus (V)')
@@ -136,14 +139,14 @@ xlabel(axes_handles(3),'Blank duration (ms)')
 
 
 % make a linear filter
-R = mean2(fA);
-[K, filtertime_full] = fitFilter2Data(mean2(PID),R,'reg',1,'filter_length',1999,'offset',500);
+R = mean(fA,2);
+[K, filtertime_full] = fitFilter2Data(mean(PID,2),R,'reg',1,'filter_length',1999,'offset',500);
 filtertime_full = filtertime_full*mean(diff(tA));
 filtertime = 1e-3*(-200:900);
 K = interp1(filtertime_full,K,filtertime);
 
 % convolve with filter to make prediction
-fp = convolve(tA,mean2(PID),K,filtertime);
+fp = convolve(tA,mean(PID,2),K,filtertime);
 
 % plot the response and the prediction
 clear l
@@ -156,7 +159,7 @@ ylabel(ax(1),'ab3A Response (Hz)')
 ylabel(ax(2),'Projected Stimulus (V)')
 set(axes_handles(5),'box','off')
 
-shat = computeSmoothedStimulus(mean2(PID),500);
+shat = computeSmoothedStimulus(mean(PID,2),500);
 shat = shat-min(shat);
 shat = shat/max(shat);
 shat = 1+ceil(shat*99);
@@ -164,15 +167,13 @@ shat(isnan(shat)) = 1;
 
 % make the output analysis plot
 axes(axes_handles(6))
-ss = 1;
 cc = parula(100);
 c = cc(shat,:);
 ab3.c = c;
-scatter(fp(1:ss:end),R(1:ss:end),[],'k','filled')
-scatter(fp(1:ss:end),R(1:ss:end),[],c(1:ss:end,:),'filled')
+scatter(fp,R,scatter_size,c,'filled')
 xlabel(axes_handles(6),'Projected Stimulus (V)')
 ylabel(axes_handles(6),'ab3A response (Hz)')
-shat = computeSmoothedStimulus(mean2(PID),500);
+shat = computeSmoothedStimulus(mean(PID,2),500);
 ch = colorbar('east');
 set(ch,'Position',[.44 .1 .02 .1])
 caxis([min(shat) max(shat)]);
@@ -207,7 +208,7 @@ ab3.gain_err = gain_err;
 ab3.R = R;
 ab3.fp = fp;
 ab3.K = K;
-ab3.PID = mean2(PID);
+ab3.PID = mean(PID,2);
 
 % now also add ab2 data
 load('/local-data/DA-paper/natural-flickering/mahmut-raw/2014_07_11_EA_natflick_non_period_CFM_1_ab2_1_1_all.mat')
@@ -242,16 +243,16 @@ PID_baseline_err = std(mean(PID(1:5e3,:)));
 PID = PID - PID_baseline;
 
 % make a linear filter
-R = mean2(fA);
-[K, filtertime_full] = fitFilter2Data(mean2(PID),R,'reg',1,'filter_length',1999,'offset',500);
+R = mean(fA,2);
+[K, filtertime_full] = fitFilter2Data(mean(PID,2),R,'reg',1,'filter_length',1999,'offset',500);
 filtertime_full = filtertime_full*mean(diff(tA));
 filtertime = 1e-3*(-200:900);
 K = interp1(filtertime_full,K,filtertime);
 
 % convolve with filter to make prediction
-fp = convolve(tA,mean2(PID),K,filtertime);
+fp = convolve(tA,mean(PID,2),K,filtertime);
 
-shat = computeSmoothedStimulus(mean2(PID),500);
+shat = computeSmoothedStimulus(mean(PID,2),500);
 
 % find all excursions (defined as firing rate crossing 10Hz)
 [whiff_starts,whiff_ends] = computeOnsOffs(R>10);
@@ -325,7 +326,7 @@ end
 
 
 %% Supplmentary Figure
-% 
+% This supplementary figure shows that the choice of filter doesn't affect our results of large, rapid gain control. 
 
 figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
 
@@ -335,7 +336,7 @@ plot(filtertime,ab3.K,'b');
 
 % load MSG filter for ab3
 load('../data/MSG_per_neuron.mat');
-ab3.K_white = (mean2(reshape([MSG_data(1,:).K],1001,11)));
+ab3.K_white = mean(reshape([MSG_data(1,:).K],1001,11),2);
 t = 1e-3*(1:length(ab3.K_white))- .2;
 plot(t,ab3.K_white,'r')
 legend({'Nat. Stimulus Filter','White Noise filter'})
@@ -345,14 +346,14 @@ xlabel('Lag (s)')
 ab3.fp2 = convolve(1e-3*(1:length(ab3.PID)),ab3.PID,ab3.K_white,t);
 
 subplot(2,3,3), hold on
-scatter(ab3.fp2(1:ss:end),ab3.R(1:ss:end),[],ab3.c(1:ss:end,:),'filled')
+scatter(ab3.fp2,ab3.R,scatter_size,ab3.c,'filled')
 xlabel('Projected Stimulus (V)')
 title('using white-noise filter')
 ylabel('ab3A Response (Hz)')
 set(gca,'XColor','r','XLim',[-1 14])
 
 subplot(2,3,2), hold on
-scatter(ab3.fp(1:ss:end),ab3.R(1:ss:end),[],ab3.c(1:ss:end,:),'filled')
+scatter(ab3.fp,ab3.R,scatter_size,ab3.c,'filled')
 xlabel('Projected Stimulus (V)')
 ylabel('ab3A Response (Hz)')
 title('using nat. stimulus filter')
@@ -365,20 +366,19 @@ xlabel('Lag (s)')
 
 subplot(2,3,5), hold on
 
-shat = computeSmoothedStimulus(mean2(PID),500);
+shat = computeSmoothedStimulus(mean(PID,2),500);
 shat = shat-min(shat);
 shat = shat/max(shat);
 shat = 1+ceil(shat*99);
 shat(isnan(shat)) = 1;
 
 % make the output analysis plot
-ss = 1;
 cc = parula(100);
 c= cc(shat,:);
-scatter(fp(1:ss:end),R(1:ss:end),[],c(1:ss:end,:),'filled')
+scatter(fp,R,scatter_size,c,'filled')
 xlabel('Projected Stimulus (V)')
 ylabel('ab2A response (Hz)')
-shat = computeSmoothedStimulus(mean2(PID),500);
+shat = computeSmoothedStimulus(mean(PID,2),500);
 ch = colorbar('east');
 set(ch,'Position',[.58 .15 .02 .1])
 caxis([min(shat) max(shat)]);

@@ -170,6 +170,10 @@ end
 p = '/local-data/DA-paper/GCamp6/ephys/variance-switches';
 [PID, ~, ~, paradigm, orn, fly, AllControlParadigms, paradigm_hashes, sequence,calcium_test,calcium_control] = consolidateDataCalcium(p,1);
 
+global_start = 30e3;
+block_length = 10e3;
+
+
 % find outliers and blank them
 o = kmeans(PID(5e3:end-5e3,:)',2);
 PID(:,(o ~= mode(o))) = NaN;
@@ -189,8 +193,6 @@ for i = 1:length(paradigm)
 	calcium_control(a:z,i) = calcium_control(a:z,i) - ff(a:z) + mean(calcium_control(a:z,i));
 end
 
-global_start = 30e3;
-block_length = 10e3;
 
 % reshape signals into blocks
 reshaped_PID = PID(global_start:end-1e4-1,1:width(PID));

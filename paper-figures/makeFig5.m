@@ -41,6 +41,9 @@ tic
 %          ######   #######  ##    ##    ##    ##     ##  #######  ######## 
 
 
+%% Fig 5 from paper
+% 
+
 fig_handle=figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
 clf(fig_handle);
 axes_handles(1) = subplot(10,3,1:9); 
@@ -192,7 +195,7 @@ if being_published
 end
 
 %% Test Figure: How does instantaneous gain depend on various history lengths? 
-% In this section, we look at a generalized version of the plot of instate nous gain vs. mean history in the last 500ms, where we now vary the length of the history length, and see how the slope of the gain plot changes, as well as how well it is fit by a straight line. 
+% In this section, we look at a generalized version of the plot of instate nous gain vs. mean history in the last 500ms, where we now vary the length of the history length, and see how the slope of the gain plot changes, as well as how well it is fit by a straight line. First, we plot the inst. gain vs. stimulus projected by a box filter, for various lengths of the box filter.
 
 [~,inst_gain] = makeFig6G(mean(PID,2),mean(fA,2),mean(fp,2),500);
 mean_pid = mean(PID,2);
@@ -207,6 +210,8 @@ gain_K2_rho = NaN*history_lengths;
 gain_K3_slope = NaN*history_lengths;
 gain_K3_rho = NaN*history_lengths;
 
+figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+c = parula(length(history_lengths)+1);
 for i = 1:length(history_lengths)
 	% first do the simple box filter
 	temp = floor(history_lengths(i)*1e3);
@@ -217,10 +222,16 @@ for i = 1:length(history_lengths)
 	y = inst_gain;
 	y(rm_this) = [];
 
+	if rem(i,3) == 0
+		plotPieceWiseLinear(temp,y,'Color',c(i,:),'nbins',20);
+	end
+
 	ff = fit(temp(:),y(:),'power1','StartPoint',[0 0]);
-	gain_K1_rho(i) = rsquare(ff(temp),y);
+	temp = ff(temp);
+	gain_K1_rho(i) = spear(temp(1:10:end),y(1:10:end));
 	gain_K1_slope(i) = ff.b;
 
+	
 	% now do a squared differentiating filter
 	temp = floor(history_lengths(i)*1e3/2);
 	temp = filter([ones(temp,1); -ones(temp,1)],2*temp,mean_pid);
@@ -232,7 +243,8 @@ for i = 1:length(history_lengths)
 	y(rm_this) = [];
 
 	ff = fit(temp(:),y(:),'power1','StartPoint',[0 0]);
-	gain_K2_rho(i) = rsquare(ff(temp),y);
+	temp = ff(temp);
+	gain_K2_rho(i) = spear(temp(1:10:end),y(1:10:end));
 	gain_K2_slope(i) = ff.b;
 
 	% now do a absolute value of differentiating filter
@@ -246,16 +258,30 @@ for i = 1:length(history_lengths)
 	y(rm_this) = [];
 
 	ff = fit(temp(:),y(:),'power1','StartPoint',[0 0]);
-	gain_K3_rho(i) = rsquare(ff(temp),y);
+	temp = ff(temp);
+	gain_K3_rho(i) = spear(temp(1:10:end),y(1:10:end));
 	gain_K3_slope(i) = ff.b;
 
 end
+
+xlabel('Projected Stimulus (V)')
+ylabel('Inst. Gain (Hz/V)')
+set(gca,'YScale','log')
+
+prettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% We now plot the slopes of these plots as a function of history length, and also plot the Spearman rank correlation, showing where these slopes are meaningful (and where there is little correlation between inst. gain and the projected stimulus). 
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 h1 = subplot(1,3,1); hold on
 ax = plotyy(history_lengths,gain_K1_slope,history_lengths,gain_K1_rho);
 ylabel(ax(1),'Gain Exponent')
-ylabel(ax(2),'r^2')
+ylabel(ax(2),'\rho')
 xlabel('History Length (s)')
 title('Integrating Filter')
 set(ax,'XScale','log')
@@ -264,7 +290,7 @@ set(ax(2),'YLim',[0 1])
 subplot(1,3,2), hold on
 ax = plotyy(history_lengths,gain_K2_slope,history_lengths,gain_K2_rho);
 ylabel(ax(1),'Gain Exponent')
-ylabel(ax(2),'r^2')
+ylabel(ax(2),'\rho')
 xlabel('History Length (s)')
 title('Sq. Differentiating Filter')
 set(ax,'XScale','log')
@@ -273,7 +299,7 @@ set(ax(2),'YLim',[0 1])
 h3= subplot(1,3,3); hold on
 ax = plotyy(history_lengths,gain_K3_slope,history_lengths,gain_K3_rho);
 ylabel(ax(1),'Gain Exponent')
-ylabel(ax(2),'r^2')
+ylabel(ax(2),'\rho')
 xlabel('History Length (s)')
 title('Abs. Differentiating Filter')
 set(ax,'XScale','log')
@@ -315,9 +341,10 @@ shat(rm_this) = [];
 
 subplot(1,2,2), hold on
 l = plotPieceWiseLinear(shat,temp,'nbins',50,'Color','k','use_std',true);
-legend(l.line,['\rho =' oval(spear(shat(1:10:end),temp(1:10:end)))])
-xlabel('Projected Stimulus (a.u.)')
+legend(l.line(1),['\rho =' oval(spear(shat(1:10:end),temp(1:10:end)),3)])
+xlabel('Stimulus projected by gain filter (a.u.)')
 ylabel('Inst. Gain (Hz/V)')
+set(gca,'YScale','log')
 
 prettyFig();
 

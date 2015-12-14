@@ -80,7 +80,7 @@ mean_pid = NaN(length(c),1);
 % plot some stimulus
 example_dose = 3;
 plot_these=find(strcmp(paradigm_names{example_dose}, combined_data.paradigm));
-plot_this = mean2(combined_data.PID(plot_these,:));
+plot_this = mean(combined_data.PID(plot_these,:),2);
 time = dt*(1:length(plot_this));
 axes(axes_handles(1))
 plot(time,plot_this,'Color',c(example_dose,:));
@@ -118,7 +118,7 @@ load('../data/MSG_per_neuron.mat','MSG_data')
 filtertime = (-200:800)*1e-3;
 K = reshape([MSG_data(example_dose,:).K],1001,length([MSG_data(example_dose,:).K])/1001);
 axes(axes_handles(3))
-shadedErrorBar(filtertime,mean2(K),sem(K'),{'Color',c(example_dose,:)})
+shadedErrorBar(filtertime,mean(K,2),sem(K'),{'Color',c(example_dose,:)})
 set(axes_handles(3),'XLim',[min(filtertime) max(filtertime)])
 xlabel(axes_handles(3),'Lag (s)')
 ylabel(axes_handles(3),'Filter K (norm)')
@@ -128,10 +128,10 @@ ylabel(axes_handles(3),'Filter K (norm)')
 for i = 1:8
 	for j = 1:13
 		if width(MSG_data(i,j).stim) > 1
-			this_stim = mean2(MSG_data(i,j).stim);
-			this_resp = mean2(MSG_data(i,j).resp);
-			MSG_data(i,j).fp = convolve(MSG_data(i,j).time,mean2(MSG_data(i,j).stim),[0 0 MSG_data(i,j).K(3:end)],filtertime) ;
-			MSG_data(i,j).r2 = rsquare(MSG_data(i,j).fp,mean2(MSG_data(i,j).resp));
+			this_stim = mean(MSG_data(i,j).stim,2);
+			this_resp = mean(MSG_data(i,j).resp,2);
+			MSG_data(i,j).fp = convolve(MSG_data(i,j).time,mean(MSG_data(i,j).stim,2),[0 0 MSG_data(i,j).K(3:end)],filtertime) ;
+			MSG_data(i,j).r2 = rsquare(MSG_data(i,j).fp,mean(MSG_data(i,j).resp,2));
 		end
 	end
 end
@@ -139,8 +139,8 @@ end
 
 % plot linear prediction vs. data for the example dose. 
 ss = 25;
-y = mean2([MSG_data(example_dose,:).resp]);
-x = mean2([MSG_data(example_dose,:).fp]);
+y = mean([MSG_data(example_dose,:).resp],2);
+x = mean([MSG_data(example_dose,:).fp],2);
 time = 35+1e-3*(1:length([MSG_data(example_dose,:).fp]));
 
 
@@ -212,7 +212,7 @@ end
 
 % plot all the stimuli
 for i = 1:8
-	plot(ax(1),MSG_data(1,1).time,mean2([MSG_data(i,:).stim]),'Color',c(i,:))
+	plot(ax(1),MSG_data(1,1).time,mean([MSG_data(i,:).stim],2),'Color',c(i,:))
 end
 
 % plot the stimulus distributions 
@@ -231,8 +231,8 @@ end
 % plot the responses
 for i = 1:8
 	temp = [MSG_data(i,:).resp];
-	plot(ax(3),MSG_data(1,1).time,mean2(temp),'Color',c(i,:));
-	[hx,hy] = hist(mean2(temp),30);
+	plot(ax(3),MSG_data(1,1).time,mean(temp,2),'Color',c(i,:));
+	[hx,hy] = hist(mean(temp,2),30);
 	hx = hx/sum(hx);
 	plot(ax(4),hx,hy,'Color',c(i,:));
 end
@@ -248,15 +248,15 @@ for i = 1:8 % iterate over all paradigms
 	x = ([MSG_data(i,:).fp]);
 	s = ([MSG_data(i,:).stim]);
 	if ~isvector(x)
-		x = mean2(x);
+		x = mean(x,2);
 		
 	end
 	if ~isvector(s)
-		s = mean2(s);
+		s = mean(s,2);
 	end
 
 	if ~isvector(y)
-		y = mean2(y);
+		y = mean(y,2);
 	end 
 
 	%plot(ax(5),mean(s)+x(1:ss:end),y(1:ss:end),'.','Color',c(i,:))
@@ -274,10 +274,10 @@ for i = 1:8 % iterate over all paradigms
 			y = MSG_data(i,j).resp; % average over all neurons 
 			x = MSG_data(i,j).fp;
 			if ~isvector(x)
-				x = mean2(x);
+				x = mean(x,2);
 			end
 			if ~isvector(y)
-				y = mean2(y);
+				y = mean(y,2);
 			end 
 			
 			% trim NaNs again
@@ -307,7 +307,6 @@ end
 cf = fit(nanmean(mean_stim,2),nanmean(gain,2),'power1','Weights',1./gain_err(:));
 
 
-l(1)=plot(ax(6),nanmean(mean_stim,2),cf(nanmean(mean_stim,2)),'k');
 % r2 = rsquare(nonnans(gain),cf(nonnans(mean_stim)));
 % L = strcat('y = \alpha x^{\beta}, \beta= ',oval(cf.b), ',r^2 = ',oval(r2));
 
@@ -317,7 +316,7 @@ options.Lower = [-Inf -1];
 options.Upper = [Inf -1];
 options.Weights = 1./gain_err(:);
 cf = fit(nanmean(mean_stim,2),nanmean(gain,2),'power1',options);
-l(2)=plot(ax(6),nanmean(mean_stim,2),cf(nanmean(mean_stim,2)),'k--');
+l=plot(ax(6),nanmean(mean_stim,2),cf(nanmean(mean_stim,2)),'r');
 r2 = rsquare(nonnans(gain),cf(nonnans(mean_stim)));
 % legend(l,{L, strcat('y = \alpha x^{-1}, \alpha= ',oval(cf.a), ', r^2 = ',oval(r2))},'Location','northoutside')
 
@@ -331,20 +330,20 @@ for i = 1:8 % iterate over all paradigms
 	x = ([MSG_data(i,:).fp]);
 	s = ([MSG_data(i,:).stim]);
 	if ~isvector(x)
-		x = mean2(x);
+		x = mean(x,2);
 	end
 	if ~isvector(s)
-		s = mean2(s);
+		s = mean(s,2);
 	end
 	if ~isvector(y)
-		y = mean2(y);
+		y = mean(y,2);
 	end 
 
-	allx = [allx mean(y)+cf(mean2(s))*(x(1:ss:end))];
+	allx = [allx mean(y)+cf(mean(s))*(x(1:ss:end))];
 	ally = [ally y(1:ss:end)];
 	%plot(ax(7),mean(y)+cf(mean2(s))*(x(1:ss:end)),y(1:ss:end),'.','Color',c(i,:))
 
-	x = mean(y)+cf(mean2(s))*(x);
+	x = mean(y)+cf(mean(s))*(x);
 
 	plotPieceWiseLinear(x,y,'nbins',40,'Color',c(i,:));
 
@@ -500,7 +499,7 @@ for i = 1:8
 		stim = (MSG_data(i,j).stim);
 		if ~isempty(stim)
 			if ~isvector(stim)
-				stim = mean2(stim);
+				stim = mean(stim,2);
 			end
 			[~,~,temp]=findCorrelationTime(stim);
 			this_ac = [this_ac temp];
@@ -509,7 +508,7 @@ for i = 1:8
 	if isvector(this_ac)
 		ac_mean(:,i) = (this_ac);
 	else
-		ac_mean(:,i) = mean2(this_ac);
+		ac_mean(:,i) = mean(this_ac,2);
 	end
 	ac_std(:,i) = sem(this_ac);
 end
@@ -535,7 +534,7 @@ for i = 1:8
 		stim = (MSG_data(i,j).resp);
 		if ~isempty(stim)
 			if ~isvector(stim)
-				stim = mean2(stim);
+				stim = mean(stim,2);
 			end
 			[~,~,temp]=findCorrelationTime(stim);
 			this_ac = [this_ac temp];
@@ -544,7 +543,7 @@ for i = 1:8
 	if isvector(this_ac)
 		ac_mean(:,i) = (this_ac);
 	else
-		ac_mean(:,i) = mean2(this_ac);
+		ac_mean(:,i) = mean(this_ac,2);
 	end
 	ac_std(:,i) = sem(this_ac);
 end

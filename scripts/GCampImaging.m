@@ -164,7 +164,108 @@ if being_published
 	delete(gcf)
 end
 
+%% Calcium Changes with Variance
+% In this section we see how calcium changes when we change the variance of the signal, but not the mean. First, we verify that the stimulus is actually nice, and the means are close together when we change the variance. 
 
+p = '/local-data/DA-paper/GCamp6/ephys/variance-switches';
+[PID, ~, ~, paradigm, orn, fly, AllControlParadigms, paradigm_hashes, sequence,calcium_test,calcium_control] = consolidateDataCalcium(p,1);
+
+% find outliers and blank them
+o = kmeans(PID(5e3:end-5e3,:)',2);
+PID(:,(o ~= mode(o))) = NaN;
+
+% convert all calcium signals into a fold change, and remove a linear trend from them
+for i = 1:length(paradigm)
+	% fold change
+	calcium_test(:,i) = calcium_test(:,i)/mean(calcium_test(1e3:5e3,i));
+	calcium_control(:,i) = calcium_control(:,i)/mean(calcium_control(1e3:5e3,i));
+	% 
+	a = global_start;
+	z = length(PID)-5e3;
+	ff = fit((a:z)',calcium_test(a:z,i),'poly1');
+	calcium_test(a:z,i) = calcium_test(a:z,i) - ff(a:z) + mean(calcium_test(a:z,i));
+
+	ff = fit((a:z)',calcium_control(a:z,i),'poly1');
+	calcium_control(a:z,i) = calcium_control(a:z,i) - ff(a:z) + mean(calcium_control(a:z,i));
+end
+
+global_start = 30e3;
+block_length = 10e3;
+
+% reshape signals into blocks
+reshaped_PID = PID(global_start:end-1e4-1,1:width(PID));
+reshaped_PID = reshape(reshaped_PID,block_length,width(reshaped_PID)*length(reshaped_PID)/block_length);
+
+reshaped_calcium_test = calcium_test(global_start:end-1e4-1,1:width(calcium_test));
+reshaped_calcium_test = reshape(reshaped_calcium_test,block_length,width(reshaped_calcium_test)*length(reshaped_calcium_test)/block_length);
+
+reshaped_calcium_control = calcium_control(global_start:end-1e4-1,1:width(calcium_control));
+reshaped_calcium_control = reshape(reshaped_calcium_control,block_length,width(reshaped_calcium_control)*length(reshaped_calcium_control)/block_length);
+
+figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
+subplot(2,3,1), hold on
+t = 1e-3*(1:block_length);
+plot(t,reshaped_PID,'Color',[.5 .5 .5 .1])
+xlabel('Time since switch (s)')
+ylabel('PID (V)')
+
+subplot(2,3,4), hold on
+m1 =  nanmean(reshaped_PID(1e3:5e3,:));
+m2 =  nanmean(reshaped_PID(6e3:end,:));
+
+plot(1+.01*randn(length(m1),1),m1,'b+')
+plot(2+.01*randn(length(m2),1),m2,'r+')
+set(gca,'XTick',[1 2],'XTickLabel',{'Low \sigma','High \sigma'})
+ylabel('Mean PID (V)')
+[~,p] = kstest2(m1,m2);
+title(['p = ' oval(p)])
+
+subplot(2,3,2), hold on
+t = 1e-3*(1:block_length);
+plot(t,reshaped_calcium_test,'Color',[.5 .5 .5 .1])
+xlabel('Time since switch (s)')
+ylabel('Calcium Test ROI (fold change)')
+
+subplot(2,3,5), hold on
+m1 =  nanmean(reshaped_calcium_test(1e3:5e3,:));
+m2 =  nanmean(reshaped_calcium_test(6e3:end,:));
+
+m2 = m2 - m1;
+m1 = m1*0;
+
+plot(1+.01*randn(length(m1),1),m1,'b+')
+plot(2+.01*randn(length(m2),1),m2,'r+')
+set(gca,'XTick',[1 2],'XTickLabel',{'Low \sigma','High \sigma'})
+ylabel('\Delta Fold change')
+[~,p]=ttest(m2);
+title(['t-test p = ' oval(p)])
+
+subplot(2,3,3), hold on
+t = 1e-3*(1:block_length);
+plot(t,reshaped_calcium_control,'Color',[.5 .5 .5 .1])
+xlabel('Time since switch (s)')
+ylabel('Calcium Control (fold change)')
+
+subplot(2,3,6), hold on
+m1 =  nanmean(reshaped_calcium_control(1e3:5e3,:));
+m2 =  nanmean(reshaped_calcium_control(6e3:end,:));
+
+m2 = m2 - m1;
+m1 = m1*0;
+
+plot(1+.01*randn(length(m1),1),m1,'b+')
+plot(2+.01*randn(length(m2),1),m2,'r+')
+set(gca,'XTick',[1 2],'XTickLabel',{'Low \sigma','High \sigma'})
+ylabel('\Delta Fold change')
+[~,p]=ttest(m2);
+title(['t-test p = ' oval(p)])
+
+prettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %% Version Info
 % The file that generated this document is called:

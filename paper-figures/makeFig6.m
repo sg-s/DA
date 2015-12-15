@@ -95,17 +95,17 @@ for i = do_these
 	for j = 1:width(K)
 		K(:,j) = K(:,j)/max(K(:,j));
 	end
-	plot(axes_handles(1),filtertime,mean2(K))
+	plot(axes_handles(1),filtertime,mean(K,2))
 end
 clear ph
 ph(3:4) = axes_handles(2:3);
 
 
 for i = do_these
-	time = 1e-3*(1:length(mean2(data(i).PID)));
-	stimulus = mean2(data(i).PID);
-	prediction = mean2(data(i).LinearFit);
-	response = mean2(data(i).fA);
+	time = 1e-3*(1:length(mean(data(i).PID,2)));
+	stimulus = mean(data(i).PID,2);
+	prediction = mean(data(i).LinearFit,2);
+	response = mean(data(i).fA,2);
 
 	% throw out first 5 seconds
 	time = time(5e3:end);
@@ -165,7 +165,7 @@ for i = do_these
 	for j = 1:width(K)
 		K(:,j) = K(:,j)/max(K(:,j));
 	end
-	l=[l plot(axes_handles(7),filtertime,mean2(K))];
+	l=[l plot(axes_handles(7),filtertime,mean(K,2))];
 end
 legend(l,{'pb1A','ab3A'})
 
@@ -173,10 +173,10 @@ legend(l,{'pb1A','ab3A'})
 clear ph
 ph(3:4) = axes_handles(8:9);
 for i = do_these
-	time = 1e-3*(1:length(mean2(data(i).PID)));
-	stimulus = mean2(data(i).PID);
-	prediction = mean2(data(i).LinearFit);
-	response = mean2(data(i).fA);
+	time = 1e-3*(1:length(mean(data(i).PID,2)));
+	stimulus = mean(data(i).PID,2);
+	prediction = mean(data(i).LinearFit,2);
+	response = mean(data(i).fA,2);
 
 	% throw out first 5 seconds
 	time = time(5e3:end);
@@ -235,17 +235,17 @@ for i = do_these
 	for j = 1:width(K)
 		K(:,j) = K(:,j)/max(K(:,j));
 	end
-	l=[l plot(axes_handles(4),filtertime,mean2(K))];
+	l=[l plot(axes_handles(4),filtertime,mean(K,2))];
 end
 legend(l,odours)
 
 clear ph
 ph(3:4) = axes_handles(5:6);
 for i = do_these
-	time = 1e-3*(1:length(mean2(data(i).PID)));
-	stimulus = mean2(data(i).PID);
-	prediction = mean2(data(i).LinearFit);
-	response = mean2(data(i).fA);
+	time = 1e-3*(1:length(mean(data(i).PID,2)));
+	stimulus = mean(data(i).PID,2);
+	prediction = mean(data(i).LinearFit,2);
+	response = mean(data(i).fA,2);
 
 	% throw out first 5 seconds
 	time = time(5e3:end);
@@ -349,6 +349,91 @@ if being_published
 	delete(gcf)
 end
 
+%% Pulse Gain Analysis
+% In this section we analyse the gain in a differnet way. We compute the gain of the ORN at every valve onset, and try to find a projection of the stimulus that accounts for the variation in this gain. 
+
+history_lengths = logspace(log10(.1),log10(10),40);
+gain_K1_slope = NaN(length(history_lengths),length(data));
+gain_K1_rho = NaN(length(history_lengths),length(data));
+
+for i = 1:length(data)
+
+
+	valve = data(i).Valve';
+	inst_gain = findGainWhenValveOpens(valve,stim,resp);
+	for j = 1:length(history_lengths)
+
+		% first do the simple box filter
+		filtered_stim = floor(history_lengths(j)*1e3);
+		filtered_stim = filter(ones(filtered_stim,1),filtered_stim,stim);
+
+		y = inst_gain;
+		y(1:10e3) = NaN;
+
+		rm_this = isnan(filtered_stim) | isnan(y);
+		filtered_stim(rm_this) = [];
+		y(rm_this) = [];
+
+		ff = fit(filtered_stim(:),y(:),'power1','StartPoint',[0 0]);
+		gain_K1_rho(j,i) = spear(filtered_stim(1:10:end),y(1:10:end));
+		gain_K1_slope(j,i) = ff.b;
+	end
+end
+
+
+
+
+%% Instantaneous gain analysis
+% In this section we analyze the data in a different way: we first compute the instantaneous gain for all the data, and try to find projections of the stimulus that maximally predict the instantaneous gain. 
+
+% compute the instantenous gain for each case
+
+gain_K1_slope = NaN(length(history_lengths),length(data));
+gain_K1_rho = NaN(length(history_lengths),length(data));
+
+gain_K2_slope = NaN(length(history_lengths),length(data));
+gain_K2_rho = NaN(length(history_lengths),length(data));
+
+gain_K3_slope = NaN(length(history_lengths),length(data));
+gain_K3_rho = NaN(length(history_lengths),length(data));
+
+
+for i = 1:length(data)
+
+	t = 1e-3*(1:length(data(i).PID));
+	filtertime = 1e-3*(1:length(best_reg_filters(i).K)) - .2;
+
+	stim = data(i).PID;
+	resp = data(i).fA;
+
+	stim = mean(stim,2);
+	resp = mean(resp,2);
+
+	pred = mean(stim) + convolve(t,stim,best_reg_filters(i).K,filtertime);
+
+	[~,inst_gain] = makeFig6G(stim,resp,pred,500);
+
+	for j = 1:length(history_lengths)
+		stim = mean(data(i).PID,2);
+		resp = mean(data(i).fA,2);
+
+		y = inst_gain;
+		y(1:10e3) = -1;
+
+		% first do the simple box filter
+		temp = floor(history_lengths(j)*1e3);
+		temp = filter(ones(temp,1),temp,stim);
+
+		rm_this = (isnan(temp) | isnan(inst_gain) | y < 0);
+		temp(rm_this) = [];
+		y(rm_this) = [];
+
+		ff = fit(temp(:),y(:),'power1','StartPoint',[0 0]);
+		temp = ff(temp);
+		gain_K1_rho(j,i) = spear(temp(1:10:end),y(1:10:end));
+		gain_K1_slope(j,i) = ff.b;
+	end
+end
 
 
 

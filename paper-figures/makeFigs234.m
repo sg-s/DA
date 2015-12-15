@@ -65,7 +65,7 @@ for i = 1:length(paradigm_names)
 end
 
 
-% some global parameters
+% some universal parameters
 nbins = 50;
 histx = [];
 histy = [];
@@ -78,7 +78,7 @@ c = parula(length(paradigm_names)+1);
 mean_pid = NaN(length(c),1);
 
 % plot some stimulus
-example_dose = 3;
+example_dose = 1;
 plot_these=find(strcmp(paradigm_names{example_dose}, combined_data.paradigm));
 plot_this = mean(combined_data.PID(plot_these,:));
 time = dt*(1:length(plot_this));
@@ -89,37 +89,32 @@ set(axes_handles(1),'XLim',[45 55])
 
 % load the data cut and processed
 load('../data/MSG_per_neuron.mat','MSG_data')
-% if ~exist('MSG_data','var')
-% 	load('MSG_per_neuron.mat','MSG_data')
 
-% 	% back out all filters
-% 	for i = 1:8
-% 		for j = 1:13
-% 			disp([i j])
-% 			if width(MSG_data(i,j).stim) > 1
-% 				this_stim = mean2(MSG_data(i,j).stim);
-% 				this_stim = this_stim - mean(this_stim);
-% 				this_stim = this_stim/std(this_stim);
-% 				this_resp = mean2(MSG_data(i,j).resp);
-% 				this_resp = this_resp - mean(this_resp);
-% 				this_resp = this_resp/std(this_resp);
-% 				[K,filtertime_full] = fitFilter2Data(this_stim,this_resp,'reg',1,'filter_length',1999,'offset',300);
-% 				filtertime_full = filtertime_full;
-% 				filtertime = (-200:800);
-% 				K = interp1(filtertime_full,K,filtertime);
-% 				MSG_data(i,j).K = K;
-% 			end
-% 		end
-% 	end
-% end
-% save('MSG_per_neuron.mat','MSG_data')
+% find best reg filters
+for i = 1:8
+	for j = 1:13
+		if width(MSG_data(i,j).stim) > 1
+			this_stim = mean(MSG_data(i,j).stim,2);
+			this_resp = mean(MSG_data(i,j).resp,2);
+			MSG_data(i,j).K = fitFilter2Data(this_stim,this_resp,'offset',200,'reg',1);
+		elseif width(MSG_data(i,j).stim) == 1
+			this_stim = MSG_data(i,j).stim;
+			this_resp = MSG_data(i,j).resp;
+			MSG_data(i,j).K = fitFilter2Data(this_stim,this_resp,'offset',200,'reg',1);
+		else
+
+		end
+
+	end
+end
+
 
 % plot the filter for the lowest dose 
-filtertime = (-200:800)*1e-3;
-K = reshape([MSG_data(example_dose,:).K],1001,length([MSG_data(example_dose,:).K])/1001);
+filtertime = (-200:799)*1e-3;
+K = [MSG_data(example_dose,:).K];
 axes(axes_handles(3))
 shadedErrorBar(filtertime,mean(K,2),sem(K'),{'Color',c(example_dose,:)})
-set(axes_handles(3),'XLim',[min(filtertime) max(filtertime)])
+set(axes_handles(3),'XLim',[-.2 .7])
 xlabel(axes_handles(3),'Lag (s)')
 ylabel(axes_handles(3),'Filter K (norm)')
 
@@ -130,9 +125,15 @@ for i = 1:8
 		if width(MSG_data(i,j).stim) > 1
 			this_stim = mean(MSG_data(i,j).stim,2);
 			this_resp = mean(MSG_data(i,j).resp,2);
-			MSG_data(i,j).fp = convolve(MSG_data(i,j).time,mean(MSG_data(i,j).stim,2),[0 0 MSG_data(i,j).K(3:end)],filtertime) ;
-			MSG_data(i,j).r2 = rsquare(MSG_data(i,j).fp,mean(MSG_data(i,j).resp,2));
+			MSG_data(i,j).fp = convolve(MSG_data(i,j).time,this_stim,MSG_data(i,j).K,filtertime);
+			MSG_data(i,j).r2 = rsquare(MSG_data(i,j).fp,this_resp);
+		elseif width(MSG_data(i,j).stim) == 1
+			this_stim = MSG_data(i,j).stim;
+			this_resp = MSG_data(i,j).resp;
+			MSG_data(i,j).fp = convolve(MSG_data(i,j).time,this_stim,MSG_data(i,j).K,filtertime);
+			MSG_data(i,j).r2 = rsquare(MSG_data(i,j).fp,this_resp);
 		end
+
 	end
 end
 
@@ -145,8 +146,8 @@ time = 35+1e-3*(1:length([MSG_data(example_dose,:).fp]));
 
 
 [ax,plot1,plot2] = plotyy(axes_handles(2),time,y,time,x);
-set(ax(1),'XLim',[45 55])
-set(ax(2),'XLim',[45 55],'YLim',[-.7 .8 ])
+set(ax(1),'XLim',[45 55],'YLim',[min(y(5e3:end)) max(y(5e3:end))],'YColor',c(example_dose,:))
+set(ax(2),'XLim',[45 55],'YLim',[min(x(5e3:end)) max(x(5e3:end))],'YColor','r')
 set(plot1,'Color',c(example_dose,:))
 set(plot2,'Color','r')
 ylabel(ax(1),'ORN Response (Hz)')
@@ -162,7 +163,8 @@ L{1} = strcat('Gain=',oval(ff.p1),'Hz/V, r^2=',oval(rsquare(y,x)));
 
 
 xlabel(axes_handles(4),'Projected Stimulus (V)')
-ylabel(axes_handles(4),'Response (Hz)')
+ylabel(axes_handles(4),'ORN Response (Hz)')
+set(axes_handles(4),'YColor',c(example_dose,:),'XColor','r')
 
 legend(l,L,'Location','northwest');
 
@@ -181,7 +183,6 @@ if being_published
 	snapnow
 	delete(gcf)
 end
-
 
 
 %    ##      ## ######## ########  ######## ########      ######      ###    #### ##    ## 
@@ -260,9 +261,11 @@ for i = 1:8 % iterate over all paradigms
 	end 
 
 	%plot(ax(5),mean(s)+x(1:ss:end),y(1:ss:end),'.','Color',c(i,:))
-	plotPieceWiseLinear(x+mean(s),y,'nbins',40,'Color',c(i,:));
+	plotPieceWiseLinear(x(1e3:end),y(1e3:end),'nbins',50,'Color',c(i,:));
 
 end
+
+
 
 % compute gain changes on a per-neuron basis
 gain = NaN(8,13);
@@ -341,22 +344,14 @@ for i = 1:8 % iterate over all paradigms
 
 	allx = [allx mean(y)+cf(mean(s))*(x(1:ss:end))];
 	ally = [ally y(1:ss:end)];
-	%plot(ax(7),mean(y)+cf(mean2(s))*(x(1:ss:end)),y(1:ss:end),'.','Color',c(i,:))
 
-	x = mean(y)+cf(mean(s))*(x);
-
-	plotPieceWiseLinear(x,y,'nbins',40,'Color',c(i,:));
-
-
+	x = cf(nanmean(s))*(x);
+	x = x - nanmean(x);
+	x = x + nanmean(y);
+	plotPieceWiseLinear(x(1e3:end),y(1e3:end),'nbins',40,'Color',c(i,:));
 end
-allx = allx(:); ally = ally(:); 
-rm_this = isnan(allx) | isnan(ally);
-allx(rm_this) = [];
-ally(rm_this) = [];
-ff2 = fit(allx(:),ally(:),'poly1');
-clear l
-l = plot(ax(7),-5:0.1:45,ff2(-5:0.1:45),'r');
-% legend(l,strcat('r^2=',oval(rsquare(ally,ff2(allx)))),'Location','northwest');
+
+plot(ax(7),[0 45],[0 45],'r')
 
 
 % cosmetics

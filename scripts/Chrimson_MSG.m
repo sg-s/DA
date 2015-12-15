@@ -200,6 +200,10 @@ if ~status
 	disp(git_hash)
 end
 
+%%
+% This file has the following external dependencies:
+showDependencyHash(mfilename);
+
 t = toc;
 
 %% 

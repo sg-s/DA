@@ -410,6 +410,10 @@ if ~status
 	disp(m)
 end
 
+%%
+% This file has the following external dependencies:
+showDependencyHash(mfilename);
+
 t = toc;
 
 %% 

@@ -6,9 +6,9 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function r2 = findBestGainFilter(S,p)
+function [rho_abs, rho] = findBestGainFilter(S,p)
 
-r2 = 0;
+rho = 0;
 
 global inst_gain	
 
@@ -21,7 +21,7 @@ p.n;
 % bounds
 ub.tau1 = 300;
 ub.tau2 = 400;
-ub.A = 1;
+ub.A = 3;
 ub.n = 10;
 
 lb.tau1 = 1;
@@ -37,7 +37,7 @@ if any(isnan(K))
 end
 
 % filter the stimulus
-shat = filter(K,1,S);
+shat = abs(filter(K,1,S));
 
 % remove some junk
 rm_this = isnan(inst_gain) | isnan(shat);
@@ -46,7 +46,9 @@ shat(rm_this) = [];
 
 try
 	% use the Spearman rank correlation
-	r2 = abs(spear(temp(1:10:end),shat(1:10:end)));
+	rho = (spear(shat(1:10:end),temp(1:10:end)));
 
 catch
 end
+
+rho_abs = abs(rho);

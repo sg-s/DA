@@ -115,7 +115,7 @@ R = mean(fA,2);
 [ax,plot1,plot2] = plotyy(axes_handles(2),tA,R,tA,mean(fp,2));
 set(ax(1),'XLim',[0 60],'YLim',[min(mean(fA,2)) 1.3*max(mean(fA,2))])
 set(ax(2),'XLim',[0 60],'YLim',[min(mean(fp,2)) max(mean(fp,2))])
-set(ax(2),'YTick',[-.1:.1:.5])
+set(ax(2),'YTick',-.1:.1:.5)
 set(plot1,'Color','k')
 set(plot2,'Color','r')
 set(ax(1),'YColor',[0 0 0])
@@ -137,7 +137,7 @@ pred = mean(fp(10e3:55e3,[3:10 13:20]),2);
 time = 1e-3*(1:length(resp));
 stim = mean(PID(10e3:55e3,[3:10 13:20]),2);
 
-[p,~,~,~,~,history_lengths]=gainAnalysisWrapper('response',resp,'prediction',pred,'stimulus',stim,'time',time,'ph',ph,'history_lengths',history_lengths,'example_history_length',.5,'use_cache',true,'engine',@gainAnalysis);
+[~,~,~,~,~,history_lengths]=gainAnalysisWrapper('response',resp,'prediction',pred,'stimulus',stim,'time',time,'ph',ph,'history_lengths',history_lengths,'example_history_length',.5,'use_cache',true,'engine',@gainAnalysis);
 set(axes_handles(5),'XLim',[.09 11]) % to show .1 and 10 on the log scale
 set(axes_handles(4),'XLim',[min(pred) max(pred)])
 xlabel(axes_handles(4),'Projected Stimulus (V)')
@@ -197,7 +197,11 @@ end
 %% Test Figure: How does instantaneous gain depend on various history lengths? 
 % In this section, we look at a generalized version of the plot of instate nous gain vs. mean history in the last 500ms, where we now vary the length of the history length, and see how the slope of the gain plot changes, as well as how well it is fit by a straight line. First, we plot the inst. gain vs. stimulus projected by a box filter, for various lengths of the box filter.
 
+clear inst_gain
+global inst_gain
 [~,inst_gain] = makeFig6G(mean(PID,2),mean(fA,2),mean(fp,2),500);
+
+
 mean_pid = mean(PID,2);
 history_lengths = logspace(-2,1,40);
 
@@ -211,6 +215,7 @@ gain_K3_slope = NaN*history_lengths;
 gain_K3_rho = NaN*history_lengths;
 
 figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on
+
 c = parula(length(history_lengths)+1);
 for i = 1:length(history_lengths)
 	% first do the simple box filter
@@ -352,6 +357,40 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%%
+% The results of our optimization technique show that the "best" gain filter is one that integrates the stimulus, and doesn't differentiate it at all. However, are we sure that our optimization has found the global minimum? To verify that the gain filters with differentiating components cannot do a better job at explaining observed gain changes, we manually change the degree to which the filter differentiates, and then determine what fraction of the variance this manipulations has. 
+
+%%
+% In the following figure, the Spearman rank-correlation between the projected stimulus and the instatnenous gain is plotted on the Y-axis. Lower (larger absolute) values mean that it can explain more of the data. On the x-axis is a measure of how differentiating the filter is. Values close to 0 mean filters that perform perfect differentiation, while values close to 1 mean filters that are integrators. 
+
+all_A = linspace(0,1,30);
+all_rho = NaN*all_A;
+diff_degree = NaN*all_A;
+
+q = p;
+
+for i = 1:length(all_A)
+	q.A = all_A(i);
+	q.tau1 = p.tau1*(1-(all_A(i)/2));
+	q.tau2 = p.tau1*(1+(all_A(i)/2));
+	[~,all_rho(i)] = findBestGainFilter(mean_pid,q);
+	K = filter_gamma2(1:2e3,q);
+	diff_degree(i) = sum(K)/sum(abs(K));
+end
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(diff_degree,all_rho,'k+')
+xlabel('\int {K} / \int {|K|}','interpreter','tex')
+ylabel('\rho') 
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 %% Supplementary Figure: LN models cannot account for this
 % In this section we show that a static output nonlinearity cannot account for observed fast gain control. 

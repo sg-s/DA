@@ -8,7 +8,7 @@
 
 % add homebrew path
 path1 = getenv('PATH');
-if isempty(strfind(path1,[':/usr/local/bin']))
+if isempty(strfind(path1,':/usr/local/bin'))
     path1 = [path1 ':/usr/local/bin'];
 end
 setenv('PATH', path1);

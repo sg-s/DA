@@ -377,13 +377,13 @@ if being_published
 end
 
 
-% ######## #### ########  #### ##    ##  ######      ########     ###    ######## ########  ######  
-% ##        ##  ##     ##  ##  ###   ## ##    ##     ##     ##   ## ##      ##    ##       ##    ## 
-% ##        ##  ##     ##  ##  ####  ## ##           ##     ##  ##   ##     ##    ##       ##       
-% ######    ##  ########   ##  ## ## ## ##   ####    ########  ##     ##    ##    ######    ######  
-% ##        ##  ##   ##    ##  ##  #### ##    ##     ##   ##   #########    ##    ##             ## 
-% ##        ##  ##    ##   ##  ##   ### ##    ##     ##    ##  ##     ##    ##    ##       ##    ## 
-% ##       #### ##     ## #### ##    ##  ######      ##     ## ##     ##    ##    ########  ######  
+%   #######  ########  ##    ##    ######## #### ########  #### ##    ##  ######   
+%  ##     ## ##     ## ###   ##    ##        ##  ##     ##  ##  ###   ## ##    ##  
+%  ##     ## ##     ## ####  ##    ##        ##  ##     ##  ##  ####  ## ##        
+%  ##     ## ########  ## ## ##    ######    ##  ########   ##  ## ## ## ##   #### 
+%  ##     ## ##   ##   ##  ####    ##        ##  ##   ##    ##  ##  #### ##    ##  
+%  ##     ## ##    ##  ##   ###    ##        ##  ##    ##   ##  ##   ### ##    ##  
+%   #######  ##     ## ##    ##    ##       #### ##     ## #### ##    ##  ######   
 
 
 %% Firing Rate Analysis
@@ -568,6 +568,99 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%% Gain Filters
+% In this section, we study if we can back out a "gain filter" that can account for the observed changes in the gain. 
+
+% calculate the gain in every epoch
+
+history_lengths = logspace(-2,1,40);
+
+gain_K1_slope = NaN*history_lengths;
+gain_K1_rho = NaN*history_lengths;
+
+gain_K2_slope = NaN*history_lengths;
+gain_K2_rho = NaN*history_lengths;
+
+gain_K3_slope = NaN*history_lengths;
+gain_K3_rho = NaN*history_lengths;
+
+stim = reshaped_PID(:);
+inst_gain = n';
+inst_gain = inst_gain(1:100,:);
+inst_gain = inst_gain(:);
+inst_gain(inst_gain < 0) = NaN;
+
+for i = 1:length(history_lengths)
+	textbar(i,length(history_lengths))
+
+	% first do the simple box filter
+	temp = floor(history_lengths(i)*1e3);
+	temp = filter(ones(temp,1),temp,stim);
+	temp = (temp(1:100:end));
+
+	gain_K1_rho(i) = spear(temp(1:10:end),inst_gain(1:10:end));
+
+	% now the differentiating filter
+	temp = floor(history_lengths(i)*1e3/2);
+	temp = filter([ones(temp,1); -ones(temp,1)],2*temp,stim-nanmean(stim));
+	temp = abs(temp(1:100:end));
+
+	gain_K2_rho(i) = spear(temp(1:10:end),inst_gain(1:10:end));
+
+	% now a squared differentiating filter
+	temp = floor(history_lengths(i)*1e3/2);
+	temp = filter([ones(temp,1); -ones(temp,1)],2*temp,stim-nanmean(stim));
+	temp = (temp(1:100:end)).^2;
+
+	gain_K3_rho(i) = spear(temp(1:10:end),inst_gain(1:10:end));
+end
+
+xlabel('Projected Stimulus (V)')
+ylabel('Inst. Gain (Hz/V)')
+set(gca,'YScale','log')
+
+prettyFig;
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+       A: 1.0001
+    tau1: 151.4509
+    tau2: 149.2471
+       n: 0.7789
+
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+clear p
+p.   A = 1.0001;
+p.tau1 = 151.4509;
+p.tau2 = 149.2471;
+p.   n = 0.7789;
+
+K = filter_gamma2(1:2e3,p);
+plot(1e-3*(1:length(K)),K,'r')
+xlabel('Filter Lag (s)')
+ylabel('Gain filter')
+
+shat = abs(filter(K,1,stim));
+
+% fit a power law
+rm_this = isnan(inst_gain) | isnan(shat);
+temp = inst_gain(~rm_this);
+shat(rm_this) = [];
+
+subplot(1,2,2), hold on
+l = plotPieceWiseLinear(shat,temp,'nbins',40,'Color','k','use_sem',true);
+legend(l.line(1),['\rho =' oval(spear(shat(1:10:end),temp(1:10:end)),3)])
+xlabel('Stimulus projected by gain filter (a.u.)')
+ylabel('Inst. Gain (Hz/V)')
+set(gca,'YScale','log')
+
+prettyFig();
 
 %        #######  ########  ######## #### ##     ##    ###    ##       
 %       ##     ## ##     ##    ##     ##  ###   ###   ## ##   ##       

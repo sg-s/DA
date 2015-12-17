@@ -570,29 +570,22 @@ if being_published
 end
 
 %% Gain Filters
-% In this section, we study if we can back out a "gain filter" that can account for the observed changes in the gain. 
+% In this section, we study if we can back out a "gain filter" that can account for the observed changes in the gain. In the following figure, we plot the Spearman rank correlation coefficnent between the instantenous gain and the projected simulus for a projection using a integrating filter (red) anda  projection using a diffenrating filter (blue). 
 
 % calculate the gain in every epoch
 
 history_lengths = logspace(-2,1,40);
-
-gain_K1_slope = NaN*history_lengths;
 gain_K1_rho = NaN*history_lengths;
-
-gain_K2_slope = NaN*history_lengths;
 gain_K2_rho = NaN*history_lengths;
 
-gain_K3_slope = NaN*history_lengths;
-gain_K3_rho = NaN*history_lengths;
-
 stim = reshaped_PID(:);
+global inst_gain
 inst_gain = n';
 inst_gain = inst_gain(1:100,:);
 inst_gain = inst_gain(:);
 inst_gain(inst_gain < 0) = NaN;
 
 for i = 1:length(history_lengths)
-	textbar(i,length(history_lengths))
 
 	% first do the simple box filter
 	temp = floor(history_lengths(i)*1e3);
@@ -608,29 +601,23 @@ for i = 1:length(history_lengths)
 
 	gain_K2_rho(i) = spear(temp(1:10:end),inst_gain(1:10:end));
 
-	% now a squared differentiating filter
-	temp = floor(history_lengths(i)*1e3/2);
-	temp = filter([ones(temp,1); -ones(temp,1)],2*temp,stim-nanmean(stim));
-	temp = (temp(1:100:end)).^2;
-
-	gain_K3_rho(i) = spear(temp(1:10:end),inst_gain(1:10:end));
 end
 
-xlabel('Projected Stimulus (V)')
-ylabel('Inst. Gain (Hz/V)')
-set(gca,'YScale','log')
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(history_lengths,gain_K1_rho,'r')
+plot(history_lengths,gain_K2_rho,'b')
+legend({'Integrating','Differentiating'})
+xlabel('History Length (s)')
+ylabel('\rho')
+prettyFig();
 
-prettyFig;
 if being_published
 	snapnow
 	delete(gcf)
 end
 
-
-       A: 1.0001
-    tau1: 151.4509
-    tau2: 149.2471
-       n: 0.7789
+%%
+% It looks like that, at short time scales, a differentiating filter does better than a integrating filter at accounting for the variation in the instantaneous gain. In this section, we use numerical optimization to back out the "best" filter that can account for observed variation in gain. 
 
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
@@ -647,6 +634,7 @@ xlabel('Filter Lag (s)')
 ylabel('Gain filter')
 
 shat = abs(filter(K,1,stim));
+shat = shat(1:100:end);
 
 % fit a power law
 rm_this = isnan(inst_gain) | isnan(shat);
@@ -661,6 +649,64 @@ ylabel('Inst. Gain (Hz/V)')
 set(gca,'YScale','log')
 
 prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%
+% This filter looks awfully like a differentiating filter. Is is really the case that a integrating filter can't account for observed changes in gain? In this section, we vary the differentiating degree of the filter (left) or the timescale of the filter (right) to see how much the features of the observed best-fit filter matter. 
+
+
+temp = inst_gain;
+inst_gain = NaN*stim;
+inst_gain(1:100:end) = temp;
+
+all_A = linspace(0,1,30);
+all_rho = NaN*all_A;
+diff_degree = NaN*all_A;
+all_tau = ceil(logspace(1,3,30));
+all_rho_tau = NaN*all_tau;
+
+
+for i = 1:length(all_A)
+	q = p;
+	q.A = all_A(i);
+	q.tau1 = p.tau1*(1-(all_A(i)/2));
+	q.tau2 = p.tau1*(1+(all_A(i)/2));
+	[~,all_rho(i)] = findBestGainFilter(stim,q);
+	K = filter_gamma2(1:2e3,q);
+	diff_degree(i) = sum(K)/sum(abs(K));
+
+	q = p;
+	q.A = 1;
+	q.tau1 = all_tau(i);
+	q.tau2 = all_tau(i)*1.01;
+	[~,all_rho_tau(i)] = findBestGainFilter(stim,q);
+end
+
+
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+plot(diff_degree,all_rho,'k+')
+xlabel('\int {K} / \int {|K|}','interpreter','tex')
+ylabel('\rho') 
+
+
+subplot(1,2,2), hold on
+plot(all_tau*p.n,all_rho_tau,'k+')
+xlabel('\tau (ms)','interpreter','tex')
+ylabel('\rho') 
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 %        #######  ########  ######## #### ##     ##    ###    ##       
 %       ##     ## ##     ##    ##     ##  ###   ###   ## ##   ##       
@@ -696,7 +742,7 @@ s = .5; % shading opacity
 
 % high variance
 temp = fA_pred(1e3:5e3,:); 
-x = -1:.05:1;
+x = -1:.05:2;
 y = NaN(length(x)-1,width(temp)); 
 cy = y;
 for i = 1:width(temp)
@@ -714,7 +760,7 @@ x = fA_pred(1e3:5e3,:);
 y = reshaped_fA(1e3:5e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)));
 x(:,rm_this) = []; y(:,rm_this) = []; cy(:,rm_this)= [];
-all_x = -1:.05:1;
+all_x = -1:.05:2;
 all_y = NaN(length(all_x),width(y));
 for i = 1:width(x)
 	[~,data] = plotPieceWiseLinear(x(:,i),y(:,i),'nbins',40,'make_plot',false);
@@ -741,7 +787,7 @@ ylabel(ax(2),'Normalised Response')
 ylabel(ax(1),'Stimulus Probability')
 
 temp = fA_pred(6e3:9e3,:); 
-x = -1:.05:1;
+x = -1:.05:2;
 y = NaN(length(x)-1,width(temp)); 
 cy = y;
 for i = 1:width(temp)
@@ -759,7 +805,7 @@ x = fA_pred(6e3:9e3,:);
 y = reshaped_fA(6e3:9e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)));
 x(:,rm_this) = []; y(:,rm_this) = []; cy(:,rm_this)= [];
-all_x = -1:.05:1;
+all_x = -1:.05:2;
 all_y = NaN(length(all_x),width(y));
 for i = 1:width(x)
 	[~,data] = plotPieceWiseLinear(x(:,i),y(:,i),'nbins',40,'make_plot',false);
@@ -780,6 +826,7 @@ uistack(shade_handle2,'bottom')
 uistack(line_handle1,'top')
 
 % fake some plots for a nice legend
+clear l
 l(1) = plot(ax(2),NaN,NaN,'k');
 l(2) = plot(ax(2),NaN,NaN,'k--');
 L = {'Prediction','Data'};

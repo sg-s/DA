@@ -362,26 +362,46 @@ end
 % The results of our optimization technique show that the "best" gain filter is one that integrates the stimulus, and doesn't differentiate it at all. However, are we sure that our optimization has found the global minimum? To verify that the gain filters with differentiating components cannot do a better job at explaining observed gain changes, we manually change the degree to which the filter differentiates, and then determine what fraction of the variance this manipulations has. 
 
 %%
-% In the following figure, the Spearman rank-correlation between the projected stimulus and the instatnenous gain is plotted on the Y-axis. Lower (larger absolute) values mean that it can explain more of the data. On the x-axis is a measure of how differentiating the filter is. Values close to 0 mean filters that perform perfect differentiation, while values close to 1 mean filters that are integrators. 
+% In the following figure, in the first panel, the Spearman rank-correlation between the projected stimulus and the instatnenous gain is plotted on the Y-axis. Lower (larger absolute) values mean that it can explain more of the data. On the x-axis is a measure of how differentiating the filter is. Values close to 0 mean filters that perform perfect differentiation, while values close to 1 mean filters that are integrators. 
+
+%% 
+% In the second panel, we repeat the analysis, but now we vary the timescale of the filter. 
 
 all_A = linspace(0,1,30);
 all_rho = NaN*all_A;
 diff_degree = NaN*all_A;
+all_tau = ceil(logspace(1,3,30));
+all_rho_tau = NaN*all_tau;
 
-q = p;
 
 for i = 1:length(all_A)
+	q = p;
 	q.A = all_A(i);
 	q.tau1 = p.tau1*(1-(all_A(i)/2));
 	q.tau2 = p.tau1*(1+(all_A(i)/2));
 	[~,all_rho(i)] = findBestGainFilter(mean_pid,q);
 	K = filter_gamma2(1:2e3,q);
 	diff_degree(i) = sum(K)/sum(abs(K));
+
+	q = p;
+	q.A = 0;
+	q.tau1 = all_tau(i);
+	q.tau2 = all_tau(i);
+	[~,all_rho_tau(i)] = findBestGainFilter(mean_pid,q);
 end
 
-figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
 plot(diff_degree,all_rho,'k+')
 xlabel('\int {K} / \int {|K|}','interpreter','tex')
+ylabel('\rho') 
+
+
+subplot(1,2,2), hold on
+plot(all_tau*p.n,all_rho_tau,'k+')
+xlabel('\tau (ms)','interpreter','tex')
 ylabel('\rho') 
 
 prettyFig();
@@ -396,7 +416,7 @@ end
 % In this section we show that a static output nonlinearity cannot account for observed fast gain control. 
 
 fp = mean(fp,2);
-temp =fit(fp(~(isnan(fp) | isnan(R))),R(~(isnan(fp) | isnan(R))),'poly1');
+temp = fit(fp(~(isnan(fp) | isnan(R))),R(~(isnan(fp) | isnan(R))),'poly1');
 fp = fp*temp.p1;
 fp = fp+temp.p2;
 

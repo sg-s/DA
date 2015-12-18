@@ -144,10 +144,11 @@ ylabel('Inst. Gain')
 xlabel('Time (s)')
 
 subplot(1,2,2), hold on
-plot(mean_stim(:),inst_gain(:),'k+')
+[~,data]=plotPieceWiseLinear(mean_stim(:),inst_gain(:),'nbins',40,'make_plot',false);
+errorbar(data.x,data.y,data.ye,'k+');
 % ff = fit(mean_stim(~isnan(mean_stim)),inst_gain(~isnan(mean_stim)),'poly1');
 % plot([0 max(max(PID))],ff([0 max(max(PID))]),'r')
-xlabel('Mean Stimulus in preceding 250ms')
+xlabel('Mean Stimulus in preceding 250ms (V)')
 ylabel('Inst. Gain')
 
 prettyFig();

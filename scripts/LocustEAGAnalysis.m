@@ -27,10 +27,10 @@ tic
 
 
 %% Locust EAG Analysis
-% In this document we analyze some data from Mark Stopfer's Lab where EAG measurements are made from locust antenna while stimulating them with binary odour signals.
+% In this document we analyze some data from Zane Aldworth and Mark Stopfer where EAG measurements are made from locust antenna while stimulating them with binary odour signals. 
 
 %% Example Data
-% This is what the data looks like. In the following filter, the PID signals have been low-passed filtered by a 30ms filter, and the EAG signals have been high-pass filtered above a 2 second timescale. 
+% This is what the data looks like. In the following figure, the PID signals have been low-passed filtered by a 30ms filter, and the EAG signals have been high-pass filtered above a 2 second timescale. There are five trials in this dataset, and the shading indicates the standard error of the mean. 
 
 % load data
 load('/local-data/DA-paper/locust/example-data.mat')
@@ -45,15 +45,15 @@ valve = ODR1(:,1:10:end)';
 valve(valve<max(max(valve))/2) = 0;
 valve(valve>0) = 1;
 
-% filter
-PID = bandPass(PID,Inf,30);
-EAG = bandPass(EAG,2e3,Inf);
-
 % set zero
 for i = 1:width(PID)
 	PID(:,i) = PID(:,i) - mean(PID(1:300,i));
 	EAG(:,i) = EAG(:,i) - mean(EAG(1:300,i));
 end
+
+% filter
+PID = bandPass(PID,Inf,30);
+EAG = bandPass(EAG,2e3,Inf);
 
 t = 1e-3*(1:length(PID));
 
@@ -74,10 +74,11 @@ if being_published
 end
 
 %% 
-% We now back out the stimulus to EAG filter using standard methods. The following figure shows the filter extracted from all 5 trials. Shading is the standard error of the mean. 
+% We now back out the stimulus to EAG filter using standard methods. The following figure shows the filter extracted from all 5 trials. Shading is the standard error of the mean. The filter is integrating, and is wider than stimulus to ORN filters in the fruit fly. 
 
-[K, EAG_prediction, gain, gain_err] = extractFilters(PID,EAG,'filter_length',1e3);
-t = 1e-3*(1:length(K)) - .1;
+offset = 500;
+[K, EAG_prediction, gain, gain_err] = extractFilters(PID,EAG,'filter_length',2e3,'filter_offset',offset);
+t = 1e-3*(1:length(K)) - 1e-3*offset;
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 errorShade(t,mean(K,2),sem(K'),'Color',[0 0 0]);
@@ -91,7 +92,7 @@ if being_published
 end
 
 %%
-% We now compare the linear prediction to the actual response in each trial. 
+% We now use these filters to project the stimulus and make linear predictions of the response. In the following figure, we compare the linear prediction (red) to the actual response in each trial (black). The top row shows the two time traces overlaid, and the bottom row shows the two traces plotted against each other. We can see that the linear prediction does somewhat OK at predicting the EAG response. 
 
 time = 1e-3*(1:length(PID));
 figure('outerposition',[0 0 1400 800],'PaperUnits','points','PaperSize',[1400 800]); hold on
@@ -112,6 +113,7 @@ for i = 1:5
 		ylabel('EAG')
 		xlabel('prediction')
 	end
+	title(['r^2 = ' oval(rsquare(EAG_prediction(1e3:10:end,i),EAG(1e3:10:end,i)))])
 end
 prettyFig('fs=20;');
 
@@ -121,33 +123,42 @@ if being_published
 end
 
 %% Relationship between gain and stimulus
-% We now measure the gain in a 500ms window after every valve onset, and see how that correlates with the mean stimulus in some history length. 
+% We now measure the gain in a 500ms window after every valve onset, and see how that correlates with the mean stimulus in some history length. Estimates of gain are computed by fitting a straight line to a plot of response vs. linear prediction over a 500ms window. Gain estimates are accepted only if linear fits has a r-squared value > 0.8.
+
+%%
+% In the following figure, the panel on the left shows the gain evaluated at every valve onset as a function of time, showing that there is some variability in the instantaneous gain. What is the origin of this variability? One hypothesis is that this gain depends on the stimulus in some recent past. To check this, I plot the inst. gain vs. the stimulus in the preceding 250ms. The goodness of fit is measured by a Spearman rank correlation coefficient. 
 
 [ons,offs] = computeOnsOffs(valve(:,1));
 inst_gain = NaN(length(ons),width(PID));
 mean_stim = NaN(length(ons),width(PID));
+gain_r2 = NaN(length(ons),width(PID));
 
 for i = 1:width(PID)
 	for j = 5:length(ons)-1
 		x = EAG_prediction(ons(j):ons(j)+500,i);
 		y = EAG(ons(j):ons(j)+500,i);
-		ff = fit(x(:),y(:),'poly1');
-		inst_gain(j,i) = ff.p1;
-		mean_stim(j,i) = mean(PID(ons(j)-250:ons(j),i));
+		try
+			ff = fit(x(:),y(:),'poly1');
+			inst_gain(j,i) = ff.p1;
+			gain_r2(j,i) = rsquare(x,y);
+			mean_stim(j,i) = mean(PID(ons(j)-250:ons(j),i));
+		catch
+		end
 	end
 end
 
+inst_gain(gain_r2 < .8) = NaN;
+
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 subplot(1,2,1), hold on
-errorbar(1e-3*ons,mean(inst_gain,2),sem(inst_gain'),'k')
+errorbar(1e-3*ons,nanmean(inst_gain,2),sem(inst_gain'),'k+')
 ylabel('Inst. Gain')
 xlabel('Time (s)')
 
 subplot(1,2,2), hold on
-[~,data]=plotPieceWiseLinear(mean_stim(:),inst_gain(:),'nbins',40,'make_plot',false);
-errorbar(data.x,data.y,data.ye,'k+');
-% ff = fit(mean_stim(~isnan(mean_stim)),inst_gain(~isnan(mean_stim)),'poly1');
-% plot([0 max(max(PID))],ff([0 max(max(PID))]),'r')
+[~,data] = plotPieceWiseLinear(mean_stim(~isnan(inst_gain)),inst_gain(~isnan(inst_gain)),'nbins',40,'make_plot',false);
+l = errorbar(data.x,data.y,data.ye,'k+');
+legend(l,['\rho = ' oval(spear(mean_stim(~isnan(inst_gain)),inst_gain(~isnan(inst_gain))))])
 xlabel('Mean Stimulus in preceding 250ms (V)')
 ylabel('Inst. Gain')
 

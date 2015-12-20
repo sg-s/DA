@@ -149,8 +149,8 @@ text(-.1,60,'p < 0.01')
 title(axes_handles(4),[])
 
 % plot gain vs preceding stimulus
-[x,y] = makeFig6G(mean(PID,2),mean(fA,2),mean(fp,2),500);
-rm_this = (isnan(x) | isnan(y)) | x < .2;
+[x,y,e] = makeFig6G(mean(PID,2),mean(fA,2),mean(fp,2),500);
+rm_this = (isnan(x) | isnan(y)) | x < .2 | e < .8;
 x(rm_this) = [];
 y(rm_this) = [];
 ss = 50;
@@ -193,6 +193,7 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
 
 %% Test Figure: How does instantaneous gain depend on various history lengths? 
 % In this section, we look at a generalized version of the plot of instate nous gain vs. mean history in the last 500ms, where we now vary the length of the history length, and see how the slope of the gain plot changes, as well as how well it is fit by a straight line. First, we plot the inst. gain vs. stimulus projected by a box filter, for various lengths of the box filter.

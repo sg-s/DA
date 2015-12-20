@@ -47,6 +47,7 @@ disp(hash)
 
 x = NaN*stimulus;
 y = NaN*stimulus;
+e = NaN*stimulus;
 
 parfor i = (history_length+1):length(stimulus)
 	x(i) = mean(stimulus(i-history_length:i));

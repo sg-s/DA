@@ -60,7 +60,7 @@ t = 1e-3*(1:length(PID));
 figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
 subplot(2,1,1), hold on
 errorShade(t,mean(PID,2),sem(PID'),'Color',[0 0 0]);
-ylabel('Stimulus (V)')
+ylabel('Stimulus (mV)')
 
 subplot(2,1,2), hold on
 errorShade(t,mean(EAG,2),sem(EAG'),'Color',[0 0 0]);
@@ -128,39 +128,25 @@ end
 %%
 % In the following figure, the panel on the left shows the gain evaluated at every valve onset as a function of time, showing that there is some variability in the instantaneous gain. What is the origin of this variability? One hypothesis is that this gain depends on the stimulus in some recent past. To check this, I plot the inst. gain vs. the stimulus in the preceding 250ms. The goodness of fit is measured by a Spearman rank correlation coefficient. 
 
-[ons,offs] = computeOnsOffs(valve(:,1));
-inst_gain = NaN(length(ons),width(PID));
-mean_stim = NaN(length(ons),width(PID));
-gain_r2 = NaN(length(ons),width(PID));
+[mean_stim,inst_gain,e] = makeFig6G(mean(PID,2),mean(EAG,2),mean(EAG_prediction,2),500);
 
-for i = 1:width(PID)
-	for j = 5:length(ons)-1
-		x = EAG_prediction(ons(j):ons(j)+500,i);
-		y = EAG(ons(j):ons(j)+500,i);
-		try
-			ff = fit(x(:),y(:),'poly1');
-			inst_gain(j,i) = ff.p1;
-			gain_r2(j,i) = rsquare(x,y);
-			mean_stim(j,i) = mean(PID(ons(j)-250:ons(j),i));
-		catch
-		end
-	end
-end
+inst_gain(e < .8) = NaN;
+inst_gain(1:5e3) = NaN;
 
-inst_gain(gain_r2 < .8) = NaN;
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-subplot(1,2,1), hold on
-errorbar(1e-3*ons,nanmean(inst_gain,2),sem(inst_gain'),'k+')
-ylabel('Inst. Gain')
+figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
+subplot(1,4,1:3), hold on
+plot(time(1:50:end),inst_gain(1:50:end),'k+')
+set(gca,'XLim',[5 30],'YLim',[0 2.5])
 xlabel('Time (s)')
+ylabel('Inst. gain')
 
-subplot(1,2,2), hold on
-[~,data] = plotPieceWiseLinear(mean_stim(~isnan(inst_gain)),inst_gain(~isnan(inst_gain)),'nbins',40,'make_plot',false);
-l = errorbar(data.x,data.y,data.ye,'k+');
-legend(l,['\rho = ' oval(spear(mean_stim(~isnan(inst_gain)),inst_gain(~isnan(inst_gain))))])
-xlabel('Mean Stimulus in preceding 250ms (V)')
+subplot(1,4,4), hold on
+plotPieceWiseLinear(mean_stim(~isnan(inst_gain)),inst_gain(~isnan(inst_gain)),'nbins',40,'make_plot',true,'use_std',true);
+
+legend(['\rho = ' oval(spear(mean_stim(~isnan(inst_gain)),inst_gain(~isnan(inst_gain))))])
+xlabel('Mean Stimulus in preceding 250ms (mV)')
 ylabel('Inst. Gain')
+set(gca,'YLim',[0 2.5])
 
 prettyFig();
 

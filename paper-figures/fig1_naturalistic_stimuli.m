@@ -325,6 +325,17 @@ if being_published
 end
 
 
+
+
+%      ######  ##     ## ########  ########     ######## ####  ######   
+%     ##    ## ##     ## ##     ## ##     ##    ##        ##  ##    ##  
+%     ##       ##     ## ##     ## ##     ##    ##        ##  ##        
+%      ######  ##     ## ########  ########     ######    ##  ##   #### 
+%           ## ##     ## ##        ##           ##        ##  ##    ##  
+%     ##    ## ##     ## ##        ##           ##        ##  ##    ##  
+%      ######   #######  ##        ##           ##       ####  ######   
+
+
 %% Supplmentary Figure
 % This supplementary figure shows that the choice of filter doesn't affect our results of large, rapid gain control. 
 

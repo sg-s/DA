@@ -190,7 +190,7 @@ end
 plot(axes_handles(6),history_lengths,rho,'b+')
 set(axes_handles(6),'XScale','log')
 ylabel(axes_handles(6),'\rho')
-xlabel(axes_handles(6),'\tau_{gain} (ms)')
+xlabel(axes_handles(6),'\tau_{gain} (s)')
 
 
 prettyFig('plw=1.5;','lw=1.5;','fs=14;','FixLogX=1;')

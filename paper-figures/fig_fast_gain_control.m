@@ -152,63 +152,45 @@ ylabel(axes_handles(3),'Inst. Gain (Hz/V)')
 xlabel(axes_handles(3),'Time (s)')
 set(axes_handles(3),'XLim',[0 60])
 
-% show the backed-out gain filter
-% these parameters come from fitting a gain filter from the PID to the inst. gain
-clear p
-p.   A = 0.0386;
-p.tau1 = 299.8428;
-p.tau2 = 300.3500;
-p.   n = 0.7266;
+% show that the inst. gain varies a bit
+[y,x] = hist(inst_gain,30);
+y = y/sum(y);
+plot(axes_handles(4),x,y,'k')
+xlabel(axes_handles(4),'Instantaneous Gain (Hz/V)')
 
-K = filter_gamma2(1:2e3,p);
-plot(axes_handles(4),1e-3*(1:length(K)),K/sum(K),'b')
-xlabel(axes_handles(4),'Filter Lag (s)')
-ylabel(axes_handles(4),'Gain filter')
-
-shat = filter(K,sum(K),mean(PID,2));
-shat(isnan(inst_gain)) = NaN;
-
-axis(axes_handles(5)); hold on
-[~,data] = plotPieceWiseLinear(shat,inst_gain,'nbins',50,'Color','b','use_std',true,'make_plot',false);
+% show the inst gain vs. the mean stim
+[~,data] = plotPieceWiseLinear(mean_stim,inst_gain,'nbins',50,'Color','b','use_std',true,'make_plot',false);
 l = errorShade(axes_handles(5),data.x,data.y,data.ye,'Color',[0 0 1]);
-temp1 = shat(~isnan(inst_gain));
+temp1 = mean_stim(~isnan(inst_gain));
 temp2 = inst_gain(~isnan(inst_gain));
 legend(l(1),['\rho =' oval(spear(temp1(1:10:end),temp2(1:10:end)),3)])
-xlabel(axes_handles(5),'Stimulus projected by gain filter (V)')
+xlabel(axes_handles(5),'Stimulus in preceding 500ms (V)')
 ylabel(axes_handles(5),'Inst. Gain (Hz/V)')
-set(axes_handles(5),'YScale','log','XLim',[min(shat) max(shat)])
+set(axes_handles(5),'YScale','log','XLim',[min(mean_stim) max(mean_stim)])
 set(axes_handles(5),'YLim',[40 1000])
 
+
+
 % now vary the gain filter and show it is the best possible
-all_A = linspace(0,1,30);
-all_rho = NaN*all_A;
-diff_degree = NaN*all_A;
-all_tau = ceil(logspace(1,3,30));
-all_rho_tau = NaN*all_tau;
+rho = NaN*history_lengths;
+for i = 1:length(history_lengths)
+	hl = floor(history_lengths(i)*1e3);
+	K = ones(hl,1);
+	% filter the stimulus
+	shat = abs(filter(K,sum(K),mean(PID,2)));
 
+	% remove some junk
+	temp = inst_gain(~isnan(inst_gain));
+	shat = shat(~isnan(inst_gain));
 
-for i = 1:length(all_A)
-	q = p;
-	q.A = all_A(i);
-	q.tau1 = p.tau1*(1-(all_A(i)/2));
-	q.tau2 = p.tau1*(1+(all_A(i)/2));
-	[~,all_rho(i)] = findBestGainFilter(mean(PID,2),q);
-	K = filter_gamma2(1:2e3,q);
-	diff_degree(i) = sum(K)/sum(abs(K));
-
-	q = p;
-	q.A = 0;
-	q.tau1 = all_tau(i);
-	q.tau2 = all_tau(i);
-	[~,all_rho_tau(i)] = findBestGainFilter(mean(PID,2),q);
+	% use the Spearman rank correlation
+	rho(i) = (spear(shat(1:10:end),temp(1:10:end)));
 end
 
-
-ax = plotyy(axes_handles(6),all_rho,diff_degree,all_rho_tau,all_tau);
-
-ylabel(ax(1),'\int {K} / \int {|K|}','interpreter','tex')
-xlabel(axes_handles(6),'\rho') 
-ylabel(ax(2),'\tau_{gain} (ms)')
+plot(axes_handles(6),history_lengths,rho,'b+')
+set(axes_handles(6),'XScale','log')
+ylabel(axes_handles(6),'\rho')
+xlabel(axes_handles(6),'\tau_{gain} (ms)')
 
 
 prettyFig('plw=1.5;','lw=1.5;','fs=14;','FixLogX=1;')

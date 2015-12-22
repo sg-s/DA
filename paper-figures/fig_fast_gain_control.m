@@ -222,233 +222,53 @@ end
 %% Supplementary Figure
 % 
 
-figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
-subplot(2,2,1), hold on
+figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
+
+[mean_stim,inst_gain,e] = makeFig6G(mean(PID,2),mean(fA,2),mean(fp,2),500);
+subplot(2,3,1), hold on
+[y,x] = hist(e,50);
+y = y/sum(y);
+plot(x,y,'r')
+plot([.8 .8],[0 .25],'k--')
+xlabel('r^2')
+ylabel('p(r^2)')
+
+subplot(2,3,2), hold on
+plot([min(mean_stim) max(mean_stim)],[.8 .8],'k--')
+l = plot(mean_stim(1:50:end),e(1:50:end),'r.');
+xlabel('Stimulus in preceding 500ms (V)')
+legend(l,['r^2 = ' oval(rsquare(mean_stim,e))],'Location','southeast')
+ylabel('r^2')
+
+subplot(2,3,3), hold on
+plot([min(inst_gain) max(inst_gain)],[.8 .8],'k--')
+l = plot(inst_gain(1:50:end),e(1:50:end),'r.');
+xlabel('Inst. gain (Hz/V)')
+legend(l,['r^2 = ' oval(rsquare(inst_gain,e))],'Location','southeast')
+ylabel('r^2')
 
 
-% [~,~,~,~,~,history_lengths]=gainAnalysisWrapper('response',resp,'prediction',pred,'stimulus',stim,'time',time,'ph',ph,'history_lengths',history_lengths,'example_history_length',.5,'use_cache',true,'engine',@gainAnalysis);
-% set(axes_handles(5),'XLim',[.09 11]) % to show .1 and 10 on the log scale
-% set(axes_handles(4),'XLim',[min(pred) max(pred)])
-% xlabel(axes_handles(4),'Projected Stimulus (V)')
-% ylabel(axes_handles(4),'ORN Response (Hz)')
+clear ph
+ph(3) = subplot(2,3,4); hold on
+ph(4) = subplot(2,3,5); hold on
 
-% % show the p-value
-% axes(axes_handles(4))
-% text(-.1,60,'p < 0.01')
-% title(axes_handles(4),[])
+[~,~,~,~,~,history_lengths]=gainAnalysisWrapper('response',resp,'prediction',pred,'stimulus',stim,'time',time,'ph',ph,'history_lengths',history_lengths,'example_history_length',.5,'use_cache',true,'engine',@gainAnalysis);
+set(ph(4),'XLim',[.09 11]) % to show .1 and 10 on the log scale
+set(ph(3),'XLim',[min(pred) max(pred)])
+xlabel(ph(3),'Projected Stimulus (V)')
+ylabel(ph(3),'ORN Response (Hz)')
 
-axes(axes_handles(3))
-plotPieceWiseLinear(mean_stim,inst_gain,'nbins',50,'use_std',true);
-xlabel(axes_handles(3),'Stimulus in preceding 500ms (V)')
-ylabel(axes_handles(3),'Inst. Gain (Hz/V)')
-set(axes_handles(3),'YScale','log','XScale','log','YTick',[10 100 1000],'YLim',[10 1000])
+% show the p-value
+axes(ph(3))
+text(.1,60,'p < 0.01')
+title(ph(3),[])
 
 % fix some labels
-set(axes_handles(5),'YScale','log','YTick',[0.5 1 2],'YLim',[0.4 2.5],'XLim',[0.09 10.1],'YMinorTick','on')
-
-% Indicate regions of high and low stimulus on the stimulus
-hl = round(history_lengths(9)*1e3);
-shat = computeSmoothedStimulus(mean(PID,2),hl);
-
-n = floor(sum(~isnan(mean(fA,2)))*.33);
-shat(1:hl) = Inf; % the initial segment where we can't estimate shat is excluded
-shat(isnan(shat)) = Inf;
-shat(isnan(mean(fA,2))) = Inf;
-[~, t_low] = sort(shat,'ascend');
-t_low = t_low(1:n); % this is an index
-t_low = tA(t_low); % t_low is now a time. 
- 
-shat = computeSmoothedStimulus(mean(PID,2),hl);
-shat(1:hl) = -Inf;
-shat(isinf(shat)) = -Inf;
-shat(isnan(mean(fA,2))) = -Inf;
-[~, t_high] = sort(shat,'descend');
-t_high = t_high(1:n);
-t_high  = tA(t_high);
-
-plot(axes_handles(1),t_low,1+0*t_low,'.','Color',c(1,:))
-plot(axes_handles(1),t_high,1+0*t_low,'.','Color',c(7,:))
+set(ph(4),'YScale','log','YTick',[0.5 1 2],'YLim',[0.4 2.5],'XLim',[0.09 10.1],'YMinorTick','on')
+title(ph(4),'Linear Model')
 
 
-
-
-%% Test Figure: How does instantaneous gain depend on various history lengths? 
-% In this section, we look at a generalized version of the plot of instate nous gain vs. mean history in the last 500ms, where we now vary the length of the history length, and see how the slope of the gain plot changes, as well as how well it is fit by a straight line. First, we plot the inst. gain vs. stimulus projected by a box filter, for various lengths of the box filter.
-
-
-clear inst_gain
-global inst_gain
-[~,inst_gain] = makeFig6G(mean(PID,2),mean(fA,2),mean(fp,2),500);
-
-
-mean_pid = mean(PID,2);
-history_lengths = logspace(-2,1,40);
-
-gain_K1_slope = NaN*history_lengths;
-gain_K1_rho = NaN*history_lengths;
-
-gain_K2_slope = NaN*history_lengths;
-gain_K2_rho = NaN*history_lengths;
-
-gain_K3_slope = NaN*history_lengths;
-gain_K3_rho = NaN*history_lengths;
-
-c = parula(length(history_lengths)+1);
-for i = 1:length(history_lengths)
-	% first do the simple box filter
-	temp = floor(history_lengths(i)*1e3);
-	proj_stim = filter(ones(temp,1),temp,mean_pid);
-
-	rm_this = (isnan(proj_stim) | isnan(inst_gain) | inst_gain < 0);
-	proj_stim(rm_this) = [];
-	y = inst_gain;
-	y(rm_this) = [];
-
-	gain_K1_rho(i) = spear(proj_stim(1:10:end),y(1:10:end));
-
-	ff = fit(proj_stim(:),y(:),'power1','StartPoint',[0 0]);
-	gain_K1_slope(i) = ff.b;
-
-
-	% now do a squared differentiating filter
-	temp = floor(history_lengths(i)*1e3/2);
-	proj_stim = filter([ones(temp,1); -ones(temp,1)],2*temp,mean_pid);
-	proj_stim = proj_stim.^2;
-
-	rm_this = (isnan(proj_stim) | isnan(inst_gain) | inst_gain < 0);
-	proj_stim(rm_this) = [];
-	y = inst_gain;
-	y(rm_this) = [];
-
-	gain_K2_rho(i) = spear(proj_stim(1:10:end),y(1:10:end));
-
-	ff = fit(proj_stim(:),y(:),'power1','StartPoint',[0 0]);
-	gain_K2_slope(i) = ff.b;
-
-	% now do a absolute value of differentiating filter
-	temp = floor(history_lengths(i)*1e3/2);
-	proj_stim = filter([ones(temp,1); -ones(temp,1)],2*temp,mean_pid);
-	proj_stim = abs(proj_stim);
-
-	rm_this = (isnan(proj_stim) | isnan(inst_gain) | inst_gain < 0);
-	proj_stim(rm_this) = [];
-	y = inst_gain;
-	y(rm_this) = [];
-
-	gain_K3_rho(i) = spear(proj_stim(1:10:end),y(1:10:end));
-
-	ff = fit(proj_stim(:),y(:),'power1','StartPoint',[0 0]);
-	gain_K3_slope(i) = ff.b;
-
-end
-
-
-%%
-% We now plot the slopes of these plots as a function of history length, and also plot the Spearman rank correlation, showing where these slopes are meaningful (and where there is little correlation between inst. gain and the projected stimulus). 
-
-figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
-h1 = subplot(1,3,1); hold on
-ax = plotyy(history_lengths,gain_K1_slope,history_lengths,gain_K1_rho);
-ylabel(ax(1),'Gain Exponent')
-ylabel(ax(2),'\rho')
-xlabel('History Length (s)')
-title('Integrating Filter')
-set(ax,'XScale','log')
-set(ax(2),'YLim',[-1 0],'YTick',-1:.2:0)
-set(ax(1),'YLim',[-3 1],'YTick',-3:.5:1)
-
-subplot(1,3,2), hold on
-ax = plotyy(history_lengths,gain_K2_slope,history_lengths,gain_K2_rho);
-ylabel(ax(1),'Gain Exponent')
-ylabel(ax(2),'\rho')
-xlabel('History Length (s)')
-title('Sq. Differentiating Filter')
-set(ax,'XScale','log')
-set(ax(2),'YLim',[-1 0],'YTick',-1:.2:0)
-set(ax(1),'YLim',[-3 1],'YTick',-3:.5:1)
-
-h3= subplot(1,3,3); hold on
-ax = plotyy(history_lengths,gain_K3_slope,history_lengths,gain_K3_rho);
-ylabel(ax(1),'Gain Exponent')
-ylabel(ax(2),'\rho')
-xlabel('History Length (s)')
-title('Abs. Differentiating Filter')
-set(ax,'XScale','log')
-set(ax(2),'YLim',[-1 0],'YTick',-1:.2:0)
-set(ax(1),'YLim',[-3 1],'YTick',-3:.5:1)
-
-prettyFig('FixLogX=1;');
-pause(1)
-movePlot(h1,'left',.05)
-movePlot(h3,'right',.025)
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-%% Reconstructing the gain filter
-% In the previous section, we have used a square filter whose length we varied. In this section, we generalize the analysis by parameterizing the filter shape, and finding the best parameters that can account for the observed variation in instantaneous gain. The following figure shows the best-fit filter from this case (parameterized by a sum of two gamma functions). As we can see, a purely integrating filter is chosen, with a time-scale roughly comparable to the timescale predicted by the previous analysis. 
-
-
-
-
-%%
-% The results of our optimization technique show that the "best" gain filter is one that integrates the stimulus, and doesn't differentiate it at all. However, are we sure that our optimization has found the global minimum? To verify that the gain filters with differentiating components cannot do a better job at explaining observed gain changes, we manually change the degree to which the filter differentiates, and then determine what fraction of the variance this manipulations has. 
-
-%%
-% In the following figure, in the first panel, the Spearman rank-correlation between the projected stimulus and the instatnenous gain is plotted on the Y-axis. Lower (larger absolute) values mean that it can explain more of the data. On the x-axis is a measure of how differentiating the filter is. Values close to 0 mean filters that perform perfect differentiation, while values close to 1 mean filters that are integrators. 
-
-%% 
-% In the second panel, we repeat the analysis, but now we vary the timescale of the filter. 
-
-all_A = linspace(0,1,30);
-all_rho = NaN*all_A;
-diff_degree = NaN*all_A;
-all_tau = ceil(logspace(1,3,30));
-all_rho_tau = NaN*all_tau;
-
-
-for i = 1:length(all_A)
-	q = p;
-	q.A = all_A(i);
-	q.tau1 = p.tau1*(1-(all_A(i)/2));
-	q.tau2 = p.tau1*(1+(all_A(i)/2));
-	[~,all_rho(i)] = findBestGainFilter(mean_pid,q);
-	K = filter_gamma2(1:2e3,q);
-	diff_degree(i) = sum(K)/sum(abs(K));
-
-	q = p;
-	q.A = 0;
-	q.tau1 = all_tau(i);
-	q.tau2 = all_tau(i);
-	[~,all_rho_tau(i)] = findBestGainFilter(mean_pid,q);
-end
-
-
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-subplot(1,2,1), hold on
-plot(diff_degree,all_rho,'k+')
-xlabel('\int {K} / \int {|K|}','interpreter','tex')
-ylabel('\rho') 
-
-
-subplot(1,2,2), hold on
-plot(all_tau*p.n,all_rho_tau,'k+')
-xlabel('\tau (ms)','interpreter','tex')
-ylabel('\rho') 
-
-prettyFig();
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-
-%% Supplementary Figure: LN models cannot account for this
-% In this section we show that a static output nonlinearity cannot account for observed fast gain control. 
+% now do the same analysis with the LN model
 
 fp = mean(fp,2);
 temp = fit(fp(~(isnan(fp) | isnan(R))),R(~(isnan(fp) | isnan(R))),'poly1');
@@ -461,9 +281,8 @@ p.k = 23.6690;
 p.n = 2.9341;
 fp_hill = hill(p,fp);
 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-ph(3) = subplot(1,2,1); hold on
-ph(4) = subplot(1,2,2); hold on
+clear ph
+ph(4) = subplot(2,3,6); hold on
 
 hl_min = .1;
 hl_max = 10;
@@ -477,16 +296,192 @@ stim = mean(PID(10e3:55e3,[3:10 13:20]),2);
 
 [p,~,~,~,~,history_lengths]=gainAnalysisWrapper('response',resp,'prediction',pred,'stimulus',stim,'time',time,'ph',ph,'history_lengths',history_lengths,'example_history_length',.5,'use_cache',true,'engine',@gainAnalysis);
 set(ph(4),'XLim',[.09 11]) % to show .1 and 10 on the log scale
-set(ph(3),'XLim',[min(pred) mean(max(fA))],'YLim',[min(pred) mean(max(fA))])
-xlabel(ph(3),'LN Prediction (Hz)')
-ylabel(ph(3),'ORN Response (Hz)')
-title(ph(3),'')
-prettyFig('FixLogX=1;')
+title(ph(4),'LN Model')
+
+prettyFig('FixLogX=1;','fs=18;')
 
 if being_published
 	snapnow
 	delete(gcf)
 end
+
+
+
+
+% clear inst_gain
+% global inst_gain
+% [~,inst_gain] = makeFig6G(mean(PID,2),mean(fA,2),mean(fp,2),500);
+
+
+% mean_pid = mean(PID,2);
+% history_lengths = logspace(-2,1,40);
+
+% gain_K1_slope = NaN*history_lengths;
+% gain_K1_rho = NaN*history_lengths;
+
+% gain_K2_slope = NaN*history_lengths;
+% gain_K2_rho = NaN*history_lengths;
+
+% gain_K3_slope = NaN*history_lengths;
+% gain_K3_rho = NaN*history_lengths;
+
+% c = parula(length(history_lengths)+1);
+% for i = 1:length(history_lengths)
+% 	% first do the simple box filter
+% 	temp = floor(history_lengths(i)*1e3);
+% 	proj_stim = filter(ones(temp,1),temp,mean_pid);
+
+% 	rm_this = (isnan(proj_stim) | isnan(inst_gain) | inst_gain < 0);
+% 	proj_stim(rm_this) = [];
+% 	y = inst_gain;
+% 	y(rm_this) = [];
+
+% 	gain_K1_rho(i) = spear(proj_stim(1:10:end),y(1:10:end));
+
+% 	ff = fit(proj_stim(:),y(:),'power1','StartPoint',[0 0]);
+% 	gain_K1_slope(i) = ff.b;
+
+
+% 	% now do a squared differentiating filter
+% 	temp = floor(history_lengths(i)*1e3/2);
+% 	proj_stim = filter([ones(temp,1); -ones(temp,1)],2*temp,mean_pid);
+% 	proj_stim = proj_stim.^2;
+
+% 	rm_this = (isnan(proj_stim) | isnan(inst_gain) | inst_gain < 0);
+% 	proj_stim(rm_this) = [];
+% 	y = inst_gain;
+% 	y(rm_this) = [];
+
+% 	gain_K2_rho(i) = spear(proj_stim(1:10:end),y(1:10:end));
+
+% 	ff = fit(proj_stim(:),y(:),'power1','StartPoint',[0 0]);
+% 	gain_K2_slope(i) = ff.b;
+
+% 	% now do a absolute value of differentiating filter
+% 	temp = floor(history_lengths(i)*1e3/2);
+% 	proj_stim = filter([ones(temp,1); -ones(temp,1)],2*temp,mean_pid);
+% 	proj_stim = abs(proj_stim);
+
+% 	rm_this = (isnan(proj_stim) | isnan(inst_gain) | inst_gain < 0);
+% 	proj_stim(rm_this) = [];
+% 	y = inst_gain;
+% 	y(rm_this) = [];
+
+% 	gain_K3_rho(i) = spear(proj_stim(1:10:end),y(1:10:end));
+
+% 	ff = fit(proj_stim(:),y(:),'power1','StartPoint',[0 0]);
+% 	gain_K3_slope(i) = ff.b;
+
+% end
+
+
+% %%
+% % We now plot the slopes of these plots as a function of history length, and also plot the Spearman rank correlation, showing where these slopes are meaningful (and where there is little correlation between inst. gain and the projected stimulus). 
+
+% figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+% h1 = subplot(1,3,1); hold on
+% ax = plotyy(history_lengths,gain_K1_slope,history_lengths,gain_K1_rho);
+% ylabel(ax(1),'Gain Exponent')
+% ylabel(ax(2),'\rho')
+% xlabel('History Length (s)')
+% title('Integrating Filter')
+% set(ax,'XScale','log')
+% set(ax(2),'YLim',[-1 0],'YTick',-1:.2:0)
+% set(ax(1),'YLim',[-3 1],'YTick',-3:.5:1)
+
+% subplot(1,3,2), hold on
+% ax = plotyy(history_lengths,gain_K2_slope,history_lengths,gain_K2_rho);
+% ylabel(ax(1),'Gain Exponent')
+% ylabel(ax(2),'\rho')
+% xlabel('History Length (s)')
+% title('Sq. Differentiating Filter')
+% set(ax,'XScale','log')
+% set(ax(2),'YLim',[-1 0],'YTick',-1:.2:0)
+% set(ax(1),'YLim',[-3 1],'YTick',-3:.5:1)
+
+% h3= subplot(1,3,3); hold on
+% ax = plotyy(history_lengths,gain_K3_slope,history_lengths,gain_K3_rho);
+% ylabel(ax(1),'Gain Exponent')
+% ylabel(ax(2),'\rho')
+% xlabel('History Length (s)')
+% title('Abs. Differentiating Filter')
+% set(ax,'XScale','log')
+% set(ax(2),'YLim',[-1 0],'YTick',-1:.2:0)
+% set(ax(1),'YLim',[-3 1],'YTick',-3:.5:1)
+
+% prettyFig('FixLogX=1;');
+% pause(1)
+% movePlot(h1,'left',.05)
+% movePlot(h3,'right',.025)
+
+% if being_published
+% 	snapnow
+% 	delete(gcf)
+% end
+
+% Reconstructing the gain filter
+% In the previous section, we have used a square filter whose length we varied. In this section, we generalize the analysis by parameterizing the filter shape, and finding the best parameters that can account for the observed variation in instantaneous gain. The following figure shows the best-fit filter from this case (parameterized by a sum of two gamma functions). As we can see, a purely integrating filter is chosen, with a time-scale roughly comparable to the timescale predicted by the previous analysis. 
+
+
+
+
+%
+% The results of our optimization technique show that the "best" gain filter is one that integrates the stimulus, and doesn't differentiate it at all. However, are we sure that our optimization has found the global minimum? To verify that the gain filters with differentiating components cannot do a better job at explaining observed gain changes, we manually change the degree to which the filter differentiates, and then determine what fraction of the variance this manipulations has. 
+
+%
+% In the following figure, in the first panel, the Spearman rank-correlation between the projected stimulus and the instatnenous gain is plotted on the Y-axis. Lower (larger absolute) values mean that it can explain more of the data. On the x-axis is a measure of how differentiating the filter is. Values close to 0 mean filters that perform perfect differentiation, while values close to 1 mean filters that are integrators. 
+
+%
+% In the second panel, we repeat the analysis, but now we vary the timescale of the filter. 
+
+% all_A = linspace(0,1,30);
+% all_rho = NaN*all_A;
+% diff_degree = NaN*all_A;
+% all_tau = ceil(logspace(1,3,30));
+% all_rho_tau = NaN*all_tau;
+
+
+% for i = 1:length(all_A)
+% 	q = p;
+% 	q.A = all_A(i);
+% 	q.tau1 = p.tau1*(1-(all_A(i)/2));
+% 	q.tau2 = p.tau1*(1+(all_A(i)/2));
+% 	[~,all_rho(i)] = findBestGainFilter(mean_pid,q);
+% 	K = filter_gamma2(1:2e3,q);
+% 	diff_degree(i) = sum(K)/sum(abs(K));
+
+% 	q = p;
+% 	q.A = 0;
+% 	q.tau1 = all_tau(i);
+% 	q.tau2 = all_tau(i);
+% 	[~,all_rho_tau(i)] = findBestGainFilter(mean_pid,q);
+% end
+
+
+
+% figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% subplot(1,2,1), hold on
+% plot(diff_degree,all_rho,'k+')
+% xlabel('\int {K} / \int {|K|}','interpreter','tex')
+% ylabel('\rho') 
+
+
+% subplot(1,2,2), hold on
+% plot(all_tau*p.n,all_rho_tau,'k+')
+% xlabel('\tau (ms)','interpreter','tex')
+% ylabel('\rho') 
+
+% prettyFig();
+
+% if being_published
+% 	snapnow
+% 	delete(gcf)
+% end
+
+
+% Supplementary Figure: LN models cannot account for this
+% In this section we show that a static output nonlinearity cannot account for observed fast gain control. 
+
 
 %% Version Info
 % The file that generated this document is called:

@@ -41,16 +41,17 @@ tic
 %          ######   #######  ##    ##    ##    ##     ##  #######  ######## 
 
 
-%% Fig 5 from paper
+%% Fast Gain Control in ORNs
 % 
 
-fig_handle=figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
+fig_handle=figure('outerposition',[0 0 900 1000],'PaperUnits','points','PaperSize',[900 1000]); hold on
 clf(fig_handle);
-axes_handles(1) = subplot(10,3,1:9); 
-axes_handles(2) = subplot(10,3,10:18); 
-axes_handles(3) = subplot(10,3,[19:3:28]);
-axes_handles(4) = subplot(10,3,[20:3:29]);
-axes_handles(5) = subplot(10,3,[21:3:30]);
+axes_handles(1) = subplot(9,3,1:6); 
+axes_handles(2) = subplot(9,3,7:12); 
+axes_handles(3) = subplot(9,3,13:18);
+axes_handles(4) = subplot(9,3,[19 22 25]);
+axes_handles(5) = subplot(9,3,[20 23 26]);
+axes_handles(6) = subplot(9,3,[21 24 27]);
 
 for i = 1:length(axes_handles)
 	hold(axes_handles(i),'on');
@@ -58,9 +59,11 @@ end
 
 movePlot(axes_handles(1),'up',.03)
 movePlot(axes_handles(2),'up',.04)
-movePlot(axes_handles(3),'down',.02)
+movePlot(axes_handles(3),'up',.02)
+
 movePlot(axes_handles(4),'down',.02)
 movePlot(axes_handles(5),'down',.02)
+movePlot(axes_handles(6),'down',.02)
 
 load('/local-data/DA-paper/large-variance-flicker/ab3/2015_01_28_CS_ab3_2_EA.mat')
 PID = data(4).PID;
@@ -122,10 +125,8 @@ set(ax(1),'YColor',[0 0 0])
 ylabel(ax(1),'ORN Response (Hz)')
 ylabel(ax(2),'Projected Stimulus')
 set(axes_handles(2),'box','off')
-xlabel(axes_handles(2),'Time (s)')
 
-% gain analysis -- linear model
-ph = []; ph(3:4) = axes_handles([4 5]);
+
 
 hl_min = .1;
 hl_max = 10;
@@ -137,25 +138,107 @@ pred = mean(fp(10e3:55e3,[3:10 13:20]),2);
 time = 1e-3*(1:length(resp));
 stim = mean(PID(10e3:55e3,[3:10 13:20]),2);
 
-[~,~,~,~,~,history_lengths]=gainAnalysisWrapper('response',resp,'prediction',pred,'stimulus',stim,'time',time,'ph',ph,'history_lengths',history_lengths,'example_history_length',.5,'use_cache',true,'engine',@gainAnalysis);
-set(axes_handles(5),'XLim',[.09 11]) % to show .1 and 10 on the log scale
-set(axes_handles(4),'XLim',[min(pred) max(pred)])
-xlabel(axes_handles(4),'Projected Stimulus (V)')
-ylabel(axes_handles(4),'ORN Response (Hz)')
-
-% show the p-value
-axes(axes_handles(4))
-text(-.1,60,'p < 0.01')
-title(axes_handles(4),[])
 
 % plot gain vs preceding stimulus
-[x,y,e] = makeFig6G(mean(PID,2),mean(fA,2),mean(fp,2),500);
-rm_this = (isnan(x) | isnan(y)) | x < .2 | e < .8;
-x(rm_this) = [];
-y(rm_this) = [];
-ss = 50;
+global inst_gain
+[mean_stim,inst_gain,e] = makeFig6G(mean(PID,2),mean(fA,2),mean(fp,2),500);
+rm_this = (isnan(mean_stim) | isnan(inst_gain)) | mean_stim < .2 | e < .8;
+mean_stim(rm_this) = NaN;
+inst_gain(rm_this) = NaN;
+
+
+plot(axes_handles(3),tA(1:10:end),inst_gain(1:10:end),'k.')
+ylabel(axes_handles(3),'Inst. Gain (Hz/V)')
+xlabel(axes_handles(3),'Time (s)')
+set(axes_handles(3),'XLim',[0 60])
+
+% show the backed-out gain filter
+% these parameters come from fitting a gain filter from the PID to the inst. gain
+clear p
+p.   A = 0.0386;
+p.tau1 = 299.8428;
+p.tau2 = 300.3500;
+p.   n = 0.7266;
+
+K = filter_gamma2(1:2e3,p);
+plot(axes_handles(4),1e-3*(1:length(K)),K/sum(K),'b')
+xlabel(axes_handles(4),'Filter Lag (s)')
+ylabel(axes_handles(4),'Gain filter')
+
+shat = filter(K,sum(K),mean(PID,2));
+shat(isnan(inst_gain)) = NaN;
+
+axis(axes_handles(5)); hold on
+[~,data] = plotPieceWiseLinear(shat,inst_gain,'nbins',50,'Color','b','use_std',true,'make_plot',false);
+l = errorShade(axes_handles(5),data.x,data.y,data.ye,'Color',[0 0 1]);
+temp1 = shat(~isnan(inst_gain));
+temp2 = inst_gain(~isnan(inst_gain));
+legend(l(1),['\rho =' oval(spear(temp1(1:10:end),temp2(1:10:end)),3)])
+xlabel(axes_handles(5),'Stimulus projected by gain filter (V)')
+ylabel(axes_handles(5),'Inst. Gain (Hz/V)')
+set(axes_handles(5),'YScale','log','XLim',[min(shat) max(shat)])
+set(axes_handles(5),'YLim',[40 1000])
+
+% now vary the gain filter and show it is the best possible
+all_A = linspace(0,1,30);
+all_rho = NaN*all_A;
+diff_degree = NaN*all_A;
+all_tau = ceil(logspace(1,3,30));
+all_rho_tau = NaN*all_tau;
+
+
+for i = 1:length(all_A)
+	q = p;
+	q.A = all_A(i);
+	q.tau1 = p.tau1*(1-(all_A(i)/2));
+	q.tau2 = p.tau1*(1+(all_A(i)/2));
+	[~,all_rho(i)] = findBestGainFilter(mean(PID,2),q);
+	K = filter_gamma2(1:2e3,q);
+	diff_degree(i) = sum(K)/sum(abs(K));
+
+	q = p;
+	q.A = 0;
+	q.tau1 = all_tau(i);
+	q.tau2 = all_tau(i);
+	[~,all_rho_tau(i)] = findBestGainFilter(mean(PID,2),q);
+end
+
+
+ax = plotyy(axes_handles(6),all_rho,diff_degree,all_rho_tau,all_tau);
+
+ylabel(ax(1),'\int {K} / \int {|K|}','interpreter','tex')
+xlabel(axes_handles(6),'\rho') 
+ylabel(ax(2),'\tau_{gain} (ms)')
+
+
+prettyFig('plw=1.5;','lw=1.5;','fs=14;','FixLogX=1;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%% Supplementary Figure
+% 
+
+figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
+subplot(2,2,1), hold on
+
+
+% [~,~,~,~,~,history_lengths]=gainAnalysisWrapper('response',resp,'prediction',pred,'stimulus',stim,'time',time,'ph',ph,'history_lengths',history_lengths,'example_history_length',.5,'use_cache',true,'engine',@gainAnalysis);
+% set(axes_handles(5),'XLim',[.09 11]) % to show .1 and 10 on the log scale
+% set(axes_handles(4),'XLim',[min(pred) max(pred)])
+% xlabel(axes_handles(4),'Projected Stimulus (V)')
+% ylabel(axes_handles(4),'ORN Response (Hz)')
+
+% % show the p-value
+% axes(axes_handles(4))
+% text(-.1,60,'p < 0.01')
+% title(axes_handles(4),[])
+
 axes(axes_handles(3))
-plotPieceWiseLinear(x,y,'nbins',50,'use_std',true);
+plotPieceWiseLinear(mean_stim,inst_gain,'nbins',50,'use_std',true);
 xlabel(axes_handles(3),'Stimulus in preceding 500ms (V)')
 ylabel(axes_handles(3),'Inst. Gain (Hz/V)')
 set(axes_handles(3),'YScale','log','XScale','log','YTick',[10 100 1000],'YLim',[10 1000])
@@ -187,12 +270,6 @@ plot(axes_handles(1),t_low,1+0*t_low,'.','Color',c(1,:))
 plot(axes_handles(1),t_high,1+0*t_low,'.','Color',c(7,:))
 
 
-prettyFig('plw=1.5;','lw=1.5;','fs=14;','FixLogX=1;')
-
-if being_published
-	snapnow
-	delete(gcf)
-end
 
 
 %% Test Figure: How does instantaneous gain depend on various history lengths? 
@@ -314,39 +391,7 @@ end
 % In the previous section, we have used a square filter whose length we varied. In this section, we generalize the analysis by parameterizing the filter shape, and finding the best parameters that can account for the observed variation in instantaneous gain. The following figure shows the best-fit filter from this case (parameterized by a sum of two gamma functions). As we can see, a purely integrating filter is chosen, with a time-scale roughly comparable to the timescale predicted by the previous analysis. 
 
 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-subplot(1,2,1), hold on
-clear p
-p.   A = 0.0386;
-p.tau1 = 299.8428;
-p.tau2 = 300.3500;
-p.   n = 0.7266;
 
-K = filter_gamma2(1:2e3,p);
-plot(1e-3*(1:length(K)),K,'r')
-xlabel('Filter Lag (s)')
-ylabel('Gain filter')
-
-shat = filter(K,1,mean_pid);
-
-% fit a power law
-rm_this = isnan(inst_gain) | isnan(shat);
-temp = inst_gain(~rm_this);
-shat(rm_this) = [];
-
-subplot(1,2,2), hold on
-l = plotPieceWiseLinear(shat,temp,'nbins',50,'Color','k','use_std',true);
-legend(l.line(1),['\rho =' oval(spear(shat(1:10:end),temp(1:10:end)),3)])
-xlabel('Stimulus projected by gain filter (a.u.)')
-ylabel('Inst. Gain (Hz/V)')
-set(gca,'YScale','log')
-
-prettyFig();
-
-if being_published
-	snapnow
-	delete(gcf)
-end
 
 %%
 % The results of our optimization technique show that the "best" gain filter is one that integrates the stimulus, and doesn't differentiate it at all. However, are we sure that our optimization has found the global minimum? To verify that the gain filters with differentiating components cannot do a better job at explaining observed gain changes, we manually change the degree to which the filter differentiates, and then determine what fraction of the variance this manipulations has. 

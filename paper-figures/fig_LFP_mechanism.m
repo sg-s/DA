@@ -412,7 +412,7 @@ for i = 1:width(x)
 end
 
 % plot data
-[line_handle2, shade_handle2] = errorShade(all_x,nanmean(all_y,2),sem(all_y'),'Color',[1 0 0],'Shading',s);
+[line_handle2, shade_handle2] = errorShade(all_x,nanmean(all_y,2),sem(all_y'),'Color',[1 0 0],'Shading',.5);
 uistack(shade_handle2,'bottom')
 
 % low contrast
@@ -428,11 +428,11 @@ for i = 1:width(x)
 end
 
 % plot data
-[line_handle2, shade_handle2] = errorShade(all_x,nanmean(all_y,2),sem(all_y'),'Color',[0 0 1],'Shading',s);
+[line_handle2, shade_handle2] = errorShade(all_x,nanmean(all_y,2),sem(all_y'),'Color',[0 0 1],'Shading',.5);
 uistack(shade_handle2,'bottom')
 xlabel('Projected Stimulus (V)')
 ylabel('\Delta LFP (mV)')
-
+set(gca,'XLim',[-1 1])
 
 prettyFig('fs=18;')
 

@@ -157,6 +157,7 @@ set(axes_handles(3),'XLim',[0 60])
 y = y/sum(y);
 plot(axes_handles(4),x,y,'k')
 xlabel(axes_handles(4),'Instantaneous Gain (Hz/V)')
+ylabel(axes_handles(4),'Probability')
 
 % show the inst gain vs. the mean stim
 [~,data] = plotPieceWiseLinear(mean_stim,inst_gain,'nbins',50,'Color','b','use_std',true,'make_plot',false);
@@ -190,7 +191,7 @@ end
 plot(axes_handles(6),history_lengths,rho,'b+')
 set(axes_handles(6),'XScale','log')
 ylabel(axes_handles(6),'\rho')
-xlabel(axes_handles(6),'\tau_{gain} (s)')
+xlabel(axes_handles(6),'History Length (s)')
 
 
 prettyFig('plw=1.5;','lw=1.5;','fs=14;','FixLogX=1;')

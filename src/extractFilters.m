@@ -138,7 +138,7 @@ for i = 1:width(X)
 	rm_this = isnan(x) | isnan(y);
 	x(rm_this) = []; y(rm_this) = [];
 	try
-		[ff,gof] = fit(x(:),y(:),'poly1');
+		ff = fit(x(:),y(:),'poly1');
 		gain(i) = ff.p1;
 		% get the weights for the each
 		temp = confint(ff);

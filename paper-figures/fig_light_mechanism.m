@@ -359,7 +359,7 @@ subplot(3,3,2), hold on
 
 y = fA_gain(nominal_conc == 0);
 x = 0*y;
-plot(x,y,'k+';
+plot(x,y,'k+');
 for i = 2:length(odour_levels)
 	x = mean(PID(a:z,intersect(find(nominal_conc == odour_levels(i)),find(strcmp(odour,'2ac')))));
 	y = (fA_gain(intersect(find(nominal_conc == odour_levels(i)),find(strcmp(odour,'2ac')))));

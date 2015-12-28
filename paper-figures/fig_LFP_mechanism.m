@@ -389,7 +389,7 @@ K1_mean = nanmean(squeeze(nanmean(K,1)),2);
 ft = -99:700;
 LFP_pred = NaN*reshaped_LFP;
 for i = 1:width(reshaped_LFP)
-	LFP_pred(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K1_mean,ft);
+	LFP_pred(:,i) = bandPass(convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K1_mean,ft),1000,10);
 end
 
 

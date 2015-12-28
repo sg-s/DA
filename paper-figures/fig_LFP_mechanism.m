@@ -56,7 +56,7 @@ figure('outerposition',[0 0 1000 900],'PaperUnits','points','PaperSize',[1000 90
 %  ######   ##     ##  #######   ######   ######  #### ##     ## ##    ##  ######  
 
 
-subplot(2,2,1), hold on
+subplot(2,2,3), hold on
 
 [PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData('/local-data/DA-paper/LFP-MSG/september',1);
 
@@ -115,10 +115,7 @@ a = 10e3; z = 50e3;
 [K1,LFP_pred,LFP_gain,LFP_gain_err] = extractFilters(PID,filtered_LFP,'use_cache',true,'a',a,'z',z);
 [K2,fA_pred,fA_gain,fA_gain_err] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
 
-
-for i = 1:width(LFP)
-	plot(mean(PID(a:z,i)),LFP_gain(i),'+','Color',c(paradigm(i),:))
-end
+plot(mean(PID(a:z,:)),LFP_gain,'k+');
 
 x = mean(PID(a:z,:)); x = x(:);
 y = LFP_gain(:);
@@ -238,7 +235,7 @@ for i = 1:width(mean_stim)
 	inst_gain(1:a,i) = NaN;
 end
 
-subplot(2,2,2), hold on
+subplot(2,2,1), hold on
 for i = 1:width(mean_stim)
 	 [~,data(i)] = plotPieceWiseLinear(mean_stim(a:z,i),inst_gain(a:z,i),'nbins',50,'make_plot',false);
 end
@@ -272,7 +269,7 @@ for i = 1:max(orn)
 	end
 end
 
-subplot(2,2,3), hold on
+subplot(2,2,2), hold on
 c = lines(max(orn)+1);
 errorShade(history_lengths,mean(rho,2),sem(rho'),'Color',[0 0 0]);
 xlabel('History Length (s)')

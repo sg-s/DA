@@ -221,7 +221,6 @@ legend(h(1:2),{'High Stim.','Low Stim.'},'Location','northwest')
 % ##       ##     ## ##    ## ##     ## ##    ##    ##    
 % ########  #######   ######   #######   ######     ##    
 
-
 % load data
 load('/local-data/DA-paper/locust/example-data.mat')
 
@@ -255,13 +254,13 @@ plot(axes_handles(8),mean(EAG_prediction,2),mean(EAG,2),'k.')
 inst_gain(e < .8) = NaN;
 inst_gain(1:5e3) = NaN;
 
-axis(axes_handles(9)), hold on
+axis(axes_handles(9)); hold on
 plotPieceWiseLinear(mean_stim(~isnan(inst_gain)),inst_gain(~isnan(inst_gain)),'nbins',40,'make_plot',true,'use_std',true);
 
-legend(['\rho = ' oval(spear(mean_stim(~isnan(inst_gain)),inst_gain(~isnan(inst_gain))))])
+legend(['\rho = ' oval(spear(mean_stim(~isnan(inst_gain)),inst_gain(~isnan(inst_gain))))]);
 xlabel('Mean Stimulus in preceding 250ms (mV)')
 ylabel('Inst. Gain')
-set(gca,'YLim',[0 2.5])
+set(gca,'YLim',[0 2.5]);
 
 
 %  ######   #######   ######  ##     ## ######## ######## ####  ######   ######  
@@ -368,95 +367,6 @@ if being_published
 	snapnow
 	delete(gcf)
 end
-
-return
-
-%% Pulse Gain Analysis
-% In this section we analyse the gain in a differnet way. We compute the gain of the ORN at every valve onset, and try to find a projection of the stimulus that accounts for the variation in this gain. 
-
-history_lengths = logspace(log10(.1),log10(10),40);
-gain_K1_slope = NaN(length(history_lengths),length(data));
-gain_K1_rho = NaN(length(history_lengths),length(data));
-
-for i = 1:length(data)
-
-
-	valve = data(i).Valve';
-	inst_gain = findGainWhenValveOpens(valve,stim,resp);
-	for j = 1:length(history_lengths)
-
-		% first do the simple box filter
-		filtered_stim = floor(history_lengths(j)*1e3);
-		filtered_stim = filter(ones(filtered_stim,1),filtered_stim,stim);
-
-		y = inst_gain;
-		y(1:10e3) = NaN;
-
-		rm_this = isnan(filtered_stim) | isnan(y);
-		filtered_stim(rm_this) = [];
-		y(rm_this) = [];
-
-		ff = fit(filtered_stim(:),y(:),'power1','StartPoint',[0 0]);
-		gain_K1_rho(j,i) = spear(filtered_stim(1:10:end),y(1:10:end));
-		gain_K1_slope(j,i) = ff.b;
-	end
-end
-
-
-
-
-%% Instantaneous gain analysis
-% In this section we analyze the data in a different way: we first compute the instantaneous gain for all the data, and try to find projections of the stimulus that maximally predict the instantaneous gain. 
-
-% compute the instantenous gain for each case
-
-gain_K1_slope = NaN(length(history_lengths),length(data));
-gain_K1_rho = NaN(length(history_lengths),length(data));
-
-gain_K2_slope = NaN(length(history_lengths),length(data));
-gain_K2_rho = NaN(length(history_lengths),length(data));
-
-gain_K3_slope = NaN(length(history_lengths),length(data));
-gain_K3_rho = NaN(length(history_lengths),length(data));
-
-
-for i = 1:length(data)
-
-	t = 1e-3*(1:length(data(i).PID));
-	filtertime = 1e-3*(1:length(best_reg_filters(i).K)) - .2;
-
-	stim = data(i).PID;
-	resp = data(i).fA;
-
-	stim = mean(stim,2);
-	resp = mean(resp,2);
-
-	pred = mean(stim) + convolve(t,stim,best_reg_filters(i).K,filtertime);
-
-	[~,inst_gain] = makeFig6G(stim,resp,pred,500);
-
-	for j = 1:length(history_lengths)
-		stim = mean(data(i).PID,2);
-		resp = mean(data(i).fA,2);
-
-		y = inst_gain;
-		y(1:10e3) = -1;
-
-		% first do the simple box filter
-		temp = floor(history_lengths(j)*1e3);
-		temp = filter(ones(temp,1),temp,stim);
-
-		rm_this = (isnan(temp) | isnan(inst_gain) | y < 0);
-		temp(rm_this) = [];
-		y(rm_this) = [];
-
-		ff = fit(temp(:),y(:),'power1','StartPoint',[0 0]);
-		temp = ff(temp);
-		gain_K1_rho(j,i) = spear(temp(1:10:end),y(1:10:end));
-		gain_K1_slope(j,i) = ff.b;
-	end
-end
-
 
 
 %% Version Info

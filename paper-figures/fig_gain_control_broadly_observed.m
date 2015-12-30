@@ -213,8 +213,69 @@ end
 h=get(ph(3),'Children');
 legend(h(1:2),{'High Stim.','Low Stim.'},'Location','northwest')
 
+% ##        #######   ######  ##     ##  ######  ######## 
+% ##       ##     ## ##    ## ##     ## ##    ##    ##    
+% ##       ##     ## ##       ##     ## ##          ##    
+% ##       ##     ## ##       ##     ##  ######     ##    
+% ##       ##     ## ##       ##     ##       ##    ##    
+% ##       ##     ## ##    ## ##     ## ##    ##    ##    
+% ########  #######   ######   #######   ######     ##    
+
+
+% load data
+load('/local-data/DA-paper/locust/example-data.mat')
+
+% clean up, sub-sample to 1ms
+PID = PID1; clear PID1
+EAG = EAG1; clear EAG1 
+
+PID = PID(:,1:10:end)';
+EAG = EAG(:,1:10:end)';
+valve = ODR1(:,1:10:end)';
+valve(valve<max(max(valve))/2) = 0;
+valve(valve>0) = 1;
+
+% set zero
+for i = 1:width(PID)
+	PID(:,i) = PID(:,i) - mean(PID(1:300,i));
+	EAG(:,i) = EAG(:,i) - mean(EAG(1:300,i));
+end
+
+% filter
+PID = bandPass(PID,Inf,30);
+EAG = bandPass(EAG,2e3,Inf);
+
+offset = 500;
+[K, EAG_prediction, gain, gain_err] = extractFilters(PID,EAG,'filter_length',2e3,'filter_offset',offset);
+
+plot(axes_handles(8),mean(EAG_prediction,2),mean(EAG,2),'k.')
+
+[mean_stim,inst_gain,e] = makeFig6G(mean(PID,2),mean(EAG,2),mean(EAG_prediction,2),500);
+
+inst_gain(e < .8) = NaN;
+inst_gain(1:5e3) = NaN;
+
+axis(axes_handles(9)), hold on
+plotPieceWiseLinear(mean_stim(~isnan(inst_gain)),inst_gain(~isnan(inst_gain)),'nbins',40,'make_plot',true,'use_std',true);
+
+legend(['\rho = ' oval(spear(mean_stim(~isnan(inst_gain)),inst_gain(~isnan(inst_gain))))])
+xlabel('Mean Stimulus in preceding 250ms (mV)')
+ylabel('Inst. Gain')
+set(gca,'YLim',[0 2.5])
+
+
+%  ######   #######   ######  ##     ## ######## ######## ####  ######   ######  
+% ##    ## ##     ## ##    ## ###   ### ##          ##     ##  ##    ## ##    ## 
+% ##       ##     ## ##       #### #### ##          ##     ##  ##       ##       
+% ##       ##     ##  ######  ## ### ## ######      ##     ##  ##        ######  
+% ##       ##     ##       ## ##     ## ##          ##     ##  ##             ## 
+% ##    ## ##     ## ##    ## ##     ## ##          ##     ##  ##    ## ##    ## 
+%  ######   #######   ######  ##     ## ########    ##    ####  ######   ######  
+
+
+
 % clean up -- remove the scatter points
-for j = [2 5 8]
+for j = [2 5]
 	h=get(axes_handles(j),'Children');
 	rm_this = [];
 	for i = 1:length(h)
@@ -226,7 +287,7 @@ for j = [2 5 8]
 end
 
 % remove the line indicating the example history plot
-for j = [3 6 9]
+for j = [3 6]
 	h=get(axes_handles(j),'Children');
 	rm_this = [];
 	for i = 1:length(h)
@@ -289,6 +350,8 @@ set(l,'Position',[.2 .5527 .0849 .0597])
 % cosmetics
 ylabel(axes_handles(2),'ORN Response (Hz)')
 ylabel(axes_handles(5),'ORN Response (Hz)')
+ylabel(axes_handles(8),'EAG Response (mV)')
+xlabel(axes_handles(8),'Prediction (mV)')
 ylabel(axes_handles(3),'Relative Gain')
 ylabel(axes_handles(6),'Relative Gain')
 ylabel(axes_handles(9),'Relative Gain')

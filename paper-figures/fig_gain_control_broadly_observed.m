@@ -57,22 +57,6 @@ hl_max = 10;
 history_lengths = [logspace(log10(hl_min),log10(.5),15) logspace(log10(.5),log10(10),15)];
 history_lengths = unique(history_lengths);
 
-
-s = 860;
-figure('outerposition',[0 0 s s],'PaperUnits','points','PaperSize',[s s]); hold on, clear s
-clear axes_handles
-for i = 1:9
-	axes_handles(i) = subplot(3,3,i); hold on
-end
-
-% ########  ######## ########  ##       ####  ######     ###    ######## ########  ######  
-% ##     ## ##       ##     ## ##        ##  ##    ##   ## ##      ##    ##       ##    ## 
-% ##     ## ##       ##     ## ##        ##  ##        ##   ##     ##    ##       ##       
-% ########  ######   ########  ##        ##  ##       ##     ##    ##    ######    ######  
-% ##   ##   ##       ##        ##        ##  ##       #########    ##    ##             ## 
-% ##    ##  ##       ##        ##        ##  ##    ## ##     ##    ##    ##       ##    ## 
-% ##     ## ######## ##        ######## ####  ######  ##     ##    ##    ########  ######  
-
 % add a new field with correlation times
 for i = 1:length(data)
 	if any(strfind(data(i).original_name,'30ms'))
@@ -87,20 +71,40 @@ for i = 1:length(data)
 end
 
 
-% first row: experimental replicates
-do_these = [2 7 9 13 15 16];
-
-for i = do_these
-	K = allfilters(i).K;
-	for j = 1:width(K)
-		K(:,j) = K(:,j)/max(K(:,j));
-	end
-	plot(axes_handles(1),filtertime,mean(K,2))
+s = 860;
+figure('outerposition',[0 0 s s],'PaperUnits','points','PaperSize',[s s]); hold on, clear s
+clear axes_handles
+for i = [2 3 5 6 8 9]
+	axes_handles(i) = subplot(3,3,i); hold on
 end
+
+
+% % first row: experimental replicates
+% do_these = [2 7 9 13 15 16];
+
+
+%     ########  #### ######## ######## ######## ########  ######## ##    ## ######## 
+%     ##     ##  ##  ##       ##       ##       ##     ## ##       ###   ##    ##    
+%     ##     ##  ##  ##       ##       ##       ##     ## ##       ####  ##    ##    
+%     ##     ##  ##  ######   ######   ######   ########  ######   ## ## ##    ##    
+%     ##     ##  ##  ##       ##       ##       ##   ##   ##       ##  ####    ##    
+%     ##     ##  ##  ##       ##       ##       ##    ##  ##       ##   ###    ##    
+%     ########  #### ##       ##       ######## ##     ## ######## ##    ##    ##    
+    
+%      #######  ########   #######  ##     ## ########   ######  
+%     ##     ## ##     ## ##     ## ##     ## ##     ## ##    ## 
+%     ##     ## ##     ## ##     ## ##     ## ##     ## ##       
+%     ##     ## ##     ## ##     ## ##     ## ########   ######  
+%     ##     ## ##     ## ##     ## ##     ## ##   ##         ## 
+%     ##     ## ##     ## ##     ## ##     ## ##    ##  ##    ## 
+%      #######  ########   #######   #######  ##     ##  ######  
+
+
+do_these = [7 8 10 14 17 18];
+odours = {'1but','1o3ol','dsucc','2ac','2but','5ol'};
+
 clear ph
 ph(3:4) = axes_handles(2:3);
-
-
 for i = do_these
 	time = 1e-3*(1:length(mean(data(i).PID,2)));
 	stimulus = mean(data(i).PID,2);
@@ -113,10 +117,6 @@ for i = do_these
 	response = response(5e3:end);
 	prediction = prediction(5e3:end);
 
-	% remove trend in stimulus
-	temp = fit(time(:),stimulus(:),'poly2');
-	stimulus = stimulus - temp(time) + mean(stimulus);
-
 	% fix the gain to be exactly 1
 	x = prediction;
 	y = response;
@@ -126,16 +126,17 @@ for i = do_these
 	temp = fit(x,y,'poly1');
 	prediction = prediction*temp.p1;
 
-	% ignore very low responses
-	y(y<5) = NaN;
+	% remove trend in stimulus
+	temp = fit(time(:),stimulus(:),'poly2');
+	stimulus = stimulus - temp(time) + mean(stimulus);
 
 	gainAnalysisWrapper('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph,'engine',@gainAnalysis,'use_cache',true,'example_history_length',history_lengths(15));
 end
 
-
 % add a minimal legend
 h=get(ph(3),'Children');
 legend(h(1:2),{'High Stim.','Low Stim.'},'Location','northwest')
+
 
 %    ########  #### ######## ######## ######## ########  ######## ##    ## ######## 
 %    ##     ##  ##  ##       ##       ##       ##     ## ##       ###   ##    ##    
@@ -156,27 +157,31 @@ legend(h(1:2),{'High Stim.','Low Stim.'},'Location','northwest')
 % add new ab2 data
 p = '/local-data/DA-paper/large-variance-flicker/ab2';
 [PID, ~, fA, paradigm, orn, fly] = consolidateData(p,true);
+a = 5e3;
+z = length(PID) - 5e3;
+[K, prediction, gain, gain_err] = extractFilters(PID,fA,'a',a,'z',z,'filter_offset',200,'filter_length',900);
 
-
-do_these = [11 17];
-l = [];
-for i = do_these
-	K = allfilters(i).K;
-	for j = 1:width(K)
-		K(:,j) = K(:,j)/max(K(:,j));
-	end
-	l=[l plot(axes_handles(7),filtertime,mean(K,2))];
+data(25).PID = PID(:,1:5);
+data(25).fA = fA(:,1:5);
+allfilters(25).K = K(:,1:5);
+clear p
+p.A =  46.6458;
+p.k =  0.2557;
+p.n =  1.1956;
+for i = 1:width(prediction)
+	prediction(:,i) = hill(prediction(:,i),p);
 end
-legend(l,{'pb1A','ab3A'})
 
+data(25).LinearFit = prediction(:,1:5);
 
+do_these = [11 17 25];
 clear ph
-ph(3:4) = axes_handles(8:9);
+ph(3:4) = axes_handles(5:6);
 for i = do_these
 	time = 1e-3*(1:length(mean(data(i).PID,2)));
-	stimulus = mean(data(i).PID,2);
-	prediction = mean(data(i).LinearFit,2);
-	response = mean(data(i).fA,2);
+	stimulus = nanmean(data(i).PID,2);
+	prediction = nanmean(data(i).LinearFit,2);
+	response = nanmean(data(i).fA,2);
 
 	% throw out first 5 seconds
 	time = time(5e3:end);
@@ -201,72 +206,6 @@ for i = do_these
 	y(y<5) = NaN;
 
 	gainAnalysisWrapper('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph,'engine',@gainAnalysis,'use_cache',true,'example_history_length',history_lengths(15)');
-end
-
-
-
-% add a minimal legend
-h=get(ph(3),'Children');
-legend(h(1:2),{'High Stim.','Low Stim.'},'Location','northwest')
-
-
-%     ########  #### ######## ######## ######## ########  ######## ##    ## ######## 
-%     ##     ##  ##  ##       ##       ##       ##     ## ##       ###   ##    ##    
-%     ##     ##  ##  ##       ##       ##       ##     ## ##       ####  ##    ##    
-%     ##     ##  ##  ######   ######   ######   ########  ######   ## ## ##    ##    
-%     ##     ##  ##  ##       ##       ##       ##   ##   ##       ##  ####    ##    
-%     ##     ##  ##  ##       ##       ##       ##    ##  ##       ##   ###    ##    
-%     ########  #### ##       ##       ######## ##     ## ######## ##    ##    ##    
-    
-%      #######  ########   #######  ##     ## ########   ######  
-%     ##     ## ##     ## ##     ## ##     ## ##     ## ##    ## 
-%     ##     ## ##     ## ##     ## ##     ## ##     ## ##       
-%     ##     ## ##     ## ##     ## ##     ## ########   ######  
-%     ##     ## ##     ## ##     ## ##     ## ##   ##         ## 
-%     ##     ## ##     ## ##     ## ##     ## ##    ##  ##    ## 
-%      #######  ########   #######   #######  ##     ##  ######  
-
-
-do_these = [7 8 10 14 17 18];
-odours = {'1but','1o3ol','dsucc','2ac','2but','5ol'};
-l = [];
-for i = do_these
-	K = allfilters(i).K;
-	for j = 1:width(K)
-		K(:,j) = K(:,j)/max(K(:,j));
-	end
-	l=[l plot(axes_handles(4),filtertime,mean(K,2))];
-end
-legend(l,odours)
-
-clear ph
-ph(3:4) = axes_handles(5:6);
-for i = do_these
-	time = 1e-3*(1:length(mean(data(i).PID,2)));
-	stimulus = mean(data(i).PID,2);
-	prediction = mean(data(i).LinearFit,2);
-	response = mean(data(i).fA,2);
-
-	% throw out first 5 seconds
-	time = time(5e3:end);
-	stimulus = stimulus(5e3:end);
-	response = response(5e3:end);
-	prediction = prediction(5e3:end);
-
-	% remove trend in stimulus
-	temp = fit(time(:),stimulus(:),'poly2');
-	stimulus = stimulus - temp(time) + mean(stimulus);
-
-	% fix the gain to be exactly 1
-	x = prediction;
-	y = response;
-	rm_this = isnan(x) | isnan(y) ;
-	x(rm_this) = [];
-	y(rm_this) = [];
-	temp = fit(x,y,'poly1');
-	prediction = prediction*temp.p1;
-
-	gainAnalysisWrapper('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph,'engine',@gainAnalysis,'use_cache',true,'example_history_length',history_lengths(15));
 end
 
 
@@ -323,12 +262,33 @@ for j = [3 6 9]
 end
 
 
+% change the marker for each odour/neuron etc
+markers = {'+','o','*','x','s','d','p','h'};
+h = get(axes_handles(3),'Children');
+h_fake = [];
+for i = 1:length(h)/2
+	set(h(2*(i-1)+1),'Marker',markers{i},'SizeData',75);
+	set(h(2*(i-1)+2),'Marker',markers{i},'SizeData',75);
+	h_fake(i) = plot(axes_handles(3),NaN,NaN,'k','Marker',markers{i},'LineStyle','none');
+end
+l = legend(h_fake,{'1but','1o3ol','dsucc','2ac','2but','5ol'});
+set(l,'Position',[.2 .7973 .0884 .1150])
+
+markers = {'d','p','*'};
+h = get(axes_handles(6),'Children');
+h_fake = [];
+for i = 1:length(h)/2
+	set(h(2*(i-1)+1),'Marker',markers{i},'SizeData',75);
+	set(h(2*(i-1)+2),'Marker',markers{i},'SizeData',75);
+	h_fake(i) = plot(axes_handles(6),NaN,NaN,'k','Marker',markers{i},'LineStyle','none');
+end
+l = legend(h_fake,{'ab3A','pb1A','ab2A'});
+set(l,'Position',[.2 .5527 .0849 .0597])
+
+
 % cosmetics
-xlabel(axes_handles(1),'Lag (s)')
-xlabel(axes_handles(4),'Lag (s)')
-title(axes_handles(1),'Filters')
-title(axes_handles(4),'Filters')
-title(axes_handles(7),'Filters')
+ylabel(axes_handles(2),'ORN Response (Hz)')
+ylabel(axes_handles(5),'ORN Response (Hz)')
 ylabel(axes_handles(3),'Relative Gain')
 ylabel(axes_handles(6),'Relative Gain')
 ylabel(axes_handles(9),'Relative Gain')
@@ -340,14 +300,13 @@ title(axes_handles(8),'')
 
 prettyFig('plw=1.5;','lw=1.5;','fs=14;')
 
-ylabel(axes_handles(1),'Exp. Replicates','FontSize',20)
-ylabel(axes_handles(7),'Diff. ORNs','FontSize',20)
-ylabel(axes_handles(4),'Diff. odors','FontSize',20)
 
 if being_published
 	snapnow
 	delete(gcf)
 end
+
+return
 
 %% Pulse Gain Analysis
 % In this section we analyse the gain in a differnet way. We compute the gain of the ORN at every valve onset, and try to find a projection of the stimulus that accounts for the variation in this gain. 

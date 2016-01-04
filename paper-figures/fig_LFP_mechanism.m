@@ -58,35 +58,13 @@ figure('outerposition',[0 0 1000 900],'PaperUnits','points','PaperSize',[1000 90
 
 subplot(2,2,3), hold on
 
-[PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData('/local-data/DA-paper/LFP-MSG/september',1);
+[PID, LFP, fA, paradigm] = consolidateData('/local-data/DA-paper/LFP-MSG/september',1);
 
 
 % remove baseline from all PIDs
 for i = 1:width(PID)
 	PID(:,i) = PID(:,i) - mean(PID(1:5e3,i));
 end
-
-% sort the paradigms sensibly
-sort_value = [];
-for i = 1:length(AllControlParadigms)
-	sort_value(i) = (mean(AllControlParadigms(i).Outputs(1,:)));
-end
-
-[~,idx] = sort(sort_value);
-
-
-AllControlParadigms = AllControlParadigms(idx);
-paradigm_new = paradigm*NaN;
-for i = 1:length(idx)
-	paradigm_new(paradigm == idx(i)) = i;
-end
-paradigm = paradigm_new;
-
-% remove "Flicker" from paradigm names
-for i = 1:length(AllControlParadigms)
-	AllControlParadigms(i).Name = strrep(AllControlParadigms(i).Name,'Flicker-','');
-end
-
 
 % throw out trials where we didn't record the LFP, for whatever reason
 not_LFP = find((max(abs(LFP))) < 0.1);
@@ -98,7 +76,6 @@ LFP(:,bad_trials) = [];
 PID(:,bad_trials) = [];
 fA(:,bad_trials) = [];
 paradigm(bad_trials) = [];
-orn(bad_trials) = [];
 
 % band pass all the LFP
 filtered_LFP = LFP;
@@ -106,16 +83,11 @@ for i = 1:width(LFP)
 	filtered_LFP(:,i) = bandPass(LFP(:,i),1000,10);
 end
 
-% make a colour scheme
-c = parula(1+length(unique(paradigm)));
-
-
 % extract filters and compute gains
 a = 10e3; z = 50e3;
-[K1,LFP_pred,LFP_gain,LFP_gain_err] = extractFilters(PID,filtered_LFP,'use_cache',true,'a',a,'z',z);
-[K2,fA_pred,fA_gain,fA_gain_err] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
-
-plot(mean(PID(a:z,:)),LFP_gain,'k+');
+[~,~,LFP_gain] = extractFilters(PID,filtered_LFP,'use_cache',true,'a',a,'z',z);
+clear l
+l(1) = plot(mean(PID(a:z,:)),LFP_gain,'k+');
 
 x = mean(PID(a:z,:)); x = x(:);
 y = LFP_gain(:);
@@ -132,9 +104,7 @@ end
 
 
 ff = fit(xx(:),yy(:),'power1','Weights',ww);
-clear l
 plot(sort(xx),ff(sort(xx)),'k');
-L = {};
 
 fo = fitoptions('power1');
 fo.Upper = [Inf -1];
@@ -146,7 +116,62 @@ plot(sort(xx),ff(sort(xx)),'r');
 set(gca,'XScale','log','YScale','log')
 xlabel('Mean Stimulus (V)')
 ylabel('LFP Gain (mV/V)')
-set(gca,'YLim',[.01 1])
+
+% also show the pb3 data
+[pb3_PID, pb3_LFP, ~, pb3_paradigm] = consolidateData('/local-data/DA-paper/palp/pb3/',1);
+
+
+% remove baseline from all PIDs
+for i = 1:width(pb3_PID)
+	pb3_PID(:,i) = pb3_PID(:,i) - mean(pb3_PID(1:5e3,i));
+end
+
+% throw out trials where we didn't record the LFP, for whatever reason
+not_LFP = find((max(abs(pb3_LFP))) < 0.1);
+pb3_LFP(:,not_LFP) = NaN;
+
+% throw our bad traces
+bad_trials =  (isnan(sum(pb3_LFP)));
+pb3_LFP(:,bad_trials) = [];
+pb3_PID(:,bad_trials) = [];
+pb3_paradigm(bad_trials) = [];
+
+% band pass all the LFP
+for i = 1:width(pb3_LFP)
+	pb3_LFP(:,i) = bandPass(pb3_LFP(:,i),1000,10);
+end
+
+a = 10e3; z = 50e3;
+[~,~,pb3_LFP_gain] = extractFilters(pb3_PID,pb3_LFP,'use_cache',true,'a',a,'z',z);
+
+
+x = mean(pb3_PID(a:z,:)); x = x(:);
+y = pb3_LFP_gain(:);
+
+xx = NaN(length(unique(pb3_paradigm)),1);
+yy = NaN(length(unique(pb3_paradigm)),1);
+ww = NaN(length(unique(pb3_paradigm)),1);
+
+for i = 1:length(yy)
+	xx(i) = mean(x(pb3_paradigm==i));
+	yy(i) = mean(y(pb3_paradigm==i));
+	ww(i) = 1./sem(y(pb3_paradigm==i));
+end
+ww(isinf(ww)) = max(ww(~isinf(ww)));
+ff = fit(xx(:),yy(:),'power1','Weights',ww);
+plot(sort(xx),ff(sort(xx)),'k');
+l(2) = plot(nanmean(pb3_PID(a:z,:)),pb3_LFP_gain,'kd');
+
+fo = fitoptions('power1');
+fo.Upper = [NaN -1];
+fo.Lower = [NaN -1];
+fo.Weights = ww;
+ff = fit(xx(:),yy(:),'power1',fo);
+plot(sort(xx),ff(sort(xx)),'r');
+set(gca,'YLim',[.01 4],'XLim',[.05 2])
+legend(l,{'ab3','pb3'},'Location','southwest')
+
+
 
 %    ########    ###     ######  ########     ######      ###    #### ##    ## 
 %    ##         ## ##   ##    ##    ##       ##    ##    ## ##    ##  ###   ## 

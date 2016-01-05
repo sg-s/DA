@@ -39,6 +39,7 @@ geno = ones(length(orn),1);
 geno2 = 2*ones(length(orn2),1);
 
 PID = [PID PID2]; clear PID2
+fA = [fA fA2]; clear fA2
 LFP = [LFP LFP2]; clear LFP2
 paradigm = [paradigm paradigm2]; clear paradigm2
 orn = [orn orn2]; clear orn2
@@ -50,28 +51,14 @@ orn = orn(:);
 
 % clean up data
 rm_this = isnan(sum(LFP));
+fA(:,rm_this) = [];
 PID(:,rm_this) = [];
 LFP(:,rm_this) = [];
 paradigm(rm_this) = [];
 orn(rm_this) = [];
 fly(rm_this) = [];
 geno(rm_this) = [];
-
-
-% find traces where the neuron was lost, but the experimenter slept through this
-% WARNING: THIS WAS FUCKED AROUND WITH TO WORK WITH A SPECIFIC DATASET
-temp = LFP(55e3+10:56e3,:);
-for i = 1:size(temp,2)
-	temp(:,i) = temp(:,i) - mean(temp(:,i));
-end
-rm_this = max(temp)-min(temp) < .1;
-PID(:,rm_this) = [];
-LFP(:,rm_this) = [];
-paradigm(rm_this) = [];
-orn(rm_this) = [];
-fly(rm_this) = [];
-geno(rm_this) = [];
-
+fA(:,sum(fA) == 0) = NaN;
 
 
 % bandPass LFP
@@ -81,26 +68,48 @@ for i = 1:width(LFP)
 end
 
 a = 10e3; z = 50e3;
-[K1,LFP_pred,LFP_gain,LFP_gain_err] = extractFilters(PID,filtered_LFP,'use_cache',true,'a',a,'z',z);
+[~,~,LFP_gain] = extractFilters(PID,filtered_LFP,'use_cache',true,'a',a,'z',z);
+
+[~,~,fA_gain] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
 
 %% Comparison of Gain 
-% In the following figure we compare the gain in the LFP between the wCS control (black) and the CRISPR OBP deletion (red). 
+% In the following figure we compare the gain in the LFP and in the firing rate between the wCS control (black) and the CRISPR OBP deletion (red). 
 
-figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
 x = mean(PID(a:z,geno==1)); y = LFP_gain(geno==1);
 ff = fit(x(:),y(:),'power1');
 plot(.1:0.1:2,ff(.1:0.1:2),'r')
 plot(x,y,'r+');
 
 x = mean(PID(a:z,geno==2)); y = LFP_gain(geno==2);
-ff = fit(x(:),y(:),'power1','Lower',[-Inf -2]);
-% plot(.1:0.1:2,ff(.1:0.1:2),'k')
+ff = fit(x(:),y(:),'power1');
+plot(.1:0.1:2,ff(.1:0.1:2),'k')
 plot(x,y,'k+');
 
 set(gca,'XScale','log','YScale','log')
 xlabel('Mean Stimulus (V)')
-ylabel('LFP Gain (Hz/V)')
-prettyFig()
+ylabel('LFP Gain (mV/V)')
+
+subplot(1,2,2), hold on
+x = mean(PID(a:z,geno==1)); y = fA_gain(geno==1);
+x(isnan(y)) = []; y(isnan(y)) = [];
+ff = fit(x(:),y(:),'power1');
+plot(.1:0.1:2,ff(.1:0.1:2),'r')
+plot(x,y,'r+');
+
+x = mean(PID(a:z,geno==2)); y = fA_gain(geno==2);
+x(isnan(y)) = []; y(isnan(y)) = [];
+ff = fit(x(:),y(:),'power1');
+plot(.1:0.1:2,ff(.1:0.1:2),'k')
+plot(x,y,'k+');
+
+set(gca,'XScale','log','YScale','log')
+xlabel('Mean Stimulus (V)')
+ylabel('Firing Gain (Hz/V)')
+
+
+prettyFig('fs=20;')
 
 if being_published
 	snapnow

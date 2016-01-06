@@ -27,7 +27,7 @@ tic
 
 %% Mechanism of Gain Control: Local Field Potential 
 
-figure('outerposition',[0 0 1000 900],'PaperUnits','points','PaperSize',[1000 900]); hold on
+figure('outerposition',[0 0 950 850],'PaperUnits','points','PaperSize',[950 850]); hold on
 
 % ##     ## ########    ###    ##    ## 
 % ###   ### ##         ## ##   ###   ## 
@@ -86,9 +86,40 @@ end
 % extract filters and compute gains
 a = 10e3; z = 50e3;
 [~,~,LFP_gain] = extractFilters(PID,filtered_LFP,'use_cache',true,'a',a,'z',z);
-clear l
-l(1) = plot(mean(PID(a:z,:)),LFP_gain,'k+');
+[~,~,fA_gain] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
 
+
+x = mean(PID(a:z,:)); x = x(:);
+y = fA_gain(:);
+xx = NaN(length(unique(paradigm)),1);
+yy = NaN(length(unique(paradigm)),1);
+ww = NaN(length(unique(paradigm)),1);
+
+for i = 1:length(yy)
+	xx(i) = nanmean(x(paradigm==i));
+	yy(i) = nanmean(y(paradigm==i));
+	ww(i) = 1./sem(y(paradigm==i));
+end
+fo = fitoptions('power1');
+fo.Upper = [Inf -1];
+fo.Lower = [-Inf -1];
+fo.Weights = ww;
+ff = fit(xx(:),yy(:),'power1',fo);
+
+
+ms = mean(PID(a:z,:)); ms = ms(:);
+[ax,p1,p2] = plotyy(ms,LFP_gain,[ms'; sort(ms)']',[fA_gain'; ff(sort(ms))']');
+set(p1,'LineStyle','none','Marker','+')
+set(p2(1),'LineStyle','none','Marker','+')
+set(p2(2),'Marker','none','Color','r')
+
+set(ax(1),'XScale','log','YScale','log','YLim',[1e-2 1e1])
+set(ax(2),'XScale','log','YScale','log','YLim',[1e0 1e3])
+xlabel('Mean Stimulus (V)')
+ylabel('LFP Gain (mV/V)')
+ylabel(ax(2),'Firing Gain (Hz/V)')
+
+% plot power law fits for the LFP
 x = mean(PID(a:z,:)); x = x(:);
 y = LFP_gain(:);
 
@@ -101,76 +132,18 @@ for i = 1:length(yy)
 	yy(i) = mean(y(paradigm==i));
 	ww(i) = 1./sem(y(paradigm==i));
 end
-
-
 ff = fit(xx(:),yy(:),'power1','Weights',ww);
-plot(sort(xx),ff(sort(xx)),'k');
+plot(ax(1),min(x):.1:max(x),ff(min(x):.1:max(x)),'k');
 
 fo = fitoptions('power1');
 fo.Upper = [Inf -1];
 fo.Lower = [-Inf -1];
 fo.Weights = ww;
 ff = fit(xx(:),yy(:),'power1',fo);
-plot(sort(xx),ff(sort(xx)),'r');
-
-set(gca,'XScale','log','YScale','log')
-xlabel('Mean Stimulus (V)')
-ylabel('LFP Gain (mV/V)')
-
-% also show the pb3 data
-[pb3_PID, pb3_LFP, ~, pb3_paradigm] = consolidateData('/local-data/DA-paper/palp/pb3/',1);
-
-
-% remove baseline from all PIDs
-for i = 1:width(pb3_PID)
-	pb3_PID(:,i) = pb3_PID(:,i) - mean(pb3_PID(1:5e3,i));
-end
-
-% throw out trials where we didn't record the LFP, for whatever reason
-not_LFP = find((max(abs(pb3_LFP))) < 0.1);
-pb3_LFP(:,not_LFP) = NaN;
-
-% throw our bad traces
-bad_trials =  (isnan(sum(pb3_LFP)));
-pb3_LFP(:,bad_trials) = [];
-pb3_PID(:,bad_trials) = [];
-pb3_paradigm(bad_trials) = [];
-
-% band pass all the LFP
-for i = 1:width(pb3_LFP)
-	pb3_LFP(:,i) = bandPass(pb3_LFP(:,i),1000,10);
-end
-
-a = 10e3; z = 50e3;
-[~,~,pb3_LFP_gain] = extractFilters(pb3_PID,pb3_LFP,'use_cache',true,'a',a,'z',z);
-
-
-x = mean(pb3_PID(a:z,:)); x = x(:);
-y = pb3_LFP_gain(:);
-
-xx = NaN(length(unique(pb3_paradigm)),1);
-yy = NaN(length(unique(pb3_paradigm)),1);
-ww = NaN(length(unique(pb3_paradigm)),1);
-
-for i = 1:length(yy)
-	xx(i) = mean(x(pb3_paradigm==i));
-	yy(i) = mean(y(pb3_paradigm==i));
-	ww(i) = 1./sem(y(pb3_paradigm==i));
-end
-ww(isinf(ww)) = max(ww(~isinf(ww)));
-ff = fit(xx(:),yy(:),'power1','Weights',ww);
-plot(sort(xx),ff(sort(xx)),'k');
-l(2) = plot(nanmean(pb3_PID(a:z,:)),pb3_LFP_gain,'kd');
-
-fo = fitoptions('power1');
-fo.Upper = [NaN -1];
-fo.Lower = [NaN -1];
-fo.Weights = ww;
-ff = fit(xx(:),yy(:),'power1',fo);
-plot(sort(xx),ff(sort(xx)),'r');
-set(gca,'YLim',[.01 4],'XLim',[.05 2])
-legend(l,{'ab3','pb3'},'Location','southwest')
-
+plot(ax(1),min(x):.1:max(x),ff(min(x):.1:max(x)),'r');
+set(ax(2),'YColor',get(p2(1),'Color'))
+set(ax(1),'YTick',[1e-2 1e-1 1e0 10])
+set(ax(2),'YTick',[1 10 100 1000])
 
 
 %    ########    ###     ######  ########     ######      ###    #### ##    ## 
@@ -190,7 +163,7 @@ legend(l,{'ab3','pb3'},'Location','southwest')
 %     ######   #######  ##    ##    ##    ##     ##  #######  ######## 
 
 
-clearvars -except axes_handles being_published
+clearvars -except axes_handles being_published 
 
 p = '/local-data/DA-paper/large-variance-flicker/LFP/';
 [PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes]  = consolidateData(p,1);
@@ -295,6 +268,7 @@ for i = 1:max(orn)
 end
 
 subplot(2,2,2), hold on
+movePlot(gca,'right',.03)
 c = lines(max(orn)+1);
 errorShade(history_lengths,mean(rho,2),sem(rho'),'Color',[0 0 0]);
 xlabel('History Length (s)')
@@ -317,7 +291,7 @@ set(gca,'XScale','log')
 %      ##       ##       ##           ##    ##  ##     ##  ##  ##   ### 
 %      ######## ##       ##            ######   ##     ## #### ##    ## 
 
-clearvars -except being_published
+clearvars -except being_published 
 
 
 %      ########  ########  ######  ##     ##    ###    ########  ######## 
@@ -421,6 +395,7 @@ end
 
 
 subplot(2,2,4), hold on
+movePlot(gca,'right',.03)
 % now plot the actual i/o curve
 x = LFP_pred(1e3:5e3,:);
 y = reshaped_LFP(1e3:5e3,:);
@@ -455,6 +430,138 @@ uistack(shade_handle2,'bottom')
 xlabel('Projected Stimulus (V)')
 ylabel('\Delta LFP (mV)')
 set(gca,'XLim',[-1 1])
+
+
+% also show some statistics;
+load('.cache/VSA_LFP_slopes')
+slopes2=mean(n(:,60:100),2);
+slopes1=mean(n(:,10:50),2);
+
+h = axes;
+hold on
+set(h,'Units','normalized','Position',[ 0.6420    0.2991    0.1094    0.1383]);
+plot(h,slopes1,slopes2,'k.')
+plot([0 4],[0 4],'k--')
+set(h,'YColor','b','XColor','r')
+axis square
+
+
+prettyFig('fs=18;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%% Supplementary Figure: LFP gain control in other sensilla:
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+
+% also show the pb3 data
+[pb3_PID, pb3_LFP, ~, pb3_paradigm] = consolidateData('/local-data/DA-paper/palp/pb3/',1);
+
+
+% remove baseline from all PIDs
+for i = 1:width(pb3_PID)
+	pb3_PID(:,i) = pb3_PID(:,i) - mean(pb3_PID(1:5e3,i));
+end
+
+% throw out trials where we didn't record the LFP, for whatever reason
+not_LFP = find((max(abs(pb3_LFP))) < 0.1);
+pb3_LFP(:,not_LFP) = NaN;
+
+% throw our bad traces
+bad_trials =  (isnan(sum(pb3_LFP)));
+pb3_LFP(:,bad_trials) = [];
+pb3_PID(:,bad_trials) = [];
+pb3_paradigm(bad_trials) = [];
+
+% band pass all the LFP
+for i = 1:width(pb3_LFP)
+	pb3_LFP(:,i) = bandPass(pb3_LFP(:,i),1000,10);
+end
+
+a = 10e3; z = 50e3;
+[~,~,pb3_LFP_gain] = extractFilters(pb3_PID,pb3_LFP,'use_cache',true,'a',a,'z',z);
+
+
+x = mean(pb3_PID(a:z,:)); x = x(:);
+y = pb3_LFP_gain(:);
+
+xx = NaN(length(unique(pb3_paradigm)),1);
+yy = NaN(length(unique(pb3_paradigm)),1);
+ww = NaN(length(unique(pb3_paradigm)),1);
+
+for i = 1:length(yy)
+	xx(i) = mean(x(pb3_paradigm==i));
+	yy(i) = mean(y(pb3_paradigm==i));
+	ww(i) = 1./sem(y(pb3_paradigm==i));
+end
+ww(isinf(ww)) = max(ww(~isinf(ww)));
+ff = fit(xx(:),yy(:),'power1','Weights',ww);
+plot(sort(x),ff(sort(x)),'k');
+l(2) = plot(nanmean(pb3_PID(a:z,:)),pb3_LFP_gain,'kd');
+
+fo = fitoptions('power1');
+fo.Upper = [NaN -1];
+fo.Lower = [NaN -1];
+fo.Weights = ww;
+ff = fit(xx(:),yy(:),'power1',fo);
+plot(sort(x),ff(sort(x)),'r');
+set(gca,'XScale','log','YScale','log','XLim',[.05 .5],'XTick',[.05 .1 .5])
+xlabel('amyl acetate stimulus (V)')
+ylabel('pb3 LFP gain (mV/V')
+
+
+% now show ab8 data
+use_cache = 1;
+[PID, LFP, ~, paradigm] = consolidateData('/local-data/obp/ab8/wcs',use_cache);
+
+% clean up data
+rm_this = isnan(sum(LFP));
+PID(:,rm_this) = [];
+LFP(:,rm_this) = [];
+paradigm(rm_this) = [];
+
+% bandPass LFP
+filtered_LFP = LFP;
+for i = 1:width(LFP)
+	filtered_LFP(:,i) = bandPass(LFP(:,i),1000,10);
+end
+
+a = 10e3; z = 50e3;
+[~,~,LFP_gain] = extractFilters(PID,filtered_LFP,'use_cache',true,'a',a,'z',z);
+
+subplot(1,2,2), hold on
+x = mean(PID(a:z,:)); x = x(:);
+y = LFP_gain(:);
+
+xx = NaN(length(unique(paradigm)),1);
+yy = NaN(length(unique(paradigm)),1);
+ww = NaN(length(unique(paradigm)),1);
+
+for i = 1:length(yy)
+	xx(i) = mean(x(paradigm==i));
+	yy(i) = mean(y(paradigm==i));
+	ww(i) = 1./sem(y(paradigm==i));
+end
+ww(isinf(ww)) = max(ww(~isinf(ww)));
+ff = fit(xx(:),yy(:),'power1','Weights',ww);
+plot(sort(x),ff(sort(x)),'k');
+l(2) = plot(nanmean(PID(a:z,:)),LFP_gain,'ko');
+
+fo = fitoptions('power1');
+fo.Upper = [NaN -1];
+fo.Lower = [NaN -1];
+fo.Weights = ww;
+ff = fit(xx(:),yy(:),'power1',fo);
+plot(sort(x),ff(sort(x)),'r');
+
+set(gca,'XScale','log','YScale','log','XLim',[.01 10])
+xlabel('Ethyl acetate stimulus (V)')
+ylabel('ab8 LFP gain (mV/V')
 
 prettyFig('fs=18;')
 

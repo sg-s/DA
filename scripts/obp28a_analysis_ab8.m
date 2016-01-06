@@ -77,34 +77,34 @@ a = 10e3; z = 50e3;
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 subplot(1,2,1), hold on
-x = mean(PID(a:z,geno==1)); y = LFP_gain(geno==1);
+x = mean(PID(a:z,geno==1 & paradigm < 4)); y = LFP_gain(geno==1 & paradigm < 4);
 ff = fit(x(:),y(:),'power1');
 plot(.1:0.1:2,ff(.1:0.1:2),'r')
 plot(x,y,'r+');
 
-x = mean(PID(a:z,geno==2)); y = LFP_gain(geno==2);
+x = mean(PID(a:z,geno==2 & paradigm < 4)); y = LFP_gain(geno==2 & paradigm < 4 );
 ff = fit(x(:),y(:),'power1');
 plot(.1:0.1:2,ff(.1:0.1:2),'k')
 plot(x,y,'k+');
 
-set(gca,'XScale','log','YScale','log')
+set(gca,'XScale','log','YScale','log','XLim',[.1 10])
 xlabel('Mean Stimulus (V)')
 ylabel('LFP Gain (mV/V)')
 
 subplot(1,2,2), hold on
-x = mean(PID(a:z,geno==1)); y = fA_gain(geno==1);
+x = mean(PID(a:z,geno==1 & paradigm < 4)); y = fA_gain(geno==1 & paradigm < 4);
 x(isnan(y)) = []; y(isnan(y)) = [];
 ff = fit(x(:),y(:),'power1');
 plot(.1:0.1:2,ff(.1:0.1:2),'r')
 plot(x,y,'r+');
 
-x = mean(PID(a:z,geno==2)); y = fA_gain(geno==2);
+x = mean(PID(a:z,geno==2 & paradigm < 4)); y = fA_gain(geno==2 & paradigm < 4);
 x(isnan(y)) = []; y(isnan(y)) = [];
 ff = fit(x(:),y(:),'power1');
 plot(.1:0.1:2,ff(.1:0.1:2),'k')
 plot(x,y,'k+');
 
-set(gca,'XScale','log','YScale','log')
+set(gca,'XScale','log','YScale','log','XLim',[.1 10])
 xlabel('Mean Stimulus (V)')
 ylabel('Firing Gain (Hz/V)')
 

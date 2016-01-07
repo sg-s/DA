@@ -62,15 +62,17 @@ PID = PID2; clear PID2
 % some minor cleaning up
 PID(end,:) = PID(end-1,:); 
 
+R = mean(fA,2);
+
 figure('outerposition',[0 0 1400 1000],'PaperUnits','points','PaperSize',[1400 1000]); hold on
 subplot(2,9,10:14), hold on
-plot(tA,mean2(fA),'k')
+plot(tA,R,'k')
 set(gca,'XLim',[0 70])
 xlabel('Time (s)')
 ylabel('Firing Rate (Hz)')
 
 subplot(2,9,15:16), hold on
-[r2,s] = rsquare(fA);
+[r2,s] = rsquare(fA(1:10:end,:));
 imagescnan(r2)
 caxis([0 1])
 axis image
@@ -87,14 +89,14 @@ title(strcat('mean slope = ',oval(mean(s(~isnan(s))),2)))
 
 
 subplot(2,9,1:5), hold on
-plot(tA,mean2(PID),'k')
+plot(tA,mean(PID,2),'k')
 set(gca,'YScale','log')
 set(gca,'XLim',[0 70])
 xlabel('Time (s)')
 ylabel('Odor Concentration (V)')
 
 subplot(2,9,6:7), hold on
-[r2,s] = rsquare(PID);
+[r2,s] = rsquare(PID(1:10:end,:));
 imagescnan(r2)
 caxis([0 1])
 colorbar
@@ -119,24 +121,16 @@ end
 %%
 % For completeness, here is a comparison of the A neuron's response to that of the B neuron's. 
 
-
 figure('outerposition',[0 0 1400 1000],'PaperUnits','points','PaperSize',[1400 1000]); hold on
 subplot(2,8,1:6), hold on
-plot(tA,mean2(fA),'k')
+plot(tA,R,'k')
 set(gca,'XLim',[0 70])
 xlabel('Time (s)')
 ylabel('Firing Rate (A) (Hz)')
 set(gca,'YLim',[0 120])
 
 subplot(2,8,7:8), hold on
-hash = dataHash(fA);
-cached_data = cache(hash);
-if isempty(cached_data)
-	r2 = rsquare(fA);
-	cache(hash,r2);
-else
-	r2 = cached_data;
-end
+r2 = rsquare(fA(1:10:end,:));
 imagescnan(r2)
 caxis([0 1])
 colorbar
@@ -144,30 +138,21 @@ axis image
 axis off
 title(strcat('mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
 
-
 subplot(2,8,9:14), hold on
-plot(tA,mean2(fB),'k')
+plot(tA,mean(fB,2),'k')
 set(gca,'XLim',[0 70])
 xlabel('Time (s)')
 ylabel('Firing Rate (B) (Hz)')
 set(gca,'YLim',[0 120])
 
 subplot(2,8,15:16), hold on
-hash = dataHash(fB);
-cached_data = cache(hash);
-if isempty(cached_data)
-	r2 = rsquare(fB);
-	cache(hash,r2);
-else
-	r2 = cached_data;
-end
+r2 = rsquare(fB(1:10:end,:));
 imagescnan(r2)
 caxis([0 1])
 colorbar
 axis image
 axis off
 title(strcat('mean r^2 = ',oval(mean(r2(~isnan(r2))),2)))
-
 
 prettyFig();
 
@@ -175,6 +160,44 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%% Correlations between mean and variance in the naturalistic stimulus
+% In this section, we check whether there exists a "natural" correlation between the mean and the variance of the signal. To check this, we compute the mean and the variance of small blocks, and plot the mean vs. the variance, while varying the block size. 
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+all_block_sizes =[10:10:90 125 150 100:100:700 1e3 1.5e3 2e3 5e3 1e4];% in ms
+clear l r2
+r2 = NaN*all_block_sizes;
+c = parula(length(all_block_sizes)+3);
+for i = 1:length(all_block_sizes)
+	temp = PID(:);
+	temp = reshape(temp,all_block_sizes(i),length(temp)/all_block_sizes(i));
+	if (i/3) == round(i/3)
+		plot(mean(temp),std(temp),'+','Color',c(i,:))
+	end
+	r2(i) = rsquare(mean(temp),std(temp));
+end
+xlabel('\mu_{stimulus}')
+ylabel('\sigma_{stimulus}')
+
+subplot(1,2,2), hold on
+for i = 1:length(all_block_sizes)
+	plot(all_block_sizes(i),r2(i),'+','Color',c(i,:))
+end
+set(gca,'XScale','log')
+xlabel('Window (ms)')
+ylabel('r^2 (\mu, \sigma)')
+
+prettyFig('FixLogX=true;');
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
 
 %%
 % The following figure shows the odor stimulus (ethyl acetate). From left to right, we see the stimulus histogram showing the very long-tailed distribution of odour stimuli, the autocorrelation function of the stimulus, and the finally the autocorrelation function of the response. 
@@ -243,7 +266,7 @@ end
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[900 500]); hold on
 plot([-.1 1],[0 0 ],'k--')
-[K, filtertime_full] = fitFilter2Data(mean2(PID),mean2(fA),'reg',1,'filter_length',1999,'offset',500);
+[K, filtertime_full] = fitFilter2Data(mean(PID,2),R,'reg',1,'filter_length',1999,'offset',500);
 filtertime_full = filtertime_full*mean(diff(tA));
 filtertime = 1e-3*(-200:900);
 K = interp1(filtertime_full,K,filtertime);
@@ -265,23 +288,22 @@ end
 % We will use this filter to make a prediction of the response:
 
 % convolve with filter to make prediction
-fp = convolve(tA,mean2(PID),K,filtertime);
-
-% correct for trivial scaling
-R = mean2(fA);
-temp =fit(fp(~(isnan(fp) | isnan(R))),R(~(isnan(fp) | isnan(R))),'poly1');
-fp = fp*temp.p1;
-fp = fp+temp.p2;
+fp = convolve(tA,mean(PID,2),K,filtertime);
 
 
 figure('outerposition',[0 0 1500 400],'PaperUnits','points','PaperSize',[1500 400]); hold on
-subplot(1,4,1:3), hold on
-plot(tA,mean2(fA),'k')
-l=plot(tA,fp,'r');
-r2 = rsquare(fp,mean2(fA));
-legend(l,strcat('r^2=',oval(r2,2)))
-xlabel('Time (s)')
-ylabel('Firing Rate (Hz)')
+subplot(1,8,1:5), hold on
+% plot the response and the prediction
+clear l
+[ax,plot1,plot2] = plotyy(tA,R,tA,fp);
+set(ax(1),'XLim',[0 70],'YLim',[0 120])
+set(ax(2),'XLim',[0 70],'YLim',[min(fp) max(fp)])
+set(plot1,'Color','b')
+set(plot2,'Color','r')
+ylabel(ax(1),'ab3A Response (Hz)')
+ylabel(ax(2),'Projected Stimulus (V)')
+set(gca,'box','off')
+
 
 subplot(1,4,4), hold on
 plot(filtertime,K,'r')
@@ -316,7 +338,7 @@ end
 %% Output Analysis
 % In this section, we analyse the prediction of the linear kernel in some more detail. The following figure shows a plot of the linear predictions vs. the actual response. We colour the data by the mean stimulus in the preceding 500ms.  We see that each excursion has a different slope, and it looks like the slopes correspond to the stimulus in the preceding 500ms. Larger mean stimulus in the preceding 500ms is indicated by brighter colours. In the second subplot, we plot the gain of each of these excursions vs the mean stimulus in the preceding 500ms. The red line is a power-law fit, and the exponent is mentioned in the fit legend. 
 
-shat = computeSmoothedStimulus(mean2(PID),500);
+shat = computeSmoothedStimulus(mean(PID,2),500);
 % shat(fp<10) = 0;
 shat = shat-min(shat);
 shat = shat/max(shat);
@@ -335,8 +357,8 @@ xlabel('Linear Prediction (Hz)')
 ylabel('Actual response (Hz)')
 
 subplot(1,2,2), hold on
-fp = convolve(tA,mean2(PID),K,filtertime);
-shat = computeSmoothedStimulus(mean2(PID),500);
+fp = convolve(tA,mean(PID,2),K,filtertime);
+shat = computeSmoothedStimulus(mean(PID,2),500);
 
 % find all excursions (defined as firing rate crossing 10Hz)
 [whiff_starts,whiff_ends] = computeOnsOffs(R>10);
@@ -388,22 +410,30 @@ end
 figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[700 700]); hold on
 subplot(2,2,1:2), hold on
 clear d
-d.response = mean2(fA);
-d.stimulus = mean2(PID);
-p = fitModel2Data(@DAModelv2,d,'nsteps',0);
-fp = DAModelv2(mean2(PID),p);
+d.response = R;
+d.stimulus = mean(PID,2);
+clear p
+p.   s0 = -0.1562;
+p.  n_z = 2;
+p.tau_z = 45.6250;
+p.  n_y = 2;
+p.tau_y = 28.1875;
+p.    C = 0.4375;
+p.    A = 134.8750;
+p.    B = 1.4375;
+fp = DAModelv2(mean(PID,2),p);
 clear l L
 time = 1e-3*(1:length(fp));
-l(1) = plot(time,mean2(fA),'k');
+l(1) = plot(time,R,'k');
 l(2) = plot(time,fp,'r');
 xlabel('Time (s)')
 ylabel('Response')
 L{1} = 'ORN Response';
-L{2} = ['DA Model Fit, r^2 = ' oval(rsquare(fp,mean2(fA)))];
+L{2} = ['DA Model Fit, r^2 = ' oval(rsquare(fp,R))];
 legend(l,L)
 
 subplot(2,2,3), hold on
-shat = computeSmoothedStimulus(mean2(PID),500);
+shat = computeSmoothedStimulus(mean(PID,2),500);
 % shat(fp<10) = 0;
 shat = shat-min(shat);
 shat = shat/max(shat);
@@ -413,14 +443,13 @@ shat(isnan(shat)) = 1;
 ss = 1;
 cc = parula(100);
 c= cc(shat,:);
-R = mean2(fA);
 scatter(fp(1:ss:end),R(1:ss:end),[],c(1:ss:end,:),'filled')
 set(gca,'XLim',[0 115],'YLim',[0 115])
 xlabel('DA Model Prediction (Hz)')
 ylabel('ORN Response (Hz)')
 
 subplot(2,2,4), hold on
-shat = computeSmoothedStimulus(mean2(PID),500);
+shat = computeSmoothedStimulus(mean(PID,2),500);
 
 % find all excursions (defined as firing rate crossing 10Hz)
 [whiff_starts,whiff_ends] = computeOnsOffs(R>10);

@@ -58,13 +58,6 @@ axes_handles(4) = subplot(7,2,[10 12 14]); hold on
 % load cached data
 load('../data/MeanShiftedGaussians.mat')
 
-% shorten paradigm names by throwing out 'MFC'
-short_paradigm_names = paradigm_names;
-for i = 1:length(paradigm_names)
-	short_paradigm_names{i} = paradigm_names{i}(strfind(paradigm_names{i},'-')+1:end);
-end
-
-
 % some universal parameters
 nbins = 50;
 histx = [];
@@ -108,9 +101,18 @@ for i = 1:8
 	end
 end
 
+% cut the ends off the filters, and normalise them
+for i = 1:8
+	for j = 1:13
+		K = MSG_data(i,j).K;
+		if ~isempty(K)
+			MSG_data(i,j).K = (K(100:900));
+		end
+	end
+end
 
 % plot the filter for the lowest dose 
-filtertime = (-200:799)*1e-3;
+filtertime = (-100:700)*1e-3;
 K = [MSG_data(example_dose,:).K];
 axes(axes_handles(3))
 shadedErrorBar(filtertime,mean(K,2),sem(K'),{'Color',c(example_dose,:)})
@@ -126,11 +128,13 @@ for i = 1:8
 			this_stim = mean(MSG_data(i,j).stim,2);
 			this_resp = mean(MSG_data(i,j).resp,2);
 			MSG_data(i,j).fp = convolve(MSG_data(i,j).time,this_stim,MSG_data(i,j).K,filtertime);
+			%MSG_data(i,j).fp = convolve(MSG_data(i,j).time,this_stim,mean(K,2),filtertime);
 			MSG_data(i,j).r2 = rsquare(MSG_data(i,j).fp,this_resp);
 		elseif width(MSG_data(i,j).stim) == 1
 			this_stim = MSG_data(i,j).stim;
 			this_resp = MSG_data(i,j).resp;
 			MSG_data(i,j).fp = convolve(MSG_data(i,j).time,this_stim,MSG_data(i,j).K,filtertime);
+			%MSG_data(i,j).fp = convolve(MSG_data(i,j).time,this_stim,mean(K,2),filtertime);
 			MSG_data(i,j).r2 = rsquare(MSG_data(i,j).fp,this_resp);
 		end
 
@@ -242,7 +246,6 @@ end
 % show gain changes for all paradigms -- average over neurons 
 ss = 100;
 all_x = 0:0.1:10;
-load('.cache/hill_fits_MSG.mat')
 axes(ax(5)), hold(ax(5),'on')
 for i = 1:8 % iterate over all paradigms 
 	y = ([MSG_data(i,:).resp]);
@@ -260,7 +263,8 @@ for i = 1:8 % iterate over all paradigms
 		y = mean(y,2);
 	end 
 
-	%plot(ax(5),mean(s)+x(1:ss:end),y(1:ss:end),'.','Color',c(i,:))
+	x = x - nanmean(x);
+	x = x + nanmean(nanmean(s));
 	plotPieceWiseLinear(x(1e3:end),y(1e3:end),'nbins',50,'Color',c(i,:));
 
 end
@@ -307,12 +311,6 @@ for i = 1:8
 end
 
 
-cf = fit(nanmean(mean_stim,2),nanmean(gain,2),'power1','Weights',1./gain_err(:));
-
-
-% r2 = rsquare(nonnans(gain),cf(nonnans(mean_stim)));
-% L = strcat('y = \alpha x^{\beta}, \beta= ',oval(cf.b), ',r^2 = ',oval(r2));
-
 % fit a power law with exponent -1
 options = fitoptions(fittype('power1'));
 options.Lower = [-Inf -1];
@@ -321,7 +319,6 @@ options.Weights = 1./gain_err(:);
 cf = fit(nanmean(mean_stim,2),nanmean(gain,2),'power1',options);
 l=plot(ax(6),nanmean(mean_stim,2),cf(nanmean(mean_stim,2)),'r');
 r2 = rsquare(nonnans(gain),cf(nonnans(mean_stim)));
-% legend(l,{L, strcat('y = \alpha x^{-1}, \alpha= ',oval(cf.a), ', r^2 = ',oval(r2))},'Location','northoutside')
 
 % rescale by Weber law
 ss = 50;
@@ -384,88 +381,6 @@ if being_published
 	delete(gcf)
 end
 
-%         ######  ##     ## ########  ########     ######## ####  ######         ##   
-%        ##    ## ##     ## ##     ## ##     ##    ##        ##  ##    ##      ####   
-%        ##       ##     ## ##     ## ##     ##    ##        ##  ##              ##   
-%         ######  ##     ## ########  ########     ######    ##  ##   ####       ##   
-%              ## ##     ## ##        ##           ##        ##  ##    ##        ##   
-%        ##    ## ##     ## ##        ##           ##        ##  ##    ##        ##   
-%         ######   #######  ##        ##           ##       ####  ######       ###### 
-
-% %% Supplementary Figure 1
-% figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-% subplot(1,2,1), hold on
-% ss = 50;
-% all_x = []; all_y = [];
-% for i = 1:8 % iterate over all paradigms 
-% 	y = ([MSG_data(i,:).resp]);
-% 	s = ([MSG_data(i,:).stim]);
-% 	x = ([MSG_data(i,:).fp]);
-% 	if ~isvector(x)
-% 		x = mean2(x);
-% 	end
-
-% 	if ~isvector(s)
-% 		s = mean2(s);
-% 	end
-
-% 	if ~isvector(y)
-% 		y = mean2(y);
-% 	end 
-
-% 	all_x = [all_x x+mean(s)];
-% 	all_y = [all_y y];
-% 	plot(x(1:ss:end)+mean(s),y(1:ss:end),'.','Color',c(i,:))
-% end
-
-% p.A= 34.4229;
-% p.k= 0.7455;
-% p.n= 1.5538;
-% L = ['Hill fit, r^2=' oval(rsquare(all_y(:),hill(all_x(:),p)))];
-% all_x = nonnans(sort(all_x(:)));
-% all_x = linspace(all_x(1),all_x(end),100);
-% l = plot(all_x,hill(all_x,p),'r');
-% legend(l,L,'Location','southeast')
-% xlabel(['Projected Stimulus +' char(10) 'mean stimulus'])
-% ylabel('Neuron Response (Hz)')
-% set(gca,'XLim',[0 5],'YLim',[0 45])
-
-
-% % show non-linearities to each cloud
-% clear p
-% subplot(1,2,2), hold on
-% for i = 1:8 % iterate over all paradigms 
-% 	y = ([MSG_data(i,:).resp]);
-% 	s = ([MSG_data(i,:).stim]);
-% 	x = ([MSG_data(i,:).fp]);
-% 	if ~isvector(x)
-% 		x = mean2(x);
-% 	end
-
-% 	if ~isvector(s)
-% 		s = mean2(s);
-% 	end
-
-% 	if ~isvector(y)
-% 		y = mean2(y);
-% 	end 
-
-% 	clear d
-% 	d.stimulus = x + mean(s);
-% 	d.response = y;
-% 	p(i) = fitModel2Data(@hill,d,'nsteps',0);
-% 	plot(all_x(all_x<max(d.stimulus)),hill(all_x(all_x<max(d.stimulus)),p(i)),'Color',c(i,:))
-% end
-% set(gca,'XLim',[0 5],'YLim',[0 45])
-% xlabel(['Projected Stimulus +' char(10) 'mean stimulus'])
-% ylabel('Neuron Response (Hz)')
-
-% prettyFig('fs=20;');
-
-% if being_published
-% 	snapnow
-% 	delete(gcf)
-% end
 
 
 %        ######  ########  ######## ######## ########  ##     ## ########   ######  

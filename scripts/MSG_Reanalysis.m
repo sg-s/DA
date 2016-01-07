@@ -89,6 +89,7 @@ for i = 1:length(c) - 1
 			stim(:,j) = stim(:,j) - mean(stim(:,j));
 		end
 		[y,x] = hist(stim,50);
+		y = y/sum(y);
 		plot(x,mean(y,2),'Color',c(i,:))
 	end
 end
@@ -109,7 +110,7 @@ a = 1e3; z = length(PID);
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 plot(mean(PID),gain,'k+')
-x = mean(PID)'; y = gain(:);
+x = mean(PID)'; 
 ff = fit(x(~isnan(gain)),gain(~isnan(gain)),'power1');
 plot(sort(x),ff(sort(x)),'r')
 set(gca,'XScale','log','YScale','log')

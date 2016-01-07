@@ -112,6 +112,7 @@ ms = mean(PID(a:z,:)); ms = ms(:);
 set(p1,'LineStyle','none','Marker','+')
 set(p2(1),'LineStyle','none','Marker','+')
 set(p2(2),'Marker','none','Color','r')
+set(p2(1),'Color','k')
 
 set(ax(1),'XScale','log','YScale','log','YLim',[1e-2 1e1])
 set(ax(2),'XScale','log','YScale','log','YLim',[1e0 1e3])
@@ -512,7 +513,7 @@ ff = fit(xx(:),yy(:),'power1',fo);
 plot(sort(x),ff(sort(x)),'r');
 set(gca,'XScale','log','YScale','log','XLim',[.05 .5],'XTick',[.05 .1 .5])
 xlabel('amyl acetate stimulus (V)')
-ylabel('pb3 LFP gain (mV/V')
+ylabel('pb3 LFP gain (mV/V)')
 
 
 % now show ab8 data
@@ -559,9 +560,9 @@ fo.Weights = ww;
 ff = fit(xx(:),yy(:),'power1',fo);
 plot(sort(x),ff(sort(x)),'r');
 
-set(gca,'XScale','log','YScale','log','XLim',[.01 10])
-xlabel('Ethyl acetate stimulus (V)')
-ylabel('ab8 LFP gain (mV/V')
+set(gca,'XScale','log','YScale','log','XLim',[.1 10])
+xlabel('ethyl acetate stimulus (V)')
+ylabel('ab8 LFP gain (mV/V)')
 
 prettyFig('fs=18;')
 

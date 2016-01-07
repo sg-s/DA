@@ -337,8 +337,8 @@ for i = 1:length(history_lengths)
 end
 
 subplot(2,4,8), hold on
-plot(history_lengths,gain_K1_rho,'r')
-plot(history_lengths,gain_K2_rho,'b')
+plot(history_lengths,gain_K1_rho,'Color','k','Marker','d')
+plot(history_lengths,gain_K2_rho,'Color',[0 .6 0],'Marker','+')
 legend({'Integrating','Differentiating'},'Location','southeast')
 xlabel('History Length (s)')
 ylabel('\rho')

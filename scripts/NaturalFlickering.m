@@ -167,6 +167,8 @@ end
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 subplot(1,2,1), hold on
 all_block_sizes =[10:10:90 125 150 100:100:700 1e3 1.5e3 2e3 5e3 1e4];% in ms
+all_block_sizes = factor2(length(PID));
+all_block_sizes = all_block_sizes(6:end-1);
 clear l r2
 r2 = NaN*all_block_sizes;
 c = parula(length(all_block_sizes)+3);
@@ -196,6 +198,7 @@ if being_published
 	delete(gcf)
 end
 
+return
 
 
 

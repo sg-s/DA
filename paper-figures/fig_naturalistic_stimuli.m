@@ -339,10 +339,86 @@ end
 %% Supplmentary Figure
 % This supplementary figure shows that the choice of filter doesn't affect our results of large, rapid gain control. 
 
-figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
 
-% first row: ab3A filters and projections
-subplot(2,3,1), hold on
+% first row: show the gain as function of convolution with a diff. filter. 
+subplot(3,3,1), hold on
+Kdiff = [ones(250,1) ; -ones(250,1)];
+shat = abs(filter(Kdiff,length(Kdiff),mean(ab3.PID,2)));
+% find all excursions (defined as firing rate crossing 10Hz)
+[whiff_starts,whiff_ends] = computeOnsOffs(ab3.R>10);
+mean_stim = NaN*whiff_ends;
+gain = NaN*whiff_ends;
+gain_err =  NaN*whiff_ends;
+for i = 1:length(whiff_ends)
+	mean_stim(i) = mean(shat(whiff_starts(i):whiff_ends(i)));
+	ff=fit(fp(whiff_starts(i):whiff_ends(i)),ab3.R(whiff_starts(i):whiff_ends(i)),'poly1');
+	gain(i) = ff.p1;
+	temp = confint(ff);
+	gain_err(i) = diff(temp(:,1))/2;
+end
+rm_this = (abs(gain_err./gain)) > .5 | gain < 0; % throw out points where the estimate of gain has a more than 50% error
+gain(rm_this) = [];
+gain_err(rm_this) = [];
+mean_stim(rm_this) = [];
+plot(mean_stim,gain,'k+');
+
+
+% now add the ab2 data
+shat = abs(filter(Kdiff,length(Kdiff),mean(PID,2)));
+
+% find all excursions (defined as firing rate crossing 10Hz)
+[whiff_starts,whiff_ends] = computeOnsOffs(R>10);
+mean_stim = NaN*whiff_ends;
+gain = NaN*whiff_ends;
+gain_err =  NaN*whiff_ends;
+for i = 1:length(whiff_ends)
+	mean_stim(i) = mean(shat(whiff_starts(i):whiff_ends(i)));
+	ff=fit(fp(whiff_starts(i):whiff_ends(i)),R(whiff_starts(i):whiff_ends(i)),'poly1');
+	gain(i) = ff.p1;
+	temp = confint(ff);
+	gain_err(i) = diff(temp(:,1))/2;
+end
+rm_this = (abs(gain_err./gain)) > .5 | gain < 0; % throw out points where the estimate of gain has a more than 50% error
+gain(rm_this) = [];
+gain_err(rm_this) = [];
+mean_stim(rm_this) = [];
+plot(mean_stim,gain,'ko');
+legend({'ab3A','ab2A'})
+xlabel('Projection using differentiating filter')
+ylabel('ORN Gain (Hz/V)')
+set(gca,'XScale','log','YScale','log')
+
+% OK, now we show that both the mean and the variance can account for gain changes. now we show that in this stimulus, the mean and the variance co-vary
+subplot(3,3,2), hold on
+all_block_sizes = factor2(length(ab3.PID));
+all_block_sizes = all_block_sizes(6:end-1);
+all_block_sizes = all_block_sizes(1:41);
+clear l r2
+r2 = NaN*all_block_sizes;
+c = parula(length(all_block_sizes)+3);
+for i = 1:length(all_block_sizes)
+	temp = ab3.PID(:);
+	temp = reshape(temp,all_block_sizes(i),length(temp)/all_block_sizes(i));
+	if all_block_sizes(i) == 5e2
+		plot(mean(temp),std(temp),'+','Color',c(i,:))
+	end
+	r2(i) = rsquare(mean(temp),std(temp));
+end
+xlabel('\mu_{stimulus}')
+ylabel('\sigma_{stimulus}')
+
+subplot(3,3,3), hold on
+for i = 1:length(all_block_sizes)
+	plot(all_block_sizes(i),r2(i),'+','Color',c(i,:))
+end
+set(gca,'XScale','log')
+xlabel('Window (ms)')
+ylabel('r^2 (\mu, \sigma)')
+
+
+% second row: ab3A filters and projections
+subplot(3,3,4), hold on
 plot(filtertime,ab3.K,'b');
 
 % load MSG filter for ab3
@@ -353,30 +429,30 @@ plot(t,ab3.K_white,'r')
 legend({'Nat. Stimulus Filter','White Noise filter'})
 ylabel('ab3A filter')
 xlabel('Lag (s)')
+set(gca,'YLim',[-.005 .04])
 
 ab3.fp2 = convolve(1e-3*(1:length(ab3.PID)),ab3.PID,ab3.K_white,t);
 
-subplot(2,3,3), hold on
+subplot(3,3,6), hold on
 scatter(ab3.fp2,ab3.R,scatter_size,ab3.c,'filled')
 xlabel('Projected Stimulus (V)')
 title('using white-noise filter')
 ylabel('ab3A Response (Hz)')
 set(gca,'XColor','r','XLim',[-1 14])
 
-subplot(2,3,2), hold on
+subplot(3,3,5), hold on
 scatter(ab3.fp,ab3.R,scatter_size,ab3.c,'filled')
 xlabel('Projected Stimulus (V)')
 ylabel('ab3A Response (Hz)')
 title('using nat. stimulus filter')
 set(gca,'XColor','b','XLim',[-.5 6])
 
-subplot(2,3,4), hold on
+subplot(3,3,7), hold on
 plot(filtertime,K,'b')
 ylabel('ab2A filter')
 xlabel('Lag (s)')
 
-subplot(2,3,5), hold on
-
+subplot(3,3,8), hold on
 shat = computeSmoothedStimulus(mean(PID,2),500);
 shat = shat-min(shat);
 shat = shat/max(shat);

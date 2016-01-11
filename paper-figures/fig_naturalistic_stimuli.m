@@ -306,7 +306,7 @@ movePlot(axes_handles(7),'right',.025)
 set(axes_handles(2),'XLim',[50 5000])
 set(axes_handles(1),'XLim',[1e-2 10])
 xlabel(axes_handles(5),'Time (s)')
-set(axes_handles(6),'XLim',[-.1 5])
+set(axes_handles(6),'XLim',[-.1 5.1])
 set(axes_handles(7),'YLim',[0 max(gain)],'YScale','log','XScale','log','XLim',[.001 10])
 
 
@@ -363,7 +363,6 @@ gain_err(rm_this) = [];
 mean_stim(rm_this) = [];
 plot(mean_stim,gain,'k+');
 
-
 % now add the ab2 data
 shat = abs(filter(Kdiff,length(Kdiff),mean(PID,2)));
 
@@ -387,7 +386,7 @@ plot(mean_stim,gain,'ko');
 legend({'ab3A','ab2A'})
 xlabel('Projection using differentiating filter')
 ylabel('ORN Gain (Hz/V)')
-set(gca,'XScale','log','YScale','log')
+set(gca,'XTick',[1e-4 1e-3 1e-2 1e-1 1 10],'XScale','log','YScale','log','XLim',[1e-4 10])
 
 % OK, now we show that both the mean and the variance can account for gain changes. now we show that in this stimulus, the mean and the variance co-vary
 subplot(3,3,2), hold on
@@ -396,7 +395,7 @@ all_block_sizes = all_block_sizes(6:end-1);
 all_block_sizes = all_block_sizes(1:41);
 clear l r2
 r2 = NaN*all_block_sizes;
-c = parula(length(all_block_sizes)+3);
+c = jet(length(all_block_sizes));
 for i = 1:length(all_block_sizes)
 	temp = ab3.PID(:);
 	temp = reshape(temp,all_block_sizes(i),length(temp)/all_block_sizes(i));
@@ -412,7 +411,7 @@ subplot(3,3,3), hold on
 for i = 1:length(all_block_sizes)
 	plot(all_block_sizes(i),r2(i),'+','Color',c(i,:))
 end
-set(gca,'XScale','log')
+set(gca,'XScale','log','XTick',[1 1e1 1e2 1e3 1e4])
 xlabel('Window (ms)')
 ylabel('r^2 (\mu, \sigma)')
 

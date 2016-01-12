@@ -272,7 +272,7 @@ set(ax(2),'YLim',[0 2],'YTick',[])
 set(ax(3),'XLim',[35 55],'YLim',[0 70])
 set(ax(4),'YLim',[0 70],'YTick',[])
 
-set(ax(7),'XLim',[0 50],'YLim',[0 50])
+set(ax(7),'XLim',[0 70],'YLim',[0 70])
 
 ylabel(ax(1),'Stimulus (V)')
 ylabel(ax(3),'ORN Response (Hz)')
@@ -296,47 +296,47 @@ if being_published
 end
 
 
+
 % test figure: optimal coding in the mean shifted gaussian case
 figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
 subplot(3,3,1), hold on
-x = 0:0.1:5;
-y = zeros(length(x),8);
-for i = 1:length(paradigm_names)
-	stim = [MSG_data(i,:).stim];
+x = 0:0.05:2;
+y = zeros(length(x),max(paradigm));
+for i = 1:max(paradigm)
+	stim = PID(a:z,paradigm == i);
 	[hy,hx]  = hist(stim(:),50);
 	temp = histcounts(stim(:),x);
 	temp = temp/sum(temp);
 	temp = cumsum(temp);
 	y(2:end,i) = temp;
-	hy = hy/length(plot_these);
 	hy = hy/sum(hy);
 	plot(hx,hy,'Color',c(i,:));
 end
 ylabel('p(stimulus)')
-set(gca,'XLim',[0 4.2])
+set(gca,'XLim',[0 2])
 
 % normalise ORN data
 m = max(max([orn_io_data.y]));
-for i = 1:8
+for i = 1:max(paradigm)
 	orn_io_data(i).y = orn_io_data(i).y/m;
 end
 
 % now plot the integrals -- these are the theoretical predictions
 % also plot the data
 subplot(3,3,4), hold on
-for i = 1:8
+for i = 1:max(paradigm)
 	plot(x,y(:,i),'Color',c(i,:));
 	plot(orn_io_data(i).x,orn_io_data(i).y,'+','Color',c(i,:))
 end
 xlabel('Stimulus (V)')
 ylabel('Response (norm)')
-set(gca,'XLim',[0 4.2])
+set(gca,'XLim',[0 2])
 
 % now show the correlation between predicted gain and actual gain
 subplot(3,3,7), hold on
-orn_gain = NaN(8,1);
+orn_gain = NaN(max(paradigm),1);
 predicted_gain = NaN*orn_gain;
-for i = 1:8
+for i = 1:max(paradigm)
 	temp = interp1(orn_io_data(i).x,orn_io_data(i).y,x);
 	temp = fit(x(~isnan(temp))',temp(~isnan(temp))','poly1');
 	orn_gain(i) = temp.p1;
@@ -345,39 +345,60 @@ for i = 1:8
 	predicted_gain(i) = temp.p1;
 end
 plot(predicted_gain,orn_gain,'k+')
-plot([0 3],[0 3],'k--')
+plot([1e-3 10],[1e-3 10],'k--')
+set(gca,'XScale','log','YScale','log','YLim',[.1 3])
 xlabel('Predicted Gain')
 ylabel('ORN Gain')
 
 
 % now plot the stimulus + best fit assuming Kd constraint
+clear p
+p = cache('Kd_constrained_MSG_fit2');
+if isempty(p)
+	clear d
+	d.stimulus = x;
+	d.response = y(:,1)';
+	p = fitModel2Data(@hill,d,'make_plot',false,'nsteps',1000,'display_type','iter');
+	ub = p;
+	ub.k = Inf;
+	lb = p;
+	lb.k = 0;
+	for i = 2:max(paradigm)
+		clear d
+		d.stimulus = x;
+		d.response = y(:,i)';
+		p(i) = fitModel2Data(@hill,d,'p0',p(1),'ub',ub,'lb',lb,'make_plot',false,'nsteps',300,'display_type','iter');
+	end
+	cache('Kd_constrained_MSG_fit2',p);
+end
+
 subplot(3,3,2), hold on
-p = cache('Kd_constrained_MSG_fit');
-for i = 1:8
+
+for i = 1:max(paradigm)
 	plot(x,y(:,i),'Color',c(i,:));
 	pred = hill(x,p(i));
 	plot(x,pred,'LineStyle','--','Color',c(i,:))
 end
 title('Only K_D can vary')
-set(gca,'XLim',[0 4.2])
+set(gca,'XLim',[0 2])
 xlabel('Stimulus (V)')
 ylabel('Response (norm)')
 
 subplot(3,3,5), hold on
-for i = 1:8
+for i = 1:max(paradigm)
 	pred = hill(x,p(i));
 	plot(x,pred,'LineStyle','--','Color',c(i,:))
 	plot(orn_io_data(i).x,orn_io_data(i).y,'+','Color',c(i,:))
 end
-set(gca,'XLim',[0 4.2])
+set(gca,'XLim',[0 2])
 xlabel('Stimulus (V)')
 ylabel('Response (norm)')
 
 % now show the correlation between predicted gain and actual gain
 subplot(3,3,8), hold on
-orn_gain = NaN(8,1);
+orn_gain = NaN(max(paradigm),1);
 predicted_gain = NaN*orn_gain;
-for i = 1:8
+for i = 1:max(paradigm)
 	temp = interp1(orn_io_data(i).x,orn_io_data(i).y,x);
 	temp = fit(x(~isnan(temp))',temp(~isnan(temp))','poly1');
 	orn_gain(i) = temp.p1;
@@ -387,37 +408,57 @@ for i = 1:8
 	predicted_gain(i) = temp.p1;
 end
 plot(predicted_gain,orn_gain,'k+')
-plot([0 3],[0 3],'k--')
+plot([1e-3 10],[1e-3 10],'k--')
+set(gca,'XScale','log','YScale','log','YLim',[.1 3])
 xlabel('Predicted Gain')
 
 % now plot the stimulus + best fit assuming n constraint
+clear p
+p = cache('n_constrained_MSG_fit2');
+if isempty(p)
+	clear d
+	d.stimulus = x;
+	d.response = y(:,1)';
+	p = fitModel2Data(@hill,d,'make_plot',false,'nsteps',1000,'display_type','iter');
+	ub = p;
+	ub.n = Inf;
+	lb = p;
+	lb.n = 0;
+	for i = 2:max(paradigm)
+		clear d
+		d.stimulus = x;
+		d.response = y(:,i)';
+		p(i) = fitModel2Data(@hill,d,'p0',p(1),'ub',ub,'lb',lb,'make_plot',false,'nsteps',300,'display_type','iter');
+	end
+	cache('n_constrained_MSG_fit2',p);
+end
+
 subplot(3,3,3), hold on
-p = cache('n_constrained_MSG_fit');
-for i = 1:8
+for i = 1:max(paradigm)
 	plot(x,y(:,i),'Color',c(i,:));
 	pred = hill(x,p(i));
 	plot(x,pred,'LineStyle','--','Color',c(i,:))
 end
 title('Only n can vary')
-set(gca,'XLim',[0 4.2])
+set(gca,'XLim',[0 2])
 xlabel('Stimulus (V)')
 ylabel('Response (norm)')
 
 subplot(3,3,6), hold on
-for i = 1:8
+for i = 1:max(paradigm)
 	pred = hill(x,p(i));
 	plot(x,pred,'LineStyle','--','Color',c(i,:))
 	plot(orn_io_data(i).x,orn_io_data(i).y,'+','Color',c(i,:))
 end
-set(gca,'XLim',[0 4.2])
+set(gca,'XLim',[0 2])
 xlabel('Stimulus (V)')
 ylabel('Response (norm)')
 
 % now show the correlation between predicted gain and actual gain
 subplot(3,3,9), hold on
-orn_gain = NaN(8,1);
+orn_gain = NaN(max(paradigm),1);
 predicted_gain = NaN*orn_gain;
-for i = 1:8
+for i = 1:max(paradigm)
 	temp = interp1(orn_io_data(i).x,orn_io_data(i).y,x);
 	temp = fit(x(~isnan(temp))',temp(~isnan(temp))','poly1');
 	orn_gain(i) = temp.p1;
@@ -427,7 +468,8 @@ for i = 1:8
 	predicted_gain(i) = temp.p1;
 end
 plot(predicted_gain,orn_gain,'k+')
-plot([0 3],[0 3],'k--')
+plot([1e-3 10],[1e-3 10],'k--')
+set(gca,'XScale','log','YScale','log','YLim',[.1 3],'XTick',[1e-10 1e-6 1e-3 1e1])
 xlabel('Predicted Gain')
 
 prettyFig('plw=1.3;','lw=1.5;','fs=14;')
@@ -438,37 +480,22 @@ if being_published
 end
 
 
-% clear p
-% p.A = 1.0050;
-% p.k = 0.6347;
-% p.n = 4.7652;
-% ub = p;
-% ub.k = Inf;
-% lb = p;
-% lb.k = 0;
 
-% for i = 1:8
-% 	clear d
-% 	d.stimulus = x;
-% 	d.response = y(:,i)';
-% 	p(i) = fitModel2Data(@hill,d,'p0',p(1),'ub',ub,'lb',lb,'make_plot',false,'nsteps',100,'display_type','iter');
-% end
+clear p
+p.A = 1.0050;
+p.k = 0.6347;
+p.n = 4.7652;
+ub = p;
+ub.n = Inf;
+lb = p;
+lb.n = 0;
 
-% clear p
-% p.A = 1.0050;
-% p.k = 0.6347;
-% p.n = 4.7652;
-% ub = p;
-% ub.n = Inf;
-% lb = p;
-% lb.n = 0;
-
-% for i = 1:8
-% 	clear d
-% 	d.stimulus = x;
-% 	d.response = y(:,i)';
-% 	p(i) = fitModel2Data(@hill,d,'p0',p(1),'ub',ub,'lb',lb,'make_plot',true,'nsteps',100,'display_type','iter');
-% end
+for i = 1:max(paradigm)
+	clear d
+	d.stimulus = x;
+	d.response = y(:,i)';
+	p(i) = fitModel2Data(@hill,d,'p0',p(1),'ub',ub,'lb',lb,'make_plot',true,'nsteps',100,'display_type','iter');
+end
 
 
 % % another supplementary figure showing that variance changes are not important here. 

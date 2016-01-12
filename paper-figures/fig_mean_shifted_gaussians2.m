@@ -55,113 +55,84 @@ axes_handles(1) = subplot(7,2,1:4); hold on
 axes_handles(2) = subplot(7,2,5:8); hold on
 axes_handles(3) = subplot(7,2,[9 11 13]); hold on
 axes_handles(4) = subplot(7,2,[10 12 14]); hold on
-% load cached data
-load('../data/MeanShiftedGaussians.mat')
 
-% some universal parameters
-nbins = 50;
-histx = [];
-histy = [];
+% load data 
+
+[PID, ~, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData('/local-data/DA-paper/LFP-MSG/september',1);
+
+% remove baseline from all PIDs
+for i = 1:width(PID)
+	PID(:,i) = PID(:,i) - mean(PID(1:5e3,i));
+end
+
+% sort the paradigms sensibly
+sort_value = [];
+for i = 1:length(AllControlParadigms)
+	sort_value(i) = (mean(AllControlParadigms(i).Outputs(1,:)));
+end
+[~,idx] = sort(sort_value);
+
+
+AllControlParadigms = AllControlParadigms(idx);
+paradigm_new = paradigm*NaN;
+for i = 1:length(idx)
+	paradigm_new(paradigm == idx(i)) = i;
+end
+paradigm = paradigm_new;
+
+% throw our bad traces
+bad_trials = (sum(fA) == 0 | isnan(sum(fA)));
+PID(:,bad_trials) = [];
+fA(:,bad_trials) = [];
+paradigm(bad_trials) = [];
+orn(bad_trials) = [];
+
+% extract filters and find gain
+a = 35e3; z = 55e3;
+[K,fA_pred,fA_gain] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
+
+% some core variables
 dt = 1e-3;
-all_pid = [];
-
-
-c = parula(length(paradigm_names)+1);
-
-mean_pid = NaN(length(c),1);
+c = parula(max(paradigm)+1); % colour scheme
 
 % plot some stimulus
 example_dose = 1;
-plot_these=find(strcmp(paradigm_names{example_dose}, combined_data.paradigm));
-plot_this = mean(combined_data.PID(plot_these,:));
+plot_this = nanmean(PID(:,paradigm==example_dose),2);
 time = dt*(1:length(plot_this));
 axes(axes_handles(1))
 plot(time,plot_this,'Color',c(example_dose,:));
 ylabel(axes_handles(1),'Stimulus (V)')
-set(axes_handles(1),'XLim',[45 55])
+set(axes_handles(1),'XLim',[35 55])
 
-% load the data cut and processed
-load('../data/MSG_per_neuron.mat','MSG_data')
-
-% find best reg filters
-for i = 1:8
-	for j = 1:13
-		if width(MSG_data(i,j).stim) > 1
-			this_stim = mean(MSG_data(i,j).stim,2);
-			this_resp = mean(MSG_data(i,j).resp,2);
-			MSG_data(i,j).K = fitFilter2Data(this_stim,this_resp,'offset',200,'reg',1);
-		elseif width(MSG_data(i,j).stim) == 1
-			this_stim = MSG_data(i,j).stim;
-			this_resp = MSG_data(i,j).resp;
-			MSG_data(i,j).K = fitFilter2Data(this_stim,this_resp,'offset',200,'reg',1);
-		else
-
-		end
-
-	end
-end
-
-% cut the ends off the filters, and normalise them
-for i = 1:8
-	for j = 1:13
-		K = MSG_data(i,j).K;
-		if ~isempty(K)
-			MSG_data(i,j).K = (K(100:900));
-		end
-	end
-end
 
 % plot the filter for the lowest dose 
-filtertime = (-100:700)*1e-3;
-K = [MSG_data(example_dose,:).K];
+filtertime = (-100:599)*1e-3;
 axes(axes_handles(3))
-shadedErrorBar(filtertime,mean(K,2),sem(K'),{'Color',c(example_dose,:)})
-set(axes_handles(3),'XLim',[-.2 .7])
+shadedErrorBar(filtertime,mean(K(:,paradigm==example_dose),2),sem(K'),{'Color',c(example_dose,:)})
+set(axes_handles(3),'XLim',[-.1 .6])
 xlabel(axes_handles(3),'Lag (s)')
 ylabel(axes_handles(3),'Filter K (norm)')
 
-% make linear predictions everywhere
-% and also calculate the r2 of each -- this will be used as weights
-for i = 1:8
-	for j = 1:13
-		if width(MSG_data(i,j).stim) > 1
-			this_stim = mean(MSG_data(i,j).stim,2);
-			this_resp = mean(MSG_data(i,j).resp,2);
-			MSG_data(i,j).fp = convolve(MSG_data(i,j).time,this_stim,MSG_data(i,j).K,filtertime);
-			%MSG_data(i,j).fp = convolve(MSG_data(i,j).time,this_stim,mean(K,2),filtertime);
-			MSG_data(i,j).r2 = rsquare(MSG_data(i,j).fp,this_resp);
-		elseif width(MSG_data(i,j).stim) == 1
-			this_stim = MSG_data(i,j).stim;
-			this_resp = MSG_data(i,j).resp;
-			MSG_data(i,j).fp = convolve(MSG_data(i,j).time,this_stim,MSG_data(i,j).K,filtertime);
-			%MSG_data(i,j).fp = convolve(MSG_data(i,j).time,this_stim,mean(K,2),filtertime);
-			MSG_data(i,j).r2 = rsquare(MSG_data(i,j).fp,this_resp);
-		end
-
-	end
-end
-
-
 % plot linear prediction vs. data for the example dose. 
-ss = 25;
-y = mean([MSG_data(example_dose,:).resp],2);
-x = mean([MSG_data(example_dose,:).fp],2);
-time = 35+1e-3*(1:length([MSG_data(example_dose,:).fp]));
-
+y = mean(fA(a:z,paradigm==example_dose),2);
+x = mean(fA_pred(a:z,paradigm==example_dose),2);
+time = 35+dt*(1:length(x));
 
 [ax,plot1,plot2] = plotyy(axes_handles(2),time,y,time,x);
-set(ax(1),'XLim',[45 55],'YLim',[min(y(5e3:end)) max(y(5e3:end))],'YColor',c(example_dose,:))
-set(ax(2),'XLim',[45 55],'YLim',[min(x(5e3:end)) max(x(5e3:end))],'YColor','r')
+set(ax(1),'XLim',[35 55],'YLim',[min(y(5e3:end)) max(y(5e3:end))],'YColor',c(example_dose,:))
+set(ax(2),'XLim',[35 55],'YLim',[min(x(5e3:end)) max(x(5e3:end))],'YColor','r')
 set(plot1,'Color',c(example_dose,:))
 set(plot2,'Color','r')
 ylabel(ax(1),'ORN Response (Hz)')
 ylabel(ax(2),'Projected Stimulus')
 set(axes_handles(2),'box','off')
+set(ax(1),'XMinorTick','on','YMinorTick','on')
+set(ax(2),'XMinorTick','on','YMinorTick','on')
+xlabel('Time (s)')
 
-plot(axes_handles(4),x(1:ss:end),y(1:ss:end),'.','Color',c(example_dose,:));
-
+plot(axes_handles(4),x(1:25:end),y(1:25:end),'.','Color',c(example_dose,:));
 ff= fit(x(~isnan(x)),y(~isnan(x)),'poly1');
-l = plot(axes_handles(4),sort(x),ff(sort(x)),'r');
+l = plot(axes_handles(4),sort(x),ff(sort(x)),'k');
 L = {};
 L{1} = strcat('Gain=',oval(ff.p1),'Hz/V, r^2=',oval(rsquare(y,x)));
 
@@ -174,7 +145,7 @@ legend(l,L,'Location','northwest');
 
 prettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=0;','FixLogY=0;')
 
-legend('boxoff')
+
 
 movePlot(axes_handles(3),'down',.03)
 movePlot(axes_handles(4),'down',.03)
@@ -187,7 +158,6 @@ if being_published
 	snapnow
 	delete(gcf)
 end
-
 
 %    ##      ## ######## ########  ######## ########      ######      ###    #### ##    ## 
 %    ##  ##  ## ##       ##     ## ##       ##     ##    ##    ##    ## ##    ##  ###   ## 
@@ -216,27 +186,25 @@ for i = 1:length(ax)
 end  
 
 % plot all the stimuli
-for i = 1:8
-	plot(ax(1),MSG_data(1,1).time,mean([MSG_data(i,:).stim],2),'Color',c(i,:))
+for i = 1:max(paradigm)
+	plot(ax(1),time,nanmean(PID(a:z,paradigm==i),2),'Color',c(i,:))
 end
 
 % plot the stimulus distributions 
 a = floor(35/dt);
 z = floor(55/dt);
 
-for i = 1:length(paradigm_names)
-	plot_these=find(strcmp(paradigm_names{i}, combined_data.paradigm));
-	plot_hist = (combined_data.PID(plot_these,a:z));
+for i = 1:max(paradigm)
+	plot_hist = PID(a:z,paradigm == i);
 	[hy,hx]  = hist(plot_hist(:),50);
-	hy = hy/length(plot_these);
 	hy = hy/sum(hy);
 	plot(ax(2),hy,hx,'Color',c(i,:));
 end
 
 % plot the responses
-for i = 1:8
-	temp = [MSG_data(i,:).resp];
-	plot(ax(3),MSG_data(1,1).time,mean(temp,2),'Color',c(i,:));
+for i = 1:max(paradigm)
+	temp = fA(a:z,paradigm==i);
+	plot(ax(3),time,nanmean(temp,2),'Color',c(i,:));
 	[hx,hy] = hist(mean(temp,2),30);
 	hx = hx/sum(hx);
 	plot(ax(4),hx,hy,'Color',c(i,:));
@@ -245,79 +213,35 @@ end
 
 % show gain changes for all paradigms -- average over neurons 
 ss = 100;
-all_x = 0:0.1:5;
+all_x = 0:0.1:2;
 axes(ax(5)), hold(ax(5),'on')
-for i = 1:8 % iterate over all paradigms 
-	y = ([MSG_data(i,:).resp]);
-	x = ([MSG_data(i,:).fp]);
-	s = ([MSG_data(i,:).stim]);
-	if ~isvector(x)
-		x = mean(x,2);
-		
-	end
-	if ~isvector(s)
-		s = mean(s,2);
-	end
-
-	if ~isvector(y)
-		y = mean(y,2);
-	end 
-
+for i = 1:max(paradigm) % iterate over all paradigms 
+	y = nanmean(fA(a:z,paradigm == i),2);
+	x = nanmean(fA_pred(a:z,paradigm == i),2);
+	s = nanmean(PID(a:z,paradigm == i),2);
 	x = x - nanmean(x);
 	x = x + nanmean(nanmean(s));
-	[~,orn_io_data(i)] = plotPieceWiseLinear(x(1e3:end),y(1e3:end),'nbins',50,'Color',c(i,:));
+	[~,orn_io_data(i)] = plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:));
 end
 
-
-
-% compute gain changes on a per-neuron basis
-gain = NaN(8,13);
-mean_stim = NaN(8,13);
-mean_resp = NaN(8,13);
-for i = 1:8 % iterate over all paradigms 
-	for j = 1:13
-		if width(MSG_data(i,j).stim) > 1
-			y = MSG_data(i,j).resp; % average over all neurons 
-			x = MSG_data(i,j).fp;
-			if ~isvector(x)
-				x = mean(x,2);
-			end
-			if ~isvector(y)
-				y = mean(y,2);
-			end 
-			
-			% trim NaNs again
-			rm_this = isnan(x) | isnan(y);
-			x(rm_this) = [];
-			y(rm_this) = [];
-
-			temp=fit(x(:),y(:),'poly1');
-			gain(i,j) = temp.p1;
-			mean_stim(i,j) = mean(mean([MSG_data(i,j).stim]));
-			mean_resp(i,j) = mean(mean([MSG_data(i,j).resp]));
-
-		end
-	end	
-end
-
-% calculate the gain error as the standard deviation over each paradigm
-gain_err = nanstd(gain');
-gain_err(gain_err == 0) = Inf;
+mean_stim = nanmean(PID(a:z,:));
 
 % show gain changes -- gain vs. mean stimulus
-for i = 1:8
-	plot(ax(6),(mean_stim(i,:)),(gain(i,:)),'+','Color',c(i,:));
+for i = 1:max(paradigm)
+	plot(ax(6),mean_stim(paradigm==i),fA_gain(paradigm==i),'+','Color',c(i,:));
 end
 
 
 % fit a power law with exponent -1
+mean_stim = mean_stim(:);
+fA_gain = fA_gain(:);
 options = fitoptions(fittype('power1'));
 options.Lower = [-Inf -1];
 options.Upper = [Inf -1];
-options.Weights = 1./gain_err(:);
-cf = fit(nanmean(mean_stim,2),nanmean(gain,2),'power1',options);
-l=plot(ax(6),nanmean(mean_stim,2),cf(nanmean(mean_stim,2)),'r');
-r2 = rsquare(nonnans(gain),cf(nonnans(mean_stim)));
+cf = fit(mean_stim(~isnan(fA_gain)),fA_gain(~isnan(fA_gain)),'power1',options);
+l = plot(ax(6),sort(mean_stim),cf(sort(mean_stim)),'r');
+r2 = rsquare(nonnans(fA_gain),cf(nonnans(mean_stim)));
+set(ax(6),'XScale','log','YScale','log','YLim',[10 300],'XLim',[.1 2.5])
 
 % rescale by Weber law
 ss = 50;
@@ -325,18 +249,9 @@ allx = [];
 ally = [];
 axes(ax(7)), hold(ax(7),'on')
 for i = 1:8 % iterate over all paradigms 
-	y = ([MSG_data(i,:).resp]);
-	x = ([MSG_data(i,:).fp]);
-	s = ([MSG_data(i,:).stim]);
-	if ~isvector(x)
-		x = mean(x,2);
-	end
-	if ~isvector(s)
-		s = mean(s,2);
-	end
-	if ~isvector(y)
-		y = mean(y,2);
-	end 
+	y = nanmean(fA(a:z,paradigm == i),2);
+	x = nanmean(fA_pred(a:z,paradigm == i),2);
+	s = nanmean(PID(a:z,paradigm == i),2);
 
 	allx = [allx mean(y)+cf(mean(s))*(x(1:ss:end))];
 	ally = [ally y(1:ss:end)];
@@ -347,16 +262,16 @@ for i = 1:8 % iterate over all paradigms
 	plotPieceWiseLinear(x(1e3:end),y(1e3:end),'nbins',40,'Color',c(i,:));
 end
 
-plot(ax(7),[0 45],[0 45],'r')
+plot(ax(7),[0 80],[0 80],'r')
 
 
 % cosmetics
-set(ax(1),'XLim',[45 55],'YLim',[0 4.5])
-set(ax(2),'YLim',[0 4.5],'YTick',[])
+set(ax(1),'XLim',[35 55],'YLim',[0 2])
+set(ax(2),'YLim',[0 2],'YTick',[])
 
-set(ax(3),'XLim',[45 55],'YLim',[0 40])
-set(ax(4),'YLim',[0 40],'YTick',[])
-set(ax(6),'XScale','log','YScale','log','YLim',[1 50],'XLim',[.5 3.5])
+set(ax(3),'XLim',[35 55],'YLim',[0 70])
+set(ax(4),'YLim',[0 70],'YTick',[])
+
 set(ax(7),'XLim',[0 50],'YLim',[0 50])
 
 ylabel(ax(1),'Stimulus (V)')

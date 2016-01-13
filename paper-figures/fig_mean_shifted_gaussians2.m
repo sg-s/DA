@@ -480,27 +480,42 @@ if being_published
 end
 
 
+% another supplementary figure showing that variance changes are not important here. 
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(nanmean(PID(a:z,:)),nanstd(PID(a:z,:)),'k+')
+plot([0 2],[0 2],'k--')
+xlabel('\mu_{stimulus} (V)')
+ylabel('\sigma_{stimulus (V)}')
 
-clear p
-p.A = 1.0050;
-p.k = 0.6347;
-p.n = 4.7652;
-ub = p;
-ub.n = Inf;
-lb = p;
-lb.n = 0;
+prettyFig('plw=1.3;','lw=1.5;','fs=20;')
 
-for i = 1:max(paradigm)
-	clear d
-	d.stimulus = x;
-	d.response = y(:,i)';
-	p(i) = fitModel2Data(@hill,d,'p0',p(1),'ub',ub,'lb',lb,'make_plot',true,'nsteps',100,'display_type','iter');
+if being_published
+	snapnow
+	delete(gcf)
 end
 
+% subplot(1,3,2), hold on
+% for i = 1:max(paradigm)
+% 	plot(mean_stim(paradigm==i),fA_gain(paradigm==i),'+','Color',c(i,:));
+% end
+% l = plot(NaN,NaN,'k+');
+% legend(l,['\rho = ' oval(spear(mean_stim,fA_gain))])
+% set(gca,'XScale','log','YScale','log')
+% xlabel('Mean Stimulus (V)')
+% ylabel('ORN Gain (Hz/V)')
 
-% % another supplementary figure showing that variance changes are not important here. 
-% figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
-% subplot(1,3,1), hold on
+% subplot(1,3,3), hold on
+% std_stim = nanstd(PID(a:z,:));
+% for i = 1:max(paradigm)
+% 	plot(std_stim(paradigm==i),fA_gain(paradigm==i),'+','Color',c(i,:));
+% end
+% l = plot(NaN,NaN,'k+');
+% legend(l,['\rho = ' oval(spear(std_stim(:),fA_gain))])
+% set(gca,'XScale','log','YScale','log','XLim',[min(std_stim) max(std_stim)])
+% xlabel('Std Stimulus (V)')
+% ylabel('ORN Gain (Hz/V)')
+
+
 % % OK, now we show that both the mean and the variance can account for gain changes. now we show that in this stimulus, the mean and the variance co-vary
 
 % all_block_sizes = factor2(20e3);

@@ -34,17 +34,14 @@ clearvars -except being_published
 scatter_size = 12;
 
 % make figure placeholders 
-fig_handle=figure('outerposition',[0 0 800 950],'PaperUnits','points','PaperSize',[800 950]); hold on
+fig_handle=figure('outerposition',[0 0 750 1000],'PaperUnits','points','PaperSize',[750 1000]); hold on
 clf(fig_handle);
-axes_handles(1) = subplot(16,6,[1:2 7:8 13:14 19:20]); 
-axes_handles(2) = subplot(16,6,2+[1:2 7:8 13:14 19:20]); 
-axes_handles(3) = subplot(16,6,4+[1:2 7:8 13:14 19:20]); 
-
-axes_handles(4) = subplot(16,6,25:42); 
-axes_handles(5) = subplot(16,6,43:60); 
-
-axes_handles(6) = subplot(16,6,[61:63 67:69 73:75 79:81 85:87 91:93]);
-axes_handles(7) = subplot(16,6,3+[61:63 67:69 73:75 79:81 85:87 91:93]);
+axes_handles(1) = subplot(16,2,1:6);
+axes_handles(2) = subplot(16,2,7:12);
+axes_handles(3) = subplot(16,2,13:2:21);
+axes_handles(4) = subplot(16,2,14:2:22);
+axes_handles(5) = subplot(16,2,23:2:31);
+axes_handles(6) = subplot(16,2,24:2:32);
 
 for i = 1:length(axes_handles)
 	hold(axes_handles(i),'on');
@@ -54,7 +51,6 @@ load('/local-data/DA-paper/natural-flickering/mahmut-raw/2014_07_11_EA_natflick_
 PID = data(2).PID;
 time = 1e-4*(1:length(PID));
 all_spikes = spikes(2).A;
-
 
 % A spikes --> firing rate
 hash = dataHash(full(all_spikes));
@@ -79,63 +75,10 @@ PID(end,:) = PID(end-1,:);
 PID_baseline = mean(mean(PID(1:5e3,:)));
 PID = PID - PID_baseline;
 
+% plot the sitmulus
+plot(axes_handles(1),tA(1:10:end),mean(PID(1:10:end,:),2),'Color',[0.2 .2 .2]);
+set(axes_handles(1),'XLim',[0 70],'YLim',[0 7],'XTick',[])
 
-plot(axes_handles(4),tA(1:10:end),mean(PID(1:10:end,:),2),'Color',[0.2 .2 .2]);
-set(axes_handles(4),'XLim',[0 70],'YLim',[0 7],'XTick',[])
-ylabel(axes_handles(4),'Stimulus (V)')
-
-% % make an inset showing details of stimulus reproducibility 
-% inset(1) = axes(); % to show natural flickering vs. linear prediction
-% set(inset(1),'Position',[.58 .62 .18 .08],'box','on','XTickLabel',{},'YTickLabel',{})
-% plot(inset(1),PID(27e3:29e3,:),'Color',[.5 .5 .5])
-% set(inset(1),'XLim',[1 1e3],'XTick',[],'YTick',[],'YLim',[0 7])
-
-axes(axes_handles(1));
-y = zeros(300,width(PID));
-for i = 1:width(PID)
-	[y(:,i),x] = histcounts(PID(:,i),300);x(1) = [];
-	y(:,i) = y(:,i)/sum(y(:,i));
-end
-errorShade(x,mean(y,2),sem(y'),'Color',[.2 .2 .2]);
-warning off % because there are some -ve values on the log scale
-set(axes_handles(1),'XScale','log','YScale','log','XLim',[min(x) 10],'YLim',[1e-5 1],'YTick',logspace(-5,0,6))
-xlabel(axes_handles(1),'Stimulus (V)')
-ylabel(axes_handles(1),'Probability')
-warning on
-
-
-% show the whiff durations 
-whiff_durations = []; 
-for i = 1:width(PID)
-	[ons,offs] = computeOnsOffs(PID(:,i) > .024);
-	whiff_durations =  [whiff_durations; offs-ons];
-end
-whiff_durations = nonzeros(whiff_durations);
-[y,x] = histcounts(whiff_durations,50); x(1)  =[];
-y = y/sum(y);
-a = 1; m = fittype('a*(x).^n');
-ff = fit(x(a:end)',y(a:end)',m,'Upper',[Inf -1.5],'Lower',[-Inf -1.5],'StartPoint',[300 -1.5]);
-plot(axes_handles(2),x,y,'k+')
-plot(axes_handles(2),x,ff(x),'r')
-set(axes_handles(2),'YScale','log','XScale','log')
-xlabel(axes_handles(2),'Whiff duration (ms)')
-
-
-% show the blank durations 
-whiff_durations = [];
-for i = 1:width(PID)
-	[ons,offs] = computeOnsOffs(PID(:,i) < .024);
-	whiff_durations =  [whiff_durations; offs-ons];
-end
-whiff_durations = nonzeros(whiff_durations);
-[y,x] = histcounts(whiff_durations,50); x(1)  =[];
-y = y/sum(y);
-a = 1; m = fittype('a*(x).^n');
-ff = fit(x(a:end)',y(a:end)',m,'Upper',[Inf -1.5],'Lower',[-Inf -1.5],'StartPoint',[300 -1.5]);
-plot(axes_handles(3),x,y,'k+')
-plot(axes_handles(3),x,ff(x),'r')
-set(axes_handles(3),'YScale','log','XScale','log')
-xlabel(axes_handles(3),'Blank duration (ms)')
 
 
 % make a linear filter
@@ -150,14 +93,14 @@ fp = convolve(tA,mean(PID,2),K,filtertime);
 
 % plot the response and the prediction
 clear l
-[ax,plot1,plot2] = plotyy(axes_handles(5),tA,R,tA,fp);
-set(ax(1),'XLim',[0 70],'YLim',[0 120])
+[ax,plot1,plot2] = plotyy(axes_handles(2),tA,R,tA,fp);
+set(ax(1),'XLim',[0 70],'YLim',[0 120],'YColor','k')
 set(ax(2),'XLim',[0 70],'YLim',[min(fp) max(fp)])
-set(plot1,'Color','b')
+set(plot1,'Color','k')
 set(plot2,'Color','r')
 ylabel(ax(1),'ab3A Response (Hz)')
 ylabel(ax(2),'Projected Stimulus (V)')
-set(axes_handles(5),'box','off')
+set(axes_handles(2),'box','off')
 
 shat = computeSmoothedStimulus(mean(PID,2),500);
 shat = shat-min(shat);
@@ -166,20 +109,19 @@ shat = 1+ceil(shat*99);
 shat(isnan(shat)) = 1;
 
 % make the output analysis plot
-axes(axes_handles(6))
+axes(axes_handles(3))
 cc = parula(100);
 c = cc(shat,:);
 ab3.c = c;
 scatter(fp,R,scatter_size,c,'filled')
-xlabel(axes_handles(6),'Projected Stimulus (V)')
-ylabel(axes_handles(6),'ab3A response (Hz)')
+
 shat = computeSmoothedStimulus(mean(PID,2),500);
 ch = colorbar('east');
-set(ch,'Position',[.44 .1 .02 .1])
+set(ch,'Position',[.44 .4 .02 .1])
 caxis([min(shat) max(shat)]);
 
-% plot gain vs stimulus for all these whiffs
-axes(axes_handles(7))
+% plot gain vs mean stimulus for all these whiffs
+axes(axes_handles(5))
 
 % find all excursions (defined as firing rate crossing 10Hz)
 [whiff_starts,whiff_ends] = computeOnsOffs(R>10);
@@ -198,7 +140,7 @@ gain(rm_this) = [];
 gain_err(rm_this) = [];
 mean_stim(rm_this) = [];
 
-l(1) = plot(axes_handles(7),mean_stim,gain,'k+');
+l(1) = plot(axes_handles(5),mean_stim,gain,'k+');
 
 
 % save this for a later fit
@@ -208,7 +150,7 @@ ab3.gain_err = gain_err;
 ab3.R = R;
 ab3.fp = fp;
 ab3.K = K;
-ab3.PID = mean(PID,2);
+ab3.PID = PID;
 
 % now also add ab2 data
 load('/local-data/DA-paper/natural-flickering/mahmut-raw/2014_07_11_EA_natflick_non_period_CFM_1_ab2_1_1_all.mat')
@@ -271,7 +213,7 @@ gain(rm_this) = [];
 gain_err(rm_this) = [];
 mean_stim(rm_this) = [];
 
-l(2) = plot(axes_handles(7),mean_stim,gain,'ko');
+l(2) = plot(axes_handles(5),mean_stim,gain,'ko');
 
 % fit a inverse relationship to all the data
 options = fitoptions(fittype('power1'));
@@ -279,70 +221,12 @@ options.Lower = [-Inf -1];
 options.Upper = [Inf -1];
 options.Weights = 1./[gain_err; ab3.gain_err];
 ff = fit([mean_stim; ab3.mean_stim],[gain; ab3.gain],'power1',options);
-plot(axes_handles(7),sort([mean_stim; ab3.mean_stim]),ff(sort([mean_stim; ab3.mean_stim])),'r');
-
+plot(axes_handles(5),sort([mean_stim; ab3.mean_stim]),ff(sort([mean_stim; ab3.mean_stim])),'r');
 legend(l,{'ab3A','ab2A'},'Location','southwest')
-xlabel(axes_handles(7),'Stimulus in preceding 500ms (V)')
-ylabel(axes_handles(7),'Gain (Hz/V)')
-
-% cosmetic fixes
-movePlot(axes_handles(1),'up',.05)
-movePlot(axes_handles(2),'up',.05)
-movePlot(axes_handles(3),'up',.05)
-
-movePlot(axes_handles(1),'left',.02)
-movePlot(axes_handles(3),'right',.02)
-
-movePlot(axes_handles(4),'up',.025)
-movePlot(axes_handles(5),'up',.025)
-
-movePlot(axes_handles(6),'down',.025)
-movePlot(axes_handles(7),'down',.025)
-movePlot(axes_handles(6),'left',.025)
-movePlot(axes_handles(7),'right',.025)
 
 
 
-set(axes_handles(2),'XLim',[50 5000])
-set(axes_handles(1),'XLim',[1e-2 10])
-xlabel(axes_handles(5),'Time (s)')
-set(axes_handles(6),'XLim',[-.1 5.1])
-set(axes_handles(7),'YLim',[0 max(gain)],'YScale','log','XScale','log','XLim',[.001 10])
-
-
-% more cosmetics
-set(ax(2),'YColor','r')
-set(ax(1),'YColor','b')
-set(axes_handles(6),'YColor','b','XColor','r')
-
-prettyFig('plw=1.5;','lw=1.5;','fs=12;')
-
-legend('boxoff')
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-
-
-
-%      ######  ##     ## ########  ########     ######## ####  ######   
-%     ##    ## ##     ## ##     ## ##     ##    ##        ##  ##    ##  
-%     ##       ##     ## ##     ## ##     ##    ##        ##  ##        
-%      ######  ##     ## ########  ########     ######    ##  ##   #### 
-%           ## ##     ## ##        ##           ##        ##  ##    ##  
-%     ##    ## ##     ## ##        ##           ##        ##  ##    ##  
-%      ######   #######  ##        ##           ##       ####  ######   
-
-
-%% Supplmentary Figure
-% This supplementary figure shows that the choice of filter doesn't affect our results of large, rapid gain control. 
-
-figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
-
-% first row: show the gain as function of convolution with a diff. filter. 
-subplot(3,3,1), hold on
+% show the gain as function of convolution with a diff. filter. 
 Kdiff = [ones(250,1) ; -ones(250,1)];
 shat = abs(filter(Kdiff,length(Kdiff),mean(ab3.PID,2)));
 % find all excursions (defined as firing rate crossing 10Hz)
@@ -352,7 +236,7 @@ gain = NaN*whiff_ends;
 gain_err =  NaN*whiff_ends;
 for i = 1:length(whiff_ends)
 	mean_stim(i) = mean(shat(whiff_starts(i):whiff_ends(i)));
-	ff=fit(fp(whiff_starts(i):whiff_ends(i)),ab3.R(whiff_starts(i):whiff_ends(i)),'poly1');
+	ff = fit(fp(whiff_starts(i):whiff_ends(i)),ab3.R(whiff_starts(i):whiff_ends(i)),'poly1');
 	gain(i) = ff.p1;
 	temp = confint(ff);
 	gain_err(i) = diff(temp(:,1))/2;
@@ -361,7 +245,7 @@ rm_this = (abs(gain_err./gain)) > .5 | gain < 0; % throw out points where the es
 gain(rm_this) = [];
 gain_err(rm_this) = [];
 mean_stim(rm_this) = [];
-plot(mean_stim,gain,'k+');
+plot(axes_handles(6),mean_stim,gain,'k+');
 
 % now add the ab2 data
 shat = abs(filter(Kdiff,length(Kdiff),mean(PID,2)));
@@ -382,44 +266,162 @@ rm_this = (abs(gain_err./gain)) > .5 | gain < 0; % throw out points where the es
 gain(rm_this) = [];
 gain_err(rm_this) = [];
 mean_stim(rm_this) = [];
-plot(mean_stim,gain,'ko');
+plot(axes_handles(6),mean_stim,gain,'ko');
 legend({'ab3A','ab2A'})
-xlabel('Projection using differentiating filter')
-ylabel('ORN Gain (Hz/V)')
-set(gca,'XTick',[1e-4 1e-3 1e-2 1e-1 1 10],'XScale','log','YScale','log','XLim',[1e-4 10])
 
-% OK, now we show that both the mean and the variance can account for gain changes. now we show that in this stimulus, the mean and the variance co-vary
-subplot(3,3,2), hold on
+
+% now show that the variance and the mean are correlated 
 all_block_sizes = factor2(length(ab3.PID));
 all_block_sizes = all_block_sizes(6:end-1);
 all_block_sizes = all_block_sizes(1:41);
 clear l r2
 r2 = NaN*all_block_sizes;
-c = jet(length(all_block_sizes));
-plot([0 2],[0 2],'k--')
+plot(axes_handles(4),[0 2],[0 2],'k--')
 for i = 1:length(all_block_sizes)
 	temp = ab3.PID(:);
 	temp = reshape(temp,all_block_sizes(i),length(temp)/all_block_sizes(i));
 	if all_block_sizes(i) == 5e2
-		plot(mean(temp),std(temp),'+','Color',c(i,:))
+		plot(axes_handles(4),mean(temp),std(temp),'k+')
 	end
 	r2(i) = rsquare(mean(temp),std(temp));
 end
-xlabel('\mu_{stimulus}')
-ylabel('\sigma_{stimulus}')
-set(gca,'XLim',[0 2.5],'YLim',[0 2.5])
 
-subplot(3,3,3), hold on
+% label all the axes, set the scales, etc.
+ylabel(axes_handles(1),'Stimulus (V)')
+
+xlabel(axes_handles(2),'Time (s)')
+
+xlabel(axes_handles(3),'Projected Stimulus (V)')
+ylabel(axes_handles(3),'ab3A response (Hz)')
+set(axes_handles(3),'XLim',[-.1 5.1])
+set(axes_handles(3),'YColor','k','XColor','r')
+
+xlabel(axes_handles(4),'\mu_{stimulus} (V)')
+ylabel(axes_handles(4),'\sigma_{stimulus} (V)')
+set(axes_handles(4),'XLim',[0 2],'YLim',[0 2])
+
+xlabel(axes_handles(5),'Mean Stimulus in preceding 500ms (V)')
+ylabel(axes_handles(5),'Gain (Hz/V)')
+set(axes_handles(5),'YLim',[10 1e4],'YScale','log','XScale','log','XLim',[.001 10])
+
+xlabel(axes_handles(6),'Std. Stimulus in preceding 500ms (V)')
+set(axes_handles(6),'XTick',[1e-4 1e-3 1e-2 1e-1 1 10],'XScale','log','YScale','log','XLim',[1e-4 10])
+
+% cosmetic fixes
+movePlot(axes_handles(1),'up',.05)
+movePlot(axes_handles(2),'up',.05)
+
+movePlot(axes_handles(3),'up',.02)
+movePlot(axes_handles(4),'up',.02)
+
+
+movePlot(axes_handles(5),'down',.025)
+movePlot(axes_handles(6),'down',.025)
+
+prettyFig('plw=1.5;','lw=1.5;','fs=12;','FixLogX=true;')
+
+legend('boxoff')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%      ######  ##     ## ########  ########     ######## ####  ######   
+%     ##    ## ##     ## ##     ## ##     ##    ##        ##  ##    ##  
+%     ##       ##     ## ##     ## ##     ##    ##        ##  ##        
+%      ######  ##     ## ########  ########     ######    ##  ##   #### 
+%           ## ##     ## ##        ##           ##        ##  ##    ##  
+%     ##    ## ##     ## ##        ##           ##        ##  ##    ##  
+%      ######   #######  ##        ##           ##       ####  ######   
+
+
+%% Supplmentary Figure 1
+% This shows some statistics of the stimulus
+figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
+
+% show the rsquare of the mean and variance as a function of box size
+subplot(2,2,1), hold on
 for i = 1:length(all_block_sizes)
-	plot(all_block_sizes(i),r2(i),'+','Color',c(i,:))
+	plot(all_block_sizes(i),r2(i),'k+')
 end
 set(gca,'XScale','log','XTick',[1 1e1 1e2 1e3 1e4])
 xlabel('Window (ms)')
 ylabel('r^2 (\mu, \sigma)')
 
+% show the PDF of the stimulus
+subplot(2,2,2), hold on
+y = zeros(300,width(PID));
+for i = 1:width(PID)
+	[y(:,i),x] = histcounts(PID(:,i),300);x(1) = [];
+	y(:,i) = y(:,i)/sum(y(:,i));
+end
+errorShade(x,mean(y,2),sem(y'),'Color',[.2 .2 .2]);
+warning off % because there are some -ve values on the log scale
+set(gca,'XScale','log','YScale','log','XLim',[min(x) 10],'YLim',[1e-5 1],'YTick',logspace(-5,0,6))
+xlabel(gca,'Stimulus (V)')
+ylabel(gca,'Probability')
+warning on
 
-% second row: ab3A filters and projections
-subplot(3,3,4), hold on
+% show the whiff durations 
+subplot(2,2,3), hold on
+whiff_durations = []; 
+for i = 1:width(PID)
+	[ons,offs] = computeOnsOffs(PID(:,i) > .024);
+	whiff_durations =  [whiff_durations; offs-ons];
+end
+whiff_durations = nonzeros(whiff_durations);
+[y,x] = histcounts(whiff_durations,50); x(1)  =[];
+y = y/sum(y);
+a = 1; m = fittype('a*(x).^n');
+ff = fit(x(a:end)',y(a:end)',m,'Upper',[Inf -1.5],'Lower',[-Inf -1.5],'StartPoint',[300 -1.5]);
+plot(x,y,'k+')
+plot(x,ff(x),'r')
+ylabel(gca,'Probability')
+set(gca,'YScale','log','XScale','log')
+xlabel('Whiff duration (ms)')
+
+% show the blank durations 
+subplot(2,2,4), hold on
+whiff_durations = [];
+for i = 1:width(PID)
+	[ons,offs] = computeOnsOffs(PID(:,i) < .024);
+	whiff_durations =  [whiff_durations; offs-ons];
+end
+whiff_durations = nonzeros(whiff_durations);
+[y,x] = histcounts(whiff_durations,50); x(1)  =[];
+y = y/sum(y);
+a = 1; m = fittype('a*(x).^n');
+ff = fit(x(a:end)',y(a:end)',m,'Upper',[Inf -1.5],'Lower',[-Inf -1.5],'StartPoint',[300 -1.5]);
+plot(x,y,'k+')
+plot(x,ff(x),'r')
+set(gca,'YScale','log','XScale','log')
+xlabel('Blank duration (ms)')
+ylabel(gca,'Probability')
+
+prettyFig('fs=18;','FixLogX=true;')
+
+
+legend('boxoff')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
+
+%% Supplementary Figure 2
+% This supplementary figure shows that the choice of filter doesn't affect our results of large, rapid gain control. 
+
+
+
+figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
+
+% ab3A filters and projections
+subplot(2,3,1), hold on
 plot(filtertime,ab3.K,'b');
 
 % load MSG filter for ab3
@@ -432,28 +434,29 @@ ylabel('ab3A filter')
 xlabel('Lag (s)')
 set(gca,'YLim',[-.005 .04])
 
-ab3.fp2 = convolve(1e-3*(1:length(ab3.PID)),ab3.PID,ab3.K_white,t);
+ab3.fp2 = convolve(1e-3*(1:length(mean(ab3.PID,2))),mean(ab3.PID,2),ab3.K_white,t);
 
-subplot(3,3,6), hold on
+subplot(2,3,3), hold on
 scatter(ab3.fp2,ab3.R,scatter_size,ab3.c,'filled')
 xlabel('Projected Stimulus (V)')
 title('using white-noise filter')
 ylabel('ab3A Response (Hz)')
 set(gca,'XColor','r','XLim',[-1 14])
 
-subplot(3,3,5), hold on
+subplot(2,3,2), hold on
 scatter(ab3.fp,ab3.R,scatter_size,ab3.c,'filled')
 xlabel('Projected Stimulus (V)')
 ylabel('ab3A Response (Hz)')
 title('using nat. stimulus filter')
 set(gca,'XColor','b','XLim',[-.5 6])
 
-subplot(3,3,7), hold on
+% now show ab2A filters
+subplot(2,3,4), hold on
 plot(filtertime,K,'b')
 ylabel('ab2A filter')
 xlabel('Lag (s)')
 
-subplot(3,3,8), hold on
+subplot(2,3,5), hold on
 shat = computeSmoothedStimulus(mean(PID,2),500);
 shat = shat-min(shat);
 shat = shat/max(shat);
@@ -472,7 +475,7 @@ set(ch,'Position',[.58 .15 .02 .1])
 caxis([min(shat) max(shat)]);
 set(gca,'XLim',[-.15 4],'XColor','b')
 
-prettyFig('fs=12;')
+prettyFig('fs=18;')
 
 if being_published
 	snapnow

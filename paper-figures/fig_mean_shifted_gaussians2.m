@@ -50,12 +50,17 @@ clearvars -except being_published fig*
 %% Figure 1: ORN gain can be estimated by measuring responses to Gaussian inputs
 % Gaussian odorant inputs with short correlation times (A), elicit flickering responses in ORNs that track the odorant stimulus well (B). A linear filter K can be extracted from the odorant input and the firing rate output of the neuron (C). The slope of the residuals in a plot of the firing response vs. the linear prediction (D) is defined as the gain of the ORN. Here, we measure the ORN gain in the linear regime: the linear filter accounts for 96% of the variance in the ORN response (red line), and adding an output nonlinearity (dotted black line), only accounts for an additional 1%. The odorant used is ethyl acetate, stimulating the ab3A neuron. Shading in all plots shows the standard error of the mean. 
 
-figure('outerposition',[0 0 800 700],'PaperUnits','points','PaperSize',[800 700]); hold on
-axes_handles(1) = subplot(7,2,1:4); hold on
-axes_handles(2) = subplot(7,2,5:8); hold on
-axes_handles(3) = subplot(7,2,[9 11 13]); hold on
-axes_handles(4) = subplot(7,2,[10 12 14]); hold on
+figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
+clear axes_handles
+axes_handles(1) = subplot(3,10,1:10);
+axes_handles(2) = subplot(3,10,11:20);
 
+axes_handles(3) = subplot(3,3,7); 
+axes_handles(4) = subplot(3,3,8);
+axes_handles(5) = subplot(3,3,9);
+for i = 1:length(axes_handles)
+	hold(axes_handles(i),'on');
+end  
 % load data 
 
 [PID, ~, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData('/local-data/DA-paper/LFP-MSG/september',1);
@@ -124,10 +129,10 @@ set(ax(2),'XLim',[35 55],'YLim',[min(x(5e3:end)) max(x(5e3:end))],'YColor','r')
 set(plot1,'Color',c(example_dose,:))
 set(plot2,'Color','r')
 ylabel(ax(1),'ORN Response (Hz)')
-ylabel(ax(2),'Projected Stimulus')
+ylabel(ax(2),'Projected Stimulus (V)')
 set(axes_handles(2),'box','off')
-set(ax(1),'XMinorTick','on','YMinorTick','on')
-set(ax(2),'XMinorTick','on','YMinorTick','on')
+set(ax(2),'XMinorTick','on','YMinorTick','on','YTick',[0:0.1:0.5],'YTickLabel',{'0','.1','.2','.3','.4','.5'})
+set(ax(1),'XMinorTick','on','YMinorTick','on','YTick',[0:10:50],'YTickLabel',{'0','10','20','30','40','50'})
 xlabel('Time (s)')
 
 plot(axes_handles(4),x(1:25:end),y(1:25:end),'.','Color',c(example_dose,:));
@@ -141,16 +146,18 @@ xlabel(axes_handles(4),'Projected Stimulus (V)')
 ylabel(axes_handles(4),'ORN Response (Hz)')
 set(axes_handles(4),'YColor',c(example_dose,:),'XColor','r')
 
-legend(l,L,'Location','northwest');
+lh = legend(l,L,'Location','northwest');
+
+movePlot(axes_handles(2),'up',.02)
+
+plot(axes_handles(5),nanmean(PID(a:z,:)),nanstd(PID(a:z,:)),'k+')
+plot(axes_handles(5),[0 2],[0 2],'k--')
+xlabel(axes_handles(5),'\mu_{stimulus} (V)')
+ylabel(axes_handles(5),'\sigma_{stimulus (V)}')
+set(axes_handles(5),'XLim',[0 2],'YLim',[0 2])
 
 prettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=0;','FixLogY=0;')
-
-
-
-movePlot(axes_handles(3),'down',.03)
-movePlot(axes_handles(4),'down',.03)
-movePlot(axes_handles(1),'up',.06)
-movePlot(axes_handles(2),'up',.03)
+set(lh,'Position',[0.42 0.32 0.2112 0.0275],'box','off')
 
 xlabel(axes_handles(2),'Time (s)')
 
@@ -158,6 +165,9 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+
+
 
 %    ##      ## ######## ########  ######## ########      ######      ###    #### ##    ## 
 %    ##  ##  ## ##       ##     ## ##       ##     ##    ##    ##    ## ##    ##  ###   ## 
@@ -480,97 +490,6 @@ if being_published
 end
 
 
-% another supplementary figure showing that variance changes are not important here. 
-figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(nanmean(PID(a:z,:)),nanstd(PID(a:z,:)),'k+')
-plot([0 2],[0 2],'k--')
-xlabel('\mu_{stimulus} (V)')
-ylabel('\sigma_{stimulus (V)}')
-
-prettyFig('plw=1.3;','lw=1.5;','fs=20;')
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-% subplot(1,3,2), hold on
-% for i = 1:max(paradigm)
-% 	plot(mean_stim(paradigm==i),fA_gain(paradigm==i),'+','Color',c(i,:));
-% end
-% l = plot(NaN,NaN,'k+');
-% legend(l,['\rho = ' oval(spear(mean_stim,fA_gain))])
-% set(gca,'XScale','log','YScale','log')
-% xlabel('Mean Stimulus (V)')
-% ylabel('ORN Gain (Hz/V)')
-
-% subplot(1,3,3), hold on
-% std_stim = nanstd(PID(a:z,:));
-% for i = 1:max(paradigm)
-% 	plot(std_stim(paradigm==i),fA_gain(paradigm==i),'+','Color',c(i,:));
-% end
-% l = plot(NaN,NaN,'k+');
-% legend(l,['\rho = ' oval(spear(std_stim(:),fA_gain))])
-% set(gca,'XScale','log','YScale','log','XLim',[min(std_stim) max(std_stim)])
-% xlabel('Std Stimulus (V)')
-% ylabel('ORN Gain (Hz/V)')
-
-
-% % OK, now we show that both the mean and the variance can account for gain changes. now we show that in this stimulus, the mean and the variance co-vary
-
-% all_block_sizes = factor2(20e3);
-% all_block_sizes = all_block_sizes(6:24);
-% clear l r2
-% r2 = NaN(length(all_block_sizes),8);
-% for j = 1:8
-% 	for i = 1:length(all_block_sizes)
-% 		temp = [MSG_data(j,:).stim];
-% 		temp = temp(2:end,:);
-% 		temp = temp(:);
-% 		temp = reshape(temp,all_block_sizes(i),length(temp)/all_block_sizes(i));
-% 		r2(i,j) = rsquare(mean(temp),std(temp));
-% 	end
-% 	plot(all_block_sizes,r2(:,j),'Color',c(j,:))
-% end
-% set(gca,'XScale','log','YLim',[0 1])
-% ylabel('r^2(\sigma,\mu)')
-% xlabel('Window Length (ms)')
-
-
-% % compute gain changes on a per-neuron basis
-% gain = NaN(8,13);
-% mean_stim = NaN(8,13);
-% std_stim = NaN(8,13);
-% for i = 1:8 % iterate over all paradigms 
-% 	for j = 1:13
-% 		if width(MSG_data(i,j).stim) > 1
-% 			y = MSG_data(i,j).resp; % average over all neurons 
-% 			x = MSG_data(i,j).fp;
-% 			if ~isvector(x)
-% 				x = mean(x,2);
-% 			end
-% 			if ~isvector(y)
-% 				y = mean(y,2);
-% 			end 
-			
-% 			% trim NaNs again
-% 			rm_this = isnan(x) | isnan(y);
-% 			x(rm_this) = [];
-% 			y(rm_this) = [];
-
-% 			temp=fit(x(:),y(:),'poly1');
-% 			gain(i,j) = temp.p1;
-% 			mean_stim(i,j) = mean(mean([MSG_data(i,j).stim]));
-% 			std_stim(i,j) = mean(std([MSG_data(i,j).stim]));
-% 		end
-% 	end	
-% end
-
-% subplot(1,3,2), hold on
-% plot(mean_stim(:),gain(:),'k+')
-
-% subplot(1,3,3), hold on
-% plot(std_stim(:),gain(:),'k+')
 
 
 %        ######  ########  ######## ######## ########  ##     ## ########   ######  

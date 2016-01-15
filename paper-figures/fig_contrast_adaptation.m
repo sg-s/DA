@@ -141,45 +141,6 @@ for i = 1:width(reshaped_fA)
 	fA_pred(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K2_mean,ft);
 end
 
-all_offsets = [1 3 6 8];
-window_length = 2;
-
-% compute the slopes -- firing rate 
-if exist('.cache/VSA_fA_slopes.mat','file') == 2
-	load('.cache/VSA_fA_slopes.mat','n')
-else
-	n = NaN(width(reshaped_PID),length(all_offsets));
-	for i = 1:width(reshaped_PID)
-		textbar(i,width(reshaped_fA))
-		for j = 1:length(all_offsets)
-			x = fA_pred(:,i);
-			y = reshaped_fA(:,i);
-
-			a = round(1e3*(all_offsets(j) - window_length/2));
-			z = round(1e3*(all_offsets(j) + window_length/2));
-
-			x = circshift(x,length(x) - z );
-			y = circshift(y,length(y) - z );
-
-			x = x(end-window_length*1e3:end);
-			y = y(end-window_length*1e3:end);
-
-			rm_this = isnan(x) | isnan(y);
-			x(rm_this) = [];
-			y(rm_this) = [];
-
-			y = y(x > 0.33*max(x) & x < .66*max(x));
-			x = x(x > 0.33*max(x) & x < .66*max(x));
-
-			try
-				ff = fit(x(:),y(:),'poly1');
-				n(i,j) = ff.p1;
-			catch
-			end
-		end
-	end
-	save('.cache/VSA_fA_slopes.mat','n')
-end
 
 
 % ##     ##    ###    ##    ## ########    ########  ##        #######  ######## 
@@ -302,19 +263,28 @@ if being_published
 end
 
 % now do the supplementary figure
-figure('outerposition',[0 0 500 800],'PaperUnits','points','PaperSize',[500 800]); hold on
-
-% show how gain changes with time
-subplot(3,1,1), hold on
-all_offsets = 0:0.1:10;
-[lhl, shl]= errorShade(all_offsets,nanmean(n),nanstd(n)/sqrt(width(reshaped_fA)),'Color','k');
-set(lhl,'LineWidth',2);
-xlabel('Time since switch (s)')
-ylabel('Inst. Gain (Hz/V)')
 
 
 % calculate instantaneous gain everywhere 
 [mean_stim,inst_gain,e] = makeFig6G(reshaped_PID(:),reshaped_fA(:),fA_pred(:),500);
+
+% reshape back
+inst_gain = reshape(inst_gain,size(reshaped_PID,1),size(reshaped_PID,2));
+e = reshape(e,size(reshaped_PID,1),size(reshaped_PID,2));
+mean_stim = reshape(mean_stim,size(reshaped_PID,1),size(reshaped_PID,2));
+inst_gain(e<.8) = NaN;
+inst_gain(inst_gain == 0) = NaN;
+inst_gain(1:1e3,:) = NaN;
+
+
+figure('outerposition',[0 0 500 800],'PaperUnits','points','PaperSize',[500 800]); hold on
+
+% show how gain changes with time
+subplot(3,1,1), hold on
+errorShade(time,nanmean(inst_gain,2),nanstd(inst_gain'),'Color',[0 0 0]);
+xlabel('Time since switch (s)')
+ylabel('Inst. Gain (Hz/V)')
+
 
 % now do the gain filter analysis 
 history_lengths = logspace(-2,0.5,20);
@@ -323,42 +293,46 @@ gain_K1_rho = NaN*history_lengths;
 gain_K2_rho = NaN*history_lengths;
 
 stim = reshaped_PID(:);
-global inst_gain
-inst_gain = n';
-inst_gain = inst_gain(1:100,:);
-inst_gain = inst_gain(:);
-inst_gain(inst_gain < 0) = NaN;
+y = inst_gain(:);
 
 for i = 1:length(history_lengths)
-
 	% first do the simple box filter
 	temp = floor(history_lengths(i)*1e3);
-	temp = filter(ones(temp,1),temp,stim);
-	temp = (temp(1:100:end));
+	temp = abs(filter(ones(temp,1),temp,stim));
 	subplot(3,2,3), hold on
+	gain_K1_rho(i) = spear(temp(1:100:end),y(1:100:end));
 	if i == 14
-		plot(temp,inst_gain,'k+')
+		plot(temp(1:100:end),y(1:100:end),'k.')
 		ylabel('Inst. Gain (Hz/V)')
+		xlabel(['Stimulus projected ' char(10) 'using integrating filter'])
+		legend(['\rho = ' oval(gain_K1_rho(i))])
 	end
-	gain_K1_rho(i) = spear(temp(1:10:end),inst_gain(1:10:end));
+	
+
 
 	% now the differentiating filter
 	temp = floor(history_lengths(i)*1e3/2);
-	temp = filter([ones(temp,1); -ones(temp,1)],2*temp,stim-nanmean(stim));
-	temp = abs(temp(1:100:end));
+	temp = abs(filter([ones(temp,1); -ones(temp,1)],2*temp,stim-nanmean(stim)));
+	gain_K2_rho(i) = spear(temp(1:100:end),y(1:100:end));
 	subplot(3,2,4), hold on
 	if i == 14
-		plot(temp,inst_gain,'k+')
+		plot(temp(1:100:end),y(1:100:end),'k.')
+		xlabel(['Stimulus projected ' char(10) 'using differentiating filter'])
+		legend(['\rho = ' oval(gain_K2_rho(i))])
 	end
-	gain_K2_rho(i) = spear(temp(1:10:end),inst_gain(1:10:end));
+	
+
 end
 
 
-
-subplot(2,4,8), hold on
+subplot(3,2,5), hold on
+xlabel('History Length (s)')
+ylabel('\rho')
 plot(history_lengths,gain_K1_rho,'Color','k','Marker','d')
+set(gca,'YLim',[-.4 .2])
+subplot(3,2,6), hold on
 plot(history_lengths,gain_K2_rho,'Color',[0 .6 0],'Marker','+')
-legend({'Integrating','Differentiating'},'Location','southeast')
+set(gca,'YLim',[-.4 .2])
 xlabel('History Length (s)')
 ylabel('\rho')
 
@@ -369,111 +343,6 @@ if being_published
 	delete(gcf)
 end
 
-
-%  ######## #### ##       ######## ######## ########   ######      ##  
-% %  ##        ##  ##          ##    ##       ##     ## ##    ##    #### 
-% %  ##        ##  ##          ##    ##       ##     ## ##           ##  
-% %  ######    ##  ##          ##    ######   ########   ######          
-% %  ##        ##  ##          ##    ##       ##   ##         ##     ##  
-% %  ##        ##  ##          ##    ##       ##    ##  ##    ##    #### 
-% %  ##       #### ########    ##    ######## ##     ##  ######      ##  
-
-% %    ##       ######## ########  
-% %    ##       ##       ##     ## 
-% %    ##       ##       ##     ## 
-% %    ##       ######   ########  
-% %    ##       ##       ##        
-% %    ##       ##       ##        
-% %    ######## ##       ##        
-
-
-% % make colour scheme for block analysis
-% filter_length = 1000;
-% offset = 200;
-
-% % we are going to calculate only one filter/epoch
-% sr = 1e3; % sampling rate, Hz
-% if exist('.cache/VSA_K.mat','file') == 2
-% 	load('.cache/VSA_K.mat','K')
-% else
-% 	filter_length = 1000;
-% 	offset = 200;
-% 	K = NaN(2,filter_length-offset,width(reshaped_LFP));
-% 	for i = 1:width(reshaped_LFP)
-% 		textbar(i,width(reshaped_PID))
-
-% 		% calculate filter for large variance epoch
-% 		stim = reshaped_PID(:,i);
-% 		resp = reshaped_LFP(:,i);
-
-% 		resp(1:1e3) = NaN;
-% 		resp(5e3:end)= NaN;
-
-% 		try
-% 			[this_K,ft] = fitFilter2Data(stim,resp,'reg',1,'offset',offset,'filter_length',filter_length);
-% 			K(1,:,i) = this_K(100:end-101);
-% 		catch 
-% 		end
-
-% 		% calculate filter for low variance epoch
-% 		stim = reshaped_PID(:,i);
-% 		resp = reshaped_LFP(:,i);
-
-% 		resp(1:6e3) = NaN;
-
-% 		try
-% 			[this_K,ft] = fitFilter2Data(stim,resp,'reg',1,'offset',offset,'filter_length',filter_length);
-% 			K(2,:,i) = this_K(100:end-101);
-% 		catch 
-% 		end
-% 	end
-% 	mkdir('.cache')
-% 	save('.cache/VSA_K.mat','K')
-% end
-
-% % make linear predictions on the de-trended data using a mean filter averaged over all cases
-% K_mean = mean(squeeze(mean(K,1)),2);
-% ft = -99:700;
-% LFP_pred = NaN*reshaped_LFP;
-% for i = 1:width(reshaped_LFP)
-% 	LFP_pred(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K_mean,ft);
-% end
-
-% all_offsets = [1 3 6 8];
-% window_length = 1;
-
-% % compute the slopes
-% if exist('.cache/VSA_LFP_slopes.mat','file') == 2
-% 	load('.cache/VSA_LFP_slopes.mat','n')
-% else
-% 	n = NaN(width(reshaped_PID),length(all_offsets));
-% 	for i = 1:width(reshaped_PID)
-% 		textbar(i,width(reshaped_LFP))
-% 		for j = 1:length(all_offsets)
-% 			x = LFP_pred(:,i);
-% 			y = reshaped_LFP(:,i);
-
-% 			a = round(1e3*(all_offsets(j) - window_length/2));
-% 			z = round(1e3*(all_offsets(j) + window_length/2));
-
-% 			x = circshift(x,length(x) - z );
-% 			y = circshift(y,length(y) - z );
-
-% 			x = x(end-window_length*1e3:end);
-% 			y = y(end-window_length*1e3:end);
-
-% 			rm_this = isnan(x) | isnan(y);
-% 			x(rm_this) = [];
-% 			y(rm_this) = [];
-% 			try
-% 				ff = fit(x(:),y(:),'poly1');
-% 				n(i,j) = ff.p1;
-% 			catch
-% 			end
-% 		end
-% 	end
-% 	save('.cache/VSA_LFP_slopes.mat','n')
-% end
 
 %% Version Info
 % The file that generated this document is called:

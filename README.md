@@ -1,42 +1,43 @@
-# Dynamical Adaptation in ORNs
+# Fast Gain Control for Naturalistic Odor Detection in *Drosophila* 
 
 This repository contains all code written for this project. Everything is written in MATLAB.
 
-## List of Figures
+## Project Overview
 
-1. Gain control in ORN responses to naturalistic Inputs
-2. White noise characterisation of gain 
-3. Weber-like scaling 
-4. Responses speed up with increasing mean stimulus
-5. Fast gain control
-6. Fast gain control is broadly observed
-7. LFP also shows gain control 
-8. Gain control with contrast changes
-9. Gain change without odorant binding (ReaChR experiments)
-10. DA model fits to data
+### Code 
 
-### Supplementary Figures
+All the code here is written in MATLAB. 
 
-1. No one nonlinearity can account for gain changes with mean stimulus
-2. Fast gain control cannot be explained by a static output non-linearity 
-3. 
+
+| folder        | Description |
+| -------       | ----------- |
+| ./src 	    | contains core source files for some low-level calculations. Add to your path | 
+| ./experiments | contains code for running the experiments. Needs kontroller (see below) |
+| ./obsolete    | obsolete code, should be ignored unless you know what you're doing | 
+| ./scripts 	| scripts to run various analyses. Run by calling them, or use makePDF (see below) |
+| ./paper-figures | scripts that, when run, make figures for the paper. |
+
+
+### Data 
+
+You will need the data. The data is not part of this repository. You need to change paths everywhere in this repo. so that the data is referenced correctly. 
 
 ## Installation
+
+
+### Download code
 
 Install using my package manager:
 
 ```matlab
 % copy and past this into your MATLAB shell
 urlwrite('http://srinivas.gs/install.m','install.m')
-install kontroller
-install srinivas.gs_mtools
-install spikesort
-install da
-install fitFilter2Data
-install fitModel2Data
+install kontroller srinivas.gs_mtools
+install spikesort da
+install fitFilter2Data fitModel2Data
 ```
 
-## tag
+### install tag
 
 Scripts assume you are running Mac OS X. Scripts also use `tag` to tag scripts when they successfully make a PDF. Install `tag` using 
 
@@ -44,7 +45,9 @@ Scripts assume you are running Mac OS X. Scripts also use `tag` to tag scripts w
 brew install tag
 ```
 
-## Latex
+This is totally not needed, but will throw errors if you don't install this. 
+
+### Latex
 
 You should have latex (Tex Live 2013+) installed. Check with:
 
@@ -52,15 +55,9 @@ You should have latex (Tex Live 2013+) installed. Check with:
 latex --version
 ```
 
-## Contents
+### makePDF
 
-* `experiments` contains scripts and functions to make experimental control paradigms. These control paradigms are config files for Kontroller
-* `obp` contains some scripts used in analysis of OBP mutants, not related to the main project
-* `paper-figures` contains scripts that will make all the figures in the paper. Each script operates on one dataset and may make more than one figure
-* `janelia-poster` contains scripts to make some figures for a poster presented at the Swartz conference, together with the actual poster. 
-* `scripts` contains all scripts that analyse various aspects of the problem. 
-* `src` contains functions that are essential to this project, but not general-purpose enough to be moved to other projects. Make sure you add this to your path. 
-* `pdfs` contains all PDFs made by any script in this repository
+All scripts in this repository are written assuming that will be called using makePDF.m (part of srinivas.gs_mtools). For a tutorial on why I'm doing this, and why it matters, see [this repo](https://github.com/sg-s/awesome-matlab-notebook).
 
 ## Tests
 
@@ -73,3 +70,7 @@ You can generate PDFs from any script (either in `scripts` or in `paper-figures`
 ```matlab
 makePDF(script_name.m)
 ```
+Make sure you read this [tutorial](https://github.com/sg-s/awesome-matlab-notebook) to familiarize yourself with how makePDF works. 
+
+
+

@@ -68,9 +68,169 @@ for i = 1:width(LFP)
 end
 
 a = 10e3; z = 50e3;
-[~,~,LFP_gain] = extractFilters(PID,filtered_LFP,'use_cache',true,'a',a,'z',z);
+[K1,LFP_pred,LFP_gain] = extractFilters(PID,filtered_LFP,'use_cache',true,'a',a,'z',z);
 
-[~,~,fA_gain] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
+[K2,fA_pred,fA_gain] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
+
+%% Overview of the data
+% In the following figure, we plot all LFP and firing rate traces for visual inspection. 
+
+figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
+c = parula(max(paradigm));
+subplot(3,1,1), hold on
+time = 1e-3*(1:length(PID));
+for i = 1:max(paradigm)-1
+	plot(time,nanmean(PID(:,paradigm == i),2),'Color',c(i,:));
+end
+ylabel('PID (V)')
+set(gca,'XLim',[0 60])
+
+subplot(3,1,2), hold on
+for i = 1:max(paradigm)-1
+	plot(time,nanmean(filtered_LFP(:,paradigm == i),2),'Color',c(i,:));
+end
+ylabel('LFP (mV)')
+set(gca,'XLim',[0 60])
+
+subplot(3,1,3), hold on
+for i = 1:max(paradigm)-1
+	plot(time,nanmean(fA(:,paradigm == i),2),'Color',c(i,:));
+end
+xlabel('Time (s)')
+ylabel('Firing Rate (Hz)')
+set(gca,'XLim',[0 60])
+
+prettyFig('fs=20;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% In the following figure, we compare the KO to the control genotype.
+figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
+c = parula(max(paradigm));
+subplot(3,1,1), hold on
+time = 1e-3*(1:length(PID));
+for i = 1:max(paradigm)-1
+	plot(time,nanmean(PID(:,paradigm == i & geno == 2),2),'Color','k');
+	plot(time,nanmean(PID(:,paradigm == i & geno == 1),2),'Color','r');
+end
+ylabel('PID (V)')
+set(gca,'XLim',[30 40])
+
+subplot(3,1,2), hold on
+for i = 1:max(paradigm)-1
+	plot(time,nanmean(filtered_LFP(:,paradigm == i & geno == 2),2),'Color','k');
+	plot(time,nanmean(filtered_LFP(:,paradigm == i & geno == 1),2),'Color','r');
+end
+ylabel('LFP (mV)')
+set(gca,'XLim',[30 40])
+
+subplot(3,1,3), hold on
+for i = 1:max(paradigm)-1
+	plot(time,nanmean(fA(:,paradigm == i & geno == 2),2),'Color','k');
+	plot(time,nanmean(fA(:,paradigm == i & geno == 1),2),'Color','r');
+end
+xlabel('Time (s)')
+ylabel('Firing Rate (Hz)')
+set(gca,'XLim',[30 40])
+
+prettyFig('fs=20;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%% Filters and Output Nonlinearities 
+% In this section, we compare the filter shapes and the output nonlinearities for each dose, for each odour dose concentration. The figure below shows this comparison for the PID to LFP transformation. 
+
+figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[900 800]); hold on
+filtertime = 1e-3*(1:length(K1)) - .1;
+opacity = .3;
+for i = 1:max(paradigm)-1
+	subplot(3,2,2*(i-1)+1), hold on
+	this_K = K1(:,paradigm==i & geno == 2);
+	errorShade(filtertime,nanmean(this_K,2),nanstd(this_K'),'Color','k');
+	this_K = K1(:,paradigm==i & geno == 1);
+	errorShade(filtertime,nanmean(this_K,2),nanstd(this_K'),'Color','r');
+	xlabel('Filter Lag (s)')
+
+	subplot(3,2,2*(i-1)+2), hold on
+	x = LFP_pred(a:z,paradigm==i & geno == 2);
+	y = filtered_LFP(a:z,paradigm==i & geno == 2);
+	for j = 1:width(x)
+		try
+			[~,data]=plotPieceWiseLinear(x(:,j),y(:,j),'nbins',50,'make_plot',false);
+			h = plot(data.x,data.y);
+			h.Color = [0 0 0 opacity];
+		end
+	end
+	x = LFP_pred(a:z,paradigm==i & geno == 1);
+	y = filtered_LFP(a:z,paradigm==i & geno == 1);
+	for j = 1:width(x)
+		try
+			[~,data]=plotPieceWiseLinear(x(:,j),y(:,j),'nbins',50,'make_plot',false);
+			h = plot(data.x,data.y);
+			h.Color = [1 0 0 opacity];
+		end
+	end
+	xlabel('Linear Prediction (mV)')
+	ylabel('\DeltaLFP(mV)')
+end
+
+prettyFig('fs=20;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% Now we compare filters and nonlinearities for the PID->firing rate transformation. 
+
+figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[900 800]); hold on
+filtertime = 1e-3*(1:length(K2)) - .1;
+for i = 1:max(paradigm)-1
+	subplot(3,2,2*(i-1)+1), hold on
+	this_K = K2(:,paradigm==i & geno == 2);
+	errorShade(filtertime,nanmean(this_K,2),nanstd(this_K'),'Color','k');
+	this_K = K2(:,paradigm==i & geno == 1);
+	errorShade(filtertime,nanmean(this_K,2),nanstd(this_K'),'Color','r');
+	xlabel('Filter Lag (s)')
+
+	subplot(3,2,2*(i-1)+2), hold on
+	x = fA_pred(a:z,paradigm==i & geno == 2);
+	y = fA(a:z,paradigm==i & geno == 2);
+	for j = 1:width(x)
+		try
+			[~,data]=plotPieceWiseLinear(x(:,j),y(:,j),'nbins',50,'make_plot',false);
+			h = plot(data.x,data.y);
+			h.Color = [0 0 0 opacity];
+		end
+	end
+	x = fA_pred(a:z,paradigm==i & geno == 1);
+	y = fA(a:z,paradigm==i & geno == 1);
+	for j = 1:width(x)
+		try
+			[~,data]=plotPieceWiseLinear(x(:,j),y(:,j),'nbins',50,'make_plot',false);
+			h = plot(data.x,data.y);
+			h.Color = [1 0 0 opacity];
+		end
+	end
+	xlabel('Linear Prediction (V)')
+	ylabel('Firing Rate(Hz)')
+end
+
+prettyFig('fs=20;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 %% Comparison of Gain 
 % In the following figure we compare the gain in the LFP and in the firing rate between the wCS control (black) and the CRISPR OBP deletion (red). 

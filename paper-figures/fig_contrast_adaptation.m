@@ -191,24 +191,23 @@ end
 % ##     ## ##     ## ##    ## ########    ##        ########  #######     ##    
 
 
-
 time = 1e-3*(1:length(reshaped_PID));
 s = .5; % shading opacity
 
 figure('outerposition',[0 0 1400 700],'PaperUnits','points','PaperSize',[1400 700]); hold on
-subplot(2,4,1), hold on
+subplot(2,3,1), hold on
 plot(time(1:10:end),reshaped_PID(1:10:end,1:10:end),'Color',[.5 .5 .5 .5]);
 xlabel('Time since switch (s)')
 ylabel('Stimulus (V)')
 
-subplot(2,4,5), hold on
+subplot(2,3,4), hold on
 plot(time(1:10:end),reshaped_fA(1:10:end,1:10:end),'Color',[.5 .5 .5 .5]);
 xlabel('Time since switch (s)')
 ylabel('ORN Response (Hz)')
 
 % first show the high contrast epochs
-ax(1) = subplot(2,4,2); hold on
-ax(2) = subplot(2,4,6); hold on
+ax(1) = subplot(2,3,2); hold on
+ax(2) = subplot(2,3,5); hold on
 xlabel(ax(2),'Projected Stimulus')
 ylabel(ax(2),'Normalised Response')
 ylabel(ax(1),'Stimulus Probability')
@@ -257,8 +256,8 @@ legend(l,L,'Location','southeast')
 
 
 % now do low variance case
-ax(1) = subplot(2,4,3); hold on
-ax(2) = subplot(2,4,7); hold on
+ax(1) = subplot(2,3,3); hold on
+ax(2) = subplot(2,3,6); hold on
 xlabel(ax(2),'Projected Stimulus')
 ylabel(ax(2),'Normalised Response')
 ylabel(ax(1),'Stimulus Probability')
@@ -295,10 +294,18 @@ uistack(shade_handle2,'bottom')
 set(ax(1),'XLim',[0 2],'YLim',[-.01 .16])
 set(ax(2),'XLim',[0 2],'YLim',[-.01 1.1])
 
+prettyFig('FixLogX=1;','fs=16;')
 
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+% now do the supplementary figure
+figure('outerposition',[0 0 500 800],'PaperUnits','points','PaperSize',[500 800]); hold on
 
 % show how gain changes with time
-subplot(2,4,4), hold on
+subplot(3,1,1), hold on
 all_offsets = 0:0.1:10;
 [lhl, shl]= errorShade(all_offsets,nanmean(n),nanstd(n)/sqrt(width(reshaped_fA)),'Color','k');
 set(lhl,'LineWidth',2);
@@ -306,8 +313,12 @@ xlabel('Time since switch (s)')
 ylabel('Inst. Gain (Hz/V)')
 
 
+% calculate instantaneous gain everywhere 
+[mean_stim,inst_gain,e] = makeFig6G(reshaped_PID(:),reshaped_fA(:),fA_pred(:),500);
+
 % now do the gain filter analysis 
 history_lengths = logspace(-2,0.5,20);
+history_lengths(14) = .5;
 gain_K1_rho = NaN*history_lengths;
 gain_K2_rho = NaN*history_lengths;
 
@@ -324,17 +335,25 @@ for i = 1:length(history_lengths)
 	temp = floor(history_lengths(i)*1e3);
 	temp = filter(ones(temp,1),temp,stim);
 	temp = (temp(1:100:end));
-
+	subplot(3,2,3), hold on
+	if i == 14
+		plot(temp,inst_gain,'k+')
+		ylabel('Inst. Gain (Hz/V)')
+	end
 	gain_K1_rho(i) = spear(temp(1:10:end),inst_gain(1:10:end));
 
 	% now the differentiating filter
 	temp = floor(history_lengths(i)*1e3/2);
 	temp = filter([ones(temp,1); -ones(temp,1)],2*temp,stim-nanmean(stim));
 	temp = abs(temp(1:100:end));
-
+	subplot(3,2,4), hold on
+	if i == 14
+		plot(temp,inst_gain,'k+')
+	end
 	gain_K2_rho(i) = spear(temp(1:10:end),inst_gain(1:10:end));
-
 end
+
+
 
 subplot(2,4,8), hold on
 plot(history_lengths,gain_K1_rho,'Color','k','Marker','d')

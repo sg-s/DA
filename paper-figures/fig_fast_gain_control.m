@@ -205,32 +205,32 @@ if being_published
 	delete(gcf)
 end
 
-return
 
 %% Supplementary Figure
 % 
 
 figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
 
-[mean_stim,inst_gain,e] = makeFig6G(mean(PID,2),mean(fA,2),mean(fp,2),500);
+[mean_stim,inst_gain,e] = makeFig6G(mean(PID,2),mean(fA,2),mean(fp,2),50);
 subplot(2,3,1), hold on
 [y,x] = hist(e,50);
 y = y/sum(y);
 plot(x,y,'r')
-plot([.8 .8],[0 .25],'k--')
+plot([.8 .8],[0 .5],'k--')
 xlabel('r^2')
 ylabel('p(r^2)')
 
 subplot(2,3,2), hold on
 plot([min(mean_stim) max(mean_stim)],[.8 .8],'k--')
 l = plot(mean_stim(1:50:end),e(1:50:end),'r.');
-xlabel('Stimulus in preceding 500ms (V)')
+xlabel('Stimulus in preceding 50ms (V)')
 legend(l,['r^2 = ' oval(rsquare(mean_stim,e))],'Location','southeast')
 ylabel('r^2')
 
 subplot(2,3,3), hold on
 plot([min(inst_gain) max(inst_gain)],[.8 .8],'k--')
 l = plot(inst_gain(1:50:end),e(1:50:end),'r.');
+set(gca,'XLim',[-5e3 1e4])
 xlabel('Inst. gain (Hz/V)')
 legend(l,['r^2 = ' oval(rsquare(inst_gain,e))],'Location','southeast')
 ylabel('r^2')
@@ -239,6 +239,12 @@ ylabel('r^2')
 clear ph
 ph(3) = subplot(2,3,4); hold on
 ph(4) = subplot(2,3,5); hold on
+
+
+hl_min = 1e-1;
+hl_max = 10;
+history_lengths = [logspace(log10(hl_min),log10(.5),15) logspace(log10(.5),log10(10),15)];
+history_lengths = unique(history_lengths);
 
 [~,~,~,~,~,history_lengths]=gainAnalysisWrapper('response',resp,'prediction',pred,'stimulus',stim,'time',time,'ph',ph,'history_lengths',history_lengths,'example_history_length',.5,'use_cache',true,'engine',@gainAnalysis);
 set(ph(4),'XLim',[.09 11]) % to show .1 and 10 on the log scale

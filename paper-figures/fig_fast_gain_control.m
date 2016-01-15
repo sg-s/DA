@@ -128,7 +128,7 @@ set(axes_handles(2),'box','off')
 
 
 
-hl_min = .1;
+hl_min = 1e-2;
 hl_max = 10;
 history_lengths = [logspace(log10(hl_min),log10(.5),15) logspace(log10(.5),log10(10),15)];
 history_lengths = unique(history_lengths);
@@ -140,35 +140,40 @@ stim = mean(PID(10e3:55e3,[3:10 13:20]),2);
 
 
 % plot gain vs preceding stimulus
-global inst_gain
-[mean_stim,inst_gain,e] = makeFig6G(mean(PID,2),mean(fA,2),mean(fp,2),500);
-rm_this = (isnan(mean_stim) | isnan(inst_gain)) | mean_stim < .2 | e < .8;
+[mean_stim,inst_gain,e] = makeFig6G(mean(PID,2),mean(fA,2),mean(fp,2),50);
+rm_this = (isnan(mean_stim) | isnan(inst_gain)) | e < .8 | inst_gain < 0;
 mean_stim(rm_this) = NaN;
 inst_gain(rm_this) = NaN;
+mean_stim(1:1e3) = NaN; inst_gain(1:1e3) = NaN;
 
 
-plot(axes_handles(3),tA(1:10:end),inst_gain(1:10:end),'k.')
+plot(axes_handles(3),tA(1:10:end),inst_gain(1:10:end),'b.')
 ylabel(axes_handles(3),'Inst. Gain (Hz/V)')
 xlabel(axes_handles(3),'Time (s)')
-set(axes_handles(3),'XLim',[0 60])
+set(axes_handles(3),'XLim',[0 60],'YScale','log','YLim',[10 1e4])
 
 % show that the inst. gain varies a bit
-[y,x] = hist(inst_gain,30);
+[y,x] = hist(log(inst_gain),100);
 y = y/sum(y);
-plot(axes_handles(4),x,y,'k')
+plot(axes_handles(4),exp(x),y,'b')
+set(axes_handles(4),'XScale','log','XLim',[10 1e4],'XTick',[1e1 1e2 1e3 1e4],'YLim',[0 max(y)*1.1])
 xlabel(axes_handles(4),'Instantaneous Gain (Hz/V)')
 ylabel(axes_handles(4),'Probability')
 
+
 % show the inst gain vs. the mean stim
-[~,data] = plotPieceWiseLinear(mean_stim,inst_gain,'nbins',50,'Color','b','use_std',true,'make_plot',false);
+K = ones(500,1);
+% filter the stimulus
+mean_stim = abs(filter(K,sum(K),mean(PID,2)));
+mean_stim(1:1e3) = NaN;
+[~,data] = plotPieceWiseLinear(mean_stim,inst_gain,'nbins',100,'Color','b','use_std',false,'make_plot',false);
 l = errorShade(axes_handles(5),data.x,data.y,data.ye,'Color',[0 0 1]);
 temp1 = mean_stim(~isnan(inst_gain));
 temp2 = inst_gain(~isnan(inst_gain));
 legend(l(1),['\rho =' oval(spear(temp1(1:10:end),temp2(1:10:end)),3)])
 xlabel(axes_handles(5),'Stimulus in preceding 500ms (V)')
 ylabel(axes_handles(5),'Inst. Gain (Hz/V)')
-set(axes_handles(5),'YScale','log','XLim',[min(mean_stim) max(mean_stim)])
-set(axes_handles(5),'YLim',[40 1000])
+set(axes_handles(5),'YScale','log','XLim',[min(mean_stim) max(mean_stim)],'YLim',[1e1 1e4])
 
 
 
@@ -189,18 +194,18 @@ for i = 1:length(history_lengths)
 end
 
 plot(axes_handles(6),history_lengths,rho,'b+')
-set(axes_handles(6),'XScale','log')
+set(axes_handles(6),'XScale','log','XMinorTick','on','XLim',[1e-2 1e1])
 ylabel(axes_handles(6),'\rho')
 xlabel(axes_handles(6),'History Length (s)')
 
-
-prettyFig('plw=1.5;','lw=1.5;','fs=14;','FixLogX=1;')
+prettyFig('plw=1.5;','lw=1.2;','fs=14;','FixLogX=true;')
 
 if being_published
 	snapnow
 	delete(gcf)
 end
 
+return
 
 %% Supplementary Figure
 % 

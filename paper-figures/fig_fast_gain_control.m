@@ -30,9 +30,9 @@ pHeader;
 
 fig_handle=figure('outerposition',[0 0 900 1000],'PaperUnits','points','PaperSize',[900 1000]); hold on
 clf(fig_handle);
-axes_handles(1) = subplot(9,3,1:6); 
-axes_handles(2) = subplot(9,3,7:12); 
-axes_handles(3) = subplot(9,3,13:18);
+axes_handles(1) = subplot(9,3,[1 2 4 5]); 
+axes_handles(2) = subplot(9,3,[7 8 10 11]); 
+axes_handles(3) = subplot(9,3,[13 14 16 17]);
 axes_handles(4) = subplot(9,3,[19 22 25]);
 axes_handles(5) = subplot(9,3,[20 23 26]);
 axes_handles(6) = subplot(9,3,[21 24 27]);
@@ -48,6 +48,33 @@ movePlot(axes_handles(3),'up',.02)
 movePlot(axes_handles(4),'down',.02)
 movePlot(axes_handles(5),'down',.02)
 movePlot(axes_handles(6),'down',.02)
+
+% make three more axes for explanation of how we calculate instantaneous gain
+inst_ax(1) = subplot(18,3,6); hold on
+inst_ax(2) = subplot(18,3,12); hold on
+inst_ax(3) = subplot(9,3,12); hold on
+
+% resize some plots and move them into position
+temp = get(inst_ax(3),'Position');
+temp(4) = .2;
+set(inst_ax(3),'Position',temp);
+
+for i = 1:2
+	temp = get(inst_ax(i),'Position');
+	temp(4) = 2*temp(4);
+	set(inst_ax(i),'Position',temp);
+end
+
+movePlot(inst_ax(2),'down',.3)
+
+% make all plots smaller
+for i = 1:3
+	temp = get(inst_ax(i),'Position');
+	temp(3) = .18;
+	set(inst_ax(i),'Position',temp);
+	movePlot(inst_ax(i),'right',.05)
+end
+
 
 load('/local-data/DA-paper/large-variance-flicker/ab3/2015_01_28_CS_ab3_2_EA.mat')
 PID = data(4).PID;
@@ -102,12 +129,12 @@ R = mean(fA,2);
 [ax,plot1,plot2] = plotyy(axes_handles(2),tA,R,tA,mean(fp,2));
 set(ax(1),'XLim',[0 60],'YLim',[min(mean(fA,2)) 1.3*max(mean(fA,2))])
 set(ax(2),'XLim',[0 60],'YLim',[min(mean(fp,2)) max(mean(fp,2))])
-set(ax(2),'YTick',-.1:.1:.5)
+set(ax(2),'YTick',-.1:.1:.5,'YColor','r')
 set(plot1,'Color','k')
 set(plot2,'Color','r')
 set(ax(1),'YColor',[0 0 0])
 ylabel(ax(1),'ORN Response (Hz)')
-ylabel(ax(2),'Projected Stimulus')
+ylabel(ax(2),'Projected Stimulus (V)')
 set(axes_handles(2),'box','off')
 
 
@@ -129,6 +156,31 @@ rm_this = (isnan(mean_stim) | isnan(inst_gain)) | e < .8 | inst_gain < 0;
 mean_stim(rm_this) = NaN;
 inst_gain(rm_this) = NaN;
 mean_stim(1:1e3) = NaN; inst_gain(1:1e3) = NaN;
+
+% explain how we compute the inst. gain
+plot(inst_ax(1),tA,mean(fA,2),'k')
+plot(inst_ax(2),tA,mean(fp,2),'r')
+set(inst_ax(1),'XLim',[21 22],'XTick',[],'XTickLabel',{},'XColor','w','YLim',[0 60])
+set(inst_ax(2),'XLim',[21 22],'XTick',[],'XTickLabel',{},'XColor','w','YLim',[0 .4])
+% insert a marker at 21.5
+plot(inst_ax(1),[21.5 21.5],[0 200],'k')
+plot(inst_ax(2),[21.5 21.5],[0 0.5],'k')
+
+x = mean(fp,2); y = mean(fA,2);
+x = x(21.5e3-50:21.5e3); y = y(21.5e3-50:21.5e3);
+plot(inst_ax(3),x,y,'b.')
+ff = fit(x(:),y(:),'poly1');
+plot(inst_ax(3),sort(x),ff(sort(x)),'b')
+
+plot(inst_ax(1),tA(21.5e3-50:21.5e3),y,'k','LineWidth',4)
+plot(inst_ax(2),tA(21.5e3-50:21.5e3),x,'r','LineWidth',4)
+
+set(inst_ax(3),'XColor','r')
+set(inst_ax(2),'YColor','r')
+
+temp = get(inst_ax(3),'Position');
+set(inst_ax(3),'Position',[.74 .59 .17 .18])
+
 
 
 plot(axes_handles(3),tA(1:10:end),inst_gain(1:10:end),'b.')
@@ -183,6 +235,11 @@ ylabel(axes_handles(6),'\rho')
 xlabel(axes_handles(6),'History Length (s)')
 
 prettyFig('plw=1.5;','lw=1.2;','fs=14;','FixLogX=true;')
+
+ylabel(inst_ax(1),'ORN Response (Hz)','FontSize',10)
+ylabel(inst_ax(2),'Proj. Stimulus (V)','FontSize',10)
+set(inst_ax(1),'FontSize',10)
+set(inst_ax(2),'FontSize',10)
 
 if being_published
 	snapnow

@@ -159,7 +159,7 @@ plot([6 10],[80 80],'b','LineWidth',3)
 % first show the high contrast epochs
 ax(1) = subplot(2,3,2); hold on
 ax(2) = subplot(2,3,5); hold on
-xlabel(ax(2),'Projected Stimulus')
+xlabel(ax(2),'Projected Stimulus (V)')
 ylabel(ax(2),'Normalised Response')
 ylabel(ax(1),'Stimulus Probability')
 
@@ -195,8 +195,8 @@ end
 % plot data
 [line_handle2, shade_handle2] = errorShade(ax(2),all_x,nanmean(all_y,2),sem(all_y'),'Color',[1 0 0],'Shading',s);
 uistack(shade_handle2,'bottom')
-set(ax(1),'XLim',[0 2],'YLim',[-.01 .16])
-set(ax(2),'XLim',[0 2],'YLim',[-.01 1.1])
+set(ax(1),'XLim',[0 2],'YLim',[0 .16])
+set(ax(2),'XLim',[0 2],'YLim',[0 1.1])
 
 % fake some plots for a nice legend
 clear l
@@ -209,7 +209,7 @@ legend(l,L,'Location','southeast')
 % now do low variance case
 ax(1) = subplot(2,3,3); hold on
 ax(2) = subplot(2,3,6); hold on
-xlabel(ax(2),'Projected Stimulus')
+xlabel(ax(2),'Projected Stimulus (V)')
 ylabel(ax(2),'Normalised Response')
 ylabel(ax(1),'Stimulus Probability')
 
@@ -242,8 +242,8 @@ end
 % plot data
 [line_handle2, shade_handle2] = errorShade(ax(2),all_x,nanmean(all_y,2),sem(all_y'),'Color',[0 0 1],'Shading',s);
 uistack(shade_handle2,'bottom')
-set(ax(1),'XLim',[0 2],'YLim',[-.01 .16])
-set(ax(2),'XLim',[0 2],'YLim',[-.01 1.1])
+set(ax(1),'XLim',[0 2],'YLim',[0 .16])
+set(ax(2),'XLim',[0 2],'YLim',[0 1.1])
 
 prettyFig('FixLogX=1;','fs=16;')
 
@@ -252,7 +252,33 @@ if being_published
 	delete(gcf)
 end
 
-% now do the supplementary figure
+
+
+% ########  ##    ## ##    ##    ###    ##     ## ####  ######   ######      #######  ######## 
+% ##     ##  ##  ##  ###   ##   ## ##   ###   ###  ##  ##    ## ##    ##    ##     ## ##       
+% ##     ##   ####   ####  ##  ##   ##  #### ####  ##  ##       ##          ##     ## ##       
+% ##     ##    ##    ## ## ## ##     ## ## ### ##  ##  ##        ######     ##     ## ######   
+% ##     ##    ##    ##  #### ######### ##     ##  ##  ##             ##    ##     ## ##       
+% ##     ##    ##    ##   ### ##     ## ##     ##  ##  ##    ## ##    ##    ##     ## ##       
+% ########     ##    ##    ## ##     ## ##     ## ####  ######   ######      #######  ##  
+
+%  ######      ###    #### ##    ## 
+% ##    ##    ## ##    ##  ###   ## 
+% ##         ##   ##   ##  ####  ## 
+% ##   #### ##     ##  ##  ## ## ## 
+% ##    ##  #########  ##  ##  #### 
+% ##    ##  ##     ##  ##  ##   ### 
+%  ######   ##     ## #### ##    ## 
+
+%  ######   #######  ##    ## ######## ########   #######  ##       
+% ##    ## ##     ## ###   ##    ##    ##     ## ##     ## ##       
+% ##       ##     ## ####  ##    ##    ##     ## ##     ## ##       
+% ##       ##     ## ## ## ##    ##    ########  ##     ## ##       
+% ##       ##     ## ##  ####    ##    ##   ##   ##     ## ##       
+% ##    ## ##     ## ##   ###    ##    ##    ##  ##     ## ##       
+%  ######   #######  ##    ##    ##    ##     ##  #######  ######## 
+
+% now do the supplementary figure showing dynamics of gain change
 
 
 % calculate instantaneous gain everywhere 
@@ -333,6 +359,40 @@ if being_published
 	delete(gcf)
 end
 
+% supplementary figure showing gain changes are not due to change in mean
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,3,1), hold on
+mean_1 = mean(reshaped_PID(1e3:5e3,:));
+mean_2 = mean(reshaped_PID(6e3:end,:));
+std_1 = std(reshaped_PID(1e3:5e3,:));
+std_2 = std(reshaped_PID(6e3:end,:));
+plot([0 0.6],[0 0.6],'k--')
+plot(mean_1,mean_2,'k.')
+ylabel('Mean during low variance epoch (V)')
+xlabel('Mean during high variance epoch (V)')
+
+subplot(1,3,2), hold on
+plot(mean_1,std_1,'r.')
+plot(mean_2,std_2,'b.')
+set(gca,'XLim',[0 0.6],'YLim',[0 0.2])
+xlabel('\mu (V)')
+ylabel('\sigma (V)')
+legend({'High variance','Low variance'},'Location','southwest')
+
+subplot(1,3,3), hold on
+weber_fit = @(x) (50./x);
+plot([0 160],[0 160],'k--')
+plot(weber_fit(mean_1),nanmean(inst_gain(1e3:5e3,:)),'r.')
+plot(weber_fit(mean_2),nanmean(inst_gain(6e3:end,:)),'b.')
+xlabel('Gain predicted by mean stimulus (Hz/V)')
+ylabel('Observed gain (Hz/V)')
+
+prettyFig('FixLogX=1;','fs=16;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %% Version Info
 % 

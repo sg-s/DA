@@ -143,11 +143,18 @@ subplot(2,3,1), hold on
 plot(time(1:10:end),reshaped_PID(1:10:end,1:10:end),'Color',[.5 .5 .5 .5]);
 xlabel('Time since switch (s)')
 ylabel('Stimulus (V)')
+set(gca,'XLim',[0 10],'YLim',[0 1.1])
+plot([1 5],[1 1],'r','LineWidth',3)
+plot([6 10],[1 1],'b','LineWidth',3)
+
 
 subplot(2,3,4), hold on
 plot(time(1:10:end),reshaped_fA(1:10:end,1:10:end),'Color',[.5 .5 .5 .5]);
 xlabel('Time since switch (s)')
 ylabel('ORN Response (Hz)')
+set(gca,'XLim',[0 10],'YLim',[0 85])
+plot([1 5],[80 80],'r','LineWidth',3)
+plot([6 10],[80 80],'b','LineWidth',3)
 
 % first show the high contrast epochs
 ax(1) = subplot(2,3,2); hold on

@@ -375,8 +375,8 @@ subplot(1,3,2), hold on
 plot(mean_1,std_1,'r.')
 plot(mean_2,std_2,'b.')
 set(gca,'XLim',[0 0.6],'YLim',[0 0.2])
-xlabel('\mu (V)')
-ylabel('\sigma (V)')
+xlabel('\mu_{stimulus} (V)')
+ylabel('\sigma_{stimulus} (V)')
 legend({'High variance','Low variance'},'Location','southwest')
 
 subplot(1,3,3), hold on

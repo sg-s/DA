@@ -27,7 +27,7 @@ tic
 
 %% Mechanism of Gain Control: Local Field Potential 
 
-figure('outerposition',[0 0 950 850],'PaperUnits','points','PaperSize',[950 850]); hold on
+figure('outerposition',[0 0 1500 850],'PaperUnits','points','PaperSize',[1500 850]); hold on
 
 % ##     ## ########    ###    ##    ## 
 % ###   ### ##         ## ##   ###   ## 
@@ -55,8 +55,8 @@ figure('outerposition',[0 0 950 850],'PaperUnits','points','PaperSize',[950 850]
 % ##    ##  ##     ## ##     ## ##    ## ##    ##  ##  ##     ## ##   ### ##    ## 
 %  ######   ##     ##  #######   ######   ######  #### ##     ## ##    ##  ######  
 
-
-subplot(2,2,3), hold on
+clear axes_handles
+axes_handles(6) = subplot(2,4,6); hold on
 
 [PID, LFP, fA, paradigm] = consolidateData('/local-data/DA-paper/LFP-MSG/september',1);
 
@@ -146,6 +146,195 @@ set(ax(2),'YColor',get(p2(1),'Color'))
 set(ax(1),'YTick',[1e-2 1e-1 1e0 10])
 set(ax(2),'YTick',[1 10 100 1000])
 
+% now add an explanatory figure
+axes_handles(5) = subplot(2,4,5); hold on
+o = imread('../images/black-msg.png');
+imagesc(o)
+axis ij 
+axis off
+axis image
+
+
+%      ##     ##    ###    ########  ####    ###    ##    ##  ######  ######## 
+%      ##     ##   ## ##   ##     ##  ##    ## ##   ###   ## ##    ## ##       
+%      ##     ##  ##   ##  ##     ##  ##   ##   ##  ####  ## ##       ##       
+%      ##     ## ##     ## ########   ##  ##     ## ## ## ## ##       ######   
+%       ##   ##  ######### ##   ##    ##  ######### ##  #### ##       ##       
+%        ## ##   ##     ## ##    ##   ##  ##     ## ##   ### ##    ## ##       
+%         ###    ##     ## ##     ## #### ##     ## ##    ##  ######  ######## 
+     
+%      ##       ######## ########      ######      ###    #### ##    ## 
+%      ##       ##       ##     ##    ##    ##    ## ##    ##  ###   ## 
+%      ##       ##       ##     ##    ##         ##   ##   ##  ####  ## 
+%      ##       ######   ########     ##   #### ##     ##  ##  ## ## ## 
+%      ##       ##       ##           ##    ##  #########  ##  ##  #### 
+%      ##       ##       ##           ##    ##  ##     ##  ##  ##   ### 
+%      ######## ##       ##            ######   ##     ## #### ##    ## 
+
+
+%      ########  ########  ######  ##     ##    ###    ########  ######## 
+%      ##     ## ##       ##    ## ##     ##   ## ##   ##     ## ##       
+%      ##     ## ##       ##       ##     ##  ##   ##  ##     ## ##       
+%      ########  ######    ######  ######### ##     ## ########  ######   
+%      ##   ##   ##             ## ##     ## ######### ##        ##       
+%      ##    ##  ##       ##    ## ##     ## ##     ## ##        ##       
+%      ##     ## ########  ######  ##     ## ##     ## ##        ######## 
+     
+%      ########     ###    ########    ###    
+%      ##     ##   ## ##      ##      ## ##   
+%      ##     ##  ##   ##     ##     ##   ##  
+%      ##     ## ##     ##    ##    ##     ## 
+%      ##     ## #########    ##    ######### 
+%      ##     ## ##     ##    ##    ##     ## 
+%      ########  ##     ##    ##    ##     ## 
+
+clearvars -except being_published axes_handles
+path_name = '/local-data/DA-paper/switching/variance/v2/';
+[PID, LFP, fA, paradigm, orn] = consolidateData(path_name,1);
+
+global_start = 40e3; % 40 seconds
+global_end = length(PID) - 5e3; 
+% bandpass to remove spikes and slow fluctuations
+for i = 1:width(LFP)
+	a = find(~isnan(LFP(:,i)),1,'first');
+	z = find(~isnan(LFP(:,i)),1,'last');
+	LFP(a:z,i) = bandPass(LFP(a:z,i),1000,10)*10; % now in mV
+end
+
+% reshape the LFP signals
+block_length = 1e4;
+reshaped_LFP = LFP(global_start:end-1e4-1,1:width(PID));
+reshaped_LFP = reshape(reshaped_LFP,block_length,width(reshaped_LFP)*length(reshaped_LFP)/block_length);
+
+% also reshape the PID
+reshaped_PID = PID(global_start:end-1e4-1,1:width(PID));
+reshaped_PID = reshape(reshaped_PID,block_length,width(reshaped_PID)*length(reshaped_PID)/block_length);
+
+% also reshape the orn ID
+reshaped_orn = repmat(orn,length(global_start:length(PID)-1e4-1)/block_length,1);
+reshaped_orn = reshaped_orn(:);
+
+% throw our NaNs globally. so we're throwing out epochs where the data is incomplete
+rm_this = isnan(sum(reshaped_LFP));
+reshaped_LFP(:,rm_this) = [];
+reshaped_PID(:,rm_this) = [];
+reshaped_orn(rm_this) = [];
+
+% we are going to calculate only one filter/epoch
+sr = 1e3; % sampling rate, Hz
+if exist('.cache/VSA_K.mat','file') == 2
+	load('.cache/VSA_K.mat','K')
+else
+	filter_length = 1000;
+	offset = 200;
+	K1 = NaN(2,filter_length-offset,width(reshaped_LFP));
+	for i = 1:width(reshaped_LFP)
+		textbar(i,width(reshaped_PID))
+
+		% calculate filter for large variance epoch
+		stim = reshaped_PID(:,i);
+		resp = reshaped_LFP(:,i);
+
+		resp(1:1e3) = NaN;
+		resp(5e3:end)= NaN;
+
+		try
+			this_K1 = fitFilter2Data(stim,resp,'reg',1,'offset',offset,'filter_length',filter_length);
+			K1(1,:,i) = this_K1(100:end-101);
+		catch 
+		end
+
+		% calculate filter for low variance epoch
+		stim = reshaped_PID(:,i);
+		resp = reshaped_LFP(:,i);
+
+		resp(1:6e3) = NaN;
+
+		try
+			this_K1 = fitFilter2Data(stim,resp,'reg',1,'offset',offset,'filter_length',filter_length);
+			K1(2,:,i) = this_K1(100:end-101);
+		catch 
+		end
+	end
+	mkdir('.cache')
+	save('.cache/VSA_K.mat','K')
+end
+
+% make linear predictions on the de-trended data using a mean filter averaged over all cases
+K1_mean = nanmean(squeeze(nanmean(K,1)),2);
+ft = -99:700;
+LFP_pred = NaN*reshaped_LFP;
+for i = 1:width(reshaped_LFP)
+	LFP_pred(:,i) = bandPass(convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K1_mean,ft),1000,10);
+end
+
+
+% plot the distributions of the projected stimulus
+axes_handles(7) = subplot(2,4,7); hold on
+temp = LFP_pred(1e3:5e3,:); temp = temp(:);
+[y,x] = hist(temp,100);
+y = y/sum(y);
+plot(x,y,'r','LineWidth',3)
+temp = LFP_pred(6e3:end,:); temp = temp(:);
+[y,x] = hist(temp,100);
+y = y/sum(y);
+x = x+2;
+plot(x,y,'b','LineWidth',3)
+axis off
+set(axes_handles(7),'Position',[.56 .22 .15 .17])
+
+axes_handles(8) = subplot(2,4,8); hold on
+movePlot(gca,'right',.03)
+% now plot the actual i/o curve
+x = LFP_pred(1e3:5e3,:);
+y = reshaped_LFP(1e3:5e3,:);
+rm_this = (isnan(sum(y)) | isnan(sum(x)));
+x(:,rm_this) = []; y(:,rm_this) = []; cy(:,rm_this)= [];
+all_x = -2.5:.05:1;
+all_y = NaN(length(all_x),width(y));
+for i = 1:width(x)
+	[~,data] = plotPieceWiseLinear(x(:,i),y(:,i),'nbins',40,'make_plot',false);
+	all_y(:,i) = interp1(data.x,data.y,all_x);
+end
+
+% plot data
+[line_handle2, shade_handle2] = errorShade(all_x,nanmean(all_y,2),sem(all_y'),'Color',[1 0 0],'Shading',.5);
+uistack(shade_handle2,'bottom')
+
+% low contrast
+x = LFP_pred(6e3:9e3,:);
+y = reshaped_LFP(6e3:9e3,:);
+rm_this = (isnan(sum(y)) | isnan(sum(x)));
+x(:,rm_this) = []; y(:,rm_this) = []; cy(:,rm_this)= [];
+all_x = -2.5:.05:1;
+all_y = NaN(length(all_x),width(y));
+for i = 1:width(x)
+	[~,data] = plotPieceWiseLinear(x(:,i),y(:,i),'nbins',40,'make_plot',false);
+	all_y(:,i) = interp1(data.x,data.y,all_x);
+end
+
+% plot data
+[line_handle2, shade_handle2] = errorShade(all_x,nanmean(all_y,2),sem(all_y'),'Color',[0 0 1],'Shading',.5);
+uistack(shade_handle2,'bottom')
+xlabel('Projected Stimulus (V)')
+ylabel('\Delta LFP (mV)')
+set(gca,'XLim',[-1 1])
+
+
+% also show some statistics;
+load('.cache/VSA_LFP_slopes')
+slopes2=mean(n(:,60:100),2);
+slopes1=mean(n(:,10:50),2);
+
+h = axes;
+hold on
+set(h,'Units','normalized','Position',[ 0.87    0.15    0.1    0.13]);
+plot(h,slopes1,slopes2,'k.')
+plot([0 4],[0 4],'k--')
+set(h,'YColor','b','XColor','r')
+axis square
+
+
 
 %    ########    ###     ######  ########     ######      ###    #### ##    ## 
 %    ##         ## ##   ##    ##    ##       ##    ##    ## ##    ##  ###   ## 
@@ -164,7 +353,7 @@ set(ax(2),'YTick',[1 10 100 1000])
 %     ######   #######  ##    ##    ##    ##     ##  #######  ######## 
 
 
-clearvars -except axes_handles being_published 
+clearvars -except axes_handles being_published h
 
 p = '/local-data/DA-paper/large-variance-flicker/LFP/';
 [PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes]  = consolidateData(p,1);
@@ -234,17 +423,41 @@ for i = 1:width(mean_stim)
 	inst_gain(1:a,i) = NaN;
 end
 
-subplot(2,2,1), hold on
+axes_handles(3) = subplot(2,4,3); hold on
 for i = 1:width(mean_stim)
 	 [~,data(i)] = plotPieceWiseLinear(mean_stim(a:z,i),inst_gain(a:z,i),'nbins',50,'make_plot',false);
 end
 l = errorShade(mean([data.x],2),mean([data.y],2),sem([data.y]'),'Color',[0 0 0]);
 legend(l(1),['\rho = ' oval(spear(mean(mean_stim(a:10:z,:),2),mean(inst_gain(a:10:z,:),2)))])
 
-ylabel('Inst. LFP Gain (mV/V)')
-xlabel('Stimulus in preceding 500ms')
-set(gca,'YScale','log')
+ylabel(axes_handles(3),'Inst. LFP Gain (mV/V)')
+xlabel(axes_handles(3),'Stimulus in preceding 500ms')
+set(axes_handles(3),'YScale','log')
 
+% show how we calculate the inst. gain
+inst_ax(1) = subplot(4,4,1); hold on
+inst_ax(2) = subplot(4,4,5); hold on
+inst_ax(3) = subplot(2,4,2); hold on
+
+y = nanmean(filtered_LFP(2e4:2.1e4,orn==i),2);
+x = nanmean(LFP_pred(2e4:2.1e4,orn==i),2);
+t = 1:length(x);
+
+plot(inst_ax(1),t,y,'k','LineWidth',1.1)
+plot(inst_ax(2),t,x,'Color',[.6 .1 .1],'LineWidth',1.1)
+plot(inst_ax(1),t(300:800),y(300:800),'k','LineWidth',3)
+plot(inst_ax(2),t(300:800),x(300:800),'Color',[.6 .1 .1],'LineWidth',3)
+plot(inst_ax(3),x(300:50:800),y(300:50:800),'kd','LineWidth',3)
+
+plot(inst_ax(1),[800 800],[-4 2],'k','LineWidth',0.5)
+plot(inst_ax(2),[800 800],[-2 2],'k','LineWidth',0.5)
+
+ff = fit(x(300:800),y(300:800),'poly1');
+plot(inst_ax(3),[min(x(300:800)) max(x(300:800))],ff([min(x(300:800)) max(x(300:800))]),'k','LineWidth',.5)
+
+set(inst_ax(1),'XTick',[],'XColor','w','YColor','k','Position',[.25 .75 .1 .1])
+set(inst_ax(2),'XTick',[],'XColor','w','YColor',[.6 .1 .1],'Position',[.25 .61 .1 .1])
+set(inst_ax(3),'XColor',[.6 .1 .1],'YColor','k','Position',[.3827 .6768 .08 .16])
 
 % now vary the gain filter and show it is the best possible
 history_lengths = logspace(-1,1,30);
@@ -268,7 +481,7 @@ for i = 1:max(orn)
 	end
 end
 
-subplot(2,2,2), hold on
+axes_handles(4) = subplot(2,4,4); hold on
 movePlot(gca,'right',.03)
 c = lines(max(orn)+1);
 errorShade(history_lengths,mean(rho,2),sem(rho'),'Color',[0 0 0]);
@@ -276,184 +489,25 @@ xlabel('History Length (s)')
 ylabel('\rho')
 set(gca,'XScale','log')
 
-%      ##     ##    ###    ########  ####    ###    ##    ##  ######  ######## 
-%      ##     ##   ## ##   ##     ##  ##    ## ##   ###   ## ##    ## ##       
-%      ##     ##  ##   ##  ##     ##  ##   ##   ##  ####  ## ##       ##       
-%      ##     ## ##     ## ########   ##  ##     ## ## ## ## ##       ######   
-%       ##   ##  ######### ##   ##    ##  ######### ##  #### ##       ##       
-%        ## ##   ##     ## ##    ##   ##  ##     ## ##   ### ##    ## ##       
-%         ###    ##     ## ##     ## #### ##     ## ##    ##  ######  ######## 
-     
-%      ##       ######## ########      ######      ###    #### ##    ## 
-%      ##       ##       ##     ##    ##    ##    ## ##    ##  ###   ## 
-%      ##       ##       ##     ##    ##         ##   ##   ##  ####  ## 
-%      ##       ######   ########     ##   #### ##     ##  ##  ## ## ## 
-%      ##       ##       ##           ##    ##  #########  ##  ##  #### 
-%      ##       ##       ##           ##    ##  ##     ##  ##  ##   ### 
-%      ######## ##       ##            ######   ##     ## #### ##    ## 
 
-clearvars -except being_published 
+prettyFig('fs=18;','plw=1.5;','lw=1.5;')
 
+% minor prettification
+ylabel(inst_ax(2),['Projected' char(10) ' Stimulus (V)'],'FontSize',12)
+ylabel(inst_ax(1),'\DeltaLFP (mV)','FontSize',12)
 
-%      ########  ########  ######  ##     ##    ###    ########  ######## 
-%      ##     ## ##       ##    ## ##     ##   ## ##   ##     ## ##       
-%      ##     ## ##       ##       ##     ##  ##   ##  ##     ## ##       
-%      ########  ######    ######  ######### ##     ## ########  ######   
-%      ##   ##   ##             ## ##     ## ######### ##        ##       
-%      ##    ##  ##       ##    ## ##     ## ##     ## ##        ##       
-%      ##     ## ########  ######  ##     ## ##     ## ##        ######## 
-     
-%      ########     ###    ########    ###    
-%      ##     ##   ## ##      ##      ## ##   
-%      ##     ##  ##   ##     ##     ##   ##  
-%      ##     ## ##     ##    ##    ##     ## 
-%      ##     ## #########    ##    ######### 
-%      ##     ## ##     ##    ##    ##     ## 
-%      ########  ##     ##    ##    ##     ## 
+set(inst_ax(3),'XLim',[-2.5 1.5],'YLim',[-2.5 1.5])
 
-
-path_name = '/local-data/DA-paper/switching/variance/v2/';
-[PID, LFP, fA, paradigm, orn] = consolidateData(path_name,1);
-
-global_start = 40e3; % 40 seconds
-global_end = length(PID) - 5e3; 
-% bandpass to remove spikes and slow fluctuations
-for i = 1:width(LFP)
-	a = find(~isnan(LFP(:,i)),1,'first');
-	z = find(~isnan(LFP(:,i)),1,'last');
-	LFP(a:z,i) = bandPass(LFP(a:z,i),1000,10)*10; % now in mV
-end
-
-% reshape the LFP signals
-block_length = 1e4;
-reshaped_LFP = LFP(global_start:end-1e4-1,1:width(PID));
-reshaped_LFP = reshape(reshaped_LFP,block_length,width(reshaped_LFP)*length(reshaped_LFP)/block_length);
-
-% also reshape the PID
-reshaped_PID = PID(global_start:end-1e4-1,1:width(PID));
-reshaped_PID = reshape(reshaped_PID,block_length,width(reshaped_PID)*length(reshaped_PID)/block_length);
-
-% also reshape the orn ID
-reshaped_orn = repmat(orn,length(global_start:length(PID)-1e4-1)/block_length,1);
-reshaped_orn = reshaped_orn(:);
-
-% throw our NaNs globally. so we're throwing out epochs where the data is incomplete
-rm_this = isnan(sum(reshaped_LFP));
-reshaped_LFP(:,rm_this) = [];
-reshaped_PID(:,rm_this) = [];
-reshaped_orn(rm_this) = [];
-
-
-% we are going to calculate only one filter/epoch
-sr = 1e3; % sampling rate, Hz
-if exist('.cache/VSA_K.mat','file') == 2
-	load('.cache/VSA_K.mat','K')
-else
-	filter_length = 1000;
-	offset = 200;
-	K1 = NaN(2,filter_length-offset,width(reshaped_LFP));
-	for i = 1:width(reshaped_LFP)
-		textbar(i,width(reshaped_PID))
-
-		% calculate filter for large variance epoch
-		stim = reshaped_PID(:,i);
-		resp = reshaped_LFP(:,i);
-
-		resp(1:1e3) = NaN;
-		resp(5e3:end)= NaN;
-
-		try
-			this_K1 = fitFilter2Data(stim,resp,'reg',1,'offset',offset,'filter_length',filter_length);
-			K1(1,:,i) = this_K1(100:end-101);
-		catch 
-		end
-
-		% calculate filter for low variance epoch
-		stim = reshaped_PID(:,i);
-		resp = reshaped_LFP(:,i);
-
-		resp(1:6e3) = NaN;
-
-		try
-			this_K1 = fitFilter2Data(stim,resp,'reg',1,'offset',offset,'filter_length',filter_length);
-			K1(2,:,i) = this_K1(100:end-101);
-		catch 
-		end
-	end
-	mkdir('.cache')
-	save('.cache/VSA_K.mat','K')
-end
-
-% make linear predictions on the de-trended data using a mean filter averaged over all cases
-K1_mean = nanmean(squeeze(nanmean(K,1)),2);
-ft = -99:700;
-LFP_pred = NaN*reshaped_LFP;
-for i = 1:width(reshaped_LFP)
-	LFP_pred(:,i) = bandPass(convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K1_mean,ft),1000,10);
-end
-
-
-
-
-subplot(2,2,4), hold on
-movePlot(gca,'right',.03)
-% now plot the actual i/o curve
-x = LFP_pred(1e3:5e3,:);
-y = reshaped_LFP(1e3:5e3,:);
-rm_this = (isnan(sum(y)) | isnan(sum(x)));
-x(:,rm_this) = []; y(:,rm_this) = []; cy(:,rm_this)= [];
-all_x = -2.5:.05:1;
-all_y = NaN(length(all_x),width(y));
-for i = 1:width(x)
-	[~,data] = plotPieceWiseLinear(x(:,i),y(:,i),'nbins',40,'make_plot',false);
-	all_y(:,i) = interp1(data.x,data.y,all_x);
-end
-
-% plot data
-[line_handle2, shade_handle2] = errorShade(all_x,nanmean(all_y,2),sem(all_y'),'Color',[1 0 0],'Shading',.5);
-uistack(shade_handle2,'bottom')
-
-% low contrast
-x = LFP_pred(6e3:9e3,:);
-y = reshaped_LFP(6e3:9e3,:);
-rm_this = (isnan(sum(y)) | isnan(sum(x)));
-x(:,rm_this) = []; y(:,rm_this) = []; cy(:,rm_this)= [];
-all_x = -2.5:.05:1;
-all_y = NaN(length(all_x),width(y));
-for i = 1:width(x)
-	[~,data] = plotPieceWiseLinear(x(:,i),y(:,i),'nbins',40,'make_plot',false);
-	all_y(:,i) = interp1(data.x,data.y,all_x);
-end
-
-% plot data
-[line_handle2, shade_handle2] = errorShade(all_x,nanmean(all_y,2),sem(all_y'),'Color',[0 0 1],'Shading',.5);
-uistack(shade_handle2,'bottom')
-xlabel('Projected Stimulus (V)')
-ylabel('\Delta LFP (mV)')
-set(gca,'XLim',[-1 1])
-
-
-% also show some statistics;
-load('.cache/VSA_LFP_slopes')
-slopes2=mean(n(:,60:100),2);
-slopes1=mean(n(:,10:50),2);
-
-h = axes;
-hold on
-set(h,'Units','normalized','Position',[ 0.6420    0.2991    0.1094    0.1383]);
-plot(h,slopes1,slopes2,'k.')
-plot([0 4],[0 4],'k--')
-set(h,'YColor','b','XColor','r')
-axis square
-
-
-prettyFig('fs=18;')
+movePlot(axes_handles(7),'right',.03)
+movePlot(axes_handles(5),'right',.05)
+movePlot(axes_handles(6),'right',.05)
 
 if being_published
 	snapnow
 	delete(gcf)
 end
 
+return
 
 %% Supplementary Figure: LFP gain control in other sensilla:
 

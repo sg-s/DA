@@ -5,25 +5,7 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-% add homebrew path
-path1 = getenv('PATH');
-if isempty(strfind(path1,':/usr/local/bin'))
-    path1 = [path1 ':/usr/local/bin'];
-end
-setenv('PATH', path1);
-
-% this code determines if this function is being called 
-calling_func = dbstack;
-being_published = 0;
-if ~isempty(calling_func)
-	if find(strcmp('publish',{calling_func.name}))
-		being_published = 1;
-		unix(['tag -a publish-failed ',which(mfilename)]);
-		unix(['tag -r published ',which(mfilename)]);
-	end
-end
-tic
-
+pHeader;
 
 
 
@@ -44,7 +26,7 @@ tic
 %      ######   ##     ## #### ##    ## 
 
 
-clearvars -except being_published fig*
+clearvars -except being_published 
 
 
 %% Figure 1: ORN gain can be estimated by measuring responses to Gaussian inputs
@@ -356,7 +338,7 @@ for i = 1:max(paradigm)
 end
 plot(predicted_gain,orn_gain,'k+')
 plot([1e-3 10],[1e-3 10],'k--')
-set(gca,'XScale','log','YScale','log','YLim',[.1 3])
+set(gca,'XScale','log','YScale','log','YLim',[.1 10])
 xlabel('Predicted Gain')
 ylabel('ORN Gain')
 
@@ -382,7 +364,7 @@ if isempty(p)
 	cache('Kd_constrained_MSG_fit2',p);
 end
 
-subplot(3,3,2), hold on
+subplot(3,3,3), hold on
 
 for i = 1:max(paradigm)
 	plot(x,y(:,i),'Color',c(i,:));
@@ -390,66 +372,6 @@ for i = 1:max(paradigm)
 	plot(x,pred,'LineStyle','--','Color',c(i,:))
 end
 title('Only K_D can vary')
-set(gca,'XLim',[0 2])
-xlabel('Stimulus (V)')
-ylabel('Response (norm)')
-
-subplot(3,3,5), hold on
-for i = 1:max(paradigm)
-	pred = hill(x,p(i));
-	plot(x,pred,'LineStyle','--','Color',c(i,:))
-	plot(orn_io_data(i).x,orn_io_data(i).y,'+','Color',c(i,:))
-end
-set(gca,'XLim',[0 2])
-xlabel('Stimulus (V)')
-ylabel('Response (norm)')
-
-% now show the correlation between predicted gain and actual gain
-subplot(3,3,8), hold on
-orn_gain = NaN(max(paradigm),1);
-predicted_gain = NaN*orn_gain;
-for i = 1:max(paradigm)
-	temp = interp1(orn_io_data(i).x,orn_io_data(i).y,x);
-	temp = fit(x(~isnan(temp))',temp(~isnan(temp))','poly1');
-	orn_gain(i) = temp.p1;
-	temp = interp1(orn_io_data(i).x,orn_io_data(i).y,x);
-	pred = hill(x,p(i));
-	temp = fit(x(~isnan(temp))',pred(~isnan(temp))','poly1');
-	predicted_gain(i) = temp.p1;
-end
-plot(predicted_gain,orn_gain,'k+')
-plot([1e-3 10],[1e-3 10],'k--')
-set(gca,'XScale','log','YScale','log','YLim',[.1 3])
-xlabel('Predicted Gain')
-
-% now plot the stimulus + best fit assuming n constraint
-clear p
-p = cache('n_constrained_MSG_fit2');
-if isempty(p)
-	clear d
-	d.stimulus = x;
-	d.response = y(:,1)';
-	p = fitModel2Data(@hill,d,'make_plot',false,'nsteps',1000,'display_type','iter');
-	ub = p;
-	ub.n = Inf;
-	lb = p;
-	lb.n = 0;
-	for i = 2:max(paradigm)
-		clear d
-		d.stimulus = x;
-		d.response = y(:,i)';
-		p(i) = fitModel2Data(@hill,d,'p0',p(1),'ub',ub,'lb',lb,'make_plot',false,'nsteps',300,'display_type','iter');
-	end
-	cache('n_constrained_MSG_fit2',p);
-end
-
-subplot(3,3,3), hold on
-for i = 1:max(paradigm)
-	plot(x,y(:,i),'Color',c(i,:));
-	pred = hill(x,p(i));
-	plot(x,pred,'LineStyle','--','Color',c(i,:))
-end
-title('Only n can vary')
 set(gca,'XLim',[0 2])
 xlabel('Stimulus (V)')
 ylabel('Response (norm)')
@@ -479,7 +401,67 @@ for i = 1:max(paradigm)
 end
 plot(predicted_gain,orn_gain,'k+')
 plot([1e-3 10],[1e-3 10],'k--')
-set(gca,'XScale','log','YScale','log','YLim',[.1 3],'XTick',[1e-10 1e-6 1e-3 1e1])
+set(gca,'XScale','log','YScale','log','YLim',[.1 10])
+xlabel('Predicted Gain')
+
+% now plot the stimulus + best fit assuming n constraint
+clear p
+p = cache('n_constrained_MSG_fit2');
+if isempty(p)
+	clear d
+	d.stimulus = x;
+	d.response = y(:,1)';
+	p = fitModel2Data(@hill,d,'make_plot',false,'nsteps',1000,'display_type','iter');
+	ub = p;
+	ub.n = Inf;
+	lb = p;
+	lb.n = 0;
+	for i = 2:max(paradigm)
+		clear d
+		d.stimulus = x;
+		d.response = y(:,i)';
+		p(i) = fitModel2Data(@hill,d,'p0',p(1),'ub',ub,'lb',lb,'make_plot',false,'nsteps',300,'display_type','iter');
+	end
+	cache('n_constrained_MSG_fit2',p);
+end
+
+subplot(3,3,2), hold on
+for i = 1:max(paradigm)
+	plot(x,y(:,i),'Color',c(i,:));
+	pred = hill(x,p(i));
+	plot(x,pred,'LineStyle','--','Color',c(i,:))
+end
+title('Only n can vary')
+set(gca,'XLim',[0 2])
+xlabel('Stimulus (V)')
+ylabel('Response (norm)')
+
+subplot(3,3,5), hold on
+for i = 1:max(paradigm)
+	pred = hill(x,p(i));
+	plot(x,pred,'LineStyle','--','Color',c(i,:))
+	plot(orn_io_data(i).x,orn_io_data(i).y,'+','Color',c(i,:))
+end
+set(gca,'XLim',[0 2])
+xlabel('Stimulus (V)')
+ylabel('Response (norm)')
+
+% now show the correlation between predicted gain and actual gain
+subplot(3,3,8), hold on
+orn_gain = NaN(max(paradigm),1);
+predicted_gain = NaN*orn_gain;
+for i = 1:max(paradigm)
+	temp = interp1(orn_io_data(i).x,orn_io_data(i).y,x);
+	temp = fit(x(~isnan(temp))',temp(~isnan(temp))','poly1');
+	orn_gain(i) = temp.p1;
+	temp = interp1(orn_io_data(i).x,orn_io_data(i).y,x);
+	pred = hill(x,p(i));
+	temp = fit(x(~isnan(temp))',pred(~isnan(temp))','poly1');
+	predicted_gain(i) = temp.p1;
+end
+plot(predicted_gain,orn_gain,'k+')
+plot([1e-3 10],[1e-3 10],'k--')
+set(gca,'XScale','log','YScale','log','YLim',[.1 10],'XTick',[1e-10 1e-6 1e-3 1e1])
 xlabel('Predicted Gain')
 
 prettyFig('plw=1.3;','lw=1.5;','fs=14;')
@@ -748,33 +730,5 @@ end
 
 
 %% Version Info
-% The file that generated this document is called:
-disp(mfilename)
-
-%%
-% and its md5 hash is:
-Opt.Input = 'file';
-disp(dataHash(strcat(mfilename,'.m'),Opt))
-
-%%
-% This file should be in this commit:
-[status,m]=unix('git rev-parse HEAD');
-if ~status
-	disp(m)
-end
-
-t = toc;
-
-%%
-% This file has the following external dependencies:
-showDependencyHash(mfilename);
-
-%% 
-% This document was built in: 
-disp(strcat(oval(t,3),' seconds.'))
-
-% tag the file as being published 
-if being_published
-	unix(['tag -a published ',which(mfilename)]);
-	unix(['tag -r publish-failed ',which(mfilename)]);
-end
+% 
+pFooter;

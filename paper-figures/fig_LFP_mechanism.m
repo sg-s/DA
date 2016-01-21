@@ -6,24 +6,7 @@
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
 
-% add homebrew path
-path1 = getenv('PATH');
-if isempty(strfind(path1,':/usr/local/bin'))
-    path1 = [path1 ':/usr/local/bin'];
-end
-setenv('PATH', path1);
-
-% this code determines if this function is being called
-calling_func = dbstack;
-being_published = 0;
-if ~isempty(calling_func)
-	if find(strcmp('publish',{calling_func.name}))
-		being_published = 1;
-		unix(['tag -a publish-failed ',which(mfilename)]);
-		unix(['tag -r published ',which(mfilename)]);
-	end
-end
-tic
+pHeader;
 
 %% Mechanism of Gain Control: Local Field Potential 
 
@@ -369,6 +352,7 @@ for i = 1:width(LFP)
 end
 LFP(:,not_LFP< 0.5) = NaN;
 
+
 % filter the LFP
 filtered_LFP = LFP;
 for i = 1:width(LFP)
@@ -381,16 +365,19 @@ for i = 1:width(LFP)
 		z = length(LFP);
 	end
 	try
-		filtered_LFP(a:z,i) = 10*bandPass(LFP(a:z,i),1000,10);
+		filtered_LFP(a:z,i) = 10*bandPass(LFP(a:z,i),1e4,10); % 10 second high pass
 	catch
 	end
 end
 
 % extract LFP filters trialwise
 a = 10e3; z = 50e3;
-[K1,LFP_pred,LFP_gain,LFP_gain_err] = extractFilters(PID,filtered_LFP,'use_cache',true,'a',a,'z',z);
+[K1,LFP_pred] = extractFilters(PID,filtered_LFP,'use_cache',true,'a',a,'z',z);
 
-% fit non-linearities by ORN
+% also extract firing rate filters
+[K2,fA_pred] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
+
+% fit non-linearities by ORN for the LFP
 for i = 1:max(orn)
 	do_these = orn == i;
 	x = nanmean(LFP_pred(a:z,do_these),2);
@@ -403,35 +390,131 @@ for i = 1:max(orn)
 	end
 end
 
-% build inst. gain vectors for each ORN
-inst_gain = NaN(length(LFP_pred),length(unique(orn)));
-mean_stim = NaN(length(LFP_pred),length(unique(orn)));
-gain_err  = NaN(length(LFP_pred),length(unique(orn)));
+
+% find inst gain for the LFP and the firing rate
+inst_gain_LFP = NaN(length(PID),width(PID));
+inst_gain_fA = NaN(length(PID),width(PID));
+gain_err_LFP = NaN(length(PID),width(PID));
+gain_err_fA = NaN(length(PID),width(PID));
+
 
 for i = 1:max(orn)
-	do_these = orn == i;
 	s = nanmean(PID(:,do_these),2);
 	p = nanmean(LFP_pred(:,do_these),2);
 	r = nanmean(filtered_LFP(:,do_these),2);
-	[mean_stim(:,i),inst_gain(:,i),gain_err(:,i)] = makeFig6G(s,r,p,500);
+	[~,inst_gain_LFP(:,i),gain_err_LFP(:,i)] = makeFig6G(s,r,p,50);
+
+	p = nanmean(fA_pred(:,do_these),2);
+	r = nanmean(fA(:,do_these),2);
+	[~,inst_gain_fA(:,i),gain_err_fA(:,i)] = makeFig6G(s,r,p,50);
+
 end
 
 % clean up
-for i = 1:width(mean_stim)
-	inst_gain(gain_err(:,i)<.8,i) = NaN;
-	inst_gain(inst_gain(:,i)<0,i) = NaN;
-	inst_gain(1:a,i) = NaN;
+for i = 1:max(orn)
+	inst_gain_fA(gain_err_fA(:,i)<.8,i) = NaN;
+	inst_gain_fA(inst_gain_fA(:,i)<0,i) = NaN;
+	inst_gain_fA(1:20e3,i) = NaN;
+
+	inst_gain_LFP(gain_err_LFP(:,i)<.8,i) = NaN;
+	inst_gain_LFP(inst_gain_LFP(:,i)<0,i) = NaN;
+	inst_gain_LFP(1:20e3,i) = NaN;
 end
+
+
+% now vary the gain filter and show it is the best possible
+history_lengths = logspace(-2,1,30);
+rho_fA = NaN(length(history_lengths),max(orn));
+rho_LFP = NaN(length(history_lengths),max(orn));
+for i = 1:max(orn)
+	do_these = orn == i;
+	this_stim = nanmean(PID(:,do_these),2);
+	this_inst_gain = inst_gain_fA(:,i);
+	for j = 1:length(history_lengths)
+		hl = floor(history_lengths(j)*1e3);
+		K = ones(hl,1);
+		% filter the stimulus
+		shat = abs(filter(K,sum(K),this_stim));
+
+		% remove some junk
+		temp = this_inst_gain(~isnan(this_inst_gain));
+		shat = shat(~isnan(this_inst_gain));
+
+		% use the Spearman rank correlation
+		rho_fA(j,i) = (spear(shat(1:100:end),temp(1:100:end)));
+	end
+
+	this_inst_gain = inst_gain_LFP(:,i);
+	for j = 1:length(history_lengths)
+		hl = floor(history_lengths(j)*1e3);
+		K = ones(hl,1);
+		% filter the stimulus
+		shat = abs(filter(K,sum(K),this_stim));
+
+		% remove some junk
+		temp = this_inst_gain(~isnan(this_inst_gain));
+		shat = shat(~isnan(this_inst_gain));
+
+		% use the Spearman rank correlation
+		rho_LFP(j,i) = (spear(shat(1:100:end),temp(1:100:end)));
+	end
+end
+
+axes_handles(4) = subplot(2,4,4); hold on
+movePlot(gca,'right',.03)
+c = lines(max(orn)+1);
+plot(history_lengths,rho_LFP,'b+');
+plot(history_lengths,rho_fA,'k.');
+xlabel('History Length (s)')
+ylabel('\rho')
+set(gca,'XScale','log')
+
+
+
+% compute mean_stim on a 200ms window
+mean_stim = NaN*inst_gain_LFP;
+K = ones(300,1);
+for i = 1:max(orn)
+	mean_stim(:,i) = nanmean(PID(:,orn==i),2);
+	mean_stim(:,i) = abs(filter(K,length(K),mean_stim(:,i)));
+end
+
 
 axes_handles(3) = subplot(2,4,3); hold on
-for i = 1:width(mean_stim)
-	 [~,data(i)] = plotPieceWiseLinear(mean_stim(a:z,i),inst_gain(a:z,i),'nbins',50,'make_plot',false);
+clear data_fA data_LFP
+for i = 1:max(orn)
+	 [~,data_fA(i)] = plotPieceWiseLinear(mean_stim(20e3:z,i),inst_gain_fA(20e3:z,i),'nbins',50,'make_plot',false);
+	 [~,data_LFP(i)] = plotPieceWiseLinear(mean_stim(20e3:z,i),inst_gain_LFP(20e3:z,i),'nbins',50,'make_plot',false);
 end
-l = errorShade(mean([data.x],2),mean([data.y],2),sem([data.y]'),'Color',[0 0 0]);
-legend(l(1),['\rho = ' oval(spear(mean(mean_stim(a:10:z,:),2),mean(inst_gain(a:10:z,:),2)))])
+clear l L
+[ax,p1,p2]= plotyy([data_fA.x],[data_fA.y],[data_LFP.x],[data_LFP.y]);
+% fix the colours, etc
+for i = 1:max(orn)
+	set(p1(i),'Color','k','Marker','.','LineStyle','none')
+	set(p2(i),'Color','b','Marker','+','LineStyle','none')
+end
+set(ax(2),'YColor','b','YLim',[1e-2 1e1],'YScale','log','YTick',[ 1e-2 1e-1 1e0 1e1])
+set(ax(1),'YColor','k','YLim',[1e1 1e4],'YScale','log','YTick',[1e1 1e2 1e3 1e4])
+ylabel(ax(1),'Inst. ORN Gain (Hz/V)')
+ylabel(ax(2),'Inst. LFP Gain (mV/V)')
+xlabel('Mean Stimulus in preceding 200ms (V)')
+
+temp = errorShade(mean([data_fA.x],2),mean([data_fA.y],2),sem([data_fA.y]'),'Color',[0 0 0]);
+l(1) = temp(1);
+temp = errorShade(mean([data_LFP.x],2),mean([data_LFP.y],2),sem([data_LFP.y]'),'Color',[0 0 1]);
+l(2) = temp(1);
+x = nanmean(mean_stim(20e3:10:z,:),2); 
+y = nanmean(inst_gain_fA(20e3:10:z,:),2);
+x(isnan(y)) = []; y(isnan(y)) = [];
+L{1} = ['\rho = ' oval(spear(x,y))];
+x = nanmean(mean_stim(20e3:10:z,:),2); 
+y = nanmean(inst_gain_LFP(20e3:10:z,:),2);
+x(isnan(y)) = []; y(isnan(y)) = [];
+L{2} = ['\rho = ' oval(spear(x,y))];
+legend(l,L)
 
 ylabel(axes_handles(3),'Inst. LFP Gain (mV/V)')
-xlabel(axes_handles(3),'Stimulus in preceding 500ms')
+xlabel(axes_handles(3),'Stimulus in preceding 200ms')
 set(axes_handles(3),'YScale','log')
 
 % show how we calculate the inst. gain
@@ -458,36 +541,6 @@ plot(inst_ax(3),[min(x(300:800)) max(x(300:800))],ff([min(x(300:800)) max(x(300:
 set(inst_ax(1),'XTick',[],'XColor','w','YColor','k','Position',[.25 .75 .1 .1])
 set(inst_ax(2),'XTick',[],'XColor','w','YColor',[.6 .1 .1],'Position',[.25 .61 .1 .1])
 set(inst_ax(3),'XColor',[.6 .1 .1],'YColor','k','Position',[.3827 .6768 .08 .16])
-
-% now vary the gain filter and show it is the best possible
-history_lengths = logspace(-1,1,30);
-rho = NaN(length(history_lengths),width(inst_gain));
-for i = 1:max(orn)
-	do_these = orn == i;
-	this_stim = nanmean(PID(:,do_these),2);
-	this_inst_gain = inst_gain(:,i);
-	for j = 1:length(history_lengths)
-		hl = floor(history_lengths(j)*1e3);
-		K = ones(hl,1);
-		% filter the stimulus
-		shat = abs(filter(K,sum(K),this_stim));
-
-		% remove some junk
-		temp = this_inst_gain(~isnan(this_inst_gain));
-		shat = shat(~isnan(this_inst_gain));
-
-		% use the Spearman rank correlation
-		rho(j,i) = (spear(shat(1:10:end),temp(1:10:end)));
-	end
-end
-
-axes_handles(4) = subplot(2,4,4); hold on
-movePlot(gca,'right',.03)
-c = lines(max(orn)+1);
-errorShade(history_lengths,mean(rho,2),sem(rho'),'Color',[0 0 0]);
-xlabel('History Length (s)')
-ylabel('\rho')
-set(gca,'XScale','log')
 
 
 prettyFig('fs=18;','plw=1.5;','lw=1.5;')

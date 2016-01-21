@@ -63,7 +63,7 @@ paradigm(bad_trials) = [];
 % band pass all the LFP
 filtered_LFP = LFP;
 for i = 1:width(LFP)
-	filtered_LFP(:,i) = bandPass(LFP(:,i),1000,10);
+	filtered_LFP(:,i) = 10*bandPass(LFP(:,i),1e4,10);
 end
 
 % extract filters and compute gains
@@ -93,12 +93,10 @@ ff = fit(xx(:),yy(:),'power1',fo);
 ms = mean(PID(a:z,:)); ms = ms(:);
 [ax,p1,p2] = plotyy(ms,LFP_gain,[ms'; sort(ms)']',[fA_gain'; ff(sort(ms))']');
 set(p1,'LineStyle','none','Marker','+')
-set(p2(1),'LineStyle','none','Marker','+')
+set(p2(1),'LineStyle','none','Marker','.','Color','k')
 set(p2(2),'Marker','none','Color','r')
-set(p2(1),'Color','k')
 
-set(ax(1),'XScale','log','YScale','log','YLim',[1e-2 1e1])
-set(ax(2),'XScale','log','YScale','log','YLim',[1e0 1e3])
+
 xlabel('Mean Stimulus (V)')
 ylabel('LFP Gain (mV/V)')
 ylabel(ax(2),'Firing Gain (Hz/V)')
@@ -116,8 +114,8 @@ for i = 1:length(yy)
 	yy(i) = mean(y(paradigm==i));
 	ww(i) = 1./sem(y(paradigm==i));
 end
-ff = fit(xx(:),yy(:),'power1','Weights',ww);
-plot(ax(1),min(x):.1:max(x),ff(min(x):.1:max(x)),'k');
+% ff = fit(xx(:),yy(:),'power1','Weights',ww);
+% plot(ax(1),min(x):.1:max(x),ff(min(x):.1:max(x)),'k');
 
 fo = fitoptions('power1');
 fo.Upper = [Inf -1];
@@ -126,8 +124,9 @@ fo.Weights = ww;
 ff = fit(xx(:),yy(:),'power1',fo);
 plot(ax(1),min(x):.1:max(x),ff(min(x):.1:max(x)),'r');
 set(ax(2),'YColor',get(p2(1),'Color'))
-set(ax(1),'YTick',[1e-2 1e-1 1e0 10])
-set(ax(2),'YTick',[1 10 100 1000])
+set(ax(1),'XScale','log','YScale','log','YLim',[1 1e2],'YTick',[1 10 100],'XLim',[.1 3])
+set(ax(2),'XScale','log','YScale','log','YLim',[1e1 1e3],'YTick',[10 100 1e3],'XLim',[.1 3])
+
 
 % now add an explanatory figure
 axes_handles(5) = subplot(2,4,5); hold on
@@ -173,7 +172,7 @@ axis image
 
 clearvars -except being_published axes_handles
 path_name = '/local-data/DA-paper/switching/variance/v2/';
-[PID, LFP, fA, paradigm, orn] = consolidateData(path_name,1);
+[PID, LFP, ~, ~, orn] = consolidateData(path_name,1);
 
 global_start = 40e3; % 40 seconds
 global_end = length(PID) - 5e3; 
@@ -181,7 +180,7 @@ global_end = length(PID) - 5e3;
 for i = 1:width(LFP)
 	a = find(~isnan(LFP(:,i)),1,'first');
 	z = find(~isnan(LFP(:,i)),1,'last');
-	LFP(a:z,i) = bandPass(LFP(a:z,i),1000,10)*10; % now in mV
+	LFP(a:z,i) = 10*bandPass(LFP(a:z,i),1e4,10); % now in mV
 end
 
 % reshape the LFP signals
@@ -206,63 +205,52 @@ reshaped_orn(rm_this) = [];
 % we are going to calculate only one filter/epoch
 sr = 1e3; % sampling rate, Hz
 if exist('.cache/VSA_K.mat','file') == 2
-	load('.cache/VSA_K.mat','K')
+	load('.cache/VSA_K.mat','K1')
 else
 	filter_length = 1000;
 	offset = 200;
-	K1 = NaN(2,filter_length-offset,width(reshaped_LFP));
+	K1 = NaN(800,width(reshaped_PID));
 	for i = 1:width(reshaped_LFP)
 		textbar(i,width(reshaped_PID))
-
-		% calculate filter for large variance epoch
 		stim = reshaped_PID(:,i);
 		resp = reshaped_LFP(:,i);
 
 		resp(1:1e3) = NaN;
-		resp(5e3:end)= NaN;
+		resp(5e3:6e3)= NaN;
 
 		try
 			this_K1 = fitFilter2Data(stim,resp,'reg',1,'offset',offset,'filter_length',filter_length);
-			K1(1,:,i) = this_K1(100:end-101);
-		catch 
-		end
-
-		% calculate filter for low variance epoch
-		stim = reshaped_PID(:,i);
-		resp = reshaped_LFP(:,i);
-
-		resp(1:6e3) = NaN;
-
-		try
-			this_K1 = fitFilter2Data(stim,resp,'reg',1,'offset',offset,'filter_length',filter_length);
-			K1(2,:,i) = this_K1(100:end-101);
+			K1(:,i) = this_K1(100:end-101);
 		catch 
 		end
 	end
 	mkdir('.cache')
-	save('.cache/VSA_K.mat','K')
+	save('.cache/VSA_K.mat','K1')
 end
 
 % make linear predictions on the de-trended data using a mean filter averaged over all cases
-K1_mean = nanmean(squeeze(nanmean(K,1)),2);
+K1_mean = nanmean(K1,2);
 ft = -99:700;
 LFP_pred = NaN*reshaped_LFP;
 for i = 1:width(reshaped_LFP)
-	LFP_pred(:,i) = bandPass(convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K1_mean,ft),1000,10);
+	LFP_pred(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K1_mean,ft);
 end
 
 
 % plot the distributions of the projected stimulus
 axes_handles(7) = subplot(2,4,7); hold on
-temp = LFP_pred(1e3:5e3,:); temp = temp(:);
-[y,x] = hist(temp,100);
+temp = LFP_pred(1e3:5e3,:); temp = nonnans(temp(:));
+x = min(min(LFP_pred)):0.02:max(max(LFP_pred));
+y = histcounts(temp,x);
+y = y/sum(y); 
+plot(x(2:end),y,'r','LineWidth',3)
+temp = LFP_pred(6e3:end,:); temp = nonnans(temp(:));
+y = histcounts(temp,x);
 y = y/sum(y);
-plot(x,y,'r','LineWidth',3)
-temp = LFP_pred(6e3:end,:); temp = temp(:);
-[y,x] = hist(temp,100);
-y = y/sum(y);
-x = x+2;
-plot(x,y,'b','LineWidth',3)
+
+x = x+3; % to offset it on our arbitrary axis
+
+plot(x(2:end),y,'b','LineWidth',3)
 axis off
 set(axes_handles(7),'Position',[.56 .22 .15 .17])
 
@@ -301,22 +289,49 @@ end
 uistack(shade_handle2,'bottom')
 xlabel('Projected Stimulus (V)')
 ylabel('\Delta LFP (mV)')
-set(gca,'XLim',[-1 1])
+set(gca,'XLim',[-1.5 0])
 
 
-% also show some statistics;
-load('.cache/VSA_LFP_slopes')
-slopes2=mean(n(:,60:100),2);
-slopes1=mean(n(:,10:50),2);
+% compute gains for each of these cases
+if exist('.cache/LFP_gain.mat','file') == 2
+	load('.cache/LFP_gain.mat','gain_lo','gain_hi','gain_lo_r2','gain_hi_r2')
+else
+	gain_lo = NaN(width(reshaped_PID),1);
+	gain_lo_r2 = zeros(width(reshaped_PID),1);
+	gain_hi = NaN(width(reshaped_PID),1);
+	gain_hi_r2 = zeros(width(reshaped_PID),1);
+	for i = 1:width(reshaped_PID)
+		textbar(i,width(reshaped_PID))
+		x = LFP_pred(1e3:5e3,i); y = reshaped_LFP(1e3:5e3,i);
+		try
+			ff = fit(x(:),y(:),'poly1');
+			gain_hi(i) = ff.p1;
+			gain_hi_r2(i) = rsquare(ff(x),y);
+		catch
+		end
+		x = LFP_pred(6e3:9e3,i); y = reshaped_LFP(6e3:9e3,i);
+		try
+			ff = fit(x(:),y(:),'poly1');
+			gain_lo(i) = ff.p1;
+			gain_lo_r2(i) = rsquare(ff(x),y);
+		catch
+		end
+	end
+
+	save('.cache/LFP_gain.mat','gain_lo','gain_hi','gain_lo_r2','gain_hi_r2')
+end
+
+rm_this = gain_lo_r2<.5 | gain_hi_r2<.5;
+gain_lo(rm_this) = []; gain_hi(rm_this) = [];
+
 
 h = axes;
 hold on
 set(h,'Units','normalized','Position',[ 0.87    0.15    0.1    0.13]);
-plot(h,slopes1,slopes2,'k.')
-plot([0 4],[0 4],'k--')
-set(h,'YColor','b','XColor','r')
+plot(h,gain_lo,gain_hi,'k.')
+plot([4 20],[4 20],'k--')
+set(h,'YColor','r','XColor','b')
 axis square
-
 
 
 %    ########    ###     ######  ########     ######      ###    #### ##    ## 
@@ -499,10 +514,7 @@ ylabel(ax(1),'Inst. ORN Gain (Hz/V)')
 ylabel(ax(2),'Inst. LFP Gain (mV/V)')
 xlabel('Mean Stimulus in preceding 200ms (V)')
 
-temp = errorShade(mean([data_fA.x],2),mean([data_fA.y],2),sem([data_fA.y]'),'Color',[0 0 0]);
-l(1) = temp(1);
-temp = errorShade(mean([data_LFP.x],2),mean([data_LFP.y],2),sem([data_LFP.y]'),'Color',[0 0 1]);
-l(2) = temp(1);
+clear L
 x = nanmean(mean_stim(20e3:10:z,:),2); 
 y = nanmean(inst_gain_fA(20e3:10:z,:),2);
 x(isnan(y)) = []; y(isnan(y)) = [];
@@ -511,11 +523,8 @@ x = nanmean(mean_stim(20e3:10:z,:),2);
 y = nanmean(inst_gain_LFP(20e3:10:z,:),2);
 x(isnan(y)) = []; y(isnan(y)) = [];
 L{2} = ['\rho = ' oval(spear(x,y))];
-legend(l,L)
+legend([p1(1) p2(2)],L)
 
-ylabel(axes_handles(3),'Inst. LFP Gain (mV/V)')
-xlabel(axes_handles(3),'Stimulus in preceding 200ms')
-set(axes_handles(3),'YScale','log')
 
 % show how we calculate the inst. gain
 inst_ax(1) = subplot(4,4,1); hold on
@@ -528,29 +537,30 @@ t = 1:length(x);
 
 plot(inst_ax(1),t,y,'k','LineWidth',1.1)
 plot(inst_ax(2),t,x,'Color',[.6 .1 .1],'LineWidth',1.1)
-plot(inst_ax(1),t(300:800),y(300:800),'k','LineWidth',3)
-plot(inst_ax(2),t(300:800),x(300:800),'Color',[.6 .1 .1],'LineWidth',3)
-plot(inst_ax(3),x(300:50:800),y(300:50:800),'kd','LineWidth',3)
+plot(inst_ax(1),t(750:800),y(750:800),'k','LineWidth',3)
+plot(inst_ax(2),t(750:800),x(750:800),'Color',[.6 .1 .1],'LineWidth',3)
+plot(inst_ax(3),x(750:5:800),y(750:5:800),'kd','LineWidth',3)
 
-plot(inst_ax(1),[800 800],[-4 2],'k','LineWidth',0.5)
+plot(inst_ax(1),[800 800],[-2 2],'k','LineWidth',0.5)
 plot(inst_ax(2),[800 800],[-2 2],'k','LineWidth',0.5)
 
-ff = fit(x(300:800),y(300:800),'poly1');
-plot(inst_ax(3),[min(x(300:800)) max(x(300:800))],ff([min(x(300:800)) max(x(300:800))]),'k','LineWidth',.5)
+ff = fit(x(750:800),y(750:800),'poly1');
+plot(inst_ax(3),[min(x(750:800)) max(x(750:800))],ff([min(x(750:800)) max(x(750:800))]),'k','LineWidth',.5)
 
 set(inst_ax(1),'XTick',[],'XColor','w','YColor','k','Position',[.25 .75 .1 .1])
 set(inst_ax(2),'XTick',[],'XColor','w','YColor',[.6 .1 .1],'Position',[.25 .61 .1 .1])
 set(inst_ax(3),'XColor',[.6 .1 .1],'YColor','k','Position',[.3827 .6768 .08 .16])
 
 
-prettyFig('fs=18;','plw=1.5;','lw=1.5;')
+prettyFig('fs=18;','plw=1.5;','lw=1.5;','FixLogX=true;')
 
 % minor prettification
 ylabel(inst_ax(2),['Projected' char(10) ' Stimulus (V)'],'FontSize',12)
 ylabel(inst_ax(1),'\DeltaLFP (mV)','FontSize',12)
 
-set(inst_ax(3),'XLim',[-2.5 1.5],'YLim',[-2.5 1.5])
+set(inst_ax(3),'XLim',[1.3 1.7],'YLim',[1.3 1.7],'box','off','XTick',[1.3 1.4 1.5 1.6 ])
 
+movePlot(axes_handles(3),'left',.025)
 movePlot(axes_handles(7),'right',.03)
 movePlot(axes_handles(5),'right',.05)
 movePlot(axes_handles(6),'right',.05)
@@ -560,7 +570,6 @@ if being_published
 	delete(gcf)
 end
 
-return
 
 %% Supplementary Figure: LFP gain control in other sensilla:
 
@@ -588,7 +597,7 @@ pb3_paradigm(bad_trials) = [];
 
 % band pass all the LFP
 for i = 1:width(pb3_LFP)
-	pb3_LFP(:,i) = bandPass(pb3_LFP(:,i),1000,10);
+	pb3_LFP(:,i) = bandPass(pb3_LFP(:,i),1e4,10);
 end
 
 a = 10e3; z = 50e3;
@@ -636,7 +645,7 @@ paradigm(rm_this) = [];
 % bandPass LFP
 filtered_LFP = LFP;
 for i = 1:width(LFP)
-	filtered_LFP(:,i) = bandPass(LFP(:,i),1000,10);
+	filtered_LFP(:,i) = bandPass(LFP(:,i),1e4,10);
 end
 
 a = 10e3; z = 50e3;
@@ -681,33 +690,4 @@ end
 
 %% Version Info
 % The file that generated this document is called:
-disp(mfilename)
-
-%%
-% and its md5 hash is:
-Opt.Input = 'file';
-disp(dataHash(strcat(mfilename,'.m'),Opt))
-
-%%
-% This file should be in this commit:
-[status,m]=unix('git rev-parse HEAD');
-if ~status
-	disp(m)
-end
-
-%%
-% This file has the following external dependencies:
-showDependencyHash(mfilename);
-
-t = toc;
-
-%% 
-% This document was built in: 
-disp(strcat(oval(t,3),' seconds.'))
-
-% tag the file as being published 
-
-if being_published
-	unix(['tag -a published ',which(mfilename)]);
-	unix(['tag -r publish-failed ',which(mfilename)]);
-end
+pFooter;

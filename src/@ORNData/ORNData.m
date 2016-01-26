@@ -19,6 +19,8 @@ classdef ORNData
       filter_length = 700;
       filter_offset = 100;
       filtertime_firing = 1e-3*(1:700) - 100*1e-3;
+      a = 10e3; % where do we start looking at the data
+      z
 
       % filters, projections and gain
       regularisation_factor = .1;
@@ -56,6 +58,11 @@ classdef ORNData
          end
          obj.firing_rate = value;
 
+         % set z if unset 
+         if isempty(obj.z)
+            obj.z = length(value);
+         end
+
       end
 
 
@@ -73,6 +80,11 @@ classdef ORNData
    			obj.n_trials = size(value,2);
    		end
    		obj.stimulus = value;
+         
+         % set z if unset 
+         if isempty(obj.z)
+            obj.z = length(value);
+         end
    	end
 
    	function obj = set.K_firing(obj,value)
@@ -86,6 +98,18 @@ classdef ORNData
    		obj.K_firing = value;
    		obj = projectStimulus(obj,'firing');
    	end
+
+      function obj = set.regularisation_factor(obj,value)
+         % validate input
+         assert(isnumeric(value),'regularisation_factor must be a +ve number')
+         assert(isscalar(value),'regularisation_factor must be a +ve number')
+         assert(value>0,'regularisation_factor must be a +ve number')
+
+         disp('Recomputing filters because you changed the regularisation_factor...')
+         obj.regularisation_factor = value;
+         obj = backOutFilters(obj);
+
+      end
 
    end
 

@@ -12,6 +12,10 @@ classdef ORNData
 		stimulus              % same dimensions as firing_rate (in V)
       LFP
       n_trials              % # of trials. integer. 
+      valve
+      MFC_control
+      MFC_signal
+      spikes
 
       % timing information
       dt = 1e-3;
@@ -35,6 +39,19 @@ classdef ORNData
       inst_gain_firing     % averaged over all trials
       inst_gain_firing_err
       gain_firing
+
+      % metadata
+      original_name
+      data_creator
+      neuron_name
+      odour_name
+      orn % ID of orn
+      fly % ID of fly
+      paradigm 
+
+
+
+
 
 
 	end

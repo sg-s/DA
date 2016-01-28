@@ -21,7 +21,11 @@ if strcmp(projection_type,'firing')
 	   obj.firing_projected(:,i) = convolve(time,obj.stimulus(:,i),obj.K_firing(:,i),obj.filtertime_firing);
 	end
 elseif strcmp(projection_type,'LFP')
-	error('not coded')
+	obj.LFP_projected = NaN*obj.stimulus;
+	time = obj.dt*(1:length(obj.stimulus));
+	for i = 1:obj.n_trials
+	   obj.LFP_projected(:,i) = convolve(time,obj.stimulus(:,i),obj.K_LFP(:,i),obj.filtertime_LFP);
+	end
 else
 	error('I dont know what you want me to project')
 end 

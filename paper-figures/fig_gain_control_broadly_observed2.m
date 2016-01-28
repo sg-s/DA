@@ -28,48 +28,69 @@ pHeader;
 %% Figure 6: Gain Control is widely observed
 % The previous result showed fast gain control using ethyl acetate, a volatile odor, in ab3A, an antennal ORN. To determine if fast gain control is widely observed, and not a peculiarity of the odor-receptor combination used, I reanalyzed a published data set of ORN responses to flickering odor stimuli (from Martelli et al. J. Neuro. 2013). The data set consists of six different odors and two ORN types: one in the antenna and one in the maxillary palp. My analysis of fast gain control is self-consistent across experimental replicates (A-C), and shows that fast gain control is observed for different odors (D-F) and in two different neurons (G-I).  In each row, the first column shows the linear filter extracted from the stimulus and the response. The second column shows the principal components fit to the highest (lowest) 1/3 of stimulus filtered over some history length in red (green). The third column shows how relative gain varies at times when the filtered stimulus in in the top 1/3 (green) or bottom 1/3 (red), for various history lengths. Only significant (p<0.01) points are shown. In every dataset, significant gain control is observed on a sub-second time scale, and the gain control always acts to amplify responses to recently weak stimuli and suppress responses to recently large stimuli (red dots always below green dots in third column). 
 
-load('../data/CMData_Gain.mat')
-load('../data/CM_Data_filters.mat')
-combined_data_file = ('/local-data/DA-paper/carlotta-martelli/flickering-stim/data.mat');
-load(combined_data_file)
-filtertime = -200:700;
-filtertime = filtertime*1e-3;
-
-hl_min = .2;
-hl_max = 10;
-history_lengths = [logspace(log10(hl_min),log10(.5),15) logspace(log10(.5),log10(10),15)];
-history_lengths = unique(history_lengths);
-
-% add a new field with correlation times
-for i = 1:length(data)
-	if any(strfind(data(i).original_name,'30ms'))
-		data(i).corr_time = 30;
-	end
-	if any(strfind(data(i).original_name,'50ms'))
-		data(i).corr_time = 50;
-	end
-	if any(strfind(data(i).original_name,'100ms'))
-		data(i).corr_time = 100;
-	end
+% load the data
+if ~exist('orn_data','var')
+	load('Carlotta_Data.mat')
 end
 
-
-s = 860;
-figure('outerposition',[0 0 s s],'PaperUnits','points','PaperSize',[s s]); hold on, clear s
+% make the figures
+figure('outerposition',[0 0 1300 800],'PaperUnits','points','PaperSize',[1300 800]); hold on
 clear axes_handles
-for i = [2 3 5 6 8 9]
-	axes_handles(i) = subplot(3,3,i); hold on
+for i = 1:12
+	axes_handles(i) = subplot(3,4,i);
+	hold on
 end
 
 
-% calculate inst. gain
-return
+title(axes_handles(1),'Experimental Replicates')
+title(axes_handles(2),'Different Odors')
+title(axes_handles(3),'Different ORNs')
+title(axes_handles(4),'Locust EAG')
 
-[mean_stim,inst_gain,e] = makeFig6G(mean(data(1).PID,2),mean(data(1).fA,2),mean(data(1).LinearFit,2),50);
+% first row: experimental replicates
+do_these = [7 9 13 15 16];
+clear plot_handles
+for i = 1:length(do_these)
+	do_this = do_these(i);
+	plot_handles(i).h = plot(orn_data(do_this),axes_handles([5 9]),'gain_analysis.binned','mean_stim_bins',200);
+end
 
-% % first row: experimental replicates
-% do_these = [2 7 9 13 15 16];
+% replot the binned gain vs. mean stim with futher binning
+for i = 1:length(do_these)
+	x = get(plot_handles(i).h(1),'XData');
+	y = get(plot_handles(i).h(1),'YData');
+	rm_this = x < .1 | x > .9 | y < 0;
+	x(rm_this) = []; y(rm_this) = [];
+	delete(plot_handles(i).h(1));
+	axes(axes_handles(5));
+	plot_handles(i).h(1) = plotPieceWiseLinear(x,y,'nbins',5,'use_std',true);
+end
 
+% cosmetics
+c =  lines(length(do_these));
+for i = 1:length(do_these)
+	set(plot_handles(i).h(1),'Color',c(i,:),'LineStyle','-','Marker','none')
+	set(plot_handles(i).h(2),'Color',c(i,:),'LineStyle','-','Marker','none')
+end
+
+set(axes_handles(5),'YLim',[0.5 2],'XLim',[0 0.9])
+set(axes_handles(9),'YLim',[-1 0])
+
+% show a explanatory graphic
+o = imread('../images/exp-rep.png');
+axes(axes_handles(1));
+imagesc(o);
+axis ij
+axis image
+axis off
+uistack(axes_handles(1),'bottom')
+
+
+% get the legend right
+ph = [plot_handles.h]; ph = ph(1:2:end);
+L = {'06/03','05/28','06/05','06/12','06/19'};
+lh = legend(ph,L);
+set(lh,'Position',[0.2292 0.75 0.0500 0.0770])
 
 %     ########  #### ######## ######## ######## ########  ######## ##    ## ######## 
 %     ##     ##  ##  ##       ##       ##       ##     ## ##       ###   ##    ##    
@@ -89,41 +110,49 @@ return
 
 
 do_these = [7 8 10 14 17 18];
-odours = {'1but','1o3ol','dsucc','2ac','2but','5ol'};
 
-clear ph
-ph(3:4) = axes_handles(2:3);
-for i = do_these
-	time = 1e-3*(1:length(mean(data(i).PID,2)));
-	stimulus = mean(data(i).PID,2);
-	prediction = mean(data(i).LinearFit,2);
-	response = mean(data(i).fA,2);
-
-	% throw out first 5 seconds
-	time = time(5e3:end);
-	stimulus = stimulus(5e3:end);
-	response = response(5e3:end);
-	prediction = prediction(5e3:end);
-
-	% fix the gain to be exactly 1
-	x = prediction;
-	y = response;
-	rm_this = isnan(x) | isnan(y) ;
-	x(rm_this) = [];
-	y(rm_this) = [];
-	temp = fit(x,y,'poly1');
-	prediction = prediction*temp.p1;
-
-	% remove trend in stimulus
-	temp = fit(time(:),stimulus(:),'poly2');
-	stimulus = stimulus - temp(time) + mean(stimulus);
-
-	gainAnalysisWrapper('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph,'engine',@gainAnalysis,'use_cache',true,'example_history_length',history_lengths(15));
+clear plot_handles
+for i = 1:length(do_these)
+	do_this = do_these(i);
+	plot_handles(i).h = plot(orn_data(do_this),axes_handles([6 10]),'gain_analysis.binned','mean_stim_bins',200);
 end
 
-% add a minimal legend
-h=get(ph(3),'Children');
-legend(h(1:2),{'High Stim.','Low Stim.'},'Location','northwest')
+% replot the binned gain vs. mean stim with futher binning
+for i = 1:length(do_these)
+	x = get(plot_handles(i).h(1),'XData');
+	y = get(plot_handles(i).h(1),'YData');
+	rm_this = x < .1 | x > .9;
+	x(rm_this) = []; y(rm_this) = [];
+	delete(plot_handles(i).h(1));
+	axes(axes_handles(6));
+	plot_handles(i).h(1) = plotPieceWiseLinear(x,y,'nbins',5,'use_std',true);
+end
+
+% cosmetics
+c =  lines(length(do_these));
+for i = 1:length(do_these)
+	set(plot_handles(i).h(1),'Color',c(i,:),'LineStyle','-','Marker','none')
+	set(plot_handles(i).h(2),'Color',c(i,:),'LineStyle','-','Marker','none')
+end
+
+set(axes_handles(6),'YLim',[0.5 2],'XLim',[0 0.9])
+set(axes_handles(10),'YLim',[-1 0])
+
+% show a explanatory graphic
+o = imread('../images/diff-odors.png');
+axes(axes_handles(2));
+imagesc(o);
+axis ij
+axis image
+axis off
+uistack(axes_handles(2),'bottom')
+
+
+% get the legend right
+ph = [plot_handles.h]; ph = ph(1:2:end);
+odours = {'1but','1o3ol','dsucc','2ac','2but','5ol'};
+lh = legend(ph,odours);
+set(lh,'Position',[0.35 0.75 0.0300 0.0770],'Box','off')
 
 
 %    ########  #### ######## ######## ######## ########  ######## ##    ## ######## 
@@ -142,64 +171,50 @@ legend(h(1:2),{'High Stim.','Low Stim.'},'Location','northwest')
 %    ##   ### ##       ##     ## ##    ##  ##     ## ##   ### ##    ## 
 %    ##    ## ########  #######  ##     ##  #######  ##    ##  ######  
 
-% add new ab2 data
-p = '/local-data/DA-paper/large-variance-flicker/ab2';
-[PID, ~, fA, paradigm, orn, fly] = consolidateData(p,true);
-a = 5e3;
-z = length(PID) - 5e3;
-[K, prediction, gain, gain_err] = extractFilters(PID,fA,'a',a,'z',z,'filter_offset',200,'filter_length',900);
-
-data(25).PID = PID(:,1:5);
-data(25).fA = fA(:,1:5);
-allfilters(25).K = K(:,1:5);
-clear p
-p.A =  46.6458;
-p.k =  0.2557;
-p.n =  1.1956;
-for i = 1:width(prediction)
-	prediction(:,i) = hill(prediction(:,i),p);
-end
-
-data(25).LinearFit = prediction(:,1:5);
-
 do_these = [11 17 25];
-clear ph
-ph(3:4) = axes_handles(5:6);
-for i = do_these
-	time = 1e-3*(1:length(mean(data(i).PID,2)));
-	stimulus = nanmean(data(i).PID,2);
-	prediction = nanmean(data(i).LinearFit,2);
-	response = nanmean(data(i).fA,2);
 
-	% throw out first 5 seconds
-	time = time(5e3:end);
-	stimulus = stimulus(5e3:end);
-	response = response(5e3:end);
-	prediction = prediction(5e3:end);
-
-	% remove trend in stimulus
-	temp = fit(time(:),stimulus(:),'poly2');
-	stimulus = stimulus - temp(time) + mean(stimulus);
-
-	% fix the gain to be exactly 1
-	x = prediction;
-	y = response;
-	rm_this = isnan(x) | isnan(y) ;
-	x(rm_this) = [];
-	y(rm_this) = [];
-	temp = fit(x,y,'poly1');
-	prediction = prediction*temp.p1;
-
-	% ignore very low responses
-	y(y<5) = NaN;
-
-	gainAnalysisWrapper('time',time,'response',response,'stimulus',stimulus,'prediction',prediction,'history_lengths',history_lengths,'ph',ph,'engine',@gainAnalysis,'use_cache',true,'example_history_length',history_lengths(15)');
+clear plot_handles
+for i = 1:length(do_these)
+	do_this = do_these(i);
+	plot_handles(i).h = plot(orn_data(do_this),axes_handles([7 11]),'gain_analysis.binned','mean_stim_bins',200);
 end
 
+% replot the binned gain vs. mean stim with futher binning
+for i = 1:length(do_these)
+	x = get(plot_handles(i).h(1),'XData');
+	y = get(plot_handles(i).h(1),'YData');
+	rm_this = x < .1 | x > .9;
+	x(rm_this) = []; y(rm_this) = [];
+	delete(plot_handles(i).h(1));
+	axes(axes_handles(7));
+	plot_handles(i).h(1) = plotPieceWiseLinear(x,y,'nbins',5,'use_std',true);
+end
 
-% add a minimal legend
-h=get(ph(3),'Children');
-legend(h(1:2),{'High Stim.','Low Stim.'},'Location','northwest')
+% cosmetics
+c =  lines(length(do_these));
+for i = 1:length(do_these)
+	set(plot_handles(i).h(1),'Color',c(i,:),'LineStyle','-','Marker','none')
+	set(plot_handles(i).h(2),'Color',c(i,:),'LineStyle','-','Marker','none')
+end
+
+set(axes_handles(7),'YLim',[0.5 2],'XLim',[0 0.9])
+set(axes_handles(11),'YLim',[-1 0])
+
+% show a explanatory graphic
+o = imread('../images/diff-orns.png');
+axes(axes_handles(3));
+imagesc(o);
+axis ij
+axis image
+axis off
+uistack(axes_handles(3),'bottom')
+
+
+% get the legend right
+ph = [plot_handles.h]; ph = ph(1:2:end);
+lh = legend(ph,odours,{'','',''});
+set(lh,'Position',[15 0.75 0.0300 0.0770],'Box','off')
+
 
 % ##        #######   ######  ##     ##  ######  ######## 
 % ##       ##     ## ##    ## ##     ## ##    ##    ##    
@@ -210,145 +225,62 @@ legend(h(1:2),{'High Stim.','Low Stim.'},'Location','northwest')
 % ########  #######   ######   #######   ######     ##    
 
 % load data
-load('/local-data/DA-paper/locust/example-data.mat')
+if ~exist('locust_data','var')
+	load('/local-data/DA-paper/locust/example-data')
 
-% clean up, sub-sample to 1ms
-PID = PID1; clear PID1
-EAG = EAG1; clear EAG1 
+	% clean up, sub-sample to 1ms
+	PID = PID1; clear PID1
+	EAG = EAG1; clear EAG1 
 
-PID = PID(:,1:10:end)';
-EAG = EAG(:,1:10:end)';
-valve = ODR1(:,1:10:end)';
-valve(valve<max(max(valve))/2) = 0;
-valve(valve>0) = 1;
+	PID = PID(:,1:10:end)';
+	EAG = EAG(:,1:10:end)';
+	valve = ODR1(:,1:10:end)';
+	valve(valve<max(max(valve))/2) = 0;
+	valve(valve>0) = 1;
 
-% set zero
-for i = 1:width(PID)
-	PID(:,i) = PID(:,i) - mean(PID(1:300,i));
-	EAG(:,i) = EAG(:,i) - mean(EAG(1:300,i));
-end
-
-% filter
-PID = bandPass(PID,Inf,30);
-EAG = bandPass(EAG,2e3,Inf);
-
-offset = 500;
-[K, EAG_prediction, gain, gain_err] = extractFilters(PID,EAG,'filter_length',2e3,'filter_offset',offset);
-
-plot(axes_handles(8),mean(EAG_prediction,2),mean(EAG,2),'k.')
-
-[mean_stim,inst_gain,e] = makeFig6G(mean(PID,2),mean(EAG,2),mean(EAG_prediction,2),500);
-
-inst_gain(e < .8) = NaN;
-inst_gain(1:5e3) = NaN;
-
-axis(axes_handles(9)); hold on
-plotPieceWiseLinear(mean_stim(~isnan(inst_gain)),inst_gain(~isnan(inst_gain)),'nbins',40,'make_plot',true,'use_std',true);
-
-legend(['\rho = ' oval(spear(mean_stim(~isnan(inst_gain)),inst_gain(~isnan(inst_gain))))]);
-xlabel('Mean Stimulus in preceding 250ms (mV)')
-ylabel('Inst. Gain')
-set(gca,'YLim',[0 2.5]);
-
-
-%  ######   #######   ######  ##     ## ######## ######## ####  ######   ######  
-% ##    ## ##     ## ##    ## ###   ### ##          ##     ##  ##    ## ##    ## 
-% ##       ##     ## ##       #### #### ##          ##     ##  ##       ##       
-% ##       ##     ##  ######  ## ### ## ######      ##     ##  ##        ######  
-% ##       ##     ##       ## ##     ## ##          ##     ##  ##             ## 
-% ##    ## ##     ## ##    ## ##     ## ##          ##     ##  ##    ## ##    ## 
-%  ######   #######   ######  ##     ## ########    ##    ####  ######   ######  
-
-
-
-% clean up -- remove the scatter points
-for j = [2 5]
-	h=get(axes_handles(j),'Children');
-	rm_this = [];
-	for i = 1:length(h)
-		if strcmp(get(h(i),'Marker'),'.')
-			rm_this = [rm_this i];
-		end
-	end
-	delete(h(rm_this))
-end
-
-% remove the line indicating the example history plot
-for j = [3 6]
-	h=get(axes_handles(j),'Children');
-	rm_this = [];
-	for i = 1:length(h)
-		try
-			if  strcmp(get(h(i),'LineStyle'),'-.')
-				rm_this = [rm_this i];
-			end
-		catch
-		end
-	end
-	delete(h(rm_this))
-
-	% remove the lines where the data isn't significant
-	h=get(axes_handles(j),'Children');
-	rm_this = [];
-	for i = 1:length(h)
-		try
-			if  strcmp(get(h(i),'Type'),'line')
-				rm_this = [rm_this i];
-			end
-		catch
-		end
-	end
-	delete(h(rm_this))
-
-	% make all the scatter plots smaller
-	h=get(axes_handles(j),'Children');
-	for i = 1:length(h)
-		 set(h(i),'SizeData',256)
+	% set zero
+	for i = 1:width(PID)
+		PID(:,i) = PID(:,i) - mean(PID(1:300,i));
+		EAG(:,i) = EAG(:,i) - mean(EAG(1:300,i));
+		% filter
+		PID(:,i) = bandPass(PID(:,i),Inf,30);
+		EAG(:,i) = bandPass(EAG(:,i),2e3,Inf);
 	end
 
-	set(axes_handles(j),'XLim',[.1 10],'YLim',[.6 1.45])
+
+	locust_data = ORNData;
+	locust_data.filtertime_LFP = -.5:1e-3:.9;
+	locust_data.regularisation_factor = 1;
+	locust_data.stimulus = PID;
+	locust_data.LFP = EAG;
+	locust_data = backOutFilters(locust_data);
 end
 
-
-% change the marker for each odour/neuron etc
-markers = {'+','o','*','x','s','d','p','h'};
-h = get(axes_handles(3),'Children');
-h_fake = [];
-for i = 1:length(h)/2
-	set(h(2*(i-1)+1),'Marker',markers{i},'SizeData',75);
-	set(h(2*(i-1)+2),'Marker',markers{i},'SizeData',75);
-	h_fake(i) = plot(axes_handles(3),NaN,NaN,'k','Marker',markers{i},'LineStyle','none');
-end
-l = legend(h_fake,{'1but','1o3ol','dsucc','2ac','2but','5ol'});
-set(l,'Position',[.2 .7973 .0884 .1150])
-
-markers = {'d','p','*'};
-h = get(axes_handles(6),'Children');
-h_fake = [];
-for i = 1:length(h)/2
-	set(h(2*(i-1)+1),'Marker',markers{i},'SizeData',75);
-	set(h(2*(i-1)+2),'Marker',markers{i},'SizeData',75);
-	h_fake(i) = plot(axes_handles(6),NaN,NaN,'k','Marker',markers{i},'LineStyle','none');
-end
-l = legend(h_fake,{'ab3A','pb1A','ab2A'});
-set(l,'Position',[.2 .5527 .0849 .0597])
+clear plot_handles
+plot_handles.h = plot(locust_data,axes_handles([8 12]),'gain_analysis.LFP','mean_stim_bins',200,'history_length',1);
 
 
-% cosmetics
-ylabel(axes_handles(2),'ORN Response (Hz)')
-ylabel(axes_handles(5),'ORN Response (Hz)')
-ylabel(axes_handles(8),'EAG Response (mV)')
-xlabel(axes_handles(8),'Prediction (mV)')
-ylabel(axes_handles(3),'Relative Gain')
-ylabel(axes_handles(6),'Relative Gain')
-ylabel(axes_handles(9),'Relative Gain')
-title(axes_handles(2),'')
-title(axes_handles(5),'')
-title(axes_handles(8),'')
+% replot the binned gain vs. mean stim with futher binning
+x = get(plot_handles.h(1),'XData');
+y = get(plot_handles.h(1),'YData');
+rm_this = y < 0;
+x(rm_this) = []; y(rm_this) = [];
+delete(plot_handles.h(1));
+axes(axes_handles(8));
+plot_handles.h(1) = plotPieceWiseLinear(x,y,'nbins',5,'use_std',true);
+
+
+set(plot_handles.h(1),'LineStyle','-','Marker','none')
+set(plot_handles.h(2),'LineStyle','-','Marker','none')
 
 
 
 prettyFig('plw=1.5;','lw=1.5;','fs=14;')
+
+% turn all boxes off
+for i = 1:length(axes_handles)
+	set(axes_handles(i),'box','off')
+end
 
 
 if being_published

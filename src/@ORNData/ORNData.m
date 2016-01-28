@@ -20,9 +20,8 @@ classdef ORNData
       % timing information
       dt = 1e-3;
       timescale_inst_gain = 50; % in ms
-      filter_length = 700;
-      filter_offset = 100;
       filtertime_firing = 1e-3*(1:700) - 100*1e-3;
+      filtertime_LFP = 1e-3*(1:700) - 100*1e-3;
       a = 10e3; % where do we start looking at the data
       z
 
@@ -31,7 +30,7 @@ classdef ORNData
       K_firing
       K_LFP
       K_firing_hash = 'filter not computed';
-      K_LPF_hash = 'filter not computed';
+      K_LFP_hash = 'filter not computed';
       firing_projected
       LFP_projected
       inst_gain_LFP
@@ -48,6 +47,7 @@ classdef ORNData
       orn % ID of orn
       fly % ID of fly
       paradigm 
+      console_log = '';
 
 
 
@@ -74,6 +74,7 @@ classdef ORNData
             obj.n_trials = size(value,2);
          end
          obj.firing_rate = value;
+         obj.console_log = [obj.console_log char(10) ' ' datestr(now) '    Firing Rate set'];
 
          % set z if unset 
          if isempty(obj.z)
@@ -97,6 +98,7 @@ classdef ORNData
    			obj.n_trials = size(value,2);
    		end
    		obj.stimulus = value;
+         obj.console_log = [obj.console_log char(10) ' ' datestr(now) '   Stimulus set'];
          
          % set z if unset 
          if isempty(obj.z)
@@ -113,6 +115,8 @@ classdef ORNData
    		assert(size(value,2) == obj.n_trials,'Filter dimensions do not match # of trials')
 
    		obj.K_firing = value;
+         obj.console_log = [obj.console_log char(10) ' ' datestr(now) '   K_firing rate set'];
+
    		obj = projectStimulus(obj,'firing');
    	end
 
@@ -125,7 +129,16 @@ classdef ORNData
          disp('Recomputing filters because you changed the regularisation_factor...')
          obj.regularisation_factor = value;
          obj = backOutFilters(obj);
+      end
 
+
+      function obj = set.filtertime_LFP(obj,value)
+         % validate input
+         assert(isvector(value),'filtertime_LFP must be a vector')
+
+         disp('Recomputing filters because you changed the filtertime for LFP...')
+         obj.filtertime_LFP = value;
+         obj = backOutFilters(obj);
       end
 
    end

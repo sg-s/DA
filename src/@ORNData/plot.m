@@ -40,7 +40,7 @@ else
 end
 
 % figure out WHAT to plot
-allowed_plots = {'pdf','Filter.','muSigma.','ioCurve.','LN.','weber.','laughlin.','gainAnalysis.','muSigmaR2.'};
+allowed_plots = {'timeseries.','pdf.','Filter.','muSigma.','ioCurve.','LN.','weber.','laughlin.','gainAnalysis.','muSigmaR2.'};
 temp = varargin{1};
 if isa(temp,'char')
 	% user has supplied a string, make sure we can understand it 
@@ -55,7 +55,7 @@ if isa(temp,'char')
 		varargin(1) = [];
 	else
 		disp('I dont know what you want me to plot. Allowed plot arguments are:')
-		disp(allowed_plots')
+		disp(sort(allowed_plots'))
 		error('Invalid plot argument')
 	end
 else
@@ -259,6 +259,34 @@ if any(strfind(plot_what,'muSigmaR2.'))
 	end
 	plot(plot_here,history_lengths,r2,'k+')
 	set(plot_here,'XScale','log','YLim',[-1 1])
+
+end
+
+if any(strfind(plot_what,'timeseries.'))
+	if isempty(plot_here)
+	 	clear plot_here % so that plot_here gets the right class (axes object)
+		figure('outerposition',[0 0 1000 600],'PaperUnits','points','PaperSize',[1000 600]); hold on 			
+		plot_here = gca;
+	end
+
+	time = o.dt*(1:length(o.stimulus));
+	if strfind(plot_what,'stimulus') 
+		plot_this = o.stimulus(uts,utt);
+	elseif any(strfind(plot_what,'firing')) && ~any(strfind(plot_what,'firing_projected'))
+		plot_this = o.firing_rate(uts,utt);
+	elseif strfind(plot_what,'firing_projected')
+		plot_this = o.firing_projected(uts,utt);
+	elseif strfind(plot_what,'LFP') && ~strfind(plot_what,'LFP_projected')
+		plot_this = o.LFP(uts,utt);
+	elseif strfind(plot_what,'LFP_projected')
+		plot_this = o.LFP_projected(uts,utt);
+	end
+	time = time(uts);
+	xlabel(plot_here,'Time (s)')
+
+	clear plot_options
+	plot_options.plot_type = plot_type;
+	plot_handles = plotTimeSeries(plot_here,time,plot_this,grouping,plot_options);
 
 end
 

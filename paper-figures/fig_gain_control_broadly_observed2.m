@@ -273,7 +273,7 @@ plot_handles.h(1) = plotPieceWiseLinear(x,y,'nbins',5,'use_std',true);
 set(plot_handles.h(1),'LineStyle','-','Marker','none')
 set(plot_handles.h(2),'LineStyle','-','Marker','none')
 
-
+set(axes_handles(12),'YLim',[-1 0])
 
 prettyFig('plw=1.5;','lw=1.5;','fs=14;')
 

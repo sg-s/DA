@@ -20,11 +20,13 @@ if  strcmp(filter_type,'all') || strcmp(filter_type,'firing')
 		% use hashes to check if anything has changed since last compute
 		K_firing_hash = dataHash([obj.firing_rate(:); obj.stimulus(:); obj.regularisation_factor(:); obj.filtertime_firing(:)]);
 		if ~strcmp(K_firing_hash,obj.K_firing_hash)
+			filter_length = length(obj.filtertime_firing);
+			filter_offset = find(obj.filtertime_firing == 0);
 			disp('computing filter...')
-			K = zeros(obj.filter_length,obj.n_trials);
+			K = zeros(filter_length,obj.n_trials);
 			for i = 1:obj.n_trials
 				textbar(i,obj.n_trials)
-				[temp, filtertime] = fitFilter2Data(obj.stimulus(:,i), obj.firing_rate(:,i),'filter_length',obj.filter_length+200,'reg',obj.regularisation_factor,'offset',obj.filter_offset+100);
+				[temp, filtertime] = fitFilter2Data(obj.stimulus(:,i), obj.firing_rate(:,i),'filter_length',filter_length+200,'reg',obj.regularisation_factor,'offset',filter_offset+100);
 				K(:,i) = temp(101:end-100);
 				filtertime = filtertime(101:end-100);
 			end

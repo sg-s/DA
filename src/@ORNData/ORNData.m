@@ -49,6 +49,10 @@ classdef ORNData
       paradigm 
       console_log = '';
 
+      % filters to plot subparts of the data
+      use_these_trials
+      use_this_segment
+
 
 
 

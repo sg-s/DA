@@ -35,7 +35,7 @@ else
 end
 
 % figure out WHAT to plot
-allowed_plots = {'Filter.','muSigma.','ioCurve.','LN.','weber.','laughlin.','gainAnalysis.'};
+allowed_plots = {'pdf','Filter.','muSigma.','ioCurve.','LN.','weber.','laughlin.','gainAnalysis.'};
 temp = varargin{1};
 if isa(temp,'char')
 	% user has supplied a string, make sure we can understand it 
@@ -157,4 +157,48 @@ if strfind(plot_what,'LN.')
 	plot(o,plot_here(2),strrep(plot_what,'LN.','ioCurve.'));
 
 end
+
+if strfind(plot_what,'pdf.')
+	% show a distribution of ... something
+	if isempty(plot_here)
+	 	clear plot_here % so that plot_here gets the right class (axes object)
+		figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on 			
+		plot_here = gca;
+	end
+
+	if strfind(plot_what,'stimulus')
+		xlabel('Stimulus (V)')
+		x = o.stimulus(uts,utt);
+	elseif strfind(plot_what,'firing') && ~strfind(plot_what,'firing_projected')
+		xlabel('Firing Rate (Hz)')
+		x = o.firing_rate(uts,utt);
+	elseif strfind(plot_what,'firing_projected')
+		xlabel('Projected Stimulus (V)')
+		x = o.firing_projected(uts,utt);
+	elseif strfind(plot_what,'LFP') && ~strfind(plot_what,'LFP_projected')
+		xlabel('\DeltaLFP (mV)')
+		x = o.LFP(uts,utt);
+	elseif strfind(plot_what,'LFP_projected')
+		x = o.LFP_projected(uts,utt);
+		xlabel('Projected Stimulus (V)')
+	end
+
+	ylabel(plot_here,'p.d.f')
+
+	clear plot_options
+	plot_options.ioCurve_type = ioCurve_type;
+	plot_options.nbins = nbins;
+	plot_options.showr2 = showr2;
+	plot_options.plot_type = plot_type;
+	plot_handles = plotPDF(plot_here,x,grouping,plot_options);
+end
+
+
+
+
+
+
+
+
+
 

@@ -14,6 +14,11 @@ nbins = 30;
 plot_type = 'trial-wise'; % can also be "trial-wise", or "mean"
 grouping = [];
 plot_here = [];
+history_length = 500; % in ms, or the time step of the data (which is the same)
+hl_min = 200; % in ms
+hl_max = 1e4;
+history_lengths = unique([logspace(log10(hl_min),log10(500),15) logspace(log10(500),log10(hl_max),15)]);
+
 
 % defensive programming
 assert(length(varargin)>1,'Not enough input arguments.')
@@ -35,7 +40,7 @@ else
 end
 
 % figure out WHAT to plot
-allowed_plots = {'pdf','Filter.','muSigma.','ioCurve.','LN.','weber.','laughlin.','gainAnalysis.'};
+allowed_plots = {'pdf','Filter.','muSigma.','ioCurve.','LN.','weber.','laughlin.','gainAnalysis.','muSigmaR2.'};
 temp = varargin{1};
 if isa(temp,'char')
 	% user has supplied a string, make sure we can understand it 
@@ -181,6 +186,10 @@ if strfind(plot_what,'pdf.')
 	elseif strfind(plot_what,'LFP_projected')
 		x = o.LFP_projected(uts,utt);
 		xlabel('Projected Stimulus (V)')
+	elseif strfind(plot_what,'inst_gain')
+		error('185 not coded')
+	elseif strfind(plot_what,'inst_gain_r2')
+		error('187 not coded')
 	end
 
 	ylabel(plot_here,'p.d.f')
@@ -193,9 +202,65 @@ if strfind(plot_what,'pdf.')
 	plot_handles = plotPDF(plot_here,x,grouping,plot_options);
 end
 
+if any(strfind(plot_what,'muSigma.')) && ~any(strfind(plot_what,'muSigmaR2.'))
+	if isempty(plot_here)
+	 	clear plot_here % so that plot_here gets the right class (axes object)
+		figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on 			
+		plot_here = gca;
+	end
 
+	if strfind(plot_what,'stimulus') 
+		plot_this = o.stimulus(uts,utt);
+		xlabel(plot_here,'\mu_{Stimulus} (V)')
+		ylabel(plot_here,'\sigma_{Stimulus} (V)')
+	elseif any(strfind(plot_what,'firing')) && ~any(strfind(plot_what,'firing_projected'))
+		plot_this = o.firing_rate(uts,utt);
+		xlabel(plot_here,'\mu_{Firing Rate} (Hz)')
+		ylabel(plot_here,'\sigma_{Firing Rate} (Hz)')
+	elseif strfind(plot_what,'firing_projected')
+		plot_this = o.firing_projected(uts,utt);
+		xlabel(plot_here,'\mu_{Projected Stim.} (V)')
+		ylabel(plot_here,'\sigma_{Projected Stim.} (V)')
+	elseif strfind(plot_what,'LFP') && ~strfind(plot_what,'LFP_projected')
+		plot_this = o.LFP(uts,utt);
+	elseif strfind(plot_what,'LFP_projected')
+		plot_this = o.LFP_projected(uts,utt);
+	end
+	plot_this = plot_this(:);
 
+	plot_handles = plotMuSigma(plot_here,plot_this,history_length,true);
+end
 
+if any(strfind(plot_what,'muSigmaR2.'))
+	if isempty(plot_here)
+	 	clear plot_here % so that plot_here gets the right class (axes object)
+		figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on 			
+		plot_here = gca;
+	end
+
+	if strfind(plot_what,'stimulus') 
+		plot_this = o.stimulus(uts,utt);
+	elseif any(strfind(plot_what,'firing')) && ~any(strfind(plot_what,'firing_projected'))
+		plot_this = o.firing_rate(uts,utt);
+	elseif strfind(plot_what,'firing_projected')
+		plot_this = o.firing_projected(uts,utt);
+	elseif strfind(plot_what,'LFP') && ~strfind(plot_what,'LFP_projected')
+		plot_this = o.LFP(uts,utt);
+	elseif strfind(plot_what,'LFP_projected')
+		plot_this = o.LFP_projected(uts,utt);
+	end
+	ylabel(plot_here,'\rho')
+	xlabel(plot_here,'History Length (ms)')
+	plot_this = plot_this(:);
+
+	r2 = NaN*history_lengths;
+	for i = 1:length(history_lengths)
+		[~,r2(i)] = plotMuSigma([],plot_this,history_lengths(i),false);
+	end
+	plot(plot_here,history_lengths,r2,'k+')
+	set(plot_here,'XScale','log','YLim',[-1 1])
+
+end
 
 
 

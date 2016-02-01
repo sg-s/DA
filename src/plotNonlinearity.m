@@ -33,6 +33,9 @@ for i = 1:length(groups)
 			for j = 1:width(this_pred)
 				 plot_handles(i).line(j) = plotPieceWiseLinearN(plot_here,this_pred(:,j),this_resp(:,j),c(i,:),plot_options.nbins);
 			end
+			% also super-impose the mean
+			plot_handles(i).line(j+1) = plotPieceWiseLinearN(plot_here,nanmean(this_pred,2),nanmean(this_resp,2),c(i,:),plot_options.nbins);
+			set(plot_handles(i).line(j+1),'LineWidth',3)
 		elseif strcmp(plot_options.plot_type,'sem')
 			axis(plot_here);
 			plot_handles(i) = plotPieceWiseLinear(this_pred,this_resp,'nbins',plot_options.nbins,'make_plot',true,'Color',c(i,:));
@@ -56,6 +59,7 @@ end
 	function plot_handle = plotPieceWiseLinearN(plot_here,x,y,colour,nbins)
 		[~,data] = plotPieceWiseLinear(x,y,'nbins',nbins,'make_plot',false);
 		plot_handle = plot(plot_here,data.x,data.y,'Color',colour);
+
 	end
 
 

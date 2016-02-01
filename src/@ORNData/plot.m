@@ -21,9 +21,9 @@ o = varargin{1};
 assert(isa(o,'ORNData'),'1st argument should be an object from the ORNData class')
 varargin(1) = [];
 
-% figure out where to plot
+% figure out WHERE to plot
 temp = varargin{1};
-if strcmp(class(temp),'matlab.graphics.axis.Axes')
+if isa(temp,'matlab.graphics.axis.Axes')
 	% user has supplied a handlle to a axis; make sure it is valid
 	if min(isvalid(temp))
 		plot_here = varargin{1};
@@ -35,9 +35,9 @@ else
 end
 
 % figure out WHAT to plot
-allowed_plots = {'L.','muSigma.','ioCurve.','LN.','weber.','laughlin.','gainAnalysis.'};
+allowed_plots = {'Filter.','muSigma.','ioCurve.','LN.','weber.','laughlin.','gainAnalysis.'};
 temp = varargin{1};
-if strcmp(class(temp),'char')
+if isa(temp,'char')
 	% user has supplied a string, make sure we can understand it 
 	ok = false;
 	for i = 1:length(allowed_plots)
@@ -58,7 +58,7 @@ else
 end
 
 % handle any additional arguments (they have to be options in name value syntax )
-if length(varargin) 
+if ~isempty(varargin) 
 	if iseven(length(varargin))
 		for ii = 1:2:length(varargin)-1
 			temp = varargin{ii};
@@ -84,8 +84,42 @@ else
 end
 
 
+if strfind(plot_what,'Filter.')
+	if isempty(plot_here)
+		clear plot_here % so that plot_here gets the right class (axes object)
+		figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on 			
+		plot_here = gca;
+	end
+	% only plot fitlers. figure out which filters to plot
+	if strfind(plot_what,'firing')
+		filtertime = o.filtertime_firing;
+		K = o.K_firing;
+	elseif strfind(plot_what,'LFP')
+		filtertime = o.filtertime_LFP;
+		K = o.K_LFP;
+	else
+		error('What to plot not specified. You told me to plot the ioCurve, but the only things I can plot the ioCurve of are "firing" or "LFP"')
+	end
+
+	if strcmp(plot_type,'trial-wise')
+		plot_handles = plot(plot_here,filtertime,K,'Color',[.5 .5 .5]);
+		plot_handles(end+1) = plot(plot_here,filtertime,nanmean(K,2),'Color','k','LineWidth',3);
+	elseif strcmp(plot_type,'sem')
+		axis(plot_here);
+		plot_handles = errorShade(filtertime,nanmean(K,2),sem(K'),'Color',[0 0 0]);
+	elseif strcmp(plot_type,'mean')
+		plot_handles = plot(plot_here,filtertime,nanmean(K,2),'Color','k','LineWidth',2);
+	else
+		error('Unknown plot type')
+	end
+	xlabel(plot_here,'Filter Lag (s)')
+	ylabel(plot_here,'Filter')
+
+end
+
 if strfind(plot_what,'ioCurve.') 
 	if isempty(plot_here)
+		clear plot_here % so that plot_here gets the right class (axes object)
 		figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on 			
 		plot_here = gca;
 	end
@@ -93,8 +127,10 @@ if strfind(plot_what,'ioCurve.')
 	if strfind(plot_what,'firing')
 		pred = o.firing_projected(uts,utt);
 		resp = o.firing_rate(uts,utt);
+		ylabel(plot_here,'Firing Rate (Hz)')
 
 	elseif strfind(plot_what,'LFP')
+			ylabel(plot_here,'\DeltaLFP (mV)')
 		error('73 not coded')
 	else
 		error('What to plot not specified. You told me to plot the ioCurve, but the only things I can plot the ioCurve of are "firing" or "LFP"')
@@ -106,4 +142,19 @@ if strfind(plot_what,'ioCurve.')
 	plot_options.showr2 = showr2;
 	plot_options.plot_type = plot_type;
 	plot_handles = plotNonlinearity(plot_here,pred,resp,grouping,plot_options);
+	xlabel(plot_here,'Projected Stimulus (V)')
+
 end
+
+if strfind(plot_what,'LN.')
+	 if isempty(plot_here)
+	 	clear plot_here % so that plot_here gets the right class (axes object)
+		figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on 			
+		plot_here(1) = subplot(1,2,1); hold on
+		plot_here(2) = subplot(1,2,2); hold on
+	end
+	plot(o,plot_here(1),strrep(plot_what,'LN.','Filter.'));
+	plot(o,plot_here(2),strrep(plot_what,'LN.','ioCurve.'));
+
+end
+

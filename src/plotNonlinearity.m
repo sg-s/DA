@@ -21,6 +21,11 @@ else
 	c = parula(length(groups)+1);
 end
 
+if plot_options.normalise
+	resp = resp - min(min(resp));
+	resp = resp/max(max(resp));
+end
+
 for i = 1:length(groups)
 	this_group = groups(i);
 
@@ -31,7 +36,7 @@ for i = 1:length(groups)
 	if strcmp(plot_options.ioCurve_type,'pwlinear')
 		if strcmp(plot_options.plot_type,'trial-wise')
 			for j = 1:width(this_pred)
-				 plot_handles(i).line(j) = plotPieceWiseLinearN(plot_here,this_pred(:,j),this_resp(:,j),c(i,:),plot_options.nbins);
+				 plot_handles(i).line(j) = plotPieceWiseLinearN(plot_here,this_pred(:,j),this_resp(:,j),[c(i,:) .3],plot_options.nbins);
 			end
 			% also super-impose the mean
 			plot_handles(i).line(j+1) = plotPieceWiseLinearN(plot_here,nanmean(this_pred,2),nanmean(this_resp,2),c(i,:),plot_options.nbins);

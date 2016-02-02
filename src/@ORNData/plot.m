@@ -1,4 +1,13 @@
 %ORNDATA/plot.m
+% overloaded plot function for the ORNDATA class
+% plot makes various plots from data in the ORNDATA class
+% 
+% minimal usage:
+% plot(orn_data,'plot_what'), e.g. plot(orn_data,'timeseries.firing_rate')
+%
+% where the first argument is a ORNData object, and the second argument is a 
+% string specifying what sort of plot to make. 
+% Use plot(orn_data,'help') to get more info.
 % 
 % created by Srinivas Gorur-Shandilya at 9:20 , 01 February 2016. Contact me at http://srinivas.gs/contact/
 % 
@@ -40,7 +49,7 @@ else
 end
 
 % figure out WHAT to plot
-allowed_plots = {'timeseries.','pdf.','Filter.','muSigma.','ioCurve.','LN.','weber.','laughlin.','gainAnalysis.','muSigmaR2.'};
+allowed_plots = {'help','timeseries','pdf','Filter','muSigma','ioCurve','LN','weber','laughlin','gainAnalysis','muSigmaR2'};
 temp = varargin{1};
 if isa(temp,'char')
 	% user has supplied a string, make sure we can understand it 
@@ -88,6 +97,21 @@ else
 	uts = o.use_this_segment;
 end
 
+if any(strfind(plot_what,'help'))
+	disp('ORNData/plot')
+	disp('You are viewing the help on how to tell plot what to plot.')
+	disp('You can specify what you want to plot with a string as the 2nd or 3rd argument.')
+	disp('The string comprises of three parts, separated by a period:')
+	disp('plot_type.data_type.modifier')
+	disp('Allowed plot types are:')
+	disp(sort(allowed_plots'))
+	disp('')
+	disp('Allowed data types are almost any reasonable property in the ORNdata class.')
+	disp('e.g., "firing_rate" is a property of the ORNData class.')
+	disp('The third part, the modifier, specifies the X axis if ambiguous. e.g.,')
+	disp('>> plot(orn_data,''gainAnalysis.firing.mu'')')
+
+end
 
 if strfind(plot_what,'Filter.')
 	if isempty(plot_here)
@@ -96,14 +120,14 @@ if strfind(plot_what,'Filter.')
 		plot_here = gca;
 	end
 	% only plot fitlers. figure out which filters to plot
-	if strfind(plot_what,'firing')
+	if strfind(plot_what,'firing_rate')
 		filtertime = o.filtertime_firing;
 		K = o.K_firing;
 	elseif strfind(plot_what,'LFP')
 		filtertime = o.filtertime_LFP;
 		K = o.K_LFP;
 	else
-		error('What to plot not specified. You told me to plot the ioCurve, but the only things I can plot the ioCurve of are "firing" or "LFP"')
+		error('What to plot not specified. You told me to plot the ioCurve, but the only things I can plot the ioCurve of are "firing_rate" or "LFP"')
 	end
 
 	if strcmp(plot_type,'trial-wise')
@@ -129,7 +153,7 @@ if strfind(plot_what,'ioCurve.')
 		plot_here = gca;
 	end
 	% only plot nonlinearity. figure out what to plot
-	if strfind(plot_what,'firing')
+	if strfind(plot_what,'firing_rate')
 		pred = o.firing_projected(uts,utt);
 		resp = o.firing_rate(uts,utt);
 		ylabel(plot_here,'Firing Rate (Hz)')
@@ -138,7 +162,7 @@ if strfind(plot_what,'ioCurve.')
 			ylabel(plot_here,'\DeltaLFP (mV)')
 		error('73 not coded')
 	else
-		error('What to plot not specified. You told me to plot the ioCurve, but the only things I can plot the ioCurve of are "firing" or "LFP"')
+		error('What to plot not specified. You told me to plot the ioCurve, but the only things I can plot the ioCurve of are "firing_rate" or "LFP"')
 	end
 
 	clear plot_options
@@ -174,7 +198,7 @@ if strfind(plot_what,'pdf.')
 	if strfind(plot_what,'stimulus')
 		xlabel('Stimulus (V)')
 		x = o.stimulus(uts,utt);
-	elseif strfind(plot_what,'firing') && ~strfind(plot_what,'firing_projected')
+	elseif strfind(plot_what,'firing_rate') 
 		xlabel('Firing Rate (Hz)')
 		x = o.firing_rate(uts,utt);
 	elseif strfind(plot_what,'firing_projected')
@@ -213,7 +237,7 @@ if any(strfind(plot_what,'muSigma.')) && ~any(strfind(plot_what,'muSigmaR2.'))
 		plot_this = o.stimulus(uts,utt);
 		xlabel(plot_here,'\mu_{Stimulus} (V)')
 		ylabel(plot_here,'\sigma_{Stimulus} (V)')
-	elseif any(strfind(plot_what,'firing')) && ~any(strfind(plot_what,'firing_projected'))
+	elseif any(strfind(plot_what,'firing_rate')) && ~any(strfind(plot_what,'firing_projected'))
 		plot_this = o.firing_rate(uts,utt);
 		xlabel(plot_here,'\mu_{Firing Rate} (Hz)')
 		ylabel(plot_here,'\sigma_{Firing Rate} (Hz)')
@@ -240,7 +264,7 @@ if any(strfind(plot_what,'muSigmaR2.'))
 
 	if strfind(plot_what,'stimulus') 
 		plot_this = o.stimulus(uts,utt);
-	elseif any(strfind(plot_what,'firing')) && ~any(strfind(plot_what,'firing_projected'))
+	elseif any(strfind(plot_what,'firing_rate')) && ~any(strfind(plot_what,'firing_projected'))
 		plot_this = o.firing_rate(uts,utt);
 	elseif strfind(plot_what,'firing_projected')
 		plot_this = o.firing_projected(uts,utt);
@@ -271,15 +295,20 @@ if any(strfind(plot_what,'timeseries.'))
 
 	time = o.dt*(1:length(o.stimulus));
 	if strfind(plot_what,'stimulus') 
+		ylabel(plot_here,'Stimulus (V)')
 		plot_this = o.stimulus(uts,utt);
-	elseif any(strfind(plot_what,'firing')) && ~any(strfind(plot_what,'firing_projected'))
+	elseif any(strfind(plot_what,'firing_rate')) && ~any(strfind(plot_what,'firing_projected'))
 		plot_this = o.firing_rate(uts,utt);
+		ylabel(plot_here,'Firing Rate (Hz)')
 	elseif strfind(plot_what,'firing_projected')
+		ylabel(plot_here,'Projected Stimulus (V)')
 		plot_this = o.firing_projected(uts,utt);
 	elseif strfind(plot_what,'LFP') && ~strfind(plot_what,'LFP_projected')
 		plot_this = o.LFP(uts,utt);
+		ylabel(plot_here,'\DeltaLFP (mV)')
 	elseif strfind(plot_what,'LFP_projected')
 		plot_this = o.LFP_projected(uts,utt);
+		ylabel(plot_here,'Projected Stimulus (V)')
 	end
 	time = time(uts);
 	xlabel(plot_here,'Time (s)')
@@ -291,7 +320,35 @@ if any(strfind(plot_what,'timeseries.'))
 end
 
 
+if any(strfind(plot_what,'laughlin.'))
+	if isempty(plot_here)
+	 	clear plot_here % so that plot_here gets the right class (axes object)
+		figure('outerposition',[0 0 400 800],'PaperUnits','points','PaperSize',[400 800]); hold on 		
+		plot_here(1) = subplot(2,1,1); hold on
+		plot_here(2) = subplot(2,1,2); hold on
+	end
+	if strfind(plot_what,'firing_rate') 
+		x = o.firing_projected(uts,utt);
+		y = o.firing_rate(uts,utt);
+	elseif strfind(plot_what,'LFP') 
+		x = o.LFP_projected(uts,utt);
+		y = o.LFP(uts,utt);
+	end
 
+	% first show the PDF of the projected stimulus
+	clear plot_options
+	plot_options.nbins = nbins;
+	plot_options.plot_type = plot_type;
+	plot_handles(1).pdf = plotPDF(plot_here(1),x,grouping,plot_options);
+
+	plot_handles(2).h = plotLaughlin(plot_here(2),x,y,grouping,plot_options);
+
+	% labels
+	ylabel(plot_here(1),'p.d.f')
+	xlabel(plot_here(2),'Projected Stimulus (V)')
+	ylabel(plot_here(2),'Response (norm)')
+
+end
 
 
 

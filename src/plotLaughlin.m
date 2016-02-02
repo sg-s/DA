@@ -62,7 +62,7 @@ for i = 1:length(groups)
 		% now plot the normalised neuron I/o curve
 		plot_options.normalise = true;
 		plot_options.ioCurve_type = 'pwlinear';
-		plot_options.plot_type = 'mean';
+		plot_options.plot_type = 'sem';
 		plot_handles(i).io_curve = plotNonlinearity(plot_here,X,Y,grouping,plot_options);
 	end
 end

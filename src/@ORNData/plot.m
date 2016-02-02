@@ -134,7 +134,7 @@ if strfind(plot_what,'Filter.')
 		plot_handles = plot(plot_here,filtertime,K,'Color',[.5 .5 .5]);
 		plot_handles(end+1) = plot(plot_here,filtertime,nanmean(K,2),'Color','k','LineWidth',3);
 	elseif strcmp(plot_type,'sem')
-		axis(plot_here);
+		axes(plot_here); 
 		plot_handles = errorShade(filtertime,nanmean(K,2),sem(K'),'Color',[0 0 0]);
 	elseif strcmp(plot_type,'mean')
 		plot_handles = plot(plot_here,filtertime,nanmean(K,2),'Color','k','LineWidth',2);
@@ -170,6 +170,7 @@ if strfind(plot_what,'ioCurve.')
 	plot_options.nbins = nbins;
 	plot_options.showr2 = showr2;
 	plot_options.plot_type = plot_type;
+	plot_options.normalise = false;
 	plot_handles = plotNonlinearity(plot_here,pred,resp,grouping,plot_options);
 	xlabel(plot_here,'Projected Stimulus (V)')
 
@@ -182,8 +183,9 @@ if strfind(plot_what,'LN.')
 		plot_here(1) = subplot(1,2,1); hold on
 		plot_here(2) = subplot(1,2,2); hold on
 	end
-	plot(o,plot_here(1),strrep(plot_what,'LN.','Filter.'));
-	plot(o,plot_here(2),strrep(plot_what,'LN.','ioCurve.'));
+	% recursively call plot with new arguments
+	plot(o,plot_here(1),strrep(plot_what,'LN.','Filter.'),'plot_type',plot_type);
+	plot(o,plot_here(2),strrep(plot_what,'LN.','ioCurve.'),'plot_type',plot_type);
 
 end
 

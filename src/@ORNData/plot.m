@@ -163,7 +163,7 @@ if strfind(plot_what,'ioCurve.')
 	end
 
 	clear plot_options
-	plot_options.ioCurve_type = ioCurve_type;
+	plot_options.data_bin_type = data_bin_type;
 	plot_options.nbins = nbins;
 	plot_options.showr2 = showr2;
 	plot_options.plot_type = plot_type;
@@ -194,10 +194,10 @@ if strfind(plot_what,'pdf.')
 		plot_here = gca;
 	end
 
-	if strfind(plot_what,'stimulus')
+	if any(strfind(plot_what,'stimulus'))
 		xlabel('Stimulus (V)')
 		x = o.stimulus(uts,utt);
-	elseif strfind(plot_what,'firing_rate') 
+	elseif any(strfind(plot_what,'firing_rate'))
 		xlabel('Firing Rate (Hz)')
 		x = o.firing_rate(uts,utt);
 	elseif strfind(plot_what,'firing_projected')
@@ -206,25 +206,34 @@ if strfind(plot_what,'pdf.')
 	elseif any(strfind(plot_what,'LFP')) && ~any(strfind(plot_what,'LFP_projected'))
 		xlabel('\DeltaLFP (mV)')
 		x = o.LFP(uts,utt);
-	elseif strfind(plot_what,'LFP_projected')
+	elseif any(strfind(plot_what,'LFP_projected'))
 		x = o.LFP_projected(uts,utt);
 		xlabel('Projected Stimulus (V)')
-	elseif strfind(plot_what,'inst_gain_firing')
+	elseif any(strfind(plot_what,'inst_gain_firing'))
 		x = o.inst_gain_firing; y = o.inst_gain_firing_err;
 		x(x<0 | y < min_inst_gain_r2) = [];
+		x = log(x);
 		xlabel('Inst. Gain (Hz/V)')
-	elseif strfind(plot_what,'inst_gain_firing_err')
+	elseif any(strfind(plot_what,'inst_gain_firing_err'))
 		error('187 not coded')
 	end
 
 	ylabel(plot_here,'p.d.f')
 
 	clear plot_options
-	plot_options.ioCurve_type = ioCurve_type;
+	plot_options.data_bin_type = data_bin_type;
 	plot_options.nbins = nbins;
 	plot_options.showr2 = showr2;
 	plot_options.plot_type = plot_type;
 	plot_handles = plotPDF(plot_here,x,grouping,plot_options);
+
+	if any(strfind(plot_what,'inst_gain_firing'))
+		% change the X axis to compensate for us taking the logarithm
+		plot_handles.line(1).XData = exp(plot_handles.line(1).XData);
+		plot_handles.line(2).XData = exp(plot_handles.line(2).XData);
+		set(plot_here,'XSCale','log')
+		xlabel(plot_here,'Inst. Gain (Hz/V)')
+	end
 end
 
 if any(strfind(plot_what,'muSigma.')) && ~any(strfind(plot_what,'muSigmaR2.'))
@@ -374,7 +383,10 @@ if any(strfind(plot_what,'instGainAnalysis.'))
 
 	use_mean = false;
 	if strfind(plot_what,'.mu') 
+		xlabel(plot_here(1),'\mu_{Stimulus} in preceding window (V)')
 		use_mean = true;
+	else
+		xlabel(plot_here(1),'\sigma_{Stimulus} in preceding window (V)')
 	end
 
 	clear plot_options
@@ -392,11 +404,16 @@ if any(strfind(plot_what,'instGainAnalysis.'))
 	for i = 1:length(history_length)
 		plot_options.history_length = history_length(i);
 		% find the closest hit in history_lengths
-		[~,temp] = min(abs(history_lengths - history_length(i)));
+		if length(history_length) > 1
+			[~,temp] = min(abs(history_lengths - history_length(i)));
+		else
+			temp = 1;
+		end
 		plot_options.colour = c(temp,:);
 		plot_handles(1).lines(i) = plotInstGainVsStim(plot_here(1),y,ye,s,plot_options);
 	end
 	ylabel(plot_here(1),'Inst. Gain (Hz/V)')
+
 
 	rho = NaN*history_lengths;
 	plot_options.make_plot = false;

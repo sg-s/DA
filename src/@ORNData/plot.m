@@ -18,15 +18,16 @@ function [plot_handles] = plot(varargin)
 
 % options and defaults
 showr2 = false;
-ioCurve_type = 'pwlinear'; % can also be "dots"
+data_bin_type = 'pwlinear'; % can also be "dots"
 nbins = 30;
-plot_type = 'trial-wise'; % can also be "trial-wise", or "mean"
+plot_type = 'trial-wise'; % can also be "sem", or "mean"
 grouping = [];
 plot_here = [];
 history_length = 500; % in ms, or the time step of the data (which is the same)
 hl_min = 200; % in ms
 hl_max = 1e4;
 history_lengths = unique([logspace(log10(hl_min),log10(500),15) logspace(log10(500),log10(hl_max),15)]);
+min_inst_gain_r2 = .8; % r2 values of inst. gain below this are discarded
 
 
 % defensive programming
@@ -49,7 +50,7 @@ else
 end
 
 % figure out WHAT to plot
-allowed_plots = {'help','timeseries','pdf','Filter','muSigma','ioCurve','LN','weber','laughlin','gainAnalysis','muSigmaR2'};
+allowed_plots = {'help.','timeseries.','pdf.','Filter.','muSigma.','ioCurve.','LN.','weber.','laughlin.','instGainAnalysis.','muSigmaR2.'};
 temp = varargin{1};
 if isa(temp,'char')
 	% user has supplied a string, make sure we can understand it 
@@ -90,6 +91,10 @@ if isempty(o.use_these_trials)
 	utt = 1:o.n_trials;
 else
 	utt = o.use_these_trials;
+	if ~isempty(grouping)
+		grouping = grouping(utt);
+	end
+	
 end
 if isempty(o.use_this_segment)
 	uts = 1:length(o.stimulus);
@@ -122,25 +127,17 @@ if strfind(plot_what,'Filter.')
 	% only plot fitlers. figure out which filters to plot
 	if strfind(plot_what,'firing_rate')
 		filtertime = o.filtertime_firing;
-		K = o.K_firing;
+		K = o.K_firing(:,utt);
 	elseif strfind(plot_what,'LFP')
 		filtertime = o.filtertime_LFP;
-		K = o.K_LFP;
+		K = o.K_LFP(:,utt);
 	else
 		error('What to plot not specified. You told me to plot the ioCurve, but the only things I can plot the ioCurve of are "firing_rate" or "LFP"')
 	end
 
-	if strcmp(plot_type,'trial-wise')
-		plot_handles = plot(plot_here,filtertime,K,'Color',[.5 .5 .5]);
-		plot_handles(end+1) = plot(plot_here,filtertime,nanmean(K,2),'Color','k','LineWidth',3);
-	elseif strcmp(plot_type,'sem')
-		axes(plot_here); 
-		plot_handles = errorShade(filtertime,nanmean(K,2),sem(K'),'Color',[0 0 0]);
-	elseif strcmp(plot_type,'mean')
-		plot_handles = plot(plot_here,filtertime,nanmean(K,2),'Color','k','LineWidth',2);
-	else
-		error('Unknown plot type')
-	end
+	clear plot_options
+	plot_options.plot_type = plot_type;
+	plot_handles= plotFilters(plot_here,filtertime,K,grouping,plot_options);
 	xlabel(plot_here,'Filter Lag (s)')
 	ylabel(plot_here,'Filter')
 
@@ -177,15 +174,15 @@ if strfind(plot_what,'ioCurve.')
 end
 
 if strfind(plot_what,'LN.')
-	 if isempty(plot_here)
+	if isempty(plot_here)
 	 	clear plot_here % so that plot_here gets the right class (axes object)
 		figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on 			
 		plot_here(1) = subplot(1,2,1); hold on
 		plot_here(2) = subplot(1,2,2); hold on
 	end
 	% recursively call plot with new arguments
-	plot(o,plot_here(1),strrep(plot_what,'LN.','Filter.'),'plot_type',plot_type);
-	plot(o,plot_here(2),strrep(plot_what,'LN.','ioCurve.'),'plot_type',plot_type);
+	plot(o,plot_here(1),strrep(plot_what,'LN.','Filter.'),'plot_type',plot_type,'grouping',grouping);
+	plot(o,plot_here(2),strrep(plot_what,'LN.','ioCurve.'),'plot_type',plot_type,'grouping',grouping);
 
 end
 
@@ -206,15 +203,17 @@ if strfind(plot_what,'pdf.')
 	elseif strfind(plot_what,'firing_projected')
 		xlabel('Projected Stimulus (V)')
 		x = o.firing_projected(uts,utt);
-	elseif strfind(plot_what,'LFP') && ~strfind(plot_what,'LFP_projected')
+	elseif any(strfind(plot_what,'LFP')) && ~any(strfind(plot_what,'LFP_projected'))
 		xlabel('\DeltaLFP (mV)')
 		x = o.LFP(uts,utt);
 	elseif strfind(plot_what,'LFP_projected')
 		x = o.LFP_projected(uts,utt);
 		xlabel('Projected Stimulus (V)')
-	elseif strfind(plot_what,'inst_gain')
-		error('185 not coded')
-	elseif strfind(plot_what,'inst_gain_r2')
+	elseif strfind(plot_what,'inst_gain_firing')
+		x = o.inst_gain_firing; y = o.inst_gain_firing_err;
+		x(x<0 | y < min_inst_gain_r2) = [];
+		xlabel('Inst. Gain (Hz/V)')
+	elseif strfind(plot_what,'inst_gain_firing_err')
 		error('187 not coded')
 	end
 
@@ -352,5 +351,75 @@ if any(strfind(plot_what,'laughlin.'))
 
 end
 
+if any(strfind(plot_what,'instGainAnalysis.'))
+
+	% verify that we get three arguments
+	assert(length(strfind(plot_what,'.'))==2,'string specfiying what to plot should have 3 parts, since you are asking for a inst. gain analysis. e.g, "instGainAnalysis.firing_rate.mu')
+
+	if isempty(plot_here)
+	 	clear plot_here % so that plot_here gets the right class (axes object)
+		figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on 			
+		plot_here(1) = subplot(1,2,1); hold on
+		plot_here(2) = subplot(1,2,2); hold on
+	end
+
+	if strfind(plot_what,'.firing_rate') 
+		y = o.inst_gain_firing;
+		ye = o.inst_gain_firing_err;
+	elseif strfind(plot_what,'.LFP') 
+		y = o.inst_gain_LFP;
+		ye = o.inst_gain_LFP_err;
+	end
+	s = nanmean(o.stimulus(uts,utt),2);
+
+	use_mean = false;
+	if strfind(plot_what,'.mu') 
+		use_mean = true;
+	end
+
+	clear plot_options
+	plot_options.use_mean = use_mean;
+	plot_options.make_plot = true;
+	plot_options.min_inst_gain_r2 = min_inst_gain_r2;
+	plot_options.nbins = nbins;
+	plot_options.data_bin_type = data_bin_type;
+	if length(history_length) > 1
+		c = parula(floor(1.1*length(history_lengths))); % note that this colour map is on history_lengthS
+	else
+		c = [0 0 0];
+	end
+
+	for i = 1:length(history_length)
+		plot_options.history_length = history_length(i);
+		% find the closest hit in history_lengths
+		[~,temp] = min(abs(history_lengths - history_length(i)));
+		plot_options.colour = c(temp,:);
+		plot_handles(1).lines(i) = plotInstGainVsStim(plot_here(1),y,ye,s,plot_options);
+	end
+	ylabel(plot_here(1),'Inst. Gain (Hz/V)')
+
+	rho = NaN*history_lengths;
+	plot_options.make_plot = false;
+	for i = 1:length(rho)
+		plot_options.history_length = history_lengths(i);
+		[~,rho(i)] = plotInstGainVsStim(plot_here(1),y,ye,s,plot_options);
+	end
+
+
+	if length(history_length) == 1
+		plot_handles(end+1).f2 = plot(plot_here(2),history_lengths,rho,'k+');
+	else
+		for i = 1:length(history_lengths)
+			plot_handles(2).dots(i) = plot(plot_here(2),history_lengths(i),rho(i),'Marker','+','LineStyle','none','Color',c(i,:));
+		end
+	end
+	set(plot_here(2),'XScale','log','YLim',[-1 1])
+	xlabel(plot_here(2),'History Lengths (ms)')
+	ylabel(plot_here(2),'\rho')
+	
+
+
+
+end
 
 

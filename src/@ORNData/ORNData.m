@@ -22,10 +22,8 @@ classdef ORNData
       timescale_inst_gain = 50; % in ms
       filtertime_firing = 1e-3*(1:700) - 100*1e-3;
       filtertime_LFP = 1e-3*(1:700) - 100*1e-3;
-      a = 10e3; % where do we start looking at the data
-      z
 
-      % filters, projections and gain
+      % filters and projections
       regularisation_factor = .1;
       K_firing
       K_LFP
@@ -33,11 +31,16 @@ classdef ORNData
       K_LFP_hash = 'filter not computed';
       firing_projected
       LFP_projected
-      inst_gain_LFP
-      gain_LFP             % trial-wise 
+
+      % gain
+      gain_LFP 
+      gain_firing
+
+      inst_gain_LFP 
+      inst_gain_LFP_err          
       inst_gain_firing     % averaged over all trials
       inst_gain_firing_err
-      gain_firing
+      
 
       % metadata
       original_name
@@ -80,10 +83,6 @@ classdef ORNData
          obj.firing_rate = value;
          obj.console_log = [obj.console_log char(10) ' ' datestr(now) '    Firing Rate set'];
 
-         % set z if unset 
-         if isempty(obj.z)
-            obj.z = length(value);
-         end
 
       end
 
@@ -104,10 +103,7 @@ classdef ORNData
    		obj.stimulus = value;
          obj.console_log = [obj.console_log char(10) ' ' datestr(now) '   Stimulus set'];
          
-         % set z if unset 
-         if isempty(obj.z)
-            obj.z = length(value);
-         end
+
    	end
 
    	function obj = set.K_firing(obj,value)
@@ -129,8 +125,6 @@ classdef ORNData
          assert(isnumeric(value),'regularisation_factor must be a +ve number')
          assert(isscalar(value),'regularisation_factor must be a +ve number')
          assert(value>0,'regularisation_factor must be a +ve number')
-
-         disp('Recomputing filters because you changed the regularisation_factor...')
          obj.regularisation_factor = value;
          obj = backOutFilters(obj);
       end
@@ -140,9 +134,14 @@ classdef ORNData
          % validate input
          assert(isvector(value),'filtertime_LFP must be a vector')
 
-         disp('Recomputing filters because you changed the filtertime for LFP...')
          obj.filtertime_LFP = value;
          obj = backOutFilters(obj);
+      end
+
+      function obj = set.use_this_segment(obj,value)
+         % validate input
+         assert(length(value) == length(obj.stimulus),'use_this_segment must be a vector that is as long as the stimulus')
+         obj.use_this_segment = logical(value);
       end
 
    end

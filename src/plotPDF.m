@@ -25,6 +25,7 @@ for i = 1:length(groups)
 
 	% get the data for this group
 	this_X = X(:,grouping == this_group);
+
 	if strcmp(plot_options.plot_type,'trial-wise')
 		for j = 1:width(this_X)
 			[y,x] = histcounts(this_X(:,j),plot_options.nbins);

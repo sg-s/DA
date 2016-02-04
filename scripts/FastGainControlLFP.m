@@ -68,6 +68,7 @@ for i = 1:5
 
 	set(ax(7),'XScale','log','YScale','log')
 
+	suptitle(['ORN #' oval(i)])
 
 	prettyFig('fs=13;','FixLogX=true;','lw=1.3;','plw=1.2;');
 

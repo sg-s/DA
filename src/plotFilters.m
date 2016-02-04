@@ -36,7 +36,7 @@ for i = 1:length(groups)
 		axes(plot_here);
 		plot_handles(i).h = errorShade(filtertime,nanmean(this_K,2),sem(this_K'),'Color',c(i,:));
 	elseif strcmp(plot_options.plot_type,'mean')
-		plot_handles(i) = plot(filtertime,nanmean(this_K,2),'Color',c(i,:));
+		plot_handles(i) = plot(plot_here,filtertime,nanmean(this_K,2),'Color',c(i,:));
 	end
 
 

@@ -16,17 +16,18 @@ else
 end
 
 % throw out some data
-rm_this = (inst_gain_err<plot_options.min_inst_gain_r2) | inst_gain < 0;
+rm_this = (inst_gain_err<plot_options.min_inst_gain_r2 | inst_gain < 0 | isinf(inst_gain));
 rm_this(1:history_length*2) = true;
 inst_gain(rm_this) = [];
 stim(rm_this) = [];
+
 
 if plot_options.make_plot
 	if strcmp(plot_options.data_bin_type,'pwlinear')
 		axes(plot_here);
 		plot_handles = plotPieceWiseLinear(stim,inst_gain,'nbins',plot_options.nbins,'Color',plot_options.colour);
 	elseif strcmp(plot_options.data_bin_type,'dots')
-		plot_handles = plot(plot_here,stim,inst_gain,'Color',plot_options.colour,'Marker','.','LineStyle','none');
+		plot_handles = plot(plot_here,stim(1:plot_options.nbins:end),inst_gain(1:plot_options.nbins:end),'Color',plot_options.colour,'Marker','.','LineStyle','none');
 	end
 		
 else

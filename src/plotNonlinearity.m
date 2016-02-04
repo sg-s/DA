@@ -38,7 +38,7 @@ for i = 1:length(groups)
 			plot_handles(i).line(j+1) = plotPieceWiseLinearN(plot_here,nanmean(this_pred,2),nanmean(this_resp,2),c(i,:),plot_options.nbins);
 			set(plot_handles(i).line(j+1),'LineWidth',3)
 		elseif strcmp(plot_options.plot_type,'sem')
-			axis(plot_here);
+			axes(plot_here);
 			plot_handles(i) = plotPieceWiseLinear(this_pred,this_resp,'nbins',plot_options.nbins,'make_plot',true,'Color',c(i,:),'normalise',plot_options.normalise);
 		elseif strcmp(plot_options.plot_type,'mean')
 			plot_handles(i) = plotPieceWiseLinearN(plot_here,nanmean(this_pred,2),nanmean(this_resp,2),c(i,:),plot_options.nbins);

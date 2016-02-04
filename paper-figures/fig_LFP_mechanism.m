@@ -380,7 +380,7 @@ for i = 1:width(LFP)
 		z = length(LFP);
 	end
 	try
-		filtered_LFP(a:z,i) = 10*bandPass(LFP(a:z,i),1e4,10); % 10 second high pass
+		filtered_LFP(a:z,i) = 10*bandPass(LFP(a:z,i),1e4,Inf); % 10 second high pass
 	catch
 	end
 end

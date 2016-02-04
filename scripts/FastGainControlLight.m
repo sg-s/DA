@@ -54,7 +54,7 @@ if being_published
 	delete(gcf)
 end
 
-%
+%% 
 % We now repeat this analysis, but for another stimulus paradigm:
 
 do_this_paradigm = 3;

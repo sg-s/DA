@@ -156,8 +156,9 @@ if strfind(plot_what,'ioCurve.')
 		ylabel(plot_here,'Firing Rate (Hz)')
 
 	elseif strfind(plot_what,'LFP')
-			ylabel(plot_here,'\DeltaLFP (mV)')
-		error('73 not coded')
+		pred = o.LFP_projected(uts,utt);
+		resp = o.LFP(uts,utt);
+		ylabel(plot_here,'\DeltaLFP (mV)')
 	else
 		error('What to plot not specified. You told me to plot the ioCurve, but the only things I can plot the ioCurve of are "firing_rate" or "LFP"')
 	end
@@ -181,8 +182,8 @@ if strfind(plot_what,'LN.')
 		plot_here(2) = subplot(1,2,2); hold on
 	end
 	% recursively call plot with new arguments
-	plot(o,plot_here(1),strrep(plot_what,'LN.','Filter.'),'plot_type',plot_type,'grouping',grouping);
-	plot(o,plot_here(2),strrep(plot_what,'LN.','ioCurve.'),'plot_type',plot_type,'grouping',grouping);
+	plot(o,plot_here(1),strrep(plot_what,'LN.','Filter.'),'plot_type',plot_type,'grouping',grouping,'data_bin_type',data_bin_type,'showr2',showr2);
+	plot(o,plot_here(2),strrep(plot_what,'LN.','ioCurve.'),'plot_type',plot_type,'grouping',grouping,'data_bin_type',data_bin_type,'showr2',showr2);
 
 end
 
@@ -203,7 +204,7 @@ if strfind(plot_what,'pdf.')
 	elseif strfind(plot_what,'firing_projected')
 		xlabel('Projected Stimulus (V)')
 		x = o.firing_projected(uts,utt);
-	elseif any(strfind(plot_what,'LFP')) && ~any(strfind(plot_what,'LFP_projected'))
+	elseif any(strfind(plot_what,'LFP')) && ~any(strfind(plot_what,'LFP_projected')) && ~any(strfind(plot_what,'inst_gain'))
 		xlabel('\DeltaLFP (mV)')
 		x = o.LFP(uts,utt);
 	elseif any(strfind(plot_what,'LFP_projected'))
@@ -213,7 +214,12 @@ if strfind(plot_what,'pdf.')
 		x = o.inst_gain_firing; y = o.inst_gain_firing_err;
 		x(x<0 | y < min_inst_gain_r2) = [];
 		x = log(x);
-		xlabel('Inst. Gain (Hz/V)')
+		xlabel(plot_here,'Inst. Gain (Hz/V)')
+	elseif any(strfind(plot_what,'inst_gain_LFP'))
+		x = o.inst_gain_LFP; y = o.inst_gain_LFP_err;
+		x(x<0 | y < min_inst_gain_r2) = [];
+		x = log(x);
+		xlabel(plot_here,'Inst. Gain (mV/V)')
 	elseif any(strfind(plot_what,'inst_gain_firing_err'))
 		error('187 not coded')
 	end
@@ -227,12 +233,11 @@ if strfind(plot_what,'pdf.')
 	plot_options.plot_type = plot_type;
 	plot_handles = plotPDF(plot_here,x,grouping,plot_options);
 
-	if any(strfind(plot_what,'inst_gain_firing'))
+	if any(strfind(plot_what,'inst_gain'))
 		% change the X axis to compensate for us taking the logarithm
 		plot_handles.line(1).XData = exp(plot_handles.line(1).XData);
 		plot_handles.line(2).XData = exp(plot_handles.line(2).XData);
 		set(plot_here,'XSCale','log')
-		xlabel(plot_here,'Inst. Gain (Hz/V)')
 	end
 end
 
@@ -304,19 +309,19 @@ if any(strfind(plot_what,'timeseries.'))
 	end
 
 	time = o.dt*(1:length(o.stimulus));
-	if strfind(plot_what,'stimulus') 
+	if any(strfind(plot_what,'stimulus'))
 		ylabel(plot_here,'Stimulus (V)')
 		plot_this = o.stimulus(uts,utt);
 	elseif any(strfind(plot_what,'firing_rate')) && ~any(strfind(plot_what,'firing_projected'))
 		plot_this = o.firing_rate(uts,utt);
 		ylabel(plot_here,'Firing Rate (Hz)')
-	elseif strfind(plot_what,'firing_projected')
+	elseif any(strfind(plot_what,'firing_projected'))
 		ylabel(plot_here,'Projected Stimulus (V)')
 		plot_this = o.firing_projected(uts,utt);
-	elseif strfind(plot_what,'LFP') && ~strfind(plot_what,'LFP_projected')
+	elseif any(strfind(plot_what,'LFP')) && ~any(strfind(plot_what,'LFP_projected'))
 		plot_this = o.LFP(uts,utt);
 		ylabel(plot_here,'\DeltaLFP (mV)')
-	elseif strfind(plot_what,'LFP_projected')
+	elseif any(strfind(plot_what,'LFP_projected'))
 		plot_this = o.LFP_projected(uts,utt);
 		ylabel(plot_here,'Projected Stimulus (V)')
 	end
@@ -410,6 +415,7 @@ if any(strfind(plot_what,'instGainAnalysis.'))
 			temp = 1;
 		end
 		plot_options.colour = c(temp,:);
+		plot_options.nbins = nbins;
 		plot_handles(1).lines(i) = plotInstGainVsStim(plot_here(1),y,ye,s,plot_options);
 	end
 	ylabel(plot_here(1),'Inst. Gain (Hz/V)')

@@ -19,7 +19,7 @@ figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]
 for i = 1:4
 	ax(i) = subplot(2,2,i); hold on
 end
-hl = [10 500 1e4];
+hl = [10 200 1e4];
 for i = 1:3
 	plot_handles = plot(od,[ax(i) ax(4)],'instGainAnalysis.firing_rate.mu','history_lengths',logspace(-2,1,30)*1e3,'history_length',hl(i),'data_bin_type','dots','nbins',3);
 	title(ax(i),['\tau_{H} = ' oval(hl(i)) 'ms'])

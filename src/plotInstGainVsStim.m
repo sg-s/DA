@@ -5,7 +5,7 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [plot_handles,rho] = plotInstGainVsStim(plot_here,inst_gain,inst_gain_err,stim,plot_options)
+function [plot_handles,rho] = plotInstGainVsStim(plot_here,inst_gain,inst_gain_err,stim,resp,plot_options)
 
 if plot_options.use_mean
 	history_length = round(plot_options.history_length);
@@ -16,7 +16,7 @@ else
 end
 
 % throw out some data
-rm_this = (inst_gain_err<plot_options.min_inst_gain_r2 | inst_gain < 0 | isinf(inst_gain));
+rm_this = (inst_gain_err<plot_options.min_inst_gain_r2 | inst_gain < 0 | isinf(inst_gain) | resp < plot_options.min_inst_gain_firing);
 rm_this(1:history_length*2) = true;
 inst_gain(rm_this) = [];
 stim(rm_this) = [];

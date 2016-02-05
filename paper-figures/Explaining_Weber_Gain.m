@@ -91,7 +91,7 @@ for i = 1:max(paradigm)
 	hy = hy/sum(hy);
 	plot(hx,hy,'Color',c(i,:));
 end
-ylabel('p(Proj. stimulus)')
+ylabel('p(stimulus)')
 set(gca,'XLim',[0 1.5])
 title('Stimulus-defined I/O curves')
 
@@ -156,7 +156,7 @@ for i = 1:max(paradigm)
 end
 title('K_D and n can vary')
 set(gca,'XLim',[0 2])
-xlabel('Stimulus (V)')
+xlabel('Proj Stimulus (V)')
 ylabel('Response (norm)')
 
 
@@ -167,7 +167,7 @@ for i = 1:max(paradigm)
 	plot(orn_io_data(i).x,orn_io_data(i).y,'+','Color',c(i,:))
 end
 set(gca,'XLim',[0 2])
-xlabel('Stimulus (V)')
+xlabel('Proj Stimulus (V)')
 ylabel('Response (norm)')
 
 % now show the correlation between predicted gain and actual gain
@@ -218,7 +218,7 @@ for i = 1:max(paradigm)
 end
 title('Only K_D can vary')
 set(gca,'XLim',[0 2])
-xlabel('Stimulus (V)')
+xlabel('Proj Stimulus (V)')
 ylabel('Response (norm)')
 
 subplot(3,3,6), hold on
@@ -228,7 +228,7 @@ for i = 1:max(paradigm)
 	plot(orn_io_data(i).x,orn_io_data(i).y,'+','Color',c(i,:))
 end
 set(gca,'XLim',[0 2])
-xlabel('Stimulus (V)')
+xlabel('Proj Stimulus (V)')
 ylabel('Response (norm)')
 
 % now show the correlation between predicted gain and actual gain

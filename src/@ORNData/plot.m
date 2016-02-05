@@ -28,7 +28,7 @@ hl_min = 200; % in ms
 hl_max = 1e4;
 history_lengths = unique([logspace(log10(hl_min),log10(500),15) logspace(log10(500),log10(hl_max),15)]);
 min_inst_gain_r2 = .8; % r2 values of inst. gain below this are discarded
-
+min_inst_gain_firing = 10; % firing rates below 10Hz are excluded from the analysis 
 
 % defensive programming
 assert(length(varargin)>1,'Not enough input arguments.')
@@ -183,7 +183,7 @@ if strfind(plot_what,'LN.')
 	end
 	% recursively call plot with new arguments
 	plot(o,plot_here(1),strrep(plot_what,'LN.','Filter.'),'plot_type',plot_type,'grouping',grouping,'data_bin_type',data_bin_type,'showr2',showr2);
-	plot(o,plot_here(2),strrep(plot_what,'LN.','ioCurve.'),'plot_type',plot_type,'grouping',grouping,'data_bin_type',data_bin_type,'showr2',showr2);
+	plot(o,plot_here(2),strrep(plot_what,'LN.','ioCurve.'),'plot_type',plot_type,'grouping',grouping,'data_bin_type',data_bin_type,'showr2',showr2,'nbins',nbins);
 
 end
 
@@ -380,6 +380,7 @@ if any(strfind(plot_what,'instGainAnalysis.'))
 	if strfind(plot_what,'.firing_rate') 
 		y = o.inst_gain_firing;
 		ye = o.inst_gain_firing_err;
+		r = nanmean(o.firing_rate(uts,utt),2);
 	elseif strfind(plot_what,'.LFP') 
 		y = o.inst_gain_LFP;
 		ye = o.inst_gain_LFP_err;
@@ -398,6 +399,7 @@ if any(strfind(plot_what,'instGainAnalysis.'))
 	plot_options.use_mean = use_mean;
 	plot_options.make_plot = true;
 	plot_options.min_inst_gain_r2 = min_inst_gain_r2;
+	plot_options.min_inst_gain_firing = min_inst_gain_firing;
 	plot_options.nbins = nbins;
 	plot_options.data_bin_type = data_bin_type;
 	if length(history_length) > 1
@@ -416,7 +418,7 @@ if any(strfind(plot_what,'instGainAnalysis.'))
 		end
 		plot_options.colour = c(temp,:);
 		plot_options.nbins = nbins;
-		plot_handles(1).lines(i) = plotInstGainVsStim(plot_here(1),y,ye,s,plot_options);
+		plot_handles(1).lines(i) = plotInstGainVsStim(plot_here(1),y,ye,s,r,plot_options);
 	end
 	ylabel(plot_here(1),'Inst. Gain (Hz/V)')
 
@@ -425,7 +427,7 @@ if any(strfind(plot_what,'instGainAnalysis.'))
 	plot_options.make_plot = false;
 	for i = 1:length(rho)
 		plot_options.history_length = history_lengths(i);
-		[~,rho(i)] = plotInstGainVsStim(plot_here(1),y,ye,s,plot_options);
+		[~,rho(i)] = plotInstGainVsStim(plot_here(1),y,ye,s,r,plot_options);
 	end
 
 

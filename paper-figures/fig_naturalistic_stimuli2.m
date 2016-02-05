@@ -6,24 +6,7 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-% add homebrew path
-path1 = getenv('PATH');
-if isempty(strfind(path1,':/usr/local/bin'))
-    path1 = [path1 ':/usr/local/bin'];
-end
-setenv('PATH', path1);
-
-% this code determines if this function is being called 
-calling_func = dbstack;
-being_published = 0;
-if ~isempty(calling_func)
-	if find(strcmp('publish',{calling_func.name}))
-		being_published = 1;
-		unix(['tag -a publish-failed ',which(mfilename)]);
-		unix(['tag -r published ',which(mfilename)]);
-	end
-end
-tic
+pHeader;
 
 
 %% Figure 1: Gain changes with a naturalistic stimulus

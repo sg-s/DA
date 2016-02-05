@@ -1,30 +1,46 @@
-% pLinearModel.m
-% parametric linear model, that accounts for some trivial offsets
-% uses filter_gamma2, so you can use bounds to constrain it to a single lobed filter if needed
-% 
-% created by Srinivas Gorur-Shandilya at 9:57 , 26 October 2015. Contact me at http://srinivas.gs/contact/
+% Parametric Linear Model
+% the filter is modelled by a double gamma filter (two lobed)
+% created by Srinivas Gorur-Shandilya at 2:43 , 17 December 2014. Contact me at http://srinivas.gs/contact/
 % 
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [R,K] = pLinearModel(S,p)
+function [f,K,shat] = pLinearModel(s,p)
 
-S = S(:);
+% set bounds
+lb.n = 0; 
+ub.n = 6;
+lb.tau1 = 1;
+ub.tau1 = 200;
+lb.tau2 = 10;
+ub.tau2 = 200;
+lb.A = 0;
+ub.A = 2;
 
-% parameters
-p.tau;
-p.A;
+
+% show parameters for readability
 p.n;
+p.A;
+p.tau1;
+p.tau2;
+p.scale;
+p.offset;
 
-ub.A = 0;
+% make the filters
+% make the filters
+filter_length = 7*max([p.n*p.tau2  p.n*p.tau1]);
+if filter_length < length(s)/10
+else
+	filter_length = length(s)/10; % ridiculously long filters
+end
+t = 0:filter_length; 
+K = filter_gamma2(t,p);
 
-lb.n = 1;
-ub.n = 10;
+% filter the input
+shat = filter(K,1,s);
 
-lb.tau = 1;
-ub.tau = 3e2;
+% add the offset
+shat = shat + p.offset;
 
-t = 1:1000;
-K = filter_gamma(t,p);
-
-R = filter(K,1,S-mean(S));
+% scale
+f = shat*p.scale;

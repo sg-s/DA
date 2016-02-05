@@ -68,7 +68,7 @@ for i = 1:5
 
 	set(ax(7),'XScale','log','YScale','log')
 
-	suptitle(['ORN #' oval(i)])
+	suptitle(['ORN #' oval(ig)])
 
 	prettyFig('fs=13;','FixLogX=true;','lw=1.3;','plw=1.2;');
 
@@ -77,8 +77,6 @@ for i = 1:5
 		delete(gcf)
 	end
 end
-
-
 
 
 %% Version Info

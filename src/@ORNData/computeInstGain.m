@@ -51,7 +51,7 @@ if ~isempty(o.LFP) && ~isempty(o.LFP_projected) && ~isempty(o.stimulus)
 		temp1 = p(:); temp2 = r(:);
 		rm_this = isnan(temp1) | isnan(temp2);
 		temp1(rm_this) = []; temp2(rm_this) = [];
-		ff = fit(temp1,temp2,'poly3');
+		ff = fit(temp1,temp2,'poly2');
 		p = ff(p);
 	end
 

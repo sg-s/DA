@@ -63,7 +63,7 @@ paradigm(bad_trials) = [];
 % band pass all the LFP
 filtered_LFP = LFP;
 for i = 1:width(LFP)
-	filtered_LFP(:,i) = 10*bandPass(LFP(:,i),1e4,10);
+	filtered_LFP(:,i) = 10*bandPass(LFP(:,i),1e4,Inf);
 end
 
 % extract filters and compute gains

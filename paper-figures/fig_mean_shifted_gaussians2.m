@@ -381,6 +381,74 @@ if being_published
 	delete(gcf)
 end
 
+%% Timescale of gain changes in the firing rate
+% In this section, we attempt to determine the timescale of the gain changes by analyzing gain in small bins along the course of the experiment. The bin size is 50ms, and we compute the gain trial-wise, averaging them over paradigms. Only gains where the r2 of linear fit is > 0.8 are retained. Different colours indicate increasing mean stimulus, consistent with the rest of this document. 
+
+if ~exist('gain_r2','var')
+	gain = NaN*fA;
+	gain_r2 = NaN*fA;
+	window_size = 5e2;
+	for i = 1:width(PID)
+		textbar(i,width(PID))
+		for t = 5e3:10:7e3
+			x = fp(t-window_size:t,i);
+			y = fA(t-window_size:t,i);
+			[temp,gof] = fit(x(:),y(:),'poly1');
+			gain(t,i) = temp.p1;
+			gain_r2(t,i) = gof.rsquare;
+		end
+	end
+	gain(gain_r2<.8) = NaN;
+end
+
+time_to_ten_percent = NaN(max(paradigm),1);
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,3,1), hold on
+for i = 1:max(paradigm)
+	temp = nanmean(gain(:,paradigm==i),2);
+	time = 1e-3*(1:length(gain));
+	time = time(~isnan(temp));
+	temp = temp(~isnan(temp));
+	time = time - 5;
+	plot(time,temp,'+-','Color',c(i,:))
+end
+xlabel('Time since odour onset (s)')
+ylabel('Gain (Hz/V)')
+set(gca,'XScale','linear','yScale','log')
+title('Gain as a function of time')
+
+subplot(1,3,2), hold on
+for i = 1:max(paradigm)
+	temp = nanmean(gain(:,paradigm==i),2);
+	time = 1e-3*(1:length(gain));
+	m = nanmean(temp(6e3:7e3));
+	temp = temp/m;
+	time = time(~isnan(temp));
+	temp = temp(~isnan(temp));
+	time = time - 5;
+
+	time_to_ten_percent(i) = time(find(abs(temp-1) < .1,1,'first'));
+
+	plot(time,temp,'+-','Color',c(i,:))
+end
+xlabel('Time since odour onset (s)')
+ylabel('Gain (norm)')
+title('Gain normalised to asymptote')
+
+subplot(1,3,3), hold on
+plot(1:max(paradigm),time_to_ten_percent,'k+')
+xlabel('Paradigm')
+ylabel('Time to 10% of asymptote (s)')
+set(gca,'YLim',[0 2])
+title('Timescale of gain control')
+
+prettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=true;','FixLogY=0;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %% Version Info
 % 

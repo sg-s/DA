@@ -26,9 +26,6 @@ pHeader;
 %      ######   ##     ## #### ##    ## 
 
 
-clearvars -except being_published 
-
-
 %% Figure 1: ORN gain can be estimated by measuring responses to Gaussian inputs
 % Gaussian odorant inputs with short correlation times (A), elicit flickering responses in ORNs that track the odorant stimulus well (B). A linear filter K can be extracted from the odorant input and the firing rate output of the neuron (C). The slope of the residuals in a plot of the firing response vs. the linear prediction (D) is defined as the gain of the ORN. Here, we measure the ORN gain in the linear regime: the linear filter accounts for 96% of the variance in the ORN response (red line), and adding an output nonlinearity (dotted black line), only accounts for an additional 1%. The odorant used is ethyl acetate, stimulating the ab3A neuron. Shading in all plots shows the standard error of the mean. 
 
@@ -339,6 +336,7 @@ for i = 1:max(paradigm) % iterate over all paradigms
 end
 xlabel('Projected Stimulus (V)')
 ylabel('ORN Response (Hz)')
+title('Using a single filter')
 
 % find gain in each trial
 single_K_gain = NaN(width(PID),1);
@@ -384,9 +382,9 @@ end
 %% Timescale of gain changes in the firing rate
 % In this section, we attempt to determine the timescale of the gain changes by analyzing gain in small bins along the course of the experiment. The bin size is 50ms, and we compute the gain trial-wise, averaging them over paradigms. Only gains where the r2 of linear fit is > 0.8 are retained. Different colours indicate increasing mean stimulus, consistent with the rest of this document. 
 
-if ~exist('gain_r2','var')
-	gain = NaN*fA;
-	gain_r2 = NaN*fA;
+if ~exist('inst_gain','var')
+	inst_gain = NaN*fA;
+	inst_gain_r2 = NaN*fA;
 	window_size = 5e2;
 	for i = 1:width(PID)
 		textbar(i,width(PID))
@@ -394,11 +392,11 @@ if ~exist('gain_r2','var')
 			x = fp(t-window_size:t,i);
 			y = fA(t-window_size:t,i);
 			[temp,gof] = fit(x(:),y(:),'poly1');
-			gain(t,i) = temp.p1;
-			gain_r2(t,i) = gof.rsquare;
+			inst_gain(t,i) = temp.p1;
+			inst_gain_r2(t,i) = gof.rsquare;
 		end
 	end
-	gain(gain_r2<.8) = NaN;
+	inst_gain(inst_gain_r2<.8) = NaN;
 end
 
 time_to_ten_percent = NaN(max(paradigm),1);
@@ -406,8 +404,8 @@ time_to_ten_percent = NaN(max(paradigm),1);
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1), hold on
 for i = 1:max(paradigm)
-	temp = nanmean(gain(:,paradigm==i),2);
-	time = 1e-3*(1:length(gain));
+	temp = nanmean(inst_gain(:,paradigm==i),2);
+	time = 1e-3*(1:length(inst_gain));
 	time = time(~isnan(temp));
 	temp = temp(~isnan(temp));
 	time = time - 5;
@@ -420,8 +418,8 @@ title('Gain as a function of time')
 
 subplot(1,3,2), hold on
 for i = 1:max(paradigm)
-	temp = nanmean(gain(:,paradigm==i),2);
-	time = 1e-3*(1:length(gain));
+	temp = nanmean(inst_gain(:,paradigm==i),2);
+	time = 1e-3*(1:length(inst_gain));
 	m = nanmean(temp(6e3:7e3));
 	temp = temp/m;
 	time = time(~isnan(temp));

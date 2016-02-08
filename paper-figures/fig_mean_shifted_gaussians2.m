@@ -287,9 +287,99 @@ if being_published
 	delete(gcf)
 end
 
+%% Sanity Check
+% In this section, we check if my filter extractions works (comparing it to Damon's FFT-based methods) if we still see the overall phenomenology if we only use a single filter to project all the data. 
+
+% back out Damon's filters here
+K_Damon = NaN*K;
+for i = 1:width(PID)
+	if (paradigm(i)==1)
+		K_Damon(:,i) = backOutFilter(PID(a:z,i),fA(a:z,i),'offset',100,'filter_length',700);
+	end
+end
+
+figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
+subplot(2,2,1), hold on
+for i = 1:max(paradigm)
+	temp = nanmean(K(:,paradigm==i),2);
+	plot(filtertime,temp,'Color',c(i,:))
+end
+xlabel('Filter Lag (s)')
+ylabel('Filter amplitude')
+title('Filters extracted at different mean stimuli')
 
 
+subplot(2,2,2), hold on
+temp = nanmean(K(:,paradigm==1),2);
+single_K = temp;
+temp =temp/max(temp);
+plot(filtertime,temp,'k')
+temp = nanmean(K_Damon(:,paradigm==1),2); temp =temp/max(temp);
+plot(filtertime,temp,'r')
+legend({'Srinivas Filter','Damon Filter'})
+xlabel('Filter Lag (s)')
+ylabel('Filter (a.u.)')
 
+% use this to make projections everywhere
+fp = NaN*fA;
+for i = 1:width(PID)
+	fp(:,i) = convolve(1e-3*(1:length(PID)),PID(:,i),single_K,filtertime);
+end
+
+subplot(2,2,3), hold on
+ss = 100;
+all_x = 0:0.1:2;
+for i = 1:max(paradigm) % iterate over all paradigms 
+	y = nanmean(fA(a:z,paradigm == i),2);
+	x = nanmean(fp(a:z,paradigm == i),2);
+	s = nanmean(PID(a:z,paradigm == i),2);
+	x = x - nanmean(x);
+	x = x + nanmean(nanmean(s));
+	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:));
+end
+xlabel('Projected Stimulus (V)')
+ylabel('ORN Response (Hz)')
+
+% find gain in each trial
+single_K_gain = NaN(width(PID),1);
+for i = 1:width(PID)
+	try
+		temp = fit(fp(a:z,i),fA(a:z,i),'poly1');
+		single_K_gain(i) = temp.p1;
+	catch
+	end
+end
+
+subplot(2,2,4), hold on
+plot(nanmean(PID(a:z,:)),single_K_gain,'k+')
+set(gca,'XScale','log','YScale','log')
+
+% fit a power law with exponent -1
+mean_stim = nanmean(PID(a:z,:));
+single_K_gain = single_K_gain(:);
+options = fitoptions(fittype('power1'));
+options.Lower = [-Inf -1];
+options.Upper = [Inf -1];
+cf = fit(nonnans(mean_stim),nonnans(single_K_gain),'power1',options);
+plot(sort(mean_stim),cf(sort(mean_stim)),'r');
+
+
+% also fit a power law with no constraint
+mean_stim = nanmean(PID(a:z,:));
+single_K_gain = single_K_gain(:);
+cf = fit(nonnans(mean_stim),nonnans(single_K_gain),'power1');
+l = plot(sort(mean_stim),cf(sort(mean_stim)),'k--');
+legend(l,['\alpha=' oval(cf.b)])
+
+xlabel('Mean Stim (V)')
+ylabel('Gain calc. using single filter (Hz/V)')
+
+prettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=true;','FixLogY=0;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 
 %% Version Info

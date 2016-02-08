@@ -10,7 +10,7 @@ pHeader;
 
 
 %% Figure 1: Gain changes with a naturalistic stimulus
-% 
+% In this figure, we show that the gain of ab3A and ab2A ORNs changes dramatically in response to a naturalistic stimulus, and that this gain change can be correlated to the mean or the variance of the stimulus in the last 500ms. 
 
 clearvars -except being_published 
 
@@ -338,7 +338,26 @@ if being_published
 	delete(gcf)
 end
 
-return
+%% Sanity Check 1
+% Here, I show that my filter extraction works well by comparing it to Damon's FFT-based filter extraction function. Note that the two filters are almost identical:
+
+K_Damon = backOutFilter(mean(PID,2),R,'offset',200);
+figure('outerposition',[0 0 600 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(filtertime,K/max(K),'k')
+plot(filtertime(1:700),K_Damon/max(K_Damon),'r')
+xlabel('Filter Lag (s)')
+ylabel('Filter (a.u.)')
+legend({'Srinivas Filter','Damon Filter'})
+
+prettyFig;
+
+legend('boxoff')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 
 %      ######  ##     ## ########  ########     ######## ####  ######   
@@ -351,7 +370,8 @@ return
 
 
 %% Supplmentary Figure 1
-% This shows some statistics of the stimulus
+% This figure shows some statistics of the stimulus. 
+
 figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
 
 % show the rsquare of the mean and variance as a function of box size
@@ -430,11 +450,10 @@ end
 % This supplementary figure shows that the choice of filter doesn't affect our results of large, rapid gain control. 
 
 
-
-figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
+figure('outerposition',[0 0 1400 800],'PaperUnits','points','PaperSize',[1400 800]); hold on
 
 % ab3A filters and projections
-subplot(2,3,1), hold on
+subplot(2,4,1), hold on
 plot(filtertime,ab3.K,'b');
 
 % load MSG filter for ab3
@@ -449,27 +468,51 @@ set(gca,'YLim',[-.005 .04])
 
 ab3.fp2 = convolve(1e-3*(1:length(mean(ab3.PID,2))),mean(ab3.PID,2),ab3.K_white,t);
 
-subplot(2,3,3), hold on
+subplot(2,4,3), hold on
 scatter(ab3.fp2,ab3.R,scatter_size,ab3.c,'filled')
 xlabel('Projected Stimulus (V)')
 title('using white-noise filter')
 ylabel('ab3A Response (Hz)')
 set(gca,'XColor','r','XLim',[-1 14])
 
-subplot(2,3,2), hold on
+subplot(2,4,2), hold on
 scatter(ab3.fp,ab3.R,scatter_size,ab3.c,'filled')
 xlabel('Projected Stimulus (V)')
 ylabel('ab3A Response (Hz)')
 title('using nat. stimulus filter')
 set(gca,'XColor','b','XLim',[-.5 6])
 
+% now also show the gain-per-whiff vs. the mean stimulus in the preceding 500ms for the white-noise-projection
+shat = computeSmoothedStimulus(mean(ab3.PID,2),500);
+[whiff_starts,whiff_ends] = computeOnsOffs(ab3.R>10);
+mean_stim = NaN*whiff_ends;
+gain = NaN*whiff_ends;
+gain_err =  NaN*whiff_ends;
+for i = 1:length(whiff_ends)
+	mean_stim(i) = mean(shat(whiff_starts(i):whiff_ends(i)));
+	[ff,gof]=fit(ab3.fp2(whiff_starts(i):whiff_ends(i)),ab3.R(whiff_starts(i):whiff_ends(i)),'poly1');
+	gain(i) = ff.p1;
+	temp = confint(ff);
+	gain_err(i) = gof.rsquare;
+end
+rm_this = gain < 0 | gain_err < .8;
+gain(rm_this) = [];
+gain_err(rm_this) = [];
+mean_stim(rm_this) = [];
+subplot(2,4,4), hold on
+plot(mean_stim,gain,'ro');
+set(gca,'XScale','log','YScale','log')
+ylabel('Gain (Hz/V')
+xlabel('Mean Stimulus in preceding 500ms')
+title('Gain estimation using white-noise filter')
+
 % now show ab2A filters
-subplot(2,3,4), hold on
+subplot(2,4,5), hold on
 plot(filtertime,K,'b')
 ylabel('ab2A filter')
 xlabel('Lag (s)')
 
-subplot(2,3,5), hold on
+subplot(2,4,6), hold on
 shat = computeSmoothedStimulus(mean(PID,2),500);
 shat = shat-min(shat);
 shat = shat/max(shat);
@@ -488,12 +531,14 @@ set(ch,'Position',[.58 .15 .02 .1])
 caxis([min(shat) max(shat)]);
 set(gca,'XLim',[-.15 4],'XColor','b')
 
-prettyFig('fs=18;')
+prettyFig('fs=18;','FixLogX=true;')
 
 if being_published
 	snapnow
 	delete(gcf)
 end
+
+
 
 
 

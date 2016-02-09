@@ -426,7 +426,7 @@ for i = 1:max(paradigm)
 	temp = temp(~isnan(temp));
 	time = time - 5;
 
-	time_to_ten_percent(i) = time(find(abs(temp-1) < .1,1,'first'));
+	time_to_ten_percent(i) = time(find(abs(temp-1) < 1/exp(1),1,'first'));
 
 	plot(time,temp,'+-','Color',c(i,:))
 end
@@ -437,7 +437,7 @@ title('Gain normalised to asymptote')
 subplot(1,3,3), hold on
 plot(1:max(paradigm),time_to_ten_percent,'k+')
 xlabel('Paradigm')
-ylabel('Time to 10% of asymptote (s)')
+ylabel('Time to 1/e of asymptote (s)')
 set(gca,'YLim',[0 2])
 title('Timescale of gain control')
 suptitle('Timescale of firing gain control')
@@ -536,7 +536,7 @@ for i = 1:max(paradigm)
 	temp = temp(~isnan(temp));
 	time = time - 5;
 
-	time_to_ten_percent(i) = time(find(abs(temp-1) < .1,1,'first'));
+	time_to_ten_percent(i) = time(find(abs(temp-1) < 1/exp(1),1,'first'));
 
 	plot(time,temp,'+-','Color',c(i,:))
 end
@@ -547,7 +547,7 @@ title('Gain normalised to asymptote')
 subplot(2,2,4), hold on
 plot(1:max(paradigm),time_to_ten_percent,'k+')
 xlabel('Paradigm')
-ylabel('Time to 10% of asymptote (s)')
+ylabel('Time to 1/e of asymptote (s)')
 set(gca,'YLim',[0 2])
 title('Timescale of gain control')
 suptitle('Timescale of LFP gain control')

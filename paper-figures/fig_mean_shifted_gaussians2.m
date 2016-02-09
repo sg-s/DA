@@ -42,7 +42,7 @@ for i = 1:length(axes_handles)
 end  
 % load data 
 
-[PID, ~, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData('/local-data/DA-paper/LFP-MSG/september',1);
+[PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData('/local-data/DA-paper/LFP-MSG/september',1);
 
 % remove baseline from all PIDs
 for i = 1:width(PID)
@@ -380,7 +380,7 @@ if being_published
 end
 
 %% Timescale of gain changes in the firing rate
-% In this section, we attempt to determine the timescale of the gain changes by analyzing gain in small bins along the course of the experiment. The bin size is 50ms, and we compute the gain trial-wise, averaging them over paradigms. Only gains where the r2 of linear fit is > 0.8 are retained. Different colours indicate increasing mean stimulus, consistent with the rest of this document. 
+% In this section, we attempt to determine the timescale of the gain changes by analyzing gain in small bins along the course of the experiment. The bin size is 50ms, and we compute the gain trial-wise, averaging them over paradigms. Only gains where the r2 of linear fit is > 0.8 are retained. Different colours indicate increasing mean stimulus, consistent with the rest of this document. We use a single filter (show in the previous figure) to compute all the gains. 
 
 if ~exist('inst_gain','var')
 	inst_gain = NaN*fA;
@@ -440,6 +440,117 @@ xlabel('Paradigm')
 ylabel('Time to 10% of asymptote (s)')
 set(gca,'YLim',[0 2])
 title('Timescale of gain control')
+suptitle('Timescale of firing gain control')
+
+prettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=true;','FixLogY=0;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%% Timescales of change in LFP gain
+% We now repeat this analysis, but for the LFP. 
+
+% band pass all the LFP
+filtered_LFP = LFP;
+for i = 1:width(LFP)
+	filtered_LFP(:,i) = filtered_LFP(:,i) - fastFiltFilt(ones(1e4,1),1e4,filtered_LFP(:,i));
+	filtered_LFP(:,i) = filtered_LFP(:,i)*10; % to get the units right, now in mV
+end
+
+% extract filter from lowest dose
+K_LFP = K*NaN;
+K_LFP_Damon = K*NaN;
+a_LFP = 15e3; % to avoid the long, 10s filter
+z_LFP = 45e3; % ditto
+for i = 1:width(PID)
+	if (paradigm(i)==1)
+		K_LFP_Damon(:,i) = backOutFilter(PID(a_LFP:z_LFP,i),filtered_LFP(a_LFP:z_LFP,i),'offset',100,'filter_length',700);
+		temp = fitFilter2Data(PID(a_LFP:z_LFP,i),filtered_LFP(a_LFP:z_LFP,i),'offset',200,'filter_length',900,'reg',1);
+		K_LFP(:,i) = temp(101:end-100);
+	end
+end
+
+% make linear predictions using the average filter
+K_LFP_av = nanmean(K_LFP(:,paradigm==1),2);
+LFP_pred = NaN*LFP;
+for i = 1:width(PID)
+	LFP_pred(:,i) = convolve(1e-3*(1:length(PID)),PID(:,i),K_LFP_av,filtertime);
+end
+
+
+if ~exist('inst_gain_LFP','var')
+	inst_gain_LFP = NaN*fA;
+	inst_gain_LFP_r2 = NaN*fA;
+	window_size = 5e2;
+	for i = 1:width(PID)
+		textbar(i,width(PID))
+		for t = 5e3:10:7e3
+			x = LFP_pred(t-window_size:t,i);
+			y = filtered_LFP(t-window_size:t,i);
+			if ~any(isnan(x)) & ~any(isnan(y))
+				[temp,gof] = fit(x(:),y(:),'poly1');
+				inst_gain_LFP(t,i) = temp.p1;
+				inst_gain_LFP_r2(t,i) = gof.rsquare;
+			end
+		end
+	end
+	inst_gain_LFP(inst_gain_LFP_r2<.8) = NaN;
+end
+
+
+figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[900 800]); hold on
+subplot(2,2,1), hold on
+temp = nanmean(K_LFP_Damon(:,paradigm==1),2);
+temp = temp/-min(temp);
+plot(filtertime,temp,'r')
+temp = nanmean(K_LFP(:,paradigm==1),2);
+temp = temp/-min(temp);
+plot(filtertime,temp,'k')
+legend({'Damon Filter','Srinivas Filter'})
+
+time_to_ten_percent = NaN(max(paradigm),1);
+
+subplot(2,2,2), hold on
+for i = 1:max(paradigm)
+	temp = nanmean(inst_gain_LFP(:,paradigm==i),2);
+	time = 1e-3*(1:length(inst_gain_LFP));
+	time = time(~isnan(temp));
+	temp = temp(~isnan(temp));
+	time = time - 5;
+	plot(time,temp,'+-','Color',c(i,:))
+end
+xlabel('Time since odour onset (s)')
+ylabel('Gain (mV/V)')
+set(gca,'XScale','linear','yScale','log')
+title('Gain as a function of time')
+
+subplot(2,2,3), hold on
+for i = 1:max(paradigm)
+	temp = nanmean(inst_gain_LFP(:,paradigm==i),2);
+	time = 1e-3*(1:length(inst_gain));
+	m = nanmean(temp(6e3:7e3));
+	temp = temp/m;
+	time = time(~isnan(temp));
+	temp = temp(~isnan(temp));
+	time = time - 5;
+
+	time_to_ten_percent(i) = time(find(abs(temp-1) < .1,1,'first'));
+
+	plot(time,temp,'+-','Color',c(i,:))
+end
+xlabel('Time since odour onset (s)')
+ylabel('Gain (norm)')
+title('Gain normalised to asymptote')
+
+subplot(2,2,4), hold on
+plot(1:max(paradigm),time_to_ten_percent,'k+')
+xlabel('Paradigm')
+ylabel('Time to 10% of asymptote (s)')
+set(gca,'YLim',[0 2])
+title('Timescale of gain control')
+suptitle('Timescale of LFP gain control')
 
 prettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=true;','FixLogY=0;')
 

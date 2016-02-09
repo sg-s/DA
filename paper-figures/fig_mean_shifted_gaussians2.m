@@ -559,6 +559,74 @@ if being_published
 	delete(gcf)
 end
 
+%% Kinetics of Response as a function of mean stimulus
+% In this section, we determine if the firing and LFP responses slow down or speed up as a function of the mean stimulus. We do so buy computing the cross-correlation functions between the stimulus and the response for each trial, for the LFP and the firing response. 
+
+LFP_xcorr = NaN(1e3,width(PID));
+firing_xcorr = NaN(1e3,width(PID));
+
+firing_peaks = NaN*paradigm;
+LFP_peaks = NaN*paradigm;
+
+firing_xcorr_max = NaN*paradigm;
+LFP_xcorr_max = NaN*paradigm;
+
+for i = 1:width(PID)
+	s = PID(25e3:45e3,i)-mean(PID(25e3:45e3,i)); s = s/std(s);
+	f = fA(25e3:45e3,i)-mean(fA(25e3:45e3,i)); f = f/std(f);
+	r = filtered_LFP(25e3:45e3,i)-mean(filtered_LFP(25e3:45e3,i)); r = r/std(r);
+
+	temp = xcorr(f,s);
+	firing_xcorr(:,i) = temp(19.5e3+1:20.5e3);
+	[firing_xcorr_max(i),firing_peaks(i)] = max(firing_xcorr(:,i));
+	firing_xcorr(:,i) = firing_xcorr(:,i)/max(firing_xcorr(:,i));
+
+	temp = xcorr(r,s);
+	LFP_xcorr(:,i) = temp(19.5e3+1:20.5e3);
+	[LFP_xcorr_max(i),LFP_peaks(i)] = min(LFP_xcorr(:,i));
+	LFP_xcorr(:,i) = LFP_xcorr(:,i)/-min(LFP_xcorr(:,i));
+
+end
+LFP_peaks = LFP_peaks - 500;
+firing_peaks = firing_peaks - 500;
+firing_peaks(firing_peaks<0) = NaN;
+LFP_peaks(LFP_peaks<0) = NaN;
+
+figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
+ax(1) = subplot(2,2,1); hold on
+plot([0 0],[-1 1],'k--')
+title('LFP xcorr functions')
+ylabel('Cross correlation (norm)')
+xlabel('Lag (ms)')
+ax(2) = subplot(2,2,2); hold on
+plot([0 0],[-1 1],'k--')
+xlabel('Lag (ms)')
+title('Firing xcorr functions')
+for i = 1:width(PID)
+	plot(ax(1),-499:500,LFP_xcorr(:,i),'Color',c(paradigm(i),:))
+	plot(ax(2),-499:500,firing_xcorr(:,i),'Color',c(paradigm(i),:))
+end
+subplot(2,2,3), hold on
+plot(abs(firing_xcorr_max)/20e3,firing_peaks,'k+')
+plot(abs(LFP_xcorr_max)/20e3,LFP_peaks,'ro')
+legend({'Firing','LFP'})
+xlabel('Absolute Peak correlation')
+ylabel('Location of peak (ms)')
+
+subplot(2,2,4), hold on
+plot(nanmean(PID(35e3:45e3,:)),firing_peaks,'k+')
+plot(nanmean(PID(35e3:45e3,:)),LFP_peaks,'ro')
+xlabel('Mean Stimulus (V)')
+ylabel('Delay (ms)')
+
+prettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=true;','FixLogY=0;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
 %% Version Info
 % 
 pFooter;

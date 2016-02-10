@@ -67,6 +67,7 @@ paradigm = paradigm_new;
 % throw our bad traces
 bad_trials = (sum(fA) == 0 | isnan(sum(fA)));
 PID(:,bad_trials) = [];
+LFP(:,bad_trials) = [];
 fA(:,bad_trials) = [];
 paradigm(bad_trials) = [];
 orn(bad_trials) = [];
@@ -284,6 +285,7 @@ if being_published
 	delete(gcf)
 end
 
+
 %% Sanity Check
 % In this section, we check if my filter extractions works (comparing it to Damon's FFT-based methods) if we still see the overall phenomenology if we only use a single filter to project all the data. 
 
@@ -472,6 +474,9 @@ for i = 1:width(PID)
 	end
 end
 
+% find gains everywhere
+[~,~,LFP_gain] = extractFilters(PID,filtered_LFP,'use_cache',true,'a',a_LFP,'z',z_LFP);
+
 % make linear predictions using the average filter
 K_LFP_av = nanmean(K_LFP(:,paradigm==1),2);
 LFP_pred = NaN*LFP;
@@ -529,7 +534,7 @@ title('Gain as a function of time')
 subplot(2,2,3), hold on
 for i = 1:max(paradigm)
 	temp = nanmean(inst_gain_LFP(:,paradigm==i),2);
-	time = 1e-3*(1:length(inst_gain));
+	time = 1e-3*(1:length(inst_gain_LFP));
 	m = nanmean(temp(6e3:7e3));
 	temp = temp/m;
 	time = time(~isnan(temp));
@@ -592,13 +597,13 @@ firing_peaks = firing_peaks - 500;
 firing_peaks(firing_peaks<0) = NaN;
 LFP_peaks(LFP_peaks<0) = NaN;
 
-figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
-ax(1) = subplot(2,2,1); hold on
+figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1300 800]); hold on
+ax(1) = subplot(2,3,1); hold on
 plot([0 0],[-1 1],'k--')
 title('LFP xcorr functions')
 ylabel('Cross correlation (norm)')
 xlabel('Lag (ms)')
-ax(2) = subplot(2,2,2); hold on
+ax(2) = subplot(2,3,2); hold on
 plot([0 0],[-1 1],'k--')
 xlabel('Lag (ms)')
 title('Firing xcorr functions')
@@ -606,18 +611,28 @@ for i = 1:width(PID)
 	plot(ax(1),-499:500,LFP_xcorr(:,i),'Color',c(paradigm(i),:))
 	plot(ax(2),-499:500,firing_xcorr(:,i),'Color',c(paradigm(i),:))
 end
-subplot(2,2,3), hold on
+subplot(2,3,3), hold on
 plot(abs(firing_xcorr_max)/20e3,firing_peaks,'k+')
 plot(abs(LFP_xcorr_max)/20e3,LFP_peaks,'ro')
 legend({'Firing','LFP'})
 xlabel('Absolute Peak correlation')
 ylabel('Location of peak (ms)')
 
-subplot(2,2,4), hold on
+subplot(2,3,4), hold on
 plot(nanmean(PID(35e3:45e3,:)),firing_peaks,'k+')
 plot(nanmean(PID(35e3:45e3,:)),LFP_peaks,'ro')
 xlabel('Mean Stimulus (V)')
 ylabel('Delay (ms)')
+
+subplot(2,3,5), hold on
+plot(LFP_gain,LFP_peaks,'ro')
+xlabel('LFP Gain (mV/V)')
+ylabel('Response delay (ms)')
+
+subplot(2,3,6), hold on
+plot(fA_gain,firing_peaks,'k+')
+xlabel('Firing Gain (Hz/V)')
+ylabel('Response delay (ms)')
 
 prettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=true;','FixLogY=0;')
 

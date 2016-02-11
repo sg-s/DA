@@ -28,7 +28,7 @@ p.offset;
 
 % make the filters
 % make the filters
-filter_length = 7*max([p.n*p.tau2  p.n*p.tau1]);
+filter_length = 10*max([p.n*p.tau2  p.n*p.tau1]);
 if filter_length < length(s)/10
 else
 	filter_length = length(s)/10; % ridiculously long filters

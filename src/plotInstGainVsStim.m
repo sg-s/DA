@@ -16,7 +16,16 @@ else
 end
 
 % throw out some data
-rm_this = (inst_gain_err<plot_options.min_inst_gain_r2 | inst_gain < 0 | isinf(inst_gain) | resp < plot_options.min_inst_gain_firing);
+if min(resp) >= 0
+	% it's firing rate
+	rm_this = (inst_gain_err<plot_options.min_inst_gain_r2 | inst_gain < 0 | isinf(inst_gain) | resp < plot_options.min_inst_gain_firing);
+else
+	% it's LFP
+	rm_this = (inst_gain_err<plot_options.min_inst_gain_r2 | inst_gain < 0 | isinf(inst_gain));
+
+end
+
+
 rm_this(1:history_length*2) = true;
 inst_gain(rm_this) = [];
 stim(rm_this) = [];

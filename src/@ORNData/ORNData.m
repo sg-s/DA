@@ -126,7 +126,7 @@ classdef ORNData
          assert(isscalar(value),'regularisation_factor must be a +ve number')
          assert(value>0,'regularisation_factor must be a +ve number')
          obj.regularisation_factor = value;
-         obj = backOutFilters(obj);
+         %obj = backOutFilters(obj);
       end
 
 
@@ -135,7 +135,7 @@ classdef ORNData
          assert(isvector(value),'filtertime_LFP must be a vector')
 
          obj.filtertime_LFP = value;
-         obj = backOutFilters(obj);
+         %obj = backOutFilters(obj);
       end
 
       function obj = set.use_this_segment(obj,value)

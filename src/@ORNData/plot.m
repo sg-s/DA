@@ -212,7 +212,8 @@ if strfind(plot_what,'pdf.')
 		xlabel('Projected Stimulus (V)')
 	elseif any(strfind(plot_what,'inst_gain_firing'))
 		x = o.inst_gain_firing; y = o.inst_gain_firing_err;
-		x(x<0 | y < min_inst_gain_r2) = [];
+		r = nanmean(o.firing_rate(uts,utt),2);
+		x(x<0 | y < min_inst_gain_r2 | r < min_inst_gain_firing) = [];
 		x = log(x);
 		xlabel(plot_here,'Inst. Gain (Hz/V)')
 	elseif any(strfind(plot_what,'inst_gain_LFP'))
@@ -384,6 +385,7 @@ if any(strfind(plot_what,'instGainAnalysis.'))
 	elseif strfind(plot_what,'.LFP') 
 		y = o.inst_gain_LFP;
 		ye = o.inst_gain_LFP_err;
+		r = nanmean(o.LFP(uts,utt),2);
 	end
 	s = nanmean(o.stimulus(uts,utt),2);
 

@@ -46,12 +46,11 @@ end
 if ~isempty(o.LFP) && ~isempty(o.LFP_projected) && ~isempty(o.stimulus)
 	r = nanmean(o.LFP(uts,utt),2);
 	p = nanmean(o.LFP_projected(uts,utt),2);
-	useLN = true;
 	if useLN
 		temp1 = p(:); temp2 = r(:);
 		rm_this = isnan(temp1) | isnan(temp2);
 		temp1(rm_this) = []; temp2(rm_this) = [];
-		ff = fit(temp1,temp2,'poly2');
+		ff = fit(temp1,temp2,'rat24');
 		p = ff(p);
 	end
 

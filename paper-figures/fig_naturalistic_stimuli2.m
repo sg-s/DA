@@ -538,38 +538,117 @@ if being_published
 	delete(gcf)
 end
 
+%% Inst. Gain Analysis of Natural Stimulus
+% Now, we perform an instantaneous gain analysis of this data, using the analysis methods we developed for looking at the fast gain control. This analysis knows nothing of "whiffs", etc, and blindly plots the inst. gain vs. the mean stimulus in this data. In the following figure, we compute the inst. gain vs. the projected stimulus, and observe that there is a minimum in the Spearman correlation at a few hundred ms. 
 
+load('/Users/sigbhu/code/da/data/nat_stim_parametric_fits.mat','od')
 
+figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
+for i = 1:4
+	ax(i) = subplot(2,2,i); hold on
+end
+hl = [50 300 1e4];
+for i = 1:3
+	plot_handles = plot(od,[ax(i) ax(4)],'instGainAnalysis.firing_rate.mu','history_lengths',logspace(-2,1,30)*1e3,'history_length',hl(i),'nbins',300);
+	title(ax(i),['\tau_{H} = ' oval(hl(i)) 'ms'])
+	if i < 3
+		delete(plot_handles(2).f2)
+	end
+end
+set(ax(1:3),'XScale','log','YScale','log')
+set(ax(4),'YLim',[-1 0])
 
+prettyFig('fs=14;');
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%% Gain control is truly dynamic, and cannot be explained by a nonlinearity. 
+% The big question now is if the gain control we observe merely a consequence of a static nonlinearity. Based on our visualization of the response vs. the projected stimulus, we think not: we see multiple curves that cannot be fit by any one nonlinearity. However, we also observe that the Spearman correlation in the previous plot is non-zero even at very small history lengths, suggesting that the static nonlinearity contributes to some degree to the observed gain changes. 
+
+%% 
+% To show that there is a gain control mechanism even if we account for the nonlinearity, we fit a nonlinear function to the data and then compute an instantaneous gain vs. the prediction of the full LN model. 
+
+od = computeInstGain(od,true);
+
+figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
+for i = 1:4
+	ax(i) = subplot(2,2,i); hold on
+end
+hl = [50 300 1e4];
+for i = 1:3
+	plot_handles = plot(od,[ax(i) ax(4)],'instGainAnalysis.firing_rate.mu','history_lengths',logspace(-2,1,30)*1e3,'history_length',hl(i),'nbins',300);
+	title(ax(i),['\tau_{H} = ' oval(hl(i)) 'ms'])
+	if i < 3
+		delete(plot_handles(2).f2)
+	end
+	ylabel(ax(i),'Inst Gain (norm)')
+end
+set(ax(1:3),'XScale','log','YScale','log','YLim',[.5 10])
+set(ax(4),'YLim',[-1 0])
+
+prettyFig('fs=14;','FixLogY=true;');
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%% Dynamic Gain Control
+% We have shown through our inst. gain aanlysis that there is a gain control mechanism that is "dynamic" in the sense that it cannot be explained by a static nonlinearity. If this is true, a dynamic gain model (the DA Model) should outperform a LN model in explaining this data. Let's check. 
+
+% fit LN model
+R = nanmean(od.firing_rate,2);
+S = nanmean(od.stimulus,2);
+LN = nanmean(od.firing_projected,2);
+
+temp1 = LN(:); temp2 = R(:);
+rm_this = isnan(temp1) | isnan(temp2);
+temp1(rm_this) = []; temp2(rm_this) = [];
+ft = fittype('hillFit(x,A,k,n,x_offset)');
+ff = fit(temp1,temp2,ft,'StartPoint',[max(temp2) mean(temp1) 1 0],'Upper',[1e3 max(temp1) 10 Inf],'Lower',[min(temp2)/2 0 0 -Inf]);
+LN = ff(LN);
+
+% fit DA model
+clear p
+p.   s0 = 7.8242e-04;
+p.  n_z = 2;
+p.tau_z = 151.1249;
+p.  n_y = 2;
+p.tau_y = 26.7002;
+p.    C = 0.5457;
+p.    A = 163.2252;
+p.    B = 2.4703;
+DA = DAModelv2(S,p);
+
+figure('outerposition',[0 0 1500 800],'PaperUnits','points','PaperSize',[1800 500]); hold on
+subplot(2,1,1), hold on
+plot(tA,R,'k')
+l = plot(tA,LN,'r');
+legend(l,['LN Model, r^2 = ' oval(rsquare(LN,R))]);
+ylabel('Firing Rate (Hz)')
+
+subplot(2,1,2), hold on
+plot(tA,R,'k')
+l = plot(tA,DA,'r');
+legend(l,['LN Model, r^2 = ' oval(rsquare(DA,R))]);
+ylabel('Firing Rate (Hz)')
+xlabel('Time (s)')
+
+prettyFig('fs=14;','FixLogY=true;');
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% Finally, we can check that the timescale of gain control as reported by the best-fit DA model agrees with the timescale we determined using the fast gain control. The timescale of fast gain control in the DA model is (in ms):
+
+disp(p.tau_z*p.n_z)
 
 %% Version Info
 % The file that generated this document is called:
-disp(mfilename)
-
-%%
-% and its md5 hash is:
-Opt.Input = 'file';
-disp(dataHash(strcat(mfilename,'.m'),Opt))
-
-%%
-% This file should be in this commit:
-[status,m]=unix('git rev-parse HEAD');
-if ~status
-	disp(m)
-end
-
-%%
-% This file has the following external dependencies:
-showDependencyHash(mfilename);
-
-t = toc;
-
-%% 
-% This document was built in: 
-disp(strcat(oval(t,3),' seconds.'))
-
-% tag the file as being published 
-if being_published
-	unix(['tag -a published ',which(mfilename)]);
-	unix(['tag -r publish-failed ',which(mfilename)]);
-end
+pFooter;

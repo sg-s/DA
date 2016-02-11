@@ -49,4 +49,7 @@ else
 	rho = spear(stim,inst_gain);
 end
 
+% also fit a power law and get the exponent
+% ff = fit(stim,inst_gain,'power1');
+% weber_exponent = ff.b;
 

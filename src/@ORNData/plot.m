@@ -432,7 +432,7 @@ if any(strfind(plot_what,'instGainAnalysis.'))
 		[~,rho(i)] = plotInstGainVsStim(plot_here(1),y,ye,s,r,plot_options);
 	end
 
-
+	% first plot all the history lengths in black/flat colours
 	if length(history_length) == 1
 		plot_handles(end+1).f2 = plot(plot_here(2),history_lengths,rho,'k+');
 	else

@@ -8,16 +8,7 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-calling_func = dbstack;
-being_published = 0;
-if ~isempty(calling_func)
-	if find(strcmp('publish',{calling_func.name}))
-		being_published = 1;
-		unix(['tag -a publish-failed ',which(mfilename)]);
-		unix(['tag -r published ',which(mfilename)]);
-	end
-end
-tic
+pHeader;
 
 %% Natural Flickering
 % In this document, we generate odor stimuli flickers over a large range, to mimic what the fly might encounter in the "real" world. The idea is that odour stimuli are very broadly distributed in intensity, and that odour stimuli arrive in whiffs and clumps of whiffs (like in Vergassola et al.). 

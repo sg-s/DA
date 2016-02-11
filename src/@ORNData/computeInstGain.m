@@ -50,7 +50,7 @@ if ~isempty(o.LFP) && ~isempty(o.LFP_projected) && ~isempty(o.stimulus)
 		temp1 = p(:); temp2 = r(:);
 		rm_this = isnan(temp1) | isnan(temp2);
 		temp1(rm_this) = []; temp2(rm_this) = [];
-		ff = fit(temp1,temp2,'rat24');
+		ff = fit(temp1,temp2,'rat24','StartPoint',[-2.9013    2.7802    0.5358   -0.2435   -0.2933   -0.7712    0.0777]*1e5);
 		p = ff(p);
 	end
 

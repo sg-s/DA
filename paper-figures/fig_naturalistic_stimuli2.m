@@ -637,7 +637,7 @@ legend(l,['LN Model, r^2 = ' oval(rsquare(DA,R))]);
 ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')
 
-prettyFig('fs=14;','FixLogY=true;');
+prettyFig('fs=20;','FixLogY=true;');
 
 if being_published
 	snapnow
@@ -648,6 +648,21 @@ end
 % Finally, we can check that the timescale of gain control as reported by the best-fit DA model agrees with the timescale we determined using the fast gain control. The timescale of fast gain control in the DA model is (in ms):
 
 disp(p.tau_z*p.n_z)
+
+%% Visualizing the changing gain 
+% In this section, we try to visualize how the input-output curve changes over the course of this experiment by binning the data into regions where the stimulus is high or low and visualizing input-output curves for those regions. In the following figure, we plot the input-output curves for the data segregated into five quintiles. Brighter colours indicate higher stimulus in the preceding 500ms.
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(od,gca,'dynamicIO.firing_rate','nbins',100)
+
+prettyFig('fs=20;','FixLogY=true;');
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
 
 %% Version Info
 % The file that generated this document is called:

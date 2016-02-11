@@ -114,7 +114,6 @@ set(axes_handles(1),'XLim',[0 60],'XTick',[])
 ylabel(axes_handles(1),'Stimulus (V)')
 
 % make linear predictions for the whole experiment
-K = NaN(1e3,1);
 [this_K, filtertime_full] = fitFilter2Data(mean(PID(10e3:end,:),2),mean(fA(10e3:end,:),2),'reg',1,'filter_length',1200,'offset',200);
 K = this_K(100:end-101);
 filtertime = filtertime_full(100:end-101);
@@ -151,7 +150,7 @@ stim = mean(PID(10e3:55e3,[3:10 13:20]),2);
 
 
 % plot gain vs preceding stimulus
-[mean_stim,inst_gain,e] = makeFig6G(mean(PID,2),mean(fA,2),mean(fp,2),50);
+[mean_stim,inst_gain,e] = findInstGain(mean(PID,2),mean(fA,2),mean(fp,2),50);
 rm_this = (isnan(mean_stim) | isnan(inst_gain)) | e < .8 | inst_gain < 0;
 mean_stim(rm_this) = NaN;
 inst_gain(rm_this) = NaN;
@@ -252,7 +251,7 @@ end
 
 figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
 
-[mean_stim,inst_gain,e] = makeFig6G(mean(PID,2),mean(fA,2),mean(fp,2),50);
+[mean_stim,inst_gain,e] = findInstGain(mean(PID,2),mean(fA,2),mean(fp,2),50);
 subplot(2,3,1), hold on
 [y,x] = hist(e,50);
 y = y/sum(y);
@@ -329,7 +328,7 @@ pred = (fp_hill(10e3:55e3));
 time = 1e-3*(1:length(resp));
 stim = mean(PID(10e3:55e3,[3:10 13:20]),2);
 
-[p,~,~,~,~,history_lengths]=gainAnalysisWrapper('response',resp,'prediction',pred,'stimulus',stim,'time',time,'ph',ph,'history_lengths',history_lengths,'example_history_length',.5,'use_cache',true,'engine',@gainAnalysis);
+[p,~,~,~,~,history_lengths] = gainAnalysisWrapper('response',resp,'prediction',pred,'stimulus',stim,'time',time,'ph',ph,'history_lengths',history_lengths,'example_history_length',.5,'use_cache',true,'engine',@gainAnalysis);
 set(ph(4),'XLim',[.09 11]) % to show .1 and 10 on the log scale
 title(ph(4),'LN Model')
 
@@ -339,6 +338,32 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%% Gain Control beyond a static nonlinearity
+% In this section, we fit a static nonlinearity to the data, and then repeat the inst. gain analysis to show that there is still some gain control that cannot be explained by a static output nonlinearity. 
+
+load('/Users/sigbhu/code/da/data/LVP_orn_data.mat','od')
+figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
+for i = 1:4
+	ax(i) = subplot(2,2,i); hold on
+end
+hl = [50 300 1e4];
+for i = 1:3
+	plot_handles = plot(od,[ax(i) ax(4)],'instGainAnalysis.firing_rate.mu','history_lengths',logspace(-2,1,30)*1e3,'history_length',hl(i),'nbins',300);
+	title(ax(i),['\tau_{H} = ' oval(hl(i)) 'ms'])
+	if i < 3
+		delete(plot_handles(2).f2)
+	end
+	ylabel(ax(i),'Inst Gain (norm)')
+end
+set(ax(1:3),'XScale','log','YScale','log','YLim',[.5 10])
+set(ax(4),'YLim',[-1 1])
+
+prettyFig('fs=14;','FixLogY=true;');
+
+%%
+% As is clear from the figure above, fitting an output nonlinearity eliminates most of the gain control that we see. We did fit a nonlinearity when we used the Clark et al. style fast gain analysis, and we still found significant dynamic gain control. Since this analysis method is  less sensitive (because we don't bin data), it doesn't see a lot of gain control after fitting a nonlinearity.  
+
 
 
 %% Version Info

@@ -33,11 +33,21 @@ do_this_paradigm = 2;
 light_data.use_these_trials = (light_data.paradigm == do_this_paradigm);
 light_data = computeInstGain(light_data);
 
-figure('outerposition',[0 0 1300 400],'PaperUnits','points','PaperSize',[1300 400]); hold on
-ax(1) = subplot(1,4,1); hold on
-ax(2) = subplot(1,4,2); hold on
-ax(3) = subplot(1,4,3); hold on
-ax(4) = subplot(1,4,4); hold on
+figure('outerposition',[0 0 1400 800],'PaperUnits','points','PaperSize',[1400 800]); hold on
+for i = 1:6
+	ax(i) = subplot(2,3,i); hold on
+end
+hl = [50 300 1e4];
+for i = 3:5
+	plot_handles = plot(light_data,[ax(i) ax(6)],'instGainAnalysis.firing_rate.mu','history_lengths',logspace(-2,1,30)*1e3,'history_length',hl(i-2),'nbins',300);
+	title(ax(i),['\tau_{H} = ' oval(hl(i-2)) 'ms'])
+	if i < 5
+		delete(plot_handles(2).f2)
+	end
+	ylabel(ax(i),'Inst Gain (Hz/\muW)')
+end
+set(ax(3:5),'XScale','log','YScale','log','YLim',[.5 10])
+set(ax(6),'YLim',[-1 0])
 
 % show the prediction vs. the data
 plot(light_data,ax(1),'ioCurve.firing_rate','data_bin_type','dots','plot_type','mean','showr2',true);
@@ -45,9 +55,8 @@ plot(light_data,ax(1),'ioCurve.firing_rate','data_bin_type','dots','plot_type','
 % show the distribution of inst. gain
 plot(light_data,ax(2),'pdf.inst_gain_firing','nbins',100);
 
-plot(light_data,ax(3:4),'instGainAnalysis.firing_rate.mu','history_lengths',logspace(-2,1,30)*1e3,'history_length',[10 500 1e4],'data_bin_type','dots');
-set(ax(3),'XScale','log','YScale','log','XLim',[1e-5 1e2])
-prettyFig('fs=13;','FixLogX=true;','lw=1.3;','plw=1.2;')
+prettyFig('fs=14;','FixLogY=true;');
+
 
 if being_published
 	snapnow
@@ -61,11 +70,21 @@ do_this_paradigm = 3;
 light_data.use_these_trials = (light_data.paradigm == do_this_paradigm);
 light_data = computeInstGain(light_data);
 
-figure('outerposition',[0 0 1300 400],'PaperUnits','points','PaperSize',[1300 400]); hold on
-ax(1) = subplot(1,4,1); hold on
-ax(2) = subplot(1,4,2); hold on
-ax(3) = subplot(1,4,3); hold on
-ax(4) = subplot(1,4,4); hold on
+figure('outerposition',[0 0 1400 800],'PaperUnits','points','PaperSize',[1400 800]); hold on
+for i = 1:6
+	ax(i) = subplot(2,3,i); hold on
+end
+hl = [50 300 1e4];
+for i = 3:5
+	plot_handles = plot(light_data,[ax(i) ax(6)],'instGainAnalysis.firing_rate.mu','history_lengths',logspace(-2,1,30)*1e3,'history_length',hl(i-2),'nbins',300);
+	title(ax(i),['\tau_{H} = ' oval(hl(i-2)) 'ms'])
+	if i < 5
+		delete(plot_handles(2).f2)
+	end
+	ylabel(ax(i),'Inst Gain (Hz/\muW)')
+end
+set(ax(3:5),'XScale','log','YScale','log','YLim',[.5 10])
+set(ax(6),'YLim',[-1 0])
 
 % show the prediction vs. the data
 plot(light_data,ax(1),'ioCurve.firing_rate','data_bin_type','dots','plot_type','mean','showr2',true);
@@ -73,15 +92,85 @@ plot(light_data,ax(1),'ioCurve.firing_rate','data_bin_type','dots','plot_type','
 % show the distribution of inst. gain
 plot(light_data,ax(2),'pdf.inst_gain_firing','nbins',100);
 
-plot(light_data,ax(3:4),'instGainAnalysis.firing_rate.mu','history_lengths',logspace(-2,1,30)*1e3,'history_length',[10 500 1e4],'data_bin_type','dots');
-set(ax(3),'XScale','log','YScale','log','XLim',[1e-5 1e2])
-prettyFig('fs=13;','FixLogX=true;','lw=1.3;','plw=1.2;')
+prettyFig('fs=14;','FixLogY=true;');
 
 if being_published
 	snapnow
 	delete(gcf)
 end
 
+%% Gain control beyond a static nonlinearity? 
+% In this section we fit a full LN model to the data and check if there is gain control beyond a static nonlinearity. 
+
+
+do_this_paradigm = 2;
+light_data.use_these_trials = (light_data.paradigm == do_this_paradigm);
+light_data = computeInstGain(light_data,true);
+
+figure('outerposition',[0 0 1400 800],'PaperUnits','points','PaperSize',[1400 800]); hold on
+for i = 1:6
+	ax(i) = subplot(2,3,i); hold on
+end
+hl = [50 300 1e4];
+for i = 3:5
+	plot_handles = plot(light_data,[ax(i) ax(6)],'instGainAnalysis.firing_rate.mu','history_lengths',logspace(-2,1,30)*1e3,'history_length',hl(i-2),'nbins',300);
+	title(ax(i),['\tau_{H} = ' oval(hl(i-2)) 'ms'])
+	if i < 5
+		delete(plot_handles(2).f2)
+	end
+	ylabel(ax(i),'Inst Gain (Hz/\muW)')
+end
+set(ax(3:5),'XScale','log','YScale','log','YLim',[.5 10])
+set(ax(6),'YLim',[-1 .5])
+
+% show the prediction vs. the data
+plot(light_data,ax(1),'ioCurve.firing_rate','data_bin_type','dots','plot_type','mean','showr2',true);
+
+% show the distribution of inst. gain
+plot(light_data,ax(2),'pdf.inst_gain_firing','nbins',100);
+
+prettyFig('fs=14;','FixLogY=true;');
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% Now we repeat it for another dataset.
+
+do_this_paradigm = 3;
+light_data.use_these_trials = (light_data.paradigm == do_this_paradigm);
+light_data = computeInstGain(light_data,true);
+
+figure('outerposition',[0 0 1400 800],'PaperUnits','points','PaperSize',[1400 800]); hold on
+for i = 1:6
+	ax(i) = subplot(2,3,i); hold on
+end
+hl = [50 300 1e4];
+for i = 3:5
+	plot_handles = plot(light_data,[ax(i) ax(6)],'instGainAnalysis.firing_rate.mu','history_lengths',logspace(-2,1,30)*1e3,'history_length',hl(i-2),'nbins',300);
+	title(ax(i),['\tau_{H} = ' oval(hl(i-2)) 'ms'])
+	if i < 5
+		delete(plot_handles(2).f2)
+	end
+	ylabel(ax(i),'Inst Gain (Hz/\muW)')
+end
+set(ax(3:5),'XScale','log','YScale','log','YLim',[.5 10])
+set(ax(6),'YLim',[-1 .5])
+
+% show the prediction vs. the data
+plot(light_data,ax(1),'ioCurve.firing_rate','data_bin_type','dots','plot_type','mean','showr2',true);
+
+% show the distribution of inst. gain
+plot(light_data,ax(2),'pdf.inst_gain_firing','nbins',100);
+
+prettyFig('fs=14;','FixLogY=true;');
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 
 %% Version Info

@@ -50,7 +50,7 @@ else
 end
 
 % figure out WHAT to plot
-allowed_plots = {'help.','timeseries.','pdf.','Filter.','muSigma.','ioCurve.','LN.','weber.','laughlin.','instGainAnalysis.','muSigmaR2.'};
+allowed_plots = {'dynamicIO.','help.','timeseries.','pdf.','Filter.','muSigma.','ioCurve.','LN.','weber.','laughlin.','instGainAnalysis.','muSigmaR2.'};
 temp = varargin{1};
 if isa(temp,'char')
 	% user has supplied a string, make sure we can understand it 
@@ -140,6 +140,47 @@ if strfind(plot_what,'Filter.')
 	plot_handles= plotFilters(plot_here,filtertime,K,grouping,plot_options);
 	xlabel(plot_here,'Filter Lag (s)')
 	ylabel(plot_here,'Filter')
+
+end
+
+
+if strfind(plot_what,'dynamicIO.')
+ 	if isempty(plot_here)
+		clear plot_here % so that plot_here gets the right class (axes object)
+		figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on 			
+		plot_here = gca;
+	end
+	% only plot nonlinearity. figure out what to plot
+	if strfind(plot_what,'firing_rate')
+		pred = nanmean(o.firing_projected(uts,utt),2);
+		stim = nanmean(o.stimulus(uts,utt),2);
+		stim = computeSmoothedStimulus(stim,history_length);
+		resp = nanmean(o.firing_rate(uts,utt),2);
+		% respect min firing rate
+		stim(resp<min_inst_gain_firing) = NaN;
+		pred(resp<min_inst_gain_firing) = NaN;
+		resp(resp<min_inst_gain_firing) = NaN;
+		ylabel(plot_here,'Firing Rate (Hz)')
+
+	elseif strfind(plot_what,'LFP')
+		pred = nanmean(o.LFP_projected(uts,utt),2);
+		resp = nanmean(o.LFP(uts,utt),2);
+		ylabel(plot_here,'\DeltaLFP (mV)')
+	else
+		error('What to plot not specified. You told me to plot the ioCurve, but the only things I can plot the ioCurve of are "firing_rate" or "LFP"')
+	end
+	l = labelByPercentile(nonnans(stim),5);
+	L = NaN*stim;
+	L(~isnan(stim)) = l;
+	c = parula(max(L)+1);
+	for i = 1:max(l)
+		this_pred = pred(L==i);
+		this_resp = resp(L==i);
+		plotPieceWiseLinear(this_pred,this_resp,'nbins',nbins,'Color',c(i,:));
+	end
+	xlabel('Projected Stimulus (V)')
+	ylabel('ORN Response (Hz)')
+
 
 end
 

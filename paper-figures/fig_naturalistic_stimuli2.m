@@ -623,7 +623,7 @@ p.    A = 163.2252;
 p.    B = 2.4703;
 DA = DAModelv2(S,p);
 
-figure('outerposition',[0 0 1500 800],'PaperUnits','points','PaperSize',[1800 500]); hold on
+figure('outerposition',[0 0 1500 800],'PaperUnits','points','PaperSize',[1500 800]); hold on
 subplot(2,1,1), hold on
 plot(tA,R,'k')
 l = plot(tA,LN,'r');

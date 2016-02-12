@@ -43,7 +43,7 @@ end
 
 time = 1e-3*(1:length(PID));
 
-figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,5,1:4), hold on
 plot(time,nanmean(PID,2),'k')
 xlabel('Time (s)')

@@ -490,7 +490,7 @@ if ~exist('inst_gain_LFP','var')
 		textbar(i,width(PID))
 		for t = 5e3:10:7e3
 			x = LFP_pred(t-window_size:t,i);
-			y = filtered_LFP(t-window_size:t,i);
+			y = LFP(t-window_size:t,i);
 			if ~any(isnan(x)) & ~any(isnan(y))
 				[temp,gof] = fit(x(:),y(:),'poly1');
 				inst_gain_LFP(t,i) = temp.p1;
@@ -498,7 +498,7 @@ if ~exist('inst_gain_LFP','var')
 			end
 		end
 	end
-	inst_gain_LFP(inst_gain_LFP_r2<.8) = NaN;
+	inst_gain_LFP(inst_gain_LFP_r2 < .8) = NaN;
 end
 
 

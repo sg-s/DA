@@ -254,6 +254,11 @@ mean_stim(rm_this) = [];
 clear l
 l(1) = plot(axes_handles(8),mean_stim,gain,'k+');
 
+% save this so we can fit a line to all the data
+ab3.std_stim = mean_stim;
+ab3.std_stim_gain = gain;
+ab3.std_stim_gain_err = gain_err;
+
 % now add the ab2 data
 shat = abs(filter(Kdiff,length(Kdiff),mean(PID,2)));
 
@@ -276,6 +281,13 @@ mean_stim(rm_this) = [];
 l(2) = plot(axes_handles(8),mean_stim,gain,'ko');
 legend(l,{'ab3A','ab2A'})
 
+% fit a line to this
+options = fitoptions(fittype('power1'));
+options.Lower = [-Inf -1];
+options.Upper = [Inf -1];
+options.Weights = 1./[ab3.std_stim_gain_err; gain_err];
+ff = fit([ab3.std_stim; mean_stim],[ab3.std_stim_gain; gain],'power1',options);
+plot(axes_handles(8),[1e-4 1],ff([1e-4 1]),'r')
 
 % now show that the variance and the mean are correlated 
 all_block_sizes = factor2(length(ab3.PID));
@@ -337,6 +349,7 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
 
 %% Sanity Check 1
 % Here, I show that my filter extraction works well by comparing it to Damon's FFT-based filter extraction function. Note that the two filters are almost identical:

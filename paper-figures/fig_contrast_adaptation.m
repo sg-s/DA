@@ -138,8 +138,8 @@ end
 time = 1e-3*(1:length(reshaped_PID));
 s = .5; % shading opacity
 
-figure('outerposition',[0 0 1400 700],'PaperUnits','points','PaperSize',[1400 700]); hold on
-subplot(2,3,1), hold on
+figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+subplot(2,2,1), hold on
 plot(time(1:10:end),reshaped_PID(1:10:end,1:10:end),'Color',[.5 .5 .5 .5]);
 xlabel('Time since switch (s)')
 ylabel('Stimulus (V)')
@@ -148,7 +148,7 @@ plot([1 5],[1 1],'r','LineWidth',3)
 plot([6 10],[1 1],'b','LineWidth',3)
 
 
-subplot(2,3,4), hold on
+subplot(2,2,3), hold on
 plot(time(1:10:end),reshaped_fA(1:10:end,1:10:end),'Color',[.5 .5 .5 .5]);
 xlabel('Time since switch (s)')
 ylabel('ORN Response (Hz)')
@@ -157,11 +157,11 @@ plot([1 5],[80 80],'r','LineWidth',3)
 plot([6 10],[80 80],'b','LineWidth',3)
 
 % first show the high contrast epochs
-ax(1) = subplot(2,3,2); hold on
-ax(2) = subplot(2,3,5); hold on
+ax(1) = subplot(2,2,2); hold on
+ax(2) = subplot(2,2,4); hold on
 xlabel(ax(2),'Projected Stimulus (V)')
 ylabel(ax(2),'Normalised Response')
-ylabel(ax(1),'Stimulus Probability')
+ylabel(ax(1),'Probability')
 
 % high variance
 temp = fA_pred(1e3:5e3,:); 
@@ -207,12 +207,6 @@ legend(l,L,'Location','southeast')
 
 
 % now do low variance case
-ax(1) = subplot(2,3,3); hold on
-ax(2) = subplot(2,3,6); hold on
-xlabel(ax(2),'Projected Stimulus (V)')
-ylabel(ax(2),'Normalised Response')
-ylabel(ax(1),'Stimulus Probability')
-
 temp = fA_pred(6e3:9e3,:); 
 x = 0:.05:2;
 y = NaN(length(x)-1,width(temp)); 
@@ -244,6 +238,20 @@ end
 uistack(shade_handle2,'bottom')
 set(ax(1),'XLim',[0 2],'YLim',[0 .16])
 set(ax(2),'XLim',[0 2],'YLim',[0 1.1])
+
+% also plot the distributions of the means 
+h = axes(); hold(h,'on')
+set(h,'Position',[.8 .8 .1 .13])
+mean_1 = mean(reshaped_PID(1e3:5e3,:));
+mean_2 = mean(reshaped_PID(6e3:end,:));
+std_1 = std(reshaped_PID(1e3:5e3,:));
+std_2 = std(reshaped_PID(6e3:end,:));
+plot(h,mean_1,std_1,'r.')
+plot(h,mean_2,std_2,'b.')
+set(h,'XLim',[0 0.6],'YLim',[0 0.2])
+xlabel('\mu (V)')
+ylabel('\sigma (V)')
+
 
 prettyFig('FixLogX=1;','fs=16;')
 
@@ -359,40 +367,6 @@ if being_published
 	delete(gcf)
 end
 
-% supplementary figure showing gain changes are not due to change in mean
-figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
-subplot(1,3,1), hold on
-mean_1 = mean(reshaped_PID(1e3:5e3,:));
-mean_2 = mean(reshaped_PID(6e3:end,:));
-std_1 = std(reshaped_PID(1e3:5e3,:));
-std_2 = std(reshaped_PID(6e3:end,:));
-plot([0 0.6],[0 0.6],'k--')
-plot(mean_1,mean_2,'k.')
-ylabel('Mean during low variance epoch (V)')
-xlabel('Mean during high variance epoch (V)')
-
-subplot(1,3,2), hold on
-plot(mean_1,std_1,'r.')
-plot(mean_2,std_2,'b.')
-set(gca,'XLim',[0 0.6],'YLim',[0 0.2])
-xlabel('\mu_{stimulus} (V)')
-ylabel('\sigma_{stimulus} (V)')
-legend({'High variance','Low variance'},'Location','southwest')
-
-subplot(1,3,3), hold on
-weber_fit = @(x) (50./x);
-plot([0 160],[0 160],'k--')
-plot(weber_fit(mean_1),nanmean(inst_gain(1e3:5e3,:)),'r.')
-plot(weber_fit(mean_2),nanmean(inst_gain(6e3:end,:)),'b.')
-xlabel('Gain predicted by mean stimulus (Hz/V)')
-ylabel('Observed gain (Hz/V)')
-
-prettyFig('FixLogX=1;','fs=16;')
-
-if being_published
-	snapnow
-	delete(gcf)
-end
 
 %% Version Info
 % 

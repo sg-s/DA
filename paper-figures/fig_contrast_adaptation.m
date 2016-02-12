@@ -290,7 +290,7 @@ end
 
 
 % calculate instantaneous gain everywhere 
-[mean_stim,inst_gain,e] = makeFig6G(reshaped_PID(:),reshaped_fA(:),fA_pred(:),500);
+[mean_stim,inst_gain,e] = findInstGain(reshaped_PID(:),reshaped_fA(:),fA_pred(:),500);
 
 % reshape back
 inst_gain = reshape(inst_gain,size(reshaped_PID,1),size(reshaped_PID,2));

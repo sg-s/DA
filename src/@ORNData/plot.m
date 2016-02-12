@@ -20,6 +20,8 @@ function [plot_handles] = plot(varargin)
 showr2 = false;
 data_bin_type = 'pwlinear'; % can also be "dots"
 nbins = 30;
+ngroups = 5;
+use_std = false;
 plot_type = 'trial-wise'; % can also be "sem", or "mean"
 grouping = [];
 plot_here = [];
@@ -50,7 +52,7 @@ else
 end
 
 % figure out WHAT to plot
-allowed_plots = {'dynamicIO.','help.','timeseries.','pdf.','Filter.','muSigma.','ioCurve.','LN.','weber.','laughlin.','instGainAnalysis.','muSigmaR2.'};
+allowed_plots = {'dynamicIO.','help.','timeseries.','pdf.','Filter.','muSigma.','ioCurve.','LN.','weber.','laughlin.','instGainAnalysis.','muSigmaR2.','binnedGainAnalysis.'};
 temp = varargin{1};
 if isa(temp,'char')
 	% user has supplied a string, make sure we can understand it 
@@ -169,14 +171,22 @@ if strfind(plot_what,'dynamicIO.')
 	else
 		error('What to plot not specified. You told me to plot the ioCurve, but the only things I can plot the ioCurve of are "firing_rate" or "LFP"')
 	end
-	l = labelByPercentile(nonnans(stim),5);
+	l = labelByPercentile(nonnans(stim),ngroups);
 	L = NaN*stim;
 	L(~isnan(stim)) = l;
 	c = parula(max(L)+1);
-	for i = 1:max(l)
-		this_pred = pred(L==i);
-		this_resp = resp(L==i);
-		plotPieceWiseLinear(this_pred,this_resp,'nbins',nbins,'Color',c(i,:));
+	if strcmp(data_bin_type,'pwlinear')
+		for i = 1:max(l)
+			this_pred = pred(L==i);
+			this_resp = resp(L==i);
+			plotPieceWiseLinear(this_pred,this_resp,'nbins',nbins,'Color',c(i,:));
+		end
+	elseif strcmp(data_bin_type,'dots')
+		for i = 1:max(l)
+			this_pred = pred(L==i);
+			this_resp = resp(L==i);
+			plot(plot_here,this_pred,this_resp,'.','Color',c(i,:));
+		end
 	end
 	xlabel('Projected Stimulus (V)')
 	ylabel('ORN Response (Hz)')
@@ -278,7 +288,10 @@ if strfind(plot_what,'pdf.')
 	if any(strfind(plot_what,'inst_gain'))
 		% change the X axis to compensate for us taking the logarithm
 		plot_handles.line(1).XData = exp(plot_handles.line(1).XData);
-		plot_handles.line(2).XData = exp(plot_handles.line(2).XData);
+		try
+			plot_handles.line(2).XData = exp(plot_handles.line(2).XData);
+		catch
+		end
 		set(plot_here,'XSCale','log')
 	end
 end
@@ -461,6 +474,7 @@ if any(strfind(plot_what,'instGainAnalysis.'))
 		end
 		plot_options.colour = c(temp,:);
 		plot_options.nbins = nbins;
+		plot_options.use_std = use_std;
 		plot_handles(1).lines(i) = plotInstGainVsStim(plot_here(1),y,ye,s,r,plot_options);
 	end
 	ylabel(plot_here(1),'Inst. Gain (Hz/V)')
@@ -468,6 +482,7 @@ if any(strfind(plot_what,'instGainAnalysis.'))
 
 	rho = NaN*history_lengths;
 	plot_options.make_plot = false;
+	plot_options.use_std = use_std;
 	for i = 1:length(rho)
 		plot_options.history_length = history_lengths(i);
 		[~,rho(i)] = plotInstGainVsStim(plot_here(1),y,ye,s,r,plot_options);
@@ -484,10 +499,4 @@ if any(strfind(plot_what,'instGainAnalysis.'))
 	set(plot_here(2),'XScale','log','YLim',[-1 1])
 	xlabel(plot_here(2),'History Lengths (ms)')
 	ylabel(plot_here(2),'\rho')
-	
-
-
-
 end
-
-

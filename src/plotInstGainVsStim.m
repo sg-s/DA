@@ -34,7 +34,7 @@ stim(rm_this) = [];
 if plot_options.make_plot
 	if strcmp(plot_options.data_bin_type,'pwlinear')
 		axes(plot_here);
-		plot_handles = plotPieceWiseLinear(stim,inst_gain,'nbins',plot_options.nbins,'Color',plot_options.colour);
+		plot_handles = plotPieceWiseLinear(stim,inst_gain,'nbins',plot_options.nbins,'Color',plot_options.colour,'use_std',plot_options.use_std);
 	elseif strcmp(plot_options.data_bin_type,'dots')
 		plot_handles = plot(plot_here,stim(1:plot_options.nbins:end),inst_gain(1:plot_options.nbins:end),'Color',plot_options.colour,'Marker','.','LineStyle','none');
 	end

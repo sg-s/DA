@@ -579,7 +579,7 @@ for i = 1:4
 end
 hl = [50 300 1e4];
 for i = 1:3
-	plot_handles = plot(od,[ax(i) ax(4)],'instGainAnalysis.firing_rate.mu','history_lengths',logspace(-2,1,30)*1e3,'history_length',hl(i),'nbins',300);
+	plot_handles = plot(od,[ax(i) ax(4)],'binnedGainAnalysis.firing_rate.mu','history_lengths',logspace(-2,1,30)*1e3,'history_length',hl(i),'nbins',100);
 	title(ax(i),['\tau_{H} = ' oval(hl(i)) 'ms'])
 	if i < 3
 		delete(plot_handles(2).f2)
@@ -652,15 +652,26 @@ disp(p.tau_z*p.n_z)
 %% Visualizing the changing gain 
 % In this section, we try to visualize how the input-output curve changes over the course of this experiment by binning the data into regions where the stimulus is high or low and visualizing input-output curves for those regions. In the following figure, we plot the input-output curves for the data segregated into five quintiles. Brighter colours indicate higher stimulus in the preceding 500ms.
 
-figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(od,gca,'dynamicIO.firing_rate','nbins',100)
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+plot(od,gca,'dynamicIO.firing_rate','nbins',19,'min_inst_gain_firing',2)
 
+subplot(1,2,2), hold on
+da_model = ORNData;
+da_model.stimulus = S;
+da_model.firing_projected = nanmean(od.firing_projected,2);
+da_model.firing_rate = R;
+
+plot(da_model,gca,'dynamicIO.firing_rate','nbins',19,'min_inst_gain_firing',2)
+ylabel('DA Model Prediction (Hz)')
 prettyFig('fs=20;','FixLogY=true;');
 
 if being_published
 	snapnow
 	delete(gcf)
 end
+
+
 
 
 

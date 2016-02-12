@@ -119,7 +119,6 @@ end
 
 
 for i = 1:max(orn)
-	disp(i)
 	od(i) = computeInstGain(od(i));
 end
 
@@ -164,78 +163,64 @@ ax = plotyy(time,x,time,y);
 xlabel('Time (s)')
 set(ax(1),'YLim',[-0.1 2],'XLim',[10 20])
 set(ax(2),'YLim',[0 150],'XLim',[10 20])
+ylabel(ax(1),'Firing Rate (Hz)')
+ylabel(ax(2),'Proj. Stimulus (V)')
+box off
+prettyFig('fs=14;');
 
-%% Inst. Gain Control
-% Now we analyse the inst. gain in the LFP and the firing rate. 
-
-for i = 1:max(orn)
-	% first do LFP
-	figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
-	subplot(2,3,1), hold on
-	plot(od(i),gca,'pdf.inst_gain_LFP','nbins',100);
-
-	clear ax
-	ax(1) = subplot(2,3,2); hold on
-	ax(2) = subplot(2,3,3); hold on
-	plot(od(i),ax,'instGainAnalysis.LFP.mu','history_lengths',logspace(-2,1,30)*1e3,'data_bin_type','dots');
-	set(ax(1),'XScale','log','YScale','log')
-
-	subplot(2,3,4), hold on
-	plot(od(i),gca,'pdf.inst_gain_firing','nbins',100);
-
-	clear ax
-	ax(1) = subplot(2,3,5); hold on
-	ax(2) = subplot(2,3,6); hold on
-	plot(od(i),ax,'instGainAnalysis.firing_rate.mu','history_lengths',logspace(-2,1,30)*1e3,'data_bin_type','dots');
-	set(ax(1),'XScale','log','YScale','log')
-
-	prettyFig('fs=14;','FixLogX=true;');
-
-	if being_published
-		snapnow
-		delete(gcf)
-	end
+if being_published
+	snapnow
+	delete(gcf)
 end
 
-%%
-% Now we repeat the inst. gain analysis, but accounting for the nonlinearity:
+%% Dynamic Gain Control in LFP and the firing rate
+% Now we analyse the inst. gain in the LFP and the firing rate. Having learnt our lesson about dynamic gain control being something that the LN model can't account for, we compute inst. gain vs. the output of a best-fit LN model. 
 
-warning off
 for i = 1:max(orn)
-	disp(i)
 	od(i) = computeInstGain(od(i),true);
 end
-warning on
 
-
-for i = 1:max(orn)
-	% first do LFP
-	figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
-	subplot(2,3,1), hold on
-	plot(od(i),gca,'pdf.inst_gain_LFP','nbins',100);
-
-	clear ax
-	ax(1) = subplot(2,3,2); hold on
-	ax(2) = subplot(2,3,3); hold on
-	plot(od(i),ax,'instGainAnalysis.LFP.mu','history_lengths',logspace(-2,1,30)*1e3,'data_bin_type','dots');
-	set(ax(1),'XScale','log','YScale','log')
-
-	subplot(2,3,4), hold on
-	plot(od(i),gca,'pdf.inst_gain_firing','nbins',100);
-
-	clear ax
-	ax(1) = subplot(2,3,5); hold on
-	ax(2) = subplot(2,3,6); hold on
-	plot(od(i),ax,'instGainAnalysis.firing_rate.mu','history_lengths',logspace(-2,1,30)*1e3,'data_bin_type','dots');
-	set(ax(1),'XScale','log','YScale','log')
-
-	prettyFig('fs=14;','FixLogX=true;');
-
-	if being_published
-		snapnow
-		delete(gcf)
-	end
+figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+for i = 1:6
+	ax(i) = subplot(2,3,i); hold on
 end
+c = parula(max(orn)+1);
+
+for i = 2:max(orn) % skip the first because it only has one trial
+	% first do LFP inst gain distribution
+	plot_handles = plot(od(i),ax(1),'pdf.inst_gain_LFP','nbins',100,'plot_type','mean');
+	set(plot_handles.line(1),'Color',c(i,:))
+
+	% show inst. gain analysis on LFP
+	plot_handles = plot(od(i),ax(2:3),'instGainAnalysis.LFP.mu','history_lengths',logspace(-2,1,30)*1e3,'nbins',19);
+	plot_handles(1).lines.Color = c(i,:);
+	plot_handles(2).f2.Color = c(i,:);
+
+	% now do firing inst. gain distribution
+	plot_handles = plot(od(i),ax(4),'pdf.inst_gain_firing','nbins',100,'plot_type','mean');
+	set(plot_handles.line(1),'Color',c(i,:))
+
+	% show inst. gain analysis on firing rate
+	plot_handles = plot(od(i),ax(5:6),'instGainAnalysis.firing_rate.mu','history_lengths',logspace(-2,1,30)*1e3,'nbins',19);
+	plot_handles(1).lines.Color = c(i,:);
+	plot_handles(2).f2.Color = c(i,:);
+end
+set(ax(2),'XScale','log','YScale','log','YLim',[.9 11])
+set(ax(5),'XScale','log','YScale','log','YLim',[.9 11])
+ylabel(ax(2),'Inst. Gain (norm)')
+ylabel(ax(5),'Inst. Gain (norm)')
+xlabel(ax(1),'Inst. gain (norm)')
+xlabel(ax(4),'Inst. gain (norm)')
+set(ax([1 4]),'XTick',[1e-2 1e-1 1e0 1e1 1e2])
+title(ax(1),'LFP')
+title(ax(4),'Firing Rate')
+prettyFig('fs=14;','FixLogX=true;');
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 
 pFooter;

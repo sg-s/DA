@@ -49,7 +49,17 @@ for i = 1:length(groups)
 		end
 		x = mean(diff(x)) + x(1:end-1);
 		axis(plot_here);
-		plot_handles(i).h = errorShade(plot_here,x,nanmean(y,2),sem(y'),'Color',c(i,:));
+		plot_handles(i).line = errorShade(plot_here,x,nanmean(y,2),sem(y'),'Color',c(i,:));
+	elseif strcmp(plot_options.plot_type,'mean')
+		% first get the bins right
+		[y,x] = histcounts(this_X,plot_options.nbins);
+		y = NaN(length(y),width(this_X));
+		for j = 1:width(this_X)
+			[y(:,j),~] = histcounts(this_X(:,j),x);
+			y(:,j) = y(:,j)/sum(y(:,j));
+		end
+		x = mean(diff(x)) + x(1:end-1);
+		plot_handles(i).line = plot(plot_here,x,nanmean(y,2),'Color',c(i,:));
 	end
 
 

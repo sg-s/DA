@@ -401,46 +401,43 @@ if ~exist('inst_gain','var')
 	inst_gain(inst_gain_r2<.8) = NaN;
 end
 
-time_to_ten_percent = NaN(max(paradigm),1);
+timescale_firing = NaN(max(paradigm),1);
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
-subplot(1,3,1), hold on
+ax(1) = subplot(1,3,1); hold on
+ax(2) = subplot(1,3,2); hold on
 for i = 1:max(paradigm)
 	temp = nanmean(inst_gain(:,paradigm==i),2);
 	time = 1e-3*(1:length(inst_gain));
 	time = time(~isnan(temp));
 	temp = temp(~isnan(temp));
 	time = time - 5;
-	plot(time,temp,'+-','Color',c(i,:))
+
+	% fit an exponential to get a timescale
+	fo = fitoptions('Method','NonlinearLeastSquares','StartPoint',[mean(temp(1:5)) 1 1 1],'Lower',[min(temp(1:5)) 0 0 0 ],'Upper',[max(temp(1:5)) Inf Inf Inf]);
+	ft = fittype('A*exp(-x/tau+c)+d','options',fo);
+	ff = fit(time(:),temp(:),ft);
+	timescale_firing(i) = ff.tau*1e3;
+
+	plot(ax(1),time,temp,'+-','Color',c(i,:))
+	% also plot the fit
+	plot(ax(2),time,ff(time),'Color',c(i,:))
 end
-xlabel('Time since odour onset (s)')
-ylabel('Gain (Hz/V)')
-set(gca,'XScale','linear','yScale','log')
-title('Gain as a function of time')
+xlabel(ax(1),'Time since odour onset (s)')
+ylabel(ax(1),'Gain (Hz/V)')
+set(ax(1),'XScale','linear','yScale','log')
+title(ax(1),'Gain as a function of time')
 
-subplot(1,3,2), hold on
-for i = 1:max(paradigm)
-	temp = nanmean(inst_gain(:,paradigm==i),2);
-	time = 1e-3*(1:length(inst_gain));
-	m = nanmean(temp(6e3:7e3));
-	temp = temp/m;
-	time = time(~isnan(temp));
-	temp = temp(~isnan(temp));
-	time = time - 5;
-
-	time_to_ten_percent(i) = time(find(abs(temp-1) < 1/exp(1),1,'first'));
-
-	plot(time,temp,'+-','Color',c(i,:))
-end
-xlabel('Time since odour onset (s)')
-ylabel('Gain (norm)')
-title('Gain normalised to asymptote')
+xlabel(ax(2),'Time since odour onset (s)')
+ylabel(ax(2),'Gain (Hz/V)')
+set(ax(2),'XScale','linear','yScale','log')
+title(ax(2),'Exponential fits')
 
 subplot(1,3,3), hold on
-plot(1:max(paradigm),time_to_ten_percent,'k+')
+plot(1:max(paradigm),timescale_firing,'k+')
 xlabel('Paradigm')
-ylabel('Time to 1/e of asymptote (s)')
-set(gca,'YLim',[0 2])
+set(gca,'YLim',[0 200])
+ylabel('Timescale of firing (ms)')
 title('Timescale of gain control')
 suptitle('Timescale of firing gain control')
 
@@ -515,47 +512,44 @@ temp = temp/-min(temp);
 plot(filtertime,temp,'k')
 legend({'Damon Filter','Srinivas Filter'})
 
-time_to_ten_percent = NaN(max(paradigm),1);
+timescale_LFP = NaN(max(paradigm),1);
 
-subplot(2,2,2), hold on
+ax(1) = subplot(2,2,2); hold on
+ax(2) = subplot(2,2,3); hold on
 for i = 1:max(paradigm)
 	temp = nanmean(inst_gain_LFP(:,paradigm==i),2);
 	time = 1e-3*(1:length(inst_gain_LFP));
 	time = time(~isnan(temp));
 	temp = temp(~isnan(temp));
 	time = time - 5;
-	plot(time,temp,'+-','Color',c(i,:))
+
+	% fit an exponential to get a timescale
+	fo = fitoptions('Method','NonlinearLeastSquares','StartPoint',[mean(temp(1:5)) 1 1 1],'Lower',[min(temp(1:5)) 0 0 0 ],'Upper',[max(temp(1:5)) Inf Inf Inf]);
+	ft = fittype('A*exp(-x/tau+c)+d','options',fo);
+	ff = fit(time(:),temp(:),ft);
+	timescale_LFP(i) = ff.tau*1e3;
+
+	plot(ax(1),time,temp,'+-','Color',c(i,:))
+	% also plot the fit
+	plot(ax(2),time,ff(time),'Color',c(i,:))
 end
-xlabel('Time since odour onset (s)')
-ylabel('Gain (mV/V)')
-set(gca,'XScale','linear','yScale','log')
-title('Gain as a function of time')
+xlabel(ax(1),'Time since odour onset (s)')
+ylabel(ax(1),'Gain (Hz/V)')
+set(ax(1),'XScale','linear','yScale','log')
+title(ax(1),'Gain as a function of time')
 
-subplot(2,2,3), hold on
-for i = 1:max(paradigm)
-	temp = nanmean(inst_gain_LFP(:,paradigm==i),2);
-	time = 1e-3*(1:length(inst_gain_LFP));
-	m = nanmean(temp(6e3:7e3));
-	temp = temp/m;
-	time = time(~isnan(temp));
-	temp = temp(~isnan(temp));
-	time = time - 5;
-
-	time_to_ten_percent(i) = time(find(abs(temp-1) < 1/exp(1),1,'first'));
-
-	plot(time,temp,'+-','Color',c(i,:))
-end
-xlabel('Time since odour onset (s)')
-ylabel('Gain (norm)')
-title('Gain normalised to asymptote')
+xlabel(ax(2),'Time since odour onset (s)')
+ylabel(ax(2),'Gain (Hz/V)')
+set(ax(2),'XScale','linear','yScale','log')
+title(ax(2),'Exponential fits')
 
 subplot(2,2,4), hold on
-plot(1:max(paradigm),time_to_ten_percent,'k+')
+plot(1:max(paradigm),timescale_firing,'k+')
 xlabel('Paradigm')
-ylabel('Time to 1/e of asymptote (s)')
-set(gca,'YLim',[0 2])
+set(gca,'YLim',[0 200])
+ylabel('Timescale of firing (ms)')
 title('Timescale of gain control')
-suptitle('Timescale of LFP gain control')
+suptitle('Timescale of firing gain control')
 
 prettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=true;','FixLogY=0;')
 

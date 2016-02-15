@@ -221,6 +221,32 @@ if being_published
 	delete(gcf)
 end
 
+%% Whiff-based analysis
+% In this section, we attempt to look at the gain on a whiff-by-whiff basis
+
+
+R = nanmean(od(2).firing_rate,2);
+[ons,offs] = computeOnsOffs(R>10);
+rm_this = (offs-ons)>500;
+ons(rm_this) = [];
+offs(rm_this) = [];
+
+figure, hold on
+for i = 1:length(ons)
+	plot(fp(ons(i):offs(i)),R(ons(i):offs(i)),'k.')
+	pause(.5)
+end
+
+
+% for orn # 2
+    % s0: -0.0148
+    %   n_z: 2.2344
+    % tau_z: 101.2500
+    %   n_y: 8.2812
+    % tau_y: 4.5752
+    %     C: 0.7019
+    %     A: 844.8893
+    %     B: 10.6797
 
 
 pFooter;

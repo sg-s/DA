@@ -11,9 +11,9 @@ function [f,K,shat] = pLinearModel(s,p)
 lb.n = 0; 
 ub.n = 6;
 lb.tau1 = 1;
-ub.tau1 = 200;
+ub.tau1 = 400;
 lb.tau2 = 10;
-ub.tau2 = 200;
+ub.tau2 = 400;
 lb.A = 0;
 ub.A = 2;
 

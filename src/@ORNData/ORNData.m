@@ -78,8 +78,9 @@ classdef ORNData
          if ~isempty(obj.n_trials)
             % assert(obj.n_trials == size(value,2),'# of trials of firing rate should match # of trials of stimulus')
          else
-            obj.n_trials = size(value,2);
+            
          end
+         obj.n_trials = size(value,2);
          obj.firing_rate = value;
          obj.console_log = [obj.console_log char(10) ' ' datestr(now) '    Firing Rate set'];
 
@@ -98,8 +99,9 @@ classdef ORNData
    		if ~isempty(obj.n_trials)
    			% assert(obj.n_trials == size(value,2),'# of trials of firing rate should match # of trials of stimulus')
    		else
-   			obj.n_trials = size(value,2);
+   			
    		end
+         obj.n_trials = size(value,2);
    		obj.stimulus = value;
          obj.console_log = [obj.console_log char(10) ' ' datestr(now) '   Stimulus set'];
          
@@ -126,7 +128,6 @@ classdef ORNData
          assert(isscalar(value),'regularisation_factor must be a +ve number')
          assert(value>0,'regularisation_factor must be a +ve number')
          obj.regularisation_factor = value;
-         %obj = backOutFilters(obj);
       end
 
 

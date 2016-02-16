@@ -37,8 +37,9 @@ if  strcmp(filter_type,'all') || strcmp(filter_type,'firing')
 			filter_offset = find(obj.filtertime_firing == 0);
 			disp('computing filter...')
 			K = NaN(filter_length,obj.n_trials);
+
 			for i = 1:obj.n_trials
-				if  ismember(i,utt)
+				if  ismember(i,find(utt))
 					textbar(i,obj.n_trials)
 					[temp, filtertime] = fitFilter2Data(obj.stimulus(uts,i), obj.firing_rate(uts,i),'filter_length',filter_length+200,'reg',obj.regularisation_factor,'offset',filter_offset+100);
 					K(:,i) = temp(101:end-100);
@@ -63,7 +64,7 @@ if strcmp(filter_type,'all') || strcmp(filter_type,'LFP')
 			filter_offset = find(obj.filtertime_LFP == 0);
 			K = NaN(filter_length,obj.n_trials);
 			for i = 1:obj.n_trials
-				if  ismember(i,utt)
+				if  ismember(i,find(utt))
 					textbar(i,obj.n_trials)
 					[temp, filtertime] = fitFilter2Data(obj.stimulus(uts,i), obj.LFP(uts,i),'filter_length',filter_length+200,'reg',obj.regularisation_factor,'offset',filter_offset+100);
 					K(:,i) = temp(101:end-100);

@@ -10,8 +10,13 @@
 
 pHeader;
 
-% load the pre-computed stuff
-load('/local-data/DA-paper/natural-flickering/with-lfp/ab3/ORNData.mat','od')
+% load the data
+od = ORNData;
+od = readData(od,'/local-data/DA-paper/natural-flickering/with-lfp/ab3/');
+
+for i = 1:length(od)
+	od(i) = backOutFilters(od(i));
+end
 
 % project evrything
 for i = 1:length(od)

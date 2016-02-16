@@ -17,6 +17,18 @@ else
 	path_name = [path_name oss];
 end
 
+if nargin<2
+	use_cache = true;
+end
+
+% check if we have already done this
+if use_cache
+	if exist([path_name 'combined_data.ORNData'],'file') == 2
+		load([path_name 'combined_data.ORNData'],'-mat')
+		return
+	end
+end
+
 allfiles = dir([path_name '*.mat']);
 
 % remove some junk
@@ -66,5 +78,7 @@ for i = 1:length(allfiles)
 
 	% automatically annotate the data so we only use good trials
 	od(i).use_these_trials= ~((any(isnan(od(i).LFP))) | (any(isnan(od(i).firing_rate))) | (any(isnan(od(i).stimulus))));
-
 end
+
+% save this locally 
+save([path_name 'combined_data.ORNData'],'od','-v7.3')

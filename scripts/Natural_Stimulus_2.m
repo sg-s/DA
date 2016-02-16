@@ -10,52 +10,28 @@
 
 pHeader;
 
-path_name = '/local-data/DA-paper/natural-flickering/with-lfp/ab3';
-[PID, LFP, fA, paradigm,orn,fly] = consolidateData(path_name,1);
+% load the pre-computed stuff
+load('/local-data/DA-paper/natural-flickering/with-lfp/ab3/ORNData.mat','od')
 
-% remove crap trials
-rm_this = max(fA) == 0 | isnan(sum(LFP));
-PID(:,rm_this) = [];
-fA(:,rm_this) = [];
-LFP(:,rm_this) = [];
-paradigm(:,rm_this) = [];
-fly(rm_this) = [];
-orn(rm_this) = [];
-
-% remove baselines from LFP and PID
-for i = 1:width(PID)
-	temp = nanmean(PID(1:4e3,i));
-	PID(:,i) = PID(:,i) - temp;
-	temp = nanmean(LFP(1:4e3,i));
-	LFP(:,i) = LFP(:,i) - temp;
+% project evrything
+for i = 1:length(od)
+	od0(i) = projectStimulus(od0(i),'firing');
+	od0(i) = projectStimulus(od0(i),'LFP');
+	od(i) = projectStimulus(od(i),'firing');
+	od(i) = projectStimulus(od(i),'LFP');
 end
-
-% band pass all the LFP
-filtered_LFP = LFP;
-for i = 1:width(LFP)
-	filtered_LFP(:,i) = filtered_LFP(:,i) - fastFiltFilt(ones(1e4,1),1e4,filtered_LFP(:,i));
-	filtered_LFP(:,i) = filtered_LFP(:,i)*10; % to get the units right, now in mV
-end
-
 
 %% Stimulus
 % In this section we plot the stimulus we used. Because we're using Alicat MFCs rather than Aalborgs, this stimulus is different from the one originally used, despite an identical configuration of MFCs, valves and control signals. As you can see, this signal is denser, but still seems "naturalistic", with broad variation in the stimulus. Also, since we're using the Alicats, the stimulus is extremely reproducible trial-to-trial. The following figure shows the average of all the data, with a closeup to see the trial-to-trial variability. 
 
-time = 1e-3*(1:length(PID));
+time = 1e-3*(1:length(od(1).stimulus));
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
-subplot(1,5,1:4), hold on
-plot(time,nanmean(PID,2),'k')
+plot(time,[od.stimulus])
 xlabel('Time (s)')
 ylabel('Stimulus (V)')
-title('Mean Stimulus')
-
-subplot(1,5,5), hold on
-a = 14e3; z = 18e3; ss = 10;
-plot(time(a:ss:z),PID(a:ss:z,:))
-xlabel('Time (s)')
-title([oval(width(PID)) ' trials'])
-
+title('25 trials')
+set(gca,'XLim',[0 70])
 prettyFig();
 
 if being_published
@@ -64,32 +40,31 @@ if being_published
 end
 
 %% LFP and Firing Data
-% The following figure shows how the raw and filtered LFP, together with the firing rate responses, averaged across each ORN.
+% The following figure shows the stimulus, the LFP and the firing rate responses, averaged across each ORN.
 
 figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
 subplot(3,1,1), hold on
-for i = 1:max(orn)
-	plot(time,10*nanmean(LFP(:,orn==i),2))
+c = parula(length(od)+1);
+for i = 1:length(od)
+	plot(time,nanmean(od(i).stimulus,2),'Color',c(i,:))
 end
 set(gca,'XLim',[0 70])
-ylabel('Raw LFP (mV)')
+ylabel('Stimulus (V)')
 subplot(3,1,2), hold on
-for i = 1:max(orn)
-	plot(time,nanmean(filtered_LFP(:,orn==i),2))
+ylabel('\DeltaLFP (mV)')
+for i = 1:length(od)
+	plot(time,nanmean(od(i).LFP,2),'Color',c(i,:))
 end
 set(gca,'XLim',[0 70])
-
-ylabel('Filtered LFP (mV)')
 subplot(3,1,3), hold on
-for i = 1:max(orn)
-	plot(time,nanmean(fA(:,orn==i),2))
+for i = 1:length(od)
+	plot(time,nanmean(od(i).firing_rate,2),'Color',c(i,:))
 end
 set(gca,'XLim',[0 70])
-
 ylabel('ORN Response (Hz)')
 xlabel('Time (s)')
 suptitle('Neuron-wise LFP and Firing Rates')
-prettyFig('fs=14;');
+prettyFig('fs=14;','plw=1.5;');
 
 if being_published
 	snapnow
@@ -97,36 +72,47 @@ if being_published
 end
 
 %% Filters and Nonlinearities 
-% In this section we back out filters for the LFP and the firing rate on a neuron-by-neuron basis. The following figure show the filters and and the residuals for the PID -> LFP transformation, for each ORN. Note that the LFP filter is simply integrating, and the nonlinearity is a simple curve.
+% In this section, we back out filters for the LFP and the firing rate. We do so in two ways: first, using standard filter extraction techniques, and then using direct search to fit a  parametric filter.
 
-% first convert everything to ORNData class
-if ~exist('od','var')
-	load('/local-data/DA-paper/natural-flickering/with-lfp/ab3/ORNData.mat','od')
-else
-	% od = ORNData;
-	% for i = 1:max(orn)
-	% 	disp(i)
-	% 	od(i).stimulus = PID(:,orn==i);
-	% 	od(i).LFP = filtered_LFP(:,orn==i);
-	% 	od(i).firing_rate = fA(:,orn==i);
-
-	% 	temp = zeros(7e4,1);
-	% 	temp(15e3:55e3) = true;
-	% 	od(i).use_this_segment = temp;
-	% 	od(i).regularisation_factor = 1;	% this will automatically get the filters
-	% end
-end
-
-
-for i = 1:max(orn)
-	od(i) = computeInstGain(od(i));
-end
-
-figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 for i = 1:length(od)
-	ax(1) = subplot(2,length(od),i); hold on; title(['ORN ' oval(i)])
-	ax(2) = subplot(2,length(od),i+length(od)); hold on
-	plot(od(i),ax,'LN.LFP','data_bin_type','dots','plot_type','mean','nbins',10)
+	od(i).filtertime_firing = (-50:500)*1e-3;
+	od(i).filtertime_LFP = (-50:500)*1e-3;
+	od(i) = fitParametricFilters(od(i));
+end
+
+figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
+clear ax
+for i = 1:6
+	ax(i) = subplot(2,3,i); hold on
+end
+
+% plot LFP filters
+for i = 1:length(od)
+	ph = plot(od0(i),ax(1),'Filter.LFP');
+	set(ph.line,'Color',c(i,:))
+	delete(ph.line(end))
+
+	ph = plot(od(i),ax(2),'Filter.LFP','Color',c(i,:));
+	set(ph.line,'Color',c(i,:))
+	delete(ph.line(end))
+
+	% calculate r-square for each trial
+	y0 = od0(i).LFP;
+	x0 = od0(i).LFP_projected;
+	y = od(i).LFP;
+	x = od(i).LFP_projected;
+	r2_0 = NaN*(1:od(i).n_trials);
+	r2 = NaN*(1:od(i).n_trials);
+
+	for j = 1:od(i).n_trials
+		r2_0(j) = rsquare(x0(:,j),y0(:,j));
+		r2(j) = rsquare(x(:,j),y(:,j));
+	end
+
+	% plot this
+	x = [ones(length(r2),1) NaN*ones(length(r2),1) 2*ones(length(r2),1)];
+	y = [r2_0; NaN*r2_0; r2];
+
 end
 
 prettyFig('fs=14;');

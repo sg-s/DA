@@ -76,7 +76,7 @@ classdef ORNData
 
          % it should match stimulus, if it exists
          if ~isempty(obj.n_trials)
-            assert(obj.n_trials == size(value,2),'# of trials of firing rate should match # of trials of stimulus')
+            % assert(obj.n_trials == size(value,2),'# of trials of firing rate should match # of trials of stimulus')
          else
             obj.n_trials = size(value,2);
          end
@@ -96,7 +96,7 @@ classdef ORNData
 
    		% it should match stimulus, if it exists
    		if ~isempty(obj.n_trials)
-   			assert(obj.n_trials == size(value,2),'# of trials of firing rate should match # of trials of stimulus')
+   			% assert(obj.n_trials == size(value,2),'# of trials of firing rate should match # of trials of stimulus')
    		else
    			obj.n_trials = size(value,2);
    		end

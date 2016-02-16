@@ -1,53 +1,51 @@
-% Parametric Linear Model
-% the filter is modelled by a double gamma filter (two lobed)
+% pLFP.m
+% 
+% created by Srinivas Gorur-Shandilya at 5:40 , 15 February 2016. Contact me at http://srinivas.gs/contact/
+% 
+% This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
+% To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
+
+% Parametric Linear LFP filter
+% the filter is modelled by a single gamma filter (two lobed)
 % created by Srinivas Gorur-Shandilya at 2:43 , 17 December 2014. Contact me at http://srinivas.gs/contact/
 % 
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [f,K,shat] = pLinearModel(s,p)
+function [f,K,shat] = pLFP(s,p)
 
 % set lower bounds
-lb.n = 1; 
-lb.tau1 = 15;
-lb.tau2 = 20;
-lb.A = 0;
+lb.n = 2; 
+lb.tau = 10;
 lb.x_offset = -100;
 
 % set upper bounds
 ub.n = 4;
-ub.tau1 = 400;
-ub.tau2 = 600;
-ub.A = 1;
+ub.tau = 400;
 ub.x_offset = 10;
 
 
 % show parameters for readability
 p.n;
+p.tau;
 p.A;
-p.tau1;
-p.tau2;
-p.scale;
 p.offset;
 p.x_offset;
 
 % make the filters
-filter_length = 10*max([p.n*p.tau2  p.n*p.tau1]);
+filter_length = 10*p.tau*p.n;
 if filter_length < length(s)/10
 else
 	filter_length = length(s)/10; % ridiculously long filters
 end
 t = 0:filter_length; 
-K = filter_gamma2(t,p);
+K = filter_gamma(t,p);
 
 % offset the stimulus
 s = circshift(s,round(p.x_offset));
 
 % filter the input
-shat = filter(K,1,s);
+shat = -filter(K,sum(K),s);
 
 % add the offset
-shat = shat + p.offset;
-
-% scale
-f = shat*p.scale;
+f = shat + p.offset;

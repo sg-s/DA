@@ -52,7 +52,7 @@ else
 end
 
 % figure out WHAT to plot
-allowed_plots = {'dynamicIO.','help.','timeseries.','pdf.','Filter.','muSigma.','ioCurve.','LN.','weber.','laughlin.','instGainAnalysis.','muSigmaR2.','binnedGainAnalysis.'};
+allowed_plots = {'whiffGainAnalysis.','dynamicIO.','help.','timeseries.','pdf.','Filter.','muSigma.','ioCurve.','LN.','weber.','laughlin.','instGainAnalysis.','muSigmaR2.','binnedGainAnalysis.'};
 temp = varargin{1};
 if isa(temp,'char')
 	% user has supplied a string, make sure we can understand it 
@@ -134,7 +134,7 @@ if strfind(plot_what,'Filter.')
 		filtertime = o.filtertime_LFP;
 		K = o.K_LFP(:,utt);
 	else
-		error('What to plot not specified. You told me to plot the ioCurve, but the only things I can plot the ioCurve of are "firing_rate" or "LFP"')
+		error('What to plot not specified. You told me to plot the filter, but the only things I can plot the filter of are "firing_rate" or "LFP"')
 	end
 
 	clear plot_options
@@ -145,6 +145,54 @@ if strfind(plot_what,'Filter.')
 
 end
 
+if strfind(plot_what,'whiffGainAnalysis.')
+	% verify that we get three arguments
+	assert(length(strfind(plot_what,'.'))==2,'string specfiying what to plot should have 3 parts, since you are asking for a inst. gain analysis. e.g, "instGainAnalysis.firing_rate.mu')
+
+	if isempty(plot_here)
+	 	clear plot_here % so that plot_here gets the right class (axes object)
+		figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on 			
+		plot_here(1) = subplot(1,2,1); hold on
+		plot_here(2) = subplot(1,2,2); hold on
+	end
+
+	stim = nanmean(o.stimulus(uts,utt),2);
+	shat = computeSmoothedStimulus(stim,history_length);
+
+	% figure out what to plot
+	if strfind(plot_what,'firing_rate')
+		pred = nanmean(o.firing_projected(uts,utt),2);
+		resp = nanmean(o.firing_rate(uts,utt),2);
+		[whiff_ons,whiff_offs] = findWhiffs(pred);
+		ylabel(plot_here(1),'ORN Gain (Hz/V)')
+	elseif strfind(plot_what,'LFP')
+		pred = nanmean(o.LFP_projected(uts,utt),2);
+		resp = nanmean(o.LFP(uts,utt),2);
+		temp = -pred;
+		temp = temp-min(temp);
+		[whiff_ons,whiff_offs] = findWhiffs(temp);
+		ylabel(plot_here(1),'ORN Gain (mV/V)')
+	else
+		error('What to plot not specified. You told me to plot the whiff gain analysis, but the only things I can plot the whiff gain analysis of are "firing_rate" or "LFP"')
+	end
+	gain = 0*whiff_offs-1 ;
+
+	for i = 1:length(whiff_ons)
+		try
+			ff = fit(pred(whiff_ons(i):whiff_offs(i)),resp(whiff_ons(i):whiff_offs(i)),'poly1');
+			gain(i) = ff.p1;
+		end
+	end
+	rm_this = gain < 0;
+	whiff_ons(rm_this) = []; whiff_offs(rm_this) = []; gain(rm_this) = [];
+	l = plot(plot_here(1),shat(whiff_offs),gain,'k+');
+	set(plot_here(1),'XScale','log','YScale','log')
+	% find the rho
+	r = spear(vectorise(shat(whiff_offs)),gain(:));
+	legend(l,['\rho = ' oval(r)])
+	xlabel(plot_here(1),'Mean Stimulus (V)')
+
+end
 
 if strfind(plot_what,'dynamicIO.')
  	if isempty(plot_here)
@@ -169,7 +217,7 @@ if strfind(plot_what,'dynamicIO.')
 		resp = nanmean(o.LFP(uts,utt),2);
 		ylabel(plot_here,'\DeltaLFP (mV)')
 	else
-		error('What to plot not specified. You told me to plot the ioCurve, but the only things I can plot the ioCurve of are "firing_rate" or "LFP"')
+		error('What to plot not specified. You told me to plot the dynamic IO curve, but the only things I can plot the dynamic ioCurve of are "firing_rate" or "LFP"')
 	end
 	l = labelByPercentile(nonnans(stim),ngroups);
 	L = NaN*stim;
@@ -500,3 +548,86 @@ if any(strfind(plot_what,'instGainAnalysis.'))
 	xlabel(plot_here(2),'History Lengths (ms)')
 	ylabel(plot_here(2),'\rho')
 end
+
+
+if any(strfind(plot_what,'binnedGainAnalysis.'))
+
+	% verify that we get three arguments
+	assert(length(strfind(plot_what,'.'))==2,'string specfiying what to plot should have 3 parts, since you are asking for a inst. gain analysis. e.g, "instGainAnalysis.firing_rate.mu')
+
+	if isempty(plot_here)
+	 	clear plot_here % so that plot_here gets the right class (axes object)
+		figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on 			
+		plot_here(1) = subplot(1,2,1); hold on
+		plot_here(2) = subplot(1,2,2); hold on
+	end
+
+	if strfind(plot_what,'.firing_rate') 
+		r = nanmean(o.firing_rate(uts,utt),2);
+		p = nanmean(o.firing_projected(uts,utt),2);
+	elseif strfind(plot_what,'.LFP') 
+		r = nanmean(o.LFP(uts,utt),2);
+		p = nanmean(o.LFP_projected(uts,utt),2);
+	end
+	s = nanmean(o.stimulus(uts,utt),2);
+
+	use_mean = false;
+	if strfind(plot_what,'.mu') 
+		xlabel(plot_here(1),'\mu_{Stimulus} in preceding window (V)')
+		use_mean = true;
+	else
+		xlabel(plot_here(1),'\sigma_{Stimulus} in preceding window (V)')
+	end
+
+	clear plot_options
+	plot_options.use_mean = use_mean;
+	plot_options.make_plot = true;
+	plot_options.min_inst_gain_r2 = min_inst_gain_r2;
+	plot_options.min_inst_gain_firing = min_inst_gain_firing;
+	plot_options.nbins = nbins;
+	plot_options.data_bin_type = data_bin_type;
+	if length(history_length) > 1
+		c = parula(floor(1.1*length(history_lengths))); % note that this colour map is on history_lengthS
+	else
+		c = [0 0 0];
+	end
+
+	for i = 1:length(history_length)
+		plot_options.history_length = history_length(i);
+		% find the closest hit in history_lengths
+		if length(history_length) > 1
+			[~,temp] = min(abs(history_lengths - history_length(i)));
+		else
+			temp = 1;
+		end
+		plot_options.colour = c(temp,:);
+		plot_options.nbins = nbins;
+		plot_options.use_std = use_std;
+		plot_handles(1).lines(i) = plotBinnedGainAnalysis(plot_here(1),s,p,r,plot_options);
+	end
+	ylabel(plot_here(1),'Inst. Gain (Hz/V)')
+
+
+	rho = NaN*history_lengths;
+	plot_options.make_plot = false;
+	plot_options.use_std = use_std;
+	for i = 1:length(rho)
+		plot_options.history_length = history_lengths(i);
+		[~,rho(i)] = plotBinnedGainAnalysis(plot_here(1),s,p,r,plot_options);
+	end
+
+	% first plot all the history lengths in black/flat colours
+	if length(history_length) == 1
+		plot_handles(end+1).f2 = plot(plot_here(2),history_lengths,rho,'k+');
+	else
+		for i = 1:length(history_lengths)
+			plot_handles(2).dots(i) = plot(plot_here(2),history_lengths(i),rho(i),'Marker','+','LineStyle','none','Color',c(i,:));
+		end
+	end
+	set(plot_here(2),'XScale','log','YLim',[-1 1])
+	xlabel(plot_here(2),'History Lengths (ms)')
+	ylabel(plot_here(2),'\rho')
+end
+
+
+

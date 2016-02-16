@@ -52,7 +52,7 @@ axis off
 
 
 
-load('/local-data/DA-paper/natural-flickering/mahmut-raw/2014_07_11_EA_natflick_non_period_CFM_1_ab3_1_1_all.mat')
+load('/local-data/DA-paper/natural-flickering/without-lfp/2014_07_11_EA_natflick_non_period_CFM_1_ab3_1_1_all.mat')
 PID = data(2).PID;
 time = 1e-4*(1:length(PID));
 all_spikes = spikes(2).A;
@@ -159,7 +159,7 @@ ab3.K = K;
 ab3.PID = PID;
 
 % now also add ab2 data
-load('/local-data/DA-paper/natural-flickering/mahmut-raw/2014_07_11_EA_natflick_non_period_CFM_1_ab2_1_1_all.mat')
+load('/local-data/DA-paper/natural-flickering/without-lfp/2014_07_11_EA_natflick_non_period_CFM_1_ab2_1_1_all.mat')
 PID = data(2).PID;
 time = 1e-4*(1:length(PID));
 all_spikes = spikes(2).A;
@@ -592,7 +592,7 @@ for i = 1:4
 end
 hl = [50 300 1e4];
 for i = 1:3
-	plot_handles = plot(od,[ax(i) ax(4)],'binnedGainAnalysis.firing_rate.mu','history_lengths',logspace(-2,1,30)*1e3,'history_length',hl(i),'nbins',100);
+	plot_handles = plot(od,[ax(i) ax(4)],'instGainAnalysis.firing_rate.mu','history_lengths',logspace(-2,1,30)*1e3,'history_length',hl(i),'nbins',100);
 	title(ax(i),['\tau_{H} = ' oval(hl(i)) 'ms'])
 	if i < 3
 		delete(plot_handles(2).f2)
@@ -600,7 +600,7 @@ for i = 1:3
 	ylabel(ax(i),'Inst Gain (norm)')
 end
 set(ax(1:3),'XScale','log','YScale','log','YLim',[.5 10])
-set(ax(4),'YLim',[-1 0])
+set(ax(4),'YLim',[-1 .5])
 
 prettyFig('fs=14;','FixLogY=true;');
 

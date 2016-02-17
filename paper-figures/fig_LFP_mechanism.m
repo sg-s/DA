@@ -673,7 +673,7 @@ set(ax,'XLim',[-1.2 -.4])
 % xlabel('ethyl acetate stimulus (V)')
 % ylabel('ab8 LFP gain (mV/V)')
 
-prettyFig('fs=18;')
+prettyFig('fs=14;')
 
 if being_published
 	snapnow

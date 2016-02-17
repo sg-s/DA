@@ -163,81 +163,54 @@ xlabel(ax(2),'Projected Stimulus (V)')
 ylabel(ax(2),'Normalised Response')
 ylabel(ax(1),'Probability')
 
-% high variance
-temp = fA_pred(1e3:5e3,:); 
-x = 0:.05:2;
-y = NaN(length(x)-1,width(temp)); 
-cy = y;
-for i = 1:width(temp)
-	y(:,i) = histcounts(temp(:,i),x);
-	y(:,i) = y(:,i)/sum(y(:,i));
-	cy(:,i) = cumsum(y(:,i));
-end
-l = errorShade(ax(1),x(2:end),mean(y,2),sem(y'),'Color','r');
-set(l(1),'LineWidth',2)
+temp = fA_pred(1e3:5e3,:); temp = nonnans(temp(:));
+x = min(min(fA_pred)):0.02:max(max(fA_pred));
+y = histcounts(temp,x);
+y = y/sum(y); 
+plot(ax(1),x(2:end),y,'r')
 
-% plot integral -- theoretical prediction for best coding
-plot(ax(2),x(2:end),mean(cy,2),'r--');
+% integrate it and re-plot as a prediction
+plot(ax(2),x(2:end),cumsum(y),'r--')
 
-% now plot the actual i/o curve
+temp = fA_pred(6e3:end,:); temp = nonnans(temp(:));
+y = histcounts(temp,x);
+y = y/sum(y);
+plot(ax(1),x(2:end),y,'b')
+
+% integrate it and re-plot as a prediction
+plot(ax(2),x(2:end),cumsum(y),'b--')
+
+
+% now plot the actual i/o curve: high contrast
 x = fA_pred(1e3:5e3,:);
 y = reshaped_fA(1e3:5e3,:);
-rm_this = (isnan(sum(y)) | isnan(sum(x)));
-x(:,rm_this) = []; y(:,rm_this) = []; cy(:,rm_this)= [];
-all_x = -1:.05:2;
-all_y = NaN(length(all_x),width(y));
-for i = 1:width(x)
-	[~,data] = plotPieceWiseLinear(x(:,i),y(:,i),'nbins',40,'make_plot',false);
-	data.y = data.y/max(data.y);
-	all_y(:,i) = interp1(data.x,data.y,all_x);
-end
+rm_this = (isnan(sum(y)) | isnan(sum(x)) | max(y) < 40 | min(y) > 10);
+x(:,rm_this) = []; y(:,rm_this) = []; 
+[~,data_hi] = plotPieceWiseLinear(x,y,'nbins',50,'make_plot',false);
 
-% plot data
-[line_handle2, shade_handle2] = errorShade(ax(2),all_x,nanmean(all_y,2),sem(all_y'),'Color',[1 0 0],'Shading',s);
-uistack(shade_handle2,'bottom')
-set(ax(1),'XLim',[0 2],'YLim',[0 .16])
-set(ax(2),'XLim',[0 2],'YLim',[0 1.1])
-
-% fake some plots for a nice legend
-clear l
-l(1) = plot(ax(2),NaN,NaN,'k');
-l(2) = plot(ax(2),NaN,NaN,'k--');
-L = {'ORN Response','Prediction'};
-legend(l,L,'Location','southeast')
-
-
-% now do low variance case
-temp = fA_pred(6e3:9e3,:); 
-x = 0:.05:2;
-y = NaN(length(x)-1,width(temp)); 
-cy = y;
-for i = 1:width(temp)
-	y(:,i) = histcounts(temp(:,i),x);
-	y(:,i) = y(:,i)/sum(y(:,i));
-	cy(:,i) = cumsum(y(:,i));
-end
-errorShade(ax(1),x(2:end),mean(y,2),sem(y'),'Color','b','Shading',s);
-
-% plot integral -- theoretical prediction for best coding
-plot(ax(2),x(2:end),mean(cy,2),'--','Color',[0 0 1]);
-
-% now plot the actual i/o curve
+% low contrast
 x = fA_pred(6e3:9e3,:);
 y = reshaped_fA(6e3:9e3,:);
-rm_this = (isnan(sum(y)) | isnan(sum(x)));
-x(:,rm_this) = []; y(:,rm_this) = []; cy(:,rm_this)= [];
-all_x = -1:.05:2;
-all_y = NaN(length(all_x),width(y));
-for i = 1:width(x)
-	[~,data] = plotPieceWiseLinear(x(:,i),y(:,i),'nbins',40,'make_plot',false);
-	data.y = data.y/max(data.y);
-	all_y(:,i) = interp1(data.x,data.y,all_x);
-end
+rm_this = (isnan(sum(y)) | isnan(sum(x)) | max(y) < 40 | min(y) > 10);
+x(:,rm_this) = []; y(:,rm_this) = [];
+[~,data_lo] = plotPieceWiseLinear(x,y,'nbins',50,'make_plot',false);
+
+% normalise globally
+m = min([data_lo.y data_hi.y]);
+data_lo.y = data_lo.y - m; data_hi.y = data_hi.y - m;
+
+M = max([data_lo.y data_hi.y]);
+data_lo.y = data_lo.y/M; data_hi.y = data_hi.y/M;
+
 % plot data
-[line_handle2, shade_handle2] = errorShade(ax(2),all_x,nanmean(all_y,2),sem(all_y'),'Color',[0 0 1],'Shading',s);
-uistack(shade_handle2,'bottom')
-set(ax(1),'XLim',[0 2],'YLim',[0 .16])
-set(ax(2),'XLim',[0 2],'YLim',[0 1.1])
+plot(ax(2),data_hi.x,data_hi.y,'r','LineWidth',2)
+plot(ax(2),data_lo.x,data_lo.y,'b','LineWidth',2)
+
+% create  some phantom plots for a nice legend
+clear l
+l(1) = plot(ax(2),NaN,NaN,'k--');
+l(2) = plot(ax(2),NaN,NaN,'k');
+legend(l,{'Prediction','Response'},'Location','southeast')
 
 % also plot the distributions of the means 
 h = axes(); hold(h,'on')
@@ -251,7 +224,6 @@ plot(h,mean_2,std_2,'b.')
 set(h,'XLim',[0 0.6],'YLim',[0 0.2])
 xlabel('\mu (V)')
 ylabel('\sigma (V)')
-
 
 prettyFig('FixLogX=1;','fs=16;')
 

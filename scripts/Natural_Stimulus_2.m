@@ -14,17 +14,6 @@ pHeader;
 od = ORNData;
 od = readData(od,'/local-data/DA-paper/natural-flickering/with-lfp/ab3/');
 
-for i = 1:length(od)
-	od(i) = backOutFilters(od(i));
-end
-
-% project evrything
-for i = 1:length(od)
-	od0(i) = projectStimulus(od0(i),'firing');
-	od0(i) = projectStimulus(od0(i),'LFP');
-	od(i) = projectStimulus(od(i),'firing');
-	od(i) = projectStimulus(od(i),'LFP');
-end
 
 %% Stimulus
 % In this section we plot the stimulus we used. Because we're using Alicat MFCs rather than Aalborgs, this stimulus is different from the one originally used, despite an identical configuration of MFCs, valves and control signals. As you can see, this signal is denser, but still seems "naturalistic", with broad variation in the stimulus. Also, since we're using the Alicats, the stimulus is extremely reproducible trial-to-trial. The following figure shows the average of all the data, with a closeup to see the trial-to-trial variability. 
@@ -35,7 +24,7 @@ figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 50
 plot(time,[od.stimulus])
 xlabel('Time (s)')
 ylabel('Stimulus (V)')
-title('25 trials')
+title([oval(width([od.stimulus])) ' trials'])
 set(gca,'XLim',[0 70])
 prettyFig();
 
@@ -77,50 +66,16 @@ if being_published
 end
 
 %% Filters and Nonlinearities 
-% In this section, we back out filters for the LFP and the firing rate. We do so in two ways: first, using standard filter extraction techniques, and then using direct search to fit a  parametric filter.
+% In this section, we back out filters for the LFP and the firing rate. 
 
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 for i = 1:length(od)
-	od(i).filtertime_firing = (-50:500)*1e-3;
-	od(i).filtertime_LFP = (-50:500)*1e-3;
-	od(i) = fitParametricFilters(od(i));
+	ax(1) = subplot(2,length(od),i); hold on; title(['ORN ' oval(i)])
+	ax(2) = subplot(2,length(od),i+length(od)); hold on
+	plot(od(i),ax,'LN.LFP','data_bin_type','dots','plot_type','mean','nbins',10)
 end
 
-figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
-clear ax
-for i = 1:6
-	ax(i) = subplot(2,3,i); hold on
-end
-
-% plot LFP filters
-for i = 1:length(od)
-	ph = plot(od0(i),ax(1),'Filter.LFP');
-	set(ph.line,'Color',c(i,:))
-	delete(ph.line(end))
-
-	ph = plot(od(i),ax(2),'Filter.LFP','Color',c(i,:));
-	set(ph.line,'Color',c(i,:))
-	delete(ph.line(end))
-
-	% calculate r-square for each trial
-	y0 = od0(i).LFP;
-	x0 = od0(i).LFP_projected;
-	y = od(i).LFP;
-	x = od(i).LFP_projected;
-	r2_0 = NaN*(1:od(i).n_trials);
-	r2 = NaN*(1:od(i).n_trials);
-
-	for j = 1:od(i).n_trials
-		r2_0(j) = rsquare(x0(:,j),y0(:,j));
-		r2(j) = rsquare(x(:,j),y(:,j));
-	end
-
-	% plot this
-	x = [ones(length(r2),1) NaN*ones(length(r2),1) 2*ones(length(r2),1)];
-	y = [r2_0; NaN*r2_0; r2];
-
-end
-
-prettyFig('fs=14;');
 
 if being_published
 	snapnow
@@ -162,6 +117,26 @@ prettyFig('fs=14;');
 if being_published
 	snapnow
 	delete(gcf)
+end
+
+%% Fitting DA Models to the Data
+% In this section, we fit DA models to the data on a neuron-by-neuron basis, to determine the timescale of fast gain control. The motivation for this analysis is two fold: if there is fast gain control, then DA models should outperform LN models. Also, the timescale of the gian filter in the DA model should be the timescale of the fast gain control. 
+p.   s0 = -0.0935;
+p.  n_z = 1.1328;
+p.tau_z = 29.5858;
+p.  n_y = 4.4375;
+p.tau_y = 10.0293;
+p.    C = 0.0047;
+p.    A = 201.3815;
+p.    B = 4.1471;
+for j = 1:10
+	for i = 1:length(od)
+		clear d
+		d.response = nanmean(od(i).firing_rate,2);
+		d.stimulus = nanmean(od(i).stimulus,2);
+		d.response(1:1e3) = NaN;
+		p(i) = fitModel2Data(@DAModelv2,d,'p0',p(i),'nsteps',500,'make_plot',false);
+	end
 end
 
 %% Dynamic Gain Control in LFP and the firing rate

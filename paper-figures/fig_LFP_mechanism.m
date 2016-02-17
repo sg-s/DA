@@ -10,7 +10,7 @@ pHeader;
 
 %% Mechanism of Gain Control: Local Field Potential 
 
-figure('outerposition',[0 0 1500 850],'PaperUnits','points','PaperSize',[1500 850]); hold on
+figure('outerposition',[0 0 800 850],'PaperUnits','points','PaperSize',[800 850]); hold on
 
 % ##     ## ########    ###    ##    ## 
 % ###   ### ##         ## ##   ###   ## 
@@ -39,10 +39,24 @@ figure('outerposition',[0 0 1500 850],'PaperUnits','points','PaperSize',[1500 85
 %  ######   ##     ##  #######   ######   ######  #### ##     ## ##    ##  ######  
 
 clear axes_handles
-axes_handles(6) = subplot(2,4,6); hold on
 
-[PID, LFP, fA, paradigm] = consolidateData('/local-data/DA-paper/LFP-MSG/september',1);
 
+[PID, LFP, fA, paradigm,~, ~, AllControlParadigms] = consolidateData('/local-data/DA-paper/LFP-MSG/september',1);
+
+
+% sort the paradigms sensibly
+sort_value = [];
+for i = 1:length(AllControlParadigms)
+	sort_value(i) = (mean(AllControlParadigms(i).Outputs(1,:)));
+end
+[~,idx] = sort(sort_value);
+
+AllControlParadigms = AllControlParadigms(idx);
+paradigm_new = paradigm*NaN;
+for i = 1:length(idx)
+	paradigm_new(paradigm == idx(i)) = i;
+end
+paradigm = paradigm_new;
 
 % remove baseline from all PIDs
 for i = 1:width(PID)
@@ -61,45 +75,52 @@ fA(:,bad_trials) = [];
 paradigm(bad_trials) = [];
 
 % band pass all the LFP
-filtered_LFP = LFP;
-for i = 1:width(LFP)
-	filtered_LFP(:,i) = 10*bandPass(LFP(:,i),1e4,Inf);
+try 
+	load('/local-data/DA-paper/LFP-MSG/september/filtered_LFP.mat','filtered_LFP')
+catch
+	filtered_LFP = LFP;
+	for i = 1:width(LFP)
+		filtered_LFP(:,i) = 10*bandPass(LFP(:,i),1e4,Inf);
+	end
 end
+
+% define limits on data
+a = 10e3; z = 50e3;
+
+% show the stimulus paradigm-wise
+c = parula(max(paradigm)+1);
+subplot(3,3,1), hold on
+time = 1e-3*(1:length(PID));
+time = time(a:z);
+for i = 1:max(paradigm)
+	plot(time,nanmean(PID(a:z,paradigm==i),2),'Color',c(i,:));
+end
+set(gca,'XLim',[30 35])
+ylabel('Stimulus (V)')
+xlabel('Time (s)')
+
+% show the LFP paradigm-wise
+c = parula(max(paradigm)+1);
+subplot(3,3,2), hold on
+time = 1e-3*(1:length(PID));
+time = time(a:z);
+for i = 1:max(paradigm)
+	plot(time,nanmean(filtered_LFP(a:z,paradigm==i),2),'Color',c(i,:));
+end
+set(gca,'XLim',[30 35])
+xlabel('Time (s)')
+ylabel('\DeltaLFP (mV)')
 
 % extract filters and compute gains
-a = 10e3; z = 50e3;
 [~,~,LFP_gain] = extractFilters(PID,filtered_LFP,'use_cache',true,'a',a,'z',z);
-[~,~,fA_gain] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
 
-
-x = mean(PID(a:z,:)); x = x(:);
-y = fA_gain(:);
-xx = NaN(length(unique(paradigm)),1);
-yy = NaN(length(unique(paradigm)),1);
-ww = NaN(length(unique(paradigm)),1);
-
-for i = 1:length(yy)
-	xx(i) = nanmean(x(paradigm==i));
-	yy(i) = nanmean(y(paradigm==i));
-	ww(i) = 1./sem(y(paradigm==i));
-end
-fo = fitoptions('power1');
-fo.Upper = [Inf -1];
-fo.Lower = [-Inf -1];
-fo.Weights = ww;
-ff = fit(xx(:),yy(:),'power1',fo);
-
-
+% plot gain vs. mean stimulus and colour correctly
 ms = mean(PID(a:z,:)); ms = ms(:);
-[ax,p1,p2] = plotyy(ms,LFP_gain,[ms'; sort(ms)']',[fA_gain'; ff(sort(ms))']');
-set(p1,'LineStyle','none','Marker','+')
-set(p2(1),'LineStyle','none','Marker','.','Color','k')
-set(p2(2),'Marker','none','Color','r')
+subplot(3,3,3); hold on
+for i = 1:max(paradigm)
+	plot(ms(paradigm==i),LFP_gain(paradigm==i),'+','Color',c(i,:));
+end
 
-
-xlabel('Mean Stimulus (V)')
-ylabel('LFP Gain (mV/V)')
-ylabel(ax(2),'Firing Gain (Hz/V)')
 
 % plot power law fits for the LFP
 x = mean(PID(a:z,:)); x = x(:);
@@ -114,27 +135,17 @@ for i = 1:length(yy)
 	yy(i) = mean(y(paradigm==i));
 	ww(i) = 1./sem(y(paradigm==i));
 end
-% ff = fit(xx(:),yy(:),'power1','Weights',ww);
-% plot(ax(1),min(x):.1:max(x),ff(min(x):.1:max(x)),'k');
 
 fo = fitoptions('power1');
 fo.Upper = [Inf -1];
 fo.Lower = [-Inf -1];
 fo.Weights = ww;
 ff = fit(xx(:),yy(:),'power1',fo);
-plot(ax(1),min(x):.1:max(x),ff(min(x):.1:max(x)),'r');
-set(ax(2),'YColor',get(p2(1),'Color'))
-set(ax(1),'XScale','log','YScale','log','YLim',[1 1e2],'YTick',[1 10 100],'XLim',[.1 3])
-set(ax(2),'XScale','log','YScale','log','YLim',[1e1 1e3],'YTick',[10 100 1e3],'XLim',[.1 3])
+plot([.2 1.6],ff([.2 1.6]),'r');
 
-
-% now add an explanatory figure
-axes_handles(5) = subplot(2,4,5); hold on
-o = imread('../images/black-msg.png');
-imagesc(o)
-axis ij 
-axis off
-axis image
+set(gca,'XScale','log','YScale','log','XLim',[.09 2.5],'YLim',[.9 25])
+xlabel('Mean Stimulus (V)')
+ylabel('LFP Gain (mV/V')
 
 
 %      ##     ##    ###    ########  ####    ###    ##    ##  ######  ######## 
@@ -180,7 +191,8 @@ global_end = length(PID) - 5e3;
 for i = 1:width(LFP)
 	a = find(~isnan(LFP(:,i)),1,'first');
 	z = find(~isnan(LFP(:,i)),1,'last');
-	LFP(a:z,i) = 10*bandPass(LFP(a:z,i),1e4,10); % now in mV
+	LFP(a:z,i) = LFP(a:z,i) - fastFiltFilt(ones(1e4,1),1e4,LFP(a:z,i));
+	LFP(a:z,i) = LFP(a:z,i)*10; % to get the units right, now in mV
 end
 
 % reshape the LFP signals
@@ -236,102 +248,81 @@ for i = 1:width(reshaped_LFP)
 	LFP_pred(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K1_mean,ft);
 end
 
+% plot the stimulus
+subplot(3,2,3); hold on
+time = 1e-3*(1:length(reshaped_PID));
+plot(time(1:10:end),reshaped_PID(1:10:end,1:10:end),'Color',[.5 .5 .5 .5]);
+xlabel('Time since switch (s)')
+ylabel('Stimulus (V)')
+set(gca,'XLim',[0 10],'YLim',[0 1.1])
+plot([1 5],[1 1],'r','LineWidth',3)
+plot([6 10],[1 1],'b','LineWidth',3)
+
+% plot the LFP response
+subplot(3,2,5); hold on
+time = 1e-3*(1:length(reshaped_LFP));
+plot(time(1:10:end),reshaped_LFP(1:10:end,1:2:end),'Color',[.5 .5 .5 .5]);
+xlabel('Time since switch (s)')
+ylabel('\DeltaLFP (mV)')
+set(gca,'XLim',[0 10],'YLim',[-4 4.3])
+plot([1 5],[3 3],'r','LineWidth',3)
+plot([6 10],[3 3],'b','LineWidth',3)
 
 % plot the distributions of the projected stimulus
-axes_handles(7) = subplot(2,4,7); hold on
+ax(1) = subplot(3,2,4); hold on
+ax(2) = subplot(3,2,6); hold on
 temp = LFP_pred(1e3:5e3,:); temp = nonnans(temp(:));
 x = min(min(LFP_pred)):0.02:max(max(LFP_pred));
 y = histcounts(temp,x);
 y = y/sum(y); 
-plot(x(2:end),y,'r','LineWidth',3)
+plot(ax(1),x(2:end),y,'r')
+
+% integrate it and re-plot as a prediction
+plot(ax(2),x(2:end),cumsum(y),'r--')
+
 temp = LFP_pred(6e3:end,:); temp = nonnans(temp(:));
 y = histcounts(temp,x);
 y = y/sum(y);
+plot(ax(1),x(2:end),y,'b')
 
-x = x+3; % to offset it on our arbitrary axis
+% integrate it and re-plot as a prediction
+plot(ax(2),x(2:end),cumsum(y),'b--')
 
-plot(x(2:end),y,'b','LineWidth',3)
-axis off
-set(axes_handles(7),'Position',[.56 .22 .15 .17])
 
-axes_handles(8) = subplot(2,4,8); hold on
-movePlot(gca,'right',.03)
-% now plot the actual i/o curve
+% now plot the actual i/o curve: high contrast
 x = LFP_pred(1e3:5e3,:);
 y = reshaped_LFP(1e3:5e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)));
 x(:,rm_this) = []; y(:,rm_this) = []; cy(:,rm_this)= [];
-all_x = -2.5:.05:1;
-all_y = NaN(length(all_x),width(y));
-for i = 1:width(x)
-	[~,data] = plotPieceWiseLinear(x(:,i),y(:,i),'nbins',40,'make_plot',false);
-	all_y(:,i) = interp1(data.x,data.y,all_x);
-end
-
-% plot data
-[line_handle2, shade_handle2] = errorShade(all_x,nanmean(all_y,2),sem(all_y'),'Color',[1 0 0],'Shading',.5);
-uistack(shade_handle2,'bottom')
+[~,data_hi] = plotPieceWiseLinear(x,y,'nbins',50,'make_plot',false);
 
 % low contrast
 x = LFP_pred(6e3:9e3,:);
 y = reshaped_LFP(6e3:9e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)));
 x(:,rm_this) = []; y(:,rm_this) = []; cy(:,rm_this)= [];
-all_x = -2.5:.05:1;
-all_y = NaN(length(all_x),width(y));
-for i = 1:width(x)
-	[~,data] = plotPieceWiseLinear(x(:,i),y(:,i),'nbins',40,'make_plot',false);
-	all_y(:,i) = interp1(data.x,data.y,all_x);
-end
+[~,data_lo] = plotPieceWiseLinear(x,y,'nbins',50,'make_plot',false);
+
+% normalise globally
+m = min([data_lo.y data_hi.y]);
+data_lo.y = data_lo.y - m; data_hi.y = data_hi.y - m;
+
+M = max([data_lo.y data_hi.y]);
+data_lo.y = data_lo.y/M; data_hi.y = data_hi.y/M;
 
 % plot data
-[line_handle2, shade_handle2] = errorShade(all_x,nanmean(all_y,2),sem(all_y'),'Color',[0 0 1],'Shading',.5);
+axes(ax(2))
+[line_handle2, shade_handle2] = errorShade(data_hi.x,data_hi.y,data_hi.ye,'Color',[1 0 0],'Shading',.5);
+uistack(shade_handle2,'bottom')
+
+% plot data
+[line_handle2, shade_handle2] = errorShade(data_lo.x,data_lo.y,data_lo.ye,'Color',[0 0 1],'Shading',.5);
 uistack(shade_handle2,'bottom')
 xlabel('Projected Stimulus (V)')
-ylabel('\Delta LFP (mV)')
-set(gca,'XLim',[-1.5 0])
+ylabel('\Delta LFP (norm)')
 
-
-% compute gains for each of these cases
-if exist('.cache/LFP_gain.mat','file') == 2
-	load('.cache/LFP_gain.mat','gain_lo','gain_hi','gain_lo_r2','gain_hi_r2')
-else
-	gain_lo = NaN(width(reshaped_PID),1);
-	gain_lo_r2 = zeros(width(reshaped_PID),1);
-	gain_hi = NaN(width(reshaped_PID),1);
-	gain_hi_r2 = zeros(width(reshaped_PID),1);
-	for i = 1:width(reshaped_PID)
-		textbar(i,width(reshaped_PID))
-		x = LFP_pred(1e3:5e3,i); y = reshaped_LFP(1e3:5e3,i);
-		try
-			ff = fit(x(:),y(:),'poly1');
-			gain_hi(i) = ff.p1;
-			gain_hi_r2(i) = rsquare(ff(x),y);
-		catch
-		end
-		x = LFP_pred(6e3:9e3,i); y = reshaped_LFP(6e3:9e3,i);
-		try
-			ff = fit(x(:),y(:),'poly1');
-			gain_lo(i) = ff.p1;
-			gain_lo_r2(i) = rsquare(ff(x),y);
-		catch
-		end
-	end
-
-	save('.cache/LFP_gain.mat','gain_lo','gain_hi','gain_lo_r2','gain_hi_r2')
-end
-
-rm_this = gain_lo_r2<.5 | gain_hi_r2<.5;
-gain_lo(rm_this) = []; gain_hi(rm_this) = [];
-
-
-h = axes;
-hold on
-set(h,'Units','normalized','Position',[ 0.87    0.15    0.1    0.13]);
-plot(h,gain_lo,gain_hi,'k.')
-plot([4 20],[4 20],'k--')
-set(h,'YColor','r','XColor','b')
-axis square
+ylabel(ax(1),'Probability')
+set(ax,'XLim',[-1.2 -.4])
 
 
 %    ########    ###     ######  ########     ######      ###    #### ##    ## 
@@ -380,7 +371,8 @@ for i = 1:width(LFP)
 		z = length(LFP);
 	end
 	try
-		filtered_LFP(a:z,i) = 10*bandPass(LFP(a:z,i),1e4,Inf); % 10 second high pass
+		this_LFP = this_LFP - fastFiltFilt(ones(1e4,1),1e4,LFP(a:z,i));
+		filtered_LFP(a:z,i) = this_LFP*10; % to get the units right, now in mV
 	catch
 	end
 end

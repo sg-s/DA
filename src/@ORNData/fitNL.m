@@ -6,7 +6,7 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [o] = fitNL(o)
+function [o,ff] = fitNL(o)
 
 % respect constrains on where to calculate this 
 if isempty(o.use_these_trials)
@@ -35,7 +35,7 @@ if ~isempty(o.firing_rate) && ~isempty(o.firing_projected) && ~isempty(o.stimulu
 			rm_this = isnan(temp1) | isnan(temp2);
 			temp1(rm_this) = []; temp2(rm_this) = [];
 			ft = fittype('hillFit(x,A,k,n,x_offset)');
-			ff = fit(temp1,temp2,ft,'StartPoint',[max(temp2) mean(temp1) 1 0],'Upper',[1e3 max(temp1) 10 Inf],'Lower',[min(temp2)/2 0 0 -Inf]);
+			ff = fit(temp1,temp2,ft,'StartPoint',[max(temp2) mean(temp1) 1 0],'Upper',[1e3 10*max(temp1) 10 Inf],'Lower',[min(temp2)/2 0 0 -Inf],'MaxIter',1e3);
 			o.firing_projected(:,i) = ff(o.firing_projected(:,i));
 		end
 	end

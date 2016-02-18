@@ -31,6 +31,8 @@ hl_max = 1e4;
 history_lengths = unique([logspace(log10(hl_min),log10(500),15) logspace(log10(500),log10(hl_max),15)]);
 min_inst_gain_r2 = .8; % r2 values of inst. gain below this are discarded
 min_inst_gain_firing = 10; % firing rates below 10Hz are excluded from the analysis 
+show_NL = true;
+
 
 % defensive programming
 assert(length(varargin)>1,'Not enough input arguments.')
@@ -270,6 +272,14 @@ if strfind(plot_what,'ioCurve.')
 	plot_options.normalise = false;
 	plot_handles = plotNonlinearity(plot_here,pred,resp,grouping,plot_options);
 	xlabel(plot_here,'Projected Stimulus (V)')
+
+	if show_NL
+		if strfind(plot_what,'firing_rate')
+			[~,ff] = fitNL(o);
+			plot(plot_here,pred,ff(pred),'r','LineWidth',2);
+		else
+		end
+	end
 
 end
 

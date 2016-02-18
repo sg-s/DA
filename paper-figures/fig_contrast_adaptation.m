@@ -281,6 +281,19 @@ errorShade(time,nanmean(inst_gain,2),nanstd(inst_gain'),'Color',[0 0 0]);
 xlabel('Time since switch (s)')
 ylabel('Inst. Gain (Hz/V)')
 
+% put a timescale on this change by finding the time to half asymptote 
+tau_fA = NaN(width(inst_gain),1);
+for i = 1:width(inst_gain)
+	if mean(isnan(inst_gain(:,i))) < .3
+		a = nanmean(inst_gain(1e3:5e3,i));
+		z = nanmean(inst_gain(6e3:end,i));
+		try
+			tau_fA(i) = find(inst_gain(5e3:6e3,i) > a+ (z-a)/2,1,'first');
+		catch
+		end
+	end
+end
+tau_fA(tau_fA==1) = NaN;
 
 % now do the gain filter analysis 
 history_lengths = logspace(-2,0.5,20);

@@ -74,6 +74,8 @@ PID(:,bad_trials) = [];
 fA(:,bad_trials) = [];
 paradigm(bad_trials) = [];
 
+return
+
 % band pass all the LFP
 try 
 	load('/local-data/DA-paper/LFP-MSG/september/filtered_LFP.mat','filtered_LFP')

@@ -58,6 +58,7 @@ for i = 1:length(groups)
 				legend(temp,['r^2 = ' oval(r2)],'Location','southeast');
 			end
 		end
+
 	end
 
 end

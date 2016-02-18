@@ -50,7 +50,7 @@ t = 0:filter_length;
 K = filter_gamma2(t,p);
 
 % filter the input
-shat = filter(K,1,s-mean(s));
+shat = filter(K,1,s);
 
 % add the offset
 shat = shat + p.offset;

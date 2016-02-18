@@ -129,8 +129,8 @@ figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 50
 ax(1) = subplot(1,2,1); hold on
 ax(2) = subplot(1,2,2); hold on
 
-plot(od,ax,'instGainAnalysis.firing_rate.mu','data_bin_type','dots')
-title(ax(1),'500ms')
+plot(od,ax,'instGainAnalysis.firing_rate.mu','data_bin_type','dots');
+title(ax(1),'200ms')
 prettyFig('FixLogX=1;','fs=16;')
 
 if being_published

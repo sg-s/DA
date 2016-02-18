@@ -17,8 +17,8 @@ for i = 1:8
 	axes_handles(i) = subplot(2,4,i);
 	hold(axes_handles(i),'on');
 end
-axes_handles(5) = subplot(2,2,3);
-hold(axes_handles(5),'on');
+axes_handles(3) = subplot(2,2,2);
+hold(axes_handles(3),'on');
 
 
 % ##       ####  ######   ##     ## ######## 
@@ -66,30 +66,14 @@ end
 [K,fp,gain,gain_err] = extractFilters(LED,fA,'use_cache',true,'a',a,'z',z);
 time = 1e-3*(1:length(LED));
 
-% plot the light stim
+
 contrast_levels = sort(unique(light_s(m==2)));
-% skip the third
-contrast_levels(3) = [];
-c = parula(3);
-c(3,:) = [218 142 0]/255; % yellow too bright
-
-for i = 1:length(contrast_levels)
-	plot_these = light_s == contrast_levels(i);
-	y = nanmean(LED(a:z,plot_these),2);
-	y = y(1:5e3);
-	y(1:1e3) = NaN;
-	x = 25 + 1e-3*(1:5e3) + i*5;
-	plot(axes_handles(5),x,y,'Color',c(i,:))
-end
-
-set(axes_handles(5),'XTick',[31:2:35 36:2:40 41:2:45 46:2:50],'XTickLabel',{'26','28','30','26','28','30','26','28','30','26','28','30'})
-
-% plot i/o curves
-
 light_m = NaN*contrast_levels;
 
-for i = 1:length(contrast_levels)
-	light_m(i) = mean(mean(LED(a:z,light_s == contrast_levels(i))));
+% plot i/o curves and distributions for lowest contrast
+do_these = [4 1];
+c = [0 0 1; 0 0 0; 0 0 0 ; 1 0 0];
+for i = do_these
 	y = (fA(a:z,light_s == contrast_levels(i)));
 	if ~isvector(y)
 		y = nanmean(y,2);
@@ -98,11 +82,16 @@ for i = 1:length(contrast_levels)
 	if ~isvector(x)
 		x = nanmean(x,2);
 	end
-	x = x - mean(x) + light_m(i);
+	x = x - mean(x) + mean(mean(LED(a:z,light_s == contrast_levels(i))));
 
+	hx = -100:10:500;
+	hy = histcounts(x,hx); hy = hy/sum(hy);
+	plot(axes_handles(3),hx(1:end-1)+5,hy,'Color',c(i,:),'LineWidth',3);
 	[~,data] = plotPieceWiseLinear(x,y,'make_plot',false,'nbins',40);
 	plot(axes_handles(7),data.x,data.y,'Color',c(i,:),'LineWidth',3)
 end
+
+
 
 % plot gain vs. contrast
 plot(axes_handles(8),light_s(m==2),gain(m==2),'k+')
@@ -176,7 +165,7 @@ for i = 1:3:length(light_bg_levels)
 	y = light_bg_levels(i);
 	y = y*ones(8e3+1,1);
 	y(1:1e3) = 0;
-	plot(axes_handles(2),time(4e3:12e3),y,'Color',c(i,:))
+	plot(axes_handles(2),time(4e3:12e3),y,'Color',c(i,:),'LineWidth',3)
 end
 
 
@@ -184,7 +173,7 @@ end
 x = []; y = []; base_gain = [];
 for i = 1:length(paradigm)
 	if light_background_paradigms(i)
-		plot(axes_handles(4),mean_light_power(i),fA_gain(i),'+','Color',c(find(light_bg_levels == mean_light_power(i)),:),'LineWidth',2);
+		plot(axes_handles(6),mean_light_power(i),fA_gain(i),'+','Color',c(find(light_bg_levels == mean_light_power(i)),:),'LineWidth',2);
 		x = [x mean_light_power(i)];
 		y = [y fA_gain(i)];
 		if mean_light_power(i) == 0
@@ -192,16 +181,16 @@ for i = 1:length(paradigm)
 		end
 	end
 end
-set(axes_handles(4),'XScale','linear','YScale','log')
+set(axes_handles(6),'XScale','linear','YScale','log')
 % also plot a flat line for comparison
-plot(axes_handles(4),[min(x) max(x)],[nanmean(base_gain) nanmean(base_gain)],'k--')
+plot(axes_handles(6),[min(x) max(x)],[nanmean(base_gain) nanmean(base_gain)],'k--')
 
 
 % plot the LFP gain for odour with light bg
 x = []; y = []; base_gain = [];
 for i = 1:length(paradigm)
 	if light_background_paradigms(i)
-		plot(axes_handles(3),mean_light_power(i),LFP_gain(i),'+','Color',c(find(light_bg_levels == mean_light_power(i)),:),'LineWidth',2);
+		plot(axes_handles(5),mean_light_power(i),LFP_gain(i),'+','Color',c(find(light_bg_levels == mean_light_power(i)),:),'LineWidth',2);
 		x = [x mean_light_power(i)];
 		y = [y LFP_gain(i)];
 		if mean_light_power(i) == 0
@@ -209,9 +198,9 @@ for i = 1:length(paradigm)
 		end
 	end
 end
-set(axes_handles(3),'XScale','linear','YScale','log')
+set(axes_handles(5),'XScale','linear','YScale','log')
 % also plot a flat line for comparison
-plot(axes_handles(3),[min(x) max(x)],[nanmean(base_gain) nanmean(base_gain)],'k--')
+plot(axes_handles(5),[min(x) max(x)],[nanmean(base_gain) nanmean(base_gain)],'k--')
 
 % CREATE placeholders for all x and y labels
 for i = 1:length(axes_handles)
@@ -222,3 +211,10 @@ for i = 1:length(axes_handles)
 end
 
 prettyFig('fs=18;','FixLogX=true;','lw=2;','plw=2;')
+
+% move the plots on the right to the right
+movePlot(axes_handles(3),'right',.05)
+movePlot(axes_handles(7),'right',.05)
+movePlot(axes_handles(8),'right',.05)
+
+set(axes_handles(3),'XLim',[-50 500])

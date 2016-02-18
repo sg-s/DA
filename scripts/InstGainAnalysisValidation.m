@@ -11,7 +11,7 @@ pHeader;
 % In this document we generate synethetic data using a LN model and rigorously test our inst. gain analysis methods on the various stimuli that we have. 
 
 %% LN Model
-% This is what the LN model that we will use to generate our synthetic data looks like:
+% This is what the LN model that we will use to generate our synthetic data looks like. Note that the filter is slightly differentiating, and that the nonlinearity is such that its slope increases with the mean stimulus. This will be important later. 
 
 load('/code/da/data/gaussian_stimulus.mat','gaussian_stimulus')
 
@@ -50,12 +50,12 @@ end
 figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
 subplot(2,1,1), hold on
 time = 1e-3*(1:length(gaussian_stimulus));
-plot(time,gaussian_stimulus,'k')
+plot(time(1:10:end),gaussian_stimulus(1:10:end),'k')
 xlabel('Time (s)')
 ylabel('Stimulus (V)')
 
 subplot(2,1,2), hold on
-plot(time,resp,'k')
+plot(time(1:10:end),resp(1:10:end),'k')
 xlabel('Time (s)')
 ylabel('ORN Response (Hz)')
 
@@ -67,7 +67,7 @@ if being_published
 end
 
 %%
-% Now we back out filters. 
+% Now we back out filters. Since the stimulus is somewhat Gaussian, we expect to back out a filter very close to the original.  
 
 uts = false*(1:length(gaussian_stimulus));
 uts(1e4:5e4) = true;
@@ -89,7 +89,7 @@ if being_published
 end
 
 %% 
-% OK, the filter looks good. Let's look at the full LN model that we can back out of the synthetic data:
+% OK, the filter looks good. Let's look at the full LN model that we can back out of the synthetic data, and also see if we can also back out the nonlinearity. 
 
 plot(od,'LN.firing_rate','data_bin_type','dots')
 prettyFig('FixLogX=1;','fs=16;')
@@ -98,8 +98,9 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
 %%
-% We will perform the inst. gain analysis against the linear projection. 
+% Now, we begin to test the validity of our methods. We will perform the inst. gain analysis against the linear projection. In the following figure, we plot the distribution of the inst. gain (computed on 50ms bins), and an example plot showing how the inst. gain varies with the mean stimulus in the preceding 200ms. Finally, we summarise plots like this by computing the Spearman correlation as a function of the history length. 
 
 od = computeInstGain(od);
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
@@ -118,7 +119,7 @@ if being_published
 end
 
 %%
-% Even though the plot on the left looks like a blob, we have pretty large values of $\rho$. Note that they are all positive. 
+% This is weird. First, the Spearman correlation is not negative. Second, it gets further away from zero as we move to shorted history lengths. What's going on? Remembering that our nonlinearity was such that it was shallower at lower stimuli, we hypothesize that what we see here is because of the static nonlinearity. 
 
 %%
 % Now, we repeat the inst. gain analysis, but taking into account the non-linearity.
@@ -136,6 +137,9 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%%
+% The curve is now flat! So we have shown that what we saw previously could be accounted for by a nonlinearity. The shape of the nonlinearity (steeper at low values or shallower at low values) determines if the Spearman plot goes to negative or positive values. 
 
 %% Version Info
 pFooter;

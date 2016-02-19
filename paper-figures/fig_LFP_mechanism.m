@@ -74,8 +74,6 @@ PID(:,bad_trials) = [];
 fA(:,bad_trials) = [];
 paradigm(bad_trials) = [];
 
-return
-
 % band pass all the LFP
 try 
 	load('/local-data/DA-paper/LFP-MSG/september/filtered_LFP.mat','filtered_LFP')
@@ -326,6 +324,70 @@ ylabel('\Delta LFP (norm)')
 ylabel(ax(1),'Probability')
 set(ax,'XLim',[-1.2 -.4])
 
+
+% ########  ##    ## ##    ##    ###    ##     ## ####  ######   ######      #######  ######## 
+% ##     ##  ##  ##  ###   ##   ## ##   ###   ###  ##  ##    ## ##    ##    ##     ## ##       
+% ##     ##   ####   ####  ##  ##   ##  #### ####  ##  ##       ##          ##     ## ##       
+% ##     ##    ##    ## ## ## ##     ## ## ### ##  ##  ##        ######     ##     ## ######   
+% ##     ##    ##    ##  #### ######### ##     ##  ##  ##             ##    ##     ## ##       
+% ##     ##    ##    ##   ### ##     ## ##     ##  ##  ##    ## ##    ##    ##     ## ##       
+% ########     ##    ##    ## ##     ## ##     ## ####  ######   ######      #######  ##  
+
+%  ######      ###    #### ##    ## 
+% ##    ##    ## ##    ##  ###   ## 
+% ##         ##   ##   ##  ####  ## 
+% ##   #### ##     ##  ##  ## ## ## 
+% ##    ##  #########  ##  ##  #### 
+% ##    ##  ##     ##  ##  ##   ### 
+%  ######   ##     ## #### ##    ## 
+
+%  ######   #######  ##    ## ######## ########   #######  ##       
+% ##    ## ##     ## ###   ##    ##    ##     ## ##     ## ##       
+% ##       ##     ## ####  ##    ##    ##     ## ##     ## ##       
+% ##       ##     ## ## ## ##    ##    ########  ##     ## ##       
+% ##       ##     ## ##  ####    ##    ##   ##   ##     ## ##       
+% ##    ## ##     ## ##   ###    ##    ##    ##  ##     ## ##       
+%  ######   #######  ##    ##    ##    ##     ##  #######  ######## 
+
+% now do the supplementary figure showing dynamics of gain change
+
+
+% calculate instantaneous gain everywhere (for a subset of the data for now)
+x = reshaped_PID(:); x = x(1:1e5);
+y = reshaped_LFP(:); y = y(1:1e5);
+z = LFP_pred(:); z = z(1:1e5);
+[mean_stim,inst_gain,e] = findInstGain(x,y,z,50);
+
+% reshape back
+inst_gain = reshape(inst_gain,size(reshaped_PID,1),10);
+e = reshape(e,size(reshaped_PID,1),size(reshaped_PID,2));
+mean_stim = reshape(mean_stim,size(reshaped_PID,1),size(reshaped_PID,2));
+inst_gain(e<.8) = NaN;
+inst_gain(inst_gain == 0) = NaN;
+inst_gain(1:1e3,:) = NaN;
+
+
+figure('outerposition',[0 0 500 800],'PaperUnits','points','PaperSize',[500 800]); hold on
+
+% show how gain changes with time
+subplot(3,1,1), hold on
+errorShade(time,nanmean(inst_gain,2),nanstd(inst_gain'),'Color',[0 0 0]);
+xlabel('Time since switch (s)')
+ylabel('Inst. Gain (Hz/V)')
+
+% put a timescale on this change by finding the time to half asymptote 
+tau_fA = NaN(width(inst_gain),1);
+for i = 1:width(inst_gain)
+	if mean(isnan(inst_gain(:,i))) < .3
+		a = nanmean(inst_gain(1e3:5e3,i));
+		z = nanmean(inst_gain(6e3:end,i));
+		try
+			tau_fA(i) = find(inst_gain(5e3:6e3,i) > a+ (z-a)/2,1,'first');
+		catch
+		end
+	end
+end
+tau_fA(tau_fA==1) = NaN;
 
 
 %    ########    ###     ######  ########     ######      ###    #### ##    ## 

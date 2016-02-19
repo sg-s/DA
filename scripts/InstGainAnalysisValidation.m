@@ -152,7 +152,7 @@ p.tau_y = 26.7002;
 p.    C = 0.5457;
 p.    A = 163.2252;
 p.    B = 4.4703;
-resp = DAModelv2(gaussian_stimulus,p);
+[resp,y,z,Ky,Kz] = DAModelv2(gaussian_stimulus,p);
 
 clear od
 od = ORNData;
@@ -171,10 +171,19 @@ xlabel('Time (s)')
 ylabel('Firing Rate (Hz)')
 
 clear ax
-ax(1) = subplot(2,2,3); hold on
-ax(2) = subplot(2,2,4); hold on
+ax(1) = subplot(2,3,5); hold on
+ax(2) = subplot(2,3,6); hold on
 
 plot(od,ax,'LN.firing_rate','data_bin_type','dots')
+
+% also plot the DA model filters
+subplot(2,3,4), hold on
+plot(1e-3*(1:length(Ky)),Ky)
+hold on
+plot(1e-3*(1:length(Kz)),Kz)
+xlabel('Filter Lag (s)')
+title('DA Model filters')
+set(gca,'XLim',[0 1])
 
 prettyFig('FixLogX=1;','fs=16;')
 

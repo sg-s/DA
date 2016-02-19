@@ -305,3 +305,10 @@ end
 prettyFig('fs=18;','FixLogX=true;','lw=2;','plw=1.4;')
 
 set(axes_handles(3),'TickLength',[.03 .02])
+
+
+% move the plots on the right to the right
+movePlot(axes_handles(4),'right',.05)
+movePlot(axes_handles(5),'right',.05)
+
+

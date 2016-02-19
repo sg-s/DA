@@ -22,7 +22,7 @@ p.      A = 0.4000;
 p.      n = 2;
 p. offset = 0.2769;
 p. Hill_A = 100;
-p.Hill_Kd = 0.5889;
+p.Hill_Kd = 0.3;
 p. Hill_n = 4;
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on

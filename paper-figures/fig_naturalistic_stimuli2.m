@@ -609,6 +609,37 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% In the following figure, we plot the inst. gain vs the stimulus in the preceding window for a variety of windows, to verify that what we have is actually a change in these clouds of points. 
+
+figure('outerposition',[0 0 1300 800],'PaperUnits','points','PaperSize',[1300 800]); hold on
+for i = 1:8
+	ax(i) = subplot(2,4,i); hold on
+end
+hl = round(logspace(1,4,8));
+dm = figure; hold on
+dummy = subplot(2,2,1);
+
+for i = 1:length(hl)
+	plot_handles = plot(od,[ax(i) dummy],'instGainAnalysis.firing_rate.mu','history_lengths',logspace(-2,1,30)*1e3,'history_length',hl(i),'data_bin_type','dots','nbins',5);
+	title(ax(i),['\tau_{H} = ' oval(hl(i)) 'ms'])
+	if i < 3
+		delete(plot_handles(2).f2)
+	end
+	ylabel(ax(i),'Inst Gain (norm)')
+end
+set(ax,'XScale','log','YScale','log','YLim',[.1 100],'XLim',[1e-2 10])
+
+delete(dm)
+
+prettyFig('fs=14;','FixLogY=true;','FixLogX=true;');
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
 %% Dynamic Gain Control
 % We have shown through our inst. gain aanlysis that there is a gain control mechanism that is "dynamic" in the sense that it cannot be explained by a static nonlinearity. If this is true, a dynamic gain model (the DA Model) should outperform a LN model in explaining this data. Let's check. 
 

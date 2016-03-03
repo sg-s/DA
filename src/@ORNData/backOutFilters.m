@@ -11,6 +11,14 @@ if nargin < 2
 	filter_type = 'all';
 end
 
+% recursively call this to work on arrays of objects
+if length(obj) > 1
+	for i = 1:length(obj)
+		obj(i) = backOutFilters(obj(i),filter_type);
+	end
+	return
+end
+
 % respect constrains on where to calculate this 
 if isempty(obj.use_these_trials)
 	utt = 1:obj.n_trials;
@@ -38,18 +46,20 @@ if  strcmp(filter_type,'all') || strcmp(filter_type,'firing')
 			disp('computing filter...')
 			K = NaN(filter_length,obj.n_trials);
 
-			for i = 1:obj.n_trials
-				if  ismember(i,find(utt))
-					textbar(i,obj.n_trials)
-					[temp, filtertime] = fitFilter2Data(obj.stimulus(uts,i), obj.firing_rate(uts,i),'filter_length',filter_length+200,'reg',obj.regularisation_factor,'offset',filter_offset+100);
-					K(:,i) = temp(101:end-100);
-					filtertime = filtertime(101:end-100);
+			if any(utt)
+				for i = 1:obj.n_trials
+					if  ismember(i,find(utt))
+						textbar(i,obj.n_trials)
+						[temp, filtertime] = fitFilter2Data(obj.stimulus(uts,i), obj.firing_rate(uts,i),'filter_length',filter_length+200,'reg',obj.regularisation_factor,'offset',filter_offset+100);
+						K(:,i) = temp(101:end-100);
+						filtertime = filtertime(101:end-100);
+					end
 				end
+				obj.K_firing_hash = K_firing_hash;
+				obj.K_firing = K;
+				obj.filtertime_firing = filtertime*obj.dt;
+				obj = projectStimulus(obj,'firing');
 			end
-			obj.K_firing_hash = K_firing_hash;
-			obj.K_firing = K;
-			obj.filtertime_firing = filtertime*obj.dt;
-			obj = projectStimulus(obj,'firing');
 		end
 	end
 end
@@ -63,18 +73,20 @@ if strcmp(filter_type,'all') || strcmp(filter_type,'LFP')
 			filter_length = length(obj.filtertime_LFP);
 			filter_offset = find(obj.filtertime_LFP == 0);
 			K = NaN(filter_length,obj.n_trials);
-			for i = 1:obj.n_trials
-				if  ismember(i,find(utt))
-					textbar(i,obj.n_trials)
-					[temp, filtertime] = fitFilter2Data(obj.stimulus(uts,i), obj.LFP(uts,i),'filter_length',filter_length+200,'reg',obj.regularisation_factor,'offset',filter_offset+100);
-					K(:,i) = temp(101:end-100);
-					filtertime = filtertime(101:end-100);
+			if any(utt)
+				for i = 1:obj.n_trials
+					if  ismember(i,find(utt))
+						textbar(i,obj.n_trials)
+						[temp, filtertime] = fitFilter2Data(obj.stimulus(uts,i), obj.LFP(uts,i),'filter_length',filter_length+200,'reg',obj.regularisation_factor,'offset',filter_offset+100);
+						K(:,i) = temp(101:end-100);
+						filtertime = filtertime(101:end-100);
+					end
 				end
+				obj.K_LFP_hash = K_LFP_hash;
+				obj.K_LFP = K;
+				obj.filtertime_firing = filtertime*obj.dt;
+				obj = projectStimulus(obj,'LFP');
 			end
-			obj.K_LFP_hash = K_LFP_hash;
-			obj.K_LFP = K;
-			obj.filtertime_firing = filtertime*obj.dt;
-			obj = projectStimulus(obj,'LFP');
 		end
 	end
 else

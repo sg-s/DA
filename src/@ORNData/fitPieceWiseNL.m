@@ -1,12 +1,23 @@
-% ORNData/fitNL.m
-% fits a nonlinearity to the data
+% fitPieceWiseNL.m
+% method for ORNData class
 % 
-% created by Srinivas Gorur-Shandilya at 1:34 , 15 February 2016. Contact me at http://srinivas.gs/contact/
+% created by Srinivas Gorur-Shandilya at 1:37 , 23 February 2016. Contact me at http://srinivas.gs/contact/
 % 
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [o,ff] = fitNL(o)
+function [o] = fitPieceWiseNL(o)
+
+assert(strcmp(class(o),'ORNData'),'Argument should be a ORNData class object')
+
+% recursively call this function to work on arrays
+if length(o) > 1
+	for i = 1:length(o)
+		o(i) = fitPieceWiseNL(o(i));
+	end
+	return
+end
+
 
 % respect constrains on where to calculate this 
 if isempty(o.use_these_trials)
@@ -19,23 +30,22 @@ if isempty(o.use_this_segment)
 else
 	uts = o.use_this_segment;
 end	
-
-
-
-
 % check if data is there
 if ~isempty(o.firing_rate) && ~isempty(o.firing_projected) && ~isempty(o.stimulus)
 	r = o.firing_rate(uts,:);
 	p = o.firing_projected(uts,:);
 
 	for i = 1:width(r)
-		if ismember(i,utt)
+		if ismember(i,find(utt))
 			temp1 = p(:,i); temp2 = r(:,i);
 			rm_this = isnan(temp1) | isnan(temp2);
 			temp1(rm_this) = []; temp2(rm_this) = [];
-			ft = fittype('hillFit(x,A,k,n,x_offset)');
-			ff = fit(temp1,temp2,ft,'StartPoint',[max(temp2) mean(temp1) 1 0],'Upper',[900 10*max(temp1) 10 Inf],'Lower',[min(temp2)/2 min(temp2)/2 2 -Inf],'MaxIter',1e3);
-			o.firing_projected(:,i) = ff(o.firing_projected(:,i));
+			if length(temp1) > 10
+				[~,data] = plotPieceWiseLinear(temp1,temp2,'nbins',50,'make_plot',false);
+				ff = fit(data.x,data.y,'cubicinterp');
+				o.firing_projected(:,i) = ff(o.firing_projected(:,i));
+				o.firing_projected((o.firing_projected(:,i) < 0),i) = 0;
+			end
 		end
 	end
 
@@ -46,12 +56,11 @@ if ~isempty(o.LFP) && ~isempty(o.LFP_projected) && ~isempty(o.stimulus)
 
 	for i = 1:width(r)
 		textbar(i,width(r))
-		if ismember(i,utt)
+		if ismember(i,find(utt))
 			temp1 = p(:); temp2 = r(:);
 			rm_this = isnan(temp1) | isnan(temp2);
 			temp1(rm_this) = []; temp2(rm_this) = [];
-			ff = fit(temp1(1:100:end),temp2(1:100:end),'rat24','StartPoint',[-2 2 1 -1 -2 .1 1]);
-			o.LFP_projected(:,i) = ff(o.LFP_projected(:,i));
+			keyboard
 		end
 	end
-end
+end	

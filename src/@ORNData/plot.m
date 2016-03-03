@@ -26,7 +26,7 @@ plot_type = 'trial-wise'; % can also be "sem", or "mean"
 grouping = [];
 plot_here = [];
 history_length = 500; % in ms, or the time step of the data (which is the same)
-hl_min = 200; % in ms
+hl_min = 50; % in ms
 hl_max = 1e4;
 history_lengths = unique([logspace(log10(hl_min),log10(500),15) logspace(log10(500),log10(hl_max),15)]);
 min_inst_gain_r2 = .8; % r2 values of inst. gain below this are discarded
@@ -54,7 +54,7 @@ else
 end
 
 % figure out WHAT to plot
-allowed_plots = {'whiffGainAnalysis.','dynamicIO.','help.','timeseries.','pdf.','Filter.','muSigma.','ioCurve.','LN.','weber.','laughlin.','instGainAnalysis.','muSigmaR2.','binnedGainAnalysis.'};
+allowed_plots = {'excGainAnalysis.','valveGainAnalysis.','whiffGainAnalysis.','dynamicIO.','help.','timeseries.','pdf.','Filter.','muSigma.','ioCurve.','LN.','weber.','laughlin.','instGainAnalysis.','muSigmaR2.','binnedGainAnalysis.'};
 temp = varargin{1};
 if isa(temp,'char')
 	% user has supplied a string, make sure we can understand it 
@@ -165,6 +165,196 @@ if strfind(plot_what,'whiffGainAnalysis.')
 	if strfind(plot_what,'firing_rate')
 		pred = nanmean(o.firing_projected(uts,utt),2);
 		resp = nanmean(o.firing_rate(uts,utt),2);
+		ylabel(plot_here(1),'ORN Gain (Hz/V)')
+	elseif strfind(plot_what,'LFP')
+		pred = nanmean(o.LFP_projected(uts,utt),2);
+		resp = nanmean(o.LFP(uts,utt),2);
+		ylabel(plot_here(1),'ORN Gain (mV/V)')
+	else
+		error('What to plot not specified. You told me to plot the whiff gain analysis, but the only things I can plot the whiff gain analysis of are "firing_rate" or "LFP"')
+	end
+	stim = nanmean(o.firing_rate(uts,utt),2);
+
+	% find whiffs
+	[whiff_ons,whiff_offs] = findWhiffs(stim);
+
+	% find the gains in all windows and also grab the data to plot
+	[gain,gain_err,plot_data] = findGainInWindows(whiff_ons,whiff_offs,pred,resp);
+
+
+	% now compute the smoothed stimulus for all history lengths and also compute the rho
+	rho = NaN*history_lengths;
+	for i = 1:length(history_lengths)
+		temp = computeSmoothedStimulus(stim,round(history_lengths(i)));
+		shat = NaN*whiff_ons;
+		for j = 1:length(whiff_ons)
+			shat(j) = mean(temp(whiff_ons(j):whiff_offs(j)));
+		end
+		rho(i) = spear(shat(gain>0 & gain_err > .8),gain(gain>0 & gain_err > .8));
+	end
+	plot(plot_here(2),history_lengths,rho,'k+')
+	set(plot_here(2),'XScale','log')
+
+	% show the example history length
+	temp = computeSmoothedStimulus(stim,round(history_length));
+	shat = NaN*whiff_ons;
+	for j = 1:length(whiff_ons)
+		shat(j) = mean(temp(whiff_ons(j):whiff_offs(j)));
+	end
+	shat = shat - nanmean(shat);
+	shat = shat/nanstd(shat);
+	plot(plot_here(1),shat(gain>0 & gain_err > .8),gain(gain>0 & gain_err > .8),'k+')
+
+	% colour the plot 
+	shat = shat - nanmin(shat);
+	shat = shat/nanmax(shat);
+	c = parula(100);
+	for i = 1:length(valve_ons)
+		try
+			plot_handles(1).dots(i).Color = c(1+floor(shat(i)*99),:);
+		catch
+		end
+	end
+	
+
+	% cosmetics
+	xlabel(plot_here(3),'History Length (ms)')
+	ylabel(plot_here(3),'\rho')
+	xlabel(plot_here(2),'\mu_{stimulus} in preceding window (norm)')
+	ylabel(plot_here(2),'Gain (norm)')
+	xlabel(plot_here(1),'LN Model prediction (Hz)')
+	ylabel(plot_here(1),'ORN Response (Hz)')
+	set(plot_here(3),'YLim',[-1 1])
+
+
+end
+
+if strfind(plot_what,'excGainAnalysis.')
+	% verify that we get three arguments
+	assert(length(strfind(plot_what,'.'))==2,'string specfiying what to plot should have 3 parts, since you are asking for a inst. gain analysis. e.g, "instGainAnalysis.firing_rate.mu')
+
+	if isempty(plot_here)
+	 	clear plot_here % so that plot_here gets the right class (axes object)
+		figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on 			
+		plot_here(1) = subplot(1,3,1); hold on
+		plot_here(2) = subplot(1,3,2); hold on
+		plot_here(3) = subplot(1,3,3); hold on
+	end
+
+	stim = nanmean(o.stimulus(uts,utt),2);
+	shat = computeSmoothedStimulus(stim,history_length);
+
+	% figure out what to plot
+	if strfind(plot_what,'firing_rate')
+		pred = nanmean(o.firing_projected(uts,utt),2);
+		resp = nanmean(o.firing_rate(uts,utt),2);
+		ylabel(plot_here(1),'ORN Gain (Hz/V)')
+
+		% throw out some junk points
+		rm_this = pred > 2*max(resp);
+		pred(rm_this) = []; resp(rm_this) = [];
+
+	elseif strfind(plot_what,'LFP')
+		pred = nanmean(o.LFP_projected(uts,utt),2);
+		resp = nanmean(o.LFP(uts,utt),2);
+		ylabel(plot_here(1),'ORN Gain (mV/V)')
+	else
+		error('What to plot not specified. You told me to plot the whiff gain analysis, but the only things I can plot the whiff gain analysis of are "firing_rate" or "LFP"')
+	end
+
+	% find all the excursions in the response
+	temp = resp;
+	if min(temp) >= 0
+		% firing rate
+	else
+		% LFP
+		temp = -temp;
+	end
+	temp = temp-min(temp);
+	temp = temp/max(temp);
+	[ons,offs] = computeOnsOffs(temp>.1);
+
+	% excursions should be a certain length
+	rm_this = (offs-ons) < 50 | (offs-ons) > 500;
+	ons(rm_this) = []; offs(rm_this) = [];
+
+	% find the gains in all windows and also grab the data to plot
+	[gain,gain_err,plot_data] = findGainInWindows(ons,offs,pred,resp);
+
+	% plot this
+	for i = 1:length(plot_data)
+		if gain_err(i) > .8 && ~isnan(gain_err(i)) && gain(i) > 0
+			plot_handles(1).dots(i) = plot(plot_here(1),plot_data(i).x,plot_data(i).y,'k.');
+		end
+	end
+
+	% now compute the smoothed stimulus for all history lengths and also compute the rho
+	rho = NaN*history_lengths;
+	for i = 1:length(history_lengths)
+		temp = computeSmoothedStimulus(stim,round(history_lengths(i)));
+		shat = NaN*ons;
+		for j = 1:length(ons)
+			shat(j) = mean(temp(ons(j):offs(j)));
+		end
+		rho(i) = spear(shat(gain>0 & gain_err > .8),gain(gain>0 & gain_err > .8));
+
+	end
+	plot(plot_here(3),history_lengths,rho,'k+')
+	set(plot_here(3),'XScale','log')
+
+	% show the example history length
+	temp = computeSmoothedStimulus(stim,round(history_length));
+	shat = NaN*ons;
+	for j = 1:length(ons)
+		shat(j) = mean(temp(ons(j):offs(j)));
+	end
+	shat = shat - nanmean(shat);
+	shat = shat/nanstd(shat);
+	plot(plot_here(2),shat(gain>0 & gain_err > .8),gain(gain>0 & gain_err > .8),'k+')
+
+	% colour the plot 
+	shat = shat - nanmin(shat);
+	shat = shat/nanmax(shat);
+	c = parula(100);
+	for i = 1:length(ons)
+		try
+			plot_handles(1).dots(i).Color = c(1+floor(shat(i)*99),:);
+		catch
+		end
+	end
+	
+
+	% cosmetics
+	xlabel(plot_here(3),'History Length (ms)')
+	ylabel(plot_here(3),'\rho')
+	xlabel(plot_here(2),'\mu_{stimulus} in preceding window (norm)')
+	ylabel(plot_here(2),'Gain (norm)')
+	xlabel(plot_here(1),'LN Model prediction (Hz)')
+	ylabel(plot_here(1),'ORN Response (Hz)')
+	set(plot_here(3),'YLim',[-1 1])
+
+end
+
+
+if strfind(plot_what,'valveGainAnalysis.')
+	% verify that we get three arguments
+	assert(length(strfind(plot_what,'.'))==2,'string specfiying what to plot should have 3 parts, since you are asking for a inst. gain analysis. e.g, "instGainAnalysis.firing_rate.mu')
+
+	if isempty(plot_here)
+	 	clear plot_here % so that plot_here gets the right class (axes object)
+		figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on 			
+		plot_here(1) = subplot(1,3,1); hold on
+		plot_here(2) = subplot(1,3,2); hold on
+		plot_here(3) = subplot(1,3,3); hold on
+	end
+
+	stim = nanmean(o.stimulus(uts,utt),2);
+	shat = computeSmoothedStimulus(stim,history_length);
+
+	% figure out what to plot
+	if strfind(plot_what,'firing_rate')
+		pred = nanmean(o.firing_projected(uts,utt),2);
+		resp = nanmean(o.firing_rate(uts,utt),2);
 		[whiff_ons,whiff_offs] = findWhiffs(pred);
 		ylabel(plot_here(1),'ORN Gain (Hz/V)')
 	elseif strfind(plot_what,'LFP')
@@ -177,22 +367,89 @@ if strfind(plot_what,'whiffGainAnalysis.')
 	else
 		error('What to plot not specified. You told me to plot the whiff gain analysis, but the only things I can plot the whiff gain analysis of are "firing_rate" or "LFP"')
 	end
-	gain = 0*whiff_offs-1 ;
 
-	for i = 1:length(whiff_ons)
-		try
-			ff = fit(pred(whiff_ons(i):whiff_offs(i)),resp(whiff_ons(i):whiff_offs(i)),'poly1');
-			gain(i) = ff.p1;
+	% find all valve ons and offs
+	[valve_ons,valve_offs] = computeOnsOffs(o.valve(uts));
+	resp(resp<min_inst_gain_firing) = NaN;
+
+	for i = 1:length(valve_ons)
+		a = find(~isnan(resp(valve_ons(i):valve_offs(i))),1,'first');
+		if ~isempty(a)
+			a = a + valve_ons(i);
+			[~,z] = max(resp(a:valve_offs(i))); z = z + a;
+			if z - a > 100
+				z = a + 100;
+			end
+			if any(isnan(resp(a:z)))
+				z = a+find(~isnan(resp(a:z)),1,'last');
+			end
+			valve_ons(i) = a;
+			try
+				valve_offs(i) = z;
+			catch
+				valve_offs(i) = NaN;
+				valve_ons(i) = NaN;
+			end
+
 		end
 	end
-	rm_this = gain < 0;
-	whiff_ons(rm_this) = []; whiff_offs(rm_this) = []; gain(rm_this) = [];
-	l = plot(plot_here(1),shat(whiff_offs),gain,'k+');
-	set(plot_here(1),'XScale','log','YScale','log')
-	% find the rho
-	r = spear(vectorise(shat(whiff_offs)),gain(:));
-	legend(l,['\rho = ' oval(r)])
-	xlabel(plot_here(1),'Mean Stimulus (V)')
+	valve_offs(isnan(valve_offs)) = [];
+	valve_ons(isnan(valve_ons)) = [];
+
+	% find the gains in all windows and also grab the data to plot
+	[gain,gain_err,plot_data] = findGainInWindows(valve_ons,valve_offs,pred,resp);
+
+	% plot this
+	for i = 1:length(plot_data)
+		if gain_err(i) > .8 && ~isnan(gain_err(i)) && gain(i) > 0
+			plot_handles(1).dots(i) = plot(plot_here(1),plot_data(i).x,plot_data(i).y,'k.');
+		end
+	end
+
+	% now compute the smoothed stimulus for all history lengths and also compute the rho
+	rho = NaN*history_lengths;
+	for i = 1:length(history_lengths)
+		temp = computeSmoothedStimulus(stim,round(history_lengths(i)));
+		shat = NaN*valve_ons;
+		for j = 1:length(valve_ons)
+			shat(j) = mean(temp(valve_ons(j):valve_offs(j)));
+		end
+		rho(i) = spear(shat(gain>0 & gain_err > .8),gain(gain>0 & gain_err > .8));
+	end
+	plot(plot_here(3),history_lengths,rho,'k+')
+	set(plot_here(3),'XScale','log')
+
+	% show the example history length
+	temp = computeSmoothedStimulus(stim,round(history_length));
+	shat = NaN*valve_ons;
+	for j = 1:length(valve_ons)
+		shat(j) = mean(temp(valve_ons(j):valve_offs(j)));
+	end
+	shat = shat - nanmean(shat);
+	shat = shat/nanstd(shat);
+	plot(plot_here(2),shat(gain>0 & gain_err > .8),gain(gain>0 & gain_err > .8),'k+')
+
+	% colour the plot 
+	shat = shat - nanmin(shat);
+	shat = shat/nanmax(shat);
+	c = parula(100);
+	for i = 1:length(valve_ons)
+		try
+			plot_handles(1).dots(i).Color = c(1+floor(shat(i)*99),:);
+		catch
+		end
+	end
+	
+
+	% cosmetics
+	xlabel(plot_here(3),'History Length (ms)')
+	ylabel(plot_here(3),'\rho')
+	xlabel(plot_here(2),'\mu_{stimulus} in preceding window (norm)')
+	ylabel(plot_here(2),'Gain (norm)')
+	xlabel(plot_here(1),'LN Model prediction (Hz)')
+	ylabel(plot_here(1),'ORN Response (Hz)')
+	set(plot_here(3),'YLim',[-1 1])
+
 
 end
 
@@ -274,10 +531,24 @@ if strfind(plot_what,'ioCurve.')
 	xlabel(plot_here,'Projected Stimulus (V)')
 
 	if show_NL
+		temp = ORNData;
+		if width(resp) > 1
+			resp = nanmean(resp,2);
+		end
+		if width(pred) > 1
+			pred = nanmean(pred,2);
+		end
 		if strfind(plot_what,'firing_rate')
-			[~,ff] = fitNL(o);
-			plot(plot_here,pred,ff(pred),'r','LineWidth',2);
+			temp.stimulus = NaN*pred;
+			temp.K_firing = nanmean(o.K_firing,2);
+			temp.firing_projected = pred;
+			temp.firing_rate = resp;
+			[~,ff] = fitNL(temp);
+			l = plot(plot_here,pred,ff(pred),'r','LineWidth',2);
+			% show r2
+			legend(l,{['r^2 =  ' oval(rsquare(resp,ff(pred)))]})
 		else
+			error('not coded')
 		end
 	end
 
@@ -468,7 +739,7 @@ if any(strfind(plot_what,'laughlin.'))
 	plot_options.nbins = nbins;
 	plot_options.plot_type = plot_type;
 	plot_handles(1).pdf = plotPDF(plot_here(1),x,grouping,plot_options);
-
+	plot_options.data_bin_type = data_bin_type;
 	plot_handles(2).h = plotLaughlin(plot_here(2),x,y,grouping,plot_options);
 
 	% labels

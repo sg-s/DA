@@ -6,7 +6,7 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function R = adaptiveGainModel(S,p)
+function [R,Kg] = adaptiveGainModel(S,p)
 
 switch nargin
 case 0
@@ -29,18 +29,20 @@ p.n;
 lb.A = 0;
 lb.B = 0;
 lb.tau = 0;
-lb.n = 1;
-ub.tau = 600;
+lb.n = .1;
+ub.tau = 1e3;
 ub.n = 10;
 
-filter_length = 4*max(p.n*p.tau);
-if filter_length < length(S)/10
-else
-	filter_length = length(S)/10; % ridiculously long filters
-end
-t = 0:filter_length; 
-
+t = 0:(length(S)/10); 
 Kg = generate_simple_filter(p.tau,p.n,t);
+% clip filter to interesting bits
+[m,loc]=max(Kg);
+z = loc+find(Kg(loc:end)<m/100,1,'first'); % accept a 1% error
+if ~isempty(z)
+	Kg = Kg(1:z);
+end
+
+
 g = filter(Kg,1,S);
 R = (p.A*S)./(1+p.B*g);
 

@@ -84,17 +84,14 @@ end
 figure(f1)
 prettyFig('fs=14;')
 
-if being_published	
-	snapnow	
-	delete(gcf)
-end
-
 figure(f2)
 prettyFig('fs=14;')
 
+
 if being_published	
 	snapnow	
-	delete(gcf)
+	delete(f1)
+	delete(f2)
 end
 
 %%
@@ -141,6 +138,50 @@ end
 
 %%
 % We see that in this synthetic data, we still see very low Spearman correlation coefficents even as the history length tends to zero, and especially for values within the timescale of the filter in the LN model.
+
+%% Directly Estimating Gain timescales
+% Since we define gain control in terms of deviations from a LN model, and since we believe gain occurs divisively over some recent timescale in a stimulus-driven manner, we can directly fit an adaptive gain model to the output of a LN model and check if it can account for any of the variance unexplained by a LN model. 
+
+do_these = [6 6; 6 3; 6 1; 5 1; 2 3; 2 2];
+% clear p p0 d
+% p0.A = 2; p0.B = 0.05; p0.tau = 500; p0.n = 1;
+% for i = 1:length(do_these)
+% 	a = do_these(i,1); b = do_these(i,2);
+% 	d.stimulus = nanmean(od2(a,b).firing_projected,2);
+% 	d.response = nanmean(od2(a,b).firing_rate,2);
+% 	p(i) = fitModel2Data(@adaptiveGainModel,d,'p0',p0);
+% end
+% save('.cache/adaptive_gain_model_fits_light_flicker.mat','p')
+
+load('.cache/adaptive_gain_model_fits_light_flicker.mat','p')
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+ax(1) = subplot(1,2,1); hold on
+ax(2) = subplot(1,2,2); hold on
+for i = 1:length(do_these)
+	a = do_these(i,1); b = do_these(i,2);
+	d.stimulus = nanmean(od2(a,b).firing_projected,2);
+	d.response = nanmean(od2(a,b).firing_rate,2);
+	r2LN = rsquare(d.stimulus,d.response);
+	fp = adaptiveGainModel(d.stimulus,p(i));
+	r2AG = rsquare(d.response,fp);
+	plot(ax(1),r2LN,r2AG,'k+')
+	plot(ax(2),100*(-r2LN+r2AG),p(i).tau*p(i).n,'k+')
+end
+plot(ax(1),[0 1],[0 1],'k--')
+set(ax(1),'XLim',[.7 1],'YLim',[.7 1])
+xlabel(ax(1),'r^2_{LN}')
+ylabel(ax(1),'r^2_{adaptive gain}')
+
+xlabel(ax(2),'Excess variance explained (%)')
+ylabel(ax(2),'Timescale of gain control (ms)')
+
+prettyFig('fs=18;')
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
 
 
 %% Version Info

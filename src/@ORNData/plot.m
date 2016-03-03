@@ -281,13 +281,15 @@ if strfind(plot_what,'excGainAnalysis.')
 	% find the gains in all windows and also grab the data to plot
 	[gain,gain_err,plot_data] = findGainInWindows(ons,offs,pred,resp);
 
-	% plot this
-	for i = 1:length(plot_data)
-		if gain_err(i) > .8 && ~isnan(gain_err(i)) && gain(i) > 0
-			plot_handles(1).dots(i) = plot(plot_here(1),plot_data(i).x,plot_data(i).y,'k.');
+	if showNL
+		% plot this
+		for i = 1:length(plot_data)
+			if gain_err(i) > .8 && ~isnan(gain_err(i)) && gain(i) > 0
+				plot_handles(1).dots(i) = plot(plot_here(1),plot_data(i).x,plot_data(i).y,'k.');
+			end
 		end
 	end
-
+	
 	% now compute the smoothed stimulus for all history lengths and also compute the rho
 	rho = NaN*history_lengths;
 	for i = 1:length(history_lengths)
@@ -370,6 +372,8 @@ if strfind(plot_what,'valveGainAnalysis.')
 
 	% find all valve ons and offs
 	[valve_ons,valve_offs] = computeOnsOffs(o.valve(uts));
+	% remove the last one because it might be at the end
+	valve_ons(end) = []; valve_offs(end) = [];
 	resp(resp<min_inst_gain_firing) = NaN;
 
 	for i = 1:length(valve_ons)
@@ -400,9 +404,11 @@ if strfind(plot_what,'valveGainAnalysis.')
 	[gain,gain_err,plot_data] = findGainInWindows(valve_ons,valve_offs,pred,resp);
 
 	% plot this
-	for i = 1:length(plot_data)
-		if gain_err(i) > .8 && ~isnan(gain_err(i)) && gain(i) > 0
-			plot_handles(1).dots(i) = plot(plot_here(1),plot_data(i).x,plot_data(i).y,'k.');
+	if showNL
+		for i = 1:length(plot_data)
+			if gain_err(i) > .8 && ~isnan(gain_err(i)) && gain(i) > 0
+				plot_handles(1).dots(i) = plot(plot_here(1),plot_data(i).x,plot_data(i).y,'k.');
+			end
 		end
 	end
 

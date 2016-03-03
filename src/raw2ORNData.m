@@ -43,11 +43,13 @@ if ~isempty(rm_this)
 	allfiles(rm_this) = [];
 end
 
+% organise by paradigm and by orn
 for i = 1:max(orn)
-	od(i) = ORNData;
-	od(i).original_name = allfiles(i).name;
-	od(i).paradigm = paradigm(orn==i);
-	od(i).firing_rate = fA(:,orn==i);
-	od(i).stimulus = stimulus(:,orn==i);
-	od(i).LFP = LFP(:,orn==i);
+	for j = 1:max(paradigm)
+		od(i,j) = ORNData;
+		od(i,j).original_name = allfiles(i).name;
+		od(i,j).firing_rate = fA(:,orn==i & paradigm == j);
+		od(i,j).stimulus = stimulus(:,orn==i & paradigm == j);
+		od(i,j).LFP = LFP(:,orn==i & paradigm == j);
+	end
 end

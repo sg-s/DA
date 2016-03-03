@@ -24,14 +24,88 @@ pHeader;
 %      ##     ## ##     ## ##    ## ##       ##    ##    ## ##   ##       ##     ## 
 %       #######  ########   ######  ######## ##     ##    ###    ######## ########  
 
-
-%% Figure 6: Gain Control is widely observed
-% The previous result showed fast gain control using ethyl acetate, a volatile odor, in ab3A, an antennal ORN. To determine if fast gain control is widely observed, and not a peculiarity of the odor-receptor combination used, I reanalyzed a published data set of ORN responses to flickering odor stimuli (from Martelli et al. J. Neuro. 2013). The data set consists of six different odors and two ORN types: one in the antenna and one in the maxillary palp. My analysis of fast gain control is self-consistent across experimental replicates (A-C), and shows that fast gain control is observed for different odors (D-F) and in two different neurons (G-I).  In each row, the first column shows the linear filter extracted from the stimulus and the response. The second column shows the principal components fit to the highest (lowest) 1/3 of stimulus filtered over some history length in red (green). The third column shows how relative gain varies at times when the filtered stimulus in in the top 1/3 (green) or bottom 1/3 (red), for various history lengths. Only significant (p<0.01) points are shown. In every dataset, significant gain control is observed on a sub-second time scale, and the gain control always acts to amplify responses to recently weak stimuli and suppress responses to recently large stimuli (red dots always below green dots in third column). 
-
 % load the data
 if ~exist('orn_data','var')
 	load('Carlotta_Data.mat')
 end
+
+
+%% Detailed Report: Experimental Replicates
+% In this section, we look at all the data from Carlotta in detail, ORN-by-ORN. First, we start off by looking at her experimental replicates, where the ab3A ORN responds to methyl butyrate. 
+
+% first column: experimental replicates
+do_these = [7 9 13 15 16];
+
+for i = 1:length(do_these)
+	figure('outerposition',[0 0 1300 800],'PaperUnits','points','PaperSize',[1300 800]); hold on
+	for j = 1:5
+		ax(j) = subplot(2,3,j); hold on
+	end
+
+	% show the filter
+	plot(orn_data(do_these(i)),ax(1),'Filter.firing_rate');
+
+	% show the nonlinearity -- raw 
+	plot(orn_data(do_these(i)),ax(2),'ioCurve.firing_rate','show_NL',false,'nbins',50);
+
+	% now fit a NL
+	temp = orn_data(do_these(i));
+	temp = fitPieceWiseNL(temp);
+	plot(temp,ax(3:5),'valveGainAnalysis.firing_rate.mu','history_lengths',logspace(1,4,30));
+
+	% cosmetics
+	set(ax(4),'YLim',[.5 2],'YScale','log')
+
+	prettyFig('fs=18;')
+	if being_published
+		snapnow
+		delete(gcf)
+	end
+
+end
+
+%% Detailed Report: Different Odours
+% We now see if this is true for different odours. 
+
+do_these = [7 8 10 14 17 18];
+
+for i = 1:length(do_these)
+	figure('outerposition',[0 0 1300 800],'PaperUnits','points','PaperSize',[1300 800]); hold on
+	for j = 1:5
+		ax(j) = subplot(2,3,j); hold on
+	end
+
+	% show the filter
+	plot(orn_data(do_these(i)),ax(1),'Filter.firing_rate');
+
+	% show the nonlinearity -- raw 
+	plot(orn_data(do_these(i)),ax(2),'ioCurve.firing_rate','show_NL',false,'nbins',50);
+
+	% now fit a NL
+	temp = orn_data(do_these(i));
+	temp = fitPieceWiseNL(temp);
+	plot(temp,ax(3:5),'valveGainAnalysis.firing_rate.mu','history_lengths',logspace(1,4,30));
+
+	% cosmetics
+	set(ax(4),'YLim',[.5 2],'YScale','log')
+
+	prettyFig('fs=18;')
+
+	suptitle(['Odour: ' orn_data(do_these(i)).odour_name])
+	if being_published
+		snapnow
+		delete(gcf)
+	end
+
+end
+
+
+%% Detailed Analysis: Different ORNs
+% We now compare fast gain control in different ORNs
+
+do_these = [11 17 25];
+
+
 
 % make the figures
 figure('outerposition',[0 0 1300 800],'PaperUnits','points','PaperSize',[1300 800]); hold on
@@ -47,30 +121,19 @@ title(axes_handles(2),'Different Odors')
 title(axes_handles(3),'Different ORNs')
 title(axes_handles(4),'Locust EAG')
 
-% first row: experimental replicates
-do_these = [7 9 13 15 16];
+
 clear plot_handles
 for i = 1:length(do_these)
 	do_this = do_these(i);
-	plot_handles(i).h = plot(orn_data(do_this),axes_handles([5 9]),'gain_analysis.binned','mean_stim_bins',200);
+	plot_handles(i).h = plot(orn_data(do_this),axes_handles([5 9]),'instGainAnalysis.firing_rate.mu','history_lengths',round(logspace(2,4,50)),'data_bin_type','dots','history_length',200);
 end
 
-% replot the binned gain vs. mean stim with futher binning
-for i = 1:length(do_these)
-	x = get(plot_handles(i).h(1),'XData');
-	y = get(plot_handles(i).h(1),'YData');
-	rm_this = x < .1 | x > .9 | y < 0;
-	x(rm_this) = []; y(rm_this) = [];
-	delete(plot_handles(i).h(1));
-	axes(axes_handles(5));
-	plot_handles(i).h(1) = plotPieceWiseLinear(x,y,'nbins',5,'use_std',true);
-end
 
 % cosmetics
 c =  lines(length(do_these));
 for i = 1:length(do_these)
-	set(plot_handles(i).h(1),'Color',c(i,:),'LineStyle','-','Marker','none')
-	set(plot_handles(i).h(2),'Color',c(i,:),'LineStyle','-','Marker','none')
+	set(plot_handles(i).h(1).lines,'Color',c(i,:),'LineStyle','none','Marker','+')
+	set(plot_handles(i).h(2).lines,'Color',c(i,:),'LineStyle','none','Marker','+')
 end
 
 set(axes_handles(5),'YLim',[0.5 2],'XLim',[0 0.9])

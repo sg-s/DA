@@ -8,6 +8,19 @@
 
 function [o,ff] = fitNL(o)
 
+
+% recursively call this to work on arrays of objects
+original_dimensions = size(o);
+o = o(:);
+if length(o) > 1
+	for i = 1:length(o)
+		o(i) = fitNL(o(i));
+	end
+	o = reshape(o,original_dimensions);
+	return
+end
+
+
 % respect constrains on where to calculate this 
 if isempty(o.use_these_trials)
 	utt = 1:o.n_trials;
@@ -33,9 +46,20 @@ if ~isempty(o.firing_rate) && ~isempty(o.firing_projected) && ~isempty(o.stimulu
 			temp1 = p(:,i); temp2 = r(:,i);
 			rm_this = isnan(temp1) | isnan(temp2);
 			temp1(rm_this) = []; temp2(rm_this) = [];
-			ft = fittype('hillFit(x,A,k,n,x_offset)');
-			ff = fit(temp1,temp2,ft,'StartPoint',[max(temp2) mean(temp1) 1 0],'Upper',[900 10*max(temp1) 10 Inf],'Lower',[min(temp2)/2 min(temp2)/2 2 -Inf],'MaxIter',1e3);
-			o.firing_projected(:,i) = ff(o.firing_projected(:,i));
+			temp1 = temp1 - min(temp1);
+			temp1 = temp1/max(temp1);
+			temp2 = temp2/max(temp2);
+
+			ft = fittype('hill2(x,k,n)');
+			ff = fit(temp1,temp2,ft,'StartPoint',[.5 2],'Lower',[0 1],'Upper',[1 4],'MaxIter',1e3);
+
+			temp1 = o.firing_projected(:,i);
+			temp1 = temp1 - min(temp1); temp1 = temp1/max(temp1);
+			o.firing_projected(:,i) = ff(temp1)*max(o.firing_rate(:,i));
+
+			% figure, hold on
+			% plot(temp1,o.firing_rate(:,i),'k.')
+			% plot(temp1,o.firing_projected(:,i),'rx')
 		end
 	end
 

@@ -43,6 +43,14 @@ if ~isempty(rm_this)
 	allfiles(rm_this) = [];
 end
 
+% remove some junk
+rm_this = max(fA) == 0;
+fA(:,rm_this) = [];
+stimulus(:,rm_this) = [];
+LFP(:,rm_this) = [];
+orn(rm_this) = [];
+paradigm(rm_this) = [];
+
 % organise by paradigm and by orn
 for i = 1:max(orn)
 	for j = 1:max(paradigm)

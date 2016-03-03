@@ -10,11 +10,14 @@ function [o] = fitPieceWiseNL(o)
 
 assert(strcmp(class(o),'ORNData'),'Argument should be a ORNData class object')
 
-% recursively call this function to work on arrays
+% recursively call this to work on arrays of objects
+original_dimensions = size(o);
+o = o(:);
 if length(o) > 1
 	for i = 1:length(o)
 		o(i) = fitPieceWiseNL(o(i));
 	end
+	o = reshape(o,original_dimensions);
 	return
 end
 

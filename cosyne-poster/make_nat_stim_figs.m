@@ -275,8 +275,44 @@ set(axes_handles(2),'XLim',[-.1 5.1],'YColor','k','XColor','r','box','off')
 set(axes_handles(3),'YLim',[10 1e4],'YScale','log','XScale','log','XLim',[.0009 10],'XTick',[1e-4 1e-3 1e-2 1e-1 1 10])
 set(axes_handles(4),'YLim',[10 1e4],'YScale','log','XScale','log','XLim',[.0009 10],'XTick',[1e-4 1e-3 1e-2 1e-1 1 10])
 
+% add some insets
+inset(1) = axes();
+set(inset(1),'Position',[.62 .75 .1 .2])
+hold on
 
-prettyFig('plw=1.5;','lw=1.5;','fs=12;','FixLogX=true;')
+% show the PDF of the stimulus
+y = zeros(300,width(PID));
+for i = 1:width(PID)
+	[y(:,i),x] = histcounts(PID(:,i),300);x(1) = [];
+	y(:,i) = y(:,i)/sum(y(:,i));
+end
+axes(inset(1))
+errorShade(x,mean(y,2),sem(y'),'Color',[.2 .2 .2]);
+warning off % because there are some -ve values on the log scale
+set(inset(1),'XScale','log','YScale','log','XLim',[min(x) 10],'YLim',[1e-5 1],'YTick',logspace(-5,0,6))
+warning on
+
+inset(2) = axes();
+set(inset(2),'Position',[.86 .75 .1 .2])
+hold on
+
+% show the whiff durations 
+whiff_durations = []; 
+for i = 1:width(PID)
+	[ons,offs] = computeOnsOffs(PID(:,i) > .024);
+	whiff_durations =  [whiff_durations; offs-ons];
+end
+whiff_durations = nonzeros(whiff_durations);
+[y,x] = histcounts(whiff_durations,50); x(1)  =[];
+y = y/sum(y);
+a = 1; m = fittype('a*(x).^n');
+ff = fit(x(a:end)',y(a:end)',m,'Upper',[Inf -1.5],'Lower',[-Inf -1.5],'StartPoint',[300 -1.5]);
+plot(inset(2),x,y,'k+')
+plot(inset(2),x,ff(x),'r')
+set(inset(2),'YScale','log','XScale','log')
+set(inset(2),'XMinorTick','on','YMinorTick','on','XLim',[10 1e4])
+
+prettyFig('plw=1.5;','lw=1.5;','fs=18;','FixLogX=true;')
 
 
 % move plots a bit to make room for labels

@@ -207,7 +207,7 @@ end
 
 
 %% Kinetics of Response as a function of mean stimulus
-% In this section, we determine if the firing  responses slow down or speed up as a function of the mean stimulus. We do so buy computing the cross-correlation functions between the stimulus and the response for each trial.
+% In this section, we determine if the firing  responses slow down or speed up as a function of the mean stimulus. We do so by computing the cross-correlation functions between the stimulus and the response for each trial.
 
 firing_xcorr = NaN(1e3,width(LED));
 firing_peaks = NaN*paradigm;

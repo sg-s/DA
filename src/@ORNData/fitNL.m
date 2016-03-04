@@ -10,16 +10,15 @@ function [o,ff] = fitNL(o)
 
 
 % recursively call this to work on arrays of objects
-original_dimensions = size(o);
-o = o(:);
 if length(o) > 1
+	original_dimensions = size(o);
+	o = o(:);
 	for i = 1:length(o)
 		o(i) = fitNL(o(i));
 	end
 	o = reshape(o,original_dimensions);
 	return
 end
-
 
 % respect constrains on where to calculate this 
 if isempty(o.use_these_trials)
@@ -42,7 +41,7 @@ if ~isempty(o.firing_rate) && ~isempty(o.firing_projected) && ~isempty(o.stimulu
 	p = o.firing_projected(uts,:);
 
 	for i = 1:width(r)
-		if ismember(i,utt)
+		if ismember(i,find(utt))
 			temp1 = p(:,i); temp2 = r(:,i);
 			rm_this = isnan(temp1) | isnan(temp2);
 			temp1(rm_this) = []; temp2(rm_this) = [];
@@ -69,13 +68,32 @@ if ~isempty(o.LFP) && ~isempty(o.LFP_projected) && ~isempty(o.stimulus)
 	p = o.LFP_projected(uts,utt);
 
 	for i = 1:width(r)
-		textbar(i,width(r))
-		if ismember(i,utt)
+		if ismember(i,find(utt))
 			temp1 = p(:); temp2 = r(:);
 			rm_this = isnan(temp1) | isnan(temp2);
 			temp1(rm_this) = []; temp2(rm_this) = [];
-			ff = fit(temp1(1:100:end),temp2(1:100:end),'rat24','StartPoint',[-2 2 1 -1 -2 .1 1]);
-			o.LFP_projected(:,i) = ff(o.LFP_projected(:,i));
+
+			temp1 = -temp1; temp2 = - temp2;
+			temp1 = temp1 - min(temp1);
+			temp2 = temp2 - min(temp2);
+			temp1 = temp1/max(temp1);
+			temp2 = temp2/max(temp2);
+			ft = fittype('hill2(x,k,n)');
+			ff = fit(temp1,temp2,ft,'StartPoint',[.5 2],'Lower',[0 1],'Upper',[1 4],'MaxIter',1e3);
+
+			% ff = fit(temp1(1:100:end),temp2(1:100:end),'rat24','StartPoint',[-2 2 1 -1 -2 .1 1]);
+
+			temp1 = -o.LFP_projected(:,i); 
+			temp1 = temp1 - min(temp1); temp1 = temp1/max(temp1);
+			temp1 = -ff(temp1);
+
+			ff2 = fit(temp1(~isnan(temp1)),o.LFP(~isnan(temp1),i),'poly1');
+			temp1 = ff2(temp1);
+
+
+			o.LFP_projected(:,i) = temp1;
+
+
 		end
 	end
 end

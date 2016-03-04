@@ -536,27 +536,27 @@ if strfind(plot_what,'ioCurve.')
 	plot_handles = plotNonlinearity(plot_here,pred,resp,grouping,plot_options);
 	xlabel(plot_here,'Projected Stimulus (V)')
 
-	if show_NL
-		temp = ORNData;
-		if width(resp) > 1
-			resp = nanmean(resp,2);
-		end
-		if width(pred) > 1
-			pred = nanmean(pred,2);
-		end
-		if strfind(plot_what,'firing_rate')
-			temp.stimulus = NaN*pred;
-			temp.K_firing = nanmean(o.K_firing,2);
-			temp.firing_projected = pred;
-			temp.firing_rate = resp;
-			[~,ff] = fitNL(temp);
-			l = plot(plot_here,pred,ff(pred),'r','LineWidth',2);
-			% show r2
-			legend(l,{['r^2 =  ' oval(rsquare(resp,ff(pred)))]})
-		else
-			error('not coded')
-		end
-	end
+	% if show_NL
+	% 	temp = ORNData;
+	% 	if width(resp) > 1
+	% 		resp = nanmean(resp,2);
+	% 	end
+	% 	if width(pred) > 1
+	% 		pred = nanmean(pred,2);
+	% 	end
+	% 	if strfind(plot_what,'firing_rate')
+	% 		temp.stimulus = NaN*pred;
+	% 		temp.K_firing = nanmean(o.K_firing,2);
+	% 		temp.firing_projected = pred;
+	% 		temp.firing_rate = resp;
+	% 		[~,ff] = fitNL(temp);
+	% 		l = plot(plot_here,pred,ff(pred),'r','LineWidth',2);
+	% 		% show r2
+	% 		legend(l,{['r^2 =  ' oval(rsquare(resp,ff(pred)))]})
+	% 	else
+	% 		error('not coded')
+	% 	end
+	% end
 
 end
 

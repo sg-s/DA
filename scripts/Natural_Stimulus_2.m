@@ -11,9 +11,21 @@
 pHeader;
 
 % load the data
-od = ORNData;
-od = readData(od,'/local-data/DA-paper/natural-flickering/with-lfp/ab3/');
+p = '/local-data/DA-paper/natural-flickering/with-lfp/ab3/';
+od = raw2ORNData(p);
 
+% specify intereting range
+uts = zeros(length(od(1).stimulus),1);
+uts(10e3:end-5e3) = true;
+for i = 1:length(od)
+	od(i).use_this_segment = uts;
+end
+
+% back out all filters
+od = backOutFilters(od);
+
+% fit NL
+od2 = fitNL(od);
 
 %% Stimulus
 % In this section we plot the stimulus we used. Because we're using Alicat MFCs rather than Aalborgs, this stimulus is different from the one originally used, despite an identical configuration of MFCs, valves and control signals. As you can see, this signal is denser, but still seems "naturalistic", with broad variation in the stimulus. Also, since we're using the Alicats, the stimulus is extremely reproducible trial-to-trial. The following figure shows the average of all the data, with a closeup to see the trial-to-trial variability. 

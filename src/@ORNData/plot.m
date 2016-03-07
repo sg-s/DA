@@ -90,7 +90,7 @@ if ~isempty(varargin)
     end
 end
 
-% respect use_this_segment and *se_these_trials properties
+% respect use_this_segment and use_these_trials properties
 if isempty(o.use_these_trials)
 	utt = 1:o.n_trials;
 else
@@ -281,7 +281,7 @@ if strfind(plot_what,'excGainAnalysis.')
 	% find the gains in all windows and also grab the data to plot
 	[gain,gain_err,plot_data] = findGainInWindows(ons,offs,pred,resp);
 
-	if showNL
+	if show_NL
 		% plot this
 		for i = 1:length(plot_data)
 			if gain_err(i) > .8 && ~isnan(gain_err(i)) && gain(i) > 0
@@ -291,18 +291,44 @@ if strfind(plot_what,'excGainAnalysis.')
 	end
 	
 	% now compute the smoothed stimulus for all history lengths and also compute the rho
-	rho = NaN*history_lengths;
+	% rho = NaN*history_lengths;
+	% for i = 1:length(history_lengths)
+	% 	temp = computeSmoothedStimulus(stim,round(history_lengths(i)));
+	% 	shat = NaN*ons;
+	% 	for j = 1:length(ons)
+	% 		shat(j) = mean(temp(ons(j):offs(j)));
+	% 	end
+	% 	rho(i) = spear(shat(gain>0 & gain_err > .8),gain(gain>0 & gain_err > .8));
+
+	% end
+	% plot(plot_here(3),history_lengths,rho,'k+')
+	% set(plot_here(3),'XScale','log')
+
+	set(plot_here(3),'XScale','log')
+
+	% build a measure of the gain difference (bottom 1/3 - top 1/3 of mean stimulus)
+	delta_gain = NaN*history_lengths;
+	p = NaN*delta_gain;
 	for i = 1:length(history_lengths)
 		temp = computeSmoothedStimulus(stim,round(history_lengths(i)));
 		shat = NaN*ons;
 		for j = 1:length(ons)
 			shat(j) = mean(temp(ons(j):offs(j)));
 		end
-		rho(i) = spear(shat(gain>0 & gain_err > .8),gain(gain>0 & gain_err > .8));
+		% find the bottom 1/3 of shat
+		this_gain = gain;
+		this_gain(isnan(gain) | gain < 0 | gain_err < .8) = [];
+		shat(isnan(gain) | gain < 0 | gain_err < .8) = [];
+		sorted_shat = sort(shat);
+		lo_gain = this_gain(shat<sorted_shat(floor(length(shat)/3)));
+		sorted_shat = sort(shat,'descend');
+		hi_gain = this_gain(shat>sorted_shat(floor(length(shat)/3)));
+		[~,p(i)]=ttest2(lo_gain,hi_gain,'Vartype','unequal');
+		delta_gain(i) = nanmean(lo_gain)/nanmean(hi_gain);
 
 	end
-	plot(plot_here(3),history_lengths,rho,'k+')
-	set(plot_here(3),'XScale','log')
+
+	plot(plot_here(3),history_lengths(p<0.01),delta_gain(p<0.01),'k+')
 
 	% show the example history length
 	temp = computeSmoothedStimulus(stim,round(history_length));
@@ -412,18 +438,47 @@ if strfind(plot_what,'valveGainAnalysis.')
 		end
 	end
 
-	% now compute the smoothed stimulus for all history lengths and also compute the rho
-	rho = NaN*history_lengths;
+	% % now compute the smoothed stimulus for all history lengths and also compute the rho
+	% rho = NaN*history_lengths;
+	% p = NaN*rho;
+	% for i = 1:length(history_lengths)
+	% 	temp = computeSmoothedStimulus(stim,round(history_lengths(i)));
+	% 	shat = NaN*valve_ons;
+	% 	for j = 1:length(valve_ons)
+	% 		shat(j) = mean(temp(valve_ons(j):valve_offs(j)));
+	% 	end
+	% 	x = shat(gain>0 & gain_err > .8 & ~isnan(shat) & ~isnan(gain));
+	% 	y = gain(gain>0 & gain_err > .8 & ~isnan(shat) & ~isnan(gain));
+	% 	[rho(i),p(i)] = corr(x,y,'type','Spearman');
+	% end
+
+	% % plot only the significant points
+	% plot(plot_here(3),history_lengths(p<.01),rho(p<0.01),'k+')
+	set(plot_here(3),'XScale','log')
+
+	% build a measure of the gain difference (bottom 1/3 - top 1/3 of mean stimulus)
+	delta_gain = NaN*history_lengths;
+	p = NaN*delta_gain;
 	for i = 1:length(history_lengths)
 		temp = computeSmoothedStimulus(stim,round(history_lengths(i)));
 		shat = NaN*valve_ons;
 		for j = 1:length(valve_ons)
 			shat(j) = mean(temp(valve_ons(j):valve_offs(j)));
 		end
-		rho(i) = spear(shat(gain>0 & gain_err > .8),gain(gain>0 & gain_err > .8));
+		% find the bottom 1/3 of shat
+		this_gain = gain;
+		this_gain(isnan(gain) | gain < 0 | gain_err < .8) = [];
+		shat(isnan(gain) | gain < 0 | gain_err < .8) = [];
+		sorted_shat = sort(shat);
+		lo_gain = this_gain(shat<sorted_shat(floor(length(shat)/3)));
+		sorted_shat = sort(shat,'descend');
+		hi_gain = this_gain(shat>sorted_shat(floor(length(shat)/3)));
+		[~,p(i)]=ttest2(lo_gain,hi_gain,'Vartype','unequal');
+		delta_gain(i) = nanmean(lo_gain)/nanmean(hi_gain);
+
 	end
-	plot(plot_here(3),history_lengths,rho,'k+')
-	set(plot_here(3),'XScale','log')
+
+	plot(plot_here(3),history_lengths(p<0.01),delta_gain(p<0.01),'k+')
 
 	% show the example history length
 	temp = computeSmoothedStimulus(stim,round(history_length));
@@ -449,63 +504,15 @@ if strfind(plot_what,'valveGainAnalysis.')
 
 	% cosmetics
 	xlabel(plot_here(3),'History Length (ms)')
-	ylabel(plot_here(3),'\rho')
+	ylabel(plot_here(3),'\Delta Gain')
 	xlabel(plot_here(2),'\mu_{stimulus} in preceding window (norm)')
 	ylabel(plot_here(2),'Gain (norm)')
 	xlabel(plot_here(1),'LN Model prediction (Hz)')
 	ylabel(plot_here(1),'ORN Response (Hz)')
-	set(plot_here(3),'YLim',[-1 1])
 
 
 end
 
-if strfind(plot_what,'dynamicIO.')
- 	if isempty(plot_here)
-		clear plot_here % so that plot_here gets the right class (axes object)
-		figure('outerposition',[0 0 600 600],'PaperUnits','points','PaperSize',[1000 600]); hold on 			
-		plot_here = gca;
-	end
-	% only plot nonlinearity. figure out what to plot
-	if strfind(plot_what,'firing_rate')
-		pred = nanmean(o.firing_projected(uts,utt),2);
-		stim = nanmean(o.stimulus(uts,utt),2);
-		stim = computeSmoothedStimulus(stim,history_length);
-		resp = nanmean(o.firing_rate(uts,utt),2);
-		% respect min firing rate
-		stim(resp<min_inst_gain_firing) = NaN;
-		pred(resp<min_inst_gain_firing) = NaN;
-		resp(resp<min_inst_gain_firing) = NaN;
-		ylabel(plot_here,'Firing Rate (Hz)')
-
-	elseif strfind(plot_what,'LFP')
-		pred = nanmean(o.LFP_projected(uts,utt),2);
-		resp = nanmean(o.LFP(uts,utt),2);
-		ylabel(plot_here,'\DeltaLFP (mV)')
-	else
-		error('What to plot not specified. You told me to plot the dynamic IO curve, but the only things I can plot the dynamic ioCurve of are "firing_rate" or "LFP"')
-	end
-	l = labelByPercentile(nonnans(stim),ngroups);
-	L = NaN*stim;
-	L(~isnan(stim)) = l;
-	c = parula(max(L)+1);
-	if strcmp(data_bin_type,'pwlinear')
-		for i = 1:max(l)
-			this_pred = pred(L==i);
-			this_resp = resp(L==i);
-			plotPieceWiseLinear(this_pred,this_resp,'nbins',nbins,'Color',c(i,:));
-		end
-	elseif strcmp(data_bin_type,'dots')
-		for i = 1:max(l)
-			this_pred = pred(L==i);
-			this_resp = resp(L==i);
-			plot(plot_here,this_pred,this_resp,'.','Color',c(i,:));
-		end
-	end
-	xlabel('Projected Stimulus (V)')
-	ylabel('ORN Response (Hz)')
-
-
-end
 
 if strfind(plot_what,'ioCurve.') 
 	if isempty(plot_here)

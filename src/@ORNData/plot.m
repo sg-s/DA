@@ -291,44 +291,50 @@ if strfind(plot_what,'excGainAnalysis.')
 	end
 	
 	% now compute the smoothed stimulus for all history lengths and also compute the rho
-	% rho = NaN*history_lengths;
-	% for i = 1:length(history_lengths)
-	% 	temp = computeSmoothedStimulus(stim,round(history_lengths(i)));
-	% 	shat = NaN*ons;
-	% 	for j = 1:length(ons)
-	% 		shat(j) = mean(temp(ons(j):offs(j)));
-	% 	end
-	% 	rho(i) = spear(shat(gain>0 & gain_err > .8),gain(gain>0 & gain_err > .8));
-
-	% end
-	% plot(plot_here(3),history_lengths,rho,'k+')
-	% set(plot_here(3),'XScale','log')
-
-	set(plot_here(3),'XScale','log')
-
-	% build a measure of the gain difference (bottom 1/3 - top 1/3 of mean stimulus)
-	delta_gain = NaN*history_lengths;
-	p = NaN*delta_gain;
+	rho = NaN*history_lengths;
+	p = NaN*history_lengths;
 	for i = 1:length(history_lengths)
 		temp = computeSmoothedStimulus(stim,round(history_lengths(i)));
 		shat = NaN*ons;
 		for j = 1:length(ons)
 			shat(j) = mean(temp(ons(j):offs(j)));
 		end
-		% find the bottom 1/3 of shat
-		this_gain = gain;
-		this_gain(isnan(gain) | gain < 0 | gain_err < .8) = [];
-		shat(isnan(gain) | gain < 0 | gain_err < .8) = [];
-		sorted_shat = sort(shat);
-		lo_gain = this_gain(shat<sorted_shat(floor(length(shat)/3)));
-		sorted_shat = sort(shat,'descend');
-		hi_gain = this_gain(shat>sorted_shat(floor(length(shat)/3)));
-		[~,p(i)]=ttest2(lo_gain,hi_gain,'Vartype','unequal');
-		delta_gain(i) = nanmean(lo_gain)/nanmean(hi_gain);
+		x = shat(gain>0 & gain_err > .8);
+		y = gain(gain>0 & gain_err > .8); 
+		rm_this = isnan(x) | isnan(y);
+		x(rm_this) = []; y(rm_this) = [];
+		[rho(i), p(i)] = corr(x,y,'type','Spearman');
 
 	end
+	plot(plot_here(3),history_lengths,rho,'+','Color',[0.5 0.5 0.5])
+	plot(plot_here(3),history_lengths(p<0.01),rho(p<0.01),'k+')
+	set(plot_here(3),'XScale','log')
 
-	plot(plot_here(3),history_lengths(p<0.01),delta_gain(p<0.01),'k+')
+	set(plot_here(3),'XScale','log')
+
+	% % build a measure of the gain difference (bottom 1/3 - top 1/3 of mean stimulus)
+	% delta_gain = NaN*history_lengths;
+	% p = NaN*delta_gain;
+	% for i = 1:length(history_lengths)
+	% 	temp = computeSmoothedStimulus(stim,round(history_lengths(i)));
+	% 	shat = NaN*ons;
+	% 	for j = 1:length(ons)
+	% 		shat(j) = mean(temp(ons(j):offs(j)));
+	% 	end
+	% 	% find the bottom 1/3 of shat
+	% 	this_gain = gain;
+	% 	this_gain(isnan(gain) | gain < 0 | gain_err < .8) = [];
+	% 	shat(isnan(gain) | gain < 0 | gain_err < .8) = [];
+	% 	sorted_shat = sort(shat);
+	% 	lo_gain = this_gain(shat<sorted_shat(floor(length(shat)/3)));
+	% 	sorted_shat = sort(shat,'descend');
+	% 	hi_gain = this_gain(shat>sorted_shat(floor(length(shat)/3)));
+	% 	[~,p(i)]=ttest2(lo_gain,hi_gain,'Vartype','unequal');
+	% 	delta_gain(i) = nanmean(lo_gain)/nanmean(hi_gain);
+
+	% end
+
+	% plot(plot_here(3),history_lengths(p<0.01),delta_gain(p<0.01),'k+')
 
 	% show the example history length
 	temp = computeSmoothedStimulus(stim,round(history_length));

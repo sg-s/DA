@@ -80,9 +80,11 @@ for j = 1:length(history_lengths)
 	for i = 1:length(ons)
 		sx(i) = mean(shat(ons(i):offs(i)));
 	end
-	s = spear(sx(r2>.5),k(r2>.5));
-	plot(ax(5),history_lengths(j),s,'k+')
+	[s,p] = corr(sx(r2>.5),k(r2>.5),'type','Spearman');
+	if p < 0.01
+		plot(ax(5),history_lengths(j),s,'k+')
+	end
 end
-set(ax(5),'XScale','log')
+set(ax(5),'XScale','log','XLim',[min(history_lengths) max(history_lengths)],'YLim',[-1 1])
 xlabel(ax(5),'History Length (ms)')
 ylabel(ax(5),'\rho')

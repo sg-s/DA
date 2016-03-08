@@ -45,20 +45,23 @@ if ~isempty(o.firing_rate) && ~isempty(o.firing_projected) && ~isempty(o.stimulu
 			temp1 = p(:,i); temp2 = r(:,i);
 			rm_this = isnan(temp1) | isnan(temp2);
 			temp1(rm_this) = []; temp2(rm_this) = [];
-			temp1 = temp1 - min(temp1);
-			temp1 = temp1/max(temp1);
+			min_offset = min(temp1); max_offset = max(temp1);
+			temp1 = temp1 - min_offset;
+			temp1 = temp1/max_offset;
 			temp2 = temp2/max(temp2);
 
-			ft = fittype('hill2(x,k,n)');
-			ff = fit(temp1,temp2,ft,'StartPoint',[.5 2],'Lower',[0 1],'Upper',[1 4],'MaxIter',1e3);
-
-			temp1 = o.firing_projected(:,i);
-			temp1 = temp1 - min(temp1); temp1 = temp1/max(temp1);
-			o.firing_projected(:,i) = ff(temp1)*max(o.firing_rate(:,i));
+			ft = fittype('hill2(x,k,n,x_offset)');
+			ff = fit(temp1,temp2,ft,'StartPoint',[.5 2 0],'Lower',[0 1 -1],'Upper',[1 4 1],'MaxIter',1e3);
 
 			% figure, hold on
-			% plot(temp1,o.firing_rate(:,i),'k.')
-			% plot(temp1,o.firing_projected(:,i),'rx')
+			% plot(temp1,temp2,'k.')
+			% plot(temp1,ff(temp1),'rx')
+
+			temp1 = o.firing_projected(:,i);
+			temp1 = temp1 - min_offset; temp1 = temp1/max_offset;
+			o.firing_projected(:,i) = ff(temp1)*max(o.firing_rate(:,i));
+
+
 		end
 	end
 

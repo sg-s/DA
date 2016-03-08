@@ -15,7 +15,10 @@ case 0
 case 1
 	error('Not enough input arguments')
 case 2
-	assert(isvector(S),'First argument should be a vector')
+	if size(S,2) < size(S,2)
+		S = S';
+	end
+	assert(size(S,2) == 2,'Stimulus should have two columns')
 	assert(isstruct(p),'Second argument should be a structure')
 end
 
@@ -26,12 +29,12 @@ p.tau;
 p.n;
 
 % bounds
-lb.A = 0;
-lb.B = 0;
-lb.tau = 0;
-lb.n = .1;
+lb.A = eps;
+lb.B = eps;
+lb.tau = 1;
+lb.n = 2;
 ub.tau = 1e3;
-ub.n = 10;
+ub.n = 45;
 
 t = 0:(length(S)/10); 
 Kg = generate_simple_filter(p.tau,p.n,t);
@@ -42,9 +45,11 @@ if ~isempty(z)
 	Kg = Kg(1:z);
 end
 
+fp = S(:,2);
+S = S(:,1);
 
 g = filter(Kg,1,S);
-R = (p.A*S)./(1+p.B*g);
+R = (p.A*fp)./(1+p.B*g);
 
 function f = generate_simple_filter(tau,n,t)
 f = t.^n.*exp(-t/tau); % functional form in paper

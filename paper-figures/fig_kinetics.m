@@ -232,7 +232,7 @@ prettyFig('fs=18;')
 if being_published	
 	snapnow	
 	delete(gcf)
-	end
+end
 
 
 %% Version Info

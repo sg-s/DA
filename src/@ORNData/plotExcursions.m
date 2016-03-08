@@ -12,14 +12,14 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [plot_handles] = plotExcursions(varargin)
+function [plot_handles,excursions] = plotExcursions(varargin)
 
 % options and defaults
 options.history_length = 500;
 options.excursion_thresh = .1;
 options.min_exc_length = 50;
 options.max_exc_length = 500;
-options.data = 'LFP';
+options.data = 'firing_rate';
 options.min_excursion_r2 = .8;
 
 % grab the ORNData object from the arguments
@@ -60,8 +60,11 @@ else
 	error('Inputs need to be name value pairs')
 end
 
-if ~isvalid(plot_here)
-	plot_here = [];
+% make sure axes handle is valid
+if ~isempty(plot_here)
+	if ~isvalid(plot_here)
+		plot_here = [];
+	end
 end
 
 if isempty(plot_here)
@@ -74,7 +77,7 @@ end
 
 % respect use_this_segment and use_these_trials properties
 if isempty(o.use_these_trials)
-	utt = 1:o.n_trials;
+	utt = true(o.n_trials,1);
 else
 	utt = o.use_these_trials;
 	if ~isempty(grouping)
@@ -83,7 +86,7 @@ else
 	
 end
 if isempty(o.use_this_segment)
-	uts = 1:length(o.stimulus);
+	uts = true(length(o.stimulus),1);
 else
 	uts = o.use_this_segment;
 end
@@ -150,8 +153,15 @@ shat = shat - nanmin(shat);
 shat = shat/nanmax(shat);
 c = parula(100);
 for i = length(ons):-1:1
+	try
 		plot_handles(i) = plot(plot_here,pred(ons(i):offs(i)),resp(ons(i):offs(i)),'.','Color',c(1+floor(shat(i)*99),:));
+	catch
+	end
 end
 	
+
+% also return the excursions.
+excursions.ons = ons + find(uts,1,'first');
+excursions.offs = offs + find(uts,1,'first');
 
 

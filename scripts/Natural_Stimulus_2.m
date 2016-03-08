@@ -14,7 +14,7 @@ pHeader;
 p = '/local-data/DA-paper/natural-flickering/with-lfp/ab3/';
 od = raw2ORNData(p);
 
-% specify intereting range
+% specify interesting range
 uts = zeros(length(od(1).stimulus),1);
 uts(10e3:end-5e3) = true;
 for i = 1:length(od)

@@ -128,8 +128,6 @@ K = interp1(filtertime_full,K,filtertime);
 % convolve with filter to make prediction
 fp = convolve(tA,mean(PID,2),K,filtertime);
 
-%% Fitting Hill functions to excursions 
-% In this section, we fit a Hill function to each excursion in an attempt to quantify how the nonlinearity changes. In the following figure, we plot the excursions where the Hill Fit has a $r^2 > .5$, together with the Hill fit. 
 
 plotHillExcursions(nanmean(PID,2),fp,R,true);
 suptitle('ORN Data')

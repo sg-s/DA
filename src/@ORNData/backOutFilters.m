@@ -46,7 +46,6 @@ if  strcmp(filter_type,'all') || strcmp(filter_type,'firing')
 		if ~strcmp(K_firing_hash,obj.K_firing_hash)
 			filter_length = length(obj.filtertime_firing);
 			filter_offset = find(obj.filtertime_firing == 0);
-			disp('computing filter...')
 			K = NaN(filter_length,obj.n_trials);
 
 			if any(utt)
@@ -71,7 +70,6 @@ if strcmp(filter_type,'all') || strcmp(filter_type,'LFP')
 		% use hashes to check if anything has changed since last compute
 		K_LFP_hash = dataHash([vectorise(obj.LFP(uts,utt)); vectorise(obj.stimulus(uts,utt)); obj.regularisation_factor(:); obj.filtertime_firing(:)]);
 		if ~strcmp(K_LFP_hash,obj.K_LFP_hash)
-			disp('computing filter...')
 			filter_length = length(obj.filtertime_LFP);
 			filter_offset = find(obj.filtertime_LFP == 0);
 			K = NaN(filter_length,obj.n_trials);

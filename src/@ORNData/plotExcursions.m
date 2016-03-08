@@ -41,6 +41,7 @@ for i = 1:length(varargin)
 	end
 end
 
+
 % validate and accept options
 if iseven(length(varargin))
 	for ii = 1:2:length(varargin)-1

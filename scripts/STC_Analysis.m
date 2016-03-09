@@ -274,7 +274,7 @@ if being_published
 end
 
 
-% 5: Real Data: Naturalistic Stimulus
+%% 5: Real Data: Naturalistic Stimulus
 % In this section we use our naturalistic stimulus data, where stimulus is far from Gaussian. Note that here, in contrast to the real data driven by Gaussian noise, we have contributions from more than one mode, suggesting that there is something beyond a simple LN model at play here. This is consistent with our other results where we show that the LN model leaves some variance unexplained.  
 
 clearvars -except being_published tvec nt

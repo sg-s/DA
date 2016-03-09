@@ -26,37 +26,35 @@ if ~exist('od','var')
 	uts(10e3:end-10e3) = true;
 	for i = 1:size(od,1)
 		for j = 1:size(od,2)
-			od(i,j).use_this_segment = uts;
-			od(i,j) = backOutFilters(od(i,j));
+			if od(i,j).n_trials > 0
+				disp([i j])
+				od(i,j).use_this_segment = uts;
+				od(i,j) = backOutFilters(od(i,j));
+			end
 		end
 	end
 
 	% also create another object with the odour values
 	od_odour = raw2ORNData(p,'led_power_func',led_power_func,'use_led',false,'filter_LFP',false);
+
 end
 
 %%
 % First, we show that the background odour activates the ORN. In our experiments, the odour is turned on 5 seconds before the light starts to fluctuate. We plot the ORN response during this initial period as a function of odour concentration. 
 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-ax(1) = subplot(1,2,1); hold on
-ax(2) = subplot(1,2,2); hold on
-for i = size(od,1)
+figure('outerposition',[100 100 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+c = lines(size(od,1));
+for i = 1:size(od,1)
 	% for each neuron
 	for j = 1:size(od,2)
 		% for each paradigm
 		f = nanmean(od(i,j).firing_rate(1:5e3,:));
-		x = od(i,j).LFP(1,:) - nanmean(od(i,j).LFP(1:5e3,:));
 		s = nanmean(od_odour(i,j).stimulus(1:5e3,:));
-		plot(ax(1),s,x,'k+')
-		plot(ax(2),s,f,'k+')
+		plot(s,f,'+','Color',c(i,:))
 	end
 end
-xlabel(ax(1),'Mean Odour Stimulus (V)')
-xlabel(ax(2),'Mean Odour Stimulus (V)')
-
-ylabel(ax(1),'Mean \DeltaLFP (mV)')
-ylabel(ax(2),'Mean Firing rate (Hz)')
+xlabel('Mean Odour Stimulus (V)')
+ylabel('Odour-induced Firing rate (Hz)')
 
 prettyFig()
 
@@ -69,7 +67,7 @@ end
 % figure out paradigm ordering 
 mean_s = NaN(size(od_odour,2),1);
 for i = 1:size(od_odour,2)
-	mean_s(i) = nanmean(nanmean(od_odour(:,i).stimulus));
+	mean_s(i) = nanmean(nanmean([od_odour(:,i).stimulus]));
 end
 [~,idx] = sort(mean_s);
 for i = 1:size(od_odour,1)
@@ -80,23 +78,54 @@ end
 %%
 % Now, we back out filters and plot the nonlinearities in the light flicker regime, and plot them colour coded by odour background level.
 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-ax(1) = subplot(1,2,1); hold on
-ax(2) = subplot(1,2,2); hold on
-c = parula(size(od,2)+1);
-filtertime = 1e-3*(1:700) - .1;
-for i = 1:size(od,2)
-	K = (nanmean([od(:,i).K_firing],2));
-	x = (nanmean([od(:,i).firing_projected(uts,:)],2));
-	y = (nanmean([od(:,i).firing_rate(uts,:)],2));
-	plot(ax(1),filtertime,K,'Color',c(i,:));
-	axes(ax(2))
-	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:));
+figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1400 800]); hold on
+clear ax
+for i = 1:size(od,1)*3
+	ax(i) = subplot(3,size(od,1),i); hold on
 end
-xlabel(ax(1),'Fitler Lag (s)')
-ylabel(ax(1),'Filter')
-xlabel(ax(2),'Projected Stimulus (\muW)')
-ylabel(ax(2),'Firing rate (Hz) ')
+filtertime = 1e-3*(1:700) - .1;
+for i = 1:size(od,1)
+	c = parula(length(find([od(i,:).n_trials]))+1);
+	ci = 1;
+	gain = NaN(size(od,2),1);
+	odour_induced_firing_rate = NaN(size(od,2),1);
+	for j = 1:size(od,2)
+		if od(i,j).n_trials > 0
+			K = (nanmean(od(i,j).K_firing,2));
+			x = (nanmean(od(i,j).firing_projected(uts,:),2));
+			y = (nanmean(od(i,j).firing_rate(uts,:),2));
+			plot(ax(i),filtertime,K,'Color',c(ci,:));
+			axes(ax(i+size(od,1)))
+			[~,data] = plotPieceWiseLinear(x,y,'nbins',50,'Color',c(ci,:));
+			middle_segment = (data.y > max(data.y)/3 & data.y < 2*max(data.y)/3);
+			ff = fit(data.x(middle_segment),data.y(middle_segment),'poly1');
+			gain(j) = ff.p1;
+			odour_induced_firing_rate(j) = nanmean((nanmean(od(i,j).firing_rate(1:5e3,:),2)));
+			ci = ci+1;
+		end
+	end
+	plot(ax(i+size(od,1)*2),odour_induced_firing_rate,gain,'k+')
+end
+
+% equalise axes everywhere
+set(ax(size(od,1)*2+1:end),'YLim',[0 1.5])
+
+% add labels, etc
+for i = 1:size(od,1)
+	ylabel(ax(i),'Filter')
+	xlabel(ax(i),'Filter lag (s)')
+	title(ax(i),['ORN #' oval(i)])
+end
+
+for i = size(od,1)+1:size(od,1)*2
+	ylabel(ax(i),'ORN Response (Hz)')
+	xlabel(ax(i),'Projected Stimulus (\muW)')
+end
+
+for i = size(od,1)*2+1:length(ax)
+	ylabel(ax(i),'Gain (Hz/\muW)')
+	xlabel(ax(i),'Odour-induced firing rate (Hz)')
+end
 
 prettyFig('fs=18;')
 

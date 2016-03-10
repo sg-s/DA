@@ -36,7 +36,7 @@ for i = 1:length(axes_handles)
 end
 
 % show vergassola picture
-o = imread('../images/odor.png');
+o = imread('../images/odour-plumes.png');
 axes(axes_handles(1));
 imagesc(o);
 axis ij
@@ -514,8 +514,13 @@ gain_err(rm_this) = [];
 mean_stim(rm_this) = [];
 subplot(2,4,4), hold on
 plot(mean_stim,gain,'ro');
+options = fitoptions(fittype('power1'));
+options.Lower = [-Inf -1];
+options.Upper = [Inf -1];
+ff = fit(mean_stim,gain,'power1',options);
+plot(gca,mean_stim,ff(mean_stim),'r')
 set(gca,'XScale','log','YScale','log')
-ylabel('Gain (Hz/V')
+ylabel('Gain (Hz/V)')
 xlabel('Mean Stimulus in preceding 500ms')
 title('Gain estimation using white-noise filter')
 

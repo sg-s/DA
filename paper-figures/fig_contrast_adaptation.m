@@ -260,90 +260,32 @@ end
 
 % now do the supplementary figure showing dynamics of gain change
 
+X = fA_pred(4000:6000,:);
+Y = reshaped_fA(4000:6000,:);
+S = reshaped_PID(4000:6000,:);
+if ~exist('sc','var')
+	[gain,gain_r2,sc] = findEnsembleGain(X,Y,S);
+end
 
-% calculate instantaneous gain everywhere 
-[mean_stim,inst_gain,e] = findInstGain(reshaped_PID(:),reshaped_fA(:),fA_pred(:),500);
-
-% reshape back
-inst_gain = reshape(inst_gain,size(reshaped_PID,1),size(reshaped_PID,2));
-e = reshape(e,size(reshaped_PID,1),size(reshaped_PID,2));
-mean_stim = reshape(mean_stim,size(reshaped_PID,1),size(reshaped_PID,2));
-inst_gain(e<.8) = NaN;
-inst_gain(inst_gain == 0) = NaN;
-inst_gain(1:1e3,:) = NaN;
-
-
-figure('outerposition',[0 0 500 800],'PaperUnits','points','PaperSize',[500 800]); hold on
+figure('outerposition',[0 0 800 500],'PaperUnits','points','PaperSize',[800 500]); hold on
 
 % show how gain changes with time
-subplot(3,1,1), hold on
-errorShade(time,nanmean(inst_gain,2),nanstd(inst_gain'),'Color',[0 0 0]);
-xlabel('Time since switch (s)')
-ylabel('Inst. Gain (Hz/V)')
+ax = plotyy(time(4000:6000)-5,gain,time(4000:6000)-5,sc);
+xlabel(ax(1),'Time since switch (s)')
+ylabel(ax(1),'Inst. Gain (Hz/V)')
+ylabel(ax(2),'Simulus contrast')
 
 % put a timescale on this change by finding the time to half asymptote 
-tau_fA = NaN(width(inst_gain),1);
-for i = 1:width(inst_gain)
-	if mean(isnan(inst_gain(:,i))) < .3
-		a = nanmean(inst_gain(1e3:5e3,i));
-		z = nanmean(inst_gain(6e3:end,i));
-		try
-			tau_fA(i) = find(inst_gain(5e3:6e3,i) > a+ (z-a)/2,1,'first');
-		catch
-		end
-	end
-end
-tau_fA(tau_fA==1) = NaN;
+tau_fA = NaN;
 
-% now do the gain filter analysis 
-history_lengths = logspace(-2,0.5,20);
-history_lengths(14) = .5;
-gain_K1_rho = NaN*history_lengths;
-gain_K2_rho = NaN*history_lengths;
+a = nanmean(gain(1:.5e3));
+z = nanmean(gain(1.5e3:end));
+tau_fA = find(gain > a+ (z-a)/2,1,'first');
 
-stim = reshaped_PID(:);
-y = inst_gain(:);
+a = nanmean(sc(1:.5e3));
+z = nanmean(sc(1.5e3:end));
+tau_sc = find(sc < a+ (z-a)/2,1,'first');
 
-for i = 1:length(history_lengths)
-	% first do the simple box filter
-	temp = floor(history_lengths(i)*1e3);
-	temp = abs(filter(ones(temp,1),temp,stim));
-	subplot(3,2,3), hold on
-	gain_K1_rho(i) = spear(temp(1:100:end),y(1:100:end));
-	if i == 14
-		plot(temp(1:100:end),y(1:100:end),'k.')
-		ylabel('Inst. Gain (Hz/V)')
-		xlabel(['Stimulus projected ' char(10) 'using integrating filter'])
-		legend(['\rho = ' oval(gain_K1_rho(i))])
-	end
-	
-
-
-	% now the differentiating filter
-	temp = floor(history_lengths(i)*1e3/2);
-	temp = abs(filter([ones(temp,1); -ones(temp,1)],2*temp,stim-nanmean(stim)));
-	gain_K2_rho(i) = spear(temp(1:100:end),y(1:100:end));
-	subplot(3,2,4), hold on
-	if i == 14
-		plot(temp(1:100:end),y(1:100:end),'k.')
-		xlabel(['Stimulus projected ' char(10) 'using differentiating filter'])
-		legend(['\rho = ' oval(gain_K2_rho(i))])
-	end
-	
-
-end
-
-
-subplot(3,2,5), hold on
-xlabel('History Length (s)')
-ylabel('\rho')
-plot(history_lengths,gain_K1_rho,'Color','k','Marker','d')
-set(gca,'YLim',[-.4 .2])
-subplot(3,2,6), hold on
-plot(history_lengths,gain_K2_rho,'Color',[0 .6 0],'Marker','+')
-set(gca,'YLim',[-.4 .2])
-xlabel('History Length (s)')
-ylabel('\rho')
 
 prettyFig('FixLogX=1;','fs=16;')
 

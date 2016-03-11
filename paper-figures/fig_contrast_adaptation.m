@@ -320,7 +320,7 @@ end
 % 
 % where $\hat{x}$ is the gain-corrected projection of the stimulus. For now, we neglect the kinetics of contrast gain control, and assume
 %
-% %%\beta\left|K_{g}\otimes s\right|\coloneqq\beta\left|s-\bar{s}\right| $$
+% $$\beta\left|K_{g}\otimes s\right| := \beta\left|s-\bar{s}\right| $$
 %
 % which means that
 %
@@ -328,7 +328,7 @@ end
 % 
 
 %%
-% Now, we impose the condition that the gain-corrected projection is independent of variance condition, and depends only on linear projection. Solving for $\beta$, we get:
+% Now, we impose the condition that for a single ORN response, the gain-corrected projection is independent of variance condition, and depends only on the linear projection. Solving for $\beta$, we get:
 %
 % $$ \beta=\frac{x_{lo}-x_{hi}}{x_{hi}\left|s-\bar{s}\right|_{lo}-x_{lo}\left|s-\bar{s}\right|_{hi}} $$
 

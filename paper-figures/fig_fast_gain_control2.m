@@ -49,30 +49,14 @@ for i = 3:6
 	ax(i) = subplot(2,4,2+i); hold on
 end
 
-%  ######  ######## #### ##     ## ##     ## ##       ##     ##  ######  
-% ##    ##    ##     ##  ###   ### ##     ## ##       ##     ## ##    ## 
-% ##          ##     ##  #### #### ##     ## ##       ##     ## ##       
-%  ######     ##     ##  ## ### ## ##     ## ##       ##     ##  ######  
-%       ##    ##     ##  ##     ## ##     ## ##       ##     ##       ## 
-% ##    ##    ##     ##  ##     ## ##     ## ##       ##     ## ##    ## 
-%  ######     ##    #### ##     ##  #######  ########  #######   ######  
-
-
+% show stimulus
 t = (1:length(od(1).stimulus))*1e-3;
 plot(ax(1),t,nanmean([od.stimulus],2),'k')
 xlabel(ax(1),'Time (s)')
 ylabel(ax(1),'Stimulus (V)')
 set(ax(1),'XLim',[0 70])
 
-% ########  ########  ######  ########   #######  ##    ##  ######  ######## 
-% ##     ## ##       ##    ## ##     ## ##     ## ###   ## ##    ## ##       
-% ##     ## ##       ##       ##     ## ##     ## ####  ## ##       ##       
-% ########  ######    ######  ########  ##     ## ## ## ##  ######  ######   
-% ##   ##   ##             ## ##        ##     ## ##  ####       ## ##       
-% ##    ##  ##       ##    ## ##        ##     ## ##   ### ##    ## ##       
-% ##     ## ########  ######  ##         #######  ##    ##  ######  ######## 
-
-
+% show response
 for i = 1:length(od)
 	plot(ax(2),t,nanmean([od(i).firing_rate],2),'Color',[0 0 0 0.1])
 end
@@ -82,115 +66,18 @@ ylabel(ax(2),'Firing Rate (Hz)')
 set(ax(2),'XLim',[0 70])
 
 
-% ##     ##  ######         ##       #### ##    ## ########    ###    ########  
-% ##     ## ##    ##        ##        ##  ###   ## ##         ## ##   ##     ## 
-% ##     ## ##              ##        ##  ####  ## ##        ##   ##  ##     ## 
-% ##     ##  ######         ##        ##  ## ## ## ######   ##     ## ########  
-%  ##   ##        ##        ##        ##  ##  #### ##       ######### ##   ##   
-%   ## ##   ##    ## ###    ##        ##  ##   ### ##       ##     ## ##    ##  
-%    ###     ######  ###    ######## #### ##    ## ######## ##     ## ##     ## 
-
-
+% do the analysis of fast gain control
 example_data = od(2);
-% show response vs. linear projection; colour by mean stimulus in recent history window 
-[~,excursions] = plotExcursions(example_data,ax(3),'data','firing_rate');
-
-% make two time vectors, one defining when the stimulus is on, and one just for the whiffs
+orn_data = ORNData;
+orn_data.stimulus = nanmean(example_data.stimulus,2);
+orn_data.firing_rate = nanmean(example_data.firing_rate,2);
 stim_on = false(length(example_data.stimulus),1);
 stim_on(10e3:end-5e3) = true; 
-whiff_times = false(length(example_data.stimulus),1);
-for i = 1:length(excursions.ons)
-	whiff_times(excursions.ons(i):excursions.offs(i)) = true;
-end
+orn_data.use_this_segment = stim_on;
 
-% fit a NL just to the excursions
-linear_model_data = ORNData;
-linear_model_data.stimulus = nanmean(example_data.stimulus,2);
-linear_model_data.firing_rate = nanmean(example_data.firing_rate,2);
-linear_model_data.firing_projected = nanmean(example_data.firing_projected,2);
-linear_model_data.use_this_segment = whiff_times;
-[LN_model_data,ff] = fitNL(linear_model_data);
+r2_plot_data = fastGainControlAnalysis(ax(3:end),orn_data,'recompute_DA_fit',false);
 
-% show this best-fit NL on this plot
-x = linear_model_data.firing_projected(linear_model_data.use_this_segment,:); x2 = x;
-x2 = x2 - min(x2); x2 = x2/max(x2);
-plot(ax(3),sort(x),max(linear_model_data.firing_rate(linear_model_data.use_this_segment,:))*ff(sort(x2)),'r')
-xlabel(ax(3),'Proj. Stimulus (V)')
-l = plot(ax(3),NaN,NaN);
-linear_filter_r2 = rsquare(linear_model_data.firing_projected(whiff_times),linear_model_data.firing_rate(whiff_times));
-legend(l,['r^2 = ' oval(linear_filter_r2)],'Location','southeast')
-
-% ##     ##  ######         ##       ##    ##    ##     ##  #######  ########  ######## ##       
-% ##     ## ##    ##        ##       ###   ##    ###   ### ##     ## ##     ## ##       ##       
-% ##     ## ##              ##       ####  ##    #### #### ##     ## ##     ## ##       ##       
-% ##     ##  ######         ##       ## ## ##    ## ### ## ##     ## ##     ## ######   ##       
-%  ##   ##        ##        ##       ##  ####    ##     ## ##     ## ##     ## ##       ##       
-%   ## ##   ##    ## ###    ##       ##   ###    ##     ## ##     ## ##     ## ##       ##       
-%    ###     ######  ###    ######## ##    ##    ##     ##  #######  ########  ######## ######## 
-
-
-% show response vs. LN model; colour by mean stimulus in recent history window 
-uts = false(length(example_data.stimulus),1);
-uts(10e3:end-5e3) = true;
-LN_model_data.use_this_segment = uts;
-plotExcursions(LN_model_data,ax(4),'data','firing_rate');
-xlabel(ax(4),'LN Model Prediction (Hz)')
-l = plot(ax(4),NaN,NaN);
-LN_model_r2 = rsquare(LN_model_data.firing_projected(whiff_times),LN_model_data.firing_rate(whiff_times));
-legend(l,['r^2 = ' oval(LN_model_r2)],'Location','southeast')
-
-% ##     ##  ######     ########     ###       ##     ##  #######  ########  ######## ##       
-% ##     ## ##    ##    ##     ##   ## ##      ###   ### ##     ## ##     ## ##       ##       
-% ##     ## ##          ##     ##  ##   ##     #### #### ##     ## ##     ## ##       ##       
-% ##     ##  ######     ##     ## ##     ##    ## ### ## ##     ## ##     ## ######   ##       
-%  ##   ##        ##    ##     ## #########    ##     ## ##     ## ##     ## ##       ##       
-%   ## ##   ##    ##    ##     ## ##     ##    ##     ## ##     ## ##     ## ##       ##       
-%    ###     ######     ########  ##     ##    ##     ##  #######  ########  ######## ######## 
-
-
-% fit a DA Model to the excursions
-clear p
-p.   s0 = -0.1164;
-p.  n_z = 10.6250;
-p.tau_z = 19.7499;
-p.  n_y = 10.6250;
-p.tau_y = 4.6377;
-p.    C = 0.5848;
-p.    A = 709.4439;
-p.    B = 12.0094;
-S = LN_model_data.stimulus;
-[R,y,z,Ky,Kz] = DAModelv2(S,p);
-DA_model_data = LN_model_data;
-DA_model_data.firing_projected = R;
-plotExcursions(DA_model_data,ax(5),'data','firing_rate');
-l = plot(ax(5),NaN,NaN);
-DA_model_r2 = rsquare(R(whiff_times),linear_model_data.firing_rate(whiff_times));
-legend(l,['r^2 = ' oval(DA_model_r2)],'Location','southeast');
-xlabel(ax(5),'DA Model Prediction (Hz)')
-
-
-% now show that this is the key timescale of gain control
-tau_gain = round(logspace(log10(50),4,50));
-r2 = NaN*tau_gain;
-for i = 1:length(tau_gain)
-	p.tau_z = tau_gain(i)/p.n_z;
-	R = DAModelv2(S,p);
-	r2(i) = rsquare(R(whiff_times),linear_model_data.firing_rate(whiff_times));
-end
-
-% convert into fraction remaining variance explained
-r2 = (r2 - linear_filter_r2)./(1-linear_filter_r2);
-
-
-plot(ax(6),tau_gain,r2,'k+')
-set(ax(6),'XScale','log','YLim',[0 1])
-xlabel(ax(6),'Timescale of gain control (ms)')
-ylabel(ax(6),['Remaining variance' char(10) 'explained by DA model'])
-
-% show where the LN model is on this plot
-plot(ax(6),tau_gain,(LN_model_r2-linear_filter_r2)/(1-linear_filter_r2)*(1+0*tau_gain),'r')
-
-
+legend(r2_plot_data.l,['Peak = ' oval(r2_plot_data.peak_tau) 'ms'])
 prettyFig('fs=18;','FixLogX=true;')
 
 if being_published	
@@ -232,10 +119,11 @@ q. offset = -0.0483;
 q. Hill_A = 90.0547;
 q.Hill_Kd = 0.6875;
 q. Hill_n = 4;
-[R,K] = pLNModel(linear_model_data.stimulus,q);
+[R,K] = pLNModel(orn_data.stimulus,q);
+RandStream.setGlobalStream(RandStream('mt19937ar','Seed',1984)); 
 R = R + randn(length(R),1);
 R(R<0) = 0;
-control_data.stimulus = linear_model_data.stimulus;
+control_data.stimulus = orn_data.stimulus;
 control_data.firing_rate = R;
 control_data.use_this_segment = stim_on;
 control_data.regularisation_factor = 1e-1;
@@ -342,89 +230,16 @@ p.    A = 709.4439;
 p.    B = 12.0094;
 S = linear_model_data.stimulus;
 R = DAModelv2(S,p);
+RandStream.setGlobalStream(RandStream('mt19937ar','Seed',1984)); 
 R = R + randn(length(R),1);
 R(R<0) = 0;
 control_data.stimulus = linear_model_data.stimulus;
 control_data.firing_rate = R;
 control_data.use_this_segment = stim_on;
 control_data.regularisation_factor = 1e-1;
-control_data = backOutFilters(control_data);
 
-% show response vs. linear projection; colour by mean stimulus in recent history window 
-[~,excursions] = plotExcursions(control_data,ax(5),'data','firing_rate');
-
-% make two time vectors, one defining when the stimulus is on, and one just for the whiffs
-stim_on = false(length(example_data.stimulus),1);
-stim_on(10e3:end-5e3) = true; 
-whiff_times = false(length(example_data.stimulus),1);
-for i = 1:length(excursions.ons)
-	whiff_times(excursions.ons(i):excursions.offs(i)) = true;
-end
-
-% fit a NL just to the excursions
-control_data.use_this_segment = whiff_times;
-[control_data_LN,ff] = fitNL(control_data);
-
-% show this best-fit NL on this plot
-x = control_data.firing_projected(control_data.use_this_segment,:); 
-plot(ax(5),sort(x),max(control_data.firing_rate(control_data.use_this_segment,:))*ff(sort(x)),'r')
-xlabel(ax(5),'Proj. Stimulus (V)')
-l = plot(ax(5),NaN,NaN);
-linear_filter_r2 = rsquare(control_data.firing_projected(control_data.use_this_segment),control_data.firing_rate(control_data.use_this_segment));
-legend(l,['r^2 = ' oval(linear_filter_r2)],'Location','southeast')
-
-
-% show response vs. LN model; colour by mean stimulus in recent history window 
-uts = false(length(example_data.stimulus),1);
-uts(10e3:end-5e3) = true;
-control_data_LN.use_this_segment = uts;
-plotExcursions(control_data_LN,ax(6),'data','firing_rate');
-xlabel(ax(6),'LN Model Prediction (Hz)')
-l = plot(ax(6),NaN,NaN);
-LN_model_r2 = rsquare(control_data_LN.firing_projected(whiff_times),control_data_LN.firing_rate(whiff_times));
-legend(l,['r^2 = ' oval(LN_model_r2)],'Location','southeast')
-
-% fit a DA model
-clear p
-p.   s0 = -0.1164;
-p.  n_z = 2;
-p.tau_z = 70.6249;
-p.  n_y = 2;
-p.tau_y = 20.8877;
-p.    C = 0.4285;
-p.    A = 694.5689;
-p.    B = 12.0094;
-S = control_data_LN.stimulus;
-[R,y,z,Ky,Kz] = DAModelv2(S,p);
-DA_model_data = control_data_LN;
-DA_model_data.firing_projected = R;
-plotExcursions(DA_model_data,ax(7),'data','firing_rate');
-l = plot(ax(7),NaN,NaN);
-DA_model_r2 = rsquare(R(whiff_times),control_data_LN.firing_rate(whiff_times));
-legend(l,['r^2 = ' oval(DA_model_r2)],'Location','southeast');
-xlabel(ax(7),'DA Model Prediction (Hz)')
-
-
-% now show that this is the key timescale of gain control
-tau_gain = round(logspace(log10(50),4,50));
-r2 = NaN*tau_gain;
-for i = 1:length(tau_gain)
-	p.tau_z = tau_gain(i)/p.n_z;
-	R = DAModelv2(S,p);
-	r2(i) = rsquare(R(whiff_times),control_data_LN.firing_rate(whiff_times));
-end
-
-% convert into fraction remaining variance explained
-r2 = (r2 - linear_filter_r2)./(1-linear_filter_r2);
-
-
-plot(ax(8),tau_gain,r2,'k+')
-set(ax(8),'XScale','log','YLim',[0 1])
-xlabel(ax(8),'Timescale of gain control (ms)')
-ylabel(ax(8),['Remaining variance' char(10) 'explained by DA model'])
-
-% show where the LN model is on this plot
-plot(ax(8),tau_gain,(LN_model_r2-linear_filter_r2)/(1-linear_filter_r2)*(1+0*tau_gain),'r')
+r2_plot_data = fastGainControlAnalysis(ax(3:end),control_data,'recompute_DA_fit',false);
+legend(r2_plot_data.l,['Peak = ' oval(r2_plot_data.peak_tau) 'ms'])
 
 for i = 1:4
 	title(ax(i),'Synthetic Data: LN Model')
@@ -433,13 +248,174 @@ for i = 5:8
 	title(ax(i),'Synthetic Data: DA Model')
 end
 
-prettyFig('fs=18;','FixLogX=true;')
+prettyFig('fs=16;','FixLogX=true;')
 
 if being_published	
 	snapnow	
 	delete(gcf)
 end
 
+
+%% Rescaling Time
+% What's fishy about this is that the peak of the last plot is always at the same place. In the following figure, we manipulate time in two ways: first, we use a fixed DA model, and stretch the stimulus in time, to see if the estimated timescale of gain control changes (it shouldn't). Then, we change the timescale of gain control in the DA model, and see if we can recover this change in the analysis. 
+
+figure('outerposition',[0 0 1500 800],'PaperUnits','points','PaperSize',[1500 800]); hold on
+clear ax
+for i = 8:-1:1
+	ax(i) = subplot(2,4,i); hold on
+end
+
+%  ######   #######  ##     ## ########  ########  ########  ######   ######  
+% ##    ## ##     ## ###   ### ##     ## ##     ## ##       ##    ## ##    ## 
+% ##       ##     ## #### #### ##     ## ##     ## ##       ##       ##       
+% ##       ##     ## ## ### ## ########  ########  ######    ######   ######  
+% ##       ##     ## ##     ## ##        ##   ##   ##             ##       ## 
+% ##    ## ##     ## ##     ## ##        ##    ##  ##       ##    ## ##    ## 
+%  ######   #######  ##     ## ##        ##     ## ########  ######   ######  
+
+
+S = nanmean(example_data.stimulus,2);
+S = S(1:2:end); 
+
+% use the DA model
+control_data = ORNData;
+clear p
+p0.   s0 = -0.1164;
+p0.  n_z = 10.6250;
+p0.tau_z = 19.7499;
+p0.  n_y = 10.6250;
+p0.tau_y = 4.6377;
+p0.    C = 0.5848;
+p0.    A = 709.4439;
+p0.    B = 12.0094;
+R = DAModelv2(S,p0);
+RandStream.setGlobalStream(RandStream('mt19937ar','Seed',1984)); 
+R = R + randn(length(R),1);
+R(R<0) = 0;
+control_data.stimulus = S;
+control_data.firing_rate = R;
+control_data.use_this_segment = stim_on(1:2:end);
+control_data.regularisation_factor = 1e-1;
+
+r2_plot_data = fastGainControlAnalysis(ax(1:4),control_data,'recompute_DA_fit',false);
+legend(r2_plot_data.l,['Peak = ' oval(r2_plot_data.peak_tau) 'ms, actual = ' oval(p0.tau_z*p0.n_z)])
+
+
+
+%    ######  ######## ########  ######## ########  ######  ##     ## 
+%   ##    ##    ##    ##     ## ##          ##    ##    ## ##     ## 
+%   ##          ##    ##     ## ##          ##    ##       ##     ## 
+%    ######     ##    ########  ######      ##    ##       ######### 
+%         ##    ##    ##   ##   ##          ##    ##       ##     ## 
+%   ##    ##    ##    ##    ##  ##          ##    ##    ## ##     ## 
+%    ######     ##    ##     ## ########    ##     ######  ##     ## 
+
+S = repmat(nanmean(example_data.stimulus,2),1,2)'; 
+S = S(:);
+stim_on_stretched = repmat(stim_on,1,2)';
+stim_on_stretched = stim_on_stretched(:);
+
+% use the DA model
+control_data = ORNData;
+clear p
+p0.   s0 = -0.1164;
+p0.  n_z = 10.6250;
+p0.tau_z = 19.7499;
+p0.  n_y = 10.6250;
+p0.tau_y = 4.6377;
+p0.    C = 0.5848;
+p0.    A = 709.4439;
+p0.    B = 12.0094;
+R = DAModelv2(S,p0);
+RandStream.setGlobalStream(RandStream('mt19937ar','Seed',1984)); 
+R = R + randn(length(R),1);
+R(R<0) = 0;
+control_data.stimulus = S;
+control_data.firing_rate = R;
+control_data.use_this_segment = stim_on_stretched;
+control_data.regularisation_factor = 1e-1;
+
+r2_plot_data = fastGainControlAnalysis(ax(5:8),control_data,'recompute_DA_fit',false,'max_exc_length',1e3);
+legend(r2_plot_data.l,['Peak = ' oval(r2_plot_data.peak_tau) 'ms, actual = ' oval(p0.tau_z*p0.n_z)])
+
+
+for i = 1:4
+	title(ax(i),'2X Compressed Stimulus')
+end
+for i = 5:8
+	title(ax(i),'2X Stretched Stimulus')
+end
+
+prettyFig('fs=16;','FixLogX=true;')
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
+%% Changing the timescale of gain control
+% In this section, we change the timescale of gain control in the DA model, and see if we can recover this from the analysis. 
+
+figure('outerposition',[0 0 1500 800],'PaperUnits','points','PaperSize',[1500 800]); hold on
+clear ax
+for i = 8:-1:1
+	ax(i) = subplot(2,4,i); hold on
+end
+
+S = nanmean(example_data.stimulus,2);
+
+% use the DA model
+control_data = ORNData;
+clear p0
+p0.   s0 = -0.1164;
+p0.  n_z = 10;
+p0.tau_z = 20;
+p0.  n_y = 10.6250;
+p0.tau_y = 4.6377;
+p0.    C = 0.5848;
+p0.    A = 709.4439;
+p0.    B = 12.0094;
+R = DAModelv2(S,p0);
+RandStream.setGlobalStream(RandStream('mt19937ar','Seed',1984)); 
+R = R + randn(length(R),1);
+R(R<0) = 0;
+control_data.stimulus = S;
+control_data.firing_rate = R;
+control_data.use_this_segment = stim_on;
+control_data.regularisation_factor = 1e-1;
+
+r2_plot_data = fastGainControlAnalysis(ax(1:4),control_data,'recompute_DA_fit',false);
+legend(r2_plot_data.l,['Peak = ' oval(r2_plot_data.peak_tau) 'ms, actual = ' oval(p0.tau_z*p0.n_z)])
+
+% use the DA model
+control_data = ORNData;
+p0.  n_z = 10;
+p0.tau_z = 40;
+R = DAModelv2(S,p0);
+RandStream.setGlobalStream(RandStream('mt19937ar','Seed',1984)); 
+R = R + randn(length(R),1);
+R(R<0) = 0;
+control_data.stimulus = S;
+control_data.firing_rate = R;
+control_data.use_this_segment = stim_on;
+control_data.regularisation_factor = 1e-1;
+
+r2_plot_data = fastGainControlAnalysis(ax(5:8),control_data,'recompute_DA_fit',false,'max_exc_length',1e3);
+legend(r2_plot_data.l,['Peak = ' oval(r2_plot_data.peak_tau) 'ms, actual = ' oval(p0.tau_z*p0.n_z)])
+
+for i = 1:4
+	title(ax(i),'200ms gain control')
+end
+for i = 5:8
+	title(ax(i),'400ms gain control')
+end
+
+prettyFig('fs=16;','FixLogX=true;')
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
 
 %% Version Info
 %

@@ -238,7 +238,7 @@ control_data.firing_rate = R;
 control_data.use_this_segment = stim_on;
 control_data.regularisation_factor = 1e-1;
 
-r2_plot_data = fastGainControlAnalysis(ax(3:end),control_data,'recompute_DA_fit',false);
+r2_plot_data = fastGainControlAnalysis(ax(5:8),control_data,'recompute_DA_fit',false);
 legend(r2_plot_data.l,['Peak = ' oval(r2_plot_data.peak_tau) 'ms'])
 
 for i = 1:4

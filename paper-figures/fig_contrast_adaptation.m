@@ -280,12 +280,12 @@ ylabel(ax(1),'Inst. Gain (Hz/V)')
 ylabel(ax(2),'Stimulus contrast')
 
 % put a timescale on this change by finding the time to half asymptote 
-a = nanmean(gain(1:.5e3));
-z = nanmean(gain(1.5e3:end));
-tau_fA = find(gain > a+ (z-a)/2,1,'first');
+a = nanmean(gain(1:4e3));
+z = nanmean(gain(6e3:end));
+tau_fA = 5e3 + find(gain(5e3:end) > a + (z-a)/2,1,'first');
 
-a = nanmean(sc(1:.5e3));
-z = nanmean(sc(1.5e3:end));
+a = nanmean(sc(1:4e3));
+z = nanmean(sc(6e3:end));
 tau_sc = find(sc < z+ (a-z)/2,1,'first');
 
 
@@ -321,7 +321,7 @@ end
 % 
 % $$ gain_{hi}=\frac{\alpha}{1+\beta\sigma_{hi}} $$
 %
-% for $\alpha$ and \beta$
+% for $\alpha$ and $\beta$
 % 
 
 %%
@@ -399,7 +399,7 @@ end
 % So the divisive term "works" in the sense that it has now the same gain in the high and low contrast case, but it ends up moving the curves relative to each other, so they no longer overlap. Also, the gain correction reduces the overall $r^2$, which is not good. 
 
 %%
-% Now we take the kinetics into account. We assume that the timescale of the gain filter is ~100ms, as specified by the plot earlier, and that the filter has a simple differentiating shape. 
+% Now we take the kinetics into account. We assume that the timescale of the gain filter is $~100$ms, as specified by the plot earlier, and that the filter has a simple differentiating shape. 
 
 % filter the stimulus using a differentiating filter 92ms long
 Kg = [ones(round((tau_fA-tau_sc)/2),1); -ones(round((tau_fA-tau_sc)/2),1)];

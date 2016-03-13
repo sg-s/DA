@@ -349,20 +349,20 @@ end
 
 figure('outerposition',[0 0 900 800],'PaperUnits','points','PaperSize',[900 800]); hold on
 subplot(2,2,1), hold on
-[~,data_hi] = plotPieceWiseLinear(X(1e3:5e3,:),reshaped_fA(1e3:5e3,:),'nbins',50,'Color','r');
-[~,data_lo] = plotPieceWiseLinear(X(6e3:end,:),reshaped_fA(6e3:end,:),'nbins',50,'Color','b');
+plotPieceWiseLinear(X(1e3:5e3,:),reshaped_fA(1e3:5e3,:),'nbins',50,'Color','r');
+plotPieceWiseLinear(X(6e3:end,:),reshaped_fA(6e3:end,:),'nbins',50,'Color','b');
 xlabel('K_{lo} \otimes s')
 ylabel('Response (Hz)')
 
 subplot(2,2,2), hold on
-[~,data_hi] = plotPieceWiseLinear(XG(1e3:5e3,:),reshaped_fA(1e3:5e3,:),'nbins',50,'Color','r');
-[~,data_lo] = plotPieceWiseLinear(XG(6e3:end,:),reshaped_fA(6e3:end,:),'nbins',50,'Color','b');
+plotPieceWiseLinear(XG(1e3:5e3,:),reshaped_fA(1e3:5e3,:),'nbins',50,'Color','r');
+plotPieceWiseLinear(XG(6e3:end,:),reshaped_fA(6e3:end,:),'nbins',50,'Color','b');
 xlabel('$\hat{R}$','interpreter','latex')
 ylabel('Response (Hz)')
 
 subplot(2,2,3); hold on
-[~,data_hi] = plotPieceWiseLinear(X(1e3:5e3,:),XG(1e3:5e3,:),'nbins',50,'Color','r');
-[~,data_lo] = plotPieceWiseLinear(X(6e3:end,:),XG(6e3:end,:),'nbins',50,'Color','b');
+plotPieceWiseLinear(X(1e3:5e3,:),XG(1e3:5e3,:),'nbins',50,'Color','r');
+plotPieceWiseLinear(X(6e3:end,:),XG(6e3:end,:),'nbins',50,'Color','b');
 ylabel('$\hat{R}$','interpreter','latex')
 xlabel('K_{lo} \otimes s')
 

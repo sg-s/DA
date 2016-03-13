@@ -233,7 +233,6 @@ if being_published
 end
 
 
-
 % ########  ##    ## ##    ##    ###    ##     ## ####  ######   ######      #######  ######## 
 % ##     ##  ##  ##  ###   ##   ## ##   ###   ###  ##  ##    ## ##    ##    ##     ## ##       
 % ##     ##   ####   ####  ##  ##   ##  #### ####  ##  ##       ##          ##     ## ##       
@@ -260,20 +259,25 @@ end
 
 % now do the supplementary figure showing dynamics of gain change
 
-X = fA_pred(4000:6000,:);
-Y = reshaped_fA(4000:6000,:);
-S = reshaped_PID(4000:6000,:);
+X = fA_pred;
+Y = reshaped_fA;
+S = reshaped_PID;
+S(1:1e3,:) = NaN;
+X(1:1e3,:) = NaN;
+Y(1:1e3,:) = NaN;
 if ~exist('sc','var')
-	[gain,gain_r2,sc] = findEnsembleGain(X,Y,S);
+	[gain,gain_r2,sc] = findEnsembleGain(X,Y,S,'step_size',10);
 end
 
 figure('outerposition',[0 0 800 500],'PaperUnits','points','PaperSize',[800 500]); hold on
 
 % show how gain changes with time
-ax = plotyy(time(4000:6000)-5,gain,time(4000:6000)-5,sc);
+[ax,h1,h2] = plotyy(time-5,gain,time-5,sc);
+set(h1,'Marker','+','LineStyle','none')
+set(h2,'Marker','.','LineStyle','none')
 xlabel(ax(1),'Time since switch (s)')
 ylabel(ax(1),'Inst. Gain (Hz/V)')
-ylabel(ax(2),'Simulus contrast')
+ylabel(ax(2),'Stimulus contrast')
 
 % put a timescale on this change by finding the time to half asymptote 
 a = nanmean(gain(1:.5e3));
@@ -293,9 +297,10 @@ if being_published
 end
 
 %% Zero-parameter fits to data
-% In this section we attempt to use a divisive gain control model that is sensitive to the contrast of the stimulus in some recent window to see if we can explain this change in gain. First, we calculate the filter only in the low-variance epoch (because the gain here is high), and use it to project the stimulus everywhere. 
-
-% also determine the degree of contrast-sensitive gain control (the beta parameter)
+% In this section we attempt to use a divisive gain control model that is sensitive to the contrast of the stimulus in some recent window to see if we can explain this change in gain. The model is as follows:
+%
+% $$ \hat{R}(t)=\frac{\alpha x(t)}{1+\beta\left|K_{g}\otimes s(t)\right|} $$
+% 
 
 % load the low-variance filter
 load('.cache/VSA_K2.mat','K2')
@@ -308,74 +313,79 @@ for i = 1:width(X)
 end
 
 %%
-% The following figure shows the response as a function of stimulus projected using the low-variance filter, during the two epochs. Since we have an estimate of the timescale of contrast gain control, the only thing that remains is to find the degree to which this happens, and multiply this term with the linear projection. We can directly calculate this term from the data, for each point along these two curves as follows.
-
-%%
-% Let $X_{lo}$ and $X_{hi}$ be two output nonlinearities that map the projected stimulus onto the response of the neuron, corresponding to the low and high variance stimulus. In general, these two curves overlap each other, and for each point on the Y axis, there are two corresponding points on the X axis, mapped through these two functions. Let these two points be called $x_{hi}$ and $x_{lo}$. 
-
-%%
-% Now, we define 
+% In the following figure, we ignore the kinetics for now and calculate the degree of contrast-dependent gain control over the entire epoch to find the $\alpha$ and $\beta$ parameters. Specifically, we solve the following equations: 
 % 
-% $$ \hat{x}=\frac{x}{1+\beta\left|K_{g}\otimes s\right|} $$
+% $$ gain_{lo}=\frac{\alpha}{1+\beta\sigma_{lo}} $$
 % 
-% where $\hat{x}$ is the gain-corrected projection of the stimulus. For now, we neglect the kinetics of contrast gain control, and assume
+% and 
+% 
+% $$ gain_{hi}=\frac{\alpha}{1+\beta\sigma_{hi}} $$
 %
-% $$\beta\left|K_{g}\otimes s\right| := \beta\left|s-\bar{s}\right| $$
-%
-% which means that
-%
-% $$ \beta_{lo}=\beta\left|s-\bar{s}\right|_{lo} $$
+% for $\alpha$ and \beta$
 % 
 
 %%
-% Now, we impose the condition that for a single ORN response, the gain-corrected projection is independent of variance condition, and depends only on the linear projection. Solving for $\beta$, we get:
-%
-% $$ \beta=\frac{x_{lo}-x_{hi}}{x_{hi}\left|s-\bar{s}\right|_{lo}-x_{lo}\left|s-\bar{s}\right|_{hi}} $$
+% The following figure shows the ORN response vs. the linear projections for the low (blue) and high (variance) contrast epochs. We then plot the response vs. the gain-corrected linear projections, following the formula above. We also plot the gain-corrected linear projections as a function of the linear projections, to show that there is a gain change similar to the first plot. Finally, we plot the $r^2$ of the linear projection and the gain-corrected linear projection vs. the data, to see if adding the gain-correcting term explains more of the variance in the data. 
 
-%%
-% Everything on the right hand-side is measurable from the data, so we can directly estimate $\beta$ at each point along the input-output curve. The following figure shows this:
+g_lo = nanmean(gain(6e3:end));
+g_hi = nanmean(gain(1:5e3));
+
+s_lo = nanmean(sc(6e3:end));
+s_hi = nanmean(sc(1e3:5e3));
+
+% now calculate beta
+B = ((g_lo/g_hi) - 1)/(s_hi - s_lo*(g_lo/g_hi));
+
+% now calculate alpha
+A = g_hi*(1+B*s_hi);
+
+% fix the gain
+XG = X;
+for i = 1:width(X)
+	XG(1e3:5e3,i) = A*X(1e3:5e3,i)./(1 + B*s_hi);
+	XG(6e3:end,i) = A*X(6e3:end,i)./(1 + B*s_lo);
+end
 
 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-subplot(1,2,1), hold on
+figure('outerposition',[0 0 900 800],'PaperUnits','points','PaperSize',[900 800]); hold on
+subplot(2,2,1), hold on
 [~,data_hi] = plotPieceWiseLinear(X(1e3:5e3,:),reshaped_fA(1e3:5e3,:),'nbins',50,'Color','r');
-[~,data_lo] = plotPieceWiseLinear(X(5e3:end,:),reshaped_fA(5e3:end,:),'nbins',50,'Color','b');
-xlabel('K_{high} \otimes s')
+[~,data_lo] = plotPieceWiseLinear(X(6e3:end,:),reshaped_fA(6e3:end,:),'nbins',50,'Color','b');
+xlabel('K_{lo} \otimes s')
 ylabel('Response (Hz)')
 
-% match curves
-data_hi.x = interp1(data_hi.y,data_hi.x,data_lo.y);
-data_hi.y = data_lo.y;
+subplot(2,2,2), hold on
+[~,data_hi] = plotPieceWiseLinear(XG(1e3:5e3,:),reshaped_fA(1e3:5e3,:),'nbins',50,'Color','r');
+[~,data_lo] = plotPieceWiseLinear(XG(6e3:end,:),reshaped_fA(6e3:end,:),'nbins',50,'Color','b');
+xlabel('$\hat{R}$','interpreter','latex')
+ylabel('Response (Hz)')
 
-% filter the stimulus using a differentiating filter 92ms long
-Kg = [ones(round((tau_fA-tau_sc)/2),1); -ones(round((tau_fA-tau_sc)/2),1)];
-Shat = reshaped_PID;
-for i = 1:width(reshaped_PID)
-	Shat(:,i) = abs(filter(Kg,sum(abs(Kg)),reshaped_PID(:,i)));
+subplot(2,2,3); hold on
+[~,data_hi] = plotPieceWiseLinear(X(1e3:5e3,:),XG(1e3:5e3,:),'nbins',50,'Color','r');
+[~,data_lo] = plotPieceWiseLinear(X(6e3:end,:),XG(6e3:end,:),'nbins',50,'Color','b');
+ylabel('$\hat{R}$','interpreter','latex')
+xlabel('K_{lo} \otimes s')
+
+subplot(2,2,4); hold on
+r2_X = NaN(width(X),1);
+r2_XG = r2_X;
+for i = 1:width(X)
+	fp = X([1e3:5e3 6e3:10e3],i); r = reshaped_fA([1e3:5e3 6e3:10e3],i);
+	try
+		r2_X(i) = rsquare(fp,r);
+	catch
+	end
+	fp = XG([1e3:5e3 6e3:10e3],i);
+	try
+		r2_XG(i) = rsquare(fp,r);
+	catch
+	end
 end
-
-s_hi = nanmean(nanmean(Shat(1e3:5e3,:)));
-s_lo = nanmean(nanmean(Shat(5e3:end,:)));
-
-B = NaN*data_lo.y;
-for i = 1:length(data_lo.y)
-	B(i) = data_lo.x(i) - data_hi.x(i);
-	B(i) = B(i)/(data_hi.x(i)*s_lo -s_hi*data_lo.x(i));
-end
-
-subplot(1,2,2), hold on
-plot(data_lo.x,B,'k+')
-xlabel('K_{high} \otimes s')
-ylabel('\beta')
-
-% Set up fittype and options.
-ft = fittype( 'smoothingspline' );
-opts = fitoptions( 'Method', 'SmoothingSpline' );
-opts.SmoothingParam = 0.999978291937413;
-
-% Fit model to data.
-[fitresult, gof] = fit(data_lo.x(:), B(:), ft, opts );
-plot(data_lo.x,fitresult(data_lo.x),'r')
+plot(r2_X,r2_XG,'k+')
+plot([0 1],[0 1],'k--')
+xlabel('r^2 (Linear Model)')
+ylabel('r^2 (Gain-corrected)')
+suptitle('Gain corrected by static contrast')
 
 prettyFig('FixLogX=1;','fs=16;')
 
@@ -384,71 +394,96 @@ if being_published
 	delete(gcf)
 end
 
+
 %%
-% Suprisingly, $\beta$ is not constant but looks like a function of the projected stimulus. Since we can directly measure this in the data, we modify our gain term as follows: 
-%
-% $$ \hat{x}=\frac{x}{1+\beta(K_{r}\otimes s)\left|K_{g}\otimes s\right|} $$
-% 
-% We now replot the data, using the gain-corrected model:
-% 
+% So the divisive term "works" in the sense that it has now the same gain in the high and low contrast case, but it ends up moving the curves relative to each other, so they no longer overlap. Also, the gain correction reduces the overall $r^2$, which is not good. 
+
+%%
+% Now we take the kinetics into account. We assume that the timescale of the gain filter is ~100ms, as specified by the plot earlier, and that the filter has a simple differentiating shape. 
+
+% filter the stimulus using a differentiating filter 92ms long
+Kg = [ones(round((tau_fA-tau_sc)/2),1); -ones(round((tau_fA-tau_sc)/2),1)];
+Shat = reshaped_PID;
+for i = 1:width(reshaped_PID)
+	Shat(:,i) = abs(filter(Kg,sum(abs(Kg)),reshaped_PID(:,i)));
+end
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,3,1:2); hold on
+plot(time-5,nanmean(Shat,2),'k')
+xlabel('Time since switch (s)')
+ylabel('$| K_{g} \otimes s |$','interpreter','latex')
+set(gca,'XLim',[-4 5])
+set(gca,'YLim',[0 0.1])
+
+subplot(1,3,3), hold on
+plot(sc,nanmean(Shat,2),'k+')
+xlabel('Stimulus contrast')
+ylabel('$| K_{g} \otimes s |$','interpreter','latex')
+set(gca,'YLim',[0 0.1])
+prettyFig('FixLogX=1;','fs=16;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% We now correct the linear prediction using a differentiating filter operating on the stimulus. 
+
+XG = X;
+for i = 1:width(X)
+	XG(:,i) = A*X(:,i)./(1 + B*Shat(:,i));
+end
 
 
-% XG = X;
+figure('outerposition',[0 0 900 800],'PaperUnits','points','PaperSize',[900 800]); hold on
+subplot(2,2,1), hold on
+[~,data_hi] = plotPieceWiseLinear(X(1e3:5e3,:),reshaped_fA(1e3:5e3,:),'nbins',50,'Color','r');
+[~,data_lo] = plotPieceWiseLinear(X(6e3:end,:),reshaped_fA(6e3:end,:),'nbins',50,'Color','b');
+xlabel('K_{lo} \otimes s')
+ylabel('Response (Hz)')
 
-% % pass it through the model
-% for i = 1:width(XG)
-% 	textbar(i,width(XG))
-% 	xg = XG(1e3:5e3,i);
-% 	r = reshaped_fA(1e3:5e3,i);
-% 	xg(r > max(data_lo.y)) = NaN;
-% 	xg(r < min(data_lo.y)) = NaN;
-% 	xg = xg./(1+fitresult(xg)*s_hi);
-% 	XG(1e3:5e3,i) = xg;
+subplot(2,2,2), hold on
+[~,data_hi] = plotPieceWiseLinear(XG(1e3:5e3,:),reshaped_fA(1e3:5e3,:),'nbins',50,'Color','r');
+[~,data_lo] = plotPieceWiseLinear(XG(6e3:end,:),reshaped_fA(6e3:end,:),'nbins',50,'Color','b');
+xlabel('$\hat{R}$','interpreter','latex')
+ylabel('Response (Hz)')
 
-% 	xg = XG(6e3:end,i);
-% 	r = reshaped_fA(6e3:end,i);
-% 	xg(r > max(data_lo.y)) = NaN;
-% 	xg(r < min(data_lo.y)) = NaN;
-% 	xg = xg./(1+fitresult(xg)*s_lo);
-% 	XG(6e3:end,i) = xg;
-% end
+subplot(2,2,3); hold on
+[~,data_hi] = plotPieceWiseLinear(X(1e3:5e3,:),XG(1e3:5e3,:),'nbins',50,'Color','r');
+[~,data_lo] = plotPieceWiseLinear(X(6e3:end,:),XG(6e3:end,:),'nbins',50,'Color','b');
+ylabel('$\hat{R}$','interpreter','latex')
+xlabel('K_{lo} \otimes s')
 
+subplot(2,2,4); hold on
+r2_X = NaN(width(X),1);
+r2_XG = r2_X;
+for i = 1:width(X)
+	fp = X([1e3:5e3 6e3:10e3],i); r = reshaped_fA([1e3:5e3 6e3:10e3],i);
+	try
+		r2_X(i) = rsquare(fp,r);
+	catch
+	end
+	fp = XG([1e3:5e3 6e3:10e3],i);
+	try
+		r2_XG(i) = rsquare(fp,r);
+	catch
+	end
+end
+plot(r2_X,r2_XG,'k+')
+plot([0 1],[0 1],'k--')
+xlabel('r^2 (Linear Model)')
+ylabel('r^2 (Gain-corrected)')
+suptitle('Gain corrected by contrast filter ')
 
-% figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-% plotPieceWiseLinear(XG(1e3:5e3,:),reshaped_fA(1e3:5e3,:),'nbins',50,'Color','r');
-% plotPieceWiseLinear(XG(6e3:end-100,:),reshaped_fA(6e3:end-100,:),'nbins',50,'Color','b');
-% xlabel('Gain-corrected prediction')
-% ylabel('Response (Hz)')
+prettyFig('FixLogX=1;','fs=16;')
 
+if being_published
+	snapnow
+	delete(gcf)
+end
 
-% figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-% plot(data_lo.x,data_lo.y,'b')
-% plot(data_hi.x,data_hi.y,'r')
-
-% xlabel('K_{high} \otimes s')
-% ylabel('Response (Hz)')
-
-% temp1 = Shat(1e3:end,10:25); temp1 = temp1(:);
-% temp2 = X(1e3:end,10:25); temp2 = temp2(:);
-% temp3 = reshaped_fA(1e3:end,10:25); temp3 = temp3(:);
-% rm_this = isnan(temp1) | isnan(temp2) |isnan(temp3);
-% temp1(rm_this) = []; temp2(rm_this) = []; temp3(rm_this) = [];
-% clear d
-% d.stimulus = [temp1 temp2];
-% d.response = temp3; d.response = d.response(:);
-
-% fA_gain_corrected = fA_pred;
-% for i = 1:width(fA_pred)
-% 	fA_gain_corrected(:,i) = contrastGainBeta([reshaped_PID(:,i) X(:,i)],p);
-% end
-
-% figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-% plotPieceWiseLinear(fA_gain_corrected(1e3:5e3,1:10:end),reshaped_fA(1e3:5e3,1:10:end),'nbins',50,'Color','r');
-% plotPieceWiseLinear(fA_gain_corrected(5e3:end,1:10:end),reshaped_fA(5e3:end,1:10:end),'nbins',50,'Color','b');
-% xlabel('K_{high} \otimes s')
-% ylabel('Response (Hz)')
-
-% fit this one number
 
 %% Version Info
 % 

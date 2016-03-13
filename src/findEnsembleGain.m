@@ -15,6 +15,7 @@ function [gain,gain_r2,stimulus_contrast] = findEnsembleGain(X,Y,S,varargin)
 % options and defaults
 options.window_size = 50;
 options.R_window = [.33 .66]; % window over which to calculate the gain 
+options.step_size = 10;
 
 % validate and accept options
 if iseven(length(varargin))
@@ -41,7 +42,11 @@ a = round(options.window_size/2) + 1;
 z = length(gain) - round(options.window_size/2) - 1;
 ws = round(options.window_size/2)-1;
 
-for i = a:z
+options.step_size = round(options.step_size);
+assert(options.step_size > 0,'Step size must be positive')
+assert(options.step_size < z/10,'Step size too large')
+
+for i = a:options.step_size:z
 	textbar(i,z)
 	% grab the snippet of data around this point across the ensemble
 	x = X(i-ws:i+ws,:); x = x(:);
@@ -52,12 +57,14 @@ for i = a:z
 	% find the correct portion to calculate the gain on
 	lb = find((y-min(y))/(max(y)-min(y)) > options.R_window(1),1,'first');
 	ub = find((y-min(y))/(max(y)-min(y)) < options.R_window(2),1,'last');
-	ff = fit(x(lb:ub),y(lb:ub),'poly1');
-	gain(i) = ff.p1;
-	gain_r2(i) = rsquare(x(lb:ub),y(lb:ub));
+	if any(~isnan(y))
+		ff = fit(x(lb:ub),y(lb:ub),'poly1');
+		gain(i) = ff.p1;
+		gain_r2(i) = rsquare(x(lb:ub),y(lb:ub));
 
-	% also calculate the stimulus contrast
-	stimulus_contrast(i) = nanstd(s)/nanmean(s);
+		% also calculate the stimulus contrast
+		stimulus_contrast(i) = nanstd(s)/nanmean(s);
+	end
 end
 
 

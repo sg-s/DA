@@ -296,21 +296,14 @@ if being_published
 	delete(gcf)
 end
 
+
 %% Zero-parameter fits to data
 % In this section we attempt to use a divisive gain control model that is sensitive to the contrast of the stimulus in some recent window to see if we can explain this change in gain. The model is as follows:
 %
 % $$ \hat{R}(t)=\frac{\alpha x(t)}{1+\beta\left|K_{g}\otimes s(t)\right|} $$
 % 
 
-% load the low-variance filter
-load('.cache/VSA_K2.mat','K2')
-K = (nanmean(squeeze(K2(2,:,:)),2));
-
-% now project all the stimulus using the high-variance filter
 X = fA_pred;
-for i = 1:width(X)
-	X(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K,ft);
-end
 
 %%
 % In the following figure, we ignore the kinetics for now and calculate the degree of contrast-dependent gain control over the entire epoch to find the $\alpha$ and $\beta$ parameters. Specifically, we solve the following equations: 
@@ -327,8 +320,28 @@ end
 %%
 % The following figure shows the ORN response vs. the linear projections for the low (blue) and high (variance) contrast epochs. We then plot the response vs. the gain-corrected linear projections, following the formula above. We also plot the gain-corrected linear projections as a function of the linear projections, to show that there is a gain change similar to the first plot. Finally, we plot the $r^2$ of the linear projection and the gain-corrected linear projection vs. the data, to see if adding the gain-correcting term explains more of the variance in the data. 
 
-g_lo = nanmean(gain(6e3:end));
-g_hi = nanmean(gain(1:5e3));
+% measure the gain in each trial in the high and lo variance epoch
+temp = NaN(width(X),1);
+temp2 = NaN(width(X),1);
+for i = 1:length(temp)
+	x = X(1e3:5e3,i); y = reshaped_fA(1e3:5e3,i);
+	rm_this = isnan(x) | isnan(y);
+	x(rm_this) = []; y(rm_this) = [];
+	if length(x) > 1e3
+		ff = fit(x,y,'poly1');
+		temp(i) = ff.p1;
+	end
+	x = X(6e3:end,i); y = reshaped_fA(6e3:end,i);
+	rm_this = isnan(x) | isnan(y);
+	x(rm_this) = []; y(rm_this) = [];
+	if length(x) > 1e3
+		ff = fit(x,y,'poly1');
+		temp2(i) = ff.p1;
+	end
+end
+
+g_lo = nanmean(temp2);
+g_hi = nanmean(temp);
 
 s_lo = nanmean(sc(6e3:end));
 s_hi = nanmean(sc(1e3:5e3));
@@ -399,6 +412,59 @@ end
 % So the divisive term "works" in the sense that it has now the same gain in the high and low contrast case, but it ends up moving the curves relative to each other, so they no longer overlap. Also, the gain correction reduces the overall $r^2$, which is not good. 
 
 %%
+% Perhaps the $r^2$ is getting hammered because of this shift. What if we compute the $r^2$ separately in the high and low variance epochs? 
+
+r2_X = NaN(width(X),2);
+r2_XG = r2_X;
+for i = 1:width(X)
+	fp = X(1e3:5e3,i); r = reshaped_fA(1e3:5e3,i);
+	try
+		r2_X(i,1) = rsquare(fp,r);
+	catch
+	end
+	fp = X(6e3:end,i); r = reshaped_fA(6e3:end,i);
+	try
+		r2_X(i,2) = rsquare(fp,r);
+	catch
+	end
+
+	fp = XG(1e3:5e3,i); r = reshaped_fA(1e3:5e3,i);
+	try
+		r2_XG(i,1) = rsquare(fp,r);
+	catch
+	end
+	fp = XG(6e3:end,i); r = reshaped_fA(6e3:end,i);
+	try
+		r2_XG(i,2) = rsquare(fp,r);
+	catch
+	end
+end
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+plot(r2_X(:,1),r2_XG(:,1),'r+')
+plot([0 1],[0 1],'k--')
+xlabel('r^2 (Linear Model)')
+ylabel('r^2 (Gain-corrected)')
+suptitle('Gain corrected by static contrast')
+title('High contrast')
+
+subplot(1,2,2), hold on
+plot(r2_X(:,2),r2_XG(:,2),'b+')
+plot([0 1],[0 1],'k--')
+xlabel('r^2 (Linear Model)')
+ylabel('r^2 (Gain-corrected)')
+suptitle('Gain corrected by static contrast')
+title('Low contrast')
+
+prettyFig('FixLogX=1;','fs=16;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
 % Now we take the kinetics into account. We assume that the timescale of the gain filter is $~100$ms, as specified by the plot earlier, and that the filter has a simple differentiating shape. 
 
 % filter the stimulus using a differentiating filter 92ms long
@@ -439,20 +505,20 @@ end
 
 figure('outerposition',[0 0 900 800],'PaperUnits','points','PaperSize',[900 800]); hold on
 subplot(2,2,1), hold on
-[~,data_hi] = plotPieceWiseLinear(X(1e3:5e3,:),reshaped_fA(1e3:5e3,:),'nbins',50,'Color','r');
-[~,data_lo] = plotPieceWiseLinear(X(6e3:end,:),reshaped_fA(6e3:end,:),'nbins',50,'Color','b');
+plotPieceWiseLinear(X(1e3:5e3,:),reshaped_fA(1e3:5e3,:),'nbins',50,'Color','r');
+plotPieceWiseLinear(X(6e3:end,:),reshaped_fA(6e3:end,:),'nbins',50,'Color','b');
 xlabel('K_{lo} \otimes s')
 ylabel('Response (Hz)')
 
 subplot(2,2,2), hold on
-[~,data_hi] = plotPieceWiseLinear(XG(1e3:5e3,:),reshaped_fA(1e3:5e3,:),'nbins',50,'Color','r');
-[~,data_lo] = plotPieceWiseLinear(XG(6e3:end,:),reshaped_fA(6e3:end,:),'nbins',50,'Color','b');
+plotPieceWiseLinear(XG(1e3:5e3,:),reshaped_fA(1e3:5e3,:),'nbins',50,'Color','r');
+plotPieceWiseLinear(XG(6e3:end,:),reshaped_fA(6e3:end,:),'nbins',50,'Color','b');
 xlabel('$\hat{R}$','interpreter','latex')
 ylabel('Response (Hz)')
 
 subplot(2,2,3); hold on
-[~,data_hi] = plotPieceWiseLinear(X(1e3:5e3,:),XG(1e3:5e3,:),'nbins',50,'Color','r');
-[~,data_lo] = plotPieceWiseLinear(X(6e3:end,:),XG(6e3:end,:),'nbins',50,'Color','b');
+plotPieceWiseLinear(X(1e3:5e3,:),XG(1e3:5e3,:),'nbins',50,'Color','r');
+plotPieceWiseLinear(X(6e3:end,:),XG(6e3:end,:),'nbins',50,'Color','b');
 ylabel('$\hat{R}$','interpreter','latex')
 xlabel('K_{lo} \otimes s')
 
@@ -483,6 +549,101 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%%
+% Perhaps the $r^2$ is getting hammered because of this shift. What if we compute the $r^2$ separately in the high and low variance epochs? 
+
+r2_X = NaN(width(X),2);
+r2_XG = r2_X;
+for i = 1:width(X)
+	fp = X(1e3:5e3,i); r = reshaped_fA(1e3:5e3,i);
+	try
+		r2_X(i,1) = rsquare(fp,r);
+	catch
+	end
+	fp = X(6e3:end,i); r = reshaped_fA(6e3:end,i);
+	try
+		r2_X(i,2) = rsquare(fp,r);
+	catch
+	end
+
+	fp = XG(1e3:5e3,i); r = reshaped_fA(1e3:5e3,i);
+	try
+		r2_XG(i,1) = rsquare(fp,r);
+	catch
+	end
+	fp = XG(6e3:end,i); r = reshaped_fA(6e3:end,i);
+	try
+		r2_XG(i,2) = rsquare(fp,r);
+	catch
+	end
+end
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+plot(r2_X(:,1),r2_XG(:,1),'r+')
+plot([0 1],[0 1],'k--')
+xlabel('r^2 (Linear Model)')
+ylabel('r^2 (Gain-corrected)')
+suptitle('Gain corrected by static contrast')
+title('High contrast')
+
+subplot(1,2,2), hold on
+plot(r2_X(:,2),r2_XG(:,2),'b+')
+plot([0 1],[0 1],'k--')
+xlabel('r^2 (Linear Model)')
+ylabel('r^2 (Gain-corrected)')
+suptitle('Gain corrected by static contrast')
+title('Low contrast')
+
+prettyFig('FixLogX=1;','fs=16;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% It still looks bad in each epoch, suggesting that the gain-correcting term isn't correct. Either the timescale of the constants are wrong. 
+
+%%
+% But there's a deeper problem here. When we add on the gain-sensitive term, and determine the constants as we did above, the only thing we require is that the gain in the two places is the same. This is a very tolerant restriction, and as we saw, we satisfied it without satisfying a more important one: that the two curves must intersect. Now, we impose a stricter condition: that each point on the input-output curve is identical in the low and high contrast case. This means that we require:
+%
+% $$ R_{i}=f\left(\frac{\alpha X_{i}^{lo}}{1+\beta\sigma_{lo}}\right)=f\left(\frac{\alpha X_{i}^{hi}}{1+\beta\sigma_{hi}}\right) $$
+% 
+
+%%
+% Here we ask if it possible for a single $\beta$ to ever give us a condition where the two curves overlap. We can solve for $\beta$ using this stricter condition to get:
+% 
+% $$ \beta_{i}=\frac{X{}_{i}^{hi}-X{}_{i}^{lo}}{X{}_{i}^{lo}\sigma_{hi}-X{}_{i}^{lo}\sigma_{lo}} $$
+% 
+
+% match curves
+data_hi.x = interp1(data_hi.y,data_hi.x,data_lo.y);
+data_hi.y = data_lo.y;
+
+B = NaN*data_lo.y;
+for i = 1:length(data_lo.y)
+	B(i) = data_hi.x(i) - data_lo.x(i);
+	B(i) = B(i)/(data_lo.x(i)*s_hi - s_lo*data_hi.x(i));
+end
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(data_lo.x,B,'k+')
+xlabel('K \otimes s')
+ylabel('\beta')
+
+prettyFig('FixLogX=1;','fs=16;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% It looks like no single $\beta$ can make these curves lie on top of each other. 
+
+
 
 
 %% Version Info

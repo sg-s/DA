@@ -56,7 +56,7 @@ Kz = [ones(round(p.tau_z/2),1); -ones(round(p.tau_z/2),1)];
 y = filter(Ky,1,S);
 z = abs(filter(Kz,1,S));
 
-R = (p.A*y.*z)./(1+p.B*z);
+R = (p.A*y)./(1+p.B*z);
 
 
 

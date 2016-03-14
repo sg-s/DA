@@ -642,6 +642,48 @@ end
 %%
 % It looks like no single $\beta$ can make these curves lie on top of each other. 
 
+%%
+% To verify our intuition, we now generate synthetic data using the sontrast-sensitive gain-corrected model, and see if we can ever get the two input-output curves to cross.
+
+clear p
+p.   s0 = -0.3204;
+p.tau_z = 10.1875;
+p.  n_y = 2;
+p.tau_y = 20.5000;
+p.    A = 129.5954;
+p.    B = 3.8147e-06;
+
+all_B = linspace(0,6,4);
+
+S = reshaped_PID(:,50:100);
+figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
+for i = 1:4
+	subplot(2,2,i); hold on
+	p.B = all_B(i);
+	R = NaN*S;
+	for j = 1:width(S_lo)
+		R(:,j) = DAModel_contrast(S(:,j),p);
+	end
+	R(R<0) = 0;
+	KDA = fitFilter2Data(vectorise(S(1e3:5e3,:)),vectorise(R(1e3:5e3,:)),'reg',1,'filter_length',500);
+	% make linear predictions and plot input-response curves
+	temp = NaN*S;
+	for j = 1:width(S)
+		temp(:,j) = filter(KDA,1,S(:,j));
+	end
+	plotPieceWiseLinear(temp(1e3:5e3,:),R(1e3:5e3,:),'Color','r','nbins',50);
+	plotPieceWiseLinear(temp(6e3:end,:),R(6e3:end,:),'Color','b','nbins',50);
+	title(['\beta = ' oval(p.B)])
+	xlabel('Linear Prediction (a.u.)')
+	ylabel('DA-like contrast model (a.u.)')
+end
+
+prettyFig('FixLogX=1;','fs=16;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 
 

@@ -465,7 +465,7 @@ if being_published
 end
 
 %%
-% Now we take the kinetics into account. We assume that the timescale of the gain filter is $~100$ms, as specified by the plot earlier, and that the filter has a simple differentiating shape. 
+% Now we take the kinetics into account. We assume that the timescale of the gain filter is around 100ms, as specified by the plot earlier, and that the filter has a simple differentiating shape. 
 
 % filter the stimulus using a differentiating filter 92ms long
 Kg = [ones(round((tau_fA-tau_sc)/2),1); -ones(round((tau_fA-tau_sc)/2),1)];
@@ -585,7 +585,7 @@ plot(r2_X(:,1),r2_XG(:,1),'r+')
 plot([0 1],[0 1],'k--')
 xlabel('r^2 (Linear Model)')
 ylabel('r^2 (Gain-corrected)')
-suptitle('Gain corrected by static contrast')
+suptitle('Gain corrected by contrast filter')
 title('High contrast')
 
 subplot(1,2,2), hold on
@@ -593,7 +593,6 @@ plot(r2_X(:,2),r2_XG(:,2),'b+')
 plot([0 1],[0 1],'k--')
 xlabel('r^2 (Linear Model)')
 ylabel('r^2 (Gain-corrected)')
-suptitle('Gain corrected by static contrast')
 title('Low contrast')
 
 prettyFig('FixLogX=1;','fs=16;')

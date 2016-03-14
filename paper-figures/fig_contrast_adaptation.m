@@ -647,11 +647,11 @@ end
 
 clear p
 p.   s0 = -0.3204;
-p.tau_z = 10.1875;
+p.tau_z = 100.1875;
 p.  n_y = 2;
 p.tau_y = 20.5000;
 p.    A = 129.5954;
-p.    B = 3.8147e-06;
+p.    B = 0;
 
 all_B = linspace(0,6,4);
 

@@ -558,77 +558,97 @@ if being_published
 	delete(gcf)
 end
 
-%% Kinetics of Response as a function of mean stimulus
-% In this section, we determine if the firing and LFP responses slow down or speed up as a function of the mean stimulus. We do so buy computing the cross-correlation functions between the stimulus and the response for each trial, for the LFP and the firing response. 
+%% Zero Parameter Fits
+% In this section we attempt to directly measure the gain-control parameters. Since this is an over-determined problem (we have dozens of trials to fit 2 parameters), we find the solution that minimizes the L-2 norm of the error.  
 
-LFP_xcorr = NaN(1e3,width(PID));
-firing_xcorr = NaN(1e3,width(PID));
+G = 1./fA_gain;
+M = ones(length(G),2);
+M(:,2) = mean_stim(:);
+% remove NaNs
+rm_this = isnan(G) | isnan(M(:,2));
+G(rm_this) = [];
+M(rm_this,:) = [];
 
-firing_peaks = NaN*paradigm;
-LFP_peaks = NaN*paradigm;
+X = M\G;
+A = 1/X(1); 
+B = X(2)*A;
 
-firing_xcorr_max = NaN*paradigm;
-LFP_xcorr_max = NaN*paradigm;
+%%
+% In the following figure, we plot the linear projections corrected by this zero-parameter gain scaling term. Here, we neglect the dynamical nature of the gain control, and assume that the gain simply depends on the mean stimulus over the entire trial. 
 
-for i = 1:width(PID)
-	s = PID(25e3:45e3,i)-mean(PID(25e3:45e3,i)); s = s/std(s);
-	f = fA(25e3:45e3,i)-mean(fA(25e3:45e3,i)); f = f/std(f);
-	r = filtered_LFP(25e3:45e3,i)-mean(filtered_LFP(25e3:45e3,i)); r = r/std(r);
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 
-	temp = xcorr(f,s);
-	firing_xcorr(:,i) = temp(19.5e3+1:20.5e3);
-	[firing_xcorr_max(i),firing_peaks(i)] = max(firing_xcorr(:,i));
-	firing_xcorr(:,i) = firing_xcorr(:,i)/max(firing_xcorr(:,i));
-
-	temp = xcorr(r,s);
-	LFP_xcorr(:,i) = temp(19.5e3+1:20.5e3);
-	[LFP_xcorr_max(i),LFP_peaks(i)] = min(LFP_xcorr(:,i));
-	LFP_xcorr(:,i) = LFP_xcorr(:,i)/-min(LFP_xcorr(:,i));
-
+subplot(1,2,1), hold on
+ss = 100;
+a = 35e3;
+for i = 1:max(paradigm) % iterate over all paradigms 
+	y = nanmean(fA(a:z,paradigm == i),2);
+	x = nanmean(fA_pred(a:z,paradigm == i),2);
+	x = x - nanmean(x);
+	s = nanmean(PID(a:z,paradigm==i),2);
+	x = x + nanmean(s);
+	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:));
 end
-LFP_peaks = LFP_peaks - 500;
-firing_peaks = firing_peaks - 500;
-firing_peaks(firing_peaks<0) = NaN;
-LFP_peaks(LFP_peaks<0) = NaN;
+xlabel('Projected Stimulus (V)')
+ylabel('Firing Rate (Hz)')
 
-figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1300 800]); hold on
-ax(1) = subplot(2,3,1); hold on
-plot([0 0],[-1 1],'k--')
-title('LFP xcorr functions')
-ylabel('Cross correlation (norm)')
-xlabel('Lag (ms)')
-ax(2) = subplot(2,3,2); hold on
-plot([0 0],[-1 1],'k--')
-xlabel('Lag (ms)')
-title('Firing xcorr functions')
-for i = 1:width(PID)
-	plot(ax(1),-499:500,LFP_xcorr(:,i),'Color',c(paradigm(i),:))
-	plot(ax(2),-499:500,firing_xcorr(:,i),'Color',c(paradigm(i),:))
+XG = PID;
+for i = 1:width(fp)
+	s = nanmean(PID(a:z,i),2);
+	x = fA_pred(:,i);
+	x = x - nanmean(x);
+	x = x + nanmean(s);
+	XG(:,i) = (A*x)./(1 + B*mean_stim(i));
 end
-subplot(2,3,3), hold on
-plot(abs(firing_xcorr_max)/20e3,firing_peaks,'k+')
-plot(abs(LFP_xcorr_max)/20e3,LFP_peaks,'ro')
-legend({'Firing','LFP'})
-xlabel('Absolute Peak correlation')
-ylabel('Location of peak (ms)')
 
-subplot(2,3,4), hold on
-plot(nanmean(PID(35e3:45e3,:)),firing_peaks,'k+')
-plot(nanmean(PID(35e3:45e3,:)),LFP_peaks,'ro')
-xlabel('Mean Stimulus (V)')
-ylabel('Delay (ms)')
-
-subplot(2,3,5), hold on
-plot(LFP_gain,LFP_peaks,'ro')
-xlabel('LFP Gain (mV/V)')
-ylabel('Response delay (ms)')
-
-subplot(2,3,6), hold on
-plot(fA_gain,firing_peaks,'k+')
-xlabel('Firing Gain (Hz/V)')
-ylabel('Response delay (ms)')
-
+subplot(1,2,2), hold on
+for i = 1:max(paradigm) % iterate over all paradigms 
+	y = nanmean(fA(a:z,paradigm == i),2);
+	x = nanmean(XG(a:z,paradigm == i),2);
+	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:));
+end
+xlabel('Gain corrected projection')
+suptitle('Gain correction by mean stimulus')
 prettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=true;','FixLogY=0;')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% We now repeat this, but use a dynamic estimate of the mean stimulus using a filter 100ms long. It clearly doesn't work. We increase this time scale, and it gets a little better. 
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+tau_gain = [100 300 1e3];
+for ti = 1:length(tau_gain)
+	tg = tau_gain(ti);
+	Shat = PID;
+	Kg = ones(tg,1)/tg;
+	for i = 1:width(PID)
+		Shat(:,i) = filter(Kg,1,PID(:,i));
+	end
+
+	XG = NaN*PID;
+	for i = 1:width(fp)
+		s = nanmean(PID(a:z,i),2);
+		x = fA_pred(:,i);
+		x = x - nanmean(x);
+		x = x + nanmean(s);
+		XG(:,i) = (A*x)./(1 + B*Shat(:,i));
+	end
+
+	subplot(1,3,ti); hold on
+	for i = 1:max(paradigm) % iterate over all paradigms 
+		y = nanmean(fA(a:z,paradigm == i),2);
+		x = nanmean(XG(a:z,paradigm == i),2);
+		plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:));
+	end
+	title(['\tau_{gain} = ' oval(tg) 'ms'])
+	xlabel('Gain-corrected projection')
+	ylabel('Response (Hz)')
+end
+prettyFig('plw=1.3;','lw=1.5;','fs=14;')
 
 if being_published
 	snapnow

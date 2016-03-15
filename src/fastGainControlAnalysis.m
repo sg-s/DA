@@ -10,6 +10,7 @@ function [r2_plot_data] = fastGainControlAnalysis(ax,orn_data,varargin)
 % options and defaults
 options.recompute_DA_fit = true;
 options.max_exc_length = 500;
+options.history_length = 300;
 
 % validate and accept options
 if iseven(length(varargin))
@@ -36,7 +37,7 @@ stim_on = orn_data.use_this_segment;
 orn_data = backOutFilters(orn_data);
 
 % show response vs. linear projection; colour by mean stimulus in recent history window 
-[~,excursions] = plotExcursions(orn_data,ax(1),'data','firing_rate','max_exc_length',options.max_exc_length);
+[~,excursions] = plotExcursions(orn_data,ax(1),'data','firing_rate','max_exc_length',options.max_exc_length,'history_length',options.history_length);
 
 % make two time vectors, one defining when the stimulus is on, and one just for the whiffs
 whiff_times = false(length(orn_data.stimulus),1);
@@ -79,7 +80,7 @@ p0.    B = 12.0094;
 
 d.response = orn_data.firing_rate;
 d.stimulus = orn_data.stimulus;
-d.response(1:1e3) = NaN;
+d.response(~orn_data.use_this_segment) = NaN;
 p = cache(dataHash(d));
 if isempty(p)
 	p = fitModel2Data(@DAModelv2,d,'p0',p0);

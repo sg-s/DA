@@ -1,4 +1,4 @@
-% fig_contrast_adaptation.m
+% fig_contrast_adaptation2.m
 % makes figure: contrast adaptation in ORNs
 % 
 % created by Srinivas Gorur-Shandilya at 7:10 , 03 October 2015. Contact me at http://srinivas.gs/contact/

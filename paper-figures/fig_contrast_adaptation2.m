@@ -225,7 +225,7 @@ set(h,'XLim',[0 0.6],'YLim',[0 0.2])
 xlabel('\mu (V)')
 ylabel('\sigma (V)')
 
-prettyFig('FixLogX=1;','fs=16;')
+prettyFig('fs',16)
 
 if being_published
 	snapnow

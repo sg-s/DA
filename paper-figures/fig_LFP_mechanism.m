@@ -323,7 +323,7 @@ plot(ax(7),data_lo.x,data_lo.y,'b');
 xlabel(ax(7),'Projected Stimulus (V)')
 ylabel(ax(7),'\Delta LFP (norm)')
 
-ylabel(ax(6),'Probability')
+ylabel(ax(5),'Probability')
 set(ax([5 7]),'XLim',[-1.2 -.4])
 
 % cosmetics

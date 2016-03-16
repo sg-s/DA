@@ -67,7 +67,7 @@ orn_data = backOutFilters(orn_data);
 % show response vs. linear projection; colour by mean stimulus in recent history window 
 [~,excursions] = plotExcursions(orn_data,ax(1),'max_exc_length',options.max_exc_length,'history_length',options.history_length,'data',options.data);
 
-assert(length(excursions.ons)>25,'Too few excursions!')
+assert(length(excursions.ons)>5,'Too few excursions!')
 
 % make two time vectors, one defining when the stimulus is on, and one just for the whiffs
 whiff_times = false(length(orn_data.stimulus),1);
@@ -153,6 +153,7 @@ if strcmp(options.data,'LFP')
 else
 	DA_model_data.firing_projected = R;
 end
+
 plotExcursions(DA_model_data,ax(3),'data',options.data,'max_exc_length',options.max_exc_length);
 l = plot(ax(3),NaN,NaN);
 if strcmp(options.data,'LFP')

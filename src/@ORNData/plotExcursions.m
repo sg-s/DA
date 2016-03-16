@@ -117,9 +117,6 @@ if strfind(options.data,'firing_rate')
 	resp = nanmean(o.firing_rate(uts,utt),2);
 	ylabel(plot_here(1),'Firing rate (Hz)')
 
-	% throw out some junk points
-	rm_this = pred > 2*max(resp);
-	pred(rm_this) = []; resp(rm_this) = [];
 
 elseif strfind(options.data,'LFP')
 	pred = -nanmean(o.LFP_projected(uts,utt),2);
@@ -129,14 +126,12 @@ else
 	error('I dont understand what data to plot.')
 end
 
-% find the gains in all windows and also grab the data to plot
-[gain,gain_err,plot_data] = findGainInWindows(ons,offs,pred,resp);
+% remove some points based on fit quality in the firing rate space
+[gain,gain_err] = findGainInWindows(ons,offs,pred,resp);
 
 % throw out some crappy data
-rm_this = gain < 0 | gain_err < options.min_excursion_r2;
-gain(rm_this) = [];
-gain_err(rm_this) = [];
-plot_data(rm_this) = [];
+rm_this = gain < 0| gain_err < options.min_excursion_r2;
+
 ons(rm_this) = [];
 offs(rm_this) = [];
 

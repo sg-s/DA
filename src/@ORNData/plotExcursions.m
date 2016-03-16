@@ -12,7 +12,7 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [plot_handles,excursions] = plotExcursions(varargin)
+function [varargout] = plotExcursions(varargin)
 
 % options and defaults
 options.history_length = 500;
@@ -21,6 +21,10 @@ options.min_exc_length = 50;
 options.max_exc_length = 500;
 options.data = 'firing_rate';
 options.min_excursion_r2 = .8;
+
+if nargout && ~nargin
+	varargout{1} = options;
+end
 
 % grab the ORNData object from the arguments
 for i = 1:length(varargin)
@@ -95,6 +99,18 @@ end
 
 stim = nanmean(o.stimulus(uts,utt),2);
 
+% excursions are always defined in the firing rate space. 
+f = nanmean(o.firing_rate(uts,utt),2);
+
+% find all the excursions in the firing rate
+f = f-min(f);
+f = f/max(f);
+[ons,offs] = computeOnsOffs(f>options.excursion_thresh);
+
+% excursions should be a certain length
+rm_this = (offs-ons) < options.min_exc_length | (offs-ons) > options.max_exc_length;
+ons(rm_this) = []; offs(rm_this) = [];
+
 % figure out what to plot
 if strfind(options.data,'firing_rate')
 	pred = nanmean(o.firing_projected(uts,utt),2);
@@ -106,28 +122,12 @@ if strfind(options.data,'firing_rate')
 	pred(rm_this) = []; resp(rm_this) = [];
 
 elseif strfind(options.data,'LFP')
-	pred = nanmean(o.LFP_projected(uts,utt),2);
-	resp = nanmean(o.LFP(uts,utt),2);
-	ylabel(plot_here(1),'LFP (mV)')
+	pred = -nanmean(o.LFP_projected(uts,utt),2);
+	resp = -nanmean(o.LFP(uts,utt),2);
+	ylabel(plot_here(1),'-LFP (mV)')
 else
 	error('I dont understand what data to plot.')
 end
-
-% find all the excursions in the response
-temp = resp;
-if min(temp) >= 0
-	% firing rate
-else
-	% LFP
-	temp = -temp;
-end
-temp = temp-min(temp);
-temp = temp/max(temp);
-[ons,offs] = computeOnsOffs(temp>options.excursion_thresh);
-
-% excursions should be a certain length
-rm_this = (offs-ons) < options.min_exc_length | (offs-ons) > options.max_exc_length;
-ons(rm_this) = []; offs(rm_this) = [];
 
 % find the gains in all windows and also grab the data to plot
 [gain,gain_err,plot_data] = findGainInWindows(ons,offs,pred,resp);
@@ -165,4 +165,5 @@ end
 excursions.ons = ons + find(uts,1,'first');
 excursions.offs = offs + find(uts,1,'first');
 
-
+varargout{1} = plot_handles;
+varargout{2} = excursions;

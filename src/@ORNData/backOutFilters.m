@@ -64,6 +64,7 @@ if  strcmp(filter_type,'all') || strcmp(filter_type,'firing')
 		end
 	end
 end
+
 if strcmp(filter_type,'all') || strcmp(filter_type,'LFP')
 	% do the LFP
 	if ~isempty(obj.LFP) && ~isempty(obj.stimulus) 

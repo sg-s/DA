@@ -15,8 +15,10 @@ function [R,y,z,Ky,Kz] = DAModelv2(S,p)
 
 switch nargin
 case 0
-	help DA_Modelv2
-	return
+	if ~nargout
+		help DAModelv2
+		return
+	end
 case 1
 	error('Not enough input arguments')
 case 2

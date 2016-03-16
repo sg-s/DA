@@ -73,15 +73,12 @@ classdef ORNData
 
          % if it is a matrix, it should be oriented properly
          [value] = orientMatrix(value);
-
-         % it should match stimulus, if it exists
-         if ~isempty(obj.n_trials)
-            % assert(obj.n_trials == size(value,2),'# of trials of firing rate should match # of trials of stimulus')
-         else
             
-         end
-         obj.n_trials = size(value,2);
-         obj.firing_rate = value;
+         obj.firing_rate = value; 
+
+         % n_trials should be the maximum of stimulus, firing_rate and LFP
+         obj.n_trials = max([size(obj.firing_rate,2) size(obj.LFP,2) size(obj.stimulus,2)]);
+
          obj.console_log = [obj.console_log char(10) ' ' datestr(now) '    Firing Rate set'];
 
 

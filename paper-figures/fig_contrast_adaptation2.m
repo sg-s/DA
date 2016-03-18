@@ -307,7 +307,7 @@ end
 %
 % is the time-dependent gain of the transduction currents and the nonlinear function is a Hill function. The exponent of the Hill function is also controlled by the stimulus as follows:
 %
-% $$ n(t)=\frac{n_{0}}{1+\beta_{\sigma}\left|K_{\sigma}\otimes s'(t)\right|} $$ 
+% $$ n(t)=\frac{n_{0}}{1+\beta_{\sigma}K_{\sigma}\otimes\left[s'(t)\right]_{+}} $$ 
 %  
 
 %%
@@ -353,11 +353,24 @@ end
 % $$ \beta=\frac{n_{hi}-n_{lo}}{n_{lo}\sigma_{lo}-n_{hi}\sigma_{hi}} $$
 % 
 
-s_hi = nanmean(nanstd(reshaped_PID(1e3:5e3,:))./nanmean(reshaped_PID(1e3:5e3,:)));
-s_lo = nanmean(nanstd(reshaped_PID(6e3:end,:))./nanmean(reshaped_PID(6e3:end,:)));
+% compute the derivative everywhere
+Sd = reshaped_PID;
+for i = 1:width(Sd)
+	Sd(:,i) = (filtfilt(ones(10,1),10,[0; diff(Sd(:,i))]));
+end
+Sd(Sd<0) = 0;
+
+
+s_hi = nanmean(nanmean(Sd(1e3:5e3,:)));
+s_lo = nanmean(nanmean(Sd(6e3:end,:)));
 
 B = (n_hi-n_lo)/(n_lo*s_lo - n_hi*s_hi);
 n0 = n_lo*(1+B*s_lo);
+
+%%
+% The calculated B and n0 are:
+
+B ,n0
 
 % correct the linear prediction
 XG = fA_pred;
@@ -404,11 +417,13 @@ for i = 1:width(fA_pred)
 end
 
 % convert into remaining variance accounted for
-[y,x] = hist((r2_XG-r2_X)./(1-r2_X),30);
+[y,x] = histcounts((r2_XG-r2_X)./(1-r2_X),-1:.02:1);
 y = y/sum(y);
+y = y*length(y);
+x = x(1:end-1) + mean(diff(x));
 plot(x,y,'k')
-plot([0 0],[0 1],'k--')
-set(gca,'XLim',[-1 1],'YLim',[0 .1])
+plot([0 0],[0 100],'k--')
+set(gca,'XLim',[-1 1],'YLim',[0 10])
 xlabel(['Additional Variance' char(10) 'accounted for'])
 ylabel('pdf')
 
@@ -421,60 +436,32 @@ end
 
 
 %%
-% Now we take the kinetics into account. We assume that the timescale of the gain filter is around 100ms, as specified by the plot earlier, and that the filter looks like a simple gamma function. 
+% Now we take the kinetics into account. To determine the timescale of contrast gain control, we fit a contrast-sensitive model to the data, keeping the B and n0 parameters fixed at what we measured ealrier. We now correct the linear prediction using a filter operating on the derivative of the stimulus. The parameters of the best-fit contrast sensitive model are:
 
-% compute the derivative everywhere
-Sd = reshaped_PID;
-for i = 1:width(Sd)
-	Sd(:,i) = filtfilt(ones(10,1),10,[0; diff(Sd(:,i))]);
-end
 
-% filter the stimulus using a filter  
-tau_s = tau_fA-tau_sc;
+clear d
+i = 8;
+ft = -99:700;
+fp = convolve(1e-3*(1:length(PID)),PID(:,i),K2_mean,ft);
+S = filtfilt(ones(10,1),10,[0; diff(PID(:,i))]);
+S(S<0) = 0;
+d.stimulus = [fp(1e4:end-1e4), S(1e4:end-1e4)];
+d.response = fA(1e4:end-1e4,i);
+d.response(1:1e3) = NaN;
+clear p
+p. n0 = 8.1800;
+p.tau = 215.9647;
+p.  K = 0.7623;
+p.  A = 65.2611;
+p.  B = 679;
+p.  n = 2.2969;
 
-t = 1:tau_s*5; n = 2;
-f = t.^n.*exp(-t/(tau_s/n)); % functional form in paper
-Kg = f/(tau_s/n)^(n+1)/gamma(n+1); % normalize appropriately
-
-Shat = reshaped_PID;
-for i = 1:width(reshaped_PID)
-	Shat(:,i) = abs(filter(Kg,sum(abs(Kg)),Sd(:,i)));
-end
-
-s_hi = nanmean(nanmean(Shat(1e3:5e3,:)));
-s_lo = nanmean(nanmean(Shat(6e3:end,:)));
-
-B = (n_hi-n_lo)/(n_lo*s_lo - n_hi*s_hi);
-n0 = n_lo*(1+B*s_lo);
-
-figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
-subplot(1,3,1:2); hold on
-plot(time-5,nanmean(Shat,2),'k')
-xlabel('Time since switch (s)')
-ylabel('$| K_{g} \otimes s'' |$','interpreter','latex')
-set(gca,'XLim',[-4 5])
-set(gca,'YLim',[0 1e-3])
-
-subplot(1,3,3), hold on
-plot(sc,nanmean(Shat,2),'k+')
-xlabel('Stimulus contrast')
-ylabel('$| K_{g} \otimes s'' |$','interpreter','latex')
-set(gca,'YLim',[0 1e-3])
-prettyFig('fs',16)
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-%%
-% We now correct the linear prediction using a differentiating filter operating on the stimulus. 
+disp(p)
 
 XG = X;
 for i = 1:width(X)
-	n = n0./(1 + B*Shat(:,i));
-	x = fA_pred(:,i);
-	XG(:,i) = (x.^n)./(x.^n + .79.^n);
+	temp = [fA_pred(:,i), Sd(:,i)];
+	XG(:,i) = contrastLNModel(temp,p);
 end
 
 

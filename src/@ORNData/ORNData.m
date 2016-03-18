@@ -111,12 +111,11 @@ classdef ORNData
 
    		% if it is a matrix, it should be oriented properly
    		[value] = orientMatrix(value);
-   		assert(size(value,2) == obj.n_trials,'Filter dimensions do not match # of trials')
 
    		obj.K_firing = value;
          obj.console_log = [obj.console_log char(10) ' ' datestr(now) '   K_firing rate set'];
 
-   		obj = projectStimulus(obj,'firing');
+   		obj = projectStimulus(obj,'firing_rate');
    	end
 
       function obj = set.regularisation_factor(obj,value)

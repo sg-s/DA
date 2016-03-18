@@ -16,8 +16,6 @@ p.tau2;
 p.A;
 p.n;
 
-% offset, 
-p.offset;
 
 % hill nonlinearity
 p.Hill_A;
@@ -26,24 +24,24 @@ p.Hill_n;
 
 % bounds
 lb.n = 0;
-ub.n = 4;
+ub.n = 50;
 
 lb.A = 0;
-ub.A = 1e3;
+ub.A = 0;
 
 lb.tau1 = 1;
-lb.tau2 = 2;
-ub.tau2 = 200;
-ub.tau1 = 100;
+lb.tau2 = 1;
+ub.tau2 = 1;
+ub.tau1 = 50;
 
-lb.Hill_n = 0;
+lb.Hill_n = 1;
 ub.Hill_n = 10;
 
 ub.Hill_A = 1e3;
 lb.Hill_A = 25;
 
 lb.Hill_Kd = 0;
-ub.Hill_Kd = 200;
+ub.Hill_Kd = 20;
 
 
 % make the filters
@@ -58,8 +56,9 @@ K = filter_gamma2(t,p);
 % filter the input
 shat = filter(K,1,s);
 
-% add the offset
-shat = shat + p.offset;
+% normalise this
+shat = shat - nanmin(shat);
+shat = shat/max(shat);
 
 % pass through the non-linearity
 x = [p.Hill_A p.Hill_Kd p.Hill_n];

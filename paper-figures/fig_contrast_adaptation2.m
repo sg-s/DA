@@ -307,7 +307,7 @@ end
 %
 % is the time-dependent gain of the transduction currents and the nonlinear function is a Hill function. The exponent of the Hill function is also controlled by the stimulus as follows:
 %
-% $$ n(t)=\frac{n_{0}}{1+\beta_{\sigma}\left|K_{\sigma}\otimes s(t)\right|} $$ 
+% $$ n(t)=\frac{n_{0}}{1+\beta_{\sigma}\left|K_{\sigma}\otimes s'(t)\right|} $$ 
 %  
 
 %%
@@ -402,11 +402,15 @@ for i = 1:width(fA_pred)
 	catch
 	end
 end
-plot(r2_X,r2_XG,'k+')
-plot([0 1],[0 1],'k--')
-xlabel('r^2 (Linear Model)')
-ylabel('r^2 (Gain-corrected)')
-suptitle('Gain corrected by static contrast')
+
+% convert into remaining variance accounted for
+[y,x] = hist((r2_XG-r2_X)./(1-r2_X),30);
+y = y/sum(y);
+plot(x,y,'k')
+plot([0 0],[0 1],'k--')
+set(gca,'XLim',[-1 1],'YLim',[0 .1])
+xlabel(['Additional Variance' char(10) 'accounted for'])
+ylabel('pdf')
 
 prettyFig('fs',16)
 
@@ -416,30 +420,46 @@ if being_published
 end
 
 
-
 %%
-% Now we take the kinetics into account. We assume that the timescale of the gain filter is around 100ms, as specified by the plot earlier, and that the filter has a simple differentiating shape. 
+% Now we take the kinetics into account. We assume that the timescale of the gain filter is around 100ms, as specified by the plot earlier, and that the filter looks like a simple gamma function. 
 
-% filter the stimulus using a differentiating filter  
-Kg = [ones(round((tau_fA-tau_sc)/2),1); -ones(round((tau_fA-tau_sc)/2),1)];
+% compute the derivative everywhere
+Sd = reshaped_PID;
+for i = 1:width(Sd)
+	Sd(:,i) = filtfilt(ones(10,1),10,[0; diff(Sd(:,i))]);
+end
+
+% filter the stimulus using a filter  
+tau_s = tau_fA-tau_sc;
+
+t = 1:tau_s*5; n = 2;
+f = t.^n.*exp(-t/(tau_s/n)); % functional form in paper
+Kg = f/(tau_s/n)^(n+1)/gamma(n+1); % normalize appropriately
+
 Shat = reshaped_PID;
 for i = 1:width(reshaped_PID)
-	Shat(:,i) = abs(filter(Kg,sum(abs(Kg)),reshaped_PID(:,i)));
+	Shat(:,i) = abs(filter(Kg,sum(abs(Kg)),Sd(:,i)));
 end
+
+s_hi = nanmean(nanmean(Shat(1e3:5e3,:)));
+s_lo = nanmean(nanmean(Shat(6e3:end,:)));
+
+B = (n_hi-n_lo)/(n_lo*s_lo - n_hi*s_hi);
+n0 = n_lo*(1+B*s_lo);
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1:2); hold on
 plot(time-5,nanmean(Shat,2),'k')
 xlabel('Time since switch (s)')
-ylabel('$| K_{g} \otimes s |$','interpreter','latex')
+ylabel('$| K_{g} \otimes s'' |$','interpreter','latex')
 set(gca,'XLim',[-4 5])
-set(gca,'YLim',[0 0.1])
+set(gca,'YLim',[0 1e-3])
 
 subplot(1,3,3), hold on
 plot(sc,nanmean(Shat,2),'k+')
 xlabel('Stimulus contrast')
-ylabel('$| K_{g} \otimes s |$','interpreter','latex')
-set(gca,'YLim',[0 0.1])
+ylabel('$| K_{g} \otimes s'' |$','interpreter','latex')
+set(gca,'YLim',[0 1e-3])
 prettyFig('fs',16)
 
 if being_published
@@ -492,11 +512,14 @@ for i = 1:width(X)
 	catch
 	end
 end
-plot(r2_X,r2_XG,'k+')
-plot([0 1],[0 1],'k--')
-xlabel('r^2 (Linear Model)')
-ylabel('r^2 (Gain-corrected)')
-suptitle('Gain corrected by contrast filter ')
+% convert into remaining variance accounted for
+[y,x] = hist((r2_XG-r2_X)./(1-r2_X),30);
+y = y/sum(y);
+plot(x,y,'k')
+plot([0 0],[0 1],'k--')
+set(gca,'XLim',[-1 1],'YLim',[0 .1])
+xlabel(['Additional Variance' char(10) 'accounted for'])
+ylabel('pdf')
 
 prettyFig('fs',16)
 

@@ -36,9 +36,9 @@ end
 
 
 assert(nargin<3,'Too many input arguments')
-assert(ischar(filter_type),'2nd argument should be a string: {"all","LFP","firing"}');
+assert(ischar(filter_type),'2nd argument should be a string: {"all","LFP","firing_rate"}');
 
-if  strcmp(filter_type,'all') || strcmp(filter_type,'firing')
+if  strcmp(filter_type,'all') || strcmp(filter_type,'firing_rate')
 	% do the firing rate
 	if ~isempty(obj.firing_rate) && ~isempty(obj.stimulus) 
 		% use hashes to check if anything has changed since last compute
@@ -59,7 +59,7 @@ if  strcmp(filter_type,'all') || strcmp(filter_type,'firing')
 				obj.K_firing_hash = K_firing_hash;
 				obj.K_firing = K;
 				obj.filtertime_firing = filtertime*obj.dt;
-				obj = projectStimulus(obj,'firing');
+				obj = projectStimulus(obj,'firing_rate');
 			end
 		end
 	end

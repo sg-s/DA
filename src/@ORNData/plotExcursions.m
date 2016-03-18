@@ -21,6 +21,7 @@ options.min_exc_length = 50;
 options.max_exc_length = 500;
 options.data = 'firing_rate';
 options.min_excursion_r2 = .8;
+options.debug = false;
 
 if nargout && ~nargin
 	varargout{1} = options;
@@ -106,10 +107,19 @@ f = nanmean(o.firing_rate(uts,utt),2);
 f = f-min(f);
 f = f/max(f);
 [ons,offs] = computeOnsOffs(f>options.excursion_thresh);
+if options.debug
+	disp('We start with these many excursions:')
+	disp(length(ons))
+end
+
 
 % excursions should be a certain length
 rm_this = (offs-ons) < options.min_exc_length | (offs-ons) > options.max_exc_length;
 ons(rm_this) = []; offs(rm_this) = [];
+if options.debug
+	disp('Removed these many excursions because they failed length criteria:')
+	disp(sum(rm_this))
+end
 
 % figure out what to plot
 if strfind(options.data,'firing_rate')

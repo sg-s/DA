@@ -9,7 +9,7 @@
 function [K1,K2,STA,KLcontributed] = backOutSTC(S,R,varargin)
 
 % defaults
-options.filter_length = 100;
+options.filter_length = 200;
 options.n_dims = 10;
 options.eigvalthresh = .05; % eigenvalue cutoff threshold (for pruning dims from raw stimulus)
 

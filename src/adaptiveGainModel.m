@@ -32,9 +32,9 @@ p.n;
 lb.A = eps;
 lb.B = eps;
 lb.tau = 1;
-lb.n = 2;
-ub.tau = 1e3;
-ub.n = 45;
+lb.n = 1;
+ub.tau = 50;
+ub.n = 10;
 
 t = 0:(length(S)/10); 
 Kg = generate_simple_filter(p.tau,p.n,t);
@@ -45,11 +45,12 @@ if ~isempty(z)
 	Kg = Kg(1:z);
 end
 
-fp = S(:,2);
-S = S(:,1);
+fp = S(:,1);
+S = S(:,2);
 
 g = filter(Kg,1,S);
-R = (p.A*fp)./(1+p.B*g);
+R = (p.A*fp)./(1+p.B.*g);
+
 
 function f = generate_simple_filter(tau,n,t)
 f = t.^n.*exp(-t/tau); % functional form in paper

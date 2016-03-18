@@ -11,16 +11,19 @@
 
 function obj = projectStimulus(obj,projection_type)
 
-assert(nargin==2,'Incorrect # of input arguments')
+if nargin < 2
+	projection_type = 'all';
+end
+
 assert(ischar(projection_type),'2nd argument should be a string')
 
-if strcmp(projection_type,'firing')
+if  strcmp(projection_type,'all') || strcmp(projection_type,'firing_rate')
 	obj.firing_projected = NaN*obj.stimulus;
 	time = obj.dt*(1:length(obj.stimulus));
 	for i = 1:obj.n_trials
 	   obj.firing_projected(:,i) = convolve(time,obj.stimulus(:,i),obj.K_firing(:,i),obj.filtertime_firing);
 	end
-elseif strcmp(projection_type,'LFP')
+elseif  strcmp(projection_type,'all') || strcmp(projection_type,'LFP')
 	obj.LFP_projected = NaN*obj.stimulus;
 	time = obj.dt*(1:length(obj.stimulus));
 	for i = 1:obj.n_trials

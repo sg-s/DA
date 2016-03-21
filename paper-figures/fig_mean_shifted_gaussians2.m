@@ -136,7 +136,7 @@ xlabel(axes_handles(5),'\mu_{stimulus} (V)')
 ylabel(axes_handles(5),'\sigma_{stimulus (V)}')
 set(axes_handles(5),'XLim',[0 2],'YLim',[0 2])
 
-prettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=0;','FixLogY=0;')
+prettyFig('plw',1.3,'lw',1.5,'fs',14)
 set(lh,'Position',[0.42 0.32 0.2112 0.0275],'box','off')
 
 xlabel(axes_handles(2),'Time (s)')
@@ -278,7 +278,7 @@ ylabel(ax(7),'ORN Response (Hz)')
 
 
 
-prettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=0;','FixLogY=0;')
+prettyFig('plw',1.3,'lw',1.5,'fs',14)
 
 if being_published
 	snapnow
@@ -374,7 +374,7 @@ legend(l,['\alpha=' oval(cf.b)])
 xlabel('Mean Stim (V)')
 ylabel('Gain calc. using single filter (Hz/V)')
 
-prettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=true;','FixLogY=0;')
+prettyFig('plw',1.3,'lw',1.5,'fs',14,'FixLogX',true)
 
 if being_published
 	snapnow
@@ -441,7 +441,7 @@ ylabel('Timescale of firing (ms)')
 title('Timescale of gain control')
 suptitle('Timescale of firing gain control')
 
-prettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=true;','FixLogY=0;')
+prettyFig('plw',1.3,'lw',1.5,'fs',14,'FixLogX',true)
 
 if being_published
 	snapnow
@@ -551,109 +551,13 @@ ylabel('Timescale of firing (ms)')
 title('Timescale of gain control')
 suptitle('Timescale of firing gain control')
 
-prettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=true;','FixLogY=0;')
+prettyFig('plw',1.3,'lw',1.5,'fs',14,'FixLogX',true)
 
 if being_published
 	snapnow
 	delete(gcf)
 end
 
-%% Zero Parameter Fits
-% In this section we attempt to directly measure the gain-control parameters. Since this is an over-determined problem (we have dozens of trials to fit 2 parameters), we find the solution that minimizes the L-2 norm of the error.  
-
-G = 1./fA_gain;
-M = ones(length(G),2);
-M(:,2) = mean_stim(:);
-% remove NaNs
-rm_this = isnan(G) | isnan(M(:,2));
-G(rm_this) = [];
-M(rm_this,:) = [];
-
-X = M\G;
-A = 1/X(1); 
-B = X(2)*A;
-
-%%
-% In the following figure, we plot the linear projections corrected by this zero-parameter gain scaling term. Here, we neglect the dynamical nature of the gain control, and assume that the gain simply depends on the mean stimulus over the entire trial. 
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-
-subplot(1,2,1), hold on
-ss = 100;
-a = 35e3;
-for i = 1:max(paradigm) % iterate over all paradigms 
-	y = nanmean(fA(a:z,paradigm == i),2);
-	x = nanmean(fA_pred(a:z,paradigm == i),2);
-	x = x - nanmean(x);
-	s = nanmean(PID(a:z,paradigm==i),2);
-	x = x + nanmean(s);
-	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:));
-end
-xlabel('Projected Stimulus (V)')
-ylabel('Firing Rate (Hz)')
-
-XG = PID;
-for i = 1:width(fp)
-	s = nanmean(PID(a:z,i),2);
-	x = fA_pred(:,i);
-	x = x - nanmean(x);
-	x = x + nanmean(s);
-	XG(:,i) = (A*x)./(1 + B*mean_stim(i));
-end
-
-subplot(1,2,2), hold on
-for i = 1:max(paradigm) % iterate over all paradigms 
-	y = nanmean(fA(a:z,paradigm == i),2);
-	x = nanmean(XG(a:z,paradigm == i),2);
-	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:));
-end
-xlabel('Gain corrected projection')
-suptitle('Gain correction by mean stimulus')
-prettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=true;','FixLogY=0;')
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-%%
-% We now repeat this, but use a dynamic estimate of the mean stimulus using a filter 100ms long. It clearly doesn't work. We increase this time scale, and it gets a little better. 
-
-figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
-tau_gain = [100 300 1e3];
-for ti = 1:length(tau_gain)
-	tg = tau_gain(ti);
-	Shat = PID;
-	Kg = ones(tg,1)/tg;
-	for i = 1:width(PID)
-		Shat(:,i) = filter(Kg,1,PID(:,i));
-	end
-
-	XG = NaN*PID;
-	for i = 1:width(fp)
-		s = nanmean(PID(a:z,i),2);
-		x = fA_pred(:,i);
-		x = x - nanmean(x);
-		x = x + nanmean(s);
-		XG(:,i) = (A*x)./(1 + B*Shat(:,i));
-	end
-
-	subplot(1,3,ti); hold on
-	for i = 1:max(paradigm) % iterate over all paradigms 
-		y = nanmean(fA(a:z,paradigm == i),2);
-		x = nanmean(XG(a:z,paradigm == i),2);
-		plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:));
-	end
-	title(['\tau_{gain} = ' oval(tg) 'ms'])
-	xlabel('Gain-corrected projection')
-	ylabel('Response (Hz)')
-end
-prettyFig('plw=1.3;','lw=1.5;','fs=14;')
-
-if being_published
-	snapnow
-	delete(gcf)
-end
 
 
 %% Version Info

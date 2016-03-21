@@ -18,15 +18,15 @@ p.B;
 p.n;
 
 % bounds
-lb.tau = 20;
+lb.tau = 1;
 lb.K = 0;
 lb.A = 1;
-lb.n0 = 1;
+lb.n0 = 0;
 lb.B = 0;
 lb.n = 1;
 
-ub.n = 15;
-ub.tau = 500;
+ub.n = 5;
+ub.tau = 300;
 
 fp = S(:,1);
 S = S(:,2);

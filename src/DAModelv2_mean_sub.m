@@ -1,4 +1,4 @@
-% DAModelv2.m
+% DAModelv2_mean_sub.m
 % modified version of DA model, skips integration
 % [R,y,z,Ky,Kz] = DAModelv2(S,p)
 % function takes argument of stimulus and a parameter set and implements the DA
@@ -11,12 +11,12 @@
 % Damon A. Clark, 2013
 
 
-function [R,y,z,Ky,Kz] = DAModelv2(S,p)
+function [R,y,z,Ky,Kz] = DAModelv2_mean_sub(S,p)
 
 switch nargin
 case 0
 	if ~nargout
-		help DAModelv2
+		help DAModelv2_mean_sub
 		return
 	end
 case 1
@@ -34,9 +34,9 @@ ub.C = 0;
 
 % extra bounds
 lb.n_y = 1; lb.n_z = 1;
-ub.n_y = 2; ub.n_z = 2;
-lb.s0 = -5; ub.s0 = 1;
-ub.tau_z = 300; ub.tau_y = 100;
+ub.n_y = 10; ub.n_z = 10;
+lb.s0 = -5; ub.s0 = 5;
+ub.tau_z = 200; ub.tau_y = 100;
 
 
 
@@ -60,6 +60,7 @@ z = filter(Kz,1,S);
 
 R = (p.A*y./(1+p.B*z));
 
+R = R - nanmean(R);
 
 
 

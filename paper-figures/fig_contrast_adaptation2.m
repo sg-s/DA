@@ -444,7 +444,6 @@ i = 8;
 ft = -99:700;
 fp = convolve(1e-3*(1:length(PID)),PID(:,i),K2_mean,ft);
 S = filtfilt(ones(10,1),10,[0; diff(PID(:,i))]);
-S(S<0) = 0;
 d.stimulus = [fp(1e4:end-1e4), S(1e4:end-1e4)];
 d.response = fA(1e4:end-1e4,i);
 d.response(1:1e3) = NaN;
@@ -500,13 +499,16 @@ for i = 1:width(X)
 	end
 end
 % convert into remaining variance accounted for
-[y,x] = hist((r2_XG-r2_X)./(1-r2_X),30);
+[y,x] = histcounts((r2_XG-r2_X)./(1-r2_X),-1:.02:1);
 y = y/sum(y);
+y = y*length(y);
+x = x(1:end-1) + mean(diff(x));
 plot(x,y,'k')
-plot([0 0],[0 1],'k--')
-set(gca,'XLim',[-1 1],'YLim',[0 .1])
+plot([0 0],[0 100],'k--')
+set(gca,'XLim',[-1 1],'YLim',[0 10])
 xlabel(['Additional Variance' char(10) 'accounted for'])
 ylabel('pdf')
+
 
 prettyFig('fs',16)
 

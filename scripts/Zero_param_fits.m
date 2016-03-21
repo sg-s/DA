@@ -128,6 +128,16 @@ a = 35e3; z = 55e3;
 mean_stim = nanmean(PID(a:z,:));
 [K,fA_pred,fA_gain] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
 
+% compute filter only from the lowest dose
+K = K(:,paradigm==1);
+K = nanmean(K(:,[2 5]),2);
+% use this to make projections everywhere
+filtertime = 1e-3*(1:(length(K))) - .1;
+fp = NaN*fA;
+for i = 1:width(PID)
+	fp(:,i) = convolve(1e-3*(1:length(PID)),PID(:,i),K,filtertime);
+end
+
 G = 1./fA_gain;
 M = ones(length(G),2);
 M(:,2) = mean_stim(:);
@@ -231,7 +241,7 @@ orn_data = backOutFilters(orn_data);
 stim_on = false(length(example_data.stimulus),1);
 stim_on(10e3:end-5e3) = true; 
 orn_data.use_this_segment = stim_on;
-
+orn_data.firing_projected(orn_data.firing_projected<0) = 0;
 
 figure('outerposition',[0 0 1200 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
 subplot(2,3,1); hold on
@@ -248,7 +258,7 @@ subplot(2,3,2); hold on
 plot(R(1e4:10:end),orn_data.firing_rate(1e4:10:end),'k.')
 legend(['r^2 = ' oval(rsquare(R(1e4:10:end),orn_data.firing_rate(1e4:10:end)))],'Location','southeast')
 xlabel('Corr. Proj. Stimulus (V)')
-title('Weber-LFP-DA')
+title(['Weber-LFP-DA,\tau = ' oval(p_DA_LFP.n_z*p_DA_LFP.tau_z) ,'ms'])
 
 % DA Model fit to Weber firing data
 % correct for some trivial scaling parameters
@@ -258,7 +268,7 @@ subplot(2,3,3); hold on
 plot(R(1e4:10:end),orn_data.firing_rate(1e4:10:end),'k.')
 legend(['r^2 = ' oval(rsquare(R(1e4:10:end),orn_data.firing_rate(1e4:10:end)))],'Location','southeast')
 xlabel('Corr. Proj. Stimulus (V)')
-title('Weber-Firing-DA')
+title(['Weber-Firing-DA,\tau = ' oval(p_DA_fA.n_z*p_DA_fA.tau_z) ,'ms'])
 
 clear p
 p.A = A; p.B = B;
@@ -269,7 +279,7 @@ subplot(2,3,4); hold on
 plot(R(1e4:10:end),orn_data.firing_rate(1e4:10:end),'k.')
 legend(['r^2 = ' oval(rsquare(R(1e4:10:end),orn_data.firing_rate(1e4:10:end)))],'Location','southeast')
 xlabel('Corr. Proj. Stimulus (V)')
-title('Weber-Directly measured')
+title(['Weber-directly measured,\tau = ' oval(p_DA_fA.n_z*p_DA_fA.tau_z) ,'ms'])
 
 
 % best fit DA model
@@ -282,12 +292,12 @@ p.tau_y = 6.9189;
 p.    C = 0;
 p.    A = 450.8111;
 p.    B = 5.9000;
-R = DAModelv2(orn_data.stimulus,p);
+[R,~,~,Ky,Kz] = DAModelv2(orn_data.stimulus,p);
 subplot(2,3,5); hold on
 plot(R(1e4:10:end),orn_data.firing_rate(1e4:10:end),'k.')
 legend(['r^2 = ' oval(rsquare(R(1e4:10:end),orn_data.firing_rate(1e4:10:end)))],'Location','southeast')
 xlabel('Corr. Proj. Stimulus (V)')
-title('Best-fit DA Model')
+title(['Best-fit DA,\tau = ' oval(p.n_z*p.tau_z) ,'ms'])
 
 % best fit gain-correction term
 clear p d
@@ -296,12 +306,12 @@ p.  B = 2.24;
 p.tau = 28.02;
 p.  n = 1;
 d.stimulus = [orn_data.firing_projected-min(orn_data.firing_projected) ,orn_data.stimulus];
-R = adaptiveGainModel(d.stimulus,p);
+[R,Kg] = adaptiveGainModel(d.stimulus,p);
 subplot(2,3,6); hold on
 plot(R(1e4:10:end),orn_data.firing_rate(1e4:10:end),'k.')
 legend(['r^2 = ' oval(rsquare(R(1e4:10:end),orn_data.firing_rate(1e4:10:end)))],'Location','southeast')
 xlabel('Corr. Proj. Stimulus (V)')
-title('Best-fit adaptive gain Model')
+title(['Best-fit Gain corrected,\tau = ' oval(p_DA_LFP.n_z*p_DA_LFP.tau_z) ,'ms'])
 
 prettyFig('fs',18)
 
@@ -314,7 +324,7 @@ end
 %% Adding on a contrast-sensitive Hill function
 % For each of these models, we fit a contrast-sensitive Hill function as described in other documents to see how they improve the fit. 
 
-clear d p
+clear d p S
 S = [0; diff(orn_data.stimulus)];
 S_diff = filtfilt(ones(10,1),10,S); clear S
 d.stimulus = [orn_data.firing_projected,S_diff];
@@ -330,7 +340,7 @@ p.  n = 4.7383;
 
 figure('outerposition',[0 0 1200 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
 subplot(2,3,1); hold on
-R = contrastLNModel(d.stimulus,p);
+[R,~,n] = contrastLNModel(d.stimulus,p);
 plot(R(1e4:10:end),orn_data.firing_rate(1e4:10:end),'k.')
 legend(['r^2 = ' oval(rsquare(R(1e4:10:end),orn_data.firing_rate(1e4:10:end)))],'Location','southeast')
 xlabel('Proj. Stimulus (V)')

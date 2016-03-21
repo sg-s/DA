@@ -8,7 +8,7 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [R,Kg] = contrastLNModel(S,p)
+function [R,Kg,n] = contrastLNModel(S,p)
 
 p.n0;
 p.tau;
@@ -41,6 +41,7 @@ Shat = filter(Kg,1,S);
 n = p.n0./(1 + p.B.*Shat);
 
 R = real((fp.^n)./(fp.^n + p.K.^n));
+
 R(R<0) = 0;
 R = R*p.A;
 

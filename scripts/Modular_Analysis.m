@@ -214,12 +214,211 @@ end
 %%
 % This clearly demonstrates that gain control to the mean happens at the transduction level, which is responsible for the Weber-Fechner Law at the firing machinery. We can also see that the gain of the firing machinery itself doesn't change with the mean stimulus. 
 
+%% 
+% In this section, we try to account for the observed Weber-like scaling of transduction currents using a simple divisive gain control term:
+% 
+% $$ g(t)=\frac{\alpha}{1+\beta K_{\mu}\otimes s(t)} $$
+% 
+
+%%
+% The best-fit model parameters were:
+ 
+
+clear p
+p.tau = 7.0625;
+p.  n = 6.5312;
+p.  B = 13.8125;
+p.  A = 64.6250;
+
+disp(p)
+
+%%
+% However, the filter was very poorly constrained, and many different filters with lengths from 30ms to 3s seemed to do as good a job. 
+
+d.stimulus = [PID(a:z,:), K1p(a:z,:)];
+G = divisiveGainModel(d.stimulus,p);
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+plot(mean_stim,K1_gain,'k+')
+plot(mean_stim,G,'ro')
+xlabel('Mean Stimulus')
+legend('Measured','Model Prediction')
+ylabel('Gain (mV/s/V)')
+set(gca,'XScale','log','YScale','log')
+
+subplot(1,2,2), hold on
+plot([1 20],[1 20],'k--')
+plot(G,K1_gain,'+')
+xlabel('Model Prediction')
+ylabel('Measured Gain (mV/s/V)')
+set(gca,'XScale','log','YScale','log')
+
+prettyFig('fs',18)
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
 %% Contrast Sensitivity 
-% In this section we analyse the data where we switch between two contrasts, while keeping the mean stimulus the same. 
+% In this section we analyse the data where we switch between two contrasts, while keeping the mean stimulus the same. First, we show the filters extracted at each stage. 
 
 
+path_name = '/local-data/DA-paper/switching/variance/v2/';
+[PID, LFP, fA, paradigm, orn] = consolidateData(path_name,1);
+
+global_start = 40e3; % 40 seconds
+global_end = length(PID) - 5e3; 
+% bandpass to remove spikes and slow fluctuations
+for i = 1:width(LFP)
+	LFP(:,i) = 10*bandPass(LFP(:,i),Inf,10); % remove spikes
+	LFP(:,i) = 1e4*filtfilt(ones(10,1),10,[0; diff(LFP(:,i))]);
+end
+
+% reshape the LFP signals
+block_length = 1e4;
+reshaped_LFP = LFP(global_start:end-1e4-1,1:width(PID));
+reshaped_LFP = reshape(reshaped_LFP,block_length,width(reshaped_LFP)*length(reshaped_LFP)/block_length);
+
+% also reshape the PID
+reshaped_PID = PID(global_start:end-1e4-1,1:width(PID));
+reshaped_PID = reshape(reshaped_PID,block_length,width(reshaped_PID)*length(reshaped_PID)/block_length);
+
+% reshape the firing rate signals
+reshaped_fA = fA(global_start:end-1e4-1,1:width(PID));
+reshaped_fA = reshape(reshaped_fA,block_length,width(reshaped_fA)*length(reshaped_fA)/block_length);
 
 
+% also reshape the orn ID
+reshaped_orn = repmat(orn,length(global_start:length(PID)-1e4-1)/block_length,1);
+reshaped_orn = reshaped_orn(:);
+
+% throw our NaNs globally. so we're throwing out epochs where the data is incomplete
+rm_this = isnan(sum(reshaped_LFP));
+reshaped_LFP(:,rm_this) = [];
+reshaped_PID(:,rm_this) = [];
+reshaped_fA(:,rm_this) = [];
+reshaped_orn(rm_this) = [];
+
+% extract filters and find gain
+a = 1; z = 10e3;
+K1 = extractFilters(reshaped_PID,reshaped_LFP,'use_cache',true,'a',a,'z',z);
+K2 = extractFilters(reshaped_LFP,reshaped_fA,'use_cache',true,'a',a,'z',z);
+K3 = extractFilters(reshaped_PID,reshaped_fA,'use_cache',true,'a',a,'z',z);
+ft = 1e-3*(1:length(K1)) - .1;
+
+% average filters and project stimulus
+K1 = nanmean(K1,2);
+K2 = nanmean(K2,2);
+K3 = nanmean(K3,2);
+
+K1p = NaN*reshaped_fA;
+K2p = NaN*reshaped_fA;
+K3p = NaN*reshaped_fA;
+for i = 1:width(reshaped_fA)
+	K1p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K1,ft);
+	K2p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),K1p(:,i),K2,ft);
+	K3p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K3,ft);
+end
+
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,3,1), hold on
+plot(ft,K1);
+title('PID \rightarrow dLFP')
+xlabel('Filtertime (s)')
+ylabel('K1')
+
+subplot(1,3,2), hold on
+plot(ft,K2);
+title('dLFP \rightarrow Firing','interpreter','tex')
+xlabel('Filtertime (s)')
+ylabel('K2')
+
+subplot(1,3,3), hold on
+plot(ft,K3);
+temp1 = K1;
+temp2 = K2;
+temp = convolve(ft,temp1,temp2,ft);
+plot(ft,temp);
+title('PID \rightarrow Firing','interpreter','tex')
+legend('K3','K1 \otimes K2')
+xlabel('Filtertime (s)')
+
+prettyFig()
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
+
+%%
+% Now, we compare the projections using these filters with the actual data. 
+
+
+ss = 10;
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,3,1), hold on
+x = K1p(1e3:5e3,:);
+y = reshaped_LFP(1e3:5e3,:);
+rm_this = (isnan(sum(y)) | isnan(sum(x)));
+x(:,rm_this) = []; y(:,rm_this) = []; 
+h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[1 0 0]);
+delete(h.line(2:3))
+delete(h.shade)
+x = K1p(6e3:end-100,:);
+y = reshaped_LFP(6e3:end-100,:);
+rm_this = (isnan(sum(y)) | isnan(sum(x)));
+x(:,rm_this) = []; y(:,rm_this) = []; 
+h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[0 0 1]);
+delete(h.line(2:3))
+delete(h.shade)
+xlabel('K1 \otimes s(t)')
+ylabel('dLPF (mV/s)')
+
+subplot(1,3,2), hold on
+x = K2p(1e3:5e3,:);
+y = reshaped_fA(1e3:5e3,:);
+rm_this = (isnan(sum(y)) | isnan(sum(x)));
+x(:,rm_this) = []; y(:,rm_this) = []; 
+h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[1 0 0]);
+delete(h.line(2:3))
+delete(h.shade)
+x = K2p(6e3:end-200,:);
+y = reshaped_fA(6e3:end-200,:);
+rm_this = (isnan(sum(y)) | isnan(sum(x)));
+x(:,rm_this) = []; y(:,rm_this) = []; 
+h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[0 0 1]);
+delete(h.line(2:3))
+delete(h.shade)
+xlabel('K2 \otimes dLFP_{pred}(t)')
+ylabel('Firing Rate (Hz)')
+
+subplot(1,3,3), hold on
+x = K3p(1e3:5e3,:);
+y = reshaped_fA(1e3:5e3,:);
+rm_this = (isnan(sum(y)) | isnan(sum(x)));
+x(:,rm_this) = []; y(:,rm_this) = []; 
+h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[1 0 0]);
+delete(h.line(2:3))
+delete(h.shade)
+x = K3p(6e3:end-100,:);
+y = reshaped_fA(6e3:end-100,:);
+rm_this = (isnan(sum(y)) | isnan(sum(x)));
+x(:,rm_this) = []; y(:,rm_this) = []; 
+h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[0 0 1]);
+delete(h.line(2:3))
+delete(h.shade)
+xlabel('K3 \otimes s(t)')
+ylabel('Firing Rate (Hz)')
+prettyFig;
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
 
 %% Version Info
 %

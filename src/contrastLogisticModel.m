@@ -8,7 +8,7 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [R,Kg] = contrastLogisticModel(S,p)
+function [R,Kg,k] = contrastLogisticModel(S,p)
 
 % for logistic function
 p.x0;
@@ -22,14 +22,13 @@ p.B;
 
 % bounds
 lb.tau = 10;
-lb.n = 2;
+lb.n = 1;
 lb.B = eps;
-lb.A = 1;
-lb.k0 = 10;
-lb.x0 = -3;
+lb.A = 10;
+lb.k0 = 0;
 
-ub.tau = 400;
-ub.n = 2;
+ub.tau = 100;
+ub.n = 5;
 ub.B = 1000;
 
 Sd = S;

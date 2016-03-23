@@ -608,7 +608,7 @@ ft = 1e-3*(1:length(K1)) - .1;
 %%
 % In the following figure, we compare the LFP filter extracted from the natural stimuli with the LFP filter extracted from the Weber experiment, and also compare their linear projections, before and after gain-correction from the Weber-Fechner experiment.  
 
-example_orn = 4;
+example_orn = 2;
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1), hold on
 plot(ft,K1(:,example_orn),'k')
@@ -637,11 +637,155 @@ title('Corrected by Weber-calculated Gain')
 
 prettyFig;
 
+weber_corrected_LFP = R;
+
 if being_published	
 	snapnow	
 	delete(gcf)
 end
 
+%% Naturalistic Stimulus: Firing Rate
+% In this section, we look at the LFP to firing rate transformation, and in particular, if our understanding of contrast adaptation helps improve the prediction of the firing rate. In the following figure, we plot the firing rate of the neuron vs. various predictors of the firing rate (the first row). From left to right, they are: 
+% 
+% # The stimulus -> firing rate filter
+% # The stimulus -> LFP -> firing rate mapping (2 filters)
+% # The LFP -> firing rate filter 
+% # The predicted LFP corrected by the Weber gain control term
+%
+
+%%
+% The second row shows the same plots, but with best-fit contrast-correcting terms. The titles show the best-fit timescales of contrast gain control. Also shown are the shallowest, mean, and steepest non-linearities fit to the data in red in the first row. 
+
+% first show the firing vs. the uncorrected proejctions
+ss = 10;
+figure('outerposition',[0 0 1500 800],'PaperUnits','points','PaperSize',[1500 800]); hold on
+
+for i = [1:4 6:8]
+	ax(i) = subplot(2,4,i); hold on
+end
+
+% ---------------------  PID -> firing rate ------------------------------
+
+x = K3p(:,example_orn);
+x = x(a:z);
+y = fA(a:z,example_orn);
+l = plot(ax(1),x(1:ss:end),y(1:ss:end),'.');
+legend(l,['r^2 = ' oval(rsquare(x,y))],'Location','southeast')
+xlabel(ax(1),'K3 \otimes s(t)')
+ylabel(ax(1),'Firing Rate (Hz)')
+title(ax(1),'No contrast correction')
+
+
+% ---------------------  PID -> LFP -> firing rate ------------------------------
+
+x = convolve(1e-3*(1:length(PID)),K1p(:,example_orn),K2(:,example_orn),ft);
+x = x(a:z);
+l = plot(ax(2),x(1:ss:end),y(1:ss:end),'.');
+legend(l,['r^2 = ' oval(rsquare(x,y))],'Location','southeast')
+xlabel(ax(2),'K2 \otimes (K1 \otimes s(t))')
+ylabel(ax(2),'Firing Rate (Hz)')
+title(ax(2),'No contrast correction')
+
+d.response = fA(:,example_orn);
+d.response(1:a) = NaN; d.response(z:end) = NaN;
+d.stimulus = convolve(1e-3*(1:length(PID)),K1p(:,example_orn),K2(:,example_orn),ft);
+
+
+p. x0 = -0.5821;
+p.  A = 69.9455;
+p. k0 = 22.8534;
+p.  n = 4.1675;
+p.tau = 100;
+p.  B = 14.1157;
+
+[R,~,k] = contrastLogisticModel(d.stimulus,p);
+l = plot(ax(6),R(a:ss:z),fA(a:ss:z,example_orn),'.');
+legend(l,['r^2 = ' oval(rsquare(R(a:z),fA(a:z,example_orn)))],'Location','southeast')
+xlabel(ax(6),'K2 \otimes (K1 \otimes s(t))')
+ylabel(ax(6),'Firing Rate (Hz)')
+title(ax(6),['\tau_{sigma} = ' oval(p.tau*p.n), 'ms'])
+
+% also plot the contrast-modualted curves on the previous plot
+all_k = [nanmin(k) nanmean(k) nanmax(k)];
+x = linspace(nanmin(d.stimulus),nanmax(d.stimulus),100);
+for i = 1:length(all_k)
+	plot(ax(2),x,logistic(x,p.A,all_k(i),p.x0),'r');
+end
+
+% --------------------- LFP -> firing rate ------------------------------
+
+x = K2p(:,example_orn);
+x = x(a:z);
+l = plot(ax(3),x(1:ss:end),y(1:ss:end),'.');
+legend(l,['r^2 = ' oval(rsquare(x,y))],'Location','southeast')
+xlabel(ax(3),'K2 \otimes LFP')
+ylabel(ax(3),'Firing Rate (Hz)')
+title(ax(3),'No contrast correction')
+
+d.stimulus = K2p(:,example_orn);
+
+p.x0  = -0.3321;
+p.   A= 71.5392;
+p.  k0= 0.1503;
+p.   n= 4.9956;
+p. tau= 100;
+p.   B= 0.0454;
+
+[R,~,k] = contrastLogisticModel(d.stimulus,p);
+l = plot(ax(7),R(a:ss:z),fA(a:ss:z,example_orn),'.');
+legend(l,['r^2 = ' oval(rsquare(R(a:z),fA(a:z,example_orn)))],'Location','southeast')
+xlabel(ax(7),'K2 \otimes LFP')
+ylabel(ax(7),'Firing Rate (Hz)')
+title(ax(7),['\tau_{sigma} = ' oval(p.tau*p.n), 'ms'])
+
+% also plot the contrast-modualted curves on the previous plot
+all_k = [nanmin(k) nanmean(k) nanmax(k)];
+x = linspace(nanmin(d.stimulus),nanmax(d.stimulus),100);
+for i = 1:length(all_k)
+	plot(ax(3),x,logistic(x,p.A,all_k(i),p.x0),'r');
+end
+
+
+% --------------------- Weber-corrected LFP -> firing rate ------------------------------
+
+x = convolve(1e-3*(1:length(PID)),weber_corrected_LFP,K2(:,example_orn),ft);
+x = x(a:z);
+l = plot(ax(4),x(1:ss:end),y(1:ss:end),'.');
+legend(l,['r^2 = ' oval(rsquare(x,y))],'Location','southeast')
+xlabel(ax(4),'K2 \otimes Weber-corrected LFP')
+ylabel(ax(4),'Firing Rate (Hz)')
+title(ax(4),'No contrast correction')
+
+d.stimulus = convolve(1e-3*(1:length(PID)),weber_corrected_LFP,K2(:,example_orn),ft);
+
+p. x0 = -0.9862;
+p.  A = 87.9465;
+p. k0 = 0.0935;
+p.  n = 1.0034;
+p.tau = 50.8196;
+p.  B = 0.0337;
+
+
+[R,~,k] = contrastLogisticModel(d.stimulus,p);
+l = plot(ax(8),R(a:ss:z),fA(a:ss:z,example_orn),'.');
+legend(l,['r^2 = ' oval(rsquare(R(a:z),fA(a:z,example_orn)))],'Location','southeast')
+xlabel(ax(8),'K2 \otimes Weber-corrected LFP')
+ylabel(ax(8),'Firing Rate (Hz)')
+title(ax(8),['\tau_{sigma} = ', oval(p.tau*p.n), 'ms'])
+
+% also plot the contrast-modualted curves on the previous plot
+all_k = [nanmin(k) nanmean(k) nanmax(k)];
+x = linspace(nanmin(d.stimulus),nanmax(d.stimulus),100);
+for i = 1:length(all_k)
+	plot(ax(4),x,logistic(x,p.A,all_k(i),p.x0),'r');
+end
+
+prettyFig;
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
 
 
 %% Version Info

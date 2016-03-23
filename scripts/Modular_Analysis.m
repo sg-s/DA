@@ -664,6 +664,8 @@ for i = [1:4 6:8]
 	ax(i) = subplot(2,4,i); hold on
 end
 
+clear d p
+
 % ---------------------  PID -> firing rate ------------------------------
 
 x = K3p(:,example_orn);

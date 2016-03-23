@@ -33,7 +33,7 @@ lb.A = eps;
 lb.B = eps;
 lb.tau = 1;
 lb.n = 1;
-ub.tau = 50;
+ub.tau = 100;
 ub.n = 10;
 
 t = 0:(length(S)/10); 

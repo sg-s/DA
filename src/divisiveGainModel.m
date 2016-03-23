@@ -8,7 +8,7 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [G] = divisiveGainModel(S,p)
+function [G,g_t] = divisiveGainModel(S,p)
 
 % list parameters for legibility
 p.n;
@@ -37,11 +37,13 @@ temp = S; w = round(width(temp)/2);
 S = temp(:,1:w);
 fp = temp(:,w+1:end);
 
+g_t = 0*S;
 
 G = NaN(width(S),1);
 
 for i = 1:width(S)
 	g = 1./(1+ p.B*filter(Kg,1,S(:,i)));
+	g_t(:,i) = g;
 	y = fp(:,i).*g;
 	% find the gain
 	x = fp(:,i);

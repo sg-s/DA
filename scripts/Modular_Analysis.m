@@ -54,8 +54,8 @@ paradigm(bad_trials) = [];
 dLFP = LFP;
 for i = 1:length(paradigm)
 	% first high pass them to remove spikes
-	dLFP(:,i) = 10*bandPass(LFP(:,i),Inf,10);
-	dLFP(:,i) = 1e3*filtfilt(ones(10,1),10,[0; diff(LFP(:,i))]);
+	dLFP(:,i) = bandPass(LFP(:,i),Inf,10);
+	dLFP(:,i) = 1e4*filtfilt(ones(10,1),10,[0; diff(dLFP(:,i))]);
 end
 
 % extract filters and find gain
@@ -65,6 +65,11 @@ a = 35e3; z = 55e3;
 [K3,K3p,K3_gain] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
 ft = 1e-3*(1:length(K1)) - .1;
 
+% remember this for later
+weber_data.K1 = K1;
+weber_data.K2 = K2;
+weber_data.K3 = K3;
+weber_data.paradigm = paradigm;
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1), hold on
@@ -193,7 +198,8 @@ for i = 1:length(paradigm)
 end
 xlabel('Mean Stimulus (V)')
 ylabel('Firing Gain (Hz/mV/s)')
-set(gca,'XScale','log','YScale','log')
+set(gca,'XScale','log','YScale','log','YLim',[.10 10])
+
 
 subplot(2,3,6), hold on
 for i = 1:length(paradigm)
@@ -221,16 +227,18 @@ end
 % 
 
 %%
-% The best-fit model parameters were:
- 
+% The best-fit model parameters were: 
 
-clear p
-p.tau = 7.0625;
-p.  n = 6.5312;
-p.  B = 13.8125;
-p.  A = 64.6250;
+
+p.tau = 79.8562;
+p.  n = 1.0002;
+p.  B = 4.2212;
+p.  A = 213.57;
 
 disp(p)
+
+% remember this for later
+weber_data.p = p;
 
 %%
 % However, the filter was very poorly constrained, and many different filters with lengths from 30ms to 3s seemed to do as good a job. 
@@ -248,7 +256,7 @@ ylabel('Gain (mV/s/V)')
 set(gca,'XScale','log','YScale','log')
 
 subplot(1,2,2), hold on
-plot([1 20],[1 20],'k--')
+plot([10 200],[10 200],'k--')
 plot(G,K1_gain,'+')
 xlabel('Model Prediction')
 ylabel('Measured Gain (mV/s/V)')
@@ -266,13 +274,13 @@ end
 
 
 path_name = '/local-data/DA-paper/switching/variance/v2/';
-[PID, LFP, fA, paradigm, orn] = consolidateData(path_name,1);
+[PID, LFP, fA, ~, orn] = consolidateData(path_name,1);
 
 global_start = 40e3; % 40 seconds
 global_end = length(PID) - 5e3; 
 % bandpass to remove spikes and slow fluctuations
 for i = 1:width(LFP)
-	LFP(:,i) = 10*bandPass(LFP(:,i),Inf,10); % remove spikes
+	LFP(:,i) = bandPass(LFP(:,i),Inf,10); % remove spikes
 	LFP(:,i) = 1e4*filtfilt(ones(10,1),10,[0; diff(LFP(:,i))]);
 end
 
@@ -419,6 +427,97 @@ if being_published
 	snapnow	
 	delete(gcf)
 end
+
+%% Naturalistic Stimuli: LFP
+% In this section, we attempt to explain the LFP responses of neurons to naturalistic stimuli using what we learnt from the Weber experiment. 
+
+[PID, LFP, fA, paradigm, orn, ~, AllControlParadigms] = consolidateData('/local-data/DA-paper/natural-flickering/with-lfp/ab3/',1);
+
+
+% remove baseline from all PIDs
+for i = 1:width(PID)
+	PID(:,i) = PID(:,i) - mean(PID(1:5e3,i));
+end
+
+% throw out trials where we didn't record the LFP, for whatever reason
+not_LFP = find((max(abs(LFP))) < 0.1);
+LFP(:,not_LFP) = NaN;
+
+% throw our bad traces
+bad_trials = (sum(fA) == 0 | isnan(sum(fA)) |  isnan(sum(LFP)));
+LFP(:,bad_trials) = [];
+PID(:,bad_trials) = [];
+fA(:,bad_trials) = [];
+paradigm(bad_trials) = [];
+orn(bad_trials) = [];
+
+% differentiate the LFP
+dLFP = LFP;
+for i = 1:length(paradigm)
+	% first high pass them to remove spikes
+	dLFP(:,i) = 10*bandPass(LFP(:,i),Inf,30);
+	dLFP(:,i) = 1e3*filtfilt(ones(30,1),30,[0; diff(dLFP(:,i))]);
+end
+
+% average across neurons
+temp_PID = zeros(length(dLFP),max(orn));
+temp_LFP = zeros(length(dLFP),max(orn));
+temp_fA = zeros(length(dLFP),max(orn));
+for i = 1:max(orn)
+	temp_PID(:,i) = nanmean(PID(:,orn==i),2);
+	temp_LFP(:,i) = nanmean(dLFP(:,orn==i),2);
+	temp_fA(:,i) = nanmean(fA(:,orn==i),2);
+end
+PID = temp_PID; clear temp_PID
+LFP = temp_LFP; clear temp_LFP dLFP
+fA = temp_fA; clear temp_fA 
+clear fly orn paradigm
+
+% extract filters and find gain
+a = 10e3; z = 60e3;
+[K1,K1p,K1_gain] = extractFilters(PID,LFP,'use_cache',true,'a',a,'z',z);
+[K2,K2p,K2_gain] = extractFilters(LFP,fA,'use_cache',true,'a',a,'z',z);
+[K3,K3p,K3_gain] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
+ft = 1e-3*(1:length(K1)) - .1;
+
+%%
+% In the following figure, we compare the LFP filter extracted from the natural stimuli with the LFP filter extracted from the Weber experiment, and also compare their linear projections, before and after gain-correction from the Weber-Fechner experiment.  
+
+example_orn = 4;
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,3,1), hold on
+plot(ft,K1(:,example_orn),'k')
+plot(ft,nanmean(weber_data.K1(:,weber_data.paradigm == 1),2),'r')
+legend('Natural Stimuli','Weber')
+title('PID \rightarrow dLFP')
+xlabel('Filtertime (s)')
+ylabel('K1')
+
+subplot(1,3,2), hold on
+x = K1p(a:z,example_orn);
+y = LFP(a:z,example_orn);
+plot(x,y,'.')
+legend(['r^2 = ' oval(rsquare(x,y))],'Location','southeast')
+xlabel('K1 \otimes s(t)')
+ylabel('dLFP (mV/s)')
+title('No gain correction')
+
+subplot(1,3,3), hold on
+S = [K1p(:,example_orn), PID(:,example_orn)];
+R = adaptiveGainModel(S,weber_data.p);
+plot(R(a:z),LFP(a:z,example_orn),'.')
+legend(['r^2 = ' oval(rsquare(R(a:z),LFP(a:z,example_orn)))],'Location','southeast')
+xlabel('g(t)(K1 \otimes s(t))')
+title('Corrected by Weber-calculated Gain')
+
+prettyFig;
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
+
 
 %% Version Info
 %

@@ -391,14 +391,14 @@ x = K2p(1e3:5e3,:);
 y = reshaped_fA(1e3:5e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)));
 x(:,rm_this) = []; y(:,rm_this) = []; 
-h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[1 0 0]);
+[h, data_hi] = plotPieceWiseLinear(x,y,'nbins',50,'Color',[1 0 0]);
 delete(h.line(2:3))
 delete(h.shade)
 x = K2p(6e3:end-200,:);
 y = reshaped_fA(6e3:end-200,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)));
 x(:,rm_this) = []; y(:,rm_this) = []; 
-h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[0 0 1]);
+[h, data_lo] = plotPieceWiseLinear(x,y,'nbins',50,'Color',[0 0 1]);
 delete(h.line(2:3))
 delete(h.shade)
 xlabel('K2 \otimes dLFP_{pred}(t)')
@@ -427,6 +427,131 @@ if being_published
 	snapnow	
 	delete(gcf)
 end
+
+%%
+% Now, we want to account for this gain change. We use a logistic function to describe the shape of the input-output curve from the LFP to the firing rate:
+% 
+% $$ f(x)=\frac{A}{1+e^{-kx-x_{0}}} $$
+%
+
+%%
+% where k controls the steepness of the curve. 
+
+%%
+% First, we fit this logistic function to the two input-output curves, allowing only the steepness parameter to vary between the blue and red curves.
+
+x0 = -1.3245;
+
+ft = fittype('logistic(x,A,k,x0)');
+ff_lo = fit(data_lo.x(:),data_lo.y(:),ft,'StartPoint',[max(data_hi.y) 2 x0],'Lower',[max(data_hi.y) 1 x0],'Upper',[max(data_hi.y) 100 x0],'MaxIter',1e6);
+ff_hi = fit(data_hi.x(:),data_hi.y(:),ft,'StartPoint',[max(data_hi.y) 2 0],'Lower',[max(data_hi.y) x0],'Upper',[max(data_hi.y) 100 x0],'MaxIter',1e6);
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+plot(data_lo.x,data_lo.y,'b')
+plot(data_hi.x,ff_lo(data_hi.x),'b--')
+title(['k = ' oval(ff_lo.k)])
+ylabel('ORN response (Hz)')
+xlabel('Projected Stimulus')
+
+subplot(1,2,2), hold on
+plot(data_hi.x,data_hi.y,'r')
+plot(data_hi.x,ff_hi(data_hi.x),'r--')
+title(['k = ' oval(ff_hi.k)])
+ylabel('ORN response (Hz)')
+xlabel('Projected Stimulus')
+
+prettyFig;
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
+%%
+% The steepness of the curve should depend on variance on the LFP signal. This way, the firing rate gain that depends on the contrast depends only on various parts of the LFP signal, making it modular. We assume
+% 
+% $$ k=\frac{k_{0}}{1+\beta_{\sigma}K_{\sigma}\otimes\left[l'\right]_{+}} $$
+% 
+% and find the best-fit parameters that account for the data. 
+% 
+
+clear d
+these_trials = 50:10:200;
+for i = length(these_trials):-1:1
+	d(i).stimulus = K2p(1:end-1e3,these_trials(i));
+	d(i).response = reshaped_fA(1:end-1e3,these_trials(i));
+	d(i).response(1:1e3) = NaN;
+end
+
+clear p
+p. x0 = -0.9570;
+p.  A = 50.1992;
+p. k0 = 92.3486;
+p.  n = 2;
+p.tau = 400;
+p.  B = 53.5000;
+
+
+
+XG = K2p;
+for i = 1:width(K2p)
+	XG(:,i) = contrastLogisticModel(K2p(:,i),p);
+end
+
+
+figure('outerposition',[0 0 900 800],'PaperUnits','points','PaperSize',[900 800]); hold on
+subplot(2,2,1), hold on
+plotPieceWiseLinear(K2p(1e3:5e3,:),reshaped_fA(1e3:5e3,:),'nbins',50,'Color','r');
+plotPieceWiseLinear(K2p(6e3:end,:),reshaped_fA(6e3:end,:),'nbins',50,'Color','b');
+xlabel('K \otimes s')
+ylabel('Response (Hz)')
+
+subplot(2,2,2), hold on
+plotPieceWiseLinear(XG(1e3:5e3,:),reshaped_fA(1e3:5e3,:),'nbins',50,'Color','r');
+plotPieceWiseLinear(XG(6e3:end,:),reshaped_fA(6e3:end,:),'nbins',50,'Color','b');
+xlabel('$\hat{R}$','interpreter','latex')
+ylabel('Response (Hz)')
+
+subplot(2,2,3); hold on
+plotPieceWiseLinear(K2p(1e3:5e3,:),XG(1e3:5e3,:),'nbins',50,'Color','r');
+plotPieceWiseLinear(K2p(6e3:end,:),XG(6e3:end,:),'nbins',50,'Color','b');
+ylabel('$\hat{R}$','interpreter','latex')
+xlabel('K \otimes s')
+
+subplot(2,2,4); hold on
+r2_X = NaN(width(K2p),1);
+r2_XG = r2_X;
+for i = 1:width(K2p)
+	fp = K2p([1e3:5e3 6e3:10e3],i); r = reshaped_fA([1e3:5e3 6e3:10e3],i);
+	try
+		r2_X(i) = rsquare(fp,r);
+	catch
+	end
+	fp = XG([1e3:5e3 6e3:10e3],i);
+	try
+		r2_XG(i) = rsquare(fp,r);
+	catch
+	end
+end
+% convert into remaining variance accounted for
+[y,x] = histcounts((r2_XG-r2_X)./(1-r2_X),-1:.02:1);
+y = y/sum(y);
+y = y*length(y);
+x = x(1:end-1) + mean(diff(x));
+plot(x,y,'k')
+plot([0 0],[0 100],'k--')
+set(gca,'XLim',[-1 1],'YLim',[0 10])
+xlabel(['Additional Variance' char(10) 'accounted for'])
+ylabel('pdf')
+
+prettyFig('fs',16)
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 %% Naturalistic Stimuli: LFP
 % In this section, we attempt to explain the LFP responses of neurons to naturalistic stimuli using what we learnt from the Weber experiment. 

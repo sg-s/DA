@@ -492,8 +492,6 @@ p.  n = 2;
 p.tau = 400;
 p.  B = 53.5000;
 
-
-
 XG = K2p;
 for i = 1:width(K2p)
 	XG(:,i) = contrastLogisticModel(K2p(:,i),p);
@@ -502,8 +500,8 @@ end
 
 figure('outerposition',[0 0 900 800],'PaperUnits','points','PaperSize',[900 800]); hold on
 subplot(2,2,1), hold on
-plotPieceWiseLinear(K2p(1e3:5e3,:),reshaped_fA(1e3:5e3,:),'nbins',50,'Color','r');
-plotPieceWiseLinear(K2p(6e3:end,:),reshaped_fA(6e3:end,:),'nbins',50,'Color','b');
+plot(data_lo.x,data_lo.y,'b')
+plot(data_hi.x,data_hi.y,'r')
 xlabel('K \otimes s')
 ylabel('Response (Hz)')
 
@@ -736,12 +734,12 @@ set(gca,'XScale','log','XTick',[1e1 1e2 1e3 1e4])
 subplot(2,2,2), hold on
 title('Contrast Gain Control')
 clear p
-p. x0 = -0.4516;
-p.  A = 75.7959;
-p. k0 = 0.1186;
-p.  n = 1.2341;
-p.tau = 84.6755;
-p.  B = 0.0137;
+p. x0 = -0.3262;
+p.  A = 71.9813;
+p. k0 = 0.1688;
+p.  n = 1.0001;
+p.tau = 413.7098;
+p.  B = 0.0808;
 [R,~,K] = contrastLogisticModel(d.stimulus,p);
 l = plot(R(a:ss:z),fA(a:ss:z,example_orn),'.');
 legend(l,['r^2 = ' oval(rsquare(R(a:z),fA(a:z,example_orn)))],'Location','southeast')
@@ -750,7 +748,7 @@ ylabel('Firing Rate (Hz)')
 
 subplot(2,2,4), hold on
 title(['\tau_{\sigma} = ' oval(p.tau*p.n), 'ms'])
-hx = linspace(0.05,0.15,100);
+hx = linspace(0.05,0.18,100);
 hy = histcounts(K,hx); hy = hy/sum(hy); hx = hx(1:end-1) + mean(diff(hx));
 plot(hx,hy);
 xlabel('Steepness parameter')
@@ -763,6 +761,32 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% If we attempt to use a model that moves a nonlinearity left or right, the timescale is meaningless (it is instantaneous), arguing that something is wrong with this formalism. On the other hand, if we use a model that makes a nonlinearity steeper or shallower, the timescale is more reasonable, and is non zero, indicating that the dynamics of gain control is important. 
+
+%%
+% How critical is this timescale? In the following figure, we vary the timescale and see how if affects the fit:
+
+all_t = round(logspace(.2,log10(10e3),50));
+r2 = NaN*all_t;
+for i = 1:length(all_t)
+	p.tau = all_t(i);
+	R = contrastLogisticModel(d.stimulus,p);
+	r2(i) = rsquare(R(a:z),fA(a:z,example_orn));
+end
+
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(all_t,r2,'k+')
+set(gca,'XScale','log')
+xlabel('\tau_{contrast gain} (ms)')
+ylabel('r^2')
+prettyFig('FixLogX',true);
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
 
 
 %% Naturalistic Stimulus: Firing Rate
@@ -779,13 +803,14 @@ end
 
 % first show the firing vs. the uncorrected proejctions
 ss = 10;
-figure('outerposition',[0 0 1500 800],'PaperUnits','points','PaperSize',[1500 800]); hold on
+figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
 
-for i = [1:4 6:8]
-	ax(i) = subplot(2,4,i); hold on
+for i = [1:4 6:8 10:12]
+	ax(i) = subplot(3,4,i); hold on
 end
 
 clear d p
+ft = 1e-3*(1:length(K1)) - .1;
 
 % ---------------------  PID -> firing rate ------------------------------
 
@@ -814,26 +839,27 @@ d.response(1:a) = NaN; d.response(z:end) = NaN;
 d.stimulus = convolve(1e-3*(1:length(PID)),K1p(:,example_orn),K2(:,example_orn),ft);
 
 
-p. x0 = -0.5821;
-p.  A = 69.9455;
-p. k0 = 22.8534;
-p.  n = 4.1675;
-p.tau = 100;
-p.  B = 14.1157;
+p. x0 = -0.5853;
+p.  A = 70.8430;
+p. k0 = 28.8480;
+p.  n = 1.3472;
+p.tau = 255.1616;
+p.  B = 22.6001;
 
 [R,~,k] = contrastLogisticModel(d.stimulus,p);
 l = plot(ax(6),R(a:ss:z),fA(a:ss:z,example_orn),'.');
 legend(l,['r^2 = ' oval(rsquare(R(a:z),fA(a:z,example_orn)))],'Location','southeast')
-xlabel(ax(6),'K2 \otimes (K1 \otimes s(t))')
+xlabel(ax(6),'f(K2 \otimes (K1 \otimes s(t)))')
 ylabel(ax(6),'Firing Rate (Hz)')
 title(ax(6),['\tau_{sigma} = ' oval(p.tau*p.n), 'ms'])
 
-% also plot the contrast-modulated curves on the previous plot
-all_k = [nanmin(k) nanmean(k) nanmax(k)];
-x = linspace(nanmin(d.stimulus),nanmax(d.stimulus),100);
-for i = 1:length(all_k)
-	plot(ax(2),x,logistic(x,p.A,all_k(i),p.x0),'r');
-end
+% plot the distribution of k
+x = linspace(0,30,100);
+hy = histcounts(k,x);
+x = x(1:end-1) + mean(diff(x)); hy = hy/sum(hy);
+plot(ax(10),x,hy)
+xlabel(ax(10),'Steepness parameter')
+ylabel(ax(10),'Probability')
 
 % --------------------- LFP -> firing rate ------------------------------
 
@@ -847,12 +873,12 @@ title(ax(3),'No contrast correction')
 
 d.stimulus = K2p(:,example_orn);
 
-p. x0 = -0.4516;
-p.  A = 75.7959;
-p. k0 = 0.1186;
-p.  n = 1.2341;
-p.tau = 84.6755;
-p.  B = 0.0137;
+p. x0 = -0.3262;
+p.  A = 71.9813;
+p. k0 = 0.1688;
+p.  n = 1.0001;
+p.tau = 413.7098;
+p.  B = 0.0808;
 
 [R,~,k] = contrastLogisticModel(d.stimulus,p);
 l = plot(ax(7),R(a:ss:z),fA(a:ss:z,example_orn),'.');
@@ -861,49 +887,52 @@ xlabel(ax(7),'K2 \otimes LFP')
 ylabel(ax(7),'Firing Rate (Hz)')
 title(ax(7),['\tau_{sigma} = ' oval(p.tau*p.n), 'ms'])
 
-% also plot the contrast-modualted curves on the previous plot
-all_k = [nanmin(k) nanmean(k) nanmax(k)];
-x = linspace(nanmin(d.stimulus),nanmax(d.stimulus),100);
-for i = 1:length(all_k)
-	plot(ax(3),x,logistic(x,p.A,all_k(i),p.x0),'r');
-end
+% plot the distribution of k
+x = linspace(0.06,0.18,100);
+hy = histcounts(k,x);
+x = x(1:end-1) + mean(diff(x)); hy = hy/sum(hy);
+plot(ax(11),x,hy)
+xlabel(ax(11),'Steepness parameter')
+ylabel(ax(11),'Probability')
 
 
 % --------------------- Weber-corrected LFP -> firing rate ------------------------------
 
-x = convolve(1e-3*(1:length(PID)),weber_corrected_LFP,K2(:,example_orn),ft);
+S = [convolve(1e-3*(1:length(PID)),PID(:,example_orn),K1(:,example_orn),ft), PID(:,example_orn)];
+R = adaptiveGainModel(S,weber_data.p);
+x = convolve(1e-3*(1:length(PID)),R,K2(:,example_orn),ft);
 x = x(a:z);
 l = plot(ax(4),x(1:ss:end),y(1:ss:end),'.');
 legend(l,['r^2 = ' oval(rsquare(x,y))],'Location','southeast')
-xlabel(ax(4),'K2 \otimes Weber-corrected LFP')
+xlabel(ax(4),'K2 \otimes (g_{Weber}(t)*K1 \otimes s(t)))')
 ylabel(ax(4),'Firing Rate (Hz)')
 title(ax(4),'No contrast correction')
 
-d.stimulus = convolve(1e-3*(1:length(PID)),weber_corrected_LFP,K2(:,example_orn),ft);
+d.stimulus = convolve(1e-3*(1:length(PID)),R,K2(:,example_orn),ft);
 
-p. x0 = -0.9862;
-p.  A = 87.9465;
-p. k0 = 0.0935;
-p.  n = 1.0034;
-p.tau = 50.8196;
-p.  B = 0.0337;
-
+p. x0 = -0.7469;
+p.  A = 72.5134;
+p. k0 = 0.1321;
+p.  n = 1.0001;
+p.tau = 354.4629;
+p.  B = 0.0432;
 
 [R,~,k] = contrastLogisticModel(d.stimulus,p);
 l = plot(ax(8),R(a:ss:z),fA(a:ss:z,example_orn),'.');
 legend(l,['r^2 = ' oval(rsquare(R(a:z),fA(a:z,example_orn)))],'Location','southeast')
-xlabel(ax(8),'K2 \otimes Weber-corrected LFP')
+xlabel(ax(8),'f(K2 \otimes (g_{Weber}(t)*K1 \otimes s(t))))')
 ylabel(ax(8),'Firing Rate (Hz)')
 title(ax(8),['\tau_{sigma} = ', oval(p.tau*p.n), 'ms'])
 
-% also plot the contrast-modualted curves on the previous plot
-all_k = [nanmin(k) nanmean(k) nanmax(k)];
-x = linspace(nanmin(d.stimulus),nanmax(d.stimulus),100);
-for i = 1:length(all_k)
-	plot(ax(4),x,logistic(x,p.A,all_k(i),p.x0),'r');
-end
+% plot the distribution of k
+x = linspace(0.06,0.15,100);
+hy = histcounts(k,x);
+x = x(1:end-1) + mean(diff(x)); hy = hy/sum(hy);
+plot(ax(12),x,hy)
+xlabel(ax(12),'Steepness parameter')
+ylabel(ax(12),'Probability')
 
-prettyFig;
+prettyFig('fs',14);
 
 if being_published	
 	snapnow	

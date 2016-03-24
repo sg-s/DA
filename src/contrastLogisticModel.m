@@ -21,22 +21,22 @@ p.tau;
 p.B;
 
 % bounds
-lb.tau = 10;
+lb.tau = 1;
 lb.n = 1;
 lb.B = eps;
 lb.A = 10;
 lb.k0 = 0;
 
-ub.tau = 100;
-ub.n = 5;
+ub.tau = 1000;
+ub.n = 10;
 ub.B = 1000;
-
-Sd = S;
-Sd(Sd<0) = 0;
 
 filter_length = 4*(p.n*p.tau);
 t = 0:filter_length; 
 Kg = generate_simple_filter(p.tau,p.n,t);
+
+Sd = S;
+Sd(Sd<0) = 0;
 
 Shat = filter(Kg,1,Sd);
 

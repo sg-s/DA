@@ -609,16 +609,17 @@ ft = 1e-3*(1:length(K1)) - .1;
 % In the following figure, we compare the LFP filter extracted from the natural stimuli with the LFP filter extracted from the Weber experiment, and also compare their linear projections, before and after gain-correction from the Weber-Fechner experiment.  
 
 example_orn = 2;
-figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
-subplot(1,3,1), hold on
+Weber_K = nanmean(weber_data.K1(:,weber_data.paradigm == 1),2);
+figure('outerposition',[0 0 1500 800],'PaperUnits','points','PaperSize',[1500 800]); hold on
+subplot(2,3,1), hold on
 plot(ft,K1(:,example_orn),'k')
-plot(ft,nanmean(weber_data.K1(:,weber_data.paradigm == 1),2),'r')
+plot(ft,Weber_K,'r')
 legend('Natural Stimuli','Weber')
 title('PID \rightarrow dLFP')
 xlabel('Filtertime (s)')
 ylabel('K1')
 
-subplot(1,3,2), hold on
+subplot(2,3,2), hold on
 x = K1p(a:z,example_orn);
 y = LFP(a:z,example_orn);
 plot(x,y,'.')
@@ -627,22 +628,142 @@ xlabel('K1 \otimes s(t)')
 ylabel('dLFP (mV/s)')
 title('No gain correction')
 
-subplot(1,3,3), hold on
+subplot(2,3,5), hold on
+x = convolve(1e-3*(1:length(PID)),PID(:,example_orn),Weber_K,ft); x = x(a:z);
+y = LFP(a:z,example_orn);
+plot(x,y,'.')
+legend(['r^2 = ' oval(rsquare(x,y))],'Location','southeast')
+xlabel('K1_{Weber} \otimes s(t)')
+ylabel('dLFP (mV/s)')
+title('No gain correction')
+
+subplot(2,3,3), hold on
 S = [K1p(:,example_orn), PID(:,example_orn)];
 R = adaptiveGainModel(S,weber_data.p);
 plot(R(a:z),LFP(a:z,example_orn),'.')
 legend(['r^2 = ' oval(rsquare(R(a:z),LFP(a:z,example_orn)))],'Location','southeast')
-xlabel('g(t)(K1 \otimes s(t))')
+xlabel('g_{Weber}(t)(K1 \otimes s(t))')
 title('Corrected by Weber-calculated Gain')
 
-prettyFig;
-
+subplot(2,3,6), hold on
+S = [convolve(1e-3*(1:length(PID)),PID(:,example_orn),Weber_K,ft), PID(:,example_orn)];
+R = adaptiveGainModel(S,weber_data.p);
+plot(R(a:z),LFP(a:z,example_orn),'.')
+legend(['r^2 = ' oval(rsquare(R(a:z),LFP(a:z,example_orn)))],'Location','southeast')
+xlabel('g_{Weber}(t)(K1_{Weber} \otimes s(t))')
+title('Corrected by Weber-calculated Gain')
+ylabel('dLFP (mV/s)')
 weber_corrected_LFP = R;
+
+prettyFig;
 
 if being_published	
 	snapnow	
 	delete(gcf)
 end
+
+%% Naturalistic Stimulus: The LFP to Firing Rate Module
+% In this section, we look at the mapping from the LFP to the firing rate. In the following figure, we plot the firing rate of the neuron vs. the filter convolved with the derivative of the LFP (left). We then fit a nonlinearity (a logistic function) to see how much better we can do. 
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+x = K2p(:,example_orn); x = x(a:z);
+y = fA(:,example_orn); y = y(a:z);
+l = plot(x(1:ss:end),y(1:ss:end),'.');
+legend(l,['r^2 = ' oval(rsquare(x,y))],'Location','southeast')
+xlabel('K2 \otimes LFP')
+ylabel('Firing Rate (Hz)')
+
+ft = fittype('logistic(x,A,k,x0)');
+ff = fit(x(:),y(:),ft,'StartPoint',[75 .1 -.45]);
+plot(sort(x),ff(sort(x)),'r')
+
+subplot(1,2,2), hold on
+x = ff(K2p(:,example_orn)); x = x(a:z);
+y = fA(:,example_orn); y = y(a:z);
+l = plot(x(1:ss:end),y(1:ss:end),'.');
+legend(l,['r^2 = ' oval(rsquare(x,y))],'Location','southeast')
+xlabel('f(K2 \otimes LFP)')
+ylabel('Firing Rate (Hz)')
+
+prettyFig;
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
+%%
+% Now, we consider two alternative hypothesis:
+% 
+% # An additional mean-sensitive gain control term is active in this module (that we didn't observe, for some reason, in the Weber experiment)
+% # The variance-sensitive gain control term is active in this module (that we observed in the variance-switching experiment)
+% 
+
+%%
+% In the following figure, we fit models built on these two hypothesis and check which one does a better job at explaining the data:
+
+figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
+subplot(2,2,1), hold on
+title('Mean Gain Control')
+
+clear d p
+d.stimulus = K2p(:,example_orn);
+d.response = fA(:,example_orn);
+d.response(1:a) = NaN; d.response(z:end) = NaN;
+p.x_offset = 23.4375;
+p.       A = 101.1250;
+p.       n = 1.0156;
+p.      K0 = 5.4165e+03;
+p.       m = 1;
+p.     tau = 1;
+p.       B = 5;
+[R,~,K] = slidingHillModel(d.stimulus,p);
+l = plot(R(a:ss:z),fA(a:ss:z,example_orn),'.');
+legend(l,['r^2 = ' oval(rsquare(R(a:z),fA(a:z,example_orn)))],'Location','southeast')
+xlabel('f(K2 \otimes dLFP)')
+ylabel('Firing Rate (Hz)')
+
+
+subplot(2,2,3), hold on
+title(['\tau_{\mu} = ' oval(p.tau*p.m), 'ms'])
+[hy,hx] = hist(K,100); hy = hy/sum(hy);
+plot(hx,hy);
+xlabel('K')
+ylabel('Probability')
+set(gca,'XScale','log','XTick',[1e1 1e2 1e3 1e4])
+
+subplot(2,2,2), hold on
+title('Contrast Gain Control')
+clear p
+p. x0 = -0.4516;
+p.  A = 75.7959;
+p. k0 = 0.1186;
+p.  n = 1.2341;
+p.tau = 84.6755;
+p.  B = 0.0137;
+[R,~,K] = contrastLogisticModel(d.stimulus,p);
+l = plot(R(a:ss:z),fA(a:ss:z,example_orn),'.');
+legend(l,['r^2 = ' oval(rsquare(R(a:z),fA(a:z,example_orn)))],'Location','southeast')
+xlabel('f(K2 \otimes dLFP)')
+ylabel('Firing Rate (Hz)')
+
+subplot(2,2,4), hold on
+title(['\tau_{\sigma} = ' oval(p.tau*p.n), 'ms'])
+hx = linspace(0.05,0.15,100);
+hy = histcounts(K,hx); hy = hy/sum(hy); hx = hx(1:end-1) + mean(diff(hx));
+plot(hx,hy);
+xlabel('Steepness parameter')
+ylabel('Probability')
+
+prettyFig('FixLogX',true);
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
+
 
 %% Naturalistic Stimulus: Firing Rate
 % In this section, we look at the LFP to firing rate transformation, and in particular, if our understanding of contrast adaptation helps improve the prediction of the firing rate. In the following figure, we plot the firing rate of the neuron vs. various predictors of the firing rate (the first row). From left to right, they are: 
@@ -707,7 +828,7 @@ xlabel(ax(6),'K2 \otimes (K1 \otimes s(t))')
 ylabel(ax(6),'Firing Rate (Hz)')
 title(ax(6),['\tau_{sigma} = ' oval(p.tau*p.n), 'ms'])
 
-% also plot the contrast-modualted curves on the previous plot
+% also plot the contrast-modulated curves on the previous plot
 all_k = [nanmin(k) nanmean(k) nanmax(k)];
 x = linspace(nanmin(d.stimulus),nanmax(d.stimulus),100);
 for i = 1:length(all_k)
@@ -726,12 +847,12 @@ title(ax(3),'No contrast correction')
 
 d.stimulus = K2p(:,example_orn);
 
-p.x0  = -0.3321;
-p.   A= 71.5392;
-p.  k0= 0.1503;
-p.   n= 4.9956;
-p. tau= 100;
-p.   B= 0.0454;
+p. x0 = -0.4516;
+p.  A = 75.7959;
+p. k0 = 0.1186;
+p.  n = 1.2341;
+p.tau = 84.6755;
+p.  B = 0.0137;
 
 [R,~,k] = contrastLogisticModel(d.stimulus,p);
 l = plot(ax(7),R(a:ss:z),fA(a:ss:z,example_orn),'.');

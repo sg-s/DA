@@ -55,7 +55,7 @@ dLFP = LFP;
 for i = 1:length(paradigm)
 	% first high pass them to remove spikes
 	dLFP(:,i) = bandPass(LFP(:,i),Inf,10);
-	dLFP(:,i) = 1e4*filtfilt(ones(10,1),10,[0; diff(dLFP(:,i))]);
+	dLFP(:,i) = -1e4*filtfilt(ones(10,1),10,[0; diff(dLFP(:,i))]);
 end
 
 % extract filters and find gain
@@ -232,8 +232,8 @@ end
 
 p.tau = 79.8562;
 p.  n = 1.0002;
-p.  B = 4.2212;
-p.  A = 213.57;
+p.  B = 100;
+p.  A = 3e3;
 
 disp(p)
 
@@ -269,6 +269,7 @@ if being_published
 	delete(gcf)
 end
 
+
 %% Contrast Sensitivity 
 % In this section we analyse the data where we switch between two contrasts, while keeping the mean stimulus the same. First, we show the filters extracted at each stage. 
 
@@ -280,8 +281,8 @@ global_start = 40e3; % 40 seconds
 global_end = length(PID) - 5e3; 
 % bandpass to remove spikes and slow fluctuations
 for i = 1:width(LFP)
-	LFP(:,i) = bandPass(LFP(:,i),Inf,10); % remove spikes
-	LFP(:,i) = 1e4*filtfilt(ones(10,1),10,[0; diff(LFP(:,i))]);
+	LFP(:,i) = bandPass(LFP(:,i),Inf,30); % remove spikes
+	LFP(:,i) = -1e4*filtfilt(ones(10,1),10,[0; diff(LFP(:,i))]);
 end
 
 % reshape the LFP signals
@@ -479,24 +480,30 @@ end
 clear d
 these_trials = 50:10:200;
 for i = length(these_trials):-1:1
-	d(i).stimulus = K2p(1:end-1e3,these_trials(i));
+	d(i).stimulus = [reshaped_LFP(1:end-1e3,these_trials(i)), K2p(1:end-1e3,these_trials(i))];
 	d(i).response = reshaped_fA(1:end-1e3,these_trials(i));
 	d(i).response(1:1e3) = NaN;
 end
 
 clear p
-p. x0 = -0.9570;
-p.  A = 50.1992;
-p. k0 = 92.3486;
-p.  n = 2;
-p.tau = 400;
-p.  B = 53.5000;
+% p. x0 = -0.8943;
+% p.  A = 49.0235;
+% p. k0 = 31.6407;
+% p.  n = 2.0156;
+% p.tau = 246.5000;
+% p.  B = 0.3000;
+
+p. x0 = -1.3869;
+p.  A = 53.5508;
+p. k0 = 20.9053;
+p.  n = 1;
+p.tau = 354.4629;
+p.  B = 0.0432;
 
 XG = K2p;
 for i = 1:width(K2p)
-	XG(:,i) = contrastLogisticModel(K2p(:,i),p);
+	XG(:,i) = contrastLogisticModel([reshaped_LFP(:,i) ,K2p(:,i)],p);
 end
-
 
 figure('outerposition',[0 0 900 800],'PaperUnits','points','PaperSize',[900 800]); hold on
 subplot(2,2,1), hold on
@@ -507,13 +514,13 @@ ylabel('Response (Hz)')
 
 subplot(2,2,2), hold on
 plotPieceWiseLinear(XG(1e3:5e3,:),reshaped_fA(1e3:5e3,:),'nbins',50,'Color','r');
-plotPieceWiseLinear(XG(6e3:end,:),reshaped_fA(6e3:end,:),'nbins',50,'Color','b');
+plotPieceWiseLinear(XG(6e3:9e3,:),reshaped_fA(6e3:9e3,:),'nbins',50,'Color','b');
 xlabel('$\hat{R}$','interpreter','latex')
 ylabel('Response (Hz)')
 
 subplot(2,2,3); hold on
 plotPieceWiseLinear(K2p(1e3:5e3,:),XG(1e3:5e3,:),'nbins',50,'Color','r');
-plotPieceWiseLinear(K2p(6e3:end,:),XG(6e3:end,:),'nbins',50,'Color','b');
+plotPieceWiseLinear(K2p(6e3:9e3,:),XG(6e3:9e3,:),'nbins',50,'Color','b');
 ylabel('$\hat{R}$','interpreter','latex')
 xlabel('K \otimes s')
 
@@ -521,27 +528,166 @@ subplot(2,2,4); hold on
 r2_X = NaN(width(K2p),1);
 r2_XG = r2_X;
 for i = 1:width(K2p)
-	fp = K2p([1e3:5e3 6e3:10e3],i); r = reshaped_fA([1e3:5e3 6e3:10e3],i);
+	fp = K2p([1e3:5e3 6e3:9e3],i); r = reshaped_fA([1e3:5e3 6e3:9e3],i);
 	try
 		r2_X(i) = rsquare(fp,r);
 	catch
 	end
-	fp = XG([1e3:5e3 6e3:10e3],i);
+	fp = XG([1e3:5e3 6e3:9e3],i);
 	try
 		r2_XG(i) = rsquare(fp,r);
 	catch
 	end
 end
-% convert into remaining variance accounted for
-[y,x] = histcounts((r2_XG-r2_X)./(1-r2_X),-1:.02:1);
-y = y/sum(y);
-y = y*length(y);
-x = x(1:end-1) + mean(diff(x));
-plot(x,y,'k')
-plot([0 0],[0 100],'k--')
-set(gca,'XLim',[-1 1],'YLim',[0 10])
-xlabel(['Additional Variance' char(10) 'accounted for'])
-ylabel('pdf')
+plot([0 1],[0 1],'k--')
+plot(r2_X,r2_XG,'k+')
+xlabel('r^2 Linear prediction')
+ylabel('r^2 contrast-corrected')
+
+prettyFig('fs',16)
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%% Nemenman's Model
+% In this section, we see if Nemenman's simply NL-like model can account for our observed contrast adaptation. Nemenman's model is as follows:
+% 
+% $$ \dot{r}=f(s)-d\cdot r $$
+%
+% where f(s) is some input nonlinearity. Here, we model the input nonlinearity using a logistic function, and also add a lag to the stimulus. We consider the stimulus to be the LFP, and the response is the firing rate, and fit this model to the data. 
+
+clear d
+these_trials = 50:10:200;
+for i = length(these_trials):-1:1
+	d(i).stimulus = reshaped_LFP(1:end-1e3,these_trials(i));
+	d(i).response = reshaped_fA(1:end-1e3,these_trials(i));
+	d(i).response(1:1e3) = NaN;
+end
+
+clear p
+p.  k = 0.1610;
+p. x0 = 0;
+p.  d = 0.1092;
+p.lag = 49.2760;
+p.  A = 5.7734;
+
+
+XG = K2p;
+for i = 1:width(K2p)
+	XG(:,i) = NemenmanModel(reshaped_LFP(:,i),p);
+end
+
+figure('outerposition',[0 0 900 800],'PaperUnits','points','PaperSize',[900 800]); hold on
+subplot(2,2,1), hold on
+plot(data_lo.x,data_lo.y,'b')
+plot(data_hi.x,data_hi.y,'r')
+xlabel('K \otimes s')
+ylabel('Response (Hz)')
+
+subplot(2,2,2), hold on
+plotPieceWiseLinear(XG(1e3:5e3,:),reshaped_fA(1e3:5e3,:),'nbins',50,'Color','r');
+plotPieceWiseLinear(XG(6e3:end-200,:),reshaped_fA(6e3:end-200,:),'nbins',50,'Color','b');
+xlabel('$\hat{R}$','interpreter','latex')
+ylabel('Response (Hz)')
+
+subplot(2,2,3); hold on
+plotPieceWiseLinear(K2p(1e3:5e3,:),XG(1e3:5e3,:),'nbins',50,'Color','r');
+plotPieceWiseLinear(K2p(6e3:end-200,:),XG(6e3:end-200,:),'nbins',50,'Color','b');
+ylabel('$\hat{R}$','interpreter','latex')
+xlabel('K \otimes s')
+
+subplot(2,2,4); hold on
+r2_X = NaN(width(K2p),1);
+r2_XG = r2_X;
+for i = 1:width(K2p)
+	fp = K2p([1e3:5e3 6e3:9.7e3],i); r = reshaped_fA([1e3:5e3 6e3:9.7e3],i);
+	try
+		r2_X(i) = rsquare(fp,r);
+	catch
+	end
+	fp = XG([1e3:5e3 6e3:9.7e3],i);
+	try
+		r2_XG(i) = rsquare(fp,r);
+	catch
+	end
+end
+plot([0 1],[0 1],'k--')
+plot(r2_X,r2_XG,'k+')
+xlabel('r^2 Linear prediction')
+ylabel('r^2 contrast-corrected')
+
+prettyFig('fs',16)
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% This doesn't seem to work very well. What if we consider the input to the be LFP convolved with the LFP -> firing rate filter? (We're considering the input to by $ K2 \otimes LFP $) 
+
+clear d
+these_trials = 50:10:200;
+for i = length(these_trials):-1:1
+	d(i).stimulus = K2p(1:end-1e3,these_trials(i));
+	d(i).response = reshaped_fA(1:end-1e3,these_trials(i));
+	d(i).response(1:1e3) = NaN;
+end
+
+
+clear p
+p.  k = 19.5438;
+p. x0 = -1.4199;
+p.  d = 0.1078;
+p.lag = -9.7240;
+p.  A = 5.7012;
+
+
+XG = K2p;
+for i = 1:width(K2p)
+	XG(:,i) = NemenmanModel(K2p(:,i),p);
+end
+
+figure('outerposition',[0 0 900 800],'PaperUnits','points','PaperSize',[900 800]); hold on
+subplot(2,2,1), hold on
+plot(data_lo.x,data_lo.y,'b')
+plot(data_hi.x,data_hi.y,'r')
+xlabel('K \otimes s')
+ylabel('Response (Hz)')
+
+subplot(2,2,2), hold on
+plotPieceWiseLinear(XG(1e3:5e3,:),reshaped_fA(1e3:5e3,:),'nbins',50,'Color','r');
+plotPieceWiseLinear(XG(6e3:end-200,:),reshaped_fA(6e3:end-200,:),'nbins',50,'Color','b');
+xlabel('$\hat{R}$','interpreter','latex')
+ylabel('Response (Hz)')
+
+subplot(2,2,3); hold on
+plotPieceWiseLinear(K2p(1e3:5e3,:),XG(1e3:5e3,:),'nbins',50,'Color','r');
+plotPieceWiseLinear(K2p(6e3:end-200,:),XG(6e3:end-200,:),'nbins',50,'Color','b');
+ylabel('$\hat{R}$','interpreter','latex')
+xlabel('K \otimes s')
+
+subplot(2,2,4); hold on
+r2_X = NaN(width(K2p),1);
+r2_XG = r2_X;
+for i = 1:width(K2p)
+	fp = K2p([1e3:5e3 6e3:9.7e3],i); r = reshaped_fA([1e3:5e3 6e3:9.7e3],i);
+	try
+		r2_X(i) = rsquare(fp,r);
+	catch
+	end
+	fp = XG([1e3:5e3 6e3:9.7e3],i);
+	try
+		r2_XG(i) = rsquare(fp,r);
+	catch
+	end
+end
+plot([0 1],[0 1],'k--')
+plot(r2_X,r2_XG,'k+')
+xlabel('r^2 Linear prediction')
+ylabel('r^2 contrast-corrected')
 
 prettyFig('fs',16)
 
@@ -578,8 +724,8 @@ orn(bad_trials) = [];
 dLFP = LFP;
 for i = 1:length(paradigm)
 	% first high pass them to remove spikes
-	dLFP(:,i) = 10*bandPass(LFP(:,i),Inf,30);
-	dLFP(:,i) = 1e3*filtfilt(ones(30,1),30,[0; diff(dLFP(:,i))]);
+	dLFP(:,i) = bandPass(LFP(:,i),Inf,30);
+	dLFP(:,i) = -1e4*filtfilt(ones(10,1),10,[0; diff(dLFP(:,i))]);
 end
 
 % average across neurons
@@ -692,63 +838,33 @@ if being_published
 end
 
 %%
-% Now, we consider two alternative hypothesis:
-% 
-% # An additional mean-sensitive gain control term is active in this module (that we didn't observe, for some reason, in the Weber experiment)
-% # The variance-sensitive gain control term is active in this module (that we observed in the variance-switching experiment)
+% Now, we consider how a dynamic contrast-sensitive term can help with this:
 % 
 
-%%
-% In the following figure, we fit models built on these two hypothesis and check which one does a better job at explaining the data:
-
-figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
-subplot(2,2,1), hold on
-title('Mean Gain Control')
-
-clear d p
-d.stimulus = K2p(:,example_orn);
+clear d
+d.stimulus = [LFP(:,example_orn), K2p(:,example_orn)];
 d.response = fA(:,example_orn);
-d.response(1:a) = NaN; d.response(z:end) = NaN;
-p.x_offset = 23.4375;
-p.       A = 101.1250;
-p.       n = 1.0156;
-p.      K0 = 5.4165e+03;
-p.       m = 1;
-p.     tau = 1;
-p.       B = 5;
-[R,~,K] = slidingHillModel(d.stimulus,p);
-l = plot(R(a:ss:z),fA(a:ss:z,example_orn),'.');
-legend(l,['r^2 = ' oval(rsquare(R(a:z),fA(a:z,example_orn)))],'Location','southeast')
-xlabel('f(K2 \otimes dLFP)')
-ylabel('Firing Rate (Hz)')
+d.response(1:1e4) = NaN;
 
-
-subplot(2,2,3), hold on
-title(['\tau_{\mu} = ' oval(p.tau*p.m), 'ms'])
-[hy,hx] = hist(K,100); hy = hy/sum(hy);
-plot(hx,hy);
-xlabel('K')
-ylabel('Probability')
-set(gca,'XScale','log','XTick',[1e1 1e2 1e3 1e4])
-
-subplot(2,2,2), hold on
-title('Contrast Gain Control')
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
 clear p
-p. x0 = -0.3262;
-p.  A = 71.9813;
-p. k0 = 0.1688;
-p.  n = 1.0001;
-p.tau = 413.7098;
-p.  B = 0.0808;
+p. x0 = -0.6189;
+p.  A = 74.5937;
+p. k0 = 0.1168;
+p.  n = 11.9531;
+p.tau = 38.8125;
+p.  B = 0.0031;
+
 [R,~,K] = contrastLogisticModel(d.stimulus,p);
 l = plot(R(a:ss:z),fA(a:ss:z,example_orn),'.');
 legend(l,['r^2 = ' oval(rsquare(R(a:z),fA(a:z,example_orn)))],'Location','southeast')
 xlabel('f(K2 \otimes dLFP)')
 ylabel('Firing Rate (Hz)')
 
-subplot(2,2,4), hold on
+subplot(1,2,2), hold on
 title(['\tau_{\sigma} = ' oval(p.tau*p.n), 'ms'])
-hx = linspace(0.05,0.18,100);
+hx = linspace(0.104,0.118,100);
 hy = histcounts(K,hx); hy = hy/sum(hy); hx = hx(1:end-1) + mean(diff(hx));
 plot(hx,hy);
 xlabel('Steepness parameter')
@@ -760,10 +876,7 @@ if being_published
 	snapnow	
 	delete(gcf)
 end
-
-%%
-% If we attempt to use a model that moves a nonlinearity left or right, the timescale is meaningless (it is instantaneous), arguing that something is wrong with this formalism. On the other hand, if we use a model that makes a nonlinearity steeper or shallower, the timescale is more reasonable, and is non zero, indicating that the dynamics of gain control is important. 
-
+ 
 %%
 % How critical is this timescale? In the following figure, we vary the timescale and see how if affects the fit:
 
@@ -787,6 +900,9 @@ if being_published
 	snapnow	
 	delete(gcf)
 end
+
+%%
+% So it looks like the timescale is very poorly constrained. 
 
 
 %% Naturalistic Stimulus: Firing Rate
@@ -836,17 +952,17 @@ title(ax(2),'No contrast correction')
 
 d.response = fA(:,example_orn);
 d.response(1:a) = NaN; d.response(z:end) = NaN;
-d.stimulus = convolve(1e-3*(1:length(PID)),K1p(:,example_orn),K2(:,example_orn),ft);
+d.stimulus = [convolve(1e-3*(1:length(PID)),K1p(:,example_orn),K2(:,example_orn),ft), K2p(:,example_orn)];
 
+clear p
+p. x0 = -0.2344;
+p.  A = 69.7500;
+p. k0 = 0.1883;
+p.  n = 1.2188;
+p.tau = 336.3750;
+p.  B = 8.8750;
 
-p. x0 = -0.5853;
-p.  A = 70.8430;
-p. k0 = 28.8480;
-p.  n = 1.3472;
-p.tau = 255.1616;
-p.  B = 22.6001;
-
-[R,~,k] = contrastLogisticModel(d.stimulus,p);
+[R,~,K] = contrastLogisticModel(d.stimulus,p);
 l = plot(ax(6),R(a:ss:z),fA(a:ss:z,example_orn),'.');
 legend(l,['r^2 = ' oval(rsquare(R(a:z),fA(a:z,example_orn)))],'Location','southeast')
 xlabel(ax(6),'f(K2 \otimes (K1 \otimes s(t)))')
@@ -854,8 +970,8 @@ ylabel(ax(6),'Firing Rate (Hz)')
 title(ax(6),['\tau_{sigma} = ' oval(p.tau*p.n), 'ms'])
 
 % plot the distribution of k
-x = linspace(0,30,100);
-hy = histcounts(k,x);
+x = linspace(min(K)/2,1.1*max(K),100);
+hy = histcounts(K,x);
 x = x(1:end-1) + mean(diff(x)); hy = hy/sum(hy);
 plot(ax(10),x,hy)
 xlabel(ax(10),'Steepness parameter')
@@ -871,16 +987,17 @@ xlabel(ax(3),'K2 \otimes LFP')
 ylabel(ax(3),'Firing Rate (Hz)')
 title(ax(3),'No contrast correction')
 
-d.stimulus = K2p(:,example_orn);
+d.stimulus = [LFP(:,example_orn), K2p(:,example_orn)];
 
-p. x0 = -0.3262;
-p.  A = 71.9813;
-p. k0 = 0.1688;
-p.  n = 1.0001;
-p.tau = 413.7098;
-p.  B = 0.0808;
+clear p
+p. x0 = -0.6189;
+p.  A = 74.5937;
+p. k0 = 0.1168;
+p.  n = 11.9531;
+p.tau = 38.8125;
+p.  B = 0.0031;
 
-[R,~,k] = contrastLogisticModel(d.stimulus,p);
+[R,~,K] = contrastLogisticModel(d.stimulus,p);
 l = plot(ax(7),R(a:ss:z),fA(a:ss:z,example_orn),'.');
 legend(l,['r^2 = ' oval(rsquare(R(a:z),fA(a:z,example_orn)))],'Location','southeast')
 xlabel(ax(7),'K2 \otimes LFP')
@@ -888,8 +1005,8 @@ ylabel(ax(7),'Firing Rate (Hz)')
 title(ax(7),['\tau_{sigma} = ' oval(p.tau*p.n), 'ms'])
 
 % plot the distribution of k
-x = linspace(0.06,0.18,100);
-hy = histcounts(k,x);
+x = linspace(min(K)/2,1.1*max(K),100);
+hy = histcounts(K,x);
 x = x(1:end-1) + mean(diff(x)); hy = hy/sum(hy);
 plot(ax(11),x,hy)
 xlabel(ax(11),'Steepness parameter')
@@ -908,8 +1025,9 @@ xlabel(ax(4),'K2 \otimes (g_{Weber}(t)*K1 \otimes s(t)))')
 ylabel(ax(4),'Firing Rate (Hz)')
 title(ax(4),'No contrast correction')
 
-d.stimulus = convolve(1e-3*(1:length(PID)),R,K2(:,example_orn),ft);
+d.stimulus = [convolve(1e-3*(1:length(PID)),R,K2(:,example_orn),ft),K2p(:,example_orn)];
 
+clear p
 p. x0 = -0.7469;
 p.  A = 72.5134;
 p. k0 = 0.1321;
@@ -917,7 +1035,7 @@ p.  n = 1.0001;
 p.tau = 354.4629;
 p.  B = 0.0432;
 
-[R,~,k] = contrastLogisticModel(d.stimulus,p);
+[R,~,K] = contrastLogisticModel(d.stimulus,p);
 l = plot(ax(8),R(a:ss:z),fA(a:ss:z,example_orn),'.');
 legend(l,['r^2 = ' oval(rsquare(R(a:z),fA(a:z,example_orn)))],'Location','southeast')
 xlabel(ax(8),'f(K2 \otimes (g_{Weber}(t)*K1 \otimes s(t))))')
@@ -925,8 +1043,8 @@ ylabel(ax(8),'Firing Rate (Hz)')
 title(ax(8),['\tau_{sigma} = ', oval(p.tau*p.n), 'ms'])
 
 % plot the distribution of k
-x = linspace(0.06,0.15,100);
-hy = histcounts(k,x);
+x = linspace(min(K)/2,1.1*max(K),100);
+hy = histcounts(K,x);
 x = x(1:end-1) + mean(diff(x)); hy = hy/sum(hy);
 plot(ax(12),x,hy)
 xlabel(ax(12),'Steepness parameter')

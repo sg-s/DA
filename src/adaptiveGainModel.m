@@ -30,7 +30,7 @@ p.n;
 
 % bounds
 lb.A = eps;
-lb.B = eps;
+lb.B = 100;
 lb.tau = 1;
 lb.n = 1;
 ub.tau = 100;

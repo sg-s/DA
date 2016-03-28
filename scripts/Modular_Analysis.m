@@ -485,10 +485,13 @@ for i = length(these_trials):-1:1
 end
 
 clear p
-p. k0 = 30.8547;
-p.  B = 0.8032;
-p.  n = 1;
-p.tau = 354;
+p. k0 = 17.9078;
+p.  B = 0.0432;
+p.  n = 1.7656;
+p.tau = 97.6875;
+p. s0 = 4.3347;
+p. s1 = -30.4246;
+
 
 % add some parameters
 p.A = ff_hi.A;
@@ -496,7 +499,7 @@ p.x0 = ff_hi.x0;
 
 XG = K2p;
 for i = 1:width(K2p)
-	XG(:,i) = contrastLogisticModel([reshaped_LFP(:,i) ,K2p(:,i)],p);
+	XG(:,i) = contrastLogisticModel([(reshaped_LFP(:,i)*p.s0 + p.s1) ,K2p(:,i)],p);
 end
 
 figure('outerposition',[0 0 900 800],'PaperUnits','points','PaperSize',[900 800]); hold on
@@ -646,7 +649,6 @@ legend(['r^2 = ' oval(rsquare(R(a:z),LFP(a:z,example_orn)))],'Location','southea
 xlabel('g_{Weber}(t)(K1_{Weber} \otimes s(t))')
 title('Corrected by Weber-calculated Gain')
 ylabel('dLFP (mV/s)')
-weber_corrected_LFP = R;
 
 prettyFig;
 
@@ -755,149 +757,67 @@ end
 
 
 %% Naturalistic Stimulus: Firing Rate
-% In this section, we look at the LFP to firing rate transformation, and in particular, if our understanding of contrast adaptation helps improve the prediction of the firing rate. In the following figure, we plot the firing rate of the neuron vs. various predictors of the firing rate (the first row). From left to right, they are: 
-% 
-% # The stimulus -> firing rate filter
-% # The stimulus -> LFP -> firing rate mapping (2 filters)
-% # The LFP -> firing rate filter 
-% # The predicted LFP corrected by the Weber gain control term
-%
+% In this section, we look at the LFP to firing rate transformation, and in particular, if our understanding of contrast adaptation helps improve the prediction of the firing rate. In the following figure, we attempt to go from the stimulus to the firing rate, and at each stage, correct by the mean- or contrast-sensitive changes we previously observed. 
 
-%%
-% The second row shows the same plots, but with best-fit contrast-correcting terms. The titles show the best-fit timescales of contrast gain control. Also shown are the shallowest, mean, and steepest non-linearities fit to the data in red in the first row. 
-
-% first show the firing vs. the uncorrected proejctions
-ss = 10;
-figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
-
-for i = [1:4 6:8 10:12]
-	ax(i) = subplot(3,4,i); hold on
-end
-
-clear d p
+% first show the firing vs. the uncorrected projections
+ss = 2;
+figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
 ft = 1e-3*(1:length(K1)) - .1;
-
-% ---------------------  PID -> firing rate ------------------------------
-
-x = K3p(:,example_orn);
-x = x(a:z);
-y = fA(a:z,example_orn);
-l = plot(ax(1),x(1:ss:end),y(1:ss:end),'.');
-legend(l,['r^2 = ' oval(rsquare(x,y))],'Location','southeast')
-xlabel(ax(1),'K3 \otimes s(t)')
-ylabel(ax(1),'Firing Rate (Hz)')
-title(ax(1),'No contrast correction')
 
 
 % ---------------------  PID -> LFP -> firing rate ------------------------------
-
+subplot(2,2,1), hold on
 x = convolve(1e-3*(1:length(PID)),K1p(:,example_orn),K2(:,example_orn),ft);
 x = x(a:z);
-l = plot(ax(2),x(1:ss:end),y(1:ss:end),'.');
+y = fA(a:z,example_orn);
+l = plot(x(1:ss:end),y(1:ss:end),'.');
 legend(l,['r^2 = ' oval(rsquare(x,y))],'Location','southeast')
-xlabel(ax(2),'K2 \otimes (K1 \otimes s(t))')
-ylabel(ax(2),'Firing Rate (Hz)')
-title(ax(2),'No contrast correction')
+xlabel('K2 \otimes (K1 \otimes s(t))')
+ylabel('Firing Rate (Hz)')
 
-d.response = fA(:,example_orn);
-d.response(1:a) = NaN; d.response(z:end) = NaN;
-d.stimulus = [convolve(1e-3*(1:length(PID)),K1p(:,example_orn),K2(:,example_orn),ft), K2p(:,example_orn)];
-
-clear p
-p. x0 = -0.2344;
-p.  A = 69.7500;
-p. k0 = 0.1883;
-p.  n = 1.2188;
-p.tau = 336.3750;
-p.  B = 8.8750;
-
-[R,~,K] = contrastLogisticModel(d.stimulus,p);
-l = plot(ax(6),R(a:ss:z),fA(a:ss:z,example_orn),'.');
-legend(l,['r^2 = ' oval(rsquare(R(a:z),fA(a:z,example_orn)))],'Location','southeast')
-xlabel(ax(6),'f(K2 \otimes (K1 \otimes s(t)))')
-ylabel(ax(6),'Firing Rate (Hz)')
-title(ax(6),['\tau_{sigma} = ' oval(p.tau*p.n), 'ms'])
-
-% plot the distribution of k
-x = linspace(min(K)/2,1.1*max(K),100);
-hy = histcounts(K,x);
-x = x(1:end-1) + mean(diff(x)); hy = hy/sum(hy);
-plot(ax(10),x,hy)
-xlabel(ax(10),'Steepness parameter')
-ylabel(ax(10),'Probability')
-
-% --------------------- LFP -> firing rate ------------------------------
-
-x = K2p(:,example_orn);
-x = x(a:z);
-l = plot(ax(3),x(1:ss:end),y(1:ss:end),'.');
-legend(l,['r^2 = ' oval(rsquare(x,y))],'Location','southeast')
-xlabel(ax(3),'K2 \otimes LFP')
-ylabel(ax(3),'Firing Rate (Hz)')
-title(ax(3),'No contrast correction')
-
-d.stimulus = [LFP(:,example_orn), K2p(:,example_orn)];
-
-clear p
-p. x0 = -0.6189;
-p.  A = 74.5937;
-p. k0 = 0.1168;
-p.  n = 11.9531;
-p.tau = 38.8125;
-p.  B = 0.0031;
-
-[R,~,K] = contrastLogisticModel(d.stimulus,p);
-l = plot(ax(7),R(a:ss:z),fA(a:ss:z,example_orn),'.');
-legend(l,['r^2 = ' oval(rsquare(R(a:z),fA(a:z,example_orn)))],'Location','southeast')
-xlabel(ax(7),'K2 \otimes LFP')
-ylabel(ax(7),'Firing Rate (Hz)')
-title(ax(7),['\tau_{sigma} = ' oval(p.tau*p.n), 'ms'])
-
-% plot the distribution of k
-x = linspace(min(K)/2,1.1*max(K),100);
-hy = histcounts(K,x);
-x = x(1:end-1) + mean(diff(x)); hy = hy/sum(hy);
-plot(ax(11),x,hy)
-xlabel(ax(11),'Steepness parameter')
-ylabel(ax(11),'Probability')
-
-
-% --------------------- Weber-corrected LFP -> firing rate ------------------------------
-
+% ---------------------  PID -> LFP*Weber -> firing rate ------------------------------
+subplot(2,2,2), hold on
 S = [convolve(1e-3*(1:length(PID)),PID(:,example_orn),K1(:,example_orn),ft), PID(:,example_orn)];
-R = adaptiveGainModel(S,weber_data.p);
-x = convolve(1e-3*(1:length(PID)),R,K2(:,example_orn),ft);
-x = x(a:z);
-l = plot(ax(4),x(1:ss:end),y(1:ss:end),'.');
+weber_corrected_LFP = adaptiveGainModel(S,weber_data.p);
+% get a filter from this to the firing rate
+K = fitFilter2Data(weber_corrected_LFP(a:z),y,'offset',200);
+K = K(101:800);
+weber_corrected_fp = convolve(1e-3*(1:length(PID)),weber_corrected_LFP,K,ft);
+x = weber_corrected_fp(a:z);
+l = plot(x(1:ss:end),y(1:ss:end),'.');
 legend(l,['r^2 = ' oval(rsquare(x,y))],'Location','southeast')
-xlabel(ax(4),'K2 \otimes (g_{Weber}(t)*K1 \otimes s(t)))')
-ylabel(ax(4),'Firing Rate (Hz)')
-title(ax(4),'No contrast correction')
+xlabel('K2 \otimes (g_{Weber}(t)*K1 \otimes s(t)))')
+ylabel('Firing Rate (Hz)')
 
-d.stimulus = [convolve(1e-3*(1:length(PID)),R,K2(:,example_orn),ft),K2p(:,example_orn)];
+% --------------------- f( PID -> LFP*Weber -> firing rate) ------------------------------
+
+subplot(2,2,3), hold on
+d.stimulus = [LFP(:,example_orn),weber_corrected_fp];
 
 clear p
-p. x0 = -0.7469;
-p.  A = 72.5134;
-p. k0 = 0.1321;
-p.  n = 1.0001;
-p.tau = 354.4629;
-p.  B = 0.0432;
+p. x0 = -0.8824;
+p.  A = 73.9977;
+p. k0 = 0.0732;
+p.  n = 32.4375;
+p.tau = 4.9219;
+p.  B = 0.0082;
+
 
 [R,~,K] = contrastLogisticModel(d.stimulus,p);
-l = plot(ax(8),R(a:ss:z),fA(a:ss:z,example_orn),'.');
+l = plot(R(a:ss:z),fA(a:ss:z,example_orn),'.');
 legend(l,['r^2 = ' oval(rsquare(R(a:z),fA(a:z,example_orn)))],'Location','southeast')
-xlabel(ax(8),'f(K2 \otimes (g_{Weber}(t)*K1 \otimes s(t))))')
-ylabel(ax(8),'Firing Rate (Hz)')
-title(ax(8),['\tau_{sigma} = ', oval(p.tau*p.n), 'ms'])
+xlabel('f(K2 \otimes (g_{Weber}(t)*K1 \otimes s(t))))')
+ylabel('Firing Rate (Hz)')
+title(['\tau_{sigma} = ', oval(p.tau*p.n), 'ms'])
 
 % plot the distribution of k
+subplot(2,2,4), hold on
 x = linspace(min(K)/2,1.1*max(K),100);
 hy = histcounts(K,x);
 x = x(1:end-1) + mean(diff(x)); hy = hy/sum(hy);
-plot(ax(12),x,hy)
-xlabel(ax(12),'Steepness parameter')
-ylabel(ax(12),'Probability')
+plot(x,hy)
+xlabel('Steepness parameter')
+ylabel('Probability')
 
 prettyFig('fs',14);
 

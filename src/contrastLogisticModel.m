@@ -39,13 +39,14 @@ p.B;
 lb.tau = 1;
 lb.n = 1;
 lb.B = 0;
-lb.A = 10;
+lb.A = 30;
 lb.k0 = 0;
 
-ub.tau = 400;
-ub.n = 10;
-ub.B = 1e6;
-ub.x0 = 0;
+ub.tau = 200;
+ub.n = 40;
+ub.B = 1e3;
+ub.k0 = 1e3;
+ub.x0 = 1e3;
 
 filter_length = 4*(p.n*p.tau);
 t = 0:filter_length; 

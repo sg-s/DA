@@ -480,25 +480,19 @@ end
 clear d
 these_trials = 50:10:200;
 for i = length(these_trials):-1:1
-	d(i).stimulus = [reshaped_LFP(1:end-1e3,these_trials(i)), K2p(1:end-1e3,these_trials(i))];
-	d(i).response = reshaped_fA(1:end-1e3,these_trials(i));
-	d(i).response(1:1e3) = NaN;
+	d(i).stimulus = reshaped_LFP(:,these_trials(i));
+	d(i).response = [ff_hi.k,ff_lo.k];
 end
 
 clear p
-% p. x0 = -0.8943;
-% p.  A = 49.0235;
-% p. k0 = 31.6407;
-% p.  n = 2.0156;
-% p.tau = 246.5000;
-% p.  B = 0.3000;
-
-p. x0 = -1.3869;
-p.  A = 53.5508;
-p. k0 = 20.9053;
+p. k0 = 30.8547;
+p.  B = 0.8032;
 p.  n = 1;
-p.tau = 354.4629;
-p.  B = 0.0432;
+p.tau = 354;
+
+% add some parameters
+p.A = ff_hi.A;
+p.x0 = ff_hi.x0;
 
 XG = K2p;
 for i = 1:width(K2p)

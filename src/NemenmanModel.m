@@ -14,10 +14,10 @@ function [R] = NemenmanModel(S,p)
 p.k; % steepness
 p.x0; 
 
+p.lag;
+
 % ode:
 p.d; % degradation rate 
-
-p.lag;
 
 % bounds
 lb.k = eps;

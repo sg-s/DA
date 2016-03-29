@@ -18,16 +18,17 @@ lb.d = eps;
 lb.A = eps;
 
 R = 0*S;
-R(1) = 10;
+R(1) = 100;
 
 % is there a lag?
 S = circshift(S,round(p.lag));
 
 % pass the stimulus through a step function
+S2 = S;
 ms = nanmean(S);
-S(S<ms) = 0;
-S(S>ms) = 1;
-S(S==ms) = .5;
+S2(S<ms) = 0;
+S2(S>ms) = 1;
+S2(S==ms) = .5;
 
 for i = 2:length(S)
 	dr = p.A*S(i-1) - p.d*R(i-1);

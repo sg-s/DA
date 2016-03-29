@@ -78,8 +78,8 @@ end
 XG = K2p;
 % correct for contrast
 for i = 1:width(K2p)
-	XG(1e3:5e3,i) = logistic(XG(1e3:5e3,i),55,14,-1.3);
-	XG(5e3:9e3,i) = logistic(XG(5e3:9e3,i),55,25,-1.3);
+	XG(1:5e3,i) = logistic(XG(1:5e3,i),55,14,-1.3);
+	XG(5e3+1:end,i) = logistic(XG(5e3+1:end,i),55,25,-1.3);
 end
 
 % back out filters
@@ -120,10 +120,9 @@ for i = length(these_trials):-1:1
 	d(i).response(1:1e3) = NaN;
 end
 
-
 clear p
 p.  d = 0.0094;
-p.  A = 0.5697;
+p.  A = 0.5699;
 p.lag = 13.5000;
 
 % make the prediction using the Nemenman Model
@@ -183,15 +182,36 @@ end
 %%
 % The model achieves a sort of contrast adaptation, by working as a "bang-bang" system -- it exponentially relaxes from two extremal values. The following figure shows the model fit vs. the synthetic data, showing this "bang-bang" property. 
 
-figure('outerposition',[0 0 1000 400],'PaperUnits','points','PaperSize',[1000 400]); hold on
-temp = XG(:,10);
-temp(5e3) = NaN;
-plot(temp,'k')
-plot(Np(:,10),'r')
-legend('Synthetic Data','Nemenman Model')
+i = 166;
+figure('outerposition',[0 0 1200 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
+time = 1e-3*(1:length(XG));
+subplot(2,3,1:2), hold on
+plot(time,XG(:,i),'k')
+plot(time,Np(:,i),'r')
+legend('Synthetic Data',['Nemenman Model r^2=', oval(rsquare(XG(:,i),Np(:,i)))])
+xlabel('Time (s)')
+ylabel('Response (Hz)')
+set(gca,'XLim',[1 9])
+
+subplot(2,3,3), hold on
+plot(Np(1e3:9e3,i),XG(1e3:9e3,i),'k.')
+xlabel('Nemenman Model')
+ylabel('Synthetic Data')
+
+subplot(2,3,4:5), hold on
+[ax] = plotyy(time,XG(:,i),time,Ksyn_p(:,i));
+legend('Synthetic Data',['Linear Fit r^2=', oval(rsquare(XG(:,i),Ksyn_p(:,i)))])
 xlabel('Time (ms)')
 ylabel('Response (Hz)')
-set(gca,'XLim',[1e3 9e3])
+ax(1).XLim = [1 9];
+ax(2).XLim = [1 9];
+ax(2).YLim = [-.1 .5];
+
+subplot(2,3,6), hold on
+plot(Ksyn_p(1e3:9e3,i),XG(1e3:9e3,i),'k.')
+xlabel('Linear projection')
+ylabel('Synthetic Data')
+
 prettyFig('fs',16)
 
 if being_published

@@ -9,30 +9,28 @@
 function [R] = NemenmanModel(S,p)
 
 % list parameters for clarity:
-
-% input nonlinearity:
-p.k; % steepness
-p.x0; 
-
+p.d; % degradation rate 
+p.A;
 p.lag;
 
-% ode:
-p.d; % degradation rate 
-
 % bounds
-lb.k = eps;
 lb.d = eps;
 lb.A = eps;
-
-ub.x0 = 0;
 
 R = 0*S;
 R(1) = 10;
 
+% is there a lag?
 S = circshift(S,round(p.lag));
 
+% pass the stimulus through a step function
+ms = nanmean(S);
+S(S<ms) = 0;
+S(S>ms) = 1;
+S(S==ms) = .5;
+
 for i = 2:length(S)
-	dr = p.A*logistic(S(i-1),1,p.k,p.x0) - p.d*R(i-1);
+	dr = p.A*S(i-1) - p.d*R(i-1);
 	R(i) = R(i-1) + dr;
 	R(i) = max([R(i) 0]);
 end

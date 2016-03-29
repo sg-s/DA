@@ -70,7 +70,7 @@ end
 % 
 % $$ \dot{r}=f(s)-d\cdot r $$
 %
-% where f(s) is some input nonlinearity. Here, we model the input nonlinearity using a logistic function, and also add a lag to the stimulus. 
+% where f(s) is a step function around the mean of the input. Here, and also add a lag to the stimulus. 
 
 %% Synthetic Data
 % First, we consider some synthetic data, which we construct by passing the projected LFP through two different logistic functions with different steepnesses in the two epochs. We then back out filters from this synthetic dataset, and show that we do observe contrast adaptation similar to what we see in the real data. 
@@ -120,12 +120,11 @@ for i = length(these_trials):-1:1
 	d(i).response(1:1e3) = NaN;
 end
 
+
 clear p
-p.  k = 17.3485;
-p. x0 = -0.0441;
-p.  d = 0.1065;
-p.  A = 5.1093;
-p.lag = 52;
+p.  d = 0.0094;
+p.  A = 0.5697;
+p.lag = 13.5000;
 
 % make the prediction using the Nemenman Model
 Np = K2p;
@@ -180,7 +179,26 @@ if being_published
 end
 
 %%
-% This doesn't seem to work very well. What if we consider the input to the be LFP convolved with the LFP -> firing rate filter? (We're considering the input to by $ K2 \otimes LFP $) 
+% The model achieves a sort of contrast adaptation, by working as a "bang-bang" system -- it exponentially relaxes from two extremal values. The following figure shows the model fit vs. the synthetic data, showing this "bang-bang" property. 
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+temp = XG(:,10);
+temp(5e3) = NaN;
+plot(temp,'k')
+plot(Np(:,10),'r')
+legend('Synthetic Data','Nemenman Model')
+xlabel('Time (ms)')
+ylabel('Response (Hz)')
+set(gca,'XLim',[1e3 9e3])
+prettyFig('fs',16)
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% What if we consider the input to the be LFP convolved with the LFP -> firing rate filter? 
 
 clear d
 these_trials = 50:10:200;
@@ -192,11 +210,9 @@ end
 
 
 clear p
-p.  k = 21.9188;
-p. x0 = -1.2980;
-p.  d = 0.1061;
-p.  A = 5.2343;
-p.lag = -10;
+p.  d = 0.0095;
+p.  A = 0.5638;
+p.lag = -54.5000;
 
 % make the prediction using the Nemenman Model
 Np = K2p;
@@ -249,9 +265,6 @@ if being_published
 	snapnow
 	delete(gcf)
 end
-
-%%
-% So it isn't doing anything at all, and all improvements come from the fact that we fit a nonlinearity. 
 
 %% Version Info
 %

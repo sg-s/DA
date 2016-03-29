@@ -121,9 +121,9 @@ for i = length(these_trials):-1:1
 end
 
 clear p
-p.  d = 0.0094;
-p.  A = 0.5699;
-p.lag = 13.5000;
+p.  d = 0.0095;
+p.  A = 0.5760;
+p.lag = 15;
 
 % make the prediction using the Nemenman Model
 Np = K2p;
@@ -170,8 +170,10 @@ plot(r2_X,r2_XG,'k+')
 xlabel('r^2 Linear prediction')
 ylabel('r^2 Nemenman Model')
 
+labelFigure
 suptitle('Nemenman Model : stimulus is LFP')
 
+labelFigure
 prettyFig('fs',16)
 
 if being_published
@@ -232,9 +234,9 @@ end
 
 
 clear p
-p.  d = 0.0095;
-p.  A = 0.5638;
-p.lag = -54.5000;
+p.  d = 0.0093;
+p.  A = 0.5559;
+p.lag = -56;
 
 % make the prediction using the Nemenman Model
 Np = K2p;
@@ -283,12 +285,101 @@ ylabel('r^2 Nemenman Model')
 
 suptitle('Nemenman Model : stimulus is projected LFP')
 
+labelFigure
 prettyFig('fs',16)
 
 if being_published
 	snapnow
 	delete(gcf)
 end
+
+
+
+%% Application to Natural Stimulus
+% In this section, we see if this model can help us understand the responses to naturalistic stimuli. First, we see if we can use the model to go from the LFP to the firing rate. 
+
+
+[PID, LFP, fA, paradigm, orn, ~, AllControlParadigms] = consolidateData('/local-data/DA-paper/natural-flickering/with-lfp/ab3/',1);
+
+
+% remove baseline from all PIDs
+for i = 1:width(PID)
+	PID(:,i) = PID(:,i) - mean(PID(1:5e3,i));
+end
+
+% throw out trials where we didn't record the LFP, for whatever reason
+not_LFP = find((max(abs(LFP))) < 0.1);
+LFP(:,not_LFP) = NaN;
+
+% throw our bad traces
+bad_trials = (sum(fA) == 0 | isnan(sum(fA)) |  isnan(sum(LFP)));
+LFP(:,bad_trials) = [];
+PID(:,bad_trials) = [];
+fA(:,bad_trials) = [];
+paradigm(bad_trials) = [];
+orn(bad_trials) = [];
+
+% differentiate the LFP
+dLFP = LFP;
+for i = 1:length(paradigm)
+	% first high pass them to remove spikes
+	dLFP(:,i) = bandPass(LFP(:,i),Inf,30);
+	dLFP(:,i) = -1e4*filtfilt(ones(10,1),10,[0; diff(dLFP(:,i))]);
+end
+
+% average across neurons
+temp_PID = zeros(length(dLFP),max(orn));
+temp_LFP = zeros(length(dLFP),max(orn));
+temp_fA = zeros(length(dLFP),max(orn));
+for i = 1:max(orn)
+	temp_PID(:,i) = nanmean(PID(:,orn==i),2);
+	temp_LFP(:,i) = nanmean(dLFP(:,orn==i),2);
+	temp_fA(:,i) = nanmean(fA(:,orn==i),2);
+end
+PID = temp_PID; clear temp_PID
+LFP = temp_LFP; clear temp_LFP dLFP
+fA = temp_fA; clear temp_fA 
+clear fly orn paradigm
+
+% extract filters and find gain
+a = 10e3; z = 60e3;
+[K1,K1p,K1_gain] = extractFilters(PID,LFP,'use_cache',true,'a',a,'z',z);
+[K2,K2p,K2_gain] = extractFilters(LFP,fA,'use_cache',true,'a',a,'z',z);
+[K3,K3p,K3_gain] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
+ft = 1e-3*(1:length(K1)) - .1;
+
+clear d
+d.stimulus = LFP(:,2);
+d.response = fA(:,2);
+d.response(1:5e3) = NaN;
+
+clear p
+p.  d = 0.0085;
+p.  A = 0.6440;
+p.lag = 3;
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,3,1:2), hold on
+time = 1e-3*(1:length(fA));
+plot(time,fA(:,2),'k')
+R = NemenmanModel(d.stimulus,p);
+plot(time,R,'r')
+set(gca,'XLim',[20 30])
+
+subplot(1,3,3), hold on
+plot(R(a:10:z),fA(a:10:z,2),'k.')
+xlabel('Nemenman Model')
+ylabel('ORN Firing Rate (Hz)')
+legend(['r^2 = ' oval(rsquare(R(a:10:z),fA(a:10:z,2)))],'Location','southeast')
+
+labelFigure
+prettyFig('fs',16)
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 %% Version Info
 %

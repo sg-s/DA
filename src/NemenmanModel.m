@@ -18,7 +18,7 @@ lb.d = eps;
 lb.A = eps;
 
 R = 0*S;
-R(1) = 100;
+R(1) = 10;
 
 % is there a lag?
 S = circshift(S,round(p.lag));
@@ -29,6 +29,7 @@ ms = nanmean(S);
 S2(S<ms) = 0;
 S2(S>ms) = 1;
 S2(S==ms) = .5;
+S = S2; clear S2
 
 for i = 2:length(S)
 	dr = p.A*S(i-1) - p.d*R(i-1);

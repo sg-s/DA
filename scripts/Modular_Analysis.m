@@ -94,8 +94,8 @@ legend('K3','K1 \otimes K2')
 
 xlabel('Filtertime (s)')
 
-
-prettyFig()
+labelFigure
+prettyFig
 
 if being_published	
 	snapnow	
@@ -135,8 +135,9 @@ title('PID \rightarrow Firing')
 xlabel('K3 \otimes s(t)')
 ylabel('Firing Rate (Hz)')
 legend(['r^2 = ' oval(rsquare(x,y))],'Location','southeast')
-
+labelFigure
 prettyFig()
+
 if being_published	
 	snapnow	
 	delete(gcf)
@@ -210,6 +211,8 @@ ylabel('Firing Gain (Hz/V)')
 set(gca,'XScale','log','YScale','log')
 ff = fit(mean_stim(:),K3_gain(:),'power1','Upper',[Inf -1],'Lower',[0 -1]);
 plot(ms,ff(ms),'r')
+
+labelFigure
 prettyFig('fs',18)
 
 if being_published	
@@ -262,6 +265,7 @@ xlabel('Model Prediction')
 ylabel('Measured Gain (mV/s/V)')
 set(gca,'XScale','log','YScale','log')
 
+labelFigure
 prettyFig('fs',18)
 
 if being_published	
@@ -355,6 +359,7 @@ title('PID \rightarrow Firing','interpreter','tex')
 legend('K3','K1 \otimes K2')
 xlabel('Filtertime (s)')
 
+labelFigure
 prettyFig()
 
 if being_published	
@@ -422,6 +427,8 @@ delete(h.line(2:3))
 delete(h.shade)
 xlabel('K3 \otimes s(t)')
 ylabel('Firing Rate (Hz)')
+
+labelFigure
 prettyFig;
 
 if being_published	
@@ -462,6 +469,7 @@ title(['k = ' oval(ff_hi.k)])
 ylabel('ORN response (Hz)')
 xlabel('Projected Stimulus')
 
+labelFigure
 prettyFig;
 
 if being_published	
@@ -541,6 +549,7 @@ plot(r2_X,r2_XG,'k+')
 xlabel('r^2 Linear prediction')
 ylabel('r^2 contrast-corrected')
 
+labelFigure
 prettyFig('fs',16)
 
 if being_published
@@ -650,6 +659,7 @@ xlabel('g_{Weber}(t)(K1_{Weber} \otimes s(t))')
 title('Corrected by Weber-calculated Gain')
 ylabel('dLFP (mV/s)')
 
+labelFigure
 prettyFig;
 
 if being_published	
@@ -681,6 +691,7 @@ legend(l,['r^2 = ' oval(rsquare(x,y))],'Location','southeast')
 xlabel('f(K2 \otimes LFP)')
 ylabel('Firing Rate (Hz)')
 
+labelFigure
 prettyFig;
 
 if being_published	
@@ -721,6 +732,7 @@ plot(hx,hy);
 xlabel('Steepness parameter')
 ylabel('Probability')
 
+labelFigure
 prettyFig('FixLogX',true);
 
 if being_published	
@@ -745,6 +757,8 @@ plot(all_t,r2,'k+')
 set(gca,'XScale','log')
 xlabel('\tau_{contrast gain} (ms)')
 ylabel('r^2')
+
+labelFigure
 prettyFig('FixLogX',true);
 
 if being_published	
@@ -819,6 +833,7 @@ plot(x,hy)
 xlabel('Steepness parameter')
 ylabel('Probability')
 
+labelFigure
 prettyFig('fs',14);
 
 if being_published	

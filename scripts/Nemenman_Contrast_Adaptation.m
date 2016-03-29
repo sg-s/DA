@@ -96,7 +96,7 @@ for i = 1:width(reshaped_fA)
 end
 
 
-figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[500 500]); hold on
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 plotPieceWiseLinear(Ksyn_p(1e3:5e3,:),XG(1e3:5e3,:),'nbins',50,'Color','r');
 plotPieceWiseLinear(Ksyn_p(6e3:end-200,:),XG(6e3:end-200,:),'nbins',50,'Color','b');
 xlabel('K \otimes s')
@@ -171,6 +171,8 @@ plot(r2_X,r2_XG,'k+')
 xlabel('r^2 Linear prediction')
 ylabel('r^2 Nemenman Model')
 
+suptitle('Nemenman Model : stimulus is LFP')
+
 prettyFig('fs',16)
 
 if being_published
@@ -181,7 +183,7 @@ end
 %%
 % The model achieves a sort of contrast adaptation, by working as a "bang-bang" system -- it exponentially relaxes from two extremal values. The following figure shows the model fit vs. the synthetic data, showing this "bang-bang" property. 
 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+figure('outerposition',[0 0 1000 400],'PaperUnits','points','PaperSize',[1000 400]); hold on
 temp = XG(:,10);
 temp(5e3) = NaN;
 plot(temp,'k')
@@ -258,6 +260,8 @@ plot([0 1],[0 1],'k--')
 plot(r2_X,r2_XG,'k+')
 xlabel('r^2 Linear prediction')
 ylabel('r^2 Nemenman Model')
+
+suptitle('Nemenman Model : stimulus is projected LFP')
 
 prettyFig('fs',16)
 

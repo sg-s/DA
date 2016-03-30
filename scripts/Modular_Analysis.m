@@ -357,7 +357,7 @@ end
 
 % average filters and project stimulus
 K1 = nanmean(K1,2);
-K2 = nanmean(K2,2);
+K2 = nanmean(K2,2); K2(K2<0) = 0;
 K3 = nanmean(K3,2);
 
 K1p = NaN*reshaped_fA;
@@ -419,82 +419,121 @@ end
 % Why is the first filter not a perfect differentiator? We would expect it to be so since we expect the derivative of the LFP to have a mean of zero. 
 
 %%
-% Now, we compare the projections using these filters with the actual data. 
+% Now, we compare the projections using these filters with the actual data. In the following figure, I plot responses (dLFP or firing rate) vs various projections using the filters we backed out. In each case, the red curve is from the high variance epoch, and the blue curve is from the low variance epoch. For each of the plots, I also quantify the degree of gain control as follows. First, I compute the gain in the low and high variance epochs. This ratio (low variance gain/high variance gain) is the first measure. Second, I also compute the standard deviation of the input in the low variance epoch, and divide by the standard deviation of the input during the high variance epoch. In each plot, the "input" is whatever is being convolved by the outermost filter. So, for example, in (c), the input is the predicted dLFP.
 
 
-ss = 10;
+% compute the r2 for each trial
+r2_K1p = NaN(width(reshaped_dLFP),1);
+r2_K2p = NaN(width(reshaped_dLFP),1);
+r2_K2K1p = NaN(width(reshaped_dLFP),1);
+r2_K3p = NaN(width(reshaped_dLFP),1);
+for i = 1:length(r2_K1p)
+	r2_K1p(i) = rsquare(K1p(1e3:9e3,i),reshaped_dLFP(1e3:9e3,i));
+	r2_K2p(i) = rsquare(K2p(1e3:9e3,i),reshaped_fA(1e3:9e3,i));
+	r2_K2K1p(i) = rsquare(K2K1p(1e3:9e3,i),reshaped_fA(1e3:9e3,i));
+	r2_K3p(i) = rsquare(K3p(1e3:9e3,i),reshaped_fA(1e3:9e3,i));
+end
+
+ss = 1;
+min_r2 = .7; 
+
+if ~exist('input_contrast_change_K1p','var')
+	computeContrastsGains;
+end
+
 figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
 subplot(2,2,1), hold on
 x = K1p(1e3:4e3,:);
 y = reshaped_dLFP(1e3:4e3,:);
-rm_this = (isnan(sum(y)) | isnan(sum(x)));
+rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K1p < min_r2)');
 x(:,rm_this) = []; y(:,rm_this) = []; 
-h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[1 0 0]);
-delete(h.line(2:3))
-delete(h.shade)
+x = x(:); y = y(:);
+x = x(1:ss:end); y = y(1:ss:end);
+plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[1 0 0],'proportional_bins',true,'show_error',false);
 x = K1p(6e3:9e3,:);
 y = reshaped_dLFP(6e3:9e3,:);
-rm_this = (isnan(sum(y)) | isnan(sum(x)));
+rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K1p < min_r2)');
 x(:,rm_this) = []; y(:,rm_this) = []; 
-h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[0 0 1]);
-delete(h.line(2:3))
-delete(h.shade)
+x = x(:); y = y(:);
+x = x(1:ss:end); y = y(1:ss:end);
+plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[0 0 1],'proportional_bins',true,'show_error',false);
 xlabel('K1 \otimes s(t)')
 ylabel('dLPF (mV/s)')
+
+tx = ['$\Delta gain$ = ' oval(nanmean(gain_change_K1p)) ,'$ \pm $' oval(sem(gain_change_K1p))];
+text(-.2,20,tx,'interpreter','latex');
+tx = ['$\Delta \sigma $= ' oval(nanmean(input_contrast_change_K1p)) ,'$ \pm $' oval(sem(input_contrast_change_K1p))];
+text(-.2,15,tx,'interpreter','latex');
 
 subplot(2,2,2), hold on
 x = K2p(1e3:4e3,:);
 y = reshaped_fA(1e3:4e3,:);
-rm_this = (isnan(sum(y)) | isnan(sum(x)));
+rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K2p < min_r2)');
 x(:,rm_this) = []; y(:,rm_this) = []; 
-h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[1 0 0]);
-delete(h.line(2:3))
-delete(h.shade)
+x = x(:); y = y(:);
+x = x(1:ss:end); y = y(1:ss:end);
+plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[1 0 0],'proportional_bins',true,'show_error',false);
 x = K2p(6e3:9e3,:);
 y = reshaped_fA(6e3:9e3,:);
-rm_this = (isnan(sum(y)) | isnan(sum(x)));
+rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K2p < min_r2)');
 x(:,rm_this) = []; y(:,rm_this) = []; 
-h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[0 0 1]);
-delete(h.line(2:3))
-delete(h.shade)
+x = x(:); y = y(:);
+x = x(1:ss:end); y = y(1:ss:end);
+plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[0 0 1],'proportional_bins',true,'show_error',false);
 xlabel('K2 \otimes dLFP(t)')
 ylabel('Firing Rate (Hz)')
+
+tx = ['$\Delta gain $= ' oval(nanmean(gain_change_K2p)) ,'$ \pm $' oval(sem(gain_change_K2p))];
+text(-.2,20,tx,'interpreter','latex');
+tx = ['$\Delta \sigma $= ' oval(nanmean(input_contrast_change_K2p)) ,'$ \pm $' oval(sem(input_contrast_change_K2p))];
+text(-.2,15,tx,'interpreter','latex');
+
 
 subplot(2,2,3), hold on
 x = K2K1p(1e3:4e3,:);
 y = reshaped_fA(1e3:4e3,:);
-rm_this = (isnan(sum(y)) | isnan(sum(x)));
+rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K2K1p < min_r2)');
 x(:,rm_this) = []; y(:,rm_this) = []; 
-[h, data_hi] = plotPieceWiseLinear(x,y,'nbins',50,'Color',[1 0 0]);
-delete(h.line(2:3))
-delete(h.shade)
+x = x(:); y = y(:);
+x = x(1:ss:end); y = y(1:ss:end);
+plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[1 0 0],'proportional_bins',true,'show_error',false);
 x = K2K1p(6e3:9e3,:);
 y = reshaped_fA(6e3:9e3,:);
-rm_this = (isnan(sum(y)) | isnan(sum(x)));
+rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K2K1p < min_r2)');
 x(:,rm_this) = []; y(:,rm_this) = []; 
-[h, data_lo] = plotPieceWiseLinear(x,y,'nbins',50,'Color',[0 0 1]);
-delete(h.line(2:3))
-delete(h.shade)
-xlabel('K2 \otimes dLFP_{pred}(t)')
+x = x(:); y = y(:);
+x = x(1:ss:end); y = y(1:ss:end);
+plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[0 0 1],'proportional_bins',true,'show_error',false);
+xlabel('K2 \otimes K1 \otimes s(t)')
 ylabel('Firing Rate (Hz)')
+
+tx = ['$\Delta gain $= ' oval(nanmean(gain_change_K2K1p)) ,'$ \pm $' oval(sem(gain_change_K2K1p))];
+text(-.2,60,tx,'interpreter','latex');
+tx = ['$\Delta \sigma $= ' oval(nanmean(input_contrast_change_K2K1p)) ,'$ \pm $' oval(sem(input_contrast_change_K2K1p))];
+text(-.2,52,tx,'interpreter','latex');
 
 subplot(2,2,4), hold on
 x = K3p(1e3:4e3,:);
 y = reshaped_fA(1e3:4e3,:);
-rm_this = (isnan(sum(y)) | isnan(sum(x)));
+rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K3p < min_r2)');
 x(:,rm_this) = []; y(:,rm_this) = []; 
-h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[1 0 0]);
-delete(h.line(2:3))
-delete(h.shade)
+x = x(:); y = y(:);
+x = x(1:ss:end); y = y(1:ss:end);
+plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[1 0 0],'proportional_bins',true,'show_error',false);
 x = K3p(6e3:9e3,:);
 y = reshaped_fA(6e3:9e3,:);
-rm_this = (isnan(sum(y)) | isnan(sum(x)));
+rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K3p < min_r2)');
 x(:,rm_this) = []; y(:,rm_this) = []; 
-h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[0 0 1]);
-delete(h.line(2:3))
-delete(h.shade)
-xlabel('K3 \otimes s(t)')
+x = x(:); y = y(:);
+x = x(1:ss:end); y = y(1:ss:end);
+plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[0 0 1],'proportional_bins',true,'show_error',false);
+xlabel('K3 \otimes  s(t)')
 ylabel('Firing Rate (Hz)')
+
+tx = ['$\Delta gain$ = ' oval(nanmean(gain_change_K3p)) ,'$ \pm $' oval(sem(gain_change_K3p))];
+text(.1,60,tx,'interpreter','latex');
+tx = ['$\Delta \sigma $= ' oval(nanmean(input_contrast_change_K3p)) ,'$ \pm $' oval(sem(input_contrast_change_K3p))];
+text(.1,52,tx,'interpreter','latex');
 
 labelFigure
 prettyFig;
@@ -505,7 +544,7 @@ if being_published
 end
 
 %%
-% This is weird. Even though we clearly see contrast adaptation from the stimulus to the response (d), we don't see it in the LFP to the firing rate transformation. Instead, we see something interesting: a left to right shift of the input curve. What's going on here? To look at this more closely, I plot predicted dLFP vs. the actual dLFP for the high and low variance epochs (a). I'm also plotting the distributions of the dLFPs during the two epochs (b) and the distributions of the predicted dLFPs (c).
+% This is weird. The contrast adaptation is strongest not from the LFP to the firing rate, as we would expect, but from the the predicted LFP to the firing rate. To look at this more closely, I plot predicted dLFP vs. the actual dLFP for the high and low variance epochs (a). I'm also plotting the distributions of the dLFPs during the two epochs (b) and the distributions of the predicted dLFPs (c).
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1), hold on

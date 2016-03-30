@@ -12,7 +12,6 @@ gain_change_K2p = NaN(width(reshaped_dLFP),1);
 gain_change_K3p = NaN(width(reshaped_dLFP),1);
 
 for i = 1:width(reshaped_dLFP)
-	textbar(i,width(reshaped_dLFP))
 	if r2_K1p(i) > min_r2
 		y = reshaped_dLFP(1e3:4e3,i);
 		x = K1p(1e3:4e3,i);

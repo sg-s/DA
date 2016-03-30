@@ -496,14 +496,14 @@ rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K2K1p < min_r2)');
 x(:,rm_this) = []; y(:,rm_this) = []; 
 x = x(:); y = y(:);
 x = x(1:ss:end); y = y(1:ss:end);
-plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[1 0 0],'proportional_bins',true,'show_error',false);
+[~,data_hi] = plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[1 0 0],'proportional_bins',true,'show_error',false);
 x = K2K1p(6e3:9e3,:);
 y = reshaped_fA(6e3:9e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K2K1p < min_r2)');
 x(:,rm_this) = []; y(:,rm_this) = []; 
 x = x(:); y = y(:);
 x = x(1:ss:end); y = y(1:ss:end);
-plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[0 0 1],'proportional_bins',true,'show_error',false);
+[~,data_lo] = plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[0 0 1],'proportional_bins',true,'show_error',false);
 xlabel('K2 \otimes K1 \otimes s(t)')
 ylabel('Firing Rate (Hz)')
 
@@ -713,7 +713,7 @@ end
 %%
 % First, we fit this logistic function to the two input-output curves, allowing only the steepness parameter to vary between the blue and red curves.
 
-x0 = -1.3245;
+x0 = -1.55;
 
 ft = fittype('logistic(x,A,k,x0)');
 ff_lo = fit(data_lo.x(:),data_lo.y(:),ft,'StartPoint',[max(data_hi.y) 2 x0],'Lower',[max(data_hi.y) 1 x0],'Upper',[max(data_hi.y) 100 x0],'MaxIter',1e6);
@@ -758,10 +758,10 @@ for i = length(these_trials):-1:1
 end
 
 clear p
-p. k0 = 17.9078;
-p.  B = 0.0432;
-p.  n = 1.7656;
-p.tau = 97.6875;
+p.k0  =17.9078;
+p.  B = 0.0276;
+p.  n = 8.8906;
+p.tau = 46.1875;
 p. s0 = 4.3347;
 p. s1 = -30.4246;
 

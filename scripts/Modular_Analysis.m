@@ -78,11 +78,20 @@ title('PID \rightarrow dLFP')
 xlabel('Filtertime (s)')
 ylabel('K1')
 
+iv = sum(nanmean(K1(:,paradigm==1),2))./sum(abs(nanmean(K1(:,paradigm==1),2)));
+tx = ['$\frac{\intop K}{\intop\left|K\right|}$=' oval(iv)];
+text(.3,10e-3,tx,'interpreter','latex')
+
 subplot(1,3,2), hold on
 plot(ft,nanmean(K2(:,paradigm==1),2));
 title('dLFP \rightarrow Firing','interpreter','tex')
 xlabel('Filtertime (s)')
 ylabel('K2')
+
+iv = sum(nanmean(K2(:,paradigm==1),2))./sum(abs(nanmean(K2(:,paradigm==1),2)));
+tx = ['$\frac{\intop K}{\intop\left|K\right|}$=' oval(iv)];
+text(.3,10e-3,tx,'interpreter','latex')
+
 
 subplot(1,3,3), hold on
 plot(ft,nanmean(K3(:,paradigm==1),2));
@@ -91,6 +100,10 @@ temp2 = nanmean(K2(:,paradigm==1),2);
 plot(ft,convolve(ft,temp1,temp2,ft));
 title('PID \rightarrow Firing','interpreter','tex')
 legend('K3','K1 \otimes K2')
+
+iv = sum(nanmean(K3(:,paradigm==1),2))./sum(abs(nanmean(K3(:,paradigm==1),2)));
+tx = ['$\frac{\intop K}{\intop\left|K\right|}$=' oval(iv)];
+text(.3,10e-3,tx,'interpreter','latex')
 
 xlabel('Filtertime (s)')
 
@@ -284,15 +297,19 @@ path_name = '/local-data/DA-paper/switching/variance/v2/';
 global_start = 40e3; % 40 seconds
 global_end = length(PID) - 5e3; 
 % bandpass to remove spikes and slow fluctuations
+dLFP = LFP;
 for i = 1:width(LFP)
 	LFP(:,i) = bandPass(LFP(:,i),Inf,30); % remove spikes
-	LFP(:,i) = -1e4*filtfilt(ones(10,1),10,[0; diff(LFP(:,i))]);
+	dLFP(:,i) = -1e4*filtfilt(ones(10,1),10,[0; diff(LFP(:,i))]);
 end
 
 % reshape the LFP signals
 block_length = 1e4;
 reshaped_LFP = LFP(global_start:end-1e4-1,1:width(PID));
 reshaped_LFP = reshape(reshaped_LFP,block_length,width(reshaped_LFP)*length(reshaped_LFP)/block_length);
+
+reshaped_dLFP = dLFP(global_start:end-1e4-1,1:width(PID));
+reshaped_dLFP = reshape(reshaped_dLFP,block_length,width(reshaped_dLFP)*length(reshaped_dLFP)/block_length);
 
 % also reshape the PID
 reshaped_PID = PID(global_start:end-1e4-1,1:width(PID));
@@ -308,18 +325,35 @@ reshaped_orn = repmat(orn,length(global_start:length(PID)-1e4-1)/block_length,1)
 reshaped_orn = reshaped_orn(:);
 
 % throw our NaNs globally. so we're throwing out epochs where the data is incomplete
-rm_this = isnan(sum(reshaped_LFP));
+rm_this = isnan(sum(reshaped_dLFP));
 reshaped_LFP(:,rm_this) = [];
+reshaped_dLFP(:,rm_this) = [];
 reshaped_PID(:,rm_this) = [];
 reshaped_fA(:,rm_this) = [];
 reshaped_orn(rm_this) = [];
 
 % extract filters and find gain
 a = 1; z = 10e3;
-K1 = extractFilters(reshaped_PID,reshaped_LFP,'use_cache',true,'a',a,'z',z);
-K2 = extractFilters(reshaped_LFP,reshaped_fA,'use_cache',true,'a',a,'z',z);
+K1 = extractFilters(reshaped_PID,reshaped_dLFP,'use_cache',true,'a',a,'z',z);
+K2 = extractFilters(reshaped_dLFP,reshaped_fA,'use_cache',true,'a',a,'z',z);
 K3 = extractFilters(reshaped_PID,reshaped_fA,'use_cache',true,'a',a,'z',z);
 ft = 1e-3*(1:length(K1)) - .1;
+
+% throw out traces where the dLFP traces are significantly far from 0
+dmax = (nanmean(nanmean(reshaped_dLFP)) + 2*nanstd(nanmean(reshaped_dLFP)));
+dmin = (nanmean(nanmean(reshaped_dLFP)) - 2*nanstd(nanmean(reshaped_dLFP)));
+rm_this = nanmean(reshaped_dLFP) < dmin | nanmean(reshaped_dLFP) > dmax;
+
+reshaped_LFP(:,rm_this) = [];
+reshaped_dLFP(:,rm_this) = [];
+reshaped_PID(:,rm_this) = [];
+reshaped_fA(:,rm_this) = [];
+reshaped_orn(rm_this) = [];
+
+% remove mean from the LFP for each trial
+for i = 1:width(reshaped_LFP)
+	reshaped_LFP(:,i) =  reshaped_LFP(:,i) - nanmean(reshaped_LFP(:,i));
+end
 
 % average filters and project stimulus
 K1 = nanmean(K1,2);
@@ -329,9 +363,11 @@ K3 = nanmean(K3,2);
 K1p = NaN*reshaped_fA;
 K2p = NaN*reshaped_fA;
 K3p = NaN*reshaped_fA;
+K2K1p = NaN*reshaped_fA;
 for i = 1:width(reshaped_fA)
 	K1p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K1,ft);
-	K2p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),K1p(:,i),K2,ft);
+	K2K1p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),K1p(:,i),K2,ft);
+	K2p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_dLFP(:,i),K2,ft);
 	K3p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K3,ft);
 end
 
@@ -343,11 +379,19 @@ title('PID \rightarrow dLFP')
 xlabel('Filtertime (s)')
 ylabel('K1')
 
+iv = sum(K1)./sum(abs(K1));
+tx = ['$\frac{\intop K}{\intop\left|K\right|}$=' oval(iv)];
+text(.3,10e-3,tx,'interpreter','latex')
+
 subplot(1,3,2), hold on
 plot(ft,K2);
 title('dLFP \rightarrow Firing','interpreter','tex')
 xlabel('Filtertime (s)')
 ylabel('K2')
+
+iv = sum(K2)./sum(abs(K2));
+tx = ['$\frac{\intop K}{\intop\left|K\right|}$=' oval(iv)];
+text(.3,10e-3,tx,'interpreter','latex')
 
 subplot(1,3,3), hold on
 plot(ft,K3);
@@ -359,6 +403,10 @@ title('PID \rightarrow Firing','interpreter','tex')
 legend('K3','K1 \otimes K2')
 xlabel('Filtertime (s)')
 
+iv = sum(K3)./sum(abs(K3));
+tx = ['$\frac{\intop K}{\intop\left|K\right|}$=' oval(iv)];
+text(.3,10e-3,tx,'interpreter','latex')
+
 labelFigure
 prettyFig()
 
@@ -367,23 +415,25 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% Why is the first filter not a perfect differentiator? We would expect it to be so since we expect the derivative of the LFP to have a mean of zero. 
 
 %%
 % Now, we compare the projections using these filters with the actual data. 
 
 
 ss = 10;
-figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
-subplot(1,3,1), hold on
-x = K1p(1e3:5e3,:);
-y = reshaped_LFP(1e3:5e3,:);
+figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
+subplot(2,2,1), hold on
+x = K1p(1e3:4e3,:);
+y = reshaped_dLFP(1e3:4e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)));
 x(:,rm_this) = []; y(:,rm_this) = []; 
 h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[1 0 0]);
 delete(h.line(2:3))
 delete(h.shade)
-x = K1p(6e3:end-100,:);
-y = reshaped_LFP(6e3:end-100,:);
+x = K1p(6e3:9e3,:);
+y = reshaped_dLFP(6e3:9e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)));
 x(:,rm_this) = []; y(:,rm_this) = []; 
 h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[0 0 1]);
@@ -392,16 +442,34 @@ delete(h.shade)
 xlabel('K1 \otimes s(t)')
 ylabel('dLPF (mV/s)')
 
-subplot(1,3,2), hold on
-x = K2p(1e3:5e3,:);
-y = reshaped_fA(1e3:5e3,:);
+subplot(2,2,2), hold on
+x = K2p(1e3:4e3,:);
+y = reshaped_fA(1e3:4e3,:);
+rm_this = (isnan(sum(y)) | isnan(sum(x)));
+x(:,rm_this) = []; y(:,rm_this) = []; 
+h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[1 0 0]);
+delete(h.line(2:3))
+delete(h.shade)
+x = K2p(6e3:9e3,:);
+y = reshaped_fA(6e3:9e3,:);
+rm_this = (isnan(sum(y)) | isnan(sum(x)));
+x(:,rm_this) = []; y(:,rm_this) = []; 
+h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[0 0 1]);
+delete(h.line(2:3))
+delete(h.shade)
+xlabel('K2 \otimes dLFP(t)')
+ylabel('Firing Rate (Hz)')
+
+subplot(2,2,3), hold on
+x = K2K1p(1e3:4e3,:);
+y = reshaped_fA(1e3:4e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)));
 x(:,rm_this) = []; y(:,rm_this) = []; 
 [h, data_hi] = plotPieceWiseLinear(x,y,'nbins',50,'Color',[1 0 0]);
 delete(h.line(2:3))
 delete(h.shade)
-x = K2p(6e3:end-200,:);
-y = reshaped_fA(6e3:end-200,:);
+x = K2K1p(6e3:9e3,:);
+y = reshaped_fA(6e3:9e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)));
 x(:,rm_this) = []; y(:,rm_this) = []; 
 [h, data_lo] = plotPieceWiseLinear(x,y,'nbins',50,'Color',[0 0 1]);
@@ -410,16 +478,16 @@ delete(h.shade)
 xlabel('K2 \otimes dLFP_{pred}(t)')
 ylabel('Firing Rate (Hz)')
 
-subplot(1,3,3), hold on
-x = K3p(1e3:5e3,:);
-y = reshaped_fA(1e3:5e3,:);
+subplot(2,2,4), hold on
+x = K3p(1e3:4e3,:);
+y = reshaped_fA(1e3:4e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)));
 x(:,rm_this) = []; y(:,rm_this) = []; 
 h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[1 0 0]);
 delete(h.line(2:3))
 delete(h.shade)
-x = K3p(6e3:end-100,:);
-y = reshaped_fA(6e3:end-100,:);
+x = K3p(6e3:9e3,:);
+y = reshaped_fA(6e3:9e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)));
 x(:,rm_this) = []; y(:,rm_this) = []; 
 h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[0 0 1]);
@@ -435,6 +503,164 @@ if being_published
 	snapnow	
 	delete(gcf)
 end
+
+%%
+% This is weird. Even though we clearly see contrast adaptation from the stimulus to the response (d), we don't see it in the LFP to the firing rate transformation. Instead, we see something interesting: a left to right shift of the input curve. What's going on here? To look at this more closely, I plot predicted dLFP vs. the actual dLFP for the high and low variance epochs (a). I'm also plotting the distributions of the dLFPs during the two epochs (b) and the distributions of the predicted dLFPs (c).
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,3,1), hold on
+plot(nanmean(K1p(1e3:4e3,:)),nanmean(reshaped_dLFP(1e3:4e3,:)),'r+')
+plot(nanmean(K1p(6e3:9e3,:)),nanmean(reshaped_dLFP(6e3:9e3,:)),'b+')
+xlabel('<dLFP_{pred}>_{trials}')
+ylabel('<dLFP (mV/s)>_{trials}')
+
+subplot(1,3,2), hold on
+plot([0 0],[0 .14],'k--')
+x = vectorise(reshaped_dLFP(1e3:4e3,:));
+[hy,hx] = histcounts(x,linspace(min(x),max(x),100));
+hy = hy/sum(hy);
+hx = hx(1:end-1) + mean(diff(hx));
+plot(hx,hy,'r')
+x = vectorise(reshaped_dLFP(6e3:9e3,:));
+[hy,hx] = histcounts(x,linspace(min(x),max(x),100));
+hy = hy/sum(hy);
+hx = hx(1:end-1) + mean(diff(hx));
+plot(hx,hy,'b')
+xlabel('dLFP (mV/s)')
+ylabel('Probability')
+set(gca,'XLim',[-40 40])
+
+subplot(1,3,3), hold on
+plot([0 0],[0 .04],'k--')
+x = vectorise(K1p(1e3:4e3,:));
+[hy,hx] = histcounts(x,linspace(min(x),max(x),100));
+hy = hy/sum(hy);
+hx = hx(1:end-1) + mean(diff(hx));
+plot(hx,hy,'r')
+x = vectorise(K1p(6e3:9e3,:));
+[hy,hx] = histcounts(x,linspace(min(x),max(x),100));
+hy = hy/sum(hy);
+hx = hx(1:end-1) + mean(diff(hx));
+plot(hx,hy,'b')
+xlabel('dLFP_{pred}')
+ylabel('Probability')
+set(gca,'XLim',[-.4 .5])
+
+labelFigure
+prettyFig;
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
+%%
+% There is something very weird going on. Specifically, the red distribution seems to be shifted to the left of zero, suggesting that the LFP is continuously decreasing during the high variance epoch. Does this make any sense? In the following figure, I plot the raw LFP traces, mean subtracted across each trial, to see if there is any epoch-specific trend. I also fit lines to the high (red) and low (blue) variance epochs, to show that there is an upward or downward trend. 
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+temp = (nanmean(reshaped_LFP,2));
+x = 1e3:4e3;
+y = temp(x);
+ff = fit(x(:),y(:),'poly1');
+plot(temp,'k')
+plot(x,ff(x),'r')
+x = 6e3:9e3;
+y = temp(x);
+ff = fit(x(:),y(:),'poly1');
+plot(x,ff(x),'b')
+xlabel('Time (ms)')
+ylabel('<LFP>_{trials} (\DeltamV)')
+prettyFig;
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
+%%
+% OK, so now things make sense. We see an upward trend in the LFP during the high variance epoch, and a downward trend in the low variance epoch. This corresponds to shifts left and right in the distribution derivative of the LFP, and in left-to-right shifts in the LFP to firing rate firing curve. 
+
+%%
+% Why is the mean LFP higher in the high-contrast case than in the low-contrast case? The simplest explanation is because the stimulus has slightly lower mean when the variance is high (because of an error in the stimulus delivery). 
+
+%%
+% Does this invalidate our result? Not really, for two reasons. First, the unbiased stimulus to firing rate model clearly shows contrast adaptation, and there is no getting around that. Second, the decrease in stimulus mean during the high contrast epoch, which probably causes the deviation in the LFP, works against us, and decreases the size of the expected effect, not increases it. 
+
+%% Inserting the Weber Model into the contrast data
+% In this section, we insert the Weber-Fechner Model we measured using the last dataset into this one, because we know it exists, and plays a role here. 
+
+K1p_weber = K1p;
+K2K1p_weber = NaN*K1p_weber;
+for i = 1:width(K1p)
+	d.stimulus = [K1p(:,i),reshaped_PID(:,i)];
+	K1p_weber(:,i) = adaptiveGainModel(d.stimulus,weber_data.p);
+	% now convolve with K2
+	K2K1p_weber(:,i) = convolve(1e-3*(1:length(reshaped_PID)),K1p_weber(:,i),K2,ft);
+end
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,3,1), hold on
+x = K1p(1e3:4e3,:);
+y = reshaped_dLFP(1e3:4e3,:);
+rm_this = (isnan(sum(y)) | isnan(sum(x)));
+x(:,rm_this) = []; y(:,rm_this) = []; 
+h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[1 0 0]);
+delete(h.line(2:3))
+delete(h.shade)
+x = K1p(6e3:9e3,:);
+y = reshaped_dLFP(6e3:9e3,:);
+rm_this = (isnan(sum(y)) | isnan(sum(x)));
+x(:,rm_this) = []; y(:,rm_this) = []; 
+h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[0 0 1]);
+delete(h.line(2:3))
+delete(h.shade)
+xlabel('K1 \otimes s(t)')
+ylabel('dLFP (mV/s)')
+
+subplot(1,3,2), hold on
+x = K1p_weber(1e3:4e3,:);
+y = reshaped_dLFP(1e3:4e3,:);
+rm_this = (isnan(sum(y)) | isnan(sum(x)));
+x(:,rm_this) = []; y(:,rm_this) = []; 
+h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[1 0 0]);
+delete(h.line(2:3))
+delete(h.shade)
+x = K1p_weber(6e3:9e3,:);
+y = reshaped_dLFP(6e3:9e3,:);
+rm_this = (isnan(sum(y)) | isnan(sum(x)));
+x(:,rm_this) = []; y(:,rm_this) = []; 
+h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[0 0 1]);
+delete(h.line(2:3))
+delete(h.shade)
+xlabel('g_{Weber}(t) * K1 \otimes s(t)')
+ylabel('dLFP (mV/s)')
+
+subplot(1,3,3), hold on
+x = K2K1p_weber(1e3:4e3,:);
+y = reshaped_fA(1e3:4e3,:);
+rm_this = (isnan(sum(y)) | isnan(sum(x)));
+x(:,rm_this) = []; y(:,rm_this) = []; 
+h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[1 0 0]);
+delete(h.line(2:3))
+delete(h.shade)
+x = K2K1p_weber(6e3:9e3,:);
+y = reshaped_fA(6e3:9e3,:);
+rm_this = (isnan(sum(y)) | isnan(sum(x)));
+x(:,rm_this) = []; y(:,rm_this) = []; 
+h = plotPieceWiseLinear(x,y,'nbins',50,'Color',[0 0 1]);
+delete(h.line(2:3))
+delete(h.shade)
+xlabel('K2 \otimes (g_{Weber}(t) * K1 \otimes s(t))')
+ylabel('Firing Rate (Hz)')
+
+labelFigure
+prettyFig;
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
 
 %%
 % Now, we want to account for this gain change. We use a logistic function to describe the shape of the input-output curve from the LFP to the firing rate:
@@ -488,7 +714,7 @@ end
 clear d
 these_trials = 50:10:200;
 for i = length(these_trials):-1:1
-	d(i).stimulus = reshaped_LFP(:,these_trials(i));
+	d(i).stimulus = reshaped_dLFP(:,these_trials(i));
 	d(i).response = [ff_hi.k,ff_lo.k];
 end
 
@@ -507,7 +733,7 @@ p.x0 = ff_hi.x0;
 
 XG = K2p;
 for i = 1:width(K2p)
-	XG(:,i) = contrastLogisticModel([(reshaped_LFP(:,i)*p.s0 + p.s1) ,K2p(:,i)],p);
+	XG(:,i) = contrastLogisticModel([(reshaped_dLFP(:,i)*p.s0 + p.s1) ,K2K1p(:,i)],p);
 end
 
 figure('outerposition',[0 0 900 800],'PaperUnits','points','PaperSize',[900 800]); hold on
@@ -524,16 +750,16 @@ xlabel('$\hat{R}$','interpreter','latex')
 ylabel('Response (Hz)')
 
 subplot(2,2,3); hold on
-plotPieceWiseLinear(K2p(1e3:5e3,:),XG(1e3:5e3,:),'nbins',50,'Color','r');
-plotPieceWiseLinear(K2p(6e3:9e3,:),XG(6e3:9e3,:),'nbins',50,'Color','b');
+plotPieceWiseLinear(K2K1p(1e3:5e3,:),XG(1e3:5e3,:),'nbins',50,'Color','r');
+plotPieceWiseLinear(K2K1p(6e3:9e3,:),XG(6e3:9e3,:),'nbins',50,'Color','b');
 ylabel('$\hat{R}$','interpreter','latex')
 xlabel('K \otimes s')
 
 subplot(2,2,4); hold on
-r2_X = NaN(width(K2p),1);
+r2_X = NaN(width(K2K1p),1);
 r2_XG = r2_X;
-for i = 1:width(K2p)
-	fp = K2p([1e3:5e3 6e3:9e3],i); r = reshaped_fA([1e3:5e3 6e3:9e3],i);
+for i = 1:width(K2K1p)
+	fp = K2K1p([1e3:5e3 6e3:9e3],i); r = reshaped_fA([1e3:5e3 6e3:9e3],i);
 	try
 		r2_X(i) = rsquare(fp,r);
 	catch
@@ -556,7 +782,6 @@ if being_published
 	snapnow
 	delete(gcf)
 end
-
 
 %% Naturalistic Stimuli: LFP
 % In this section, we attempt to explain the LFP responses of neurons to naturalistic stimuli using what we learnt from the Weber experiment. 

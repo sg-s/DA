@@ -170,9 +170,7 @@ plot(r2_X,r2_XG,'k+')
 xlabel('r^2 Linear prediction')
 ylabel('r^2 Nemenman Model')
 
-labelFigure
 suptitle('Nemenman Model : stimulus is LFP')
-
 labelFigure
 prettyFig('fs',16)
 
@@ -214,6 +212,7 @@ plot(Ksyn_p(1e3:9e3,i),XG(1e3:9e3,i),'k.')
 xlabel('Linear projection')
 ylabel('Synthetic Data')
 
+labelFigure
 prettyFig('fs',16)
 
 if being_published
@@ -293,7 +292,79 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% What if we consider an extended model where there is a filter after the nonlinearity and kinetic model? We parameterise this filter using two gamma functions and fit this model to the data.
 
+clear d
+these_trials = 50:10:200;
+for i = length(these_trials):-1:1
+	d(i).stimulus = K1p(1:end-1e3,these_trials(i));
+	d(i).response = XG(1:end-1e3,these_trials(i));
+	d(i).response(1:1e3) = NaN;
+end
+
+clear p
+p.  d  = 0.0050;
+p.   B = 1.2879;
+p.   n = 2;
+p.tau1 = 10.9734;
+p.tau2 = 18.4243;
+p.   A = 0.7651;
+
+% make the prediction using the Nemenman Model
+Np = K2p;
+for i = 1:width(K2p)
+	Np(:,i) = NemenmanModel2(K1p(:,i),p);
+end
+
+figure('outerposition',[0 0 900 800],'PaperUnits','points','PaperSize',[900 800]); hold on
+subplot(2,2,1), hold on
+plotPieceWiseLinear(Ksyn_p(1e3:5e3,:),XG(1e3:5e3,:),'nbins',50,'Color','r');
+plotPieceWiseLinear(Ksyn_p(6e3:end-200,:),XG(6e3:end-200,:),'nbins',50,'Color','b');
+xlabel('K \otimes s')
+ylabel('Synthetic Data (Hz)')
+
+subplot(2,2,2), hold on
+plotPieceWiseLinear(Np(1e3:5e3,:),XG(1e3:5e3,:),'nbins',50,'Color','r');
+plotPieceWiseLinear(Np(6e3:end-200,:),XG(6e3:end-200,:),'nbins',50,'Color','b');
+xlabel('Nemenman Model Prediction')
+ylabel('Synthetic Data (Hz)')
+
+subplot(2,2,3); hold on
+plotPieceWiseLinear(Ksyn_p(1e3:5e3,:),Np(1e3:5e3,:),'nbins',50,'Color','r');
+plotPieceWiseLinear(Ksyn_p(6e3:end-200,:),Np(6e3:end-200,:),'nbins',50,'Color','b');
+ylabel('Nemenman Model Prediction')
+xlabel('K \otimes s')
+
+subplot(2,2,4); hold on
+r2_X = NaN(width(K2p),1);
+r2_XG = r2_X;
+for i = 1:width(K2p)
+	fp = Ksyn_p([1e3:5e3 6e3:9.7e3],i); r = XG([1e3:5e3 6e3:9.7e3],i);
+	try
+		r2_X(i) = rsquare(fp,r);
+	catch
+	end
+	fp = Np([1e3:5e3 6e3:9.7e3],i);
+	try
+		r2_XG(i) = rsquare(fp,r);
+	catch
+	end
+end
+plot([0 1],[0 1],'k--')
+plot(r2_X,r2_XG,'k+')
+xlabel('r^2 Linear prediction')
+ylabel('r^2 Nemenman Model')
+
+suptitle('Nemenman Model + filter : stimulus is LFP')
+
+labelFigure
+prettyFig('fs',16)
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %% Application to Natural Stimulus
 % In this section, we see if this model can help us understand the responses to naturalistic stimuli. First, we see if we can use the model to go from the LFP to the firing rate. 

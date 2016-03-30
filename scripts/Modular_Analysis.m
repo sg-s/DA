@@ -236,7 +236,7 @@ end
 %%
 % This clearly demonstrates that gain control to the mean happens at the transduction level, which is responsible for the Weber-Fechner Law at the firing machinery. We can also see that the gain of the firing machinery itself doesn't change with the mean stimulus. 
 
-%% 
+%% Accounting for mean-sensitive gain changes
 % In this section, we try to account for the observed Weber-like scaling of transduction currents using a simple divisive gain control term:
 % 
 % $$ g(t)=\frac{\alpha}{1+\beta K_{\mu}\otimes s(t)} $$
@@ -555,7 +555,7 @@ if being_published
 end
 
 %%
-% There is something very weird going on. Specifically, the red distribution seems to be shifted to the left of zero, suggesting that the LFP is continuously decreasing during the high variance epoch. Does this make any sense? In the following figure, I plot the raw LFP traces, mean subtracted across each trial, to see if there is any epoch-specific trend. I also fit lines to the high (red) and low (blue) variance epochs, to show that there is an upward or downward trend. 
+% There is something very weird going on. Specifically, the red distribution seems to be shifted to the left of zero, suggesting that the LFP is continuously increasing during the high variance epoch (This is because all reported dLFPs are actually -dLFPs). Does this make any sense? In the following figure, I plot the raw LFP traces, mean subtracted across each trial, to see if there is any epoch-specific trend. I also fit lines to the high (red) and low (blue) variance epochs, to show that there is an upward or downward trend. 
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 temp = (nanmean(reshaped_LFP,2));
@@ -578,7 +578,7 @@ if being_published
 end
 
 %%
-% OK, so now things make sense. We see an upward trend in the LFP during the high variance epoch, and a downward trend in the low variance epoch. This corresponds to shifts left and right in the distribution derivative of the LFP, and in left-to-right shifts in the LFP to firing rate firing curve. 
+% OK, so now things make sense. We see an upward trend in the LFP during the high variance epoch, which explains the red distribution being pushed to the left, and a downward trend in the low variance epoch, which explains the blue distribution pushed towards the right. 
 
 %%
 % Why is the mean LFP higher in the high-contrast case than in the low-contrast case? The simplest explanation is because the stimulus has slightly lower mean when the variance is high (because of an error in the stimulus delivery). 
@@ -662,7 +662,7 @@ if being_published
 end
 
 
-%%
+%% Accounting for the Contrast Gain Change
 % Now, we want to account for this gain change. We use a logistic function to describe the shape of the input-output curve from the LFP to the firing rate:
 % 
 % $$ f(x)=\frac{A}{1+e^{-kx-x_{0}}} $$

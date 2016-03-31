@@ -70,6 +70,12 @@ weber_data.K1 = K1;
 weber_data.K2 = K2;
 weber_data.K3 = K3;
 weber_data.paradigm = paradigm;
+weber_data.K1p = K1p;
+weber_data.K2p = K2p;
+weber_data.K3p = K3p;
+weber_data.dLFP = dLFP;
+weber_data.PID = PID;
+weber_data.fA = fA;
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1), hold on
@@ -754,17 +760,25 @@ clear d
 these_trials = 50:10:200;
 for i = length(these_trials):-1:1
 	d(i).stimulus = reshaped_dLFP(:,these_trials(i));
-	d(i).response = [ff_hi.k,ff_lo.k];
+	d(i).response = [ff_hi.k,ff_lo.k,ff_hi.k - ff_lo.k];
 end
 
-clear p
-p.k0  =17.9078;
-p.  B = 0.0276;
-p.  n = 8.8906;
-p.tau = 46.1875;
-p. s0 = 4.3347;
-p. s1 = -30.4246;
 
+% p = fitModel2Data(@contrastSteepnessModel,d,'nsteps',200,'make_plot',false,'p0',p);
+
+% best_k = NaN(length(d),2);
+% for i = 1:length(d)
+% 	temp = contrastSteepnessModel(d(i).stimulus,p);
+% 	best_k(i,:) = temp(1:2);
+% end
+% best_k
+% nanmean(best_k(:,2)./best_k(:,1))
+
+clear p
+p. k0 = 27.1562;
+p.  B = 0.2698;
+p.  n = 24.6914;
+p.tau = 16.9375;
 
 % add some parameters
 p.A = ff_hi.A;
@@ -772,47 +786,143 @@ p.x0 = ff_hi.x0;
 
 XG = K2p;
 for i = 1:width(K2p)
-	XG(:,i) = contrastLogisticModel([(reshaped_dLFP(:,i)*p.s0 + p.s1) ,K2K1p(:,i)],p);
+	XG(:,i) = contrastLogisticModel([(reshaped_dLFP(:,i)) ,K2K1p(:,i)],p);
 end
 
-figure('outerposition',[0 0 900 800],'PaperUnits','points','PaperSize',[900 800]); hold on
-subplot(2,2,1), hold on
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,3,1), hold on
 plot(data_lo.x,data_lo.y,'b')
 plot(data_hi.x,data_hi.y,'r')
 xlabel('K \otimes s')
 ylabel('Response (Hz)')
 
-subplot(2,2,2), hold on
-plotPieceWiseLinear(XG(1e3:5e3,:),reshaped_fA(1e3:5e3,:),'nbins',50,'Color','r');
-plotPieceWiseLinear(XG(6e3:9e3,:),reshaped_fA(6e3:9e3,:),'nbins',50,'Color','b');
+subplot(1,3,2), hold on
+plotPieceWiseLinear(vectorise(XG(1e3:5e3,:)),vectorise(reshaped_fA(1e3:5e3,:)),'nbins',50,'Color','r');
+plotPieceWiseLinear(vectorise(XG(6e3:9e3,:)),vectorise(reshaped_fA(6e3:9e3,:)),'nbins',50,'Color','b');
 xlabel('$\hat{R}$','interpreter','latex')
 ylabel('Response (Hz)')
 
-subplot(2,2,3); hold on
-plotPieceWiseLinear(K2K1p(1e3:5e3,:),XG(1e3:5e3,:),'nbins',50,'Color','r');
-plotPieceWiseLinear(K2K1p(6e3:9e3,:),XG(6e3:9e3,:),'nbins',50,'Color','b');
+subplot(1,3,3); hold on
+plotPieceWiseLinear(vectorise(K2K1p(1e3:5e3,:)),vectorise(XG(1e3:5e3,:)),'nbins',50,'Color','r');
+plotPieceWiseLinear(vectorise(K2K1p(6e3:9e3,:)),vectorise(XG(6e3:9e3,:)),'nbins',50,'Color','b');
 ylabel('$\hat{R}$','interpreter','latex')
 xlabel('K \otimes s')
 
-subplot(2,2,4); hold on
-r2_X = NaN(width(K2K1p),1);
-r2_XG = r2_X;
-for i = 1:width(K2K1p)
-	fp = K2K1p([1e3:5e3 6e3:9e3],i); r = reshaped_fA([1e3:5e3 6e3:9e3],i);
-	try
-		r2_X(i) = rsquare(fp,r);
-	catch
-	end
-	fp = XG([1e3:5e3 6e3:9e3],i);
-	try
-		r2_XG(i) = rsquare(fp,r);
-	catch
-	end
+labelFigure
+prettyFig('fs',16)
+
+if being_published
+	snapnow
+	delete(gcf)
 end
-plot([0 1],[0 1],'k--')
-plot(r2_X,r2_XG,'k+')
-xlabel('r^2 Linear prediction')
-ylabel('r^2 contrast-corrected')
+
+%% Does contrast adaptation screw up Weber-Fechner?
+% In this section, we apply the contrast-adaptive model that operates on the LFP to the Weber-Fechner data and study how it distorts the firing gain. First, to make sure I'm not doing something crazy, I compare the distribution of the actual and projected dLFPs in the Weber-Fechner and contrast datasets. 
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,3,1), hold on
+temp = weber_data.dLFP(30e3:55e3,weber_data.paradigm==1); temp = temp(:);
+[hy,hx] = histcounts(temp,linspace(-60,60,100));
+hy = hy/sum(hy);
+hx = hx(1:end-1) + mean(diff(hx));
+plot(hx,hy,'k')
+temp = reshaped_dLFP(1e3:9e3,:); temp = temp(:);
+[hy,hx] = histcounts(temp,linspace(-60,60,100));
+hy = hy/sum(hy);
+hx = hx(1:end-1) + mean(diff(hx));
+plot(hx,hy,'r')
+legend('Weber-Fechner Data','Contrast Switch Data')
+ylabel('Probability')
+xlabel('dLFP (mV/s)')
+
+subplot(1,3,2), hold on
+temp = weber_data.K1p(30e3:55e3,weber_data.paradigm==1); temp = temp(:);
+[hy,hx] = histcounts(temp,linspace(-.6,.6,100));
+hy = hy/sum(hy);
+hx = hx(1:end-1) + mean(diff(hx));
+plot(hx,hy,'k')
+temp = K1p(1e3:9e3,:); temp = temp(:);
+[hy,hx] = histcounts(temp,linspace(-.6,.6,100));
+hy = hy/sum(hy);
+hx = hx(1:end-1) + mean(diff(hx));
+plot(hx,hy,'r')
+legend('Weber-Fechner Data','Contrast Switch Data')
+ylabel('Probability')
+xlabel('K1 \otimes s(t)')
+
+subplot(1,3,3), hold on
+temp = weber_data.K2p(30e3:55e3,weber_data.paradigm==1); temp = temp(:);
+temp = temp/100;
+[hy,hx] = histcounts(temp,linspace(-.6,.6,100));
+hy = hy/sum(hy);
+hx = hx(1:end-1) + mean(diff(hx));
+plot(hx,hy,'k')
+temp = K2K1p(1e3:9e3,:); temp = temp(:);
+[hy,hx] = histcounts(temp,linspace(-.6,.6,100));
+hy = hy/sum(hy);
+hx = hx(1:end-1) + mean(diff(hx));
+plot(hx,hy,'r')
+legend('Weber-Fechner Data','Contrast Switch Data')
+ylabel('Probability')
+xlabel('Predicted Firing Rates')
+
+
+prettyFig('fs',16)
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% Though the distributions are different, they're roughly in the same range, so we're going to go ahead and apply the same model to the Weber-Fechner Data. 
+
+% % fit the contrast model to the lowest dose, keeping some parameters fixed
+% clear d
+% tp = weber_data.paradigm == 1;
+% d.stimulus = [nanmean((weber_data.dLFP(30e3:55e3,tp)),2), .01*nanmean((weber_data.K2p(30e3:55e3,tp)),2)];
+% d.response = nanmean((weber_data.fA(30e3:55e3,tp)),2);
+
+% ub = p; lb = p;
+% lb.x0 = -Inf; ub.x0 = Inf;
+% lb.A = 0; ub.A = Inf;
+% lb.k0 = 0; ub.k0 = Inf;
+% p = fitModel2Data(@contrastLogisticModel,d,'nsteps',200,'p0',p,'lb',lb,'ub',ub);
+
+clear p
+p. k0 = 33.1213;
+p.  B = 0.2698;
+p.  n = 24.6914;
+p.tau = 16.9375;
+p.  A = 50.5640;
+p. x0 = 0.0605;
+
+% use the contrast logistic model to correct the prediction of the firing rate by the LFP
+XG = weber_data.K1p;
+K = XG;
+for i = 1:width(XG)
+	[XG(:,i),~,K(:,i)] = contrastLogisticModel([(weber_data.dLFP(:,i)), .01*weber_data.K2p(:,i)],p);
+end
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+a = 30e3; z = 55e3;
+for i = 1:max(weber_data.paradigm) % iterate over all paradigms 
+	y = nanmean(weber_data.fA(a:z,weber_data.paradigm == i),2);
+	x = nanmean(XG(a:z,weber_data.paradigm == i),2);
+	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:));
+end
+xlabel('Contrast-corrected Prediction')
+ylabel('Firing Rate (Hz)')
+
+subplot(1,2,2), hold on
+for i = 1:length(weber_data.paradigm)
+	y = nanmean(K(a:z,i));
+	x = nanmean(weber_data.PID(a:z,i));
+	plot(x,y,'+','Color',c(weber_data.paradigm(i),:))
+end
+ylabel('steepness parameter')
+xlabel('Mean Stimulus (V)')
 
 labelFigure
 prettyFig('fs',16)

@@ -103,7 +103,7 @@ for i = 1:width(PID)
 	plot(time,LFP(:,i),'Color',c(cc(i),:))
 end
 xlabel('Time (s)')
-set(gca,'XLim',[8 14])
+set(gca,'XLim',[8 14],'YLim',[-2.5 -.5])
 ylabel('LFP (mV)')
 
 subplot(2,2,2), hold on
@@ -112,7 +112,7 @@ for i = 1:width(PID)
 	plot(time,x,'Color',c(cc(i),:))
 end
 xlabel('Time (s)')
-set(gca,'XLim',[8 14])
+set(gca,'XLim',[8 14],'YLim',[-1 1])
 ylabel('\DeltaLFP (mV)')
 
 subplot(2,2,3), hold on
@@ -120,7 +120,7 @@ for i = 1:width(PID)
 	plot(time,dLFP(:,i),'Color',c(cc(i),:))
 end
 xlabel('Time (s)')
-set(gca,'XLim',[8 14])
+set(gca,'XLim',[8 14],'YLim',[-50 100])
 ylabel('dLFP (mV/s)')
 
 subplot(2,2,4), hold on
@@ -128,7 +128,7 @@ for i = 1:width(PID)
 	plot(time,fA(:,i),'Color',c(cc(i),:))
 end
 xlabel('Time (s)')
-set(gca,'XLim',[8 14])
+set(gca,'XLim',[8 14],'YLim',[0 110])
 ylabel('Firing Rate (Hz)')
 
 prettyFig()
@@ -137,6 +137,55 @@ if being_published
 	snapnow	
 	delete(gcf)
 end
+
+%% Can a DA Model do fold change detection?
+% In this section, we fit a DA model to one of the traces:
+
+clear p
+p.   s0 = 0.0312;
+p.  n_z = 2;
+p.tau_z = 247.5000;
+p.  n_y = 2;
+p.tau_y = 9.6875;
+p.    C = 0;
+p.    A = 189.3125;
+p.    B = 3.2697;
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(time,fA(:,end),'k')
+plot(time,DAModelv2(PID(:,end),p),'r')
+legend('Data','DA Model prediction')
+xlabel('Time (s)')
+ylabel('Firing Rate (Hz)')
+prettyFig()
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
+%%
+% We now scale the stimulus up and down and look at the responses of the DA model to these scaled stimuli. 
+
+scale = [.1 .5 1 2 10];
+c = parula(length(scale)+1);
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+for i = 1:length(scale)
+	R = DAModelv2(PID(:,end)*scale(i),p);
+	l(i) = plot(time,R,'Color',c(i,:));
+	L{i} = [oval(scale(i)) ,'X'];
+end
+legend(l,L)
+xlabel('Time (s)')
+ylabel('Response (Hz)')
+set(gca,'XLim',[8 14],'YLim',[0 120])
+prettyFig()
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
 
 %% Version Info
 %

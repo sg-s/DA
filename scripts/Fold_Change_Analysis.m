@@ -186,6 +186,31 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% What is we make the B parameter in the DA model much bigger than 1? So it is in the Weber-Fechner regime? Do we see fold-change detection then?
+
+p.B = 100;
+p.A = 1e3;
+
+scale = [.1 .5 1 2 10];
+c = parula(length(scale)+1);
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+for i = 1:length(scale)
+	R = DAModelv2(PID(:,end)*scale(i),p);
+	l(i) = plot(time,R,'Color',c(i,:));
+	L{i} = [oval(scale(i)) ,'X'];
+end
+legend(l,L)
+xlabel('Time (s)')
+ylabel('Response (Hz)')
+set(gca,'XLim',[8 14],'YLim',[0 120])
+prettyFig()
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
 
 %% Version Info
 %

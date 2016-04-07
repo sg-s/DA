@@ -138,7 +138,7 @@ set(axes_handles(5),'XLim',[0 2],'YLim',[0 2])
 
 prettyFig('plw',1.3,'lw',1.5,'fs',14)
 set(lh,'Position',[0.42 0.32 0.2112 0.0275],'box','off')
-
+labelFigure
 xlabel(axes_handles(2),'Time (s)')
 
 if being_published
@@ -276,9 +276,8 @@ ylabel(ax(6),'ORN Gain (Hz/V)')
 xlabel(ax(7),[' Projected Stimulus ' char(10) 'Rescaled by Weber Law'])
 ylabel(ax(7),'ORN Response (Hz)')
 
-
-
 prettyFig('plw',1.3,'lw',1.5,'fs',14)
+labelFigure
 
 if being_published
 	snapnow
@@ -409,6 +408,7 @@ xlabel('Mean Stimulus (V)')
 ylabel('\sigma_{Firing Rate}/\sigma_{Stimulus} (Hz/V)')
 
 prettyFig('plw',1.3,'lw',1.5,'fs',14,'FixLogX',true)
+labelFigure
 if being_published
 	snapnow
 	delete(gcf)
@@ -475,6 +475,7 @@ title('Timescale of gain control')
 suptitle('Timescale of firing gain control')
 
 prettyFig('plw',1.3,'lw',1.5,'fs',14,'FixLogX',true)
+labelFigure
 
 if being_published
 	snapnow
@@ -585,6 +586,7 @@ title('Timescale of gain control')
 suptitle('Timescale of firing gain control')
 
 prettyFig('plw',1.3,'lw',1.5,'fs',14,'FixLogX',true)
+labelFigure
 
 if being_published
 	snapnow

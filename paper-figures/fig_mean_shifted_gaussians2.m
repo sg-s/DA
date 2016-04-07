@@ -297,8 +297,8 @@ for i = 1:width(PID)
 	end
 end
 
-figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
-subplot(2,2,1), hold on
+figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
+subplot(2,3,1), hold on
 for i = 1:max(paradigm)
 	temp = nanmean(K(:,paradigm==i),2);
 	plot(filtertime,temp,'Color',c(i,:))
@@ -308,7 +308,7 @@ ylabel('Filter amplitude')
 title('Filters extracted at different mean stimuli')
 
 
-subplot(2,2,2), hold on
+subplot(2,3,2), hold on
 temp = nanmean(K(:,paradigm==1),2);
 single_K = temp;
 temp =temp/max(temp);
@@ -325,7 +325,7 @@ for i = 1:width(PID)
 	fp(:,i) = convolve(1e-3*(1:length(PID)),PID(:,i),single_K,filtertime);
 end
 
-subplot(2,2,3), hold on
+subplot(2,3,3), hold on
 ss = 100;
 all_x = 0:0.1:2;
 for i = 1:max(paradigm) % iterate over all paradigms 
@@ -342,15 +342,19 @@ title('Using a single filter')
 
 % find gain in each trial
 single_K_gain = NaN(width(PID),1);
+single_K_r2 = NaN(width(PID),1);
+r2 = NaN(width(PID),1);
 for i = 1:width(PID)
 	try
 		temp = fit(fp(a:z,i),fA(a:z,i),'poly1');
 		single_K_gain(i) = temp.p1;
+		single_K_r2(i) = rsquare(fp(a:z,i),fA(a:z,i));
+		r2(i) = rsquare(fA_pred(a:z,i),fA(a:z,i));
 	catch
 	end
 end
 
-subplot(2,2,4), hold on
+subplot(2,3,4), hold on
 plot(nanmean(PID(a:z,:)),single_K_gain,'k+')
 set(gca,'XScale','log','YScale','log')
 
@@ -374,8 +378,37 @@ legend(l,['\alpha=' oval(cf.b)])
 xlabel('Mean Stim (V)')
 ylabel('Gain calc. using single filter (Hz/V)')
 
-prettyFig('plw',1.3,'lw',1.5,'fs',14,'FixLogX',true)
+subplot(2,3,5), hold on
+plot([0 1],[0 1],'k--')
+plot(r2,single_K_r2,'k+')
+xlabel('r^2, best filters')
+ylabel('r^2 using single filter ')
 
+% also estimate gain using variances of stimulus and response
+frac_var = NaN(width(PID),1);
+for i = 1:width(PID)
+	try
+		frac_var(i) = std(fA(a:z,i))/std(PID(a:z,i));
+	catch
+	end
+end
+subplot(2,3,6), hold on
+for i = 1:width(PID)
+	plot(mean_stim(i),frac_var(i),'+','Color',c(paradigm(i),:))
+end
+% fit a power law with exponent -1
+mean_stim = nanmean(PID(a:z,:));
+frac_var = frac_var(:);
+options = fitoptions(fittype('power1'));
+options.Lower = [-Inf -1];
+options.Upper = [Inf -1];
+cf = fit(nonnans(mean_stim),nonnans(frac_var),'power1',options);
+plot(sort(mean_stim),cf(sort(mean_stim)),'r');
+set(gca,'XScale','log','YScale','log')
+xlabel('Mean Stimulus (V)')
+ylabel('\sigma_{Firing Rate}/\sigma_{Stimulus} (Hz/V)')
+
+prettyFig('plw',1.3,'lw',1.5,'fs',14,'FixLogX',true)
 if being_published
 	snapnow
 	delete(gcf)

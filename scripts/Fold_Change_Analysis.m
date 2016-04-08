@@ -138,6 +138,37 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% We also plot the data normalised in a slightly different way, following suggestions from Thierry. The data is coloured by the pre-pulse stimulus intensity. 
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,3,1), hold on
+for i = 1:width(PID)
+	x = (mean(PID(10.5e3:11e3,i)) - mean(PID(8e3:10e3,i)))./mean(PID(8e3:10e3,i));
+	y = mean(fA(10.5e3:11e3,i));
+	plot(x,y,'+','Color',c(cc(i),:))
+end
+xlabel('Stimulus (Pulse - background)/background')
+ylabel('Firing rate (Hz)')
+
+subplot(1,3,2), hold on
+for i = 1:width(PID)
+	x = (mean(PID(10.5e3:11e3,i)) - mean(PID(8e3:10e3,i)))./mean(PID(8e3:10e3,i));
+	y = mean(fA(10.5e3:11e3,i)) - mean(fA(8e3:10e3,i));
+	plot(x,y,'+','Color',c(cc(i),:))
+end
+xlabel('Stimulus (Pulse - background)/background')
+ylabel('\Delta Firing rate (Hz)')
+
+subplot(1,3,3), hold on
+for i = 1:width(PID)
+	x = (mean(PID(10.5e3:11e3,i)) - mean(PID(8e3:10e3,i)))./mean(PID(8e3:10e3,i));
+	y = (mean(fA(10.5e3:11e3,i)) - mean(fA(8e3:10e3,i)))/mean(fA(8e3:10e3,i));
+	plot(x,y,'+','Color',c(cc(i),:))
+end
+xlabel('Stimulus (Pulse - background)/background')
+ylabel('(\Delta Firing rate)/background firing rate')
+
 %% Can a DA Model do fold change detection?
 % In this section, we fit a DA model to one of the traces:
 

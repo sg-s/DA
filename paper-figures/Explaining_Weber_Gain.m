@@ -14,12 +14,16 @@ pHeader;
 % get the data and prepare it
 
 
-[PID, ~, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData('/local-data/DA-paper/LFP-MSG/september',1);
+[PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData('/local-data/DA-paper/LFP-MSG/september',1);
 
-% remove baseline from all PIDs
+% remove baseline from all PIDs and LFPs
 for i = 1:width(PID)
 	PID(:,i) = PID(:,i) - mean(PID(1:5e3,i));
+	LFP(:,i) = LFP(:,i) - mean(LFP(1:5e3,i));
 end
+
+% flip the LFP because otherwise things get crazy
+LFP = -LFP;
 
 % sort the paradigms sensibly
 sort_value = [];
@@ -39,6 +43,7 @@ paradigm = paradigm_new;
 % throw our bad traces
 bad_trials = (sum(fA) == 0 | isnan(sum(fA)));
 PID(:,bad_trials) = [];
+LFP(:,bad_trials) = [];
 fA(:,bad_trials) = [];
 paradigm(bad_trials) = [];
 orn(bad_trials) = [];
@@ -51,6 +56,7 @@ time = dt*(1:length(PID));
 % extract filters and find gain
 a = 35e3; z = 55e3;
 [K,fA_pred,fA_gain] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
+[K2,LFP_pred,LFP_gain] = extractFilters(PID,LFP,'use_cache',true,'a',a,'z',z);
 
 % use a single filter to re-project the stimulus
 K0 = mean(K(:,paradigm==1),2);
@@ -64,7 +70,7 @@ end
 % show gain changes for all paradigms -- average over neurons 
 ss = 100;
 all_x = 0:0.1:2;
-for i = 1:max(paradigm) % iterate over all paradigms 
+for i = max(paradigm):-1:1 % iterate over all paradigms 
 	y = nanmean(fA(a:z,paradigm == i),2);
 	x = nanmean(fA_pred(a:z,paradigm == i),2);
 	s = nanmean(proj_stim(a:z,paradigm == i),2);
@@ -72,6 +78,13 @@ for i = 1:max(paradigm) % iterate over all paradigms
 	x = x + nanmean(nanmean(s));
 	[~,orn_io_data(i)] = plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:),'make_plot',false);
 end
+
+for i = max(paradigm):-1:1 % iterate over all paradigms 
+	y = nanmean(LFP(a:z,paradigm == i),2);
+	x = nanmean(LFP_pred(a:z,paradigm == i),2);
+	[~,LFP_io_data(i)] = plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:),'make_plot',false);
+end
+
 
 %% Ansatz: Matching Stimulus Statistics
 % In this section, we assume that the ORNs gain changes in an adaptive manner, to better encode the stimulus. 
@@ -248,6 +261,31 @@ plot(predicted_gain,orn_gain,'k+')
 plot([1e-3 10],[1e-3 10],'k--')
 set(gca,'XScale','log','YScale','log','YLim',[.1 10])
 xlabel('Predicted Gain')
+
+prettyFig('plw',1.3,'lw',1.5,'fs',12)
+labelFigure
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% Can we do the same thing for the LFP? In the following figure, we plot the LFP traces and also show the I/O curves for the LFP. 
+
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,4,1:3), hold on
+for i = 1:length(paradigm)
+	plot(time,LFP(:,i),'Color',c(paradigm(i),:))
+end
+ylabel('LFP (mV)')
+xlabel('Time (s)')
+
+subplot(1,4,4), hold on
+for i = 1:length(paradigm)
+	plot(LFP_pred(a:50:z,i),LFP(a:50:z,i),'.','Color',c(paradigm(i),:))
+end
+xlabel('Projected Stimulus (V)')
 
 prettyFig('plw',1.3,'lw',1.5,'fs',12)
 labelFigure

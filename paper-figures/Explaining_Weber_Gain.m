@@ -93,7 +93,7 @@ for i = 1:max(paradigm)
 end
 ylabel('p(stimulus)')
 set(gca,'XLim',[0 1.5])
-title('Stimulus-defined I/O curves')
+title(['Stimulus-defined' char(10) 'I/O curves'])
 
 % normalise ORN data
 m = max(max([orn_io_data.y]));
@@ -249,7 +249,8 @@ plot([1e-3 10],[1e-3 10],'k--')
 set(gca,'XScale','log','YScale','log','YLim',[.1 10])
 xlabel('Predicted Gain')
 
-prettyFig('plw=1.3;','lw=1.5;','fs=12;')
+prettyFig('plw',1.3,'lw',1.5,'fs',12)
+labelFigure
 
 if being_published
 	snapnow

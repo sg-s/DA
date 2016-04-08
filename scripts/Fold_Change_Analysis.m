@@ -169,6 +169,13 @@ end
 xlabel('Stimulus (Pulse - background)/background')
 ylabel('(\Delta Firing rate)/background firing rate')
 
+prettyFig()
+labelFigure
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
 %% Can a DA Model do fold change detection?
 % In this section, we fit a DA model to one of the traces:
 

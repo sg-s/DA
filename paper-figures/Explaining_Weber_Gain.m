@@ -262,7 +262,7 @@ plot([1e-3 10],[1e-3 10],'k--')
 set(gca,'XScale','log','YScale','log','YLim',[.1 10])
 xlabel('Predicted Gain')
 
-prettyFig('plw',1.3,'lw',1.5,'fs',12)
+prettyFig('plw',1.3,'lw',1.5,'fs',13)
 labelFigure
 
 if being_published
@@ -287,7 +287,7 @@ for i = 1:length(paradigm)
 end
 xlabel('Projected Stimulus (V)')
 
-prettyFig('plw',1.3,'lw',1.5,'fs',12)
+prettyFig('plw',1.3,'lw',1.5,'fs',18)
 labelFigure
 
 if being_published
@@ -298,7 +298,7 @@ end
 %%
 % Why does the LFP vary so much? Does the absolute value of the LFP have any meaning? In the following figure, we plot the absolute value of the LFP as a function of the LFP to see if they are correlated. 
 
-figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1), hold on
 for i = 1:length(paradigm)
 	plot(mean(LFP(a:z,i)),mean(fA(a:z,i)),'+','Color',c(paradigm(i),:))
@@ -321,7 +321,8 @@ end
 xlabel('\mu_{Stimulus} (V)')
 ylabel('LFP Gain (Hz/V)')
 
-prettyFig('plw',2,'lw',1.5,'fs',12)
+prettyFig('plw',2,'lw',1.5,'fs',24)
+labelFigure
 
 if being_published
 	snapnow

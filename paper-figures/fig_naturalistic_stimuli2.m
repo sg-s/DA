@@ -350,8 +350,6 @@ if being_published
 	delete(gcf)
 end
 
-return
-
 %% Sanity Check 1
 % Here, I show that my filter extraction works well by comparing it to Damon's FFT-based filter extraction function. Note that the two filters are almost identical:
 

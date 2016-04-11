@@ -113,35 +113,66 @@ if being_published
 end
 
 %%
-% It looks like the stimulus gets smaller and narrower as time progresses. Now, we look at the correlation between the mean and the variance in these stimuli over various timescales.
+% It looks like the stimulus gets smaller and narrower as time progresses. Now, we look at the correlation between the mean and the variance in these stimuli over various timescales, and compare this to what we did for our "naturalistic stimulus". 
 
-figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
-for i = 4:-1:1
-	ax(i) = subplot(2,2,i); hold on
-	xlabel('\mu_{Stimulus} (V)')
-	ylabel('\sigma_{Stimulus} (V)')
-	set(gca,'XLim',[0 0.3],'YLim',[0 0.3])
-	plot([0 0.3],[0 0.3],'k--')
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+for i = 3:-1:1
+	ax(i) = subplot(1,3,i); hold on
 end
 
 % now show that the variance and the mean are correlated 
-all_block_sizes = [10 500 1e3 5e3];
+PID_Carlotta = nonnans(PID_1but(:));
+PID_Carlotta = PID_Carlotta(1:floor(length(PID_Carlotta)/500)*500);
+all_block_sizes = factor2(length(PID_Carlotta));
+all_block_sizes(all_block_sizes>10e3) = [];
+all_block_sizes(all_block_sizes<10) = [];
 clear l r2
 r2 = NaN*all_block_sizes;
 
-for j = 1:width(PID_1but)
-	for i = 1:length(all_block_sizes)
-		temp = nonnans(PID_1but(:,j));
-		temp(temp<0) = [];
-		z = floor(length(temp)/all_block_sizes(i))*all_block_sizes(i);
-		temp = temp(1:z);
-		temp = reshape(temp,all_block_sizes(i),length(temp)/all_block_sizes(i));
-		plot(ax(i),mean(temp),std(temp),'Marker','.','Color',[.5 .5 .5],'LineStyle','none')
-		r2(i) = rsquare(mean(temp),std(temp));
-		title(ax(i),[oval(all_block_sizes(i)) 'ms, r^2 = ' oval(r2(i))])
+clear l
+for i = 1:length(all_block_sizes)
+	temp = PID_Carlotta(:);
+	temp = reshape(temp,all_block_sizes(i),length(temp)/all_block_sizes(i));
+	if all_block_sizes(i) == 5e2
+		l(1) = plot(ax(1),mean(temp),std(temp),'Marker','.','Color',[1 .5 .5],'LineStyle','none');
 	end
+	r2(i) = rsquare(mean(temp),std(temp));
 end
 
+plot(ax(2),all_block_sizes,r2,'r+')
+set(ax(2),'XScale','log','YLim',[0 1])
+
+load('/local-data/DA-paper/natural-flickering/without-lfp/2014_07_11_EA_natflick_non_period_CFM_1_ab3_1_1_all.mat','data')
+PID = data(2).PID(:,1:10:end)';
+
+% remove the baseline from the PID, and remember the error
+PID_baseline = mean(mean(PID(1:5e3,:)));
+PID = PID - PID_baseline;
+
+all_block_sizes = factor2(length(PID));
+all_block_sizes(all_block_sizes>10e3) = [];
+all_block_sizes(all_block_sizes<10) = [];
+clear r2
+r2 = NaN*all_block_sizes;
+
+for i = 1:length(all_block_sizes)
+	temp = PID(:);
+	temp = reshape(temp,all_block_sizes(i),length(temp)/all_block_sizes(i));
+	if all_block_sizes(i) == 5e2
+		l(2) = plot(ax(1),mean(temp),std(temp),'Marker','.','Color',[.5 .5 .5],'LineStyle','none');
+	end
+	r2(i) = rsquare(mean(temp),std(temp));
+end
+
+plot(ax(3),all_block_sizes,r2,'k+')
+set(ax(3),'XScale','log','YLim',[0 1])
+set(ax(1),'YScale','log','XScale','log','XLim',[1e-3 10],'YLim',[1e-3 10],'XTick',[1e-3 1e-2 1e-1 1 1e1])
+xlabel(ax(1),'\mu_{Stimulus} (V)')
+ylabel(ax(1),'\sigma_{Stimulus} (V)')
+legend(l,'Carlotta''s Natural Stimulus','Reproducible Naturalistic')
+xlabel(ax(2),'Timescale (s)')
+xlabel(ax(3),'Timescale (s)')
+ylabel(ax(2),'r^2 (\mu,\sigma)')
 prettyFig()
 
 if being_published	

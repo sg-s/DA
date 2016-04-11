@@ -565,8 +565,46 @@ if being_published
 	delete(gcf)
 end
 
-return
+%%
+% I want to quantify how much contrast adaptation happens at each level. In the following figure, I plot the ratio of the standard deviations of the response at the low epoch to the high epoch for each stage in this process.
 
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,3,1), hold on
+x = std(reshaped_PID(1e3:4e3,r2_K1p > .8));
+y = std(reshaped_dLFP(1e3:4e3,r2_K1p > .8))./std(reshaped_PID(1e3:4e3,r2_K1p > .8));
+plot(x,y,'r+')
+x = std(reshaped_PID(6e3:9e3,r2_K1p > .8));
+y = std(reshaped_dLFP(6e3:9e3,r2_K1p > .8))./std(reshaped_PID(6e3:9e3,r2_K1p > .8));
+plot(x,y,'b+')
+ylabel(['Transduction Gain' char(10) '\sigma_{dLFP}/\sigma_{Stimulus} (mV/s/V)'])
+xlabel('\sigma_{Stimulus} (V)')
+
+subplot(1,3,2), hold on
+x = std(reshaped_PID(1e3:4e3,r2_K2p > .8));
+y = std(reshaped_fA(1e3:4e3,r2_K2p > .8))./std(reshaped_dLFP(1e3:4e3,r2_K2p > .8));
+plot(x,y,'r+')
+x = std(reshaped_PID(6e3:9e3,r2_K2p > .8));
+y = std(reshaped_fA(6e3:9e3,r2_K2p > .8))./std(reshaped_dLFP(6e3:9e3,r2_K2p > .8));
+plot(x,y,'b+')
+xlabel('\sigma_{Stimulus} (V)')
+ylabel(['Firing Gain' char(10) '\sigma_{Firing}/\sigma_{dLFP} (Hz/mV/s)'])
+
+subplot(1,3,3), hold on
+x = std(reshaped_PID(1e3:4e3,r2_K3p > .8));
+y = std(reshaped_fA(1e3:4e3,r2_K3p > .8))./std(reshaped_PID(1e3:4e3,r2_K3p > .8));
+plot(x,y,'r+')
+x = std(reshaped_PID(6e3:9e3,r2_K3p > .8));
+y = std(reshaped_fA(6e3:9e3,r2_K3p > .8))./std(reshaped_PID(6e3:9e3,r2_K3p > .8));
+plot(x,y,'b+')
+xlabel('\sigma_{Stimulus} (V)')
+ylabel(['Total Gain' char(10) '\sigma_{Firing}/\sigma_{Stimulus} (Hz/V)'])
+
+prettyFig;
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
 %%
 % This is weird. The contrast adaptation is strongest not from the LFP to the firing rate, as we would expect, but from the the predicted LFP to the firing rate. To look at this more closely, I plot predicted dLFP vs. the actual dLFP for the high and low variance epochs (a). I'm also plotting the distributions of the dLFPs during the two epochs (b) and the distributions of the predicted dLFPs (c).
 

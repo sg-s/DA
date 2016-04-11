@@ -284,7 +284,6 @@ if being_published
 	delete(gcf)
 end
 
-
 %% Sanity Check
 % In this section, we check if my filter extractions works (comparing it to Damon's FFT-based methods) if we still see the overall phenomenology if we only use a single filter to project all the data. 
 

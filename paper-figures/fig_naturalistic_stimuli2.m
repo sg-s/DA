@@ -319,12 +319,12 @@ xlabel(axes_handles(9),'\mu_{stimulus} (V)')
 ylabel(axes_handles(9),'\sigma_{stimulus} (V)')
 set(axes_handles(9),'XLim',[0 2],'YLim',[0 2])
 
-xlabel(axes_handles(7),'Mean Stimulus in preceding 500ms (V)')
+xlabel(axes_handles(7),'\mu_{Stimulus} in preceding 500ms (V)')
 ylabel(axes_handles(7),'Gain (Hz/V)')
-set(axes_handles(7),'YLim',[10 1e4],'YScale','log','XScale','log','XLim',[.001 10])
+set(axes_handles(7),'YLim',[10 1e4],'YScale','log','XScale','log','XLim',[.001 10],'XTick',[.001 .01 .1 1 10])
 
-xlabel(axes_handles(8),'Std. Stimulus in preceding 500ms (V)')
-set(axes_handles(8),'XTick',[1e-4 1e-3 1e-2 1e-1 1 10],'XScale','log','YScale','log','XLim',[1e-4 10])
+xlabel(axes_handles(8),'\sigma_{Stimulus} in preceding 500ms (V)')
+set(axes_handles(8),'XTick',[1e-4 1e-3 1e-2 1e-1 1 10],'XScale','log','YScale','log','XLim',[1e-4 10],'YLim',[10 1e4])
 
 % shrink the bottom row a little bit
 for i = 6:9
@@ -338,7 +338,7 @@ set(axes_handles(5),'Position',[.8 .65 .08 .14],'box','on')
 xlabel(axes_handles(5),'Filter Lag (s)')
 ylabel(axes_handles(5),'Filter')
 
-prettyFig('plw=1.5;','lw=1.5;','fs=12;','FixLogX=true;')
+prettyFig('plw',1.5,'lw',1.5,'fs',12,'FixLogX',true)
 
 set(axes_handles(9),'YScale','log','XScale','log','XLim',[1e-3 1e1],'XTick',[1e-3 1e-2 1e-1 1e0 1e1],'YLim',[1e-3 1e1])
 set(axes_handles(6),'box','off')
@@ -350,6 +350,7 @@ if being_published
 	delete(gcf)
 end
 
+return
 
 %% Sanity Check 1
 % Here, I show that my filter extraction works well by comparing it to Damon's FFT-based filter extraction function. Note that the two filters are almost identical:

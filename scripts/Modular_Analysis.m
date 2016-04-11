@@ -231,8 +231,8 @@ set(gca,'XScale','log','YScale','log')
 ff = fit(mean_stim(:),K3_gain(:),'power1','Upper',[Inf -1],'Lower',[0 -1]);
 plot(ms,ff(ms),'r')
 
-labelFigure
 prettyFig('fs',18)
+labelFigure
 
 if being_published	
 	snapnow	
@@ -284,13 +284,29 @@ xlabel('Model Prediction')
 ylabel('Measured Gain (mV/s/V)')
 set(gca,'XScale','log','YScale','log')
 
-labelFigure
 prettyFig('fs',18)
+labelFigure
 
 if being_published	
 	snapnow	
 	delete(gcf)
 end
+
+%  ######   #######  ##    ## ######## ########     ###     ######  ######## 
+% ##    ## ##     ## ###   ##    ##    ##     ##   ## ##   ##    ##    ##    
+% ##       ##     ## ####  ##    ##    ##     ##  ##   ##  ##          ##    
+% ##       ##     ## ## ## ##    ##    ########  ##     ##  ######     ##    
+% ##       ##     ## ##  ####    ##    ##   ##   #########       ##    ##    
+% ##    ## ##     ## ##   ###    ##    ##    ##  ##     ## ##    ##    ##    
+%  ######   #######  ##    ##    ##    ##     ## ##     ##  ######     ##    
+
+%  ######      ###    #### ##    ## 
+% ##    ##    ## ##    ##  ###   ## 
+% ##         ##   ##   ##  ####  ## 
+% ##   #### ##     ##  ##  ## ## ## 
+% ##    ##  #########  ##  ##  #### 
+% ##    ##  ##     ##  ##  ##   ### 
+%  ######   ##     ## #### ##    ## 
 
 
 %% Contrast Sensitivity 
@@ -413,8 +429,8 @@ iv = sum(K3)./sum(abs(K3));
 tx = ['$\frac{\intop K}{\intop\left|K\right|}$=' oval(iv)];
 text(.3,10e-3,tx,'interpreter','latex')
 
-labelFigure
 prettyFig()
+labelFigure
 
 if being_published	
 	snapnow	
@@ -541,13 +557,15 @@ text(.1,60,tx,'interpreter','latex');
 tx = ['$\Delta \sigma $= ' oval(nanmean(input_contrast_change_K3p)) ,'$ \pm $' oval(sem(input_contrast_change_K3p))];
 text(.1,52,tx,'interpreter','latex');
 
-labelFigure
 prettyFig;
+labelFigure
 
 if being_published	
 	snapnow	
 	delete(gcf)
 end
+
+return
 
 %%
 % This is weird. The contrast adaptation is strongest not from the LFP to the firing rate, as we would expect, but from the the predicted LFP to the firing rate. To look at this more closely, I plot predicted dLFP vs. the actual dLFP for the high and low variance epochs (a). I'm also plotting the distributions of the dLFPs during the two epochs (b) and the distributions of the predicted dLFPs (c).
@@ -591,8 +609,8 @@ xlabel('dLFP_{pred}')
 ylabel('Probability')
 set(gca,'XLim',[-.4 .5])
 
-labelFigure
 prettyFig;
+labelFigure
 
 if being_published	
 	snapnow	
@@ -698,8 +716,8 @@ delete(h.shade)
 xlabel('K2 \otimes (g_{Weber}(t) * K1 \otimes s(t))')
 ylabel('Firing Rate (Hz)')
 
-labelFigure
 prettyFig;
+labelFigure
 
 if being_published	
 	snapnow	
@@ -740,8 +758,8 @@ title(['k = ' oval(ff_hi.k)])
 ylabel('ORN response (Hz)')
 xlabel('Projected Stimulus')
 
-labelFigure
 prettyFig;
+labelFigure
 
 if being_published	
 	snapnow	
@@ -808,8 +826,8 @@ plotPieceWiseLinear(vectorise(K2K1p(6e3:9e3,:)),vectorise(XG(6e3:9e3,:)),'nbins'
 ylabel('$\hat{R}$','interpreter','latex')
 xlabel('K \otimes s')
 
-labelFigure
 prettyFig('fs',16)
+labelFigure
 
 if being_published
 	snapnow
@@ -924,8 +942,8 @@ end
 ylabel('steepness parameter')
 xlabel('Mean Stimulus (V)')
 
-labelFigure
 prettyFig('fs',16)
+labelFigure
 
 if being_published
 	snapnow
@@ -1033,8 +1051,8 @@ xlabel('g_{Weber}(t)(K1_{Weber} \otimes s(t))')
 title('Corrected by Weber-calculated Gain')
 ylabel('dLFP (mV/s)')
 
-labelFigure
 prettyFig;
+labelFigure
 
 if being_published	
 	snapnow	
@@ -1065,8 +1083,8 @@ legend(l,['r^2 = ' oval(rsquare(x,y))],'Location','southeast')
 xlabel('f(K2 \otimes LFP)')
 ylabel('Firing Rate (Hz)')
 
-labelFigure
 prettyFig;
+labelFigure
 
 if being_published	
 	snapnow	
@@ -1106,8 +1124,8 @@ plot(hx,hy);
 xlabel('Steepness parameter')
 ylabel('Probability')
 
-labelFigure
 prettyFig('FixLogX',true);
+labelFigure
 
 if being_published	
 	snapnow	
@@ -1132,8 +1150,8 @@ set(gca,'XScale','log')
 xlabel('\tau_{contrast gain} (ms)')
 ylabel('r^2')
 
-labelFigure
 prettyFig('FixLogX',true);
+labelFigure
 
 if being_published	
 	snapnow	
@@ -1207,8 +1225,8 @@ plot(x,hy)
 xlabel('Steepness parameter')
 ylabel('Probability')
 
-labelFigure
 prettyFig('fs',14);
+labelFigure
 
 if being_published	
 	snapnow	

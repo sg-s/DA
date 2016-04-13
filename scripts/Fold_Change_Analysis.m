@@ -93,6 +93,8 @@ if being_published
 	delete(gcf)
 end
 
+return
+
 %% ORN Response
 % We now plot the neuron's response to these fold change stimuli. In the following traces, each trial is plotted separately, and is colour coded by the pre-step stimulus level.
 

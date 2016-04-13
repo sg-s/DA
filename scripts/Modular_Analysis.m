@@ -377,22 +377,10 @@ for i = 1:width(reshaped_LFP)
 	reshaped_LFP(:,i) =  reshaped_LFP(:,i) - nanmean(reshaped_LFP(:,i));
 end
 
-% average filters and project stimulus
+% average filters for display and to project the stimulus
 K1 = nanmean(K1,2);
 K2 = nanmean(K2,2); K2(K2<0) = 0;
 K3 = nanmean(K3,2);
-
-K1p = NaN*reshaped_fA;
-K2p = NaN*reshaped_fA;
-K3p = NaN*reshaped_fA;
-K2K1p = NaN*reshaped_fA;
-for i = 1:width(reshaped_fA)
-	K1p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K1,ft);
-	K2K1p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),K1p(:,i),K2,ft);
-	K2p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_dLFP(:,i),K2,ft);
-	K3p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K3,ft);
-end
-
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1), hold on
@@ -437,12 +425,92 @@ if being_published
 	delete(gcf)
 end
 
-%%
-% Why is the first filter not a perfect differentiator? We would expect it to be so since we expect the derivative of the LFP to have a mean of zero. 
 
 %%
-% Now, we compare the projections using these filters with the actual data. In the following figure, I plot responses (dLFP or firing rate) vs various projections using the filters we backed out. In each case, the red curve is from the high variance epoch, and the blue curve is from the low variance epoch. For each of the plots, I also quantify the degree of gain control as follows. First, I compute the gain in the low and high variance epochs. This ratio (low variance gain/high variance gain) is the first measure. Second, I also compute the standard deviation of the input in the low variance epoch, and divide by the standard deviation of the input during the high variance epoch. In each plot, the "input" is whatever is being convolved by the outermost filter. So, for example, in (c), the input is the predicted dLFP.
+% Let's look at the data more closely. In the following figure, I plot the mean LFP (not the derivative) averaged across all trials to see if there are trends in the data that should not be there. 
 
+
+figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
+subplot(2,1,1), hold on
+temp = (nanmean(reshaped_PID,2));
+x = 1e3:4e3;
+y = temp(x);
+ff = fit(x(:),y(:),'poly1');
+plot(temp,'k')
+plot(x,ff(x),'r')
+x = 6e3:9e3;
+y = temp(x);
+ff = fit(x(:),y(:),'poly1');
+plot(x,ff(x),'b')
+xlabel('Time (ms)')
+ylabel('<PID>_{trials} (V)')
+
+subplot(2,1,2), hold on
+temp = (nanmean(reshaped_LFP,2));
+x = 1e3:4e3;
+y = temp(x);
+ff = fit(x(:),y(:),'poly1');
+plot(temp,'k')
+plot(x,ff(x),'r')
+x = 6e3:9e3;
+y = temp(x);
+ff = fit(x(:),y(:),'poly1');
+plot(x,ff(x),'b')
+xlabel('Time (ms)')
+ylabel('<LFP>_{trials} (\DeltamV)')
+prettyFig;
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
+%%
+% Hmm. So there is a trend. Does this show up in the distribution of the derivative of the LFPs?  To look at this more closely, I plot predicted dLFP vs. the actual dLFP for the high and low variance epochs (a). I'm also plotting the distributions of the dLFPs during the two epochs (b) and the distributions of the predicted dLFPs (c).
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+
+plot([0 0],[0 .14],'k--')
+x = vectorise(reshaped_dLFP(1e3:4e3,:));
+[hy,hx] = histcounts(x,linspace(min(x),max(x),100));
+hy = hy/sum(hy);
+hx = hx(1:end-1) + mean(diff(hx));
+plot(hx,hy,'r')
+x = vectorise(reshaped_dLFP(6e3:9e3,:));
+[hy,hx] = histcounts(x,linspace(min(x),max(x),100));
+hy = hy/sum(hy);
+hx = hx(1:end-1) + mean(diff(hx));
+plot(hx,hy,'b')
+xlabel('dLFP (mV/s)')
+ylabel('Probability')
+set(gca,'XLim',[-40 40])
+
+prettyFig;
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
+%%
+% Now, to compensate for this, we set the mean derivative of the LFP to be zero in each trial and then use that to predict the firing rates. 
+
+for i = 1:width(reshaped_dLFP)
+	reshaped_dLFP(1e3:4e3) = reshaped_dLFP(1e3:4e3) - nanmean(reshaped_dLFP(1e3:4e3));
+	reshaped_dLFP(6e3:9e3) = reshaped_dLFP(6e3:9e3) - nanmean(reshaped_dLFP(6e3:9e3));
+end
+
+% project the stimulus
+K1p = NaN*reshaped_fA;
+K2p = NaN*reshaped_fA;
+K3p = NaN*reshaped_fA;
+K2K1p = NaN*reshaped_fA;
+for i = 1:width(reshaped_fA)
+	K1p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K1,ft);
+	K2K1p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),K1p(:,i),K2,ft);
+	K2p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_dLFP(:,i),K2,ft);
+	K3p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K3,ft);
+end
 
 % compute the r2 for each trial
 r2_K1p = NaN(width(reshaped_dLFP),1);
@@ -456,6 +524,11 @@ for i = 1:length(r2_K1p)
 	r2_K3p(i) = rsquare(K3p(1e3:9e3,i),reshaped_fA(1e3:9e3,i));
 end
 
+
+%%
+% Now, we compare the projections using these filters with the actual data. In the following figure, I plot responses (dLFP or firing rate) vs various projections using the filters we backed out. In each case, the red curve is from the high variance epoch, and the blue curve is from the low variance epoch. For each of the plots, I also quantify the degree of gain control as follows. First, I compute the gain in the low and high variance epochs. This ratio (low variance gain/high variance gain) is the first measure. Second, I also compute the standard deviation of the input in the low variance epoch, and divide by the standard deviation of the input during the high variance epoch. In each plot, the "input" is whatever is being convolved by the outermost filter. So, for example, in (c), the input is the dLFP.
+
+
 ss = 1;
 min_r2 = .7; 
 
@@ -463,8 +536,24 @@ if ~exist('input_contrast_change_K1p','var')
 	computeContrastsGains;
 end
 
-figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
-subplot(2,2,1), hold on
+figure('outerposition',[0 0 1200 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
+subplot(2,3,1), hold on
+time = 1e-3*(1:length(reshaped_PID)) - 5;
+plot(time,reshaped_PID(:,1:10:end),'Color',[.7 .7 .7])
+xlabel('Time since switch (s)')
+ylabel('Stimulus (V)')
+
+subplot(2,3,2), hold on
+plot(time,reshaped_dLFP(:,r2_K1p>.8),'Color',[.7 .7 .7])
+xlabel('Time since switch (s)')
+ylabel('dLFP (mV/s)')
+
+subplot(2,3,3), hold on
+plot(time,reshaped_fA(:,r2_K3p>.8),'Color',[.7 .7 .7])
+xlabel('Time since switch (s)')
+ylabel('Firing Rate (Hz)')
+
+subplot(2,3,4), hold on
 x = K1p(1e3:4e3,:);
 y = reshaped_dLFP(1e3:4e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K1p < min_r2)');
@@ -487,21 +576,21 @@ text(-.2,20,tx,'interpreter','latex');
 tx = ['$\Delta \sigma $= ' oval(nanmean(input_contrast_change_K1p)) ,'$ \pm $' oval(sem(input_contrast_change_K1p))];
 text(-.2,15,tx,'interpreter','latex');
 
-subplot(2,2,2), hold on
+subplot(2,3,5), hold on
 x = K2p(1e3:4e3,:);
 y = reshaped_fA(1e3:4e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K2p < min_r2)');
 x(:,rm_this) = []; y(:,rm_this) = []; 
 x = x(:); y = y(:);
 x = x(1:ss:end); y = y(1:ss:end);
-plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[1 0 0],'proportional_bins',true,'show_error',false);
+[~,data_hi] = plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[1 0 0],'proportional_bins',true,'show_error',false);
 x = K2p(6e3:9e3,:);
 y = reshaped_fA(6e3:9e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K2p < min_r2)');
 x(:,rm_this) = []; y(:,rm_this) = []; 
 x = x(:); y = y(:);
 x = x(1:ss:end); y = y(1:ss:end);
-plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[0 0 1],'proportional_bins',true,'show_error',false);
+[~,data_lo] = plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[0 0 1],'proportional_bins',true,'show_error',false);
 xlabel('K2 \otimes dLFP(t)')
 ylabel('Firing Rate (Hz)')
 
@@ -511,30 +600,30 @@ tx = ['$\Delta \sigma $= ' oval(nanmean(input_contrast_change_K2p)) ,'$ \pm $' o
 text(-.2,15,tx,'interpreter','latex');
 
 
-subplot(2,2,3), hold on
-x = K2K1p(1e3:4e3,:);
-y = reshaped_fA(1e3:4e3,:);
-rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K2K1p < min_r2)');
-x(:,rm_this) = []; y(:,rm_this) = []; 
-x = x(:); y = y(:);
-x = x(1:ss:end); y = y(1:ss:end);
-[~,data_hi] = plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[1 0 0],'proportional_bins',true,'show_error',false);
-x = K2K1p(6e3:9e3,:);
-y = reshaped_fA(6e3:9e3,:);
-rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K2K1p < min_r2)');
-x(:,rm_this) = []; y(:,rm_this) = []; 
-x = x(:); y = y(:);
-x = x(1:ss:end); y = y(1:ss:end);
-[~,data_lo] = plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[0 0 1],'proportional_bins',true,'show_error',false);
-xlabel('K2 \otimes K1 \otimes s(t)')
-ylabel('Firing Rate (Hz)')
+% subplot(2,2,3), hold on
+% x = K2K1p(1e3:4e3,:);
+% y = reshaped_fA(1e3:4e3,:);
+% rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K2K1p < min_r2)');
+% x(:,rm_this) = []; y(:,rm_this) = []; 
+% x = x(:); y = y(:);
+% x = x(1:ss:end); y = y(1:ss:end);
+% [~,data_hi] = plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[1 0 0],'proportional_bins',true,'show_error',false);
+% x = K2K1p(6e3:9e3,:);
+% y = reshaped_fA(6e3:9e3,:);
+% rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K2K1p < min_r2)');
+% x(:,rm_this) = []; y(:,rm_this) = []; 
+% x = x(:); y = y(:);
+% x = x(1:ss:end); y = y(1:ss:end);
+% [~,data_lo] = plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[0 0 1],'proportional_bins',true,'show_error',false);
+% xlabel('K2 \otimes K1 \otimes s(t)')
+% ylabel('Firing Rate (Hz)')
 
-tx = ['$\Delta gain $= ' oval(nanmean(gain_change_K2K1p)) ,'$ \pm $' oval(sem(gain_change_K2K1p))];
-text(-.2,60,tx,'interpreter','latex');
-tx = ['$\Delta \sigma $= ' oval(nanmean(input_contrast_change_K2K1p)) ,'$ \pm $' oval(sem(input_contrast_change_K2K1p))];
-text(-.2,52,tx,'interpreter','latex');
+% tx = ['$\Delta gain $= ' oval(nanmean(gain_change_K2K1p)) ,'$ \pm $' oval(sem(gain_change_K2K1p))];
+% text(-.2,60,tx,'interpreter','latex');
+% tx = ['$\Delta \sigma $= ' oval(nanmean(input_contrast_change_K2K1p)) ,'$ \pm $' oval(sem(input_contrast_change_K2K1p))];
+% text(-.2,52,tx,'interpreter','latex');
 
-subplot(2,2,4), hold on
+subplot(2,3,6), hold on
 x = K3p(1e3:4e3,:);
 y = reshaped_fA(1e3:4e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K3p < min_r2)');
@@ -571,81 +660,36 @@ end
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1), hold on
 x = std(reshaped_PID(1e3:4e3,r2_K1p > .8));
-y = std(reshaped_dLFP(1e3:4e3,r2_K1p > .8))./std(reshaped_PID(1e3:4e3,r2_K1p > .8));
-plot(x,y,'r+')
+y1 = std(reshaped_dLFP(1e3:4e3,r2_K1p > .8))./std(reshaped_PID(1e3:4e3,r2_K1p > .8));
+plot(x,y1,'r+')
 x = std(reshaped_PID(6e3:9e3,r2_K1p > .8));
-y = std(reshaped_dLFP(6e3:9e3,r2_K1p > .8))./std(reshaped_PID(6e3:9e3,r2_K1p > .8));
-plot(x,y,'b+')
+y2 = std(reshaped_dLFP(6e3:9e3,r2_K1p > .8))./std(reshaped_PID(6e3:9e3,r2_K1p > .8));
+plot(x,y2,'b+')
+title(['\DeltaGain = ' oval(100*mean((y2-y1)./y1)) '%'])
 ylabel(['Transduction Gain' char(10) '\sigma_{dLFP}/\sigma_{Stimulus} (mV/s/V)'])
 xlabel('\sigma_{Stimulus} (V)')
 
 subplot(1,3,2), hold on
 x = std(reshaped_PID(1e3:4e3,r2_K2p > .8));
-y = std(reshaped_fA(1e3:4e3,r2_K2p > .8))./std(reshaped_dLFP(1e3:4e3,r2_K2p > .8));
-plot(x,y,'r+')
+y1 = std(reshaped_fA(1e3:4e3,r2_K2p > .8))./std(reshaped_dLFP(1e3:4e3,r2_K2p > .8));
+plot(x,y1,'r+')
 x = std(reshaped_PID(6e3:9e3,r2_K2p > .8));
-y = std(reshaped_fA(6e3:9e3,r2_K2p > .8))./std(reshaped_dLFP(6e3:9e3,r2_K2p > .8));
-plot(x,y,'b+')
+y2 = std(reshaped_fA(6e3:9e3,r2_K2p > .8))./std(reshaped_dLFP(6e3:9e3,r2_K2p > .8));
+plot(x,y2,'b+')
 xlabel('\sigma_{Stimulus} (V)')
+title(['\DeltaGain = ' oval(100*mean((y2-y1)./y1)) '%'])
 ylabel(['Firing Gain' char(10) '\sigma_{Firing}/\sigma_{dLFP} (Hz/mV/s)'])
 
 subplot(1,3,3), hold on
 x = std(reshaped_PID(1e3:4e3,r2_K3p > .8));
-y = std(reshaped_fA(1e3:4e3,r2_K3p > .8))./std(reshaped_PID(1e3:4e3,r2_K3p > .8));
-plot(x,y,'r+')
+y1 = std(reshaped_fA(1e3:4e3,r2_K3p > .8))./std(reshaped_PID(1e3:4e3,r2_K3p > .8));
+plot(x,y1,'r+')
 x = std(reshaped_PID(6e3:9e3,r2_K3p > .8));
-y = std(reshaped_fA(6e3:9e3,r2_K3p > .8))./std(reshaped_PID(6e3:9e3,r2_K3p > .8));
-plot(x,y,'b+')
+y2 = std(reshaped_fA(6e3:9e3,r2_K3p > .8))./std(reshaped_PID(6e3:9e3,r2_K3p > .8));
+plot(x,y2,'b+')
+title(['\DeltaGain = ' oval(100*mean((y2-y1)./y1)) '%'])
 xlabel('\sigma_{Stimulus} (V)')
 ylabel(['Total Gain' char(10) '\sigma_{Firing}/\sigma_{Stimulus} (Hz/V)'])
-
-prettyFig;
-
-if being_published	
-	snapnow	
-	delete(gcf)
-end
-%%
-% This is weird. The contrast adaptation is strongest not from the LFP to the firing rate, as we would expect, but from the the predicted LFP to the firing rate. To look at this more closely, I plot predicted dLFP vs. the actual dLFP for the high and low variance epochs (a). I'm also plotting the distributions of the dLFPs during the two epochs (b) and the distributions of the predicted dLFPs (c).
-
-figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
-subplot(1,3,1), hold on
-plot(nanmean(K1p(1e3:4e3,:)),nanmean(reshaped_dLFP(1e3:4e3,:)),'r+')
-plot(nanmean(K1p(6e3:9e3,:)),nanmean(reshaped_dLFP(6e3:9e3,:)),'b+')
-xlabel('<dLFP_{pred}>_{trials}')
-ylabel('<dLFP (mV/s)>_{trials}')
-
-subplot(1,3,2), hold on
-plot([0 0],[0 .14],'k--')
-x = vectorise(reshaped_dLFP(1e3:4e3,:));
-[hy,hx] = histcounts(x,linspace(min(x),max(x),100));
-hy = hy/sum(hy);
-hx = hx(1:end-1) + mean(diff(hx));
-plot(hx,hy,'r')
-x = vectorise(reshaped_dLFP(6e3:9e3,:));
-[hy,hx] = histcounts(x,linspace(min(x),max(x),100));
-hy = hy/sum(hy);
-hx = hx(1:end-1) + mean(diff(hx));
-plot(hx,hy,'b')
-xlabel('dLFP (mV/s)')
-ylabel('Probability')
-set(gca,'XLim',[-40 40])
-
-subplot(1,3,3), hold on
-plot([0 0],[0 .04],'k--')
-x = vectorise(K1p(1e3:4e3,:));
-[hy,hx] = histcounts(x,linspace(min(x),max(x),100));
-hy = hy/sum(hy);
-hx = hx(1:end-1) + mean(diff(hx));
-plot(hx,hy,'r')
-x = vectorise(K1p(6e3:9e3,:));
-[hy,hx] = histcounts(x,linspace(min(x),max(x),100));
-hy = hy/sum(hy);
-hx = hx(1:end-1) + mean(diff(hx));
-plot(hx,hy,'b')
-xlabel('dLFP_{pred}')
-ylabel('Probability')
-set(gca,'XLim',[-.4 .5])
 
 prettyFig;
 labelFigure
@@ -655,37 +699,37 @@ if being_published
 	delete(gcf)
 end
 
-%%
-% There is something very weird going on. Specifically, the red distribution seems to be shifted to the left of zero, suggesting that the LFP is continuously increasing during the high variance epoch (This is because all reported dLFPs are actually -dLFPs). Does this make any sense? In the following figure, I plot the raw LFP traces, mean subtracted across each trial, to see if there is any epoch-specific trend. I also fit lines to the high (red) and low (blue) variance epochs, to show that there is an upward or downward trend. 
+% Whiff-based Analysis of contrast-dependent gain 
+% In this section, we attempt to obtain a finer-scale measure of the gain. Here, we consider an excursion to begin when response crosses the mean response in that epoch. For each excursion so defined, we can compute the gain, and plot 
 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-temp = (nanmean(reshaped_LFP,2));
-x = 1e3:4e3;
-y = temp(x);
-ff = fit(x(:),y(:),'poly1');
-plot(temp,'k')
-plot(x,ff(x),'r')
-x = 6e3:9e3;
-y = temp(x);
-ff = fit(x(:),y(:),'poly1');
-plot(x,ff(x),'b')
-xlabel('Time (ms)')
-ylabel('<LFP>_{trials} (\DeltamV)')
-prettyFig;
-
-if being_published	
-	snapnow	
-	delete(gcf)
-end
-
-%%
-% OK, so now things make sense. We see an upward trend in the LFP during the high variance epoch, which explains the red distribution being pushed to the left, and a downward trend in the low variance epoch, which explains the blue distribution pushed towards the right. 
-
-%%
-% Why is the mean LFP higher in the high-contrast case than in the low-contrast case? The simplest explanation is because the stimulus has slightly lower mean when the variance is high (because of an error in the stimulus delivery). 
-
-%%
-% Does this invalidate our result? Not really, for two reasons. First, the unbiased stimulus to firing rate model clearly shows contrast adaptation, and there is no getting around that. Second, the decrease in stimulus mean during the high contrast epoch, which probably causes the deviation in the LFP, works against us, and decreases the size of the expected effect, not increases it. 
+% for i = 1:width(reshaped_PID)
+% 	textbar(i,width(reshaped_PID))
+% 	[ons,offs] = computeOnsOffs(reshaped_fA(:,i)>mean(reshaped_fA(:,i)));
+% 	rm_this = offs > 9e3 | ons < 1e3;
+% 	ons(rm_this) = [];
+% 	offs(rm_this) = [];
+% 	slopes = NaN*ons; 
+% 	r2 = NaN*ons;
+% 	s = NaN*ons;
+% 	for j = 1:length(ons)
+% 		x = K2p(ons(j):offs(j),i);
+% 		y = reshaped_fA(ons(j):offs(j),i);
+% 		try
+% 			[ff,gof] = fit(x(:),y(:),'poly1');
+% 			slopes(j) = ff.p1;
+% 			r2(j) = gof.rsquare;
+% 			s(j) = std(reshaped_PID(ons(j)-300:offs(j),i));
+% 		catch
+% 		end
+% 	end
+% 	alldata(i).s = s';
+% 	alldata(i).r2 = r2';
+% 	alldata(i).slopes = slopes';
+% end
+% x = [alldata.s];
+% y = [alldata.slopes];
+% e = [alldata.r2];
+% rm_this = e < .8 | y < 0;
 
 %% Inserting the Weber Model into the contrast data
 % In this section, we insert the Weber-Fechner Model we measured using the last dataset into this one, because we know it exists, and plays a role here. 
@@ -696,6 +740,7 @@ for i = 1:width(K1p)
 	d.stimulus = [K1p(:,i),reshaped_PID(:,i)];
 	K1p_weber(:,i) = adaptiveGainModel(d.stimulus,weber_data.p);
 	% now convolve with K2
+	ft = 1e-3*(1:length(K2)) - .1;
 	K2K1p_weber(:,i) = convolve(1e-3*(1:length(reshaped_PID)),K1p_weber(:,i),K2,ft);
 end
 
@@ -764,37 +809,50 @@ end
 
 
 %% Accounting for the Contrast Gain Change
-% Now, we want to account for this gain change. We use a logistic function to describe the shape of the input-output curve from the LFP to the firing rate:
-% 
-% $$ f(x)=\frac{A}{1+e^{-kx-x_{0}}} $$
-%
+% Now, we want to account for this gain change. To do this, we try to fit nonlinearities to the I/O curves in the high and low contrast case and see if we can fit both curves by changing only one parameter. We try fitting Hill functions and logistic functions. 
 
-%%
-% where k controls the steepness of the curve. 
+figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
 
-%%
-% First, we fit this logistic function to the two input-output curves, allowing only the steepness parameter to vary between the blue and red curves.
+ftype = fittype('logistic(x,A,k,x0)');
+ff_lo = fit(data_lo.x(:),data_lo.y(:),ftype,'StartPoint',[max(data_lo.y) 2 0],'Lower',[max(data_lo.y) 0 -Inf],'Upper',[max(data_lo.y) 100 Inf],'MaxIter',1e6);
+ff_hi = fit(data_hi.x(:),data_hi.y(:),ftype,'StartPoint',[max(data_hi.y) 2 0],'Lower',[max(data_hi.y) 0 -Inf],'Upper',[max(data_hi.y) 100 inf],'MaxIter',1e6);
 
-x0 = -1.55;
-
-ft = fittype('logistic(x,A,k,x0)');
-ff_lo = fit(data_lo.x(:),data_lo.y(:),ft,'StartPoint',[max(data_hi.y) 2 x0],'Lower',[max(data_hi.y) 1 x0],'Upper',[max(data_hi.y) 100 x0],'MaxIter',1e6);
-ff_hi = fit(data_hi.x(:),data_hi.y(:),ft,'StartPoint',[max(data_hi.y) 2 0],'Lower',[max(data_hi.y) x0],'Upper',[max(data_hi.y) 100 x0],'MaxIter',1e6);
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-subplot(1,2,1), hold on
+subplot(2,2,1), hold on
 plot(data_lo.x,data_lo.y,'b')
 plot(data_hi.x,ff_lo(data_hi.x),'b--')
-title(['k = ' oval(ff_lo.k)])
+legend({'Data','Logistic'},'Location','southeast')
+title(['k = ' oval(ff_lo.k) ', x_0 = ',oval(ff_lo.x0)])
 ylabel('ORN response (Hz)')
-xlabel('Projected Stimulus')
+xlabel('K_2 \otimes dLFP(t)')
 
-subplot(1,2,2), hold on
+subplot(2,2,2), hold on
 plot(data_hi.x,data_hi.y,'r')
 plot(data_hi.x,ff_hi(data_hi.x),'r--')
-title(['k = ' oval(ff_hi.k)])
+legend({'Data','Logistic'},'Location','southeast')
+title(['k = ' oval(ff_hi.k) ', x_0 = ',oval(ff_hi.x0)])
 ylabel('ORN response (Hz)')
-xlabel('Projected Stimulus')
+xlabel('K_2 \otimes dLFP(t)')
+
+% maybe we can fit a Hill function?
+ftype = fittype('hill4(x,A,K_D,n,x_offset)');
+ff_lo = fit(data_lo.x(:),data_lo.y(:),ftype,'StartPoint',[max(data_lo.y) max(data_lo.y)/2 2 min(data_lo.x)],'Lower',[1 eps 1 min(data_lo.x)],'Upper',[100 100 100 10],'MaxIter',1e6);
+ff_hi = fit(data_hi.x(:),data_hi.y(:),ftype,'StartPoint',[max(data_lo.y) max(data_lo.y)/2 2 min(data_lo.x)],'Lower',[1 eps 1 min(data_hi.x)],'Upper',[100 100 100 10],'MaxIter',1e6);
+
+subplot(2,2,3), hold on
+plot(data_lo.x,data_lo.y,'b')
+plot(data_hi.x,ff_lo(data_hi.x),'b--')
+legend({'Data','Hill'},'Location','southeast')
+title(['K_D = ' oval(ff_lo.K_D) ', n = ',oval(ff_lo.n)])
+ylabel('ORN response (Hz)')
+xlabel('K_2 \otimes dLFP(t)')
+
+subplot(2,2,4), hold on
+plot(data_hi.x,data_hi.y,'r')
+plot(data_hi.x,ff_hi(data_hi.x),'r--')
+legend({'Data','Hill'},'Location','southeast')
+title(['K_D = ' oval(ff_hi.K_D) ', n = ',oval(ff_hi.n)])
+ylabel('ORN response (Hz)')
+xlabel('K_2 \otimes dLFP(t)')
 
 prettyFig;
 labelFigure
@@ -805,6 +863,9 @@ if being_published
 end
 
 %%
+% We can't seem to fit these curves by changing just one parameter. In fact, it's worse than appears, as another parameter (the maximum response) also appears to change. 
+
+%
 % The steepness of the curve should depend on variance on the LFP signal. This way, the firing rate gain that depends on the contrast depends only on various parts of the LFP signal, making it modular. We assume
 % 
 % $$ k=\frac{k_{0}}{1+\beta_{\sigma}K_{\sigma}\otimes\left[l'\right]_{+}} $$
@@ -812,12 +873,12 @@ end
 % and find the best-fit parameters that account for the data. 
 % 
 
-clear d
-these_trials = 50:10:200;
-for i = length(these_trials):-1:1
-	d(i).stimulus = reshaped_dLFP(:,these_trials(i));
-	d(i).response = [ff_hi.k,ff_lo.k,ff_hi.k - ff_lo.k];
-end
+% clear d
+% these_trials = 50:10:200;
+% for i = length(these_trials):-1:1
+% 	d(i).stimulus = reshaped_dLFP(:,these_trials(i));
+% 	d(i).response = [ff_hi.k,ff_lo.k,ff_hi.k - ff_lo.k];
+% end
 
 
 % p = fitModel2Data(@contrastSteepnessModel,d,'nsteps',200,'make_plot',false,'p0',p);
@@ -830,107 +891,107 @@ end
 % best_k
 % nanmean(best_k(:,2)./best_k(:,1))
 
-clear p
-p. k0 = 27.1562;
-p.  B = 0.2698;
-p.  n = 24.6914;
-p.tau = 16.9375;
+% clear p
+% p. k0 = 27.1562;
+% p.  B = 0.2698;
+% p.  n = 24.6914;
+% p.tau = 16.9375;
 
-% add some parameters
-p.A = ff_hi.A;
-p.x0 = ff_hi.x0;
+% % add some parameters
+% p.A = ff_hi.A;
+% p.x0 = ff_hi.x0;
 
-XG = K2p;
-for i = 1:width(K2p)
-	XG(:,i) = contrastLogisticModel([(reshaped_dLFP(:,i)) ,K2K1p(:,i)],p);
-end
+% XG = K2p;
+% for i = 1:width(K2p)
+% 	XG(:,i) = contrastLogisticModel([(reshaped_dLFP(:,i)) ,K2K1p(:,i)],p);
+% end
 
-figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
-subplot(1,3,1), hold on
-plot(data_lo.x,data_lo.y,'b')
-plot(data_hi.x,data_hi.y,'r')
-xlabel('K \otimes s')
-ylabel('Response (Hz)')
+% figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+% subplot(1,3,1), hold on
+% plot(data_lo.x,data_lo.y,'b')
+% plot(data_hi.x,data_hi.y,'r')
+% xlabel('K \otimes s')
+% ylabel('Response (Hz)')
 
-subplot(1,3,2), hold on
-plotPieceWiseLinear(vectorise(XG(1e3:5e3,:)),vectorise(reshaped_fA(1e3:5e3,:)),'nbins',50,'Color','r');
-plotPieceWiseLinear(vectorise(XG(6e3:9e3,:)),vectorise(reshaped_fA(6e3:9e3,:)),'nbins',50,'Color','b');
-xlabel('$\hat{R}$','interpreter','latex')
-ylabel('Response (Hz)')
+% subplot(1,3,2), hold on
+% plotPieceWiseLinear(vectorise(XG(1e3:5e3,:)),vectorise(reshaped_fA(1e3:5e3,:)),'nbins',50,'Color','r');
+% plotPieceWiseLinear(vectorise(XG(6e3:9e3,:)),vectorise(reshaped_fA(6e3:9e3,:)),'nbins',50,'Color','b');
+% xlabel('$\hat{R}$','interpreter','latex')
+% ylabel('Response (Hz)')
 
-subplot(1,3,3); hold on
-plotPieceWiseLinear(vectorise(K2K1p(1e3:5e3,:)),vectorise(XG(1e3:5e3,:)),'nbins',50,'Color','r');
-plotPieceWiseLinear(vectorise(K2K1p(6e3:9e3,:)),vectorise(XG(6e3:9e3,:)),'nbins',50,'Color','b');
-ylabel('$\hat{R}$','interpreter','latex')
-xlabel('K \otimes s')
+% subplot(1,3,3); hold on
+% plotPieceWiseLinear(vectorise(K2K1p(1e3:5e3,:)),vectorise(XG(1e3:5e3,:)),'nbins',50,'Color','r');
+% plotPieceWiseLinear(vectorise(K2K1p(6e3:9e3,:)),vectorise(XG(6e3:9e3,:)),'nbins',50,'Color','b');
+% ylabel('$\hat{R}$','interpreter','latex')
+% xlabel('K \otimes s')
 
-prettyFig('fs',16)
-labelFigure
+% prettyFig('fs',16)
+% labelFigure
 
-if being_published
-	snapnow
-	delete(gcf)
-end
+% if being_published
+% 	snapnow
+% 	delete(gcf)
+% end
 
-%% Does contrast adaptation screw up Weber-Fechner?
+% Does contrast adaptation screw up Weber-Fechner?
 % In this section, we apply the contrast-adaptive model that operates on the LFP to the Weber-Fechner data and study how it distorts the firing gain. First, to make sure I'm not doing something crazy, I compare the distribution of the actual and projected dLFPs in the Weber-Fechner and contrast datasets. 
 
-figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
-subplot(1,3,1), hold on
-temp = weber_data.dLFP(30e3:55e3,weber_data.paradigm==1); temp = temp(:);
-[hy,hx] = histcounts(temp,linspace(-60,60,100));
-hy = hy/sum(hy);
-hx = hx(1:end-1) + mean(diff(hx));
-plot(hx,hy,'k')
-temp = reshaped_dLFP(1e3:9e3,:); temp = temp(:);
-[hy,hx] = histcounts(temp,linspace(-60,60,100));
-hy = hy/sum(hy);
-hx = hx(1:end-1) + mean(diff(hx));
-plot(hx,hy,'r')
-legend('Weber-Fechner Data','Contrast Switch Data')
-ylabel('Probability')
-xlabel('dLFP (mV/s)')
+% figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+% subplot(1,3,1), hold on
+% temp = weber_data.dLFP(30e3:55e3,weber_data.paradigm==1); temp = temp(:);
+% [hy,hx] = histcounts(temp,linspace(-60,60,100));
+% hy = hy/sum(hy);
+% hx = hx(1:end-1) + mean(diff(hx));
+% plot(hx,hy,'k')
+% temp = reshaped_dLFP(1e3:9e3,:); temp = temp(:);
+% [hy,hx] = histcounts(temp,linspace(-60,60,100));
+% hy = hy/sum(hy);
+% hx = hx(1:end-1) + mean(diff(hx));
+% plot(hx,hy,'r')
+% legend('Weber-Fechner Data','Contrast Switch Data')
+% ylabel('Probability')
+% xlabel('dLFP (mV/s)')
 
-subplot(1,3,2), hold on
-temp = weber_data.K1p(30e3:55e3,weber_data.paradigm==1); temp = temp(:);
-[hy,hx] = histcounts(temp,linspace(-.6,.6,100));
-hy = hy/sum(hy);
-hx = hx(1:end-1) + mean(diff(hx));
-plot(hx,hy,'k')
-temp = K1p(1e3:9e3,:); temp = temp(:);
-[hy,hx] = histcounts(temp,linspace(-.6,.6,100));
-hy = hy/sum(hy);
-hx = hx(1:end-1) + mean(diff(hx));
-plot(hx,hy,'r')
-legend('Weber-Fechner Data','Contrast Switch Data')
-ylabel('Probability')
-xlabel('K1 \otimes s(t)')
+% subplot(1,3,2), hold on
+% temp = weber_data.K1p(30e3:55e3,weber_data.paradigm==1); temp = temp(:);
+% [hy,hx] = histcounts(temp,linspace(-.6,.6,100));
+% hy = hy/sum(hy);
+% hx = hx(1:end-1) + mean(diff(hx));
+% plot(hx,hy,'k')
+% temp = K1p(1e3:9e3,:); temp = temp(:);
+% [hy,hx] = histcounts(temp,linspace(-.6,.6,100));
+% hy = hy/sum(hy);
+% hx = hx(1:end-1) + mean(diff(hx));
+% plot(hx,hy,'r')
+% legend('Weber-Fechner Data','Contrast Switch Data')
+% ylabel('Probability')
+% xlabel('K1 \otimes s(t)')
 
-subplot(1,3,3), hold on
-temp = weber_data.K2p(30e3:55e3,weber_data.paradigm==1); temp = temp(:);
-temp = temp/100;
-[hy,hx] = histcounts(temp,linspace(-.6,.6,100));
-hy = hy/sum(hy);
-hx = hx(1:end-1) + mean(diff(hx));
-plot(hx,hy,'k')
-temp = K2K1p(1e3:9e3,:); temp = temp(:);
-[hy,hx] = histcounts(temp,linspace(-.6,.6,100));
-hy = hy/sum(hy);
-hx = hx(1:end-1) + mean(diff(hx));
-plot(hx,hy,'r')
-legend('Weber-Fechner Data','Contrast Switch Data')
-ylabel('Probability')
-xlabel('Predicted Firing Rates')
+% subplot(1,3,3), hold on
+% temp = weber_data.K2p(30e3:55e3,weber_data.paradigm==1); temp = temp(:);
+% temp = temp/100;
+% [hy,hx] = histcounts(temp,linspace(-.6,.6,100));
+% hy = hy/sum(hy);
+% hx = hx(1:end-1) + mean(diff(hx));
+% plot(hx,hy,'k')
+% temp = K2K1p(1e3:9e3,:); temp = temp(:);
+% [hy,hx] = histcounts(temp,linspace(-.6,.6,100));
+% hy = hy/sum(hy);
+% hx = hx(1:end-1) + mean(diff(hx));
+% plot(hx,hy,'r')
+% legend('Weber-Fechner Data','Contrast Switch Data')
+% ylabel('Probability')
+% xlabel('Predicted Firing Rates')
 
 
-prettyFig('fs',16)
+% prettyFig('fs',16)
 
-if being_published
-	snapnow
-	delete(gcf)
-end
+% if being_published
+% 	snapnow
+% 	delete(gcf)
+% end
 
-%%
+%
 % Though the distributions are different, they're roughly in the same range, so we're going to go ahead and apply the same model to the Weber-Fechner Data. 
 
 % % fit the contrast model to the lowest dose, keeping some parameters fixed
@@ -945,48 +1006,48 @@ end
 % lb.k0 = 0; ub.k0 = Inf;
 % p = fitModel2Data(@contrastLogisticModel,d,'nsteps',200,'p0',p,'lb',lb,'ub',ub);
 
-clear p
-p. k0 = 33.1213;
-p.  B = 0.2698;
-p.  n = 24.6914;
-p.tau = 16.9375;
-p.  A = 50.5640;
-p. x0 = 0.0605;
+% clear p
+% p. k0 = 33.1213;
+% p.  B = 0.2698;
+% p.  n = 24.6914;
+% p.tau = 16.9375;
+% p.  A = 50.5640;
+% p. x0 = 0.0605;
 
-% use the contrast logistic model to correct the prediction of the firing rate by the LFP
-XG = weber_data.K1p;
-K = XG;
-for i = 1:width(XG)
-	[XG(:,i),~,K(:,i)] = contrastLogisticModel([(weber_data.dLFP(:,i)), .01*weber_data.K2p(:,i)],p);
-end
+% % use the contrast logistic model to correct the prediction of the firing rate by the LFP
+% XG = weber_data.K1p;
+% K = XG;
+% for i = 1:width(XG)
+% 	[XG(:,i),~,K(:,i)] = contrastLogisticModel([(weber_data.dLFP(:,i)), .01*weber_data.K2p(:,i)],p);
+% end
 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-subplot(1,2,1), hold on
-a = 30e3; z = 55e3;
-for i = 1:max(weber_data.paradigm) % iterate over all paradigms 
-	y = nanmean(weber_data.fA(a:z,weber_data.paradigm == i),2);
-	x = nanmean(XG(a:z,weber_data.paradigm == i),2);
-	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:));
-end
-xlabel('Contrast-corrected Prediction')
-ylabel('Firing Rate (Hz)')
+% figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% subplot(1,2,1), hold on
+% a = 30e3; z = 55e3;
+% for i = 1:max(weber_data.paradigm) % iterate over all paradigms 
+% 	y = nanmean(weber_data.fA(a:z,weber_data.paradigm == i),2);
+% 	x = nanmean(XG(a:z,weber_data.paradigm == i),2);
+% 	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:));
+% end
+% xlabel('Contrast-corrected Prediction')
+% ylabel('Firing Rate (Hz)')
 
-subplot(1,2,2), hold on
-for i = 1:length(weber_data.paradigm)
-	y = nanmean(K(a:z,i));
-	x = nanmean(weber_data.PID(a:z,i));
-	plot(x,y,'+','Color',c(weber_data.paradigm(i),:))
-end
-ylabel('steepness parameter')
-xlabel('Mean Stimulus (V)')
+% subplot(1,2,2), hold on
+% for i = 1:length(weber_data.paradigm)
+% 	y = nanmean(K(a:z,i));
+% 	x = nanmean(weber_data.PID(a:z,i));
+% 	plot(x,y,'+','Color',c(weber_data.paradigm(i),:))
+% end
+% ylabel('steepness parameter')
+% xlabel('Mean Stimulus (V)')
 
-prettyFig('fs',16)
-labelFigure
+% prettyFig('fs',16)
+% labelFigure
 
-if being_published
-	snapnow
-	delete(gcf)
-end
+% if being_published
+% 	snapnow
+% 	delete(gcf)
+% end
 
 %% Naturalistic Stimuli: LFP
 % In this section, we attempt to explain the LFP responses of neurons to naturalistic stimuli using what we learnt from the Weber experiment. 
@@ -1040,10 +1101,88 @@ a = 10e3; z = 60e3;
 [K3,K3p,K3_gain] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
 ft = 1e-3*(1:length(K1)) - .1;
 
+%% Can we predict the response to naturalistic stimuli using measurements from previous experiments where we varied the mean and the variance? In the following figure, we attempt to do this:
+
+example_orn = 2;
+Weber_K = nanmean(weber_data.K1(:,weber_data.paradigm == 1),2);
+
+figure('outerposition',[0 0 1500 900],'PaperUnits','points','PaperSize',[1500 900]); hold on
+clear ax
+for i = 6:-1:1
+	ax(i) = subplot(3,2,i); hold on
+end
+
+time = 1e-3*(1:length(PID));
+plot(ax(1),time,PID(:,example_orn),'k')
+xlabel(ax(1),'Time (s)')
+ylabel(ax(1),'Stimulus (V)')
+
+plot(ax(3),time,LFP(:,example_orn),'k')
+plot(ax(4),time,LFP(:,example_orn),'k')
+xlabel(ax(3),'Time (s)')
+ylabel(ax(3),'dLFP (mV/s)')
+
+S = [convolve(1e-3*(1:length(PID)),PID(:,example_orn),Weber_K,ft), PID(:,example_orn)];
+weber_corrected_LFP = adaptiveGainModel(S,weber_data.p);
+
+l = plot(ax(2),time,S(:,1),'r');
+xlabel(ax(2),'Time (s)')
+ylabel(ax(2),'dLFP (mV/s)')
+r2 = rsquare(S(a:z,1),LFP(a:z,example_orn));
+legend(l,['r^2 = ' oval(r2)])
+
+l = plot(ax(4),time,weber_corrected_LFP,'r');
+xlabel(ax(4),'Time (s)')
+ylabel(ax(4),'dLFP (mV/s)')
+r2 = rsquare(weber_corrected_LFP(a:z),LFP(a:z,example_orn));
+legend(l,['r^2 = ' oval(r2)])
+
+plot(ax(5),time,fA(:,example_orn),'k')
+plot(ax(6),time,fA(:,example_orn),'k')
+xlabel(ax(5),'Time (s)')
+ylabel(ax(5),'Firing Rate (Hz)')
+
+K = fitFilter2Data(weber_corrected_LFP(a:z),fA(a:z,example_orn),'offset',200);
+K = K(101:800);
+weber_corrected_fp = convolve(1e-3*(1:length(PID)),weber_corrected_LFP,K,ft);
+fp = convolve(time,R,K2(:,example_orn),ft);
+S = [LFP(:,example_orn),weber_corrected_fp];
+
+clear p
+p. x0 = -0.8824;
+p.  A = 73.9977;
+p. k0 = 0.0732;
+p.  n = 32.4375;
+p.tau = 4.9219;
+p.  B = 0.0082;
+
+R = contrastLogisticModel(S,p);
+R = logistic(weber_corrected_fp,p.A,p.k0,p.x0);
+l = plot(ax(6),time,R,'r');
+r2 = rsquare(R(a:z),fA(a:z,example_orn));
+legend(l,['r^2 = ' oval(r2)])
+xlabel(ax(6),'Time (s)')
+ylabel(ax(6),'Firing Rate (Hz)')
+
+for i = 1:length(ax)
+	set(ax(i),'XLim',[5 65],'box','on')
+	% shrink the width and height of all boxes
+	ax(i).Position(4) = .126;
+	ax(i).Position(3) = .27;
+end
+
+prettyFig('fs',12,'plw',1.3,'lw',1.5)
+labelFigure('x_offset',.1)
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 %%
 % In the following figure, we compare the LFP filter extracted from the natural stimuli with the LFP filter extracted from the Weber experiment, and also compare their linear projections, before and after gain-correction from the Weber-Fechner experiment.  
 
-example_orn = 2;
+
 Weber_K = nanmean(weber_data.K1(:,weber_data.paradigm == 1),2);
 figure('outerposition',[0 0 1500 800],'PaperUnits','points','PaperSize',[1500 800]); hold on
 subplot(2,3,1), hold on

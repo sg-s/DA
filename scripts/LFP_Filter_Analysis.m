@@ -106,6 +106,7 @@ if being_published
 end
 
 %% Naturalistic Stimulus Data
+% Now we repeat this analysis for the naturalistic stimulus dataset. 
 
 [PID, LFP, fA, paradigm, orn, ~, AllControlParadigms] = consolidateData('/local-data/DA-paper/natural-flickering/with-lfp/ab3/',1);
 

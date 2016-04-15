@@ -445,8 +445,8 @@ set(gca,'YScale','log','XScale','log')
 xlabel('Blank duration (ms)')
 ylabel(gca,'Probability')
 
-prettyFig('fs=18;','FixLogX=true;')
-
+prettyFig('fs',18,'FixLogX',true)
+labelFigure
 
 legend('boxoff')
 
@@ -548,7 +548,8 @@ set(ch,'Position',[.58 .15 .02 .1])
 caxis([min(shat) max(shat)]);
 set(gca,'XLim',[-.15 4],'XColor','b')
 
-prettyFig('fs=18;','FixLogX=true;')
+prettyFig('fs',18,'FixLogX',true)
+labelFigure
 
 if being_published
 	snapnow
@@ -575,7 +576,8 @@ end
 set(ax(1:3),'XScale','log','YScale','log')
 set(ax(4),'YLim',[-1 0])
 
-prettyFig('fs=14;');
+prettyFig('fs',14);
+labelFigure
 
 if being_published
 	snapnow
@@ -606,7 +608,7 @@ end
 set(ax(1:3),'XScale','log','YScale','log','YLim',[.5 10])
 set(ax(4),'YLim',[-1 .5])
 
-prettyFig('fs=14;','FixLogY=true;');
+prettyFig('fs',14,'FixLogY',true);
 
 if being_published
 	snapnow
@@ -636,7 +638,8 @@ set(ax,'XScale','log','YScale','log','YLim',[.1 100],'XLim',[1e-2 10])
 
 delete(dm)
 
-prettyFig('fs=14;','FixLogY=true;','FixLogX=true;');
+prettyFig('fs',14,'FixLogY',true,'FixLogX',true);
+labelFigure
 
 if being_published
 	snapnow
@@ -685,7 +688,8 @@ legend(l,['LN Model, r^2 = ' oval(rsquare(DA,R))]);
 ylabel('Firing Rate (Hz)')
 xlabel('Time (s)')
 
-prettyFig('fs=20;','FixLogY=true;');
+prettyFig('fs',20,'FixLogY',true);
+labelFigure
 
 if being_published
 	snapnow
@@ -712,7 +716,8 @@ da_model.firing_rate = R;
 
 plot(da_model,gca,'dynamicIO.firing_rate','nbins',19,'min_inst_gain_firing',2)
 ylabel('DA Model Prediction (Hz)')
-prettyFig('fs=20;','FixLogY=true;');
+prettyFig('fs',20,'FixLogY',true);
+labelFigure
 
 if being_published
 	snapnow

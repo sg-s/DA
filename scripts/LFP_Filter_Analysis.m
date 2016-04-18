@@ -143,8 +143,6 @@ for i = 1:width(LFP)
 	filtered_LFP(:,i) = filtered_LFP(:,i)*10; % to get the units right, now in mV
 end
 
-% only look at one neuron
-
 % extract filters in all cases
 a = 15e3; z = 55e3;
 [K1,K1p] = extractFilters(PID,LFP,'use_cache',true,'a',a,'z',z);
@@ -183,6 +181,55 @@ if being_published
 	snapnow	
 	delete(gcf)
 end
+
+%% 
+% Now, we compare the predictions of the LFP using the various filters. In the following figure, we do this for one trial as an illustration. 
+
+% remove baseline from all the LFP
+for i = 1:width(LFP)
+	LFP(:,i) = LFP(:,i) - mean(LFP(1:5e3,i));
+end
+
+figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
+subplot(2,2,1), hold on
+plot(-K1p(a:z,1),-LFP(a:z,1),'k')
+title('Stimulus \rightarrow LFP')
+xlabel('K_1 \otimes s(t)')
+ylabel('LFP (mV)')
+legend(['r^2 = ' oval(rsquare(-K1p(a:z,1),-LFP(a:z,1)))],'Location','southeast')
+
+subplot(2,2,2), hold on
+plot(-K2p(a:z,1),-LFP(a:z,1),'r')
+title('Stimulus \rightarrow filtered LFP')
+xlabel('K_2 \otimes s(t)')
+ylabel('LFP (mV)')
+legend(['r^2 = ' oval(rsquare(-K2p(a:z,1),-LFP(a:z,1)))],'Location','southeast')
+
+subplot(2,2,3), hold on
+plot(-K3p(a:z,1),-dLFP(a:z,1),'b')
+title('Stimulus \rightarrow dLFP/dt')
+xlabel('K_3 \otimes s(t)')
+ylabel('dLFP/dt (mV/s)')
+legend(['r^2 = ' oval(rsquare(-K3p(a:z,1),-dLFP(a:z,1)))],'Location','southeast')
+
+subplot(2,2,4), hold on
+plot(-cumsum(K3p(a:z,1)),-LFP(a:z,1),'b')
+title('Stimulus \rightarrow dLFP/dt')
+xlabel('\int K_3 \otimes s(t)')
+ylabel('LFP (mV)')
+legend(['r^2 = ' oval(rsquare(-cumsum(K3p(a:z,1)),-LFP(a:z,1)))],'Location','southeast')
+
+prettyFig()
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
+
+%%
+% Integrating the predicted dLFP using the derivative-taking filter is really bad because the derivative-taking filter isn't perfectly derivative taking. So there is a constant trend in the data (since there is a constant offset in the derivative).
+
 
 %% Version Info
 %

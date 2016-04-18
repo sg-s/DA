@@ -83,16 +83,17 @@ for i = 1:3
 	plot(ft,K2(:,do_these(i))/norm(K2(:,do_these(i))),'k'), hold on
 	plot(1e-3*(1:1e3),K/norm(K),'r')
 	set(gca,'XLim',[-.2 .6])
+	xlabel('Filter Lag (s)')
 
 
 	subplot(3,3,3*(i-1)+2), hold on
-	plot(K2p(a:10:z,do_these(i)),fA(a:10:z,do_these(i)),'k.')
+	plot(K2p(a:20:z,do_these(i)),fA(a:20:z,do_these(i)),'k.')
 	legend(['r^2 = ' oval(rsquare(K2p(a:z,do_these(i)),fA(a:z,do_these(i))))],'Location','southeast')
 	xlabel('Projection using normal filter')
 	ylabel('Firing Rate (Hz)')
 
 	subplot(3,3,3*(i-1)+3), hold on
-	plot(R(a:10:z),fA(a:10:z,do_these(i)),'r.')
+	plot(R(a:20:z),fA(a:20:z,do_these(i)),'r.')
 	legend(['r^2 = ' oval(rsquare(R(a:z),fA(a:z,do_these(i))))],'Location','southeast')
 	xlabel('Projection using idealised filter')
 	ylabel('Firing Rate (Hz)')

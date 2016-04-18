@@ -70,6 +70,8 @@ ft = 1e-3*(1:length(K1)) - .1;
 %%
 % In the following figure, we plot the filters backed out using standard methods together with the idealised filter that is force to be causal. We also plot the predictions using each of these filters and compare how well they predict the response. Each row shows a different trial from the full dataset. 
 
+a = 10e3; z = 45e3;
+
 figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
 do_these = find(paradigm==1);
 for i = 1:3

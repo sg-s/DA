@@ -190,34 +190,45 @@ for i = 1:width(LFP)
 	LFP(:,i) = LFP(:,i) - mean(LFP(1:5e3,i));
 end
 
-figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
-subplot(2,2,1), hold on
+figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
+subplot(2,3,1), hold on
 plot(-K1p(a:z,1),-LFP(a:z,1),'k')
 title('Stimulus \rightarrow LFP')
 xlabel('K_1 \otimes s(t)')
 ylabel('LFP (mV)')
 legend(['r^2 = ' oval(rsquare(-K1p(a:z,1),-LFP(a:z,1)))],'Location','southeast')
 
-subplot(2,2,2), hold on
+subplot(2,3,2), hold on
 plot(-K2p(a:z,1),-LFP(a:z,1),'r')
 title('Stimulus \rightarrow filtered LFP')
 xlabel('K_2 \otimes s(t)')
 ylabel('LFP (mV)')
 legend(['r^2 = ' oval(rsquare(-K2p(a:z,1),-LFP(a:z,1)))],'Location','southeast')
 
-subplot(2,2,3), hold on
+subplot(2,3,4), hold on
 plot(-K3p(a:z,1),-dLFP(a:z,1),'b')
 title('Stimulus \rightarrow dLFP/dt')
 xlabel('K_3 \otimes s(t)')
 ylabel('dLFP/dt (mV/s)')
 legend(['r^2 = ' oval(rsquare(-K3p(a:z,1),-dLFP(a:z,1)))],'Location','southeast')
 
-subplot(2,2,4), hold on
-plot(-cumsum(K3p(a:z,1)),-LFP(a:z,1),'b')
+subplot(2,3,5), hold on
+x = cumsum(K3p(a:z,1));
+plot(x,-LFP(a:z,1),'b')
 title('Stimulus \rightarrow dLFP/dt')
-xlabel('\int K_3 \otimes s(t)')
+xlabel('\int (K_3 \otimes s(t))')
 ylabel('LFP (mV)')
-legend(['r^2 = ' oval(rsquare(-cumsum(K3p(a:z,1)),-LFP(a:z,1)))],'Location','southeast')
+legend(['r^2 = ' oval(rsquare(x,-LFP(a:z,1)))],'Location','southeast')
+
+subplot(2,3,6), hold on
+temp = (cumsum(K3(:,1)));
+time = 1e-3*(1:length(PID));
+x = convolve(time,PID(:,1),temp,ft);
+plot(x(a:z),-LFP(a:z,1),'b')
+title('Stimulus \rightarrow dLFP/dt')
+xlabel('(\int K_3) \otimes s(t)')
+ylabel('LFP (mV)')
+legend(['r^2 = ' oval(rsquare(x(a:z),-LFP(a:z,1)))],'Location','southeast')
 
 prettyFig()
 
@@ -226,9 +237,8 @@ if being_published
 	delete(gcf)
 end
 
-
 %%
-% Integrating the predicted dLFP using the derivative-taking filter is really bad because the derivative-taking filter isn't perfectly derivative taking. So there is a constant trend in the data (since there is a constant offset in the derivative).
+% This is weird. It shouldn't matter if we integrating the filter and then convolve, or convolve with a filter and then integrate. But there's something wrong with the latter case. 
 
 
 %% Version Info

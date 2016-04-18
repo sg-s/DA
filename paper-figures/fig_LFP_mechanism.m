@@ -331,7 +331,7 @@ ax(1).Position = [0.1300 0.7673 0.4 0.1577];
 ax(2).Position = [0.1300 0.5482 0.4 0.1577];
 ax(3).Position = [0.6682 0.65 0.2368 0.25];
 
-prettyFig('fs=14;','FixLogX=true;','FixLogY=true;')
+prettyFig('fs',14,'FixLogX',true,'FixLogY',true)
 
 if being_published
 	snapnow
@@ -341,4 +341,5 @@ end
 
 %% Version Info
 % The file that generated this document is called:
+
 pFooter;

@@ -15,8 +15,6 @@ pHeader;
 %% Gain control by the mean stimulus
 % In this section, we analyse the LFP to firing rate transformation in the mean shifted gaussian data. In the following figure, we extract filters from the PID, the derivative of the LFP and the firing rate, and compare them. 
 
-
-
 [PID, LFP, fA, paradigm,~, ~, AllControlParadigms] = consolidateData('/local-data/DA-paper/LFP-MSG/september',1);
 
 
@@ -50,23 +48,25 @@ PID(:,bad_trials) = [];
 fA(:,bad_trials) = [];
 paradigm(bad_trials) = [];
 
-% filter the LFP
+% band pass all the LFP
 try 
 	load('/local-data/DA-paper/LFP-MSG/september/filtered_LFP.mat','filtered_LFP')
 catch
 	filtered_LFP = LFP;
 	for i = 1:width(LFP)
-		filtered_LFP(:,i) = filtered_LFP(:,i) - fastFiltFilt(ones(1e4,1),1e4,filtered_LFP(:,i));
-		filtered_LFP(:,i) = filtered_LFP(:,i)*10; % to get the units right, now in mV
+		filtered_LFP(:,i) = 10*bandPass(LFP(:,i),1e4,Inf);
 	end
 end
 
-% extract filters and find gain
-a = 25e3; z = 45e3;
+% define limits on data
+a = 10e3; z = 50e3;
+
+% extract filters and compute gains
 [K1,K1p,K1_gain] = extractFilters(PID,filtered_LFP,'use_cache',true,'a',a,'z',z);
 [K2,K2p,K2_gain] = extractFilters(filtered_LFP,fA,'use_cache',true,'a',a,'z',z);
 [K3,K3p,K3_gain] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
 ft = 1e-3*(1:length(K1)) - .1;
+
 
 % remember this for later
 weber_data.K1 = K1;
@@ -76,26 +76,26 @@ weber_data.paradigm = paradigm;
 weber_data.K1p = K1p;
 weber_data.K2p = K2p;
 weber_data.K3p = K3p;
-weber_data.dLFP = dLFP;
+weber_data.filtered_LFP = filtered_LFP;
 weber_data.PID = PID;
 weber_data.fA = fA;
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1), hold on
 plot(ft,nanmean(K1(:,paradigm==1),2));
-title('PID \rightarrow dLFP')
+title('PID \rightarrow LFP')
 xlabel('Filtertime (s)')
-ylabel('K1')
+ylabel('K_1')
 
 iv = sum(nanmean(K1(:,paradigm==1),2))./sum(abs(nanmean(K1(:,paradigm==1),2)));
 tx = ['$\frac{\intop K}{\intop\left|K\right|}$=' oval(iv)];
-text(.3,10e-3,tx,'interpreter','latex')
+text(0.1,0,tx,'interpreter','latex')
 
 subplot(1,3,2), hold on
 plot(ft,nanmean(K2(:,paradigm==1),2));
-title('dLFP \rightarrow Firing','interpreter','tex')
+title('LFP \rightarrow Firing','interpreter','tex')
 xlabel('Filtertime (s)')
-ylabel('K2')
+ylabel('K_2')
 
 iv = sum(nanmean(K2(:,paradigm==1),2))./sum(abs(nanmean(K2(:,paradigm==1),2)));
 tx = ['$\frac{\intop K}{\intop\left|K\right|}$=' oval(iv)];
@@ -108,7 +108,7 @@ temp1 = nanmean(K1(:,paradigm==1),2);
 temp2 = nanmean(K2(:,paradigm==1),2);
 plot(ft,convolve(ft,temp1,temp2,ft));
 title('PID \rightarrow Firing','interpreter','tex')
-legend('K3','K1 \otimes K2')
+legend('K_3','K_1 \otimes K_2')
 
 iv = sum(nanmean(K3(:,paradigm==1),2))./sum(abs(nanmean(K3(:,paradigm==1),2)));
 tx = ['$\frac{\intop K}{\intop\left|K\right|}$=' oval(iv)];
@@ -116,8 +116,8 @@ text(.3,10e-3,tx,'interpreter','latex')
 
 xlabel('Filtertime (s)')
 
-labelFigure
 prettyFig
+labelFigure
 
 if being_published	
 	snapnow	
@@ -127,7 +127,6 @@ end
 
 %%
 % Now, we compare the projections using these filters with the actual data. 
-
 
 ss = 10;
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
@@ -173,12 +172,13 @@ ss = 100;
 c = parula(max(paradigm)+1);
 mean_stim = nanmean(PID(a:z,:));
 ms = [min(mean_stim) max(mean_stim)];
-a = 35e3; z = 50e3;
 subplot(2,3,1), hold on
 for i = 1:max(paradigm) % iterate over all paradigms 
 	y = nanmean(filtered_LFP(a:z,paradigm == i),2);
 	x = nanmean(K1p(a:z,paradigm == i),2);
 	x = x - nanmean(x);
+	% s = nanmean(PID(a:z,paradigm==i),2);
+	% x = x + nanmean(s);
 	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:));
 end
 xlabel('K1 \otimes s(t)')
@@ -215,7 +215,7 @@ ylabel('LFP Gain (mV/V)')
 set(gca,'XScale','log','YScale','log')
 ff = fit(mean_stim(:),K1_gain(:),'power1','Upper',[Inf -1],'Lower',[0 -1]);
 plot(ms,ff(ms),'r')
-set(gca,'XScale','log','YScale','log','YLim',[.1 10])
+set(gca,'XScale','log','YScale','log','YLim',[1 100],'XLim',[.1 2])
 
 subplot(2,3,5), hold on
 for i = 1:length(paradigm)
@@ -223,7 +223,7 @@ for i = 1:length(paradigm)
 end
 xlabel('Mean Stimulus (V)')
 ylabel('Firing Gain (Hz/mV)')
-set(gca,'XScale','log','YScale','log','YLim',[1 100])
+set(gca,'XScale','log','YScale','log','YLim',[1 1e2],'XLim',[.1 2])
 
 
 subplot(2,3,6), hold on
@@ -232,7 +232,7 @@ for i = 1:length(paradigm)
 end
 xlabel('Mean Stimulus (V)')
 ylabel('Firing Gain (Hz/V)')
-set(gca,'XScale','log','YScale','log')
+set(gca,'XScale','log','YScale','log','YLim',[10 1e3],'XLim',[.1 2])
 ff = fit(mean_stim(:),K3_gain(:),'power1','Upper',[Inf -1],'Lower',[0 -1]);
 plot(ms,ff(ms),'r')
 
@@ -244,8 +244,52 @@ if being_published
 	delete(gcf)
 end
 
+
 %%
-% This clearly demonstrates that gain control to the mean happens at the transduction level, which is responsible for the Weber-Fechner Law at the firing machinery. We can also see that the gain of the firing machinery itself doesn't change with the mean stimulus. 
+% This clearly demonstrates that gain control to the mean happens at the transduction level, which is responsible for the Weber-Fechner Law at the firing machinery. We can also see that the gain of the firing machinery itself doesn't change with the mean stimulus. In the following figure, we verify this result by measuring the standard deviation of the input and output at each stage. The advantage of this method is that it does not rely on the filter at all. 
+
+a = 10e3; z = 45e3;
+figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
+subplot(1,3,1), hold on
+temp = nanstd(filtered_LFP(a:z,:))./nanstd(PID(a:z,:));
+for i = 1:max(paradigm)
+	plot(mean_stim(paradigm==i),temp(paradigm==i),'+','Color',c(i,:))
+end
+ff = fit(mean_stim(:),temp(:),'power1','Upper',[Inf -1],'Lower',[0 -1]);
+plot(ms,ff(ms),'r')
+set(gca,'XScale','log','YScale','log','YLim',[1 100],'XLim',[.1 2])
+ylabel('\sigma_{LFP}/\sigma_{Stimulus} (mV/V)')
+xlabel('Mean Stimulus (V)')
+
+subplot(1,3,2), hold on
+temp = nanstd(fA(a:z,:))./nanstd(filtered_LFP(a:z,:));
+for i = 1:max(paradigm)
+	plot(mean_stim(paradigm==i),temp(paradigm==i),'+','Color',c(i,:))
+end
+set(gca,'XScale','log','YScale','log','YLim',[1 1e2],'XLim',[.1 2])
+ylabel('\sigma_{Firing Rate}/\sigma_{LFP} (Hz/mV)')
+xlabel('Mean Stimulus (V)')
+
+subplot(1,3,3), hold on
+temp = nanstd(fA(a:z,:))./nanstd(PID(a:z,:));
+for i = 1:max(paradigm)
+	plot(mean_stim(paradigm==i),temp(paradigm==i),'+','Color',c(i,:))
+end
+ff = fit(mean_stim(:),temp(:),'power1','Upper',[Inf -1],'Lower',[0 -1]);
+plot(ms,ff(ms),'r')
+set(gca,'XScale','log','YScale','log','YLim',[10 1e3],'XLim',[.1 2])
+ylabel('\sigma_{Firing Rate}/\sigma_{Stimulus} (mV/V)')
+xlabel('Mean Stimulus (V)')
+
+prettyFig('fs',18)
+labelFigure
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
+
 
 %% Accounting for mean-sensitive gain changes
 % In this section, we try to account for the observed Weber-like scaling of transduction currents using a simple divisive gain control term:

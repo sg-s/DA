@@ -301,45 +301,46 @@ end
 % The best-fit model parameters were: 
 
 
-p.tau = 79.8562;
-p.  n = 1.0002;
-p.  B = 100;
-p.  A = 3e3;
+% p.tau = 99.9999;
+% p.  n = 1.0725;
+% p.  B = 531.8049;
+% p.  A = 2.2013e+03;
 
-disp(p)
+% disp(p)
 
-% remember this for later
-weber_data.p = p;
+% % remember this for later
+% weber_data.p = p;
 
-%%
-% However, the filter was very poorly constrained, and many different filters with lengths from 30ms to 3s seemed to do as good a job. 
+% %%
+% % However, the filter was very poorly constrained, and many different filters with lengths from 30ms to 3s seemed to do as good a job. 
 
-d.stimulus = [PID(a:z,:), K1p(a:z,:)];
-G = divisiveGainModel(d.stimulus,p);
+% d.stimulus = [PID(a:z,:), K1p(a:z,:)];
+% G = divisiveGainModel(d.stimulus,p);
 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-subplot(1,2,1), hold on
-plot(mean_stim,K1_gain,'k+')
-plot(mean_stim,G,'ro')
-xlabel('Mean Stimulus')
-legend('Measured','Model Prediction')
-ylabel('Gain (mV/s/V)')
-set(gca,'XScale','log','YScale','log')
+% figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% subplot(1,2,1), hold on
+% plot(mean_stim,K1_gain,'k+')
+% plot(mean_stim,G,'ro')
+% xlabel('Mean Stimulus')
+% legend('Measured','Model Prediction')
+% ylabel('Gain (mV/s/V)')
+% set(gca,'XScale','log','YScale','log')
 
-subplot(1,2,2), hold on
-plot([10 200],[10 200],'k--')
-plot(G,K1_gain,'+')
-xlabel('Model Prediction')
-ylabel('Measured Gain (mV/s/V)')
-set(gca,'XScale','log','YScale','log')
+% subplot(1,2,2), hold on
+% plot([10 200],[10 200],'k--')
+% plot(G,K1_gain,'+')
+% xlabel('Model Prediction')
+% ylabel('Measured Gain (mV/s/V)')
+% set(gca,'XScale','log','YScale','log')
 
-prettyFig('fs',18)
-labelFigure
+% prettyFig('fs',18)
+% labelFigure
 
-if being_published	
-	snapnow	
-	delete(gcf)
-end
+% if being_published	
+% 	snapnow	
+% 	delete(gcf)
+% end
+
 
 %  ######   #######  ##    ## ######## ########     ###     ######  ######## 
 % ##    ## ##     ## ###   ##    ##    ##     ##   ## ##   ##    ##    ##    
@@ -379,9 +380,6 @@ block_length = 1e4;
 reshaped_LFP = LFP(global_start:end-1e4-1,1:width(PID));
 reshaped_LFP = reshape(reshaped_LFP,block_length,width(reshaped_LFP)*length(reshaped_LFP)/block_length);
 
-reshaped_dLFP = dLFP(global_start:end-1e4-1,1:width(PID));
-reshaped_dLFP = reshape(reshaped_dLFP,block_length,width(reshaped_dLFP)*length(reshaped_dLFP)/block_length);
-
 % also reshape the PID
 reshaped_PID = PID(global_start:end-1e4-1,1:width(PID));
 reshaped_PID = reshape(reshaped_PID,block_length,width(reshaped_PID)*length(reshaped_PID)/block_length);
@@ -396,30 +394,23 @@ reshaped_orn = repmat(orn,length(global_start:length(PID)-1e4-1)/block_length,1)
 reshaped_orn = reshaped_orn(:);
 
 % throw our NaNs globally. so we're throwing out epochs where the data is incomplete
-rm_this = isnan(sum(reshaped_dLFP));
+rm_this = isnan(sum(reshaped_LFP));
 reshaped_LFP(:,rm_this) = [];
-reshaped_dLFP(:,rm_this) = [];
 reshaped_PID(:,rm_this) = [];
 reshaped_fA(:,rm_this) = [];
 reshaped_orn(rm_this) = [];
+
+% filter to remove spikes
+for i = 1:width(reshaped_LFP)
+	reshaped_LFP(:,i) = filtfilt(ones(30,1),30,reshaped_LFP(:,i));
+end
 
 % extract filters and find gain
-a = 1; z = 10e3;
-K1 = extractFilters(reshaped_PID,reshaped_dLFP,'use_cache',true,'a',a,'z',z);
-K2 = extractFilters(reshaped_dLFP,reshaped_fA,'use_cache',true,'a',a,'z',z);
+a = 1e3; z = 10e3;
+K1 = extractFilters(reshaped_PID,reshaped_LFP,'use_cache',true,'a',a,'z',z);
+K2 = extractFilters(reshaped_LFP,reshaped_fA,'use_cache',true,'a',a,'z',z);
 K3 = extractFilters(reshaped_PID,reshaped_fA,'use_cache',true,'a',a,'z',z);
 ft = 1e-3*(1:length(K1)) - .1;
-
-% throw out traces where the dLFP traces are significantly far from 0
-dmax = (nanmean(nanmean(reshaped_dLFP)) + 2*nanstd(nanmean(reshaped_dLFP)));
-dmin = (nanmean(nanmean(reshaped_dLFP)) - 2*nanstd(nanmean(reshaped_dLFP)));
-rm_this = nanmean(reshaped_dLFP) < dmin | nanmean(reshaped_dLFP) > dmax;
-
-reshaped_LFP(:,rm_this) = [];
-reshaped_dLFP(:,rm_this) = [];
-reshaped_PID(:,rm_this) = [];
-reshaped_fA(:,rm_this) = [];
-reshaped_orn(rm_this) = [];
 
 % remove mean from the LFP for each trial
 for i = 1:width(reshaped_LFP)
@@ -428,8 +419,21 @@ end
 
 % average filters for display and to project the stimulus
 K1 = nanmean(K1,2);
-K2 = nanmean(K2,2); K2(K2<0) = 0;
+K2 = nanmean(K2,2); 
 K3 = nanmean(K3,2);
+
+% project the stimulus
+K1p = NaN*reshaped_fA;
+K2p = NaN*reshaped_fA;
+K3p = NaN*reshaped_fA;
+K2K1p = NaN*reshaped_fA;
+for i = 1:width(reshaped_fA)
+	K1p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K1,ft);
+	K2K1p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),K1p(:,i),K2,ft);
+	K2p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_LFP(:,i),K2,ft);
+	K3p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K3,ft);
+end
+
 
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1), hold on
@@ -474,102 +478,15 @@ if being_published
 	delete(gcf)
 end
 
-
-%%
-% Let's look at the data more closely. In the following figure, I plot the mean LFP (not the derivative) averaged across all trials to see if there are trends in the data that should not be there. 
-
-
-figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
-subplot(2,1,1), hold on
-temp = (nanmean(reshaped_PID,2));
-x = 1e3:4e3;
-y = temp(x);
-ff = fit(x(:),y(:),'poly1');
-plot(temp,'k')
-plot(x,ff(x),'r')
-x = 6e3:9e3;
-y = temp(x);
-ff = fit(x(:),y(:),'poly1');
-plot(x,ff(x),'b')
-xlabel('Time (ms)')
-ylabel('<PID>_{trials} (V)')
-
-subplot(2,1,2), hold on
-temp = (nanmean(reshaped_LFP,2));
-x = 1e3:4e3;
-y = temp(x);
-ff = fit(x(:),y(:),'poly1');
-plot(temp,'k')
-plot(x,ff(x),'r')
-x = 6e3:9e3;
-y = temp(x);
-ff = fit(x(:),y(:),'poly1');
-plot(x,ff(x),'b')
-xlabel('Time (ms)')
-ylabel('<LFP>_{trials} (\DeltamV)')
-prettyFig;
-
-if being_published	
-	snapnow	
-	delete(gcf)
-end
-
-%%
-% Hmm. So there is a trend. Does this show up in the distribution of the derivative of the LFPs?  To look at this more closely, I plot predicted dLFP vs. the actual dLFP for the high and low variance epochs (a). I'm also plotting the distributions of the dLFPs during the two epochs (b) and the distributions of the predicted dLFPs (c).
-
-figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-
-plot([0 0],[0 .14],'k--')
-x = vectorise(reshaped_dLFP(1e3:4e3,:));
-[hy,hx] = histcounts(x,linspace(min(x),max(x),100));
-hy = hy/sum(hy);
-hx = hx(1:end-1) + mean(diff(hx));
-plot(hx,hy,'r')
-x = vectorise(reshaped_dLFP(6e3:9e3,:));
-[hy,hx] = histcounts(x,linspace(min(x),max(x),100));
-hy = hy/sum(hy);
-hx = hx(1:end-1) + mean(diff(hx));
-plot(hx,hy,'b')
-xlabel('dLFP (mV/s)')
-ylabel('Probability')
-set(gca,'XLim',[-40 40])
-
-prettyFig;
-
-if being_published	
-	snapnow	
-	delete(gcf)
-end
-
-%%
-% Now, to compensate for this, we set the mean derivative of the LFP to be zero in each trial and then use that to predict the firing rates. 
-
-for i = 1:width(reshaped_dLFP)
-	reshaped_dLFP(1e3:4e3) = reshaped_dLFP(1e3:4e3) - nanmean(reshaped_dLFP(1e3:4e3));
-	reshaped_dLFP(6e3:9e3) = reshaped_dLFP(6e3:9e3) - nanmean(reshaped_dLFP(6e3:9e3));
-end
-
-% project the stimulus
-K1p = NaN*reshaped_fA;
-K2p = NaN*reshaped_fA;
-K3p = NaN*reshaped_fA;
-K2K1p = NaN*reshaped_fA;
-for i = 1:width(reshaped_fA)
-	K1p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K1,ft);
-	K2K1p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),K1p(:,i),K2,ft);
-	K2p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_dLFP(:,i),K2,ft);
-	K3p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K3,ft);
-end
-
 % compute the r2 for each trial
-r2_K1p = NaN(width(reshaped_dLFP),1);
-r2_K2p = NaN(width(reshaped_dLFP),1);
-r2_K2K1p = NaN(width(reshaped_dLFP),1);
-r2_K3p = NaN(width(reshaped_dLFP),1);
+r2_K1p = NaN(width(reshaped_LFP),1);
+r2_K2p = NaN(width(reshaped_LFP),1);
+% r2_K2K1p = NaN(width(reshaped_LFP),1);
+r2_K3p = NaN(width(reshaped_LFP),1);
 for i = 1:length(r2_K1p)
-	r2_K1p(i) = rsquare(K1p(1e3:9e3,i),reshaped_dLFP(1e3:9e3,i));
+	r2_K1p(i) = rsquare(K1p(1e3:9e3,i),reshaped_LFP(1e3:9e3,i));
 	r2_K2p(i) = rsquare(K2p(1e3:9e3,i),reshaped_fA(1e3:9e3,i));
-	r2_K2K1p(i) = rsquare(K2K1p(1e3:9e3,i),reshaped_fA(1e3:9e3,i));
+	% r2_K2K1p(i) = rsquare(K2K1p(1e3:9e3,i),reshaped_fA(1e3:9e3,i));
 	r2_K3p(i) = rsquare(K3p(1e3:9e3,i),reshaped_fA(1e3:9e3,i));
 end
 
@@ -579,10 +496,10 @@ end
 
 
 ss = 1;
-min_r2 = .7; 
+min_r2 = .8; 
 
 if ~exist('input_contrast_change_K1p','var')
-	computeContrastsGains;
+	computeContrastsGains2;
 end
 
 figure('outerposition',[0 0 1200 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
@@ -593,7 +510,7 @@ xlabel('Time since switch (s)')
 ylabel('Stimulus (V)')
 
 subplot(2,3,2), hold on
-plot(time,reshaped_dLFP(:,r2_K1p>.8),'Color',[.7 .7 .7])
+plot(time,reshaped_LFP(:,r2_K1p>.8),'Color',[.7 .7 .7])
 xlabel('Time since switch (s)')
 ylabel('dLFP (mV/s)')
 
@@ -604,21 +521,29 @@ ylabel('Firing Rate (Hz)')
 
 subplot(2,3,4), hold on
 x = K1p(1e3:4e3,:);
-y = reshaped_dLFP(1e3:4e3,:);
+y = reshaped_LFP(1e3:4e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K1p < min_r2)');
 x(:,rm_this) = []; y(:,rm_this) = []; 
+for i = 1:width(x)
+	x(:,i) = x(:,i) - nanmean(x(:,i));
+	y(:,i) = y(:,i) - nanmean(y(:,i));
+end
 x = x(:); y = y(:);
 x = x(1:ss:end); y = y(1:ss:end);
 plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[1 0 0],'proportional_bins',true,'show_error',false);
 x = K1p(6e3:9e3,:);
-y = reshaped_dLFP(6e3:9e3,:);
+y = reshaped_LFP(6e3:9e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K1p < min_r2)');
 x(:,rm_this) = []; y(:,rm_this) = []; 
+for i = 1:width(x)
+	x(:,i) = x(:,i) - nanmean(x(:,i));
+	y(:,i) = y(:,i) - nanmean(y(:,i));
+end
 x = x(:); y = y(:);
 x = x(1:ss:end); y = y(1:ss:end);
 plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[0 0 1],'proportional_bins',true,'show_error',false);
 xlabel('K1 \otimes s(t)')
-ylabel('dLPF (mV/s)')
+ylabel('LPF (mV/s)')
 
 tx = ['$\Delta gain$ = ' oval(nanmean(gain_change_K1p)) ,'$ \pm $' oval(sem(gain_change_K1p))];
 text(-.2,20,tx,'interpreter','latex');
@@ -630,6 +555,9 @@ x = K2p(1e3:4e3,:);
 y = reshaped_fA(1e3:4e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K2p < min_r2)');
 x(:,rm_this) = []; y(:,rm_this) = []; 
+for i = 1:width(x)
+	x(:,i) = x(:,i) - nanmean(x(:,i));
+end
 x = x(:); y = y(:);
 x = x(1:ss:end); y = y(1:ss:end);
 [~,data_hi] = plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[1 0 0],'proportional_bins',true,'show_error',false);
@@ -637,40 +565,19 @@ x = K2p(6e3:9e3,:);
 y = reshaped_fA(6e3:9e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K2p < min_r2)');
 x(:,rm_this) = []; y(:,rm_this) = []; 
+for i = 1:width(x)
+	x(:,i) = x(:,i) - nanmean(x(:,i));
+end
 x = x(:); y = y(:);
 x = x(1:ss:end); y = y(1:ss:end);
 [~,data_lo] = plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[0 0 1],'proportional_bins',true,'show_error',false);
-xlabel('K2 \otimes dLFP(t)')
+xlabel('K2 \otimes LFP(t)')
 ylabel('Firing Rate (Hz)')
 
 tx = ['$\Delta gain $= ' oval(nanmean(gain_change_K2p)) ,'$ \pm $' oval(sem(gain_change_K2p))];
 text(-.2,20,tx,'interpreter','latex');
 tx = ['$\Delta \sigma $= ' oval(nanmean(input_contrast_change_K2p)) ,'$ \pm $' oval(sem(input_contrast_change_K2p))];
 text(-.2,15,tx,'interpreter','latex');
-
-
-% subplot(2,2,3), hold on
-% x = K2K1p(1e3:4e3,:);
-% y = reshaped_fA(1e3:4e3,:);
-% rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K2K1p < min_r2)');
-% x(:,rm_this) = []; y(:,rm_this) = []; 
-% x = x(:); y = y(:);
-% x = x(1:ss:end); y = y(1:ss:end);
-% [~,data_hi] = plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[1 0 0],'proportional_bins',true,'show_error',false);
-% x = K2K1p(6e3:9e3,:);
-% y = reshaped_fA(6e3:9e3,:);
-% rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K2K1p < min_r2)');
-% x(:,rm_this) = []; y(:,rm_this) = []; 
-% x = x(:); y = y(:);
-% x = x(1:ss:end); y = y(1:ss:end);
-% [~,data_lo] = plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[0 0 1],'proportional_bins',true,'show_error',false);
-% xlabel('K2 \otimes K1 \otimes s(t)')
-% ylabel('Firing Rate (Hz)')
-
-% tx = ['$\Delta gain $= ' oval(nanmean(gain_change_K2K1p)) ,'$ \pm $' oval(sem(gain_change_K2K1p))];
-% text(-.2,60,tx,'interpreter','latex');
-% tx = ['$\Delta \sigma $= ' oval(nanmean(input_contrast_change_K2K1p)) ,'$ \pm $' oval(sem(input_contrast_change_K2K1p))];
-% text(-.2,52,tx,'interpreter','latex');
 
 subplot(2,3,6), hold on
 x = K3p(1e3:4e3,:);
@@ -709,10 +616,10 @@ end
 figure('outerposition',[0 0 1500 500],'PaperUnits','points','PaperSize',[1500 500]); hold on
 subplot(1,3,1), hold on
 x = std(reshaped_PID(1e3:4e3,r2_K1p > .8));
-y1 = std(reshaped_dLFP(1e3:4e3,r2_K1p > .8))./std(reshaped_PID(1e3:4e3,r2_K1p > .8));
+y1 = std(reshaped_LFP(1e3:4e3,r2_K1p > .8))./std(reshaped_PID(1e3:4e3,r2_K1p > .8));
 plot(x,y1,'r+')
 x = std(reshaped_PID(6e3:9e3,r2_K1p > .8));
-y2 = std(reshaped_dLFP(6e3:9e3,r2_K1p > .8))./std(reshaped_PID(6e3:9e3,r2_K1p > .8));
+y2 = std(reshaped_LFP(6e3:9e3,r2_K1p > .8))./std(reshaped_PID(6e3:9e3,r2_K1p > .8));
 plot(x,y2,'b+')
 title(['\DeltaGain = ' oval(100*mean((y2-y1)./y1)) '%'])
 ylabel(['Transduction Gain' char(10) '\sigma_{dLFP}/\sigma_{Stimulus} (mV/s/V)'])
@@ -720,10 +627,10 @@ xlabel('\sigma_{Stimulus} (V)')
 
 subplot(1,3,2), hold on
 x = std(reshaped_PID(1e3:4e3,r2_K2p > .8));
-y1 = std(reshaped_fA(1e3:4e3,r2_K2p > .8))./std(reshaped_dLFP(1e3:4e3,r2_K2p > .8));
+y1 = std(reshaped_fA(1e3:4e3,r2_K2p > .8))./std(reshaped_LFP(1e3:4e3,r2_K2p > .8));
 plot(x,y1,'r+')
 x = std(reshaped_PID(6e3:9e3,r2_K2p > .8));
-y2 = std(reshaped_fA(6e3:9e3,r2_K2p > .8))./std(reshaped_dLFP(6e3:9e3,r2_K2p > .8));
+y2 = std(reshaped_fA(6e3:9e3,r2_K2p > .8))./std(reshaped_LFP(6e3:9e3,r2_K2p > .8));
 plot(x,y2,'b+')
 xlabel('\sigma_{Stimulus} (V)')
 title(['\DeltaGain = ' oval(100*mean((y2-y1)./y1)) '%'])

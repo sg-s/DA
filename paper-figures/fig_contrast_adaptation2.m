@@ -124,7 +124,30 @@ for i = 1:width(reshaped_fA)
 	fA_pred(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K2_mean,ft);
 end
 
+% compute gains per trial
+lo_gain = NaN(width(reshaped_PID),1);
+hi_gain = NaN(width(reshaped_PID),1);
+for i = 1:width(reshaped_PID)
+	y = reshaped_fA(1e3:4e3,i);
+	x = fA_pred(1e3:4e3,i);
+	r = max(y) - min(y);
+	l = (y > (r/3 + min(y))) & (y < (max(y) - r/3));
+	try
+		ff = fit(x(:),y(:),'poly1');
+		hi_gain(i) = ff.p1;
+	catch
+	end
 
+	y = reshaped_fA(6e3:9e3,i);
+	x = fA_pred(6e3:9e3,i);
+	r = max(y) - min(y);
+	l = (y > (r/3 + min(y))) & (y < (max(y) - r/3));
+	try
+		ff = fit(x(:),y(:),'poly1');
+		lo_gain(i) = ff.p1;
+	catch
+	end
+end
 
 % ##     ##    ###    ##    ## ########    ########  ##        #######  ######## 
 % ###   ###   ## ##   ##   ##  ##          ##     ## ##       ##     ##    ##    
@@ -138,48 +161,85 @@ end
 time = 1e-3*(1:length(reshaped_PID));
 s = .5; % shading opacity
 
-figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
-subplot(2,2,1), hold on
-plot(time(1:10:end),reshaped_PID(1:10:end,1:10:end),'Color',[.5 .5 .5 .5]);
-xlabel('Time since switch (s)')
-ylabel('Stimulus (V)')
-set(gca,'XLim',[0 10],'YLim',[0 1.1])
-plot([1 5],[1 1],'r','LineWidth',3)
-plot([6 10],[1 1],'b','LineWidth',3)
+figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
+clear ax
+ax(1) = subplot(3,10,1:7);
+ax(2) = subplot(3,10,8:10);
+ax(3) = subplot(3,10,11:17);
+ax(4) = subplot(3,10,18:20);
+
+ax(5) = subplot(3,3,7); 
+ax(6) = subplot(3,3,8);
+ax(7) = subplot(3,3,9);
+for i = 1:length(ax)
+	hold(ax(i),'on');
+end  
+
+plot(ax(1),time(1:10:end),reshaped_PID(1:10:end,1:10:end),'Color',[.5 .5 .5 .5]);
+xlabel(ax(1),'Time since switch (s)')
+ylabel(ax(1),'Stimulus (V)')
+set(ax(1),'XLim',[0 10],'YLim',[0 1.1])
+plot(ax(1),[1 5],[1 1],'r','LineWidth',3)
+plot(ax(1),[6 10],[1 1],'b','LineWidth',3)
+
+% plot the distributions of the projected stimulus
+x = fA_pred(1e3:10:5e3,:); x = x(:);
+x = x - mean(x);
+x = x/std(x);
+x = x*mean(std(reshaped_PID(1e3:5e3,:)));
+x = x+mean(mean(reshaped_PID(1e3:5e3,:)));
+hx = linspace(min(x),max(x),100);
+hxx = hx(1:end-1) + mean(diff(hx));
+hy = histcounts(x,hx);
+hy = hy/sum(hy);
+plot(ax(2),hy,hxx,'r')
+
+x = fA_pred(6e3:10:9e3,:); x = x(:);
+x = x - mean(x);
+x = x/std(x);
+x = x*mean(std(reshaped_PID(6e3:9e3,:)));
+x = x+mean(mean(reshaped_PID(6e3:9e3,:)));
+hxx = hx(1:end-1) + mean(diff(hx));
+hy = histcounts(x,hx);
+hy = hy/sum(hy);
+plot(ax(2),hy,hxx,'b')
+xlabel(ax(2),'Probability')
 
 
-subplot(2,2,3), hold on
-plot(time(1:10:end),reshaped_fA(1:10:end,1:10:end),'Color',[.5 .5 .5 .5]);
-xlabel('Time since switch (s)')
-ylabel('ORN Response (Hz)')
-set(gca,'XLim',[0 10],'YLim',[0 85])
-plot([1 5],[80 80],'r','LineWidth',3)
-plot([6 10],[80 80],'b','LineWidth',3)
+plot(ax(3),time(1:10:end),reshaped_fA(1:10:end,1:10:end),'Color',[.5 .5 .5 .5]);
+xlabel(ax(3),'Time since switch (s)')
+ylabel(ax(3),'ORN Response (Hz)')
+set(ax(3),'XLim',[0 10],'YLim',[0 85])
+plot(ax(3),[1 5],[80 80],'r','LineWidth',3)
+plot(ax(3),[6 10],[80 80],'b','LineWidth',3)
 
-% first show the high contrast epochs
-ax(1) = subplot(2,2,2); hold on
-ax(2) = subplot(2,2,4); hold on
-xlabel(ax(2),'Projected Stimulus (V)')
-ylabel(ax(2),'Normalised Response')
-ylabel(ax(1),'Probability')
+% and show the response distributions 
+x = reshaped_fA(1e3:10:5e3,:); x = x(:);
+hx = linspace(min(x),max(x),100);
+hxx = hx(1:end-1) + mean(diff(hx));
+hy = histcounts(x,hx);
+hy = hy/sum(hy);
+plot(ax(4),hy,hxx,'r')
+xlabel(ax(4),'Probability')
 
+x = reshaped_fA(6e3:10:9e3,:); x = x(:);
+hxx = hx(1:end-1) + mean(diff(hx));
+hy = histcounts(x,hx);
+hy = hy/sum(hy);
+plot(ax(4),hy,hxx,'b')
+xlabel(ax(4),'Probability')
+
+% integrate stimulus distributions and re-plot as a prediction
 temp = fA_pred(1e3:5e3,:); temp = nonnans(temp(:));
 x = min(min(fA_pred)):0.02:max(max(fA_pred));
 y = histcounts(temp,x);
 y = y/sum(y); 
-plot(ax(1),x(2:end),y,'r')
-
-% integrate it and re-plot as a prediction
-plot(ax(2),x(2:end),cumsum(y),'r--')
+plot(ax(7),x(2:end),cumsum(y),'r--')
 
 temp = fA_pred(6e3:end,:); temp = nonnans(temp(:));
 y = histcounts(temp,x);
 y = y/sum(y);
-plot(ax(1),x(2:end),y,'b')
-
-% integrate it and re-plot as a prediction
-plot(ax(2),x(2:end),cumsum(y),'b--')
-
+plot(ax(7),x(2:end),cumsum(y),'b--')
 
 % now plot the actual i/o curve: high contrast
 x = fA_pred(1e3:5e3,:);
@@ -203,29 +263,38 @@ M = max([data_lo.y data_hi.y]);
 data_lo.y = data_lo.y/M; data_hi.y = data_hi.y/M;
 
 % plot data
-plot(ax(2),data_hi.x,data_hi.y,'r','LineWidth',2)
-plot(ax(2),data_lo.x,data_lo.y,'b','LineWidth',2)
+plot(ax(5),data_hi.x,data_hi.y,'r','LineWidth',2)
+plot(ax(5),data_lo.x,data_lo.y,'b','LineWidth',2)
 
-% create  some phantom plots for a nice legend
-clear l
-l(1) = plot(ax(2),NaN,NaN,'k--');
-l(2) = plot(ax(2),NaN,NaN,'k');
-legend(l,{'Prediction','Response'},'Location','southeast')
+% show gain as function of contrast
+lo_gain(lo_gain==0) = NaN;
+hi_gain(hi_gain==0) = NaN;
+x = std(reshaped_PID(1e3:4e3,:));
+plot(ax(6),x,hi_gain,'r+')
+x = std(reshaped_PID(6e3:9e3,:));
+plot(ax(6),x,lo_gain,'b+')
+xlabel(ax(6),'\sigma_{Stimulus} (V)')
+ylabel(ax(6),'ORN Gain (Hz/V)')
 
-% also plot the distributions of the means 
-h = axes(); hold(h,'on')
-set(h,'Position',[.8 .8 .1 .13])
-mean_1 = mean(reshaped_PID(1e3:5e3,:));
-mean_2 = mean(reshaped_PID(6e3:end,:));
-std_1 = std(reshaped_PID(1e3:5e3,:));
-std_2 = std(reshaped_PID(6e3:end,:));
-plot(h,mean_1,std_1,'r.')
-plot(h,mean_2,std_2,'b.')
-set(h,'XLim',[0 0.6],'YLim',[0 0.2])
-xlabel('\mu (V)')
-ylabel('\sigma (V)')
+% % create  some phantom plots for a nice legend
+% clear l
+% l(1) = plot(ax(2),NaN,NaN,'k--');
+% l(2) = plot(ax(2),NaN,NaN,'k');
+% legend(l,{'Prediction','Response'},'Location','southeast')
 
-prettyFig('fs',16)
+% cosmetics
+ax(1).Position(3) = .53;
+ax(3).Position(3) = .53;
+set(ax(2),'YTick',[],'YLim',ax(1).YLim)
+set(ax(4),'YTick',[],'YLim',ax(3).YLim)
+
+xlabel(ax(5),'Projected Stimulus (V)')
+ylabel(ax(5),'Firing Rate (norm)')
+
+ylabel(ax(7),'Cumulative Probability')
+xlabel(ax(7),'Projected Stimulus (V)')
+
+prettyFig('fs',14)
 
 if being_published
 	snapnow

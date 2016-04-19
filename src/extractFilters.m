@@ -114,6 +114,11 @@ if isempty(K)
 	disp(hash)
 end
 
+% % normalise all the filters
+% for i = 1:width(K)
+% 	K(:,i) = K(:,i)/norm(K(:,i));
+% end
+
 % make the linear prediction and compute the gain
 time = dt*(1:length(X));
 filtertime = dt*(1:filter_length) - dt*filter_offset;

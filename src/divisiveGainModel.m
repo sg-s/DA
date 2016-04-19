@@ -20,8 +20,8 @@ lb.n = 1;
 lb.tau = 1;
 lb.B = 0;
 
-ub.n = 10;
-ub.tau = 300;
+ub.n = 1;
+ub.tau = 100;
 
 % see https://github.com/sg-s/DA/issues/114 for an explanation of the following
 filter_length = 4*(p.n*p.tau);

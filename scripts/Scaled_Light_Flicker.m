@@ -74,11 +74,11 @@ for i = 4:length(c)-1
 	filtertime = -99:600;
 	plot(ax(4),filtertime,tK,'Color',c(i,:))
 
-	x = fp(:,these_paradigms);
+	x = fp(a:z,these_paradigms);
 	if width(x) > 1
 		x = nanmean(x,2);
 	end
-	y = fA(:,these_paradigms);
+	y = fA(a:z,these_paradigms);
 	if width(y) > 1
 		y = nanmean(y,2);
 	end
@@ -87,8 +87,6 @@ for i = 4:length(c)-1
 	plot(ax(6),all_light_levels(these_paradigms),gain(these_paradigms),'+','Color',c(i,:))
 end
 
-% fo = fitoptions('power1');
-% fo.Lower = [-Inf -1]; fo.Upper = [Inf -1];
 these_paradigms = (all_light_levels > light_levels(3));
 
 ff = fit(all_light_levels(these_paradigms)',gain(these_paradigms),'power1');
@@ -117,7 +115,7 @@ xlabel(ax(6),'Mean Stimulus (\muW)')
 set(ax(6),'YScale','log','XScale','log')
 ylabel(ax(6),'Gain (Hz/\muW)')
 
-prettyFig('FixLogY=true;','FixLogX=true;','fs=18;')
+prettyFig('FixLogY',true,'FixLogX',true,'fs',18)
 
 if being_published	
 	snapnow	
@@ -198,7 +196,7 @@ xlabel(ax(6),'Mean Stimulus (\muW)')
 set(ax(6),'YScale','log','XScale','log')
 ylabel(ax(6),'Gain (Hz/\muW)')
 
-prettyFig('FixLogY=true;','FixLogX=true;','fs=18;')
+prettyFig('FixLogY',true,'FixLogX',true,'fs',18)
 
 if being_published	
 	snapnow	
@@ -250,7 +248,7 @@ ylabel('Delay (ms)')
 legend(l,['\rho = ' oval(spear(nanmean(LED(35e3:45e3,:))',firing_peaks(:)))])
 
 
-prettyFig('plw=1.3;','lw=1.5;','fs=14;','FixLogX=true;','FixLogY=0;')
+prettyFig('plw',1.3,'lw',1.5,'fs',14,'FixLogX',true,'FixLogY',false)
 
 if being_published
 	snapnow

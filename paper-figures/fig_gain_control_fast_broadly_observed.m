@@ -8,7 +8,7 @@ pHeader;
 tau_h = round(logspace(1.7,4,50)); % all the history lengths we look at, in ms
 example_history_length = 300; % this history length shown in the first row, in ms
 
-figure('outerposition',[0 0 1600 700],'PaperUnits','points','PaperSize',[1600 700]); hold on
+figure('outerposition',[0 0 1500 700],'PaperUnits','points','PaperSize',[1700 900]); hold on
 
 % ##    ##    ###    ######## ##     ## ########     ###    ##       
 % ###   ##   ## ##      ##    ##     ## ##     ##   ## ##   ##       
@@ -94,7 +94,7 @@ mean_stim(rm_this) = [];
 
 subplot(2,5,1), hold on
 plot(mean_stim,gain,'k+');
-set(gca,'XScale','log','YScale','log')
+set(gca,'XScale','log','YScale','log','YLim',[.5 10],'XTick',[1e-2 1e-1 1],'YTick',[.1 1 10])
 xlabel(['\mu_{Stimulus} in preceding ' oval(example_history_length) 'ms (V)'])
 ylabel('ORN Gain (norm)')
 
@@ -317,6 +317,7 @@ legend(h2,{'ab2A','ab3A','pb1A'})
 
 
 prettyFig('fs',12)
+labelFigure
 
 if being_published	
 	snapnow	

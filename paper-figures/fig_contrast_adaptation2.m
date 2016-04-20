@@ -294,13 +294,15 @@ ylabel(ax(5),'Firing Rate (norm)')
 ylabel(ax(7),'Cumulative Probability')
 xlabel(ax(7),'Projected Stimulus (V)')
 
-prettyFig('fs',14)
+prettyFig('fs',14,'lw',1.5)
+labelFigure
 
 if being_published
 	snapnow
 	delete(gcf)
 end
 
+return
 
 % ########  ##    ## ##    ##    ###    ##     ## ####  ######   ######      #######  ######## 
 % ##     ##  ##  ##  ###   ##   ## ##   ###   ###  ##  ##    ## ##    ##    ##     ## ##       

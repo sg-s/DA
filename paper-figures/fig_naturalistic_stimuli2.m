@@ -20,8 +20,7 @@ scatter_size = 12;
 fig_handle=figure('outerposition',[0 0 1300 800],'PaperUnits','points','PaperSize',[1300 800]); hold on
 clf(fig_handle);
 
-axes_handles(1) = subplot(7,4,[1 5]);   % vergassola pic
-axes_handles(2) = subplot(7,4,[9 13]);  % cartoon showing prep
+axes_handles(2) = subplot(7,4,[1 5 9 13]);   % cartoon showing prep
 axes_handles(3) = subplot(7,4,[2 3 6 7]); % stimulus 
 axes_handles(4) = subplot(7,4,[10 11 14 15]); % response + linear prediction 
 axes_handles(5) = subplot(7,4,[4 8]);  % linear filter
@@ -31,25 +30,17 @@ axes_handles(7) = subplot(7,4,1+[17:4:25]);
 axes_handles(8) = subplot(7,4,2+[17:4:25]);
 axes_handles(9) = subplot(7,4,3+[17:4:25]);
 
-for i = 1:length(axes_handles)
+for i = 2:length(axes_handles)
 	hold(axes_handles(i),'on');
 end
 
-% show vergassola picture
-o = imread('../images/odour-plumes.png');
-axes(axes_handles(1));
-imagesc(o);
-axis ij
-axis image
-axis off
-
-o = imread('../images/fig1-cartoon.png');
+axes_handles(2).Position  = [0.1300    0.4738    0.12    0.34];
+o = imread('../images/prep.png');
 axes(axes_handles(2));
 imagesc(o);
 axis ij
 axis image
 axis off
-
 
 
 load('/local-data/DA-paper/natural-flickering/without-lfp/2014_07_11_EA_natflick_non_period_CFM_1_ab3_1_1_all.mat')
@@ -344,11 +335,14 @@ set(axes_handles(9),'YScale','log','XScale','log','XLim',[1e-3 1e1],'XTick',[1e-
 set(axes_handles(6),'box','off')
 
 legend('boxoff')
+labelFigure
 
 if being_published
 	snapnow
 	delete(gcf)
 end
+
+return
 
 %% Sanity Check 1
 % Here, I show that my filter extraction works well by comparing it to Damon's FFT-based filter extraction function. Note that the two filters are almost identical:

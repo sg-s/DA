@@ -51,6 +51,12 @@ for i = 1:width(PID)
 	EAG(:,i) = EAG(:,i) - mean(EAG(1:300,i));
 end
 
+% compute the derivative of the EAG
+dEAG = EAG;
+for i = 1:width(PID)
+	dEAG(:,i) = filtfilt(ones(30,1),30,[0; diff(dEAG(:,i))]);
+end
+
 % filter
 PID = bandPass(PID,Inf,30);
 EAG = bandPass(EAG,2e3,Inf);
@@ -64,7 +70,7 @@ ylabel('Stimulus (mV)')
 
 subplot(2,1,2), hold on
 errorShade(t,mean(EAG,2),sem(EAG'),'Color',[0 0 0]);
-ylabel('EAG (mV)')
+ylabel('\DeltaEAG (mV)')
 xlabel('Time (s)')
 prettyFig();
 
@@ -77,7 +83,8 @@ end
 % We now back out the stimulus to EAG filter using standard methods. The following figure shows the filter extracted from all 5 trials. Shading is the standard error of the mean. The filter is integrating, and is wider than stimulus to ORN filters in the fruit fly. 
 
 offset = 500;
-[K, EAG_prediction, gain, gain_err] = extractFilters(PID,EAG,'filter_length',2e3,'filter_offset',offset);
+
+[K, EAG_prediction, gain] = extractFilters(PID,EAG,'filter_length',2e3,'filter_offset',offset);
 t = 1e-3*(1:length(K)) - 1e-3*offset;
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
@@ -92,10 +99,13 @@ if being_published
 end
 
 %%
+% The filter has a lot of structure before 0, which is weird. 
+
+%%
 % We now use these filters to project the stimulus and make linear predictions of the response. In the following figure, we compare the linear prediction (red) to the actual response in each trial (black). The top row shows the two time traces overlaid, and the bottom row shows the two traces plotted against each other. We can see that the linear prediction does somewhat OK at predicting the EAG response. 
 
 time = 1e-3*(1:length(PID));
-figure('outerposition',[0 0 1400 800],'PaperUnits','points','PaperSize',[1400 800]); hold on
+figure('outerposition',[0 0 1400 700],'PaperUnits','points','PaperSize',[1400 800]); hold on
 for i = 1:5
 	subplot(2,5,i), hold on
 	plot(time,EAG(:,i),'k')
@@ -115,7 +125,7 @@ for i = 1:5
 	end
 	title(['r^2 = ' oval(rsquare(EAG_prediction(1e3:10:end,i),EAG(1e3:10:end,i)))])
 end
-prettyFig('fs=20;');
+prettyFig('fs',20);
 
 if being_published
 	snapnow
@@ -128,7 +138,7 @@ end
 %%
 % In the following figure, the panel on the left shows the gain evaluated at every valve onset as a function of time, showing that there is some variability in the instantaneous gain. What is the origin of this variability? One hypothesis is that this gain depends on the stimulus in some recent past. To check this, I plot the inst. gain vs. the stimulus in the preceding 250ms. The goodness of fit is measured by a Spearman rank correlation coefficient. 
 
-[mean_stim,inst_gain,e] = makeFig6G(mean(PID,2),mean(EAG,2),mean(EAG_prediction,2),500);
+[mean_stim,inst_gain,e] = findInstGain(mean(PID,2),mean(EAG,2),mean(EAG_prediction,2),500);
 
 inst_gain(e < .8) = NaN;
 inst_gain(1:5e3) = NaN;
@@ -154,6 +164,9 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+
+[K2, dEAG_pred, K1_gain] = extractFilters(PID,dEAG,'filter_length',2e3,'filter_offset',offset);
 
 
 %% Version Info

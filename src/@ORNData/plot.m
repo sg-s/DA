@@ -444,47 +444,18 @@ if strfind(plot_what,'valveGainAnalysis.')
 		end
 	end
 
-	% % now compute the smoothed stimulus for all history lengths and also compute the rho
-	% rho = NaN*history_lengths;
-	% p = NaN*rho;
-	% for i = 1:length(history_lengths)
-	% 	temp = computeSmoothedStimulus(stim,round(history_lengths(i)));
-	% 	shat = NaN*valve_ons;
-	% 	for j = 1:length(valve_ons)
-	% 		shat(j) = mean(temp(valve_ons(j):valve_offs(j)));
-	% 	end
-	% 	x = shat(gain>0 & gain_err > .8 & ~isnan(shat) & ~isnan(gain));
-	% 	y = gain(gain>0 & gain_err > .8 & ~isnan(shat) & ~isnan(gain));
-	% 	[rho(i),p(i)] = corr(x,y,'type','Spearman');
-	% end
-
-	% % plot only the significant points
-	% plot(plot_here(3),history_lengths(p<.01),rho(p<0.01),'k+')
-	set(plot_here(3),'XScale','log')
-
-	% build a measure of the gain difference (bottom 1/3 - top 1/3 of mean stimulus)
-	delta_gain = NaN*history_lengths;
-	p = NaN*delta_gain;
+	% now compute the smoothed stimulus for all history lengths and also compute the rho
+	rho = NaN*history_lengths;
 	for i = 1:length(history_lengths)
 		temp = computeSmoothedStimulus(stim,round(history_lengths(i)));
 		shat = NaN*valve_ons;
 		for j = 1:length(valve_ons)
 			shat(j) = mean(temp(valve_ons(j):valve_offs(j)));
 		end
-		% find the bottom 1/3 of shat
-		this_gain = gain;
-		this_gain(isnan(gain) | gain < 0 | gain_err < .8) = [];
-		shat(isnan(gain) | gain < 0 | gain_err < .8) = [];
-		sorted_shat = sort(shat);
-		lo_gain = this_gain(shat<sorted_shat(floor(length(shat)/3)));
-		sorted_shat = sort(shat,'descend');
-		hi_gain = this_gain(shat>sorted_shat(floor(length(shat)/3)));
-		[~,p(i)]=ttest2(lo_gain,hi_gain,'Vartype','unequal');
-		delta_gain(i) = nanmean(lo_gain)/nanmean(hi_gain);
-
+		rho(i) = spear(shat(gain>0 & gain_err > .8),gain(gain>0 & gain_err > .8));
 	end
-
-	plot(plot_here(3),history_lengths(p<0.01),delta_gain(p<0.01),'k+')
+	plot(plot_here(3),history_lengths,rho,'k+')
+	set(plot_here(3),'XScale','log')
 
 	% show the example history length
 	temp = computeSmoothedStimulus(stim,round(history_length));
@@ -510,11 +481,12 @@ if strfind(plot_what,'valveGainAnalysis.')
 
 	% cosmetics
 	xlabel(plot_here(3),'History Length (ms)')
-	ylabel(plot_here(3),'\Delta Gain')
+	ylabel(plot_here(3),'\rho')
 	xlabel(plot_here(2),'\mu_{stimulus} in preceding window (norm)')
 	ylabel(plot_here(2),'Gain (norm)')
 	xlabel(plot_here(1),'LN Model prediction (Hz)')
 	ylabel(plot_here(1),'ORN Response (Hz)')
+	set(plot_here(3),'YLim',[-1 1])
 
 
 end

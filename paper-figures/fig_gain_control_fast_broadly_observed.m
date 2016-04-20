@@ -4,6 +4,10 @@
 
 pHeader;
 
+%% global parameters
+tau_h = round(logspace(1.7,4,50)); % all the history lengths we look at, in ms
+example_history_length = 300; % this history length shown in the first row, in ms
+
 figure('outerposition',[0 0 1600 700],'PaperUnits','points','PaperSize',[1600 700]); hold on
 
 % ##    ##    ###    ######## ##     ## ########     ###    ##       
@@ -61,7 +65,14 @@ K = interp1(filtertime_full,K,filtertime);
 % convolve with filter to make prediction
 fp = convolve(tA,mean(PID,2),K,filtertime);
 
-shat = computeSmoothedStimulus(mean(PID,2),500);
+% now fit a nonlinearity 
+ft = fittype('hill2(x,k,n,x_offset)');
+x = fp; y = R; rm_this = isnan(fp) | isnan(R);
+x(rm_this) = []; y(rm_this) = []; y = y/max(y);
+ff = fit(x(:),y(:),ft,'StartPoint',[.5 2 nanmean(x)],'Lower',[0 1 -1],'Upper',[max(x)*100 10 1],'MaxIter',1e4);
+fp = ff(fp)*max(R);
+
+shat = computeSmoothedStimulus(mean(PID,2),example_history_length);
 
 % find all excursions (defined as firing rate crossing 10Hz)
 [whiff_starts,whiff_ends] = computeOnsOffs(R>10);
@@ -84,15 +95,14 @@ mean_stim(rm_this) = [];
 subplot(2,5,1), hold on
 plot(mean_stim,gain,'k+');
 set(gca,'XScale','log','YScale','log')
-xlabel('\mu_{Stimulus} in preceding 500ms (V)')
-ylabel('ORN Gain (Hz)')
+xlabel(['\mu_{Stimulus} in preceding ' oval(example_history_length) 'ms (V)'])
+ylabel('ORN Gain (norm)')
 
 % compute rho for various history lengths
-tau_h = round(logspace(1,4,50));
 rho = computeRhoForGainTimescales(gain,whiff_starts,mean(PID,2),tau_h);
 subplot(2,5,6), hold on 
 plot(tau_h,rho,'k+')
-set(gca,'XScale','log','XTick',[10 1e2 1e3 1e4])
+set(gca,'XScale','log')
 xlabel('History Length (ms)')
 ylabel('\rho')
 
@@ -133,7 +143,7 @@ t = 1e-3*(1:length(PID));
 [K, EAG_prediction] = extractFilters(PID,EAG,'filter_length',2e3,'filter_offset',500);
 
 % find the gains when the valve turns on
-shat = computeSmoothedStimulus(mean(PID,2),500);
+shat = computeSmoothedStimulus(mean(PID,2),example_history_length);
 [whiff_starts,whiff_ends] = computeOnsOffs(valve(:,1));
 rm_this = ((whiff_ends-whiff_starts)<50) | whiff_ends > 29e3 | whiff_starts < 1e3;
 whiff_starts(rm_this) = [];
@@ -160,15 +170,14 @@ whiff_ends(rm_this) = [];
 subplot(2,5,5), hold on
 plot(mean_stim,gain,'k+');
 set(gca,'XScale','log','YScale','log')
-xlabel('\mu_{Stimulus} in preceding 500ms (V)')
+xlabel(['\mu_{Stimulus} in preceding ' oval(example_history_length) 'ms (V)'])
 ylabel('EAG Gain (mV/V)')
 
 % compute rho for various history lengths
-tau_h = round(logspace(1,4,50));
 rho = computeRhoForGainTimescales(gain,whiff_starts,mean(PID,2),tau_h);
 subplot(2,5,10), hold on 
 plot(tau_h,rho,'k+')
-set(gca,'XScale','log','XTick',[10 1e2 1e3 1e4])
+set(gca,'XScale','log')
 xlabel('History Length (ms)')
 ylabel('\rho')
 
@@ -210,7 +219,7 @@ for i = 1:length(do_these)
 	% now fit a NL
 	temp = orn_data(do_these(i));
 	temp = fitNL(temp);
-	plot(temp,[ax(1) ax(1) ax(4)],'valveGainAnalysis.firing_rate.mu','history_lengths',history_lengths,'showNL',false,'history_length',300);
+	plot(temp,[ax(1) ax(1) ax(4)],'valveGainAnalysis.firing_rate.mu','history_lengths',tau_h,'showNL',false,'history_length',example_history_length);
 end
 % colour them nicely
 c = lines(length(do_these));
@@ -235,12 +244,15 @@ legend(h2,{'5/28','6/05','6/12','6/19','6/19'})
 % ##     ##  ##  ##       ##       ###    ##     ## ##     ## ##     ## ##    ##  ##    ## 
 % ########  #### ##       ##       ###     #######  ########   #######  ##     ##  ######  
 
+ax(2) = subplot(2,5,3); hold on
+ax(5) = subplot(2,5,8); hold on 
+
 do_these = [7 8 10 14 17];
 for i = 1:length(do_these)
 	% now fit a NL
 	temp = orn_data(do_these(i));
 	temp = fitNL(temp);
-	plot(temp,[ax(2) ax(2) ax(5)],'valveGainAnalysis.firing_rate.mu','history_lengths',history_lengths,'showNL',false,'history_length',300);
+	plot(temp,[ax(2) ax(2) ax(5)],'valveGainAnalysis.firing_rate.mu','history_lengths',tau_h,'showNL',false,'history_length',example_history_length);
 end
 % colour them nicely
 c = lines(length(do_these));
@@ -266,21 +278,31 @@ legend(h2,{'1but','1o3ol','d2succ','2ac','2but'})
 % ##     ##  ##  ##       ##       ###    ##     ## ##    ##  ##   ### ##    ## 
 % ########  #### ##       ##       ###     #######  ##     ## ##    ##  ######  
 
+ax(3) = subplot(2,5,4); hold on
+ax(6) = subplot(2,5,9); hold on 
+
 do_these = [12 17];
 for i = 1:length(do_these)
 	% now fit a NL
 	temp = orn_data(do_these(i));
 	temp = fitNL(temp);
-	plot(temp,[ax(3) ax(3) ax(6)],'valveGainAnalysis.firing_rate.mu','history_lengths',history_lengths,'showNL',false,'history_length',300);
+	plot(temp,[ax(3) ax(3) ax(6)],'valveGainAnalysis.firing_rate.mu','history_lengths',tau_h,'showNL',false,'history_length',example_history_length);
 end
 temp = orn_data(25);
 temp = fitNL(temp);
-plot(temp,[ax(3) ax(3) ax(6)],'excGainAnalysis.firing_rate.mu','history_lengths',round(logspace(2,4,30)),'showNL',false,'history_length',300);
+plot(temp,[ax(3) ax(3) ax(6)],'excGainAnalysis.firing_rate.mu','history_lengths',round(logspace(2,4,30)),'showNL',false,'history_length',example_history_length);
 % colour them nicely
 
 h1 = get(ax(3),'Children');
-c = lines(length(h1));
 h2 = get(ax(6),'Children');
+% remove some extra random shit
+delete(h1(2:end-2))
+h1 = get(ax(3),'Children');
+delete(h2(1));
+h2 = get(ax(6),'Children');
+
+c = lines(length(h1));
+
 for i = 1:length(h2)
 	set(h1(i),'Color',c(i,:),'MarkerFaceColor',c(i,:),'Marker','o')
 	set(h2(i),'Color',c(i,:),'MarkerFaceColor',c(i,:),'Marker','o','LineStyle','-')
@@ -290,7 +312,7 @@ xlabel(ax(3),'\mu_{stimulus} (norm)')
 ylabel(ax(3),'Gain (norm)')
 title(ax(3),'Diff. ORNs')
 
-legend(h2,{'pb1A','ab3A','ab2A'})
+legend(h2,{'ab2A','ab3A','pb1A'})
 
 
 

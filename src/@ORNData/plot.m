@@ -32,6 +32,7 @@ history_lengths = unique([logspace(log10(hl_min),log10(500),15) logspace(log10(5
 min_inst_gain_r2 = .8; % r2 values of inst. gain below this are discarded
 min_inst_gain_firing = 10; % firing rates below 10Hz are excluded from the analysis 
 show_NL = true;
+normalise_gain = false;
 
 
 % defensive programming
@@ -281,6 +282,10 @@ if strfind(plot_what,'excGainAnalysis.')
 	% find the gains in all windows and also grab the data to plot
 	[gain,gain_err,plot_data] = findGainInWindows(ons,offs,pred,resp);
 
+	if normalise_gain
+		gain = gain/nanmean(gain);
+	end
+
 	if show_NL
 		% plot this
 		for i = 1:length(plot_data)
@@ -434,6 +439,9 @@ if strfind(plot_what,'valveGainAnalysis.')
 
 	% find the gains in all windows and also grab the data to plot
 	[gain,gain_err,plot_data] = findGainInWindows(valve_ons,valve_offs,pred,resp);
+
+	% normalise gain
+	gain = gain/nanmean(gain);
 
 	% plot this
 	if showNL

@@ -25,7 +25,7 @@ pHeader;
 %      ########  ##     ##    ##    ##     ## 
 
 
-path_name = '/local-data/DA-paper/switching/variance/v2/';
+path_name = '/local-data/DA-paper/fig3/';
 [PID, LFP, fA, paradigm, orn] = consolidateData(path_name,1);
 
 global_start = 40e3; % 40 seconds
@@ -234,12 +234,12 @@ temp = fA_pred(1e3:5e3,:); temp = nonnans(temp(:));
 x = min(min(fA_pred)):0.02:max(max(fA_pred));
 y = histcounts(temp,x);
 y = y/sum(y); 
-plot(ax(7),x(2:end),cumsum(y),'r--')
+plot(ax(5),x(2:end),cumsum(y),'r--')
 
 temp = fA_pred(6e3:end,:); temp = nonnans(temp(:));
 y = histcounts(temp,x);
 y = y/sum(y);
-plot(ax(7),x(2:end),cumsum(y),'b--')
+plot(ax(5),x(2:end),cumsum(y),'b--')
 
 % now plot the actual i/o curve: high contrast
 x = fA_pred(1e3:5e3,:);
@@ -276,11 +276,44 @@ plot(ax(6),x,lo_gain,'b+')
 xlabel(ax(6),'\sigma_{Stimulus} (V)')
 ylabel(ax(6),'ORN Gain (Hz/V)')
 
-% % create  some phantom plots for a nice legend
-% clear l
-% l(1) = plot(ax(2),NaN,NaN,'k--');
-% l(2) = plot(ax(2),NaN,NaN,'k');
-% legend(l,{'Prediction','Response'},'Location','southeast')
+% create  some phantom plots for a nice legend
+clear l
+l(1) = plot(ax(5),NaN,NaN,'k--');
+l(2) = plot(ax(5),NaN,NaN,'k');
+lh = legend(l,{'Prediction','Measured'},'Location','southeast');
+lh.FontSize = 10; lh.Box = 'off';
+
+% now use Laughlin to compute the gains per trial
+x = linspace(min(min(reshaped_PID)),max(max(reshaped_PID)),100);
+laughlin_hi_gain = NaN*hi_gain;
+laughlin_lo_gain = NaN*lo_gain;
+for i = 1:width(reshaped_PID)
+	s = reshaped_PID(1e3:5e3,i);
+	hy = histcounts(s,x);
+	hy = cumsum(hy);
+	hy = hy/hy(end);
+	yy = hy(find((hy>.4),1,'first'):find((hy>.6),1,'first'));
+	xx = hx(find((hy>.4),1,'first'):find((hy>.6),1,'first'));
+	ff = fit(xx(:),yy(:),'poly1');
+	laughlin_hi_gain(i) = ff.p1;
+
+	s = reshaped_PID(6e3:9e3,i);
+	hy = histcounts(s,x);
+	hy = cumsum(hy);
+	hy = hy/hy(end);
+	yy = hy(find((hy>.4),1,'first'):find((hy>.6),1,'first'));
+	xx = hx(find((hy>.4),1,'first'):find((hy>.6),1,'first'));
+	ff = fit(xx(:),yy(:),'poly1');
+	laughlin_lo_gain(i) = ff.p1;
+end
+
+plot(ax(7),laughlin_lo_gain,lo_gain,'b+')
+plot(ax(7),laughlin_hi_gain,hi_gain,'r+')
+r2 = rsquare([laughlin_lo_gain; laughlin_hi_gain],[lo_gain; hi_gain]);
+xlabel(ax(7),'Predicted Gain (a.u.)')
+l = plot(ax(7),NaN,NaN,'k+');
+lh = legend(l,['r^2 = ' oval(r2)]);
+lh.Location = 'southeast';
 
 % cosmetics
 ax(1).Position(3) = .53;
@@ -291,9 +324,6 @@ set(ax(4),'YTick',[],'YLim',ax(3).YLim)
 xlabel(ax(5),'Projected Stimulus (V)')
 ylabel(ax(5),'Firing Rate (norm)')
 
-ylabel(ax(7),'Cumulative Probability')
-xlabel(ax(7),'Projected Stimulus (V)')
-
 prettyFig('fs',14,'lw',1.5)
 labelFigure
 
@@ -302,7 +332,6 @@ if being_published
 	delete(gcf)
 end
 
-return
 
 % ########  ##    ## ##    ##    ###    ##     ## ####  ######   ######      #######  ######## 
 % ##     ##  ##  ##  ###   ##   ## ##   ###   ###  ##  ##    ## ##    ##    ##     ## ##       

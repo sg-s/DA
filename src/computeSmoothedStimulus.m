@@ -16,7 +16,7 @@ switch nargin
 end
 
 assert(~any(isnan(hl)), 'computeSmoothedStimulus: History lengths are NaN.')
-assert(~any(isnan(stimulus)), 'computeSmoothedStimulus: History lengths are NaN.')
+assert(~any(isnan(stimulus)), 'computeSmoothedStimulus: Stimulus has NaNs.')
 
 
 shat = NaN(length(hl),length(stimulus));

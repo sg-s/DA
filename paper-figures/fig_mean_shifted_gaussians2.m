@@ -29,20 +29,22 @@ pHeader;
 %% Figure 1: ORN gain can be estimated by measuring responses to Gaussian inputs
 % Gaussian odorant inputs with short correlation times (A), elicit flickering responses in ORNs that track the odorant stimulus well (B). A linear filter K can be extracted from the odorant input and the firing rate output of the neuron (C). The slope of the residuals in a plot of the firing response vs. the linear prediction (D) is defined as the gain of the ORN. Here, we measure the ORN gain in the linear regime: the linear filter accounts for 96% of the variance in the ORN response (red line), and adding an output nonlinearity (dotted black line), only accounts for an additional 1%. The odorant used is ethyl acetate, stimulating the ab3A neuron. Shading in all plots shows the standard error of the mean. 
 
-figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
+figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
 clear axes_handles
-axes_handles(1) = subplot(3,10,1:10);
-axes_handles(2) = subplot(3,10,11:20);
+axes_handles(1) = subplot(3,10,1:6);
+axes_handles(2) = subplot(3,10,11:16);
 
-axes_handles(3) = subplot(3,3,7); 
-axes_handles(4) = subplot(3,3,8);
-axes_handles(5) = subplot(3,3,9);
+axes_handles(3) = subplot(3,10,8:10); 
+axes_handles(4) = subplot(3,10,18:20);
+
+axes_handles(5) = subplot(3,3,7);
+axes_handles(6) = subplot(3,3,8);
 for i = 1:length(axes_handles)
 	hold(axes_handles(i),'on');
 end  
-% load data 
 
-[PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData('/local-data/DA-paper/LFP-MSG/september',1);
+% load data 
+[PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData('/local-data/DA-paper/fig2',1);
 
 % remove baseline from all PIDs
 for i = 1:width(PID)
@@ -128,25 +130,48 @@ set(axes_handles(4),'YColor',c(example_dose,:),'XColor','r')
 
 lh = legend(l,L,'Location','northwest');
 
-movePlot(axes_handles(2),'up',.02)
-
 plot(axes_handles(5),nanmean(PID(a:z,:)),nanstd(PID(a:z,:)),'k+')
 plot(axes_handles(5),[0 2],[0 2],'k--')
 xlabel(axes_handles(5),'\mu_{stimulus} (V)')
 ylabel(axes_handles(5),'\sigma_{stimulus (V)}')
 set(axes_handles(5),'XLim',[0 2],'YLim',[0 2])
 
+
+% also estimate gain using variances of stimulus and response
+mean_stim = nanmean(PID(a:z,:));
+frac_var = NaN(width(PID),1);
+for i = 1:width(PID)
+	try
+		frac_var(i) = std(fA(a:z,i))/std(PID(a:z,i));
+	catch
+	end
+end
+for i = 1:width(PID)
+	plot(axes_handles(6),mean_stim(i),frac_var(i),'+','Color',c(paradigm(i),:))
+end
+% fit a power law with exponent -1
+
+frac_var = frac_var(:);
+options = fitoptions(fittype('power1'));
+options.Lower = [-Inf -1];
+options.Upper = [Inf -1];
+cf = fit(nonnans(mean_stim),nonnans(frac_var),'power1',options);
+plot(axes_handles(6),sort(mean_stim),cf(sort(mean_stim)),'r');
+set(axes_handles(6),'XScale','log','YScale','log')
+xlabel(axes_handles(6),'Mean Stimulus (V)')
+ylabel(axes_handles(6),'\sigma_{Firing Rate}/\sigma_{Stimulus} (Hz/V)')
+
 prettyFig('plw',1.3,'lw',1.5,'fs',14)
-set(lh,'Position',[0.42 0.32 0.2112 0.0275],'box','off')
+set(lh,'Position',[0.72 0.62 0.2112 0.0275],'box','off')
+
 labelFigure
 xlabel(axes_handles(2),'Time (s)')
+
 
 if being_published
 	snapnow
 	delete(gcf)
 end
-
-
 
 
 %    ##      ## ######## ########  ######## ########      ######      ###    #### ##    ## 
@@ -278,6 +303,10 @@ ylabel(ax(7),'ORN Response (Hz)')
 
 prettyFig('plw',1.3,'lw',1.5,'fs',14)
 labelFigure
+
+axes(ax(6))
+text(.2, 30,'$\sim 1/s$','interpreter','latex','Color','r','FontSize',20)
+
 
 if being_published
 	snapnow

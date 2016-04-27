@@ -46,6 +46,10 @@ for i = 1:length(varargin)
 	end
 end
 
+if nargout && ~nargin 
+	varargout{1} = options;
+    return
+end
 
 % validate and accept options
 if iseven(length(varargin))
@@ -62,9 +66,13 @@ if iseven(length(varargin))
     	end
     end
 end
+elseif isstruct(varargin{1})
+	% should be OK...
+	options = varargin{1};
 else
 	error('Inputs need to be name value pairs')
 end
+
 
 % make sure axes handle is valid
 if ~isempty(plot_here)

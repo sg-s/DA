@@ -94,6 +94,8 @@ ff = fit(mean_stim(:),K1_gain(:),'power1','Upper',[Inf -1],'Lower',[0 -1]);
 plot(ms,ff(ms),'r')
 set(gca,'XScale','log','YScale','log','YLim',[1 100],'XLim',[.1 2])
 
+th = text(.8, 10,'$\sim 1/s$','interpreter','latex','Color','r','FontSize',20);
+
 
 % show firing machinery I/o curves
 subplot(2,5,6), hold on
@@ -228,26 +230,49 @@ for i = 1:width(reshaped_PID)
 
 	y = reshaped_LFP(6e3:9e3,i);
 	x = K1p(6e3:9e3,i);
-
 	try
 		ff = fit(x(:),y(:),'poly1');
 		lo_gain_LFP(i) = ff.p1;
 	catch
 	end
 
-	y = reshaped_fA(1e3:4e3,i);
+	% y = reshaped_fA(1e3:4e3,i);
+	% x = K2p(1e3:4e3,i);
+	% try
+	% 	ff = fit(x(:),y(:),'poly1');
+	% 	hi_gain_firing(i) = ff.p1;
+	% catch
+	% end
+
+	% y = reshaped_fA(6e3:9e3,i);
+	% x = K2p(6e3:9e3,i);
+	% try
+	% 	ff = fit(x(:),y(:),'poly1');
+	% 	lo_gain_firing(i) = ff.p1;
+	% catch
+	% end
+end
+
+% compute firing rate gains using Hill functions
+for i = 1:width(reshaped_PID)
+	if ~being_published
+		textbar(i,width(reshaped_PID))
+	end
+	y = reshaped_fA(1e3:4e3,i); s = nanmax(y); 	y = y/s;
 	x = K2p(1e3:4e3,i);
 	try
-		ff = fit(x(:),y(:),'poly1');
-		hi_gain_firing(i) = ff.p1;
+		ft = fittype('hill2(x,k,n,x_offset)');
+		ff = fit(x(:),y(:),ft,'StartPoint',[nanmax(x)/2 2 nanmean(x)],'Lower',[0 1 -Inf],'Upper',[nanmax(x) 10 nanmax(x)],'MaxIter',1e4);
+		hi_gain_firing(i) = s*differentiate(ff,ff.k + ff.x_offset);
 	catch
 	end
 
-	y = reshaped_fA(6e3:9e3,i);
+	y = reshaped_fA(6e3:9e3,i); s = nanmax(y); 	y = y/s;
 	x = K2p(6e3:9e3,i);
 	try
-		ff = fit(x(:),y(:),'poly1');
-		lo_gain_firing(i) = ff.p1;
+		ft = fittype('hill2(x,k,n,x_offset)');
+		ff = fit(x(:),y(:),ft,'StartPoint',[nanmax(x)/2 2 nanmean(x)],'Lower',[0 1 -Inf],'Upper',[nanmax(x) 10 nanmax(x)],'MaxIter',1e4);
+		lo_gain_firing(i) = s*differentiate(ff,ff.k + ff.x_offset);
 	catch
 	end
 end
@@ -286,7 +311,7 @@ plot(x,hi_gain_LFP(r2_K1p>.8),'r+')
 x = std(reshaped_PID(6e3:9e3,r2_K1p>.8));
 plot(x,lo_gain_LFP(r2_K1p>.8),'b+')
 xlabel('\sigma_{Stimulus} (V)')
-ylabel('Firing Gain (Hz/mV)')
+ylabel('Transduction Gain (mV/V)')
 
 
 % show firing i/o curves
@@ -323,8 +348,17 @@ plot(x,lo_gain_firing(r2_K2p>.8),'b+')
 xlabel('\sigma_{Stimulus} (V)')
 ylabel('Firing Gain (Hz/mV)')
 
+% add an explanatory graphic
+subplot(1,5,3), hold on
+o = imread('../images/fig-LFP-cartoon.png');
+imagesc(o);
+axis ij
+axis image
+axis off
 
 prettyFig('fs',16)
+labelFigure
+th.FontSize = 20;
 
 if being_published	
 	snapnow	

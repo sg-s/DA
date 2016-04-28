@@ -8,6 +8,8 @@
 
 pHeader;
 
+dm = dataManager;
+
 %      ########  ########  ######  ##     ##    ###    ########  ######## 
 %      ##     ## ##       ##    ## ##     ##   ## ##   ##     ## ##       
 %      ##     ## ##       ##       ##     ##  ##   ##  ##     ## ##       
@@ -25,8 +27,7 @@ pHeader;
 %      ########  ##     ##    ##    ##     ## 
 
 
-path_name = '/local-data/DA-paper/fig3/';
-[PID, LFP, fA, paradigm, orn] = consolidateData(path_name,1);
+[PID, LFP, fA, paradigm, orn] = consolidateData(dm.getPath('7955d1ed77512dfe3452b39d71a50e1b'),1);
 
 global_start = 40e3; % 40 seconds
 global_end = length(PID) - 5e3; 

@@ -7,6 +7,8 @@
 
 pHeader;
 
+% use dataManager 
+dm = dataManager;
 
 
 %     ##     ## ########    ###     ######  ##     ## ########  #### ##    ##  ######   
@@ -44,7 +46,7 @@ for i = 1:length(axes_handles)
 end  
 
 % load data 
-[PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData('/local-data/DA-paper/fig2',1);
+[PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData(dm.getPath('bf79dfd769a97089e42beb0660174e84'),1);
 
 % remove baseline from all PIDs
 for i = 1:width(PID)

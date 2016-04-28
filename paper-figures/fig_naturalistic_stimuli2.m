@@ -8,11 +8,14 @@
 
 pHeader;
 
+% this script uses dataManager to ensure data integrity
+dm = dataManager;
+
 
 %% Figure 1: Gain changes with a naturalistic stimulus
 % In this figure, we show that the gain of ab3A and ab2A ORNs changes dramatically in response to a naturalistic stimulus, and that this gain change can be correlated to the mean or the variance of the stimulus in the last 500ms. 
 
-clearvars -except being_published 
+clearvars -except being_published dm
 
 scatter_size = 12;
 
@@ -42,8 +45,7 @@ axis ij
 axis image
 axis off
 
-
-load('/local-data/DA-paper/fig1/2014_07_11_EA_natflick_non_period_CFM_1_ab3_1_1_all.mat')
+load(dm.getPath('5c7dacc5b42ff0eebb980d80fec120c3'))
 PID = data(2).PID;
 time = 1e-4*(1:length(PID));
 all_spikes = spikes(2).A;
@@ -150,7 +152,7 @@ ab3.K = K;
 ab3.PID = PID;
 
 % now also add ab2 data
-load('/local-data/DA-paper/fig1/2014_07_11_EA_natflick_non_period_CFM_1_ab2_1_1_all.mat')
+load(dm.getPath('8af556aa49c4af116c7f66e8417c0dc2'))
 PID = data(2).PID;
 time = 1e-4*(1:length(PID));
 all_spikes = spikes(2).A;
@@ -460,7 +462,7 @@ subplot(2,4,1), hold on
 plot(filtertime,ab3.K,'b');
 
 % load MSG filter for ab3
-load('../data/MSG_per_neuron.mat');
+load(dm.getPath('b934ad74a78cb20df400b67e107037e3'));
 ab3.K_white = mean(reshape([MSG_data(1,:).K],1001,11),2);
 t = 1e-3*(1:length(ab3.K_white))- .2;
 plot(t,ab3.K_white,'r')

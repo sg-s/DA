@@ -111,7 +111,7 @@ for i = size(od,1)*2+1:length(ax)
 	xlabel(ax(i),'Odor Stimulus (V)')
 end
 
-prettyFig('fs=18;')
+prettyFig('fs',18)
 
 if being_published	
 	snapnow	
@@ -148,7 +148,7 @@ end
 set(gca,'XScale','log','YLim',[0 1])
 xlabel('Odour Stimulus (V)')
 ylabel('Gain (Hz/\muW)')
-prettyFig('fs=18;')
+prettyFig('fs',18)
 
 if being_published	
 	snapnow	
@@ -180,7 +180,7 @@ set(gca,'XScale','log')
 xlabel('Mean Odour Stimulus (V)')
 ylabel('Odour-induced Firing rate (Hz)')
 
-prettyFig('FixLogX=true;')
+prettyFig('FixLogX',true)
 
 if being_published	
 	snapnow	

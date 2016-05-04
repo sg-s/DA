@@ -64,6 +64,7 @@ S = S(a:a+500); S = S - min(S); S = S/max(S);
 X = X(a:a+500); X = X - min(X); X = X/max(X);
 R = R(a:a+500); R = R - min(R); R = R/max(R);
 subplot(2,3,1), hold on
+title('Naturalistic Stimulus')
 plot(S,'k')
 plot(X,'b')
 plot(R,'r')
@@ -99,9 +100,7 @@ plot([sp xp],[1.1 1.1],'LineWidth',3,'Color','b')
 % ##    ##  ##     ## ##     ## ##    ## ##    ##  ##  ##     ## ##   ### ##    ## 
 %  ######   ##     ##  #######   ######   ######  #### ##     ## ##    ##  ######  
 
-
-% show LFP slowdown 
-
+clearvars -except being_published dm
 [PID, LFP, fA, paradigm, orn, ~, AllControlParadigms, paradigm_hashes] = consolidateData(dm.getPath('bf79dfd769a97089e42beb0660174e84'),1);
 
 % remove baseline from all PIDs
@@ -150,13 +149,13 @@ max_corr_LFP = NaN(1,width(PID));
 max_corr_fA = NaN(1,width(PID));
 
 subplot(2,3,2), hold on
-
+title('Changing Stimulus Mean')
 for i = 1:width(PID)
 	s = PID(25e3:45e3,i)-mean(PID(25e3:45e3,i)); s = s/std(s);
 	r = fA(25e3:45e3,i)-mean(fA(25e3:45e3,i)); r = r/std(r);
 	x = filtered_LFP(25e3:45e3,i)-mean(filtered_LFP(25e3:45e3,i)); x = x/std(x); x = -x;
 
-	[temp,lags] = xcorr(f,s); temp = temp/20e3;
+	[temp,lags] = xcorr(r,s); temp = temp/20e3;
 	[max_corr_fA(i),lag_fA(i)] = max(temp);
 
 	if i == 1
@@ -202,77 +201,115 @@ ylabel('Lag (ms)')
 % ##    ## ##     ## ##   ###    ##    ##    ##  ##     ## ##    ##    ##    
 %  ######   #######  ##    ##    ##    ##     ## ##     ##  ######     ##    
 
+clearvars -except being_published dm
+[PID, LFP, fA, paradigm, orn] = consolidateData(dm.getPath('7955d1ed77512dfe3452b39d71a50e1b'),1);
 
-p = '/local-data/DA-paper/Chrimson/scaled-light-flicker/v2';
-[~, ~, fA, paradigm, orn, fly, AllControlParadigms] = consolidateData(p,true);
-
-x = [.75:0.05:1.1 1.2:.1:3.6 3.8 4 4.2 4.5];
-x = [0:0.1:0.7 x];
-y = [0 4 12.8 24.1 36.2 48.1 60 70 95 114 134 151 167 184 201 219 236 252 269 283 299 314 328 343 357 370 383 394 404 413 419 422 422 421 419 418 417];
-y = [0*(0:0.1:0.7) y ];
-
-light_power_fit = fit(x(:),y(:),'spline');
-
-% make new vectors for mean and range of the stimulus
-a = 25e3; z = 55e3;
-LED = NaN*fA;
-LED_voltage = LED;
-light_s = NaN*paradigm; light_m = NaN*paradigm;
-for i = 1:length(paradigm)
-	temp = AllControlParadigms(paradigm(i)).Name;
-	LED_voltage(:,i) = (AllControlParadigms(paradigm(i)).Outputs(1,1:10:end));
-	LED(:,i) = light_power_fit(AllControlParadigms(paradigm(i)).Outputs(1,1:10:end));
+global_start = 40e3; % 40 seconds
+global_end = length(PID) - 5e3; 
+% bandpass to remove spikes and slow fluctuations
+for i = 1:width(LFP)
+	a = find(~isnan(LFP(:,i)),1,'first');
+	z = find(~isnan(LFP(:,i)),1,'last');
+	LFP(a:z,i) = bandPass(LFP(a:z,i),1000,10)*10; % now in mV
 end
 
-% remove some junk
-rm_this = sum(fA) == 0;
-LED(:,rm_this) = [];
-fA(:,rm_this) = [];
-paradigm(rm_this) = [];
-orn(rm_this) = [];
-fly(rm_this) = [];
-LED_voltage(:,rm_this) = [];
+% reshape the LFP signals
+block_length = 1e4;
+reshaped_LFP = LFP(global_start:end-1e4-1,1:width(PID));
+reshaped_LFP = reshape(reshaped_LFP,block_length,width(reshaped_LFP)*length(reshaped_LFP)/block_length);
 
-x_LED_fA = NaN(1,width(LED));
+% also reshape the PID
+reshaped_PID = PID(global_start:end-1e4-1,1:width(PID));
+reshaped_PID = reshape(reshaped_PID,block_length,width(reshaped_PID)*length(reshaped_PID)/block_length);
 
-for i = 1:width(LED)
-	s = LED(25e3:45e3,i)-mean(LED(25e3:45e3,i)); s = s/std(s);
-	f = fA(25e3:45e3,i)-mean(fA(25e3:45e3,i)); f = f/std(f);
+% reshape the firing rate signals
+reshaped_fA = fA(global_start:end-1e4-1,1:width(PID));
+reshaped_fA = reshape(reshaped_fA,block_length,width(reshaped_fA)*length(reshaped_fA)/block_length);
 
-	temp = xcorr(f,s);
-	[~,x_LED_fA(i)] = max(temp(19.5e3+1:20.5e3));
+
+% also reshape the orn ID
+reshaped_orn = repmat(orn,length(global_start:length(PID)-1e4-1)/block_length,1);
+reshaped_orn = reshaped_orn(:);
+
+% throw our NaNs globally. so we're throwing out epochs where the data is incomplete
+rm_this = isnan(sum(reshaped_LFP));
+reshaped_LFP(:,rm_this) = [];
+reshaped_PID(:,rm_this) = [];
+reshaped_fA(:,rm_this) = [];
+reshaped_orn(rm_this) = [];
+
+
+
+lag_LFP = NaN(2,width(reshaped_PID));
+lag_fA = NaN(2,width(reshaped_PID));
+max_corr_LFP = NaN(2,width(reshaped_PID));
+max_corr_fA = NaN(2,width(reshaped_PID));
+
+subplot(2,3,3), hold on
+title('Changing Stimulus variance')
+for i = 1:width(reshaped_PID)
+	s = reshaped_PID(1:5e3,i); s = s - mean(s); s = s/std(s);
+	r = reshaped_fA(1:5e3,i); r = r - mean(r); r = r/std(r);
+	x = reshaped_LFP(1:5e3,i); x = x - mean(x); x = -x/std(x); 
+
+	[temp,lags] = xcorr(r,s); temp = temp/5e3;
+	[max_corr_fA(1,i),lag_fA(1,i)] = max(temp);
+
+	if i == 2
+		plot(lags,temp/max(temp),'r--')
+	end
+
+	[temp,lags] = xcorr(x,s);  temp = temp/5e3;
+	[max_corr_LFP(1,i),lag_LFP(1,i)] = max(temp);
+
+	if i == 2
+		plot(lags,temp/max(temp),'r-')
+	end
+
+	s = reshaped_PID(5e3:end,i); s = s - mean(s); s = s/std(s);
+	r = reshaped_fA(5e3:end,i); r = r - mean(r); r = r/std(r);
+	x = reshaped_LFP(5e3:end,i); x = x - mean(x); x = -x/std(x); 
+
+	[temp,lags] = xcorr(r,s); temp = temp/5e3;
+	[max_corr_fA(2,i),lag_fA(2,i)] = max(temp);
+
+	if i == 2
+		plot(lags,temp/max(temp),'b--')
+	end
+
+	[temp,lags] = xcorr(x,s);  temp = temp/5e3;
+	[max_corr_LFP(2,i),lag_LFP(2,i)] = max(temp);
+
+	if i == 2
+		plot(lags,temp/max(temp),'b-')
+	end
 
 end
 
-x_LED_fA = x_LED_fA - 500;
-x_LED_fA(x_LED_fA<-100) = NaN;
+set(gca,'XLim',[-50 600])
+xlabel('Lag (ms)')
+ylabel('Cross correlation (norm)')
 
-l = plot(ax(6),nanmean(LED(25e3:45e3,:)),x_LED_fA,'k+');
-x = nanmean(LED(25e3:45e3,:));
-y = x_LED_fA; 
-rm_this = isnan(x) | isnan(y);
-x(rm_this) = []; y(rm_this) = [];
-[rho,p] = corr(x(:),y(:),'type','Spearman');
-legend(l,['\rho = ' oval(rho) ', p = ' oval(p)],'Location','southeast')
+sigma_stim = [std(reshaped_PID(1e3:5e3,:)); std(reshaped_PID(6e3:9e3,:))];
 
-xlabel(ax(6),'Mean Stimulus (\muW)')
-ylabel(ax(6),'Lag (ms)')
-title(ax(6),'Light \rightarrow Firing Rate')
+lag_fA = lag_fA - 5e3;
+lag_LFP = lag_LFP - 5e3;
+lag_LFP(lag_LFP<0) = NaN;
+lag_fA(lag_fA<0) = NaN;
 
-set(ax(2),'YLim',[0 250],'XLim',[0 2])
-set(ax(3),'YLim',[-100 0],'XLim',[0 2])
-set(ax(5),'YLim',[0 100],'XLim',[0 2])
-set(ax(6),'YLim',[0 100],'XLim',[0 200])
 
-o = imread('../images/modules.png');
-axes(ax(1));
-imagesc(o);
-axis ij
-axis image
-axis off
+
+subplot(2,3,6), hold on
+plot(sigma_stim(1,:),lag_LFP(1,:),'b+')
+plot(sigma_stim(2,:),lag_LFP(2,:),'b+')
+plot(sigma_stim(1,:),lag_fA(1,:),'r+')
+plot(sigma_stim(2,:),lag_fA(2,:),'r+')
+set(gca,'YLim',[0 200])
+xlabel('\sigma_{Stimulus} (V)')
+ylabel('Lag (ms)')
 
 legend('boxoff')
-prettyFig('fs=18;')
+prettyFig('fs',18)
 
 if being_published	
 	snapnow	

@@ -9,6 +9,7 @@
 %% Mechanism of Gain Control: Optogenetic Activation
 
 pHeader;
+dm = dataManager;
 
 % build the LED map
 x = [.75:0.05:1.1 1.2:.1:3.6 3.8 4 4.2 4.5];
@@ -35,9 +36,7 @@ figure('outerposition',[0 0 850 850],'PaperUnits','points','PaperSize',[850 850]
 % ##    ## ##     ## ##   ###    ##    ##    ##  ##     ## ##    ##    ##    
 %  ######   #######  ##    ##    ##    ##     ## ##     ##  ######     ##    
 
-
-p = '/local-data/DA-paper/Chrimson/MSG/ok';
-[~, ~, fA, paradigm, orn, fly, AllControlParadigms] = consolidateData(p,true);
+[~, ~, fA, paradigm, orn, fly, AllControlParadigms] = consolidateData(dm.getPath('95bb3793a09b64923a7feea179a33dce'),true);
 
 
 % make new vectors for mean and range of the stimulus
@@ -113,8 +112,7 @@ ylabel('ORN Gain (Hz/\muW)')
 %    ######## ####  ######   ##     ##    ##       ########   ######   
 
 
-p = '/local-data/DA-paper/Chrimson/light-odor-combinations/odour-flicker/';
-[PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData(p,true);
+[PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData(dm.getPath('54db648b8724ae1201fb4844f2f80f89'),true);
 a = 15e3; z = 55e3;
 
 % clean up the data
@@ -256,7 +254,7 @@ xlabel('Mean Light Power (\muW)')
 % % ######## ####  ######   ##     ##    ##       ##       ##        ######   
 
 if ~exist('od','var')
-	p = '/local-data/DA-paper/Chrimson/light-odor-combinations/light-flicker/v3';
+	p = dm.getPath('03c38ea82aea99b7ea1b16114b48a853');
 	od = raw2ORNData(p,'led_power_func',light_power_fit,'use_led',true,'filter_LFP',false);
 
 	uts = false(length(od(1,1).stimulus),1);

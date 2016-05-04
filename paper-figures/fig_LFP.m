@@ -2,12 +2,13 @@
 
 
 pHeader;
+dm = dataManager;
 
 
 figure('outerposition',[0 0 1700 700],'PaperUnits','points','PaperSize',[1700 700]); hold on
 
 
-[PID, LFP, fA, paradigm,~, ~, AllControlParadigms] = consolidateData('/local-data/DA-paper/LFP-MSG/september',1);
+[PID, LFP, fA, paradigm,~, ~, AllControlParadigms] = consolidateData(dm.getPath('bf79dfd769a97089e42beb0660174e84'),1);
 % sort the paradigms sensibly
 sort_value = [];
 for i = 1:length(AllControlParadigms)
@@ -39,7 +40,7 @@ paradigm(bad_trials) = [];
 
 % band pass all the LFP
 try 
-	load('/local-data/DA-paper/LFP-MSG/september/filtered_LFP.mat','filtered_LFP')
+	load(dm.getPath('213e6122b7e0a414debcd5ded135ab20'),'filtered_LFP')
 catch
 	filtered_LFP = LFP;
 	for i = 1:width(LFP)
@@ -126,8 +127,7 @@ set(gca,'XScale','log','YScale','log','YLim',[1 1e2],'XLim',[.1 2])
 %  ######   #######  ##    ##    ##    ##     ## ##     ##  ######     ##    
 
 
-path_name = '/local-data/DA-paper/switching/variance/v2/';
-[PID, LFP, fA, ~, orn] = consolidateData(path_name,1);
+[PID, LFP, fA, ~, orn] = consolidateData(dm.getPath('7955d1ed77512dfe3452b39d71a50e1b'),1);
 
 global_start = 40e3; % 40 seconds
 global_end = length(PID) - 5e3; 

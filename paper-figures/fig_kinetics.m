@@ -7,14 +7,73 @@
 
 
 pHeader;
+dm = dataManager;
 
 figure('outerposition',[0 0 1100 700],'PaperUnits','points','PaperSize',[1100 700]); hold on
-for i = 1:6
-	ax(i) = subplot(2,3,i); hold on
-end
-delete(ax(4))
-ax(1) = subplot(1,3,1); hold on
 
+% ##    ##    ###    ######## ##     ## ########     ###    ##       
+% ###   ##   ## ##      ##    ##     ## ##     ##   ## ##   ##       
+% ####  ##  ##   ##     ##    ##     ## ##     ##  ##   ##  ##       
+% ## ## ## ##     ##    ##    ##     ## ########  ##     ## ##       
+% ##  #### #########    ##    ##     ## ##   ##   ######### ##       
+% ##   ### ##     ##    ##    ##     ## ##    ##  ##     ## ##       
+% ##    ## ##     ##    ##     #######  ##     ## ##     ## ######## 
+
+%  ######  ######## #### ##     ## ##     ## ##       #### 
+% ##    ##    ##     ##  ###   ### ##     ## ##        ##  
+% ##          ##     ##  #### #### ##     ## ##        ##  
+%  ######     ##     ##  ## ### ## ##     ## ##        ##  
+%       ##    ##     ##  ##     ## ##     ## ##        ##  
+% ##    ##    ##     ##  ##     ## ##     ## ##        ##  
+%  ######     ##    #### ##     ##  #######  ######## #### 
+
+
+% analyse kinetics of LFP and firing rate during the naturalistic stimulus presentation
+load(dm.getPath('aeb361c027b71938021c12a6a12a85cd'),'-mat');
+
+subplot(2,3,4), hold on
+
+min_acceptable_corr = .5;
+min_acceptable_lag = 2;
+for i = 1:length(od)
+	S = nanmean(od(i).stimulus,2); 
+	R = nanmean(od(i).firing_rate,2);
+	X = -nanmean(od(i).LFP,2);
+
+	[lag, mean_x, max_corr] = findLagAndMeanInWindow(S,R,1e3,25);
+	rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr;
+	lag(rm_this) = [];
+	mean_x(rm_this) = [];
+
+	plotPieceWiseLinear(mean_x,lag,'Color','r','nbins',19);
+
+
+	[lag, mean_x, max_corr] = findLagAndMeanInWindow(S,X,1e3,25);
+	rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr;
+	lag(rm_this) = [];
+	mean_x(rm_this) = [];
+
+	plotPieceWiseLinear(mean_x,lag,'Color','b','nbins',19);
+end
+xlabel('\mu_{Stimulus} in preceding 1s (V)')
+ylabel('Lag (ms)')
+
+% also show an example whiff
+a = 2.95e4;
+S = S(a:a+500); S = S - min(S); S = S/max(S);
+X = X(a:a+500); X = X - min(X); X = X/max(X);
+R = R(a:a+500); R = R - min(R); R = R/max(R);
+subplot(2,3,1), hold on
+plot(S,'k')
+plot(X,'b')
+plot(R,'r')
+xlabel('Time since whiff onset (ms)')
+legend({'Stimulus','LFP','Firing Rate'})
+[~,sp] = max(S);
+[~,xp] = max(X);
+[~,rp] = max(R);
+plot([sp rp],[1.05 1.05],'LineWidth',3,'Color','r')
+plot([sp xp],[1.1 1.1],'LineWidth',3,'Color','b')
 
 % show LFP slowdown 
 

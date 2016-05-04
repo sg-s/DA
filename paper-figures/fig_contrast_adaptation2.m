@@ -308,13 +308,19 @@ for i = 1:width(reshaped_PID)
 	laughlin_lo_gain(i) = ff.p1;
 end
 
-plot(ax(7),laughlin_lo_gain,lo_gain,'b+')
-plot(ax(7),laughlin_hi_gain,hi_gain,'r+')
-r2 = rsquare([laughlin_lo_gain; laughlin_hi_gain],[lo_gain; hi_gain]);
-xlabel(ax(7),'Predicted Gain (a.u.)')
-l = plot(ax(7),NaN,NaN,'k+');
-lh = legend(l,['r^2 = ' oval(r2)]);
-lh.Location = 'southeast';
+x = std(reshaped_PID(1e3:4e3,:));
+plot(ax(7),x,laughlin_hi_gain,'r+')
+x = std(reshaped_PID(6e3:9e3,:));
+plot(ax(7),x,laughlin_lo_gain,'b+')
+
+% plot(ax(7),laughlin_lo_gain,lo_gain,'b+')
+% plot(ax(7),laughlin_hi_gain,hi_gain,'r+')
+% r2 = rsquare([laughlin_lo_gain; laughlin_hi_gain],[lo_gain; hi_gain]);
+ylabel(ax(7),'Predicted Gain (a.u.)')
+xlabel(ax(7),'\sigma_{Stimulus} (V)')
+% l = plot(ax(7),NaN,NaN,'k+');
+% lh = legend(l,['r^2 = ' oval(r2)]);
+% lh.Location = 'southeast';
 
 % cosmetics
 ax(1).Position(3) = .53;
@@ -333,6 +339,8 @@ if being_published
 	delete(gcf)
 end
 
+
+return
 
 % ########  ##    ## ##    ##    ###    ##     ## ####  ######   ######      #######  ######## 
 % ##     ##  ##  ##  ###   ##   ## ##   ###   ###  ##  ##    ## ##    ##    ##     ## ##       

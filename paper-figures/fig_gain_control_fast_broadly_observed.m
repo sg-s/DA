@@ -26,8 +26,8 @@ figure('outerposition',[0 0 801 1000],'PaperUnits','points','PaperSize',[801 100
 % ##    ##    ##     ##  ##     ## ##     ## ##       ##     ## ##    ## 
 %  ######     ##    #### ##     ##  #######  ########  #######   ######  
 
-
-load('/local-data/DA-paper/fig1/2014_07_11_EA_natflick_non_period_CFM_1_ab3_1_1_all.mat')
+dm = dataManager;
+load(dm.getPath('5c7dacc5b42ff0eebb980d80fec120c3'))
 PID = data(2).PID;
 time = 1e-4*(1:length(PID));
 all_spikes = spikes(2).A;

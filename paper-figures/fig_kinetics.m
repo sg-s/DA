@@ -75,9 +75,34 @@ legend({'Stimulus','LFP','Firing Rate'})
 plot([sp rp],[1.05 1.05],'LineWidth',3,'Color','r')
 plot([sp xp],[1.1 1.1],'LineWidth',3,'Color','b')
 
+% ##     ## ########    ###    ##    ## 
+% ###   ### ##         ## ##   ###   ## 
+% #### #### ##        ##   ##  ####  ## 
+% ## ### ## ######   ##     ## ## ## ## 
+% ##     ## ##       ######### ##  #### 
+% ##     ## ##       ##     ## ##   ### 
+% ##     ## ######## ##     ## ##    ## 
+
+%  ######  ##     ## #### ######## ######## ######## ########  
+% ##    ## ##     ##  ##  ##          ##    ##       ##     ## 
+% ##       ##     ##  ##  ##          ##    ##       ##     ## 
+%  ######  #########  ##  ######      ##    ######   ##     ## 
+%       ## ##     ##  ##  ##          ##    ##       ##     ## 
+% ##    ## ##     ##  ##  ##          ##    ##       ##     ## 
+%  ######  ##     ## #### ##          ##    ######## ########  
+
+%  ######      ###    ##     ##  ######   ######  ####    ###    ##    ##  ######  
+% ##    ##    ## ##   ##     ## ##    ## ##    ##  ##    ## ##   ###   ## ##    ## 
+% ##         ##   ##  ##     ## ##       ##        ##   ##   ##  ####  ## ##       
+% ##   #### ##     ## ##     ##  ######   ######   ##  ##     ## ## ## ##  ######  
+% ##    ##  ######### ##     ##       ##       ##  ##  ######### ##  ####       ## 
+% ##    ##  ##     ## ##     ## ##    ## ##    ##  ##  ##     ## ##   ### ##    ## 
+%  ######   ##     ##  #######   ######   ######  #### ##     ## ##    ##  ######  
+
+
 % show LFP slowdown 
 
-[PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData('/local-data/DA-paper/LFP-MSG/september',1);
+[PID, LFP, fA, paradigm, orn, ~, AllControlParadigms, paradigm_hashes] = consolidateData(dm.getPath('bf79dfd769a97089e42beb0660174e84'),1);
 
 % remove baseline from all PIDs
 for i = 1:width(PID)
@@ -119,102 +144,63 @@ dt = 1e-3;
 c = parula(max(paradigm)+1); % colour scheme
 
 
-x_odor_LFP = NaN(1,width(PID));
-x_odor_fA = NaN(1,width(PID));
-x_LFP_fA = NaN(1,width(PID));
+lag_LFP = NaN(1,width(PID));
+lag_fA = NaN(1,width(PID));
+max_corr_LFP = NaN(1,width(PID));
+max_corr_fA = NaN(1,width(PID));
+
+subplot(2,3,2), hold on
 
 for i = 1:width(PID)
 	s = PID(25e3:45e3,i)-mean(PID(25e3:45e3,i)); s = s/std(s);
-	f = fA(25e3:45e3,i)-mean(fA(25e3:45e3,i)); f = f/std(f);
-	r = filtered_LFP(25e3:45e3,i)-mean(filtered_LFP(25e3:45e3,i)); r = r/std(r); r = -r;
+	r = fA(25e3:45e3,i)-mean(fA(25e3:45e3,i)); r = r/std(r);
+	x = filtered_LFP(25e3:45e3,i)-mean(filtered_LFP(25e3:45e3,i)); x = x/std(x); x = -x;
 
-	temp = xcorr(f,s);
-	[~,x_odor_fA(i)] = max(temp(19.5e3+1:20.5e3));
+	[temp,lags] = xcorr(f,s); temp = temp/20e3;
+	[max_corr_fA(i),lag_fA(i)] = max(temp);
 
-	temp = xcorr(r,s);
-	[~,x_odor_LFP(i)] = max(temp(19.5e3+1:20.5e3));
+	if i == 1
+		plot(lags,temp/max(temp),'r-')
+	end
+	if i == width(PID)
+		plot(lags,temp/max(temp),'r--')
+	end
 
-	temp = xcorr(f,r);
-	[~,x_LFP_fA(i)] = max(temp(19.5e3+1:20.5e3));
+	[temp,lags] = xcorr(x,s);  temp = temp/20e3;
+	[max_corr_LFP(i),lag_LFP(i)] = max(temp);
+
+	if i == 1
+		plot(lags,temp/max(temp),'b-')
+	end
+	if i == width(PID)
+		plot(lags,temp/max(temp),'b--')
+	end
 end
+set(gca,'XLim',[-50 600])
+xlabel('Lag (ms)')
+ylabel('Cross correlation (norm)')
 
-x_odor_LFP = x_odor_LFP - 500;
-x_odor_fA = x_odor_fA - 500;
-x_LFP_fA = x_LFP_fA - 500;
+lag_LFP = lag_LFP - 20e3;
+lag_fA = lag_fA - 20e3;
+mean_stim =  nanmean(PID(25e3:45e3,:));  
+lag_fA(lag_fA<0) = NaN;
+lag_LFP(lag_LFP<0) = NaN;
 
-x_LFP_fA(x_LFP_fA<-100) = NaN;
-x_odor_fA(x_odor_fA<-100) = NaN;
-x_odor_LFP(x_odor_LFP<-100) = NaN;
-x_LFP_fA(x_LFP_fA>0) = NaN;
-
-%  ######  ######## #### ##     ##         ##    ##       ######## ########  
-% ##    ##    ##     ##  ###   ###          ##   ##       ##       ##     ## 
-% ##          ##     ##  #### ####           ##  ##       ##       ##     ## 
-%  ######     ##     ##  ## ### ## #######    ## ##       ######   ########  
-%       ##    ##     ##  ##     ##           ##  ##       ##       ##        
-% ##    ##    ##     ##  ##     ##          ##   ##       ##       ##        
-%  ######     ##    #### ##     ##         ##    ######## ##       ##        
+subplot(2,3,5), hold on
+plot(mean_stim,lag_LFP,'b+')
+plot(mean_stim,lag_fA,'r+')
+xlabel('\mu_{Stimulus} (V)')
+ylabel('Lag (ms)')
 
 
-l = plot(ax(2),nanmean(PID(25e3:45e3,:)),x_odor_LFP,'k+');
-x = nanmean(PID(25e3:45e3,:));
-y = x_odor_LFP; 
-rm_this = isnan(x) | isnan(y);
-x(rm_this) = []; y(rm_this) = [];
-[rho,p] = corr(x(:),y(:),'type','Spearman');
-legend(l,['\rho = ' oval(rho) ', p = ' oval(p)],'Location','southeast')
 
-xlabel(ax(2),'Mean Stimulus (V)')
-ylabel(ax(2),'Lag (ms)')
-title(ax(2),'Odor \rightarrow LFP')
-
-% ##       ######## ########     ##       ######## #### ########  #### ##    ##  ######   
-% ##       ##       ##     ##     ##      ##        ##  ##     ##  ##  ###   ## ##    ##  
-% ##       ##       ##     ##      ##     ##        ##  ##     ##  ##  ####  ## ##        
-% ##       ######   ########        ##    ######    ##  ########   ##  ## ## ## ##   #### 
-% ##       ##       ##             ##     ##        ##  ##   ##    ##  ##  #### ##    ##  
-% ##       ##       ##            ##      ##        ##  ##    ##   ##  ##   ### ##    ##  
-% ######## ##       ##           ##       ##       #### ##     ## #### ##    ##  ######   
-
-l = plot(ax(3),nanmean(PID(25e3:45e3,:)),x_LFP_fA,'k+');
-x = nanmean(PID(25e3:45e3,:));
-y = x_LFP_fA; 
-rm_this = isnan(x) | isnan(y);
-x(rm_this) = []; y(rm_this) = [];
-[rho,p] = corr(x(:),y(:),'type','Spearman');
-legend(l,['\rho = ' oval(rho) ', p = ' oval(p)],'Location','southeast')
-
-xlabel(ax(3),'Mean Stimulus (V)')
-ylabel(ax(3),'Lag (ms)')
-title(ax(3),'LFP \rightarrow Firing Rate')
-
-%  ######  ######## #### ##     ##    ##       ######## #### ########  #### ##    ##  ######   
-% ##    ##    ##     ##  ###   ###     ##      ##        ##  ##     ##  ##  ###   ## ##    ##  
-% ##          ##     ##  #### ####      ##     ##        ##  ##     ##  ##  ####  ## ##        
-%  ######     ##     ##  ## ### ##       ##    ######    ##  ########   ##  ## ## ## ##   #### 
-%       ##    ##     ##  ##     ##      ##     ##        ##  ##   ##    ##  ##  #### ##    ##  
-% ##    ##    ##     ##  ##     ##     ##      ##        ##  ##    ##   ##  ##   ### ##    ##  
-%  ######     ##    #### ##     ##    ##       ##       #### ##     ## #### ##    ##  ######   
-
-l = plot(ax(5),nanmean(PID(25e3:45e3,:)),x_odor_fA,'k+');
-x = nanmean(PID(25e3:45e3,:));
-y = x_odor_fA; 
-rm_this = isnan(x) | isnan(y);
-x(rm_this) = []; y(rm_this) = [];
-[rho,p] = corr(x(:),y(:),'type','Spearman');
-legend(l,['\rho = ' oval(rho) ', p = ' oval(p)],'Location','southeast')
-
-xlabel(ax(5),'Mean Stimulus (V)')
-ylabel(ax(5),'Lag (ms)')
-title(ax(5),'Odor \rightarrow Firing Rate')
-
-% ##       ####  ######   ##     ## ########          #######  ##    ## ##       ##    ## 
-% ##        ##  ##    ##  ##     ##    ##            ##     ## ###   ## ##        ##  ##  
-% ##        ##  ##        ##     ##    ##            ##     ## ####  ## ##         ####   
-% ##        ##  ##   #### #########    ##    ####### ##     ## ## ## ## ##          ##    
-% ##        ##  ##    ##  ##     ##    ##            ##     ## ##  #### ##          ##    
-% ##        ##  ##    ##  ##     ##    ##            ##     ## ##   ### ##          ##    
-% ######## ####  ######   ##     ##    ##             #######  ##    ## ########    ##    
+%  ######   #######  ##    ## ######## ########     ###     ######  ######## 
+% ##    ## ##     ## ###   ##    ##    ##     ##   ## ##   ##    ##    ##    
+% ##       ##     ## ####  ##    ##    ##     ##  ##   ##  ##          ##    
+% ##       ##     ## ## ## ##    ##    ########  ##     ##  ######     ##    
+% ##       ##     ## ##  ####    ##    ##   ##   #########       ##    ##    
+% ##    ## ##     ## ##   ###    ##    ##    ##  ##     ## ##    ##    ##    
+%  ######   #######  ##    ##    ##    ##     ## ##     ##  ######     ##    
 
 
 p = '/local-data/DA-paper/Chrimson/scaled-light-flicker/v2';

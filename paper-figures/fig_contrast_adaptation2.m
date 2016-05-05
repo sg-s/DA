@@ -309,13 +309,6 @@ for i = 1:width(reshaped_PID)
 end
 
 
-% x = std(reshaped_PID(1e3:4e3,:));
-% plot(ax(7),x,laughlin_hi_gain,'r+')
-% x = std(reshaped_PID(6e3:9e3,:));
-% plot(ax(7),x,laughlin_lo_gain,'b+')
-% ylabel(ax(7),'Predicted Gain (a.u.)')
-% xlabel(ax(7),'\sigma_{Stimulus} (V)')
-
 plot(ax(7),laughlin_lo_gain,lo_gain,'b+')
 plot(ax(7),laughlin_hi_gain,hi_gain,'r+')
 r2 = rsquare([laughlin_lo_gain; laughlin_hi_gain],[lo_gain; hi_gain]);
@@ -342,6 +335,34 @@ if being_published
 	delete(gcf)
 end
 
+%% Supplementary Figure
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+x = std(reshaped_PID(1e3:4e3,:));
+y = std(reshaped_fA(1e3:4e3,:))./x; y(y==0) = NaN;
+plot(x,y,'r+')
+x = std(reshaped_PID(6e3:9e3,:));
+y = std(reshaped_fA(6e3:9e3,:))./x; y (y==0) = NaN;
+plot(x,y,'b+')
+ylabel('\sigma_{Firing Rate}/\sigma_{Stimulus} (Hz/V)')
+xlabel(gca,'\sigma_{Stimulus} (V)')
+
+subplot(1,2,2), hold on
+x = std(reshaped_PID(1e3:4e3,:));
+plot(x,laughlin_hi_gain,'r+')
+x = std(reshaped_PID(6e3:9e3,:));
+plot(x,laughlin_lo_gain,'b+')
+ylabel(gca,'c.d.f Slope (a.u.)')
+xlabel(gca,'\sigma_{Stimulus} (V)')
+
+prettyFig('fs',18,'lw',2)
+labelFigure
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 return
 

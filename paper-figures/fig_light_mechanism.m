@@ -93,7 +93,7 @@ for i = do_these
 	[~,data] = plotPieceWiseLinear(x,y,'make_plot',false,'nbins',40);
 	plot(data.x,data.y,'Color',c(i,:),'LineWidth',3)
 end
-xlabel('Projected Stimulus (\muW)')
+xlabel('Projected Light Stimulus (\muW)')
 ylabel('Firing Rate (Hz)')
 
 % plot gain vs. contrast
@@ -322,11 +322,11 @@ for i = 1:size(od,1)
 		plot(ax(2),odour_levels,gain,'-+','Color',c2(i,:))
 	end
 end
-xlabel(ax(1),'Projected Stimulus (\muW)')
+xlabel(ax(1),'Projected Light Stimulus (\muW)')
 ylabel(ax(1),'ab3A Firing Rate (Hz)')
 
 set(ax(2),'XScale','log','YLim',[0 2],'XTick',[1e-4 1e-3 1e-2 1e-1 1e0])
-xlabel(ax(2),'Odour Background (V)')
+xlabel(ax(2),'Odor Background (V)')
 ylabel(ax(2),'ORN Gain (Hz/\muW)')
 
 % add an inset showing how the odour affects the neuron

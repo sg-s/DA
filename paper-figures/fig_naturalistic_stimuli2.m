@@ -96,7 +96,7 @@ fp = convolve(tA,mean(PID,2),K,filtertime);
 clear l
 [ax,plot1,plot2] = plotyy(axes_handles(4),tA,R,tA,fp);
 set(ax(1),'XLim',[0 70],'YLim',[0 120],'YColor','k')
-set(ax(2),'XLim',[0 70],'YLim',[min(fp) max(fp)])
+set(ax(2),'XLim',[0 70],'YLim',[min(fp) max(fp)],'YColor','r')
 set(plot1,'Color','k')
 set(plot2,'Color','r')
 ylabel(ax(1),'ab3A Response (Hz)')
@@ -317,7 +317,7 @@ ylabel(axes_handles(7),'Gain (Hz/V)')
 set(axes_handles(7),'YLim',[10 1e4],'YScale','log','XScale','log','XLim',[.001 10],'XTick',[.001 .01 .1 1 10])
 
 xlabel(axes_handles(8),'\sigma_{Stimulus} in preceding 500ms (V)')
-set(axes_handles(8),'XTick',[1e-4 1e-3 1e-2 1e-1 1 10],'XScale','log','YScale','log','XLim',[1e-4 10],'YLim',[10 1e4])
+set(axes_handles(8),'XTick',[1e-4 1e-3 1e-2 1e-1 1 10],'XScale','log','YScale','log','XLim',[1e-3 10],'YLim',[10 1e4])
 
 % shrink the bottom row a little bit
 for i = 6:9
@@ -417,7 +417,7 @@ ff = fit(x(a:end)',y(a:end)',m,'Upper',[Inf -1.5],'Lower',[-Inf -1.5],'StartPoin
 plot(x,y,'k+')
 plot(x,ff(x),'r')
 ylabel(gca,'Probability')
-set(gca,'YScale','log','XScale','log')
+set(gca,'YScale','log','XScale','log','XTick',[1e1 1e2 1e3 1e4])
 xlabel('Whiff duration (ms)')
 
 % show the blank durations 
@@ -434,7 +434,7 @@ a = 1; m = fittype('a*(x).^n');
 ff = fit(x(a:end)',y(a:end)',m,'Upper',[Inf -1.5],'Lower',[-Inf -1.5],'StartPoint',[300 -1.5]);
 plot(x,y,'k+')
 plot(x,ff(x),'r')
-set(gca,'YScale','log','XScale','log')
+set(gca,'YScale','log','XScale','log','XTick',[1e2 1e3 1e4 1e5])
 xlabel('Blank duration (ms)')
 ylabel(gca,'Probability')
 
@@ -511,7 +511,7 @@ options.Lower = [-Inf -1];
 options.Upper = [Inf -1];
 ff = fit(mean_stim,gain,'power1',options);
 plot(gca,mean_stim,ff(mean_stim),'r')
-set(gca,'XScale','log','YScale','log')
+set(gca,'XScale','log','YScale','log','XTick',[1e-2 1e-1 1e0 1e1])
 ylabel('Gain (Hz/V)')
 xlabel('Mean Stimulus in preceding 500ms')
 title('Gain estimation using white-noise filter')

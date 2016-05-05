@@ -310,6 +310,7 @@ ylabel('Lag (ms)')
 
 legend('boxoff')
 prettyFig('fs',18)
+labelFigure
 
 if being_published	
 	snapnow	

@@ -5,7 +5,7 @@ pHeader;
 dm = dataManager;
 
 
-figure('outerposition',[0 0 1700 700],'PaperUnits','points','PaperSize',[1700 700]); hold on
+figure('outerposition',[0 0 1600 720],'PaperUnits','points','PaperSize',[1600 720]); hold on
 
 
 [PID, LFP, fA, paradigm,~, ~, AllControlParadigms] = consolidateData(dm.getPath('bf79dfd769a97089e42beb0660174e84'),1);
@@ -71,24 +71,22 @@ ss = 100;
 c = parula(max(paradigm)+1);
 mean_stim = nanmean(PID(a:z,:));
 ms = [min(mean_stim) max(mean_stim)];
-subplot(2,5,1), hold on
+ax(2) = subplot(2,5,2); hold on
 for i = 1:max(paradigm) % iterate over all paradigms 
 	y = nanmean(filtered_LFP(a:z,paradigm == i),2);
 	x = nanmean(K1p(a:z,paradigm == i),2);
 	x = x - nanmean(x);
-	% s = nanmean(PID(a:z,paradigm==i),2);
-	% x = x + nanmean(s);
 	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:));
 end
 xlabel('Projected Stimulus (V)')
 ylabel('\DeltaLPF (mV)')
 
 % show transduction gain
-subplot(2,5,2), hold on
+ax(3) = subplot(2,5,3); hold on
 for i = 1:length(paradigm)
 	plot(mean_stim(i),K1_gain(i),'+','Color',c(paradigm(i),:))
 end
-xlabel('\mu_{Stimulus} (V)')
+xlabel('\mu_{Odor} (V)')
 ylabel('Transduction Gain (mV/V)')
 set(gca,'XScale','log','YScale','log')
 ff = fit(mean_stim(:),K1_gain(:),'power1','Upper',[Inf -1],'Lower',[0 -1]);
@@ -99,7 +97,7 @@ th = text(.8, 10,'$\sim 1/s$','interpreter','latex','Color','r','FontSize',20);
 
 
 % show firing machinery I/o curves
-subplot(2,5,6), hold on
+ax(7) = subplot(2,5,7); hold on
 for i = 1:max(paradigm) % iterate over all paradigms 
 	y = nanmean(fA(a:z,paradigm == i),2);
 	x = .1*nanmean(K2p(a:z,paradigm == i),2);
@@ -109,12 +107,12 @@ end
 xlabel('Projected LFP (mV)')
 ylabel('Firing Rate (Hz)')
 
-
-subplot(2,5,7), hold on
+% show firing machinery gain
+ax(8) = subplot(2,5,8); hold on
 for i = 1:length(paradigm)
 	plot(mean_stim(i),10*K2_gain(i),'+','Color',c(paradigm(i),:))
 end
-xlabel('\mu_{Stimulus} (V)')
+xlabel('\mu_{Odor} (V)')
 ylabel('Firing Gain (Hz/mV)')
 set(gca,'XScale','log','YScale','log','YLim',[1 1e2],'XLim',[.1 2])
 
@@ -217,8 +215,6 @@ min_r2 = .8;
 % compute gains per trial
 lo_gain_LFP = NaN(width(reshaped_PID),1);
 hi_gain_LFP = NaN(width(reshaped_PID),1);
-lo_gain_firing = NaN(width(reshaped_PID),1);
-hi_gain_firing = NaN(width(reshaped_PID),1);
 for i = 1:width(reshaped_PID)
 	y = reshaped_LFP(1e3:4e3,i);
 	x = K1p(1e3:4e3,i);
@@ -235,50 +231,38 @@ for i = 1:width(reshaped_PID)
 		lo_gain_LFP(i) = ff.p1;
 	catch
 	end
-
-	% y = reshaped_fA(1e3:4e3,i);
-	% x = K2p(1e3:4e3,i);
-	% try
-	% 	ff = fit(x(:),y(:),'poly1');
-	% 	hi_gain_firing(i) = ff.p1;
-	% catch
-	% end
-
-	% y = reshaped_fA(6e3:9e3,i);
-	% x = K2p(6e3:9e3,i);
-	% try
-	% 	ff = fit(x(:),y(:),'poly1');
-	% 	lo_gain_firing(i) = ff.p1;
-	% catch
-	% end
 end
 
 % compute firing rate gains using Hill functions
-for i = 1:width(reshaped_PID)
-	if ~being_published
-		textbar(i,width(reshaped_PID))
-	end
-	y = reshaped_fA(1e3:4e3,i); s = nanmax(y); 	y = y/s;
-	x = K2p(1e3:4e3,i);
-	try
-		ft = fittype('hill2(x,k,n,x_offset)');
-		ff = fit(x(:),y(:),ft,'StartPoint',[nanmax(x)/2 2 nanmean(x)],'Lower',[0 1 -Inf],'Upper',[nanmax(x) 10 nanmax(x)],'MaxIter',1e4);
-		hi_gain_firing(i) = s*differentiate(ff,ff.k + ff.x_offset);
-	catch
-	end
+if ~exist('lo_gain_firing','var')
+	lo_gain_firing = NaN(width(reshaped_PID),1);
+	hi_gain_firing = NaN(width(reshaped_PID),1);
+	for i = 1:width(reshaped_PID)
+		if ~being_published
+			textbar(i,width(reshaped_PID))
+		end
+		y = reshaped_fA(1e3:4e3,i); s = nanmax(y); 	y = y/s;
+		x = K2p(1e3:4e3,i);
+		try
+			ft = fittype('hill2(x,k,n,x_offset)');
+			ff = fit(x(:),y(:),ft,'StartPoint',[nanmax(x)/2 2 nanmean(x)],'Lower',[0 1 -Inf],'Upper',[nanmax(x) 10 nanmax(x)],'MaxIter',1e4);
+			hi_gain_firing(i) = s*differentiate(ff,ff.k + ff.x_offset);
+		catch
+		end
 
-	y = reshaped_fA(6e3:9e3,i); s = nanmax(y); 	y = y/s;
-	x = K2p(6e3:9e3,i);
-	try
-		ft = fittype('hill2(x,k,n,x_offset)');
-		ff = fit(x(:),y(:),ft,'StartPoint',[nanmax(x)/2 2 nanmean(x)],'Lower',[0 1 -Inf],'Upper',[nanmax(x) 10 nanmax(x)],'MaxIter',1e4);
-		lo_gain_firing(i) = s*differentiate(ff,ff.k + ff.x_offset);
-	catch
+		y = reshaped_fA(6e3:9e3,i); s = nanmax(y); 	y = y/s;
+		x = K2p(6e3:9e3,i);
+		try
+			ft = fittype('hill2(x,k,n,x_offset)');
+			ff = fit(x(:),y(:),ft,'StartPoint',[nanmax(x)/2 2 nanmean(x)],'Lower',[0 1 -Inf],'Upper',[nanmax(x) 10 nanmax(x)],'MaxIter',1e4);
+			lo_gain_firing(i) = s*differentiate(ff,ff.k + ff.x_offset);
+		catch
+		end
 	end
 end
 
 % plot transduction i/o curves
-subplot(2,5,4), hold on
+ax(4) = subplot(2,5,4); hold on
 x = K1p(1e3:4e3,:);
 y = reshaped_LFP(1e3:4e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K1p < min_r2)');
@@ -305,17 +289,17 @@ xlabel('Projected Stimulus (V)')
 ylabel('\DeltaLPF (mV)')
 
 % plot transduction gain change
-subplot(2,5,5), hold on
+ax(5) = subplot(2,5,5); hold on
 x = std(reshaped_PID(1e3:4e3,r2_K1p>.8));
 plot(x,hi_gain_LFP(r2_K1p>.8),'r+')
 x = std(reshaped_PID(6e3:9e3,r2_K1p>.8));
 plot(x,lo_gain_LFP(r2_K1p>.8),'b+')
-xlabel('\sigma_{Stimulus} (V)')
+xlabel('\sigma_{Odor} (V)')
 ylabel('Transduction Gain (mV/V)')
 
 
 % show firing i/o curves
-subplot(2,5,9), hold on
+ax(9) = subplot(2,5,9); hold on
 x = K2p(1e3:4e3,:);
 y = reshaped_fA(1e3:4e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K2p < min_r2)');
@@ -340,16 +324,16 @@ xlabel('Projected LFP (mV)')
 ylabel('Firing Rate (Hz)')
 
 % plot firing gain change
-subplot(2,5,10), hold on
+ax(10) = subplot(2,5,10); hold on
 x = std(reshaped_PID(1e3:4e3,r2_K2p>.8));
 plot(x,hi_gain_firing(r2_K2p>.8),'r+')
 x = std(reshaped_PID(6e3:9e3,r2_K2p>.8));
 plot(x,lo_gain_firing(r2_K2p>.8),'b+')
-xlabel('\sigma_{Stimulus} (V)')
+xlabel('\sigma_{Odor} (V)')
 ylabel('Firing Gain (Hz/mV)')
 
 % add an explanatory graphic
-subplot(1,5,3), hold on
+ax(1) = subplot(1,5,1); hold on
 o = imread('../images/fig-LFP-cartoon.png');
 imagesc(o);
 axis ij
@@ -357,8 +341,84 @@ axis image
 axis off
 
 prettyFig('fs',16)
-labelFigure
+
+% plot example traces of the LFP, firing rate and the stimulus
+inset1 = axes;
+inset1.Position = [0.13 0.76 0.1 0.1];
+plot(inset1,1e-3*(1:5e3),reshaped_PID(1:5e3,1),'k','LineWidth',1.5);
+
+inset2 = axes;
+inset2.Position = [0.13 0.54 0.1 0.1];
+plot(inset2,1e-3*(1:5e3),reshaped_LFP(1:5e3,1),'k','LineWidth',1.5);
+
+inset3 = axes;
+inset3.Position = [0.13 0.24 0.1 0.1];
+plot(inset3,1e-3*(1:5e3),reshaped_fA(1:5e3,1),'k','LineWidth',1.5);
+set(inset1,'LineWidth',1.5,'box','off','XLim',[0 5])
+set(inset2,'LineWidth',1.5,'box','off','XLim',[0 5])
+set(inset3,'LineWidth',1.5,'box','off','XLim',[0 5])
+xlabel(inset3,'Time (s)')
+
+% make all the plots square
+for i = 2:length(ax)
+	try
+		axis(ax(i),'square')
+	catch
+	end
+end
+
+% move some plots around
+ax(1).Position(1) = .01;
+
+ax(5).Position(1) = .85;
+ax(4).Position(1) = .68;
+ax(9).Position(1) = .68;
+ax(10).Position(1) = .85;
+
+ax(2).Position(2) = .53;
+ax(3).Position(2) = .53;
+ax(4).Position(2) = .53;
+ax(5).Position(2) = .53;
+
 th.FontSize = 20;
+
+% fake a axes that covers the entire figure
+a = axes;
+a.Position = [0 0 1 1];
+uistack(a,'bottom')
+a.TickLength = [0 0];
+a.XLim = [0 1];
+a.YLim = [0 1];
+
+% draw a couple of rectangles to box things in
+r1 = rectangle('Position',[0.1 0.1 .4 .4],'Curvature',0);
+r1.Position = [.255 .025 .34 .95];
+r1.FaceColor = [.9 .9 .9];
+r1.LineStyle = 'none';
+r1.Parent = a;
+
+r2 = rectangle('Position',[0.1 0.1 .4 .4],'Curvature',0);
+r2.Position = [.64 .025 .345 .95];
+r2.FaceColor = [.9 .9 .9];
+r2.LineStyle = 'none';
+r2.Parent = a;
+
+% add some text
+t1 = text;
+t1.String = 'Changing Stimulus Mean';
+t1.FontSize = 20;
+t1.FontWeight=  'bold';
+t1.Parent = a;
+t1.Position = [0.3500 0.9100 0];
+
+t2 = text;
+t2.String = 'Changing Stimulus Variance';
+t2.FontSize = 20;
+t2.FontWeight=  'bold';
+t2.Parent = a;
+t2.Position = [0.7400 0.9100 0];
+
+
 
 if being_published	
 	snapnow	

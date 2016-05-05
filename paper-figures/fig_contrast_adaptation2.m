@@ -281,7 +281,7 @@ ylabel(ax(6),'ORN Gain (Hz/V)')
 clear l
 l(1) = plot(ax(5),NaN,NaN,'k--');
 l(2) = plot(ax(5),NaN,NaN,'k');
-lh = legend(l,{'Prediction','Measured'},'Location','southeast');
+lh = legend(l,{'c.d.f.','Measured'},'Location','southeast');
 lh.FontSize = 10; lh.Box = 'off';
 
 % now use Laughlin to compute the gains per trial
@@ -308,19 +308,22 @@ for i = 1:width(reshaped_PID)
 	laughlin_lo_gain(i) = ff.p1;
 end
 
-x = std(reshaped_PID(1e3:4e3,:));
-plot(ax(7),x,laughlin_hi_gain,'r+')
-x = std(reshaped_PID(6e3:9e3,:));
-plot(ax(7),x,laughlin_lo_gain,'b+')
 
-% plot(ax(7),laughlin_lo_gain,lo_gain,'b+')
-% plot(ax(7),laughlin_hi_gain,hi_gain,'r+')
-% r2 = rsquare([laughlin_lo_gain; laughlin_hi_gain],[lo_gain; hi_gain]);
-ylabel(ax(7),'Predicted Gain (a.u.)')
-xlabel(ax(7),'\sigma_{Stimulus} (V)')
-% l = plot(ax(7),NaN,NaN,'k+');
-% lh = legend(l,['r^2 = ' oval(r2)]);
-% lh.Location = 'southeast';
+% x = std(reshaped_PID(1e3:4e3,:));
+% plot(ax(7),x,laughlin_hi_gain,'r+')
+% x = std(reshaped_PID(6e3:9e3,:));
+% plot(ax(7),x,laughlin_lo_gain,'b+')
+% ylabel(ax(7),'Predicted Gain (a.u.)')
+% xlabel(ax(7),'\sigma_{Stimulus} (V)')
+
+plot(ax(7),laughlin_lo_gain,lo_gain,'b+')
+plot(ax(7),laughlin_hi_gain,hi_gain,'r+')
+r2 = rsquare([laughlin_lo_gain; laughlin_hi_gain],[lo_gain; hi_gain]);
+ylabel(ax(7),'ORN Gain (Hz/V)')
+xlabel(ax(7),'c.d.f slope (a.u.)')
+l = plot(ax(7),NaN,NaN,'k+');
+lh = legend(l,['r^2 = ' oval(r2)]);
+lh.Location = 'southeast';
 
 % cosmetics
 ax(1).Position(3) = .53;

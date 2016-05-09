@@ -1,9 +1,14 @@
-
+%% fig_LFP.m
+% makes figure showing how gain changes at the LFP level, and from the LFP to the firing machinery
+% 
 
 
 pHeader;
+
+% uses dataManager for data integrity
 dm = dataManager;
 
+opacity = .5;
 
 figure('outerposition',[0 0 1600 720],'PaperUnits','points','PaperSize',[1600 720]); hold on
 
@@ -61,6 +66,7 @@ a = 10e3; z = 50e3;
 
 % extract filters and compute gains
 [K1,K1p,K1_gain] = extractFilters(PID,filtered_LFP,'use_cache',true,'a',a,'z',z);
+
 % we compute the firing machinery gain on the derivative of the LFP to avoid problems with filtering 
 [K2,K2p,K2_gain] = extractFilters(dLFP,fA,'use_cache',true,'a',a,'z',z);
 [K3,K3p,K3_gain] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
@@ -79,7 +85,7 @@ for i = 1:max(paradigm) % iterate over all paradigms
 	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:));
 end
 xlabel('Projected Stimulus (V)')
-ylabel('ab3 \DeltaLPF (mV)')
+ylabel('ab3 \DeltaLFP (mV)')
 
 % show transduction gain
 ax(3) = subplot(2,5,3); hold on
@@ -115,6 +121,13 @@ end
 xlabel('\mu_{Odor} (V)')
 ylabel('ab3A Firing Gain (Hz/mV)')
 set(gca,'XScale','log','YScale','log','YLim',[1 1e2],'XLim',[.1 2])
+
+clear msg_data
+msg_data.PID = PID;
+msg_data.LFP = dLFP;
+msg_data.fA = fA;
+msg_data.paradigm = paradigm;
+
 
 %  ######   #######  ##    ## ######## ########     ###     ######  ######## 
 % ##    ## ##     ## ###   ##    ##    ##     ##   ## ##   ##    ##    ##    
@@ -286,17 +299,20 @@ x = x(:); y = y(:);
 x = x(1:ss:end); y = y(1:ss:end);
 plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[0 0 1],'proportional_bins',true,'show_error',false);
 xlabel('Projected Stimulus (V)')
-ylabel('\DeltaLPF (mV)')
+ylabel('ab3 \DeltaLFP (mV)')
 
 % plot transduction gain change
 ax(5) = subplot(2,5,5); hold on
 x = std(reshaped_PID(1e3:4e3,r2_K1p>.8));
-plot(x,hi_gain_LFP(r2_K1p>.8),'r+')
+y = hi_gain_LFP(r2_K1p>.8);
+plot(ax(5),x,y,'+','Color',[1 opacity opacity])
+errorbar(ax(5),nanmean(x),nanmean(y),nanstd(y),'r','LineWidth',4,'Marker','o','MarkerSize',10);
 x = std(reshaped_PID(6e3:9e3,r2_K1p>.8));
-plot(x,lo_gain_LFP(r2_K1p>.8),'b+')
+y = lo_gain_LFP(r2_K1p>.8);
+plot(ax(5),x,y,'+','Color',[opacity opacity 1])
+errorbar(ax(5),nanmean(x),nanmean(y),nanstd(y),'b','LineWidth',4,'Marker','o','MarkerSize',10);
 xlabel('\sigma_{Odor} (V)')
 ylabel('Transduction Gain (mV/V)')
-
 
 % show firing i/o curves
 ax(9) = subplot(2,5,9); hold on
@@ -324,11 +340,15 @@ xlabel('Projected LFP (mV)')
 ylabel('ab3A Firing Rate (Hz)')
 
 % plot firing gain change
-ax(10) = subplot(2,5,10); hold on
+ax(10) = subplot(2,5,10); hold on; 
 x = std(reshaped_PID(1e3:4e3,r2_K2p>.8));
-plot(x,hi_gain_firing(r2_K2p>.8),'r+')
+y = hi_gain_firing(r2_K2p>.8);
+plot(ax(10),x,y,'+','Color',[1 opacity opacity])
+errorbar(ax(10),nanmean(x),nanmean(y),nanstd(y),'r','LineWidth',4,'Marker','o','MarkerSize',10);
 x = std(reshaped_PID(6e3:9e3,r2_K2p>.8));
-plot(x,lo_gain_firing(r2_K2p>.8),'b+')
+y = lo_gain_firing(r2_K2p>.8);
+plot(ax(10),x,y,'+','Color',[opacity opacity 1])
+errorbar(ax(10),nanmean(x),nanmean(y),nanstd(y),'b','LineWidth',4,'Marker','o','MarkerSize',10);
 xlabel('\sigma_{Odor} (V)')
 ylabel('ab3A Firing Gain (Hz/mV)')
 
@@ -390,8 +410,6 @@ a.TickLength = [0 0];
 a.XLim = [0 1];
 a.YLim = [0 1];
 
-return
-
 % draw a couple of rectangles to box things in
 r1 = rectangle('Position',[0.1 0.1 .4 .4],'Curvature',0);
 r1.Position = [.255 .025 .34 .95];
@@ -427,6 +445,69 @@ if being_published
 	delete(gcf)
 end
 
+
+%% Supplementary Figure
+% In this supplementary figure, we show the same result by estimating gain as ratios of standard deviations of output to input
+
+figure('outerposition',[0 0 800 900],'PaperUnits','points','PaperSize',[800 900]); hold on
+subplot(2,2,1), hold on
+x = mean(msg_data.PID(20e3:45e3,:));
+y = std(msg_data.LFP(20e3:45e3,:))./std(msg_data.PID(20e3:45e3,:));
+c = parula(length(unique(msg_data.paradigm))+1);
+for i = 1:length(x)
+	plot(x(i),y(i),'+','Color',c(msg_data.paradigm(i),:));
+end
+ff = fit(x(:),y(:),'power1','Upper',[Inf -1],'Lower',[0 -1]);
+plot(x,ff(x),'r')
+set(gca,'XScale','log','YScale','log','YLim',[10 1e3],'XTick',[.1 1],'XLim',[.1 2])
+xlabel('\mu_{Odor} (V)')
+ylabel('\sigma_{LFP}/\sigma_{Stimulus} (mV/V)')
+
+subplot(2,2,3), hold on
+x = mean(msg_data.PID(20e3:45e3,:));
+y = 10*std(msg_data.fA(20e3:45e3,:))./std(msg_data.LFP(20e3:45e3,:));
+c = parula(length(unique(msg_data.paradigm))+1);
+for i = 1:length(x)
+	plot(x(i),y(i),'+','Color',c(msg_data.paradigm(i),:));
+end
+set(gca,'XScale','log','YScale','log','YLim',[1 100],'XTick',[.1 1],'XLim',[.1 2])
+ylabel('\sigma_{Firing Rate}/\sigma_{LFP} (Hz/mV)')
+xlabel('\mu_{Odor} (V)')
+
+% now do the variance switching experiment
+subplot(2,2,2), hold on
+y = std(reshaped_LFP(1e3:5e3,:))./std(reshaped_PID(1e3:5e3,:));
+x = std(reshaped_PID(1e3:5e3,:));
+plot(x,y,'+','Color',[1 opacity opacity])
+errorbar(nanmean(x),nanmean(y),nanstd(y),'r','LineWidth',4,'Marker','o','MarkerSize',10);
+
+y = std(reshaped_LFP(6e3:9e3,:))./std(reshaped_PID(6e3:9e3,:));
+x = std(reshaped_PID(6e3:9e3,:));
+plot(x,y,'+','Color',[opacity opacity 1])
+errorbar(nanmean(x),nanmean(y),nanstd(y),'b','LineWidth',4,'Marker','o','MarkerSize',10);
+xlabel('\sigma_{Odor} (V)')
+ylabel('\sigma_{LFP}/\sigma_{Stimulus} (mV/V)')
+set(gca,'YLim',[0 20])
+
+subplot(2,2,4), hold on
+y = std(reshaped_fA(1e3:5e3,:))./std(reshaped_LFP(1e3:5e3,:));
+x = std(reshaped_PID(1e3:5e3,:));
+plot(x,y,'+','Color',[1 opacity opacity])
+errorbar(nanmean(x),nanmean(y),nanstd(y),'r','LineWidth',4,'Marker','o','MarkerSize',10);
+
+y = std(reshaped_fA(6e3:9e3,:))./std(reshaped_LFP(6e3:9e3,:));
+x = std(reshaped_PID(6e3:9e3,:));
+plot(x,y,'+','Color',[opacity opacity 1])
+errorbar(nanmean(x),nanmean(y),nanstd(y),'b','LineWidth',4,'Marker','o','MarkerSize',10);
+set(gca,'YLim',[0 60])
+ylabel('\sigma_{Firing Rate}/\sigma_{LFP} (Hz/mV)')
+xlabel('\sigma_{Odor} (V)')
+
+prettyFig
+if being_published	
+	snapnow	
+	delete(gcf)
+end
 
 %% Version Info
 %

@@ -209,7 +209,7 @@ xlabel(ax(2),'Probability')
 
 plot(ax(3),time(1:10:end),reshaped_fA(1:10:end,1:10:end),'Color',[.5 .5 .5 .5]);
 xlabel(ax(3),'Time since switch (s)')
-ylabel(ax(3),'ORN Response (Hz)')
+ylabel(ax(3),'ab3A Firing Rate (Hz)')
 set(ax(3),'XLim',[0 10],'YLim',[0 85])
 plot(ax(3),[1 5],[80 80],'r','LineWidth',3)
 plot(ax(3),[6 10],[80 80],'b','LineWidth',3)
@@ -275,7 +275,7 @@ plot(ax(6),x,hi_gain,'r+')
 x = std(reshaped_PID(6e3:9e3,:));
 plot(ax(6),x,lo_gain,'b+')
 xlabel(ax(6),'\sigma_{Stimulus} (V)')
-ylabel(ax(6),'ORN Gain (Hz/V)')
+ylabel(ax(6),'ab3A Firing Gain (Hz/V)')
 
 % create  some phantom plots for a nice legend
 clear l
@@ -312,7 +312,7 @@ end
 plot(ax(7),laughlin_lo_gain,lo_gain,'b+')
 plot(ax(7),laughlin_hi_gain,hi_gain,'r+')
 r2 = rsquare([laughlin_lo_gain; laughlin_hi_gain],[lo_gain; hi_gain]);
-ylabel(ax(7),'ORN Gain (Hz/V)')
+ylabel(ax(7),'ab3A Firing Gain (Hz/V)')
 xlabel(ax(7),'c.d.f slope (a.u.)')
 l = plot(ax(7),NaN,NaN,'k+');
 lh = legend(l,['r^2 = ' oval(r2)]);
@@ -325,7 +325,7 @@ set(ax(2),'YTick',[],'YLim',ax(1).YLim)
 set(ax(4),'YTick',[],'YLim',ax(3).YLim)
 
 xlabel(ax(5),'Projected Stimulus (V)')
-ylabel(ax(5),'Firing Rate (norm)')
+ylabel(ax(5),'ab3A Firing Rate (norm)')
 
 prettyFig('fs',14,'lw',1.5)
 labelFigure

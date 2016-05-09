@@ -38,27 +38,30 @@ for i = 2:length(axes_handles)
 end
 
 axes_handles(2).Position  = [0.1300    0.4738    0.12    0.34];
-o = imread('../images/fig-1-cartoon.png');
 axes(axes_handles(2));
-imagesc(o);
+imagesc(imread('../images/fig-1-cartoon.png'));
 axis ij
 axis image
 axis off
 
-load(dm.getPath('5c7dacc5b42ff0eebb980d80fec120c3'))
+% first, grab the ab3 and ab2 data
+
+%         ######   ######## ########       ###    ########   #######     ###    
+%        ##    ##  ##          ##         ## ##   ##     ## ##     ##   ## ##   
+%        ##        ##          ##        ##   ##  ##     ##        ##  ##   ##  
+%        ##   #### ######      ##       ##     ## ########   #######  ##     ## 
+%        ##    ##  ##          ##       ######### ##     ##        ## ######### 
+%        ##    ##  ##          ##       ##     ## ##     ## ##     ## ##     ## 
+%         ######   ########    ##       ##     ## ########   #######  ##     ## 
+
+clear ab3 ab2
+load(dm.getPath('5c7dacc5b42ff0eebb980d80fec120c3'),'data','spikes')
 PID = data(2).PID;
 time = 1e-4*(1:length(PID));
 all_spikes = spikes(2).A;
 
 % A spikes --> firing rate
-hash = dataHash(full(all_spikes));
-cached_data = cache(hash);
-if isempty(cached_data)
-	fA = spiketimes2f(all_spikes,time);
-	cache(hash,fA);
-else
-	fA = cached_data;
-end
+fA = spiketimes2f(all_spikes,time);
 
 tA = 1e-3*(1:length(fA));
 PID2 = fA;
@@ -73,11 +76,95 @@ PID(end,:) = PID(end-1,:);
 PID_baseline = mean(mean(PID(1:5e3,:)));
 PID = PID - PID_baseline;
 
-% plot the sitmulus
-plot(axes_handles(3),tA(1:10:end),mean(PID(1:10:end,:),2),'Color',[0.2 .2 .2]);
-set(axes_handles(3),'XLim',[0 70],'YLim',[0 7],'XTick',[])
+% make a linear filter
+R = mean(fA,2);
+[K, filtertime_full] = fitFilter2Data(mean(PID,2),R,'reg',1,'filter_length',1999,'offset',500);
+filtertime_full = filtertime_full*mean(diff(tA));
+filtertime = 1e-3*(-200:900);
+K = interp1(filtertime_full,K,filtertime);
+
+% convolve with filter to make prediction
+fp = convolve(tA,mean(PID,2),K,filtertime);
+
+% add to ab3 and remove everything else
+ab3.PID = PID;
+ab3.fA = fA;
+ab3.K = K;
+ab3.fp = fp;
+clear PID fA K R filtertime_full PID_baseline all_spikes data fp spikes time 
 
 
+% find all excursions (defined as firing rate crossing 10Hz)
+[whiff_starts,whiff_ends] = computeOnsOffs(mean(ab3.fA,2)>10);
+
+% filter the stimulus using a box filter
+shat_mean = computeSmoothedStimulus(mean(ab3.PID,2),500);
+
+
+% filter the stimulus using a diff. filter
+Kdiff = [ones(250,1) ; -ones(250,1)];
+shat_std = abs(filter(Kdiff,length(Kdiff),mean(ab3.PID,2)));
+
+
+% for each excursion, estimate mean, std stimulus, gain, etc. 
+mean_stim = NaN*whiff_ends;
+std_stim = NaN*whiff_ends;
+gain = NaN*whiff_ends;
+gain_err =  NaN*whiff_ends;
+R = mean(ab3.fA,2);
+for i = 1:length(whiff_ends)
+	mean_stim(i) = mean(shat_mean(whiff_starts(i):whiff_ends(i)));
+	std_stim(i) = mean(shat_std(whiff_starts(i):whiff_ends(i)));
+	ff=fit(ab3.fp(whiff_starts(i):whiff_ends(i)),R(whiff_starts(i):whiff_ends(i)),'poly1');
+	gain(i) = ff.p1;
+	temp = confint(ff);
+	gain_err(i) = diff(temp(:,1))/2;
+end
+clear R
+rm_this = (abs(gain_err./gain)) > .5; % throw out points where the estimate of gain has a more than 50% error
+gain(rm_this) = [];
+gain_err(rm_this) = [];
+mean_stim(rm_this) = [];
+std_stim(rm_this) = [];
+
+% save this for a later fit
+ab3.mean_stim = mean_stim;
+ab3.std_stim = std_stim;
+ab3.gain = gain;
+ab3.gain_err = gain_err;
+
+clear ff gain gain_err Kdiff mean_stim rm_this shat_mean shat_std std_stim temp whiff_starts whiff_ends
+
+%  ######   ######## ########       ###    ########   #######     ###    
+% ##    ##  ##          ##         ## ##   ##     ## ##     ##   ## ##   
+% ##        ##          ##        ##   ##  ##     ##        ##  ##   ##  
+% ##   #### ######      ##       ##     ## ########   #######  ##     ## 
+% ##    ##  ##          ##       ######### ##     ## ##        ######### 
+% ##    ##  ##          ##       ##     ## ##     ## ##        ##     ## 
+%  ######   ########    ##       ##     ## ########  ######### ##     ## 
+
+
+% now also add ab2 data
+load(dm.getPath('8af556aa49c4af116c7f66e8417c0dc2'),'data','spikes')
+PID = data(2).PID;
+time = 1e-4*(1:length(PID));
+all_spikes = spikes(2).A;
+
+% A spikes --> firing rate
+fA = spiketimes2f(all_spikes,time);
+
+tA = 1e-3*(1:length(fA));
+PID2 = fA;
+for i = 1:width(PID2)
+	PID2(:,i) = interp1(time,PID(i,:),tA);
+end
+PID = PID2; clear PID2
+% some minor cleaning up
+PID(end,:) = PID(end-1,:); 
+
+% remove the baseline from the PID, and remember the error
+PID_baseline = mean(mean(PID(1:5e3,:)));
+PID = PID - PID_baseline;
 
 % make a linear filter
 R = mean(fA,2);
@@ -86,24 +173,84 @@ filtertime_full = filtertime_full*mean(diff(tA));
 filtertime = 1e-3*(-200:900);
 K = interp1(filtertime_full,K,filtertime);
 
-% show the filter
-plot(axes_handles(5),filtertime,K,'r');
-
 % convolve with filter to make prediction
 fp = convolve(tA,mean(PID,2),K,filtertime);
 
+% add to ab2 and remove everything else
+ab2.PID = PID;
+ab2.fA = fA;
+ab2.K = K;
+ab2.fp = fp;
+clear PID fA K R filtertime_full PID_baseline all_spikes data fp spikes time 
+
+
+% find all excursions (defined as firing rate crossing 10Hz)
+[whiff_starts,whiff_ends] = computeOnsOffs(mean(ab2.fA,2)>10);
+
+% filter the stimulus using a box filter
+shat_mean = computeSmoothedStimulus(mean(ab2.PID,2),500);
+
+
+% filter the stimulus using a diff. filter
+Kdiff = [ones(250,1) ; -ones(250,1)];
+shat_std = abs(filter(Kdiff,length(Kdiff),mean(ab2.PID,2)));
+
+
+% for each excursion, estimate mean, std stimulus, gain, etc. 
+mean_stim = NaN*whiff_ends;
+std_stim = NaN*whiff_ends;
+gain = NaN*whiff_ends;
+gain_err =  NaN*whiff_ends;
+R = mean(ab2.fA,2);
+for i = 1:length(whiff_ends)
+	mean_stim(i) = mean(shat_mean(whiff_starts(i):whiff_ends(i)));
+	std_stim(i) = mean(shat_std(whiff_starts(i):whiff_ends(i)));
+	ff=fit(ab2.fp(whiff_starts(i):whiff_ends(i)),R(whiff_starts(i):whiff_ends(i)),'poly1');
+	gain(i) = ff.p1;
+	temp = confint(ff);
+	gain_err(i) = diff(temp(:,1))/2;
+end
+clear R
+rm_this = (abs(gain_err./gain)) > .5; % throw out points where the estimate of gain has a more than 50% error
+gain(rm_this) = [];
+gain_err(rm_this) = [];
+mean_stim(rm_this) = [];
+std_stim(rm_this) = [];
+
+% save this for a later fit
+ab2.mean_stim = mean_stim;
+ab2.std_stim = std_stim;
+ab2.gain = gain;
+ab2.gain_err = gain_err;
+
+clear ff gain gain_err Kdiff mean_stim rm_this shat_mean shat_std std_stim temp whiff_starts whiff_ends
+
+% ##     ##    ###    ##    ## ########    ########  ##        #######  ######## 
+% ###   ###   ## ##   ##   ##  ##          ##     ## ##       ##     ##    ##    
+% #### ####  ##   ##  ##  ##   ##          ##     ## ##       ##     ##    ##    
+% ## ### ## ##     ## #####    ######      ########  ##       ##     ##    ##    
+% ##     ## ######### ##  ##   ##          ##        ##       ##     ##    ##    
+% ##     ## ##     ## ##   ##  ##          ##        ##       ##     ##    ##    
+% ##     ## ##     ## ##    ## ########    ##        ########  #######     ##    
+
+% plot the stimulus
+plot(axes_handles(3),tA(1:10:end),mean(ab3.PID(1:10:end,:),2),'Color',[0.2 .2 .2]);
+set(axes_handles(3),'XLim',[0 70],'YLim',[0 7],'XTick',[])
+
+% show the filter
+plot(axes_handles(5),filtertime,ab3.K,'r');
+
 % plot the response and the prediction
 clear l
-[ax,plot1,plot2] = plotyy(axes_handles(4),tA,R,tA,fp);
-set(ax(1),'XLim',[0 70],'YLim',[0 120],'YColor','k')
-set(ax(2),'XLim',[0 70],'YLim',[min(fp) max(fp)],'YColor','r')
+[ax,plot1,plot2] = plotyy(axes_handles(4),tA,mean(ab3.fA,2),tA,ab3.fp);
+set(ax(1),'XLim',[0 70],'YLim',[0 150],'YColor','k')
+set(ax(2),'XLim',[0 70],'YLim',[0 6],'YColor','r','YTick',[0 2 4 6])
 set(plot1,'Color','k')
 set(plot2,'Color','r')
-ylabel(ax(1),'ab3A Response (Hz)')
-ylabel(ax(2),'Projected Stimulus (V)')
+
 set(axes_handles(4),'box','off')
 
-shat = computeSmoothedStimulus(mean(PID,2),500);
+shat = computeSmoothedStimulus(mean(ab3.PID,2),500);
 shat = shat-min(shat);
 shat = shat/max(shat);
 shat = 1+ceil(shat*99);
@@ -114,173 +261,41 @@ axes(axes_handles(6))
 cc = parula(100);
 c = cc(shat,:);
 ab3.c = c;
-scatter(fp,R,scatter_size,c,'filled')
+scatter(ab3.fp,mean(ab3.fA,2),scatter_size,c,'filled')
 
-shat = computeSmoothedStimulus(mean(PID,2),500);
+shat = computeSmoothedStimulus(mean(ab3.PID,2),500);
 ch = colorbar('east');
 set(ch,'Position',[0.2582    0.1462    0.0115    0.1358])
 caxis([min(shat) max(shat)]);
 
-% find all excursions (defined as firing rate crossing 10Hz)
-[whiff_starts,whiff_ends] = computeOnsOffs(R>10);
-mean_stim = NaN*whiff_ends;
-gain = NaN*whiff_ends;
-gain_err =  NaN*whiff_ends;
-for i = 1:length(whiff_ends)
-	mean_stim(i) = mean(shat(whiff_starts(i):whiff_ends(i)));
-	ff=fit(fp(whiff_starts(i):whiff_ends(i)),R(whiff_starts(i):whiff_ends(i)),'poly1');
-	gain(i) = ff.p1;
-	temp = confint(ff);
-	gain_err(i) = diff(temp(:,1))/2;
-end
-rm_this = (abs(gain_err./gain)) > .5; % throw out points where the estimate of gain has a more than 50% error
-gain(rm_this) = [];
-gain_err(rm_this) = [];
-mean_stim(rm_this) = [];
 
-
-l(1) = plot(axes_handles(7),mean_stim,gain,'k+');
-
-
-% save this for a later fit
-ab3.mean_stim = mean_stim;
-ab3.gain = gain;
-ab3.gain_err = gain_err;
-ab3.R = R;
-ab3.fp = fp;
-ab3.K = K;
-ab3.PID = PID;
-
-% now also add ab2 data
-load(dm.getPath('8af556aa49c4af116c7f66e8417c0dc2'))
-PID = data(2).PID;
-time = 1e-4*(1:length(PID));
-all_spikes = spikes(2).A;
-B_spikes = spikes(2).B;
-
-
-% A spikes --> firing rate
-hash = dataHash(full(all_spikes));
-cached_data = cache(hash);
-if isempty(cached_data)
-	fA = spiketimes2f(all_spikes,time);
-	cache(hash,fA);
-else
-	fA = cached_data;
-end
-
-tA = 1e-3*(1:length(fA));
-PID2 = fA;
-for i = 1:width(PID2)
-	PID2(:,i) = interp1(time,PID(i,:),tA);
-end
-PID = PID2; clear PID2
-% some minor cleaning up
-PID(end,:) = PID(end-1,:); 
-
-% remove the baseline from the PID, and remember the error
-PID_baseline = mean(mean(PID(1:5e3,:)));
-PID_baseline_err = std(mean(PID(1:5e3,:)));
-PID = PID - PID_baseline;
-
-% make a linear filter
-R = mean(fA,2);
-[K, filtertime_full] = fitFilter2Data(mean(PID,2),R,'reg',1,'filter_length',1999,'offset',500);
-filtertime_full = filtertime_full*mean(diff(tA));
-filtertime = 1e-3*(-200:900);
-K = interp1(filtertime_full,K,filtertime);
-
-% convolve with filter to make prediction
-fp = convolve(tA,mean(PID,2),K,filtertime);
-
-shat = computeSmoothedStimulus(mean(PID,2),500);
-
-% find all excursions (defined as firing rate crossing 10Hz)
-[whiff_starts,whiff_ends] = computeOnsOffs(R>10);
-mean_stim = NaN*whiff_ends;
-gain = NaN*whiff_ends;
-gain_err =  NaN*whiff_ends;
-for i = 1:length(whiff_ends)
-	mean_stim(i) = mean(shat(whiff_starts(i):whiff_ends(i)));
-	ff=fit(fp(whiff_starts(i):whiff_ends(i)),R(whiff_starts(i):whiff_ends(i)),'poly1');
-	gain(i) = ff.p1;
-	temp = confint(ff);
-	gain_err(i) = diff(temp(:,1))/2;
-end
-rm_this = (abs(gain_err./gain)) > .5 | gain < 0; % throw out points where the estimate of gain has a more than 50% error
-gain(rm_this) = [];
-gain_err(rm_this) = [];
-mean_stim(rm_this) = [];
-
-l(2) = plot(axes_handles(7),mean_stim,gain,'ko');
+% plot whiff gain vs. mean stimulus preceding whiff
+l(1) = plot(axes_handles(7),ab3.mean_stim,ab3.gain,'k+');
+l(2) = plot(axes_handles(7),ab2.mean_stim,ab2.gain,'ko');
+legend(l,{'ab3A','ab2A'},'Location','southwest')
+set(axes_handles(7),'XScale','log','YScale','log')
 
 % fit a inverse relationship to all the data
 options = fitoptions(fittype('power1'));
 options.Lower = [-Inf -1];
 options.Upper = [Inf -1];
-options.Weights = 1./[gain_err; ab3.gain_err];
-ff = fit([mean_stim; ab3.mean_stim],[gain; ab3.gain],'power1',options);
-plot(axes_handles(7),sort([mean_stim; ab3.mean_stim]),ff(sort([mean_stim; ab3.mean_stim])),'r');
+options.Weights = 1./[ab2.gain_err; ab3.gain_err];
+ff = fit([ab2.mean_stim; ab3.mean_stim],[ab2.gain; ab3.gain],'power1',options);
+plot(axes_handles(7),sort([ab2.mean_stim; ab3.mean_stim]),ff(sort([ab2.mean_stim; ab3.mean_stim])),'r');
+
+% plot whiff gain vs. std. dev. stimulus preceding whiff
+l(1) = plot(axes_handles(8),ab3.std_stim,ab3.gain,'k+');
+l(2) = plot(axes_handles(8),ab2.std_stim,ab2.gain,'ko');
+set(axes_handles(8),'XScale','log','YScale','log')
 legend(l,{'ab3A','ab2A'},'Location','southwest')
 
-
-
-% show the gain as function of convolution with a differentiating filter. 
-Kdiff = [ones(250,1) ; -ones(250,1)];
-shat = abs(filter(Kdiff,length(Kdiff),mean(ab3.PID,2)));
-% find all excursions (defined as firing rate crossing 10Hz)
-[whiff_starts,whiff_ends] = computeOnsOffs(ab3.R>10);
-mean_stim = NaN*whiff_ends;
-gain = NaN*whiff_ends;
-gain_err =  NaN*whiff_ends;
-for i = 1:length(whiff_ends)
-	mean_stim(i) = mean(shat(whiff_starts(i):whiff_ends(i)));
-	ff = fit(fp(whiff_starts(i):whiff_ends(i)),ab3.R(whiff_starts(i):whiff_ends(i)),'poly1');
-	gain(i) = ff.p1;
-	temp = confint(ff);
-	gain_err(i) = diff(temp(:,1))/2;
-end
-rm_this = (abs(gain_err./gain)) > .5 | gain < 0; % throw out points where the estimate of gain has a more than 50% error
-gain(rm_this) = [];
-gain_err(rm_this) = [];
-mean_stim(rm_this) = [];
-clear l
-l(1) = plot(axes_handles(8),mean_stim,gain,'k+');
-
-% save this so we can fit a line to all the data
-ab3.std_stim = mean_stim;
-ab3.std_stim_gain = gain;
-ab3.std_stim_gain_err = gain_err;
-
-% now add the ab2 data
-shat = abs(filter(Kdiff,length(Kdiff),mean(PID,2)));
-
-% find all excursions (defined as firing rate crossing 10Hz)
-[whiff_starts,whiff_ends] = computeOnsOffs(R>10);
-mean_stim = NaN*whiff_ends;
-gain = NaN*whiff_ends;
-gain_err =  NaN*whiff_ends;
-for i = 1:length(whiff_ends)
-	mean_stim(i) = mean(shat(whiff_starts(i):whiff_ends(i)));
-	ff=fit(fp(whiff_starts(i):whiff_ends(i)),R(whiff_starts(i):whiff_ends(i)),'poly1');
-	gain(i) = ff.p1;
-	temp = confint(ff);
-	gain_err(i) = diff(temp(:,1))/2;
-end
-rm_this = (abs(gain_err./gain)) > .5 | gain < 0; % throw out points where the estimate of gain has a more than 50% error
-gain(rm_this) = [];
-gain_err(rm_this) = [];
-mean_stim(rm_this) = [];
-l(2) = plot(axes_handles(8),mean_stim,gain,'ko');
-legend(l,{'ab3A','ab2A'})
-
-% fit a line to this
+% fit a inverse relationship to all the data
 options = fitoptions(fittype('power1'));
 options.Lower = [-Inf -1];
 options.Upper = [Inf -1];
-options.Weights = 1./[ab3.std_stim_gain_err; gain_err];
-ff = fit([ab3.std_stim; mean_stim],[ab3.std_stim_gain; gain],'power1',options);
-plot(axes_handles(8),[1e-4 1],ff([1e-4 1]),'r')
+ff = fit([ab2.std_stim; ab3.std_stim],[ab2.gain; ab3.gain],'power1',options);
+ff.a = 10;
+plot(axes_handles(8),sort([ab2.std_stim; ab3.std_stim]),ff(sort([ab2.std_stim; ab3.std_stim])),'r');
 
 % now show that the variance and the mean are correlated 
 all_block_sizes = factor2(length(ab3.PID));
@@ -299,21 +314,27 @@ for i = 1:length(all_block_sizes)
 end
 plot(axes_handles(9),[1e-3 2],[1e-3 2],'k--')
 
+
+
+
 % label all the axes, set the scales, etc.
+
+ylabel(ax(1),'ab3A Firing Rate (Hz)')
+ylabel(ax(2),'Projected Stimulus (V)')
+
 ylabel(axes_handles(3),'Stimulus (V)')
 
 xlabel(axes_handles(4),'Time (s)')
 
+
 xlabel(axes_handles(6),'Projected Stimulus (V)')
-ylabel(axes_handles(6),'ab3A response (Hz)')
+ylabel(axes_handles(6),'ab3A Firing Rate (Hz)')
 set(axes_handles(6),'XLim',[-.1 5.1],'YColor','k','XColor','r','box','off')
 
-xlabel(axes_handles(9),'\mu_{stimulus} (V)')
-ylabel(axes_handles(9),'\sigma_{stimulus} (V)')
-set(axes_handles(9),'XLim',[0 2],'YLim',[0 2])
+
 
 xlabel(axes_handles(7),'\mu_{Stimulus} in preceding 500ms (V)')
-ylabel(axes_handles(7),'Gain (Hz/V)')
+ylabel(axes_handles(7),'Firing Gain (Hz/V)')
 set(axes_handles(7),'YLim',[10 1e4],'YScale','log','XScale','log','XLim',[.001 10],'XTick',[.001 .01 .1 1 10])
 
 xlabel(axes_handles(8),'\sigma_{Stimulus} in preceding 500ms (V)')
@@ -326,23 +347,35 @@ for i = 6:9
 	set(axes_handles(i),'Position',temp);
 end
 
-% fix position of filter plot
+% fix position of some plots
 set(axes_handles(5),'Position',[.8 .65 .08 .14],'box','on')
 xlabel(axes_handles(5),'Filter Lag (s)')
 ylabel(axes_handles(5),'Filter')
 
-prettyFig('plw',1.5,'lw',1.5,'fs',12,'FixLogX',true)
-
-set(axes_handles(9),'YScale','log','XScale','log','XLim',[1e-3 1e1],'XTick',[1e-3 1e-2 1e-1 1e0 1e1],'YLim',[1e-3 1e1])
 set(axes_handles(6),'box','off')
+axes_handles(6).Position(1) = .1;
+axes_handles(9).Position(1) = .8;
+axes_handles(8).Position(1) = .57;
+axes_handles(7).Position(1) = .35;
+
+prettyFig('plw',1.5,'lw',1.5,'fs',18,'FixLogX',true)
+
+
+set(axes_handles(6),'XTick',[0 2 4 6],'box','off')
+
+xlabel(axes_handles(9),'\mu_{stimulus} (V)')
+ylabel(axes_handles(9),'\sigma_{stimulus} (V)')
+set(axes_handles(9),'YScale','log','XScale','log','XLim',[1e-3 1e1],'XTick',[1e-3 1e-2 1e-1 1e0 1e1],'YLim',[1e-3 1e1],'YTick',[1e-3 1e-2 1e-1 1 10])
+
 
 legend('boxoff')
-labelFigure
+
 
 if being_published
 	snapnow
 	delete(gcf)
 end
+
 
 %% Sanity Check 1
 % Here, I show that my filter extraction works well by comparing it to Damon's FFT-based filter extraction function. Note that the two filters are almost identical:
@@ -355,7 +388,7 @@ xlabel('Filter Lag (s)')
 ylabel('Filter (a.u.)')
 legend({'Srinivas Filter','Damon Filter'})
 
-prettyFig;
+prettyFig('fs',18);
 
 legend('boxoff')
 
@@ -448,9 +481,6 @@ if being_published
 	delete(gcf)
 end
 
-
-
-
 %% Supplementary Figure 2
 % This supplementary figure shows that the choice of filter doesn't affect our results of large, rapid gain control. 
 
@@ -512,7 +542,7 @@ options.Upper = [Inf -1];
 ff = fit(mean_stim,gain,'power1',options);
 plot(gca,mean_stim,ff(mean_stim),'r')
 set(gca,'XScale','log','YScale','log','XTick',[1e-2 1e-1 1e0 1e1])
-ylabel('Gain (Hz/V)')
+ylabel('Firing Gain (Hz/V)')
 xlabel('Mean Stimulus in preceding 500ms')
 title('Gain estimation using white-noise filter')
 
@@ -542,7 +572,6 @@ caxis([min(shat) max(shat)]);
 set(gca,'XLim',[-.15 4],'XColor','b')
 
 prettyFig('fs',18,'FixLogX',true)
-labelFigure
 
 if being_published
 	snapnow

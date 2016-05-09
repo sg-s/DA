@@ -112,7 +112,7 @@ set(ax(1),'XLim',[35 55],'YLim',[min(y(5e3:end)) max(y(5e3:end))],'YColor',c(exa
 set(ax(2),'XLim',[35 55],'YLim',[min(x(5e3:end)) max(x(5e3:end))],'YColor','r')
 set(plot1,'Color',c(example_dose,:))
 set(plot2,'Color','r')
-ylabel(ax(1),'ORN Response (Hz)')
+ylabel(ax(1),'ab3A Firing Rate (Hz)')
 ylabel(ax(2),'Projected Stimulus (V)')
 set(axes_handles(2),'box','off')
 set(ax(2),'XMinorTick','on','YMinorTick','on','YTick',[0:0.1:0.5],'YTickLabel',{'0','.1','.2','.3','.4','.5'})
@@ -127,7 +127,7 @@ L{1} = strcat('Gain=',oval(ff.p1),'Hz/V, r^2=',oval(rsquare(y,x)));
 
 
 xlabel(axes_handles(4),'Projected Stimulus (V)')
-ylabel(axes_handles(4),'ORN Response (Hz)')
+ylabel(axes_handles(4),'ab3A Firing Rate (Hz)')
 set(axes_handles(4),'YColor',c(example_dose,:),'XColor','r')
 
 lh = legend(l,L,'Location','northwest');
@@ -292,19 +292,18 @@ set(ax(4),'YLim',[0 70],'YTick',[])
 set(ax(7),'XLim',[0 70],'YLim',[0 70])
 
 ylabel(ax(1),'Stimulus (V)')
-ylabel(ax(3),'ORN Response (Hz)')
+ylabel(ax(3),'ab3A Firing Rate (Hz)')
 xlabel(ax(3),'Time (s)')
 xlabel(ax(4),'Probability')
 xlabel(ax(5),'Projected Stimulus (V)')
-ylabel(ax(5),'ORN Response (Hz)')
+ylabel(ax(5),'ab3A Firing Rate (Hz)')
 xlabel(ax(6),'Mean Stimulus (V)')
-ylabel(ax(6),'ORN Gain (Hz/V)')
+ylabel(ax(6),'ab3A Firing Gain (Hz/V)')
 
 xlabel(ax(7),[' Projected Stimulus ' char(10) 'Rescaled by Weber Law'])
-ylabel(ax(7),'ORN Response (Hz)')
+ylabel(ax(7),'ab3A Firing Rate (Hz)')
 
 prettyFig('plw',1.3,'lw',1.5,'fs',14)
-labelFigure
 
 axes(ax(6))
 text(.2, 30,'$\sim 1/s$','interpreter','latex','Color','r','FontSize',20)
@@ -314,6 +313,7 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
 
 %% Sanity Check
 % In this section, we check if my filter extractions works (comparing it to Damon's FFT-based methods) if we still see the overall phenomenology if we only use a single filter to project all the data. 

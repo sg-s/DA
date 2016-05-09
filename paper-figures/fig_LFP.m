@@ -79,7 +79,7 @@ for i = 1:max(paradigm) % iterate over all paradigms
 	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:));
 end
 xlabel('Projected Stimulus (V)')
-ylabel('\DeltaLPF (mV)')
+ylabel('ab3 \DeltaLPF (mV)')
 
 % show transduction gain
 ax(3) = subplot(2,5,3); hold on
@@ -105,7 +105,7 @@ for i = 1:max(paradigm) % iterate over all paradigms
 	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:));
 end
 xlabel('Projected LFP (mV)')
-ylabel('Firing Rate (Hz)')
+ylabel('ab3A Firing Rate (Hz)')
 
 % show firing machinery gain
 ax(8) = subplot(2,5,8); hold on
@@ -113,7 +113,7 @@ for i = 1:length(paradigm)
 	plot(mean_stim(i),10*K2_gain(i),'+','Color',c(paradigm(i),:))
 end
 xlabel('\mu_{Odor} (V)')
-ylabel('Firing Gain (Hz/mV)')
+ylabel('ab3A Firing Gain (Hz/mV)')
 set(gca,'XScale','log','YScale','log','YLim',[1 1e2],'XLim',[.1 2])
 
 %  ######   #######  ##    ## ######## ########     ###     ######  ######## 
@@ -321,7 +321,7 @@ x = x(:); y = y(:);
 x = x(1:ss:end); y = y(1:ss:end);
 [~,data_lo] = plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[0 0 1],'proportional_bins',true,'show_error',false);
 xlabel('Projected LFP (mV)')
-ylabel('Firing Rate (Hz)')
+ylabel('ab3A Firing Rate (Hz)')
 
 % plot firing gain change
 ax(10) = subplot(2,5,10); hold on
@@ -330,7 +330,7 @@ plot(x,hi_gain_firing(r2_K2p>.8),'r+')
 x = std(reshaped_PID(6e3:9e3,r2_K2p>.8));
 plot(x,lo_gain_firing(r2_K2p>.8),'b+')
 xlabel('\sigma_{Odor} (V)')
-ylabel('Firing Gain (Hz/mV)')
+ylabel('ab3A Firing Gain (Hz/mV)')
 
 % add an explanatory graphic
 ax(1) = subplot(1,5,1); hold on
@@ -389,6 +389,8 @@ uistack(a,'bottom')
 a.TickLength = [0 0];
 a.XLim = [0 1];
 a.YLim = [0 1];
+
+return
 
 % draw a couple of rectangles to box things in
 r1 = rectangle('Position',[0.1 0.1 .4 .4],'Curvature',0);

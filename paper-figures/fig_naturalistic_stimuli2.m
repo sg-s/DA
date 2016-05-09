@@ -377,27 +377,6 @@ if being_published
 end
 
 
-%% Sanity Check 1
-% Here, I show that my filter extraction works well by comparing it to Damon's FFT-based filter extraction function. Note that the two filters are almost identical:
-
-K_Damon = backOutFilter(mean(PID,2),R,'offset',200);
-figure('outerposition',[0 0 600 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(filtertime,K/max(K),'k')
-plot(filtertime(1:700),K_Damon/max(K_Damon),'r')
-xlabel('Filter Lag (s)')
-ylabel('Filter (a.u.)')
-legend({'Srinivas Filter','Damon Filter'})
-
-prettyFig('fs',18);
-
-legend('boxoff')
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-
 %      ######  ##     ## ########  ########     ######## ####  ######   
 %     ##    ## ##     ## ##     ## ##     ##    ##        ##  ##    ##  
 %     ##       ##     ## ##     ## ##     ##    ##        ##  ##        
@@ -423,9 +402,9 @@ ylabel('r^2 (\mu, \sigma)')
 
 % show the PDF of the stimulus
 subplot(2,2,2), hold on
-y = zeros(300,width(PID));
-for i = 1:width(PID)
-	[y(:,i),x] = histcounts(PID(:,i),300);x(1) = [];
+y = zeros(300,width(ab3.PID));
+for i = 1:width(ab3.PID)
+	[y(:,i),x] = histcounts(ab3.PID(:,i),300);x(1) = [];
 	y(:,i) = y(:,i)/sum(y(:,i));
 end
 errorShade(x,mean(y,2),sem(y'),'Color',[.2 .2 .2]);
@@ -438,8 +417,8 @@ warning on
 % show the whiff durations 
 subplot(2,2,3), hold on
 whiff_durations = []; 
-for i = 1:width(PID)
-	[ons,offs] = computeOnsOffs(PID(:,i) > .024);
+for i = 1:width(ab3.PID)
+	[ons,offs] = computeOnsOffs(ab3.PID(:,i) > .024);
 	whiff_durations =  [whiff_durations; offs-ons];
 end
 whiff_durations = nonzeros(whiff_durations);
@@ -456,8 +435,8 @@ xlabel('Whiff duration (ms)')
 % show the blank durations 
 subplot(2,2,4), hold on
 whiff_durations = [];
-for i = 1:width(PID)
-	[ons,offs] = computeOnsOffs(PID(:,i) < .024);
+for i = 1:width(ab3.PID)
+	[ons,offs] = computeOnsOffs(ab3.PID(:,i) < .024);
 	whiff_durations =  [whiff_durations; offs-ons];
 end
 whiff_durations = nonzeros(whiff_durations);
@@ -504,14 +483,14 @@ set(gca,'YLim',[-.005 .04])
 ab3.fp2 = convolve(1e-3*(1:length(mean(ab3.PID,2))),mean(ab3.PID,2),ab3.K_white,t);
 
 subplot(2,4,3), hold on
-scatter(ab3.fp2,ab3.R,scatter_size,ab3.c,'filled')
+scatter(ab3.fp2,mean(ab3.fA,2),scatter_size,ab3.c,'filled')
 xlabel('Projected Stimulus (V)')
 title('using white-noise filter')
 ylabel('ab3A Response (Hz)')
 set(gca,'XColor','r','XLim',[-1 14])
 
 subplot(2,4,2), hold on
-scatter(ab3.fp,ab3.R,scatter_size,ab3.c,'filled')
+scatter(ab3.fp,mean(ab3.fA,2),scatter_size,ab3.c,'filled')
 xlabel('Projected Stimulus (V)')
 ylabel('ab3A Response (Hz)')
 title('using nat. stimulus filter')
@@ -519,13 +498,14 @@ set(gca,'XColor','b','XLim',[-.5 6])
 
 % now also show the gain-per-whiff vs. the mean stimulus in the preceding 500ms for the white-noise-projection
 shat = computeSmoothedStimulus(mean(ab3.PID,2),500);
-[whiff_starts,whiff_ends] = computeOnsOffs(ab3.R>10);
+[whiff_starts,whiff_ends] = computeOnsOffs(mean(ab3.fA,2)>10);
 mean_stim = NaN*whiff_ends;
 gain = NaN*whiff_ends;
 gain_err =  NaN*whiff_ends;
+R = mean(ab3.fA,2);
 for i = 1:length(whiff_ends)
 	mean_stim(i) = mean(shat(whiff_starts(i):whiff_ends(i)));
-	[ff,gof]=fit(ab3.fp2(whiff_starts(i):whiff_ends(i)),ab3.R(whiff_starts(i):whiff_ends(i)),'poly1');
+	[ff,gof]=fit(ab3.fp2(whiff_starts(i):whiff_ends(i)),R(whiff_starts(i):whiff_ends(i)),'poly1');
 	gain(i) = ff.p1;
 	temp = confint(ff);
 	gain_err(i) = gof.rsquare;
@@ -534,26 +514,28 @@ rm_this = gain < 0 | gain_err < .8;
 gain(rm_this) = [];
 gain_err(rm_this) = [];
 mean_stim(rm_this) = [];
+
 subplot(2,4,4), hold on
 plot(mean_stim,gain,'ro');
 options = fitoptions(fittype('power1'));
 options.Lower = [-Inf -1];
 options.Upper = [Inf -1];
 ff = fit(mean_stim,gain,'power1',options);
+ff.a = 6;
 plot(gca,mean_stim,ff(mean_stim),'r')
 set(gca,'XScale','log','YScale','log','XTick',[1e-2 1e-1 1e0 1e1])
-ylabel('Firing Gain (Hz/V)')
+ylabel('ab3A Firing Gain (Hz/V)')
 xlabel('Mean Stimulus in preceding 500ms')
-title('Gain estimation using white-noise filter')
+title(['Gain estimation using' char(10) 'white-noise filter'])
 
 % now show ab2A filters
 subplot(2,4,5), hold on
-plot(filtertime,K,'b')
+plot(filtertime,ab2.K,'b')
 ylabel('ab2A filter')
 xlabel('Lag (s)')
 
 subplot(2,4,6), hold on
-shat = computeSmoothedStimulus(mean(PID,2),500);
+shat = computeSmoothedStimulus(mean(ab2.PID,2),500);
 shat = shat-min(shat);
 shat = shat/max(shat);
 shat = 1+ceil(shat*99);
@@ -562,10 +544,10 @@ shat(isnan(shat)) = 1;
 % make the output analysis plot
 cc = parula(100);
 c= cc(shat,:);
-scatter(fp,R,scatter_size,c,'filled')
+scatter(ab2.fp,mean(ab2.fA,2),scatter_size,c,'filled')
 xlabel('Projected Stimulus (V)')
 ylabel('ab2A response (Hz)')
-shat = computeSmoothedStimulus(mean(PID,2),500);
+shat = computeSmoothedStimulus(mean(ab2.PID,2),500);
 ch = colorbar('east');
 set(ch,'Position',[.58 .15 .02 .1])
 caxis([min(shat) max(shat)]);

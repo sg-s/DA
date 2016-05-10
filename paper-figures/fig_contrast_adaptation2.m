@@ -62,7 +62,6 @@ reshaped_LFP(:,rm_this) = [];
 reshaped_PID(:,rm_this) = [];
 reshaped_fA(:,rm_this) = [];
 reshaped_orn(rm_this) = [];
-
 % 
 
 % ######## #### ########  #### ##    ##  ######   
@@ -176,7 +175,10 @@ for i = 1:length(ax)
 	hold(ax(i),'on');
 end  
 
-plot(ax(1),time(1:10:end),reshaped_PID(1:10:end,1:10:end),'Color',[.5 .5 .5 .5]);
+c = repmat(randn(5,1)*.2 + .5,1,3);
+for i = 1:50:width(reshaped_PID)
+	plot(ax(1),time(1:10:end),reshaped_PID(1:10:end,i),'Color',c(ceil(i/50),:));
+end
 xlabel(ax(1),'Time since switch (s)')
 ylabel(ax(1),'Stimulus (V)')
 set(ax(1),'XLim',[0 10],'YLim',[0 1.1])
@@ -207,7 +209,9 @@ plot(ax(2),hy,hxx,'b')
 xlabel(ax(2),'Probability')
 
 
-plot(ax(3),time(1:10:end),reshaped_fA(1:10:end,1:10:end),'Color',[.5 .5 .5 .5]);
+for i = 1:50:width(reshaped_PID)
+	plot(ax(3),time(1:10:end),reshaped_fA(1:10:end,i),'Color',c(ceil(i/50),:));
+end
 xlabel(ax(3),'Time since switch (s)')
 ylabel(ax(3),'ab3A Firing Rate (Hz)')
 set(ax(3),'XLim',[0 10],'YLim',[0 85])

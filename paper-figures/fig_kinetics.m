@@ -33,6 +33,8 @@ load(dm.getPath('aeb361c027b71938021c12a6a12a85cd'),'-mat');
 
 subplot(2,3,4), hold on
 
+c = lines(3);
+
 min_acceptable_corr = .5;
 min_acceptable_lag = 2;
 for i = 1:length(od)
@@ -45,7 +47,7 @@ for i = 1:length(od)
 	lag(rm_this) = [];
 	mean_x(rm_this) = [];
 
-	plotPieceWiseLinear(mean_x,lag,'Color','r','nbins',19);
+	plotPieceWiseLinear(mean_x,lag,'Color',c(1,:),'nbins',19);
 
 
 	[lag, mean_x, max_corr] = findLagAndMeanInWindow(S,X,1e3,25);
@@ -53,10 +55,11 @@ for i = 1:length(od)
 	lag(rm_this) = [];
 	mean_x(rm_this) = [];
 
-	plotPieceWiseLinear(mean_x,lag,'Color','b','nbins',19);
+	plotPieceWiseLinear(mean_x,lag,'Color',c(2,:),'nbins',19);
 end
 xlabel('\mu_{Stimulus} in preceding 1s (V)')
 ylabel('Lag (ms)')
+
 
 % also show an example whiff
 a = 2.95e4;
@@ -66,15 +69,16 @@ R = R(a:a+500); R = R - min(R); R = R/max(R);
 subplot(2,3,1), hold on
 title('Naturalistic Stimulus')
 plot(S,'k')
-plot(X,'b')
-plot(R,'r')
+plot(X,'Color',c(2,:))
+plot(R,'Color',c(1,:))
 xlabel('Time since whiff onset (ms)')
 legend({'Stimulus','LFP','Firing Rate'})
 [~,sp] = max(S);
 [~,xp] = max(X);
 [~,rp] = max(R);
-plot([sp rp],[1.05 1.05],'LineWidth',3,'Color','r')
-plot([sp xp],[1.1 1.1],'LineWidth',3,'Color','b')
+plot([sp rp],[1.05 1.05],'LineWidth',3,'Color',c(1,:))
+plot([sp xp],[1.1 1.1],'LineWidth',3,'Color',c(2,:))
+
 
 % ##     ## ########    ###    ##    ## 
 % ###   ### ##         ## ##   ###   ## 
@@ -100,7 +104,7 @@ plot([sp xp],[1.1 1.1],'LineWidth',3,'Color','b')
 % ##    ##  ##     ## ##     ## ##    ## ##    ##  ##  ##     ## ##   ### ##    ## 
 %  ######   ##     ##  #######   ######   ######  #### ##     ## ##    ##  ######  
 
-clearvars -except being_published dm
+clearvars -except being_published dm c
 [PID, LFP, fA, paradigm, orn, ~, AllControlParadigms, paradigm_hashes] = consolidateData(dm.getPath('bf79dfd769a97089e42beb0660174e84'),1);
 
 % remove baseline from all PIDs
@@ -140,9 +144,6 @@ end
 
 % some core variables
 dt = 1e-3;
-c = parula(max(paradigm)+1); % colour scheme
-
-
 lag_LFP = NaN(1,width(PID));
 lag_fA = NaN(1,width(PID));
 max_corr_LFP = NaN(1,width(PID));
@@ -150,6 +151,8 @@ max_corr_fA = NaN(1,width(PID));
 
 subplot(2,3,2), hold on
 title('Changing Stimulus Mean')
+
+
 for i = 1:width(PID)
 	s = PID(25e3:45e3,i)-mean(PID(25e3:45e3,i)); s = s/std(s);
 	r = fA(25e3:45e3,i)-mean(fA(25e3:45e3,i)); r = r/std(r);
@@ -159,25 +162,26 @@ for i = 1:width(PID)
 	[max_corr_fA(i),lag_fA(i)] = max(temp);
 
 	if i == 1
-		plot(lags,temp/max(temp),'r-')
+		plot(s(1.42e4:1.5e4),'k')
+		plot(x(1.42e4:1.5e4),'Color',c(2,:))
+		plot(r(1.42e4:1.5e4),'Color',c(1,:))
 	end
-	if i == width(PID)
-		plot(lags,temp/max(temp),'r--')
-	end
+	% if i == width(PID)
+	% 	plot(lags,temp/max(temp),'r--')
+	% end
 
 	[temp,lags] = xcorr(x,s);  temp = temp/20e3;
 	[max_corr_LFP(i),lag_LFP(i)] = max(temp);
 
-	if i == 1
-		plot(lags,temp/max(temp),'b-')
-	end
-	if i == width(PID)
-		plot(lags,temp/max(temp),'b--')
-	end
+	% if i == 1
+	% 	plot(lags,temp/max(temp),'b-')
+	% end
+	% if i == width(PID)
+	% 	plot(lags,temp/max(temp),'b--')
+	% end
 end
-set(gca,'XLim',[-50 600])
-xlabel('Lag (ms)')
-ylabel('Cross correlation (norm)')
+xlabel('Time (ms)')
+% ylabel('Cross correlation (norm)')
 
 lag_LFP = lag_LFP - 20e3;
 lag_fA = lag_fA - 20e3;
@@ -186,8 +190,8 @@ lag_fA(lag_fA<0) = NaN;
 lag_LFP(lag_LFP<0) = NaN;
 
 subplot(2,3,5), hold on
-plot(mean_stim,lag_LFP,'b+')
-plot(mean_stim,lag_fA,'r+')
+plot(mean_stim,lag_LFP,'+','Color',c(2,:))
+plot(mean_stim,lag_fA,'+','Color',c(1,:))
 xlabel('\mu_{Stimulus} (V)')
 ylabel('Lag (ms)')
 
@@ -201,7 +205,7 @@ ylabel('Lag (ms)')
 % ##    ## ##     ## ##   ###    ##    ##    ##  ##     ## ##    ##    ##    
 %  ######   #######  ##    ##    ##    ##     ## ##     ##  ######     ##    
 
-clearvars -except being_published dm
+clearvars -except being_published dm c
 [PID, LFP, fA, paradigm, orn] = consolidateData(dm.getPath('7955d1ed77512dfe3452b39d71a50e1b'),1);
 
 global_start = 40e3; % 40 seconds
@@ -245,6 +249,7 @@ lag_fA = NaN(2,width(reshaped_PID));
 max_corr_LFP = NaN(2,width(reshaped_PID));
 max_corr_fA = NaN(2,width(reshaped_PID));
 
+
 subplot(2,3,3), hold on
 title('Changing Stimulus variance')
 for i = 1:width(reshaped_PID)
@@ -256,15 +261,17 @@ for i = 1:width(reshaped_PID)
 	[max_corr_fA(1,i),lag_fA(1,i)] = max(temp);
 
 	if i == 2
-		plot(lags,temp/max(temp),'r--')
+		plot(s(2223:2500),'k')
+		plot(x(2223:2500),'Color',c(2,:))
+		plot(r(2223:2500),'Color',c(1,:))
 	end
 
 	[temp,lags] = xcorr(x,s);  temp = temp/5e3;
 	[max_corr_LFP(1,i),lag_LFP(1,i)] = max(temp);
 
-	if i == 2
-		plot(lags,temp/max(temp),'r-')
-	end
+	% if i == 2
+	% 	plot(lags,temp/max(temp),'r-')
+	% end
 
 	s = reshaped_PID(5e3:end,i); s = s - mean(s); s = s/std(s);
 	r = reshaped_fA(5e3:end,i); r = r - mean(r); r = r/std(r);
@@ -273,22 +280,20 @@ for i = 1:width(reshaped_PID)
 	[temp,lags] = xcorr(r,s); temp = temp/5e3;
 	[max_corr_fA(2,i),lag_fA(2,i)] = max(temp);
 
-	if i == 2
-		plot(lags,temp/max(temp),'b--')
-	end
+	% if i == 2
+	% 	plot(lags,temp/max(temp),'b--')
+	% end
 
 	[temp,lags] = xcorr(x,s);  temp = temp/5e3;
 	[max_corr_LFP(2,i),lag_LFP(2,i)] = max(temp);
 
-	if i == 2
-		plot(lags,temp/max(temp),'b-')
-	end
+	% if i == 2
+	% 	plot(lags,temp/max(temp),'b-')
+	% end
 
 end
 
-set(gca,'XLim',[-50 600])
 xlabel('Lag (ms)')
-ylabel('Cross correlation (norm)')
 
 sigma_stim = [std(reshaped_PID(1e3:5e3,:)); std(reshaped_PID(6e3:9e3,:))];
 
@@ -300,17 +305,16 @@ lag_fA(lag_fA<0) = NaN;
 
 
 subplot(2,3,6), hold on
-plot(sigma_stim(1,:),lag_LFP(1,:),'b+')
-plot(sigma_stim(2,:),lag_LFP(2,:),'b+')
-plot(sigma_stim(1,:),lag_fA(1,:),'r+')
-plot(sigma_stim(2,:),lag_fA(2,:),'r+')
+plot(sigma_stim(1,:),lag_LFP(1,:),'+','Color',c(2,:))
+plot(sigma_stim(2,:),lag_LFP(2,:),'+','Color',c(2,:))
+plot(sigma_stim(1,:),lag_fA(1,:),'+','Color',c(1,:))
+plot(sigma_stim(2,:),lag_fA(2,:),'+','Color',c(1,:))
 set(gca,'YLim',[0 200])
 xlabel('\sigma_{Stimulus} (V)')
 ylabel('Lag (ms)')
 
 legend('boxoff')
 prettyFig('fs',18)
-labelFigure
 
 if being_published	
 	snapnow	

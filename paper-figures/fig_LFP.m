@@ -353,26 +353,26 @@ xlabel('\sigma_{Odor} (V)')
 ylabel('ab3A Firing Gain (Hz/mV)')
 
 % add an explanatory graphic
-ax(1) = subplot(1,5,1); hold on
-o = imread('../images/fig-LFP-cartoon.png');
-imagesc(o);
-axis ij
-axis image
-axis off
+% ax(1) = subplot(1,5,1); hold on
+% o = imread('../images/fig-LFP-cartoon.png');
+% imagesc(o);
+% axis ij
+% axis image
+% axis off
 
 prettyFig('fs',16)
 
 % plot example traces of the LFP, firing rate and the stimulus
 inset1 = axes;
-inset1.Position = [0.13 0.76 0.1 0.1];
+inset1.Position = [0.13 0.75 0.1 0.1];
 plot(inset1,1e-3*(1:5e3),reshaped_PID(1:5e3,1),'k','LineWidth',1.5);
 
 inset2 = axes;
-inset2.Position = [0.13 0.54 0.1 0.1];
+inset2.Position = [0.13 0.45 0.1 0.1];
 plot(inset2,1e-3*(1:5e3),reshaped_LFP(1:5e3,1),'k','LineWidth',1.5);
 
 inset3 = axes;
-inset3.Position = [0.13 0.24 0.1 0.1];
+inset3.Position = [0.13 0.12 0.1 0.1];
 plot(inset3,1e-3*(1:5e3),reshaped_fA(1:5e3,1),'k','LineWidth',1.5);
 set(inset1,'LineWidth',1.5,'box','off','XLim',[0 5])
 set(inset2,'LineWidth',1.5,'box','off','XLim',[0 5])
@@ -410,18 +410,18 @@ a.TickLength = [0 0];
 a.XLim = [0 1];
 a.YLim = [0 1];
 
-% draw a couple of rectangles to box things in
-r1 = rectangle('Position',[0.1 0.1 .4 .4],'Curvature',0);
-r1.Position = [.255 .025 .34 .95];
-r1.FaceColor = [.9 .9 .9];
-r1.LineStyle = 'none';
-r1.Parent = a;
+% % draw a couple of rectangles to box things in
+% r1 = rectangle('Position',[0.1 0.1 .4 .4],'Curvature',0);
+% r1.Position = [.255 .025 .34 .95];
+% r1.FaceColor = [.9 .9 .9];
+% r1.LineStyle = 'none';
+% r1.Parent = a;
 
-r2 = rectangle('Position',[0.1 0.1 .4 .4],'Curvature',0);
-r2.Position = [.64 .025 .345 .95];
-r2.FaceColor = [.9 .9 .9];
-r2.LineStyle = 'none';
-r2.Parent = a;
+% r2 = rectangle('Position',[0.1 0.1 .4 .4],'Curvature',0);
+% r2.Position = [.64 .025 .345 .95];
+% r2.FaceColor = [.9 .9 .9];
+% r2.LineStyle = 'none';
+% r2.Parent = a;
 
 % add some text
 t1 = text;

@@ -82,7 +82,7 @@ for i = 1:length(do_these)
 
 	plot(ax(2),history_lengths,rho,'.-','Color',c(i,:))
 end
-set(ax(2),'XScale','log','YLim',[-1 0])
+set(ax(2),'XScale','log','YLim',[-1 0],'XTick',[10 100 1e3 1e4])
 set(ax(1),'XScale','log','YScale','log','XLim',[.1 2],'YLim',[.1 10])
 xlabel(ax(1),['\mu_{Stimulus} in preceding ' oval(example_history_length) 'ms (norm)'])
 ylabel(ax(1),'Gain (norm)')
@@ -91,7 +91,8 @@ ylabel(ax(2),'Spearman''s \rho')
 title(ax(1),'ab3A ORN, Different odorants')
 
 lh1 = legend(l,{'1-pentanol','methyl butyrate','1-octen-3-ol','diethyl succinate','ethyl acetate','2-butanone'});
-lh1.Position = [0.1361    0.6018    0.1548    0.1080];
+lh1.Position = [0.1417    0.6   0.2010    0.1];
+lh1.FontSize = 12;
 
 % ########  #### ######## ########         #######  ########  ##    ##  ######  
 % ##     ##  ##  ##       ##              ##     ## ##     ## ###   ## ##    ## 
@@ -158,7 +159,7 @@ for i = 1:length(do_these)
 	
 end
 
-set(ax(2),'XScale','log','YLim',[-1 0])
+set(ax(2),'XScale','log','YLim',[-1 0],'XTick',[10 100 1e3 1e4])
 set(ax(1),'XScale','log','YScale','log','XLim',[.1 2],'YLim',[.1 10])
 xlabel(ax(1),['\mu_{Stimulus} in preceding ' oval(example_history_length) 'ms (norm)' ])
 ylabel(ax(1),'Gain (norm)')
@@ -166,11 +167,10 @@ xlabel(ax(2),'Gain control timescale (ms)')
 ylabel(ax(2),'Spearman''s \rho')
 title(ax(1),'Different OR types')
 
-lh2 = legend(l,{'pb1A - isoamyl acetate','ab3A - 2-butanone','ab2A - ethyl acetate'})
-lh2.Position = [0.5980    0.6066    0.1923    0.0564];
+lh2 = legend(l,{'pb1A - isoamyl acetate','ab3A - 2-butanone','ab2A - ethyl acetate'});
+lh2.Position = [0.61    0.6066    0.1923    0.0564];
 
-prettyFig('fs',12)
-labelFigure
+prettyFig('fs',18)
 
 if being_published	
 	snapnow	
@@ -230,7 +230,7 @@ for i = 1:length(do_these)
 
 	plot(ax(2),history_lengths,rho,'.-','Color',c(i,:))
 end
-set(ax(2),'XScale','log','YLim',[-1 0])
+set(ax(2),'XScale','log','YLim',[-1 0],'XTick',[10 100 1e3 1e4])
 set(ax(1),'XScale','log','YScale','log','XLim',[.1 2],'YLim',[.1 10])
 xlabel(ax(1),['\mu_{Stimulus} in preceding ' oval(example_history_length) 'ms (norm)'])
 ylabel(ax(1),'Gain (norm)')
@@ -238,7 +238,7 @@ xlabel(ax(2),'Gain control timescale (ms)')
 ylabel(ax(2),'Spearman''s \rho')
 title(ax(1),['ab3A ORN,' char(10) ' methyl butyrate odorant'])
 lh = legend(l,{'5/28','6/05','6/12','6/19','6/19'});
-lh.Position = [0.1446    0.6039    0.0569    0.1252];
+lh.Location = 'southwest';
 
 
 %  ######  #### ##     ## ##     ## ##          ###    ######## ####  #######  ##    ##  ######  
@@ -308,7 +308,7 @@ for i = 1:length(tau_gain)
 
 	plot(ax(2),history_lengths,rho,'.-','Color',c(i,:))
 end
-set(ax(2),'XScale','log','YLim',[-1 0])
+set(ax(2),'XScale','log','YLim',[-1 0],'XTick',[10 100 1e3 1e4])
 set(ax(1),'XScale','log','YScale','log','XLim',[.1 2],'YLim',[.1 10])
 title(ax(1),['Simulations with ' char(10) 'varying \tau_{gain}'])
 L = {};
@@ -316,7 +316,7 @@ for i = 1:length(tau_gain)
 	L{i} = ['\tau_{gain} = ' oval(4*tau_gain(i)) 'ms'];
 end 
 lh = legend(l,L);
-lh.Position = [0.4269    0.6011    0.1069    0.1059];
+lh.Position = [0.5835    0.6029    0.1738    0.1133];
 xlabel(ax(2),'Gain control timescale (ms)')
 ylabel(ax(2),'Spearman''s \rho')
 

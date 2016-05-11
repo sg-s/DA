@@ -20,7 +20,7 @@ for i = 1:length(ons)
 		gain(i) = ff.p1;
 		gain_err(i) = gof.rsquare;
 		plot_data(i).x = pred(ons(i):offs(i));
-		plot_data(i).y = resp(ons(i):offs(i));;
+		plot_data(i).y = resp(ons(i):offs(i));
 	catch
 	end
 end

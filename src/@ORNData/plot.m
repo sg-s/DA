@@ -394,48 +394,18 @@ if strfind(plot_what,'valveGainAnalysis.')
 	if strfind(plot_what,'firing_rate')
 		pred = nanmean(o.firing_projected(uts,utt),2);
 		resp = nanmean(o.firing_rate(uts,utt),2);
-		[whiff_ons,whiff_offs] = findWhiffs(pred);
 		ylabel(plot_here(1),'ORN Gain (Hz/V)')
 	elseif strfind(plot_what,'LFP')
 		pred = nanmean(o.LFP_projected(uts,utt),2);
 		resp = nanmean(o.LFP(uts,utt),2);
 		temp = -pred;
 		temp = temp-min(temp);
-		[whiff_ons,whiff_offs] = findWhiffs(temp);
 		ylabel(plot_here(1),'ORN Gain (mV/V)')
 	else
 		error('What to plot not specified. You told me to plot the whiff gain analysis, but the only things I can plot the whiff gain analysis of are "firing_rate" or "LFP"')
 	end
 
-	% find all valve ons and offs
-	[valve_ons,valve_offs] = computeOnsOffs(o.valve(uts));
-	% remove the last one because it might be at the end
-	valve_ons(end) = []; valve_offs(end) = [];
-	resp(resp<min_inst_gain_firing) = NaN;
-
-	for i = 1:length(valve_ons)
-		a = find(~isnan(resp(valve_ons(i):valve_offs(i))),1,'first');
-		if ~isempty(a)
-			a = a + valve_ons(i);
-			[~,z] = max(resp(a:valve_offs(i))); z = z + a;
-			if z - a > 100
-				z = a + 100;
-			end
-			if any(isnan(resp(a:z)))
-				z = a+find(~isnan(resp(a:z)),1,'last');
-			end
-			valve_ons(i) = a;
-			try
-				valve_offs(i) = z;
-			catch
-				valve_offs(i) = NaN;
-				valve_ons(i) = NaN;
-			end
-
-		end
-	end
-	valve_offs(isnan(valve_offs)) = [];
-	valve_ons(isnan(valve_ons)) = [];
+	[valve_ons,valve_offs] = findValveWhiffs(o);
 
 	% find the gains in all windows and also grab the data to plot
 	[gain,gain_err,plot_data] = findGainInWindows(valve_ons,valve_offs,pred,resp);

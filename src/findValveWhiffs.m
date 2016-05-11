@@ -10,6 +10,7 @@ function [valve_ons,valve_offs] = findValveWhiffs(varargin)
 
 % options and defaults
 options.t_after_valve_opens = 100; % milliseconds
+options.min_inst_gain_firing = 10;
 
 if nargout && ~nargin
 	varargout{1} = options;
@@ -51,14 +52,39 @@ else
 	error('Inputs need to be name value pairs')
 end
 
+% grab the response
+resp = nanmean(o.firing_rate,2);
+resp = resp(o.use_this_segment);
+
 % find all valve ons and offs
 [valve_ons,valve_offs] = computeOnsOffs(o.valve(o.use_this_segment));
 
 % remove the last one because it might be at the end
 valve_ons(end) = []; valve_offs(end) = [];
+resp(resp<options.min_inst_gain_firing) = NaN;
 
-% make sure whiffs do not exceed a maximum length
-valve_offs((valve_offs - valve_ons) > options.t_after_valve_opens) = valve_ons((valve_offs - valve_ons) > options.t_after_valve_opens) + options.t_after_valve_opens;
 
-valve_ons = valve_ons + find(o.use_this_segment,1,'first');
-valve_offs = valve_offs + find(o.use_this_segment,1,'first');
+
+for i = 1:length(valve_ons)
+	a = find(~isnan(resp(valve_ons(i):valve_offs(i))),1,'first');
+	if ~isempty(a)
+		a = a + valve_ons(i);
+		[~,z] = max(resp(a:valve_offs(i))); z = z + a;
+		if z - a > options.t_after_valve_opens
+			z = a + options.t_after_valve_opens;
+		end
+		if any(isnan(resp(a:z)))
+			z = a+find(~isnan(resp(a:z)),1,'last');
+		end
+		valve_ons(i) = a;
+		try
+			valve_offs(i) = z;
+		catch
+			valve_offs(i) = NaN;
+			valve_ons(i) = NaN;
+		end
+
+	end
+end
+valve_offs(isnan(valve_offs)) = [];
+valve_ons(isnan(valve_ons)) = [];

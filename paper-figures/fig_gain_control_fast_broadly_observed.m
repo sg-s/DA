@@ -5,11 +5,10 @@
 pHeader;
 
 %% global parameters
-tau_h = round(logspace(1.7,4,50)); % all the history lengths we look at, in ms
+history_lengths = round(logspace(1.7,4,50)); % all the history lengths we look at, in ms
 example_history_length = 300; % this history length shown in the first row, in ms
 
-figure('outerposition',[0 0 801 1000],'PaperUnits','points','PaperSize',[801 1000]); hold on
-
+figure('outerposition',[0 0 801 800],'PaperUnits','points','PaperSize',[801 800]); hold on
 
 
 %  ######     ###    ########  ##        #######  ######## ########    ###    
@@ -35,59 +34,6 @@ if ~exist('orn_data','var')
 	load('/local-data/DA-paper/fig4/Carlotta_Data.mat')
 end
 
-% ########  ######## ########  ##       ####  ######     ###    ######## ########  ######  
-% ##     ## ##       ##     ## ##        ##  ##    ##   ## ##      ##    ##       ##    ## 
-% ##     ## ##       ##     ## ##        ##  ##        ##   ##     ##    ##       ##       
-% ########  ######   ########  ##        ##  ##       ##     ##    ##    ######    ######  
-% ##   ##   ##       ##        ##        ##  ##       #########    ##    ##             ## 
-% ##    ##  ##       ##        ##        ##  ##    ## ##     ##    ##    ##       ##    ## 
-% ##     ## ######## ##        ######## ####  ######  ##     ##    ##    ########  ######  
-
-
-do_these = [7 9 13 15 16];
-example_orn = do_these(2);
-
-% plot the responses to each valve on for one of them
-[ons,offs] = findValveWhiffs(orn_data(example_orn));    % find times when valve opens
-S = nanmean(orn_data(example_orn).stimulus,2);
-use_this_segment = false(length(S),1);
-for i = 1:length(ons)
-	use_this_segment(ons(i):offs(i)) = true;
-end
-C = colourByMeanStimulus(S,use_this_segment,'history_length',example_history_length);  % build colour index based on mean stimulus
-X = nanmean(orn_data(example_orn).firing_projected,2);
-Y = nanmean(orn_data(example_orn).firing_rate,2);
-X(~use_this_segment) = NaN;
-Y(~use_this_segment) = NaN;
-subplot(5,4,6), hold on 
-scatter(X,Y,12,C,'filled')
-xlabel('Projected Stimulus (V)')
-ylabel('Firing Rate (Hz)')
-
-ax(1) = subplot(5,4,7); hold on
-ax(4) = subplot(5,4,8); hold on
-
-for i = 1:length(do_these)
-	temp = orn_data(do_these(i));
-	% now fit a NL
-	% temp = fitNL(temp);
-	plot(temp,[ax(1) ax(1) ax(4)],'valveGainAnalysis.firing_rate.mu','history_lengths',tau_h,'showNL',false,'history_length',example_history_length);
-end
-% colour them nicely
-c = lines(length(do_these));
-h1 = get(ax(1),'Children');
-h2 = get(ax(4),'Children');
-for i = 1:length(do_these)
-	set(h1(i),'Color',c(i,:),'MarkerFaceColor',c(i,:),'Marker','o')
-	set(h2(i),'Color',c(i,:),'MarkerFaceColor',c(i,:),'Marker','o','LineStyle','-')
-end
-set(ax(1),'YScale','log','YLim',[.1 5])
-set(ax(4),'XScale','log','XLim',[10 1e4],'XTick',[1e1 1e2 1e3 1e4],'YLim',[-1 0])
-xlabel(ax(1),'\mu_{stimulus} (norm)')
-ylabel(ax(1),'Gain (norm)')
-
-lh = legend(h2,{'5/28','6/05','6/12','6/19','6/19'});
-lh.Position = [0.2   0.6807    0.0749    0.06];
 
 
 % ########  #### ######## ########         #######  ########   #######  ########   ######  
@@ -99,45 +45,46 @@ lh.Position = [0.2   0.6807    0.0749    0.06];
 % ########  #### ##       ##       ###     #######  ########   #######  ##     ##  ######  
 do_these = [7 8 10 14 17];
 
-% plot the responses to each valve on for one of them
-example_orn = do_these(2);
-[ons,offs] = findValveWhiffs(orn_data(example_orn));    % find times when valve opens
-S = nanmean(orn_data(example_orn).stimulus,2);
-use_this_segment = false(length(S),1);
-for i = 1:length(ons)
-	use_this_segment(ons(i):offs(i)) = true;
-end
-C = colourByMeanStimulus(S,use_this_segment,'history_length',example_history_length);  % build colour index based on mean stimulus
-X = nanmean(orn_data(example_orn).firing_projected,2);
-Y = nanmean(orn_data(example_orn).firing_rate,2);
-X(~use_this_segment) = NaN;
-Y(~use_this_segment) = NaN;
-subplot(5,4,10), hold on 
-scatter(X,Y,12,C,'filled')
-xlabel('Projected Stimulus (V)')
-ylabel('Firing Rate (Hz)')
+ax(1) = subplot(2,2,1); hold on
+ax(2) = subplot(2,2,3); hold on
 
-ax(2) = subplot(5,4,11); hold on
-ax(5) = subplot(5,4,12); hold on 
-
+c = lines(length(do_these));
 for i = 1:length(do_these)
 	temp = orn_data(do_these(i));
-	% % now fit a NL
-	% temp = fitNL(temp);
-	plot(temp,[ax(2) ax(2) ax(5)],'valveGainAnalysis.firing_rate.mu','history_lengths',tau_h,'showNL',false,'history_length',example_history_length);
+	pred = nanmean(temp.firing_projected,2); pred = pred(temp.use_this_segment);
+	resp = nanmean(temp.firing_rate,2);  resp = resp(temp.use_this_segment);
+	stim = nanmean(temp.stimulus,2); stim = stim(temp.use_this_segment);
+ 	stim = stim/nanmean(stim);
+
+	% find when the valve opens
+	[ons,offs] = findValveWhiffs(temp);
+
+	% plot the gain in each of these windows
+	[gain,gain_err] = findGainInWindows(ons,offs,pred,resp);
+
+	gain = gain/nanmean(gain);
+
+	rm_this = gain<0.4 | gain_err < .8;
+	gain(rm_this) = [];
+	ons(rm_this) = [];
+	offs(rm_this) = [];
+
+	% find the mean stimulus in the preceding X ms in these windows
+	mean_stim = findMeanInWindows(ons,offs,computeSmoothedStimulus(stim,example_history_length));
+
+	% % plot the gain vs. the mean stim after sorting it
+	[mean_stim,idx] = sort(mean_stim);
+	plot(ax(1),mean_stim,gain(idx),'+-','Color',c(i,:))
+
+	% also find rho for various values of the history length and plot it
+	rho = findRhoForHistoryLengths(gain,stim,ons,offs,history_lengths);
+
+	plot(ax(2),history_lengths,rho,'.-','Color',c(i,:))
 end
-% colour them nicely
-c = lines(length(do_these));
-h1 = get(ax(2),'Children');
-h2 = get(ax(5),'Children');
-for i = 1:length(h2)
-	set(h1(i),'Color',c(i,:),'MarkerFaceColor',c(i,:),'Marker','o')
-	set(h2(i),'Color',c(i,:),'MarkerFaceColor',c(i,:),'Marker','o','LineStyle','-')
-end
-set(ax(2),'YScale','log','YLim',[.1 5])
-set(ax(5),'XScale','log','XLim',[10 1e4],'XTick',[1e1 1e2 1e3 1e4],'YLim',[-1 0])
-xlabel(ax(2),'\mu_{stimulus} (norm)')
-ylabel(ax(2),'Gain (norm)')
+set(ax(2),'XScale','log','YLim',[-1 0])
+set(ax(1),'XScale','log','YScale','log','XLim',[.1 2],'YLim',[.1 10])
+
+
 
 lh = legend(h2,{'methyl butyrate','1-octen-3-ol','diethyl succinate','ethyl acetate','ethyl butyrate'});
 lh.Position = [0.18    0.5081    0.0886    0.06];
@@ -217,6 +164,69 @@ if being_published
 	snapnow	
 	delete(gcf)
 end
+
+%% Supplementary Figure: 
+% in this supplementary figure, we show the response vs. the projected stimulus, and colour the data by the mean stimulus in the preceding X ms
+
+% plot the responses to each valve on for one of them
+[ons,offs] = findValveWhiffs(orn_data(example_orn));    % find times when valve opens
+S = nanmean(orn_data(example_orn).stimulus,2);
+use_this_segment = false(length(S),1);
+for i = 1:length(ons)
+	use_this_segment(ons(i):offs(i)) = true;
+end
+C = colourByMeanStimulus(S,use_this_segment,'history_length',example_history_length);  % build colour index based on mean stimulus
+X = nanmean(orn_data(example_orn).firing_projected,2);
+Y = nanmean(orn_data(example_orn).firing_rate,2);
+X(~use_this_segment) = NaN;
+Y(~use_this_segment) = NaN;
+subplot(5,4,14), hold on 
+scatter(X,Y,12,C,'filled')
+xlabel('Projected Stimulus (V)')
+ylabel('Firing Rate (Hz)')
+
+%% Supp Figure
+
+% ########  ######## ########  ##       ####  ######     ###    ######## ########  ######  
+% ##     ## ##       ##     ## ##        ##  ##    ##   ## ##      ##    ##       ##    ## 
+% ##     ## ##       ##     ## ##        ##  ##        ##   ##     ##    ##       ##       
+% ########  ######   ########  ##        ##  ##       ##     ##    ##    ######    ######  
+% ##   ##   ##       ##        ##        ##  ##       #########    ##    ##             ## 
+% ##    ##  ##       ##        ##        ##  ##    ## ##     ##    ##    ##       ##    ## 
+% ##     ## ######## ##        ######## ####  ######  ##     ##    ##    ########  ######  
+
+
+do_these = [7 9 13 15 16];
+example_orn = do_these(2);
+
+% plot the responses to each valve on for one of them
+[ons,offs] = findValveWhiffs(orn_data(example_orn));    % find times when valve opens
+S = nanmean(orn_data(example_orn).stimulus,2);
+use_this_segment = false(length(S),1);
+for i = 1:length(ons)
+	use_this_segment(ons(i):offs(i)) = true;
+end
+
+
+for i = 1:length(do_these)
+	temp = orn_data(do_these(i));
+	plot(temp,[ax(1) ax(1) ax(4)],'valveGainAnalysis.firing_rate.mu','history_lengths',tau_h,'showNL',false,'history_length',example_history_length);
+end
+% colour them nicely
+c = lines(length(do_these));
+h1 = get(ax(1),'Children');
+h2 = get(ax(4),'Children');
+for i = 1:length(do_these)
+	set(h1(i),'Color',c(i,:),'MarkerFaceColor',c(i,:),'Marker','o')
+	set(h2(i),'Color',c(i,:),'MarkerFaceColor',c(i,:),'Marker','o','LineStyle','-')
+end
+set(ax(1),'YScale','log','YLim',[.1 5])
+set(ax(4),'XScale','log','XLim',[10 1e4],'XTick',[1e1 1e2 1e3 1e4],'YLim',[-1 0])
+xlabel(ax(1),'\mu_{stimulus} (norm)')
+ylabel(ax(1),'Gain (norm)')
+
+lh = legend(h2,{'5/28','6/05','6/12','6/19','6/19'});
+lh.Position = [0.2   0.6807    0.0749    0.06];
 
 
 %% Version Info

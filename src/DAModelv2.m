@@ -29,10 +29,9 @@ end
 % specify bounds for fitModel2Data
 lb.A = 1; lb.B = eps; lb.C = 0 ; 
 lb.tau_y = 1; lb.tau_z = 10;
+ub.C = 1; 
 
-ub.C = 0; 
-
-% extra bounds
+% extra bound
 lb.n_y = 2; lb.n_z = 2;
 ub.n_y = 2; ub.n_z = 2;
 lb.s0 = -5; ub.s0 = 1;

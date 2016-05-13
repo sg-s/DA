@@ -175,7 +175,7 @@ for i = 1:length(ax)
 	hold(ax(i),'on');
 end  
 
-c = repmat(randn(5,1)*.2 + .5,1,3);
+c = repmat(randn(5,1)*.2 + .5,1,3); c(c>.9) = .9; c(c<0) = 0;
 for i = 1:50:width(reshaped_PID)
 	plot(ax(1),time(1:10:end),reshaped_PID(1:10:end,i),'Color',c(ceil(i/50),:));
 end
@@ -281,6 +281,17 @@ plot(ax(6),x,lo_gain,'b+')
 xlabel(ax(6),'\sigma_{Stimulus} (V)')
 ylabel(ax(6),'ab3A Firing Gain (Hz/V)')
 
+% % can we fit this with 1/x?
+% x = [std(reshaped_PID(1e3:4e3,:)) std(reshaped_PID(6e3:9e3,:))]; x = x(:);
+% y = [hi_gain; lo_gain];
+% rm_this = isnan(y) | isnan(x);
+% x(rm_this) = []; y(rm_this) = [];
+% options = fitoptions(fittype('power1'));
+% options.Lower = [-Inf -1];
+% options.Upper = [Inf -1];
+% ff = fit(x(:),y(:),'power1',options);
+% plot(ax(6),sort(x),ff(sort(x)),'k')
+
 % create  some phantom plots for a nice legend
 clear l
 l(1) = plot(ax(5),NaN,NaN,'k--');
@@ -331,8 +342,9 @@ set(ax(4),'YTick',[],'YLim',ax(3).YLim)
 xlabel(ax(5),'Projected Stimulus (V)')
 ylabel(ax(5),'ab3A Firing Rate (norm)')
 
+ax(6).XLim = [0 .22];
+
 prettyFig('fs',14,'lw',1.5)
-labelFigure
 
 if being_published
 	snapnow
@@ -351,6 +363,7 @@ y = std(reshaped_fA(6e3:9e3,:))./x; y (y==0) = NaN;
 plot(x,y,'b+')
 ylabel('\sigma_{Firing Rate}/\sigma_{Stimulus} (Hz/V)')
 xlabel(gca,'\sigma_{Stimulus} (V)')
+set(gca,'XLim',[0 .22])
 
 subplot(1,2,2), hold on
 x = std(reshaped_PID(1e3:4e3,:));
@@ -359,9 +372,9 @@ x = std(reshaped_PID(6e3:9e3,:));
 plot(x,laughlin_lo_gain,'b+')
 ylabel(gca,'c.d.f Slope (a.u.)')
 xlabel(gca,'\sigma_{Stimulus} (V)')
+set(gca,'XLim',[0 .22])
 
 prettyFig('fs',18,'lw',2)
-labelFigure
 
 if being_published
 	snapnow
@@ -432,6 +445,7 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
 
 %% Zero-parameter fits to data
 % In this section, we attempt to directly measure the parameters of a "zero-parameter" model that includes gain control terms that are sensitive to the mean and the contrast of the stimulus. The model response is given by

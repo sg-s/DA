@@ -18,9 +18,8 @@ p.r_d; % diffusible factor rate
 p.theta_b;
 p.theta_d;
 
-% output nonlinearity 
-p.hill_A;
-p.hill_K;
+% output scaling 
+p.A;
 
 % bounds
 lb.r_b = 0;
@@ -30,9 +29,6 @@ lb.theta_d = 0;
 ub.theta_b = 10;
 ub.theta_d = 10;
 
-lb.hill_A = 0;
-lb.hill_K = 0;
-ub.hill_K = 1;
 
 
 b = 0*S;
@@ -62,8 +58,11 @@ for i = 2:length(S)
 end
 
 
-R = p.hill_A*(b.^2)./(b.^2 + p.hill_K^2);
+
+R = p.A*b;
+R = R - nanmean(R);
 
 
 
 
+end

@@ -31,7 +31,7 @@ dm = dataManager;
 %% Figure 1: ORN gain can be estimated by measuring responses to Gaussian inputs
 % Gaussian odorant inputs with short correlation times (A), elicit flickering responses in ORNs that track the odorant stimulus well (B). A linear filter K can be extracted from the odorant input and the firing rate output of the neuron (C). The slope of the residuals in a plot of the firing response vs. the linear prediction (D) is defined as the gain of the ORN. Here, we measure the ORN gain in the linear regime: the linear filter accounts for 96% of the variance in the ORN response (red line), and adding an output nonlinearity (dotted black line), only accounts for an additional 1%. The odorant used is ethyl acetate, stimulating the ab3A neuron. Shading in all plots shows the standard error of the mean. 
 
-figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
+figure('PaperUnits','centimeters','PaperSize',[20 18],'Position',[100 100 888 800]); hold on
 clear axes_handles
 axes_handles(1) = subplot(3,10,1:6);
 axes_handles(2) = subplot(3,10,11:16);
@@ -162,12 +162,10 @@ plot(axes_handles(6),sort(mean_stim),cf(sort(mean_stim)),'r');
 set(axes_handles(6),'XScale','log','YScale','log')
 xlabel(axes_handles(6),'Mean Stimulus (V)')
 ylabel(axes_handles(6),'\sigma_{Firing Rate}/\sigma_{Stimulus} (Hz/V)')
-
-prettyFig('plw',1.3,'lw',1.5,'fs',14)
-set(lh,'Position',[0.72 0.62 0.2112 0.0275],'box','off')
-
-labelFigure
 xlabel(axes_handles(2),'Time (s)')
+
+prettyFig('plw',1.3,'lw',1.5,'fs',.5)
+set(lh,'Position',[0.72 0.62 0.2112 0.0275],'box','off')
 
 
 if being_published
@@ -188,7 +186,7 @@ end
 %% Figure 2: ORN gain decreases with increasing stimulus intensity, similar to the Weber-Fechner Law
 % Odorant stimuli drawn from distributions with similar variances but increasing means (A) elicit ORN responses with decreasing variances (B). After extracting linear filters for all stimulus paradigms, a plot of the ORN response vs. the linear prediction (C) shows a systematic decrease in slope. Plotting lines to each of these clouds of points determines the neuron gain in each case. Neuron gain decreases with the mean stimulus (D). This stimulus-dependent decrease in gain is well described by a power law with an exponent close to -1 (the Weber-Fechner Prediction). For comparison, a power law with the exponent fixed at -1 is also shown (dashed line). 
 
-figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
+figure('PaperUnits','centimeters','PaperSize',[20 20],'Position',[100 100 800 800]); hold on
 clear ax
 ax(1) = subplot(3,10,1:8);
 ax(2) = subplot(3,10,9:10);
@@ -284,10 +282,10 @@ plot(ax(7),[0 80],[0 80],'r')
 
 % cosmetics
 set(ax(1),'XLim',[35 55],'YLim',[0 2])
-set(ax(2),'YLim',[0 2],'YTick',[])
+set(ax(2),'YLim',[0 2])
 
 set(ax(3),'XLim',[35 55],'YLim',[0 70])
-set(ax(4),'YLim',[0 70],'YTick',[])
+set(ax(4),'YLim',[0 70])
 
 set(ax(7),'XLim',[0 70],'YLim',[0 70])
 
@@ -303,11 +301,26 @@ ylabel(ax(6),'ab3A Firing Gain (Hz/V)')
 xlabel(ax(7),[' Projected Stimulus ' char(10) 'Rescaled by Weber Law'])
 ylabel(ax(7),'ab3A Firing Rate (Hz)')
 
-prettyFig('plw',1.3,'lw',1.5,'fs',14)
+prettyFig('plw',1.3,'lw',1.5,'fs',.5)
 
 axes(ax(6))
 text(.2, 30,'$\sim 1/s$','interpreter','latex','Color','r','FontSize',20)
 
+% move some axes to the right
+ax(2).Position(1) = .8;
+ax(4).Position(1) = .8;
+
+% deinteresect some axes
+deintersectAxes(ax(1))
+deintersectAxes(ax(2))
+deintersectAxes(ax(3))
+deintersectAxes(ax(4))
+deintersectAxes(ax(6))
+
+% fix some origins
+ax(5).YLim(1) = 0;
+ax(5).XLim(1) = 0;
+ax(5).Position(1) = .1;
 
 if being_published
 	snapnow

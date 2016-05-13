@@ -20,29 +20,28 @@ clearvars -except being_published dm
 scatter_size = 12;
 
 % make figure placeholders 
-fig_handle=figure('outerposition',[0 0 1300 800],'PaperUnits','points','PaperSize',[1300 800]); hold on
+fig_handle = figure('PaperUnits','centimeters','PaperSize',[20 12],'Position',[100 100 1200 720],'toolbar','none'); hold on
 clf(fig_handle);
 
-axes_handles(2) = subplot(7,4,[1 5 9 13]);   % cartoon showing prep
-axes_handles(3) = subplot(7,4,[2 3 6 7]); % stimulus 
-axes_handles(4) = subplot(7,4,[10 11 14 15]); % response + linear prediction 
-axes_handles(5) = subplot(7,4,[4 8]);  % linear filter
+axes_handles(3) = subplot(7,4,[2 3 4 6 7 8]); % stimulus 
+axes_handles(4) = subplot(7,4,[10 11 12 14 15 16]); % response + linear prediction 
+axes_handles(5) = subplot(7,4,[9 13]);  % linear filter
 
 axes_handles(6) = subplot(7,4,[17:4:25]);
 axes_handles(7) = subplot(7,4,1+[17:4:25]);
 axes_handles(8) = subplot(7,4,2+[17:4:25]);
 axes_handles(9) = subplot(7,4,3+[17:4:25]);
 
-for i = 2:length(axes_handles)
+for i = 3:length(axes_handles)
 	hold(axes_handles(i),'on');
 end
 
-axes_handles(2).Position  = [0.1300    0.4738    0.12    0.34];
-axes(axes_handles(2));
-imagesc(imread('../images/fig-1-cartoon.png'));
-axis ij
-axis image
-axis off
+% axes_handles(2).Position  = [0.1300    0.4738    0.12    0.34];
+% axes(axes_handles(2));
+% imagesc(imread('../images/fig-1-cartoon.png'));
+% axis ij
+% axis image
+% axis off
 
 % first, grab the ab3 and ab2 data
 
@@ -348,7 +347,7 @@ for i = 6:9
 end
 
 % fix position of some plots
-set(axes_handles(5),'Position',[.8 .65 .08 .14],'box','on')
+axes_handles(5).Position(1) = .1;
 xlabel(axes_handles(5),'Filter Lag (s)')
 ylabel(axes_handles(5),'Filter')
 
@@ -358,9 +357,6 @@ axes_handles(9).Position(1) = .8;
 axes_handles(8).Position(1) = .57;
 axes_handles(7).Position(1) = .35;
 
-prettyFig('plw',1.5,'lw',1.5,'fs',18,'FixLogX',true)
-
-
 set(axes_handles(6),'XTick',[0 2 4 6],'box','off')
 
 xlabel(axes_handles(9),'\mu_{stimulus} (V)')
@@ -368,7 +364,14 @@ ylabel(axes_handles(9),'\sigma_{stimulus} (V)')
 set(axes_handles(9),'YScale','log','XScale','log','XLim',[1e-3 1e1],'XTick',[1e-3 1e-2 1e-1 1e0 1e1],'YLim',[1e-3 1e1],'YTick',[1e-3 1e-2 1e-1 1 10])
 
 
+prettyFig('plw',1.5,'lw',1.5,'fs',.5,'FixLogX',true)
+
 legend('boxoff')
+
+deintersectAxes(axes_handles(9))
+deintersectAxes(axes_handles(8))
+deintersectAxes(axes_handles(7))
+deintersectAxes(axes_handles(5))
 
 
 if being_published
@@ -386,13 +389,15 @@ end
 %      ######   #######  ##        ##           ##       ####  ######   
 
 
-%% Supplmentary Figure 1
+%% Supplementary Figure 1
 % This figure shows some statistics of the stimulus. 
 
-figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
+
+clear ax
+figure('PaperUnits','centimeters','PaperSize',[20 5],'Position',[100 100 1300 300],'toolbar','none'); hold on
 
 % show the rsquare of the mean and variance as a function of box size
-subplot(2,2,1), hold on
+ax(1) = subplot(1,4,1); hold on
 for i = 1:length(all_block_sizes)
 	plot(all_block_sizes(i),r2(i),'k+')
 end
@@ -401,7 +406,7 @@ xlabel('Window (ms)')
 ylabel('r^2 (\mu, \sigma)')
 
 % show the PDF of the stimulus
-subplot(2,2,2), hold on
+ax(2) = subplot(1,4,2); hold on
 y = zeros(300,width(ab3.PID));
 for i = 1:width(ab3.PID)
 	[y(:,i),x] = histcounts(ab3.PID(:,i),300);x(1) = [];
@@ -409,13 +414,13 @@ for i = 1:width(ab3.PID)
 end
 errorShade(x,mean(y,2),sem(y'),'Color',[.2 .2 .2]);
 warning off % because there are some -ve values on the log scale
-set(gca,'XScale','log','YScale','log','XLim',[min(x) 10],'YLim',[1e-5 1],'YTick',logspace(-5,0,6))
+set(gca,'XScale','log','YScale','log','XLim',[min(x) 10],'YLim',[1e-5 1],'YTick',logspace(-5,0,6),'XTick',[1e-2 1e-1 1 10 100])
 xlabel(gca,'Stimulus (V)')
 ylabel(gca,'Probability')
 warning on
 
 % show the whiff durations 
-subplot(2,2,3), hold on
+ax(3) = subplot(1,4,3); hold on
 whiff_durations = []; 
 for i = 1:width(ab3.PID)
 	[ons,offs] = computeOnsOffs(ab3.PID(:,i) > .024);
@@ -433,7 +438,7 @@ set(gca,'YScale','log','XScale','log','XTick',[1e1 1e2 1e3 1e4])
 xlabel('Whiff duration (ms)')
 
 % show the blank durations 
-subplot(2,2,4), hold on
+ax(4) = subplot(1,4,4); hold on
 whiff_durations = [];
 for i = 1:width(ab3.PID)
 	[ons,offs] = computeOnsOffs(ab3.PID(:,i) < .024);
@@ -450,10 +455,13 @@ set(gca,'YScale','log','XScale','log','XTick',[1e2 1e3 1e4 1e5])
 xlabel('Blank duration (ms)')
 ylabel(gca,'Probability')
 
-prettyFig('fs',18,'FixLogX',true)
-labelFigure
+prettyFig('fs',.5,'FixLogX',false)
 
 legend('boxoff')
+
+% fix some plots
+ax(2).Position(2) = ax(1).Position(2);
+ax(2).Position(4) = ax(1).Position(4);
 
 if being_published
 	snapnow

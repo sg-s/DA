@@ -460,8 +460,15 @@ prettyFig('fs',.5,'FixLogX',false)
 legend('boxoff')
 
 % fix some plots
+ax(1).Position(1)=.11;
 ax(2).Position(2) = ax(1).Position(2);
 ax(2).Position(4) = ax(1).Position(4);
+
+for i = 1:4
+	ax(i).Position(2) = .175;
+	ax(i).Position(4) = .725;
+	deintersectAxes(ax(i))
+end
 
 if being_published
 	snapnow

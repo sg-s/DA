@@ -161,7 +161,7 @@ end
 time = 1e-3*(1:length(reshaped_PID));
 s = .5; % shading opacity
 
-figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
+figure('PaperUnits','centimeters','PaperSize',[20 18],'Position',[100 100 888 800]); hold on
 clear ax
 ax(1) = subplot(3,10,1:7);
 ax(2) = subplot(3,10,8:10);
@@ -344,17 +344,31 @@ ylabel(ax(5),'ab3A Firing Rate (norm)')
 
 ax(6).XLim = [0 .22];
 
-prettyFig('fs',14,'lw',1.5)
+prettyFig('fs',.5,'lw',1.5)
+
+ax(5).XLim(1) = 0;
+ax(5).YLim(1) = 0;
 
 if being_published
 	snapnow
 	delete(gcf)
 end
 
+
+%  ######  ##     ## ########  ########         ######## ####  ######       
+% ##    ## ##     ## ##     ## ##     ##        ##        ##  ##    ##      
+% ##       ##     ## ##     ## ##     ##        ##        ##  ##            
+%  ######  ##     ## ########  ########         ######    ##  ##   ####     
+%       ## ##     ## ##        ##               ##        ##  ##    ##      
+% ##    ## ##     ## ##        ##        ###    ##        ##  ##    ##  ### 
+%  ######   #######  ##        ##        ###    ##       ####  ######   ### 
+
+
 %% Supplementary Figure
 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-subplot(1,2,1), hold on
+figure('PaperUnits','centimeters','PaperSize',[15 5],'Position',[100 100 1000 620]); hold on
+
+subplot(2,3,1), hold on
 x = std(reshaped_PID(1e3:4e3,:));
 y = std(reshaped_fA(1e3:4e3,:))./x; y(y==0) = NaN;
 plot(x,y,'r+')
@@ -365,7 +379,7 @@ ylabel('\sigma_{Firing Rate}/\sigma_{Stimulus} (Hz/V)')
 xlabel(gca,'\sigma_{Stimulus} (V)')
 set(gca,'XLim',[0 .22])
 
-subplot(1,2,2), hold on
+subplot(2,3,4), hold on
 x = std(reshaped_PID(1e3:4e3,:));
 plot(x,laughlin_hi_gain,'r+')
 x = std(reshaped_PID(6e3:9e3,:));
@@ -374,7 +388,86 @@ ylabel(gca,'c.d.f Slope (a.u.)')
 xlabel(gca,'\sigma_{Stimulus} (V)')
 set(gca,'XLim',[0 .22])
 
-prettyFig('fs',18,'lw',2)
+% plot mean stimulus vs. std. of stimulus
+subplot(2,3,2), hold on
+plot(std(reshaped_PID(1e3:4e3,:)),mean(reshaped_PID(1e3:4e3,:)),'r+');
+plot(std(reshaped_PID(6e3:9e3,:)),mean(reshaped_PID(6e3:9e3,:)),'b+');
+set(gca,'XLim',[0 .21],'YLim',[0 .6])
+xlabel('\sigma_{Stimulus} (V)')
+ylabel('\mu_{Stimulus} (V)')
+
+% plot gain vs. the mean stimulus
+subplot(2,3,5), hold on
+plot(mean(reshaped_PID(1e3:4e3,:)),hi_gain,'r+');
+plot(mean(reshaped_PID(6e3:9e3,:)),lo_gain,'b+');
+xlabel('\mu_{Stimulus} (V)')
+ylabel('ab3A Firing gain (Hz/V)')
+set(gca,'XLim',[0 .6],'YLim',[0 150])
+
+% correct the projected by a 1/S scaling
+fp_corrected = NaN*fA_pred;
+for i = 1:width(fp_corrected)
+	fp_corrected(1:5e3,i) = fA_pred(1:5e3,i)/mean(reshaped_PID(1e3:4e3,i));
+	fp_corrected(5e3+1:end,i) = fA_pred(5e3+1:end,i)/mean(reshaped_PID(6e3:9e3,i));
+end
+
+% now plot I/O curves after correcting for changing mean
+subplot(2,3,3); hold on
+% high contrast
+x = fp_corrected(1e3:5e3,:);
+y = reshaped_fA(1e3:5e3,:);
+rm_this = (isnan(sum(y)) | isnan(sum(x)) | max(y) < 40 | min(y) > 10);
+x(:,rm_this) = []; y(:,rm_this) = []; 
+[~,data_hi] = plotPieceWiseLinear(x,y,'nbins',50,'make_plot',false);
+plot(data_hi.x,data_hi.y,'r')
+
+% low contrast
+x = fp_corrected(6e3:9e3,:);
+y = reshaped_fA(6e3:9e3,:);
+rm_this = (isnan(sum(y)) | isnan(sum(x)) | max(y) < 40 | min(y) > 10);
+x(:,rm_this) = []; y(:,rm_this) = [];
+[~,data_lo] = plotPieceWiseLinear(x,y,'nbins',50,'make_plot',false);
+plot(data_lo.x,data_lo.y,'b')
+xlabel(['Projected Stimulus/' char(10) 'Mean Stimulus (a.u.)'])
+ylabel('Firing Rate (Hz)')
+
+% compute gains per trial
+lo_gain2 = NaN(width(reshaped_PID),1);
+hi_gain2 = NaN(width(reshaped_PID),1);
+for i = 1:width(reshaped_PID)
+	y = reshaped_fA(1e3:4e3,i);
+	x = fp_corrected(1e3:4e3,i);
+	r = max(y) - min(y);
+	l = (y > (r/3 + min(y))) & (y < (max(y) - r/3));
+	try
+		ff = fit(x(:),y(:),'poly1');
+		hi_gain2(i) = ff.p1;
+	catch
+	end
+
+	y = reshaped_fA(6e3:9e3,i);
+	x = fp_corrected(6e3:9e3,i);
+	r = max(y) - min(y);
+	l = (y > (r/3 + min(y))) & (y < (max(y) - r/3));
+	try
+		ff = fit(x(:),y(:),'poly1');
+		lo_gain2(i) = ff.p1;
+	catch
+	end
+end
+
+lo_gain2(lo_gain2==0) = NaN;
+hi_gain2(hi_gain2==0) = NaN;
+
+% plot gain vs. the mean stimulus
+subplot(2,3,6), hold on
+plot(std(reshaped_PID(1e3:4e3,:)),hi_gain2,'r+');
+plot(std(reshaped_PID(6e3:9e3,:)),lo_gain2,'b+');
+xlabel('\sigma_{Stimulus} (V)')
+ylabel('ab3A Firing gain (corrected) (a.u.)')
+set(gca,'XLim',[0 .21],'YLim',[0 100])
+
+prettyFig('fs',.5,'lw',1.5)
 
 if being_published
 	snapnow

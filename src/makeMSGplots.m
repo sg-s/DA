@@ -3,12 +3,14 @@
 % this is meant to be called by webers_generally_observed.m
 
 if exist('fA','var')
-	figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+	figure('PaperUnits','points','PaperSize',[1000 700]); hold on
 else
-	figure('outerposition',[0 0 1000 360],'PaperUnits','points','PaperSize',[1000 360]); hold on
+	figure('PaperUnits','points','PaperSize',[1000 360]); hold on
 end
 
-c = parula(max(paradigm)+1);
+% make a nice colour scheme
+c = parula(length(paradigm));
+
 % also estimate gain using variances of stimulus and response
 mean_stim = nanmean(PID(a:z,:));
 frac_var = NaN(width(PID),1);
@@ -32,8 +34,12 @@ if exist('fA','var')
 else
 	subplot(1,3,2), hold on
 end
+
+[~,idx]=sort(mean_stim,'ascend');
+
 for i = 1:width(PID)
-	plot(mean_stim(i),frac_var_LFP(i),'+','Color',c(paradigm(i),:))
+	ii = idx(i);
+	plot(mean_stim(ii),frac_var_LFP(ii),'+','Color',c(i,:))
 end
 
 options = fitoptions(fittype('power1'));
@@ -49,7 +55,8 @@ if exist('fA','var')
 	% plot frac. var of firing rate
 	subplot(2,3,5), hold on
 	for i = 1:width(PID)
-		plot(mean_stim(i),frac_var(i),'+','Color',c(paradigm(i),:))
+		ii = idx(i);
+		plot(mean_stim(ii),frac_var(ii),'+','Color',c(i,:))
 	end
 
 	options = fitoptions(fittype('power1'));
@@ -63,8 +70,9 @@ if exist('fA','var')
 
 	% show gain changes -- firing gain vs. mean stimulus
 	subplot(2,3,4), hold on
-	for i = 1:max(paradigm)
-		plot(mean_stim(paradigm==i),fA_gain(paradigm==i),'+','Color',c(i,:));
+	for i = 1:width(PID)
+		ii = idx(i);
+		plot(mean_stim(ii),fA_gain(ii),'+','Color',c(i,:))
 	end
 
 	% fit a power law with exponent -1
@@ -87,8 +95,9 @@ if exist('fA','var')
 else
 	subplot(1,3,1), hold on
 end
-for i = 1:max(paradigm)
-	plot(mean_stim(paradigm==i),LFP_gain(paradigm==i),'+','Color',c(i,:));
+for i = 1:width(PID)
+	ii = idx(i);
+	plot(mean_stim(ii),LFP_gain(ii),'+','Color',c(i,:))
 end
 
 % fit a power law with exponent -1

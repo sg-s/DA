@@ -3,9 +3,9 @@
 % this is meant to be called by webers_generally_observed.m
 
 if exist('fA','var')
-	figure('PaperUnits','points','PaperSize',[1000 700]); hold on
+	figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
 else
-	figure('PaperUnits','points','PaperSize',[1000 360]); hold on
+	figure('outerposition',[0 0 1000 360],'PaperUnits','points','PaperSize',[1000 360]); hold on
 end
 
 % make a nice colour scheme

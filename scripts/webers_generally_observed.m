@@ -9,47 +9,42 @@ dm = dataManager;
 %% 1-pentanol and ab3A
 % In this section, we use 1-pentanol to stimulate the ab3A neuron. 
 clearvars -except being_published dm
-[PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData(dm.getPath('29e79fc10c3dfd3c6cc9ad82a834f41b'),1);
 
-
-cleanMSGdata
-makeMSGplots
+cdata = consolidateData2(dm.getPath('29e79fc10c3dfd3c6cc9ad82a834f41b'));
+cdata = cleanMSGdata(cdata);
+makeMSGplots(cdata)
 suptitle('1-pentanol -- ab3A')
 
 %% 1-pentanol and ab2A
 % In this section, we use 1-pentanol to stimulate the ab2A neuron. 
 clearvars -except being_published dm
-[PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData(dm.getPath('cd6753c0e4cf02895cd5e2c5cb58aa1a'),1);
-
-cleanMSGdata
-makeMSGplots
+cdata = consolidateData2(dm.getPath('cd6753c0e4cf02895cd5e2c5cb58aa1a'));
+cdata = cleanMSGdata(cdata);
+makeMSGplots(cdata)
 suptitle('1-pentanol -- ab2A')
 
 %% 2-butanone and ab2A
 % In this section, we use 2-butanone to stimulate the ab2A neuron. 
 clearvars -except being_published dm
-[PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData(dm.getPath('3ea08ccfa892c6545d74bbdaaa6cbee1'),1);
-
-cleanMSGdata
-makeMSGplots
+cdata = consolidateData2(dm.getPath('3ea08ccfa892c6545d74bbdaaa6cbee1'));
+cdata = cleanMSGdata(cdata);
+makeMSGplots(cdata)
 suptitle('2-butanone -- ab2A')
 
 %% butanal and ab3A
 % In this section, we use butanal to stimulate the ab2A neuron. 
 clearvars -except being_published dm
-[PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData(dm.getPath('5215c83836f0e4afa3060dab51081743'),1);
-
-cleanMSGdata
-makeMSGplots
+cdata = consolidateData2(dm.getPath('5215c83836f0e4afa3060dab51081743'));
+cdata = cleanMSGdata(cdata);
+makeMSGplots(cdata)
 suptitle('butanal -- ab3A')
 
 %% ethanol and ab3A
 % In this section, we use ethanol to stimulate the ab2A neuron. 
 clearvars -except being_published dm
-[PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData(dm.getPath('2fd8239d788ef142be24f19e85e70427'),1);
-
-cleanMSGdata
-makeMSGplots
+cdata = consolidateData2(dm.getPath('2fd8239d788ef142be24f19e85e70427'));
+cdata = cleanMSGdata(cdata);
+makeMSGplots(cdata)
 suptitle('ethanol -- ab3A')
 
 

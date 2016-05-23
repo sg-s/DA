@@ -2,17 +2,55 @@
 % helper scripts that plots I/O curves, gain, and kinetics for MSG data
 % this is meant to be called by webers_generally_observed.m
 
-if exist('fA','var')
-	figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
-else
-	figure('outerposition',[0 0 1000 360],'PaperUnits','points','PaperSize',[1000 360]); hold on
-end
+
+function makeMSGplots(cdata)
+
+% unpack data
+v2struct(cdata)
+
+% show some coarse statistics of the data
+figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
+subplot(2,2,1), hold on
+mean_stim = nanmean(PID(a:z,:));
+std_stim = nanstd(PID(a:z,:));
+plot(mean_stim,std_stim,'k+')
+M = max([mean_stim(:); std_stim(:)]);
+plot([0 M],[0 M],'k--')
+xlabel('\mu_{Stimulus} (V)')
+ylabel('\sigma_{Stimulus} (V)')
+
+subplot(2,2,2), hold on
+plot(mean_stim,nanmean(fA(a:z,:)),'r+')
+plot(mean_stim,nanmean(fB(a:z,:)),'bo')
+legend({'A','B'},'Location','southeast')
+xlabel('\mu_{Stimulus} (V)')
+ylabel('\mu_{Firing rate (Hz)}')
+
+subplot(2,2,3), hold on
+plot(mean_stim,nanstd(fA(a:z,:)),'r+')
+plot(mean_stim,nanstd(fB(a:z,:)),'bo')
+legend({'A','B'},'Location','northeast')
+xlabel('\mu_{Stimulus} (V)')
+ylabel('\sigma_{Firing rate (Hz)}')
+
+subplot(2,2,4), hold on
+plot(nanmean(fA(a:z,:)),nanstd(fA(a:z,:)),'r+')
+plot(nanmean(fB(a:z,:)),nanstd(fB(a:z,:)),'bo')
+legend({'A','B'},'Location','northeast')
+xlabel('\mu_{Firing rate (Hz)}')
+ylabel('\sigma_{Firing rate (Hz)}')
+
+prettyFig
+
+
+% show gain
+figure('outerposition',[0 0 1000 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
 
 % make a nice colour scheme
 c = parula(length(paradigm));
 
 % also estimate gain using variances of stimulus and response
-mean_stim = nanmean(PID(a:z,:));
+
 frac_var = NaN(width(PID),1);
 frac_var_LFP = NaN(width(PID),1);
 for i = 1:width(PID)
@@ -29,13 +67,11 @@ frac_var_LFP = frac_var_LFP(:);
 frac_var = frac_var(:);
 
 % plot frac var of LFP
-if exist('fA','var')
-	subplot(2,3,2), hold on
-else
-	subplot(1,3,2), hold on
-end
+subplot(2,3,2), hold on
+
 
 [~,idx]=sort(mean_stim,'ascend');
+
 
 for i = 1:width(PID)
 	ii = idx(i);

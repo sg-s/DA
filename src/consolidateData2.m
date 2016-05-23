@@ -9,14 +9,66 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [consolidated_data,all_control_paradigms] = consolidateData2(pathname,use_cache)
+function consolidated_data = consolidateData2(pathname,varargin)
 
 if ~nargin
 	pathname = pwd;
 end
-if nargin < 2
-	use_cache = false;
+
+
+% options and defaults
+options.use_cache = true;
+options.fA = true;
+options.PID = true;
+options.fB = true;
+options.LFP = true;
+options.fly = true;
+options.orn = true;
+options.AllControlParadigms = true;
+options.paradigm_hashes = true;
+
+if nargout && ~nargin 
+	varargout{1} = options;
+    return
 end
+
+% validate and accept options
+if iseven(length(varargin))
+	for ii = 1:2:length(varargin)-1
+	temp = varargin{ii};
+    if ischar(temp)
+    	if ~any(find(strcmp(temp,fieldnames(options))))
+    		disp(['Unknown option: ' temp])
+    		disp('The allowed options are:')
+    		disp(fieldnames(options))
+    		error('UNKNOWN OPTION')
+    	else
+    		options = setfield(options,temp,varargin{ii+1});
+    	end
+    end
+end
+elseif isstruct(varargin{1})
+	% should be OK...
+	options = varargin{1};
+else
+	error('Inputs need to be name value pairs')
+end
+
+
+fA = [];
+fB = [];
+PID = [];
+fly = [];
+paradigm = [];
+A_spikes = [];
+B_spikes = [];
+orn = [];
+AllControlParadigms = struct;
+AllControlParadigms.Name = '';
+AllControlParadigms.Outputs = [];
+AllControlParadigms(1) = [];
+paradigm_hashes = {};
+sequence = []; % for each file. 
 
 if ~strcmp(pathname(end),oss)
 	pathname = [pathname oss];
@@ -24,40 +76,30 @@ end
 
 allfiles = dir([pathname '*.mat']);
 % remove the consolidated data from this
-rm_this = [find(strcmp('cached_log.mat',{allfiles.name})) find(strcmp('consolidated_data.mat',{allfiles.name})) find(strcmp('cached.mat',{allfiles.name}))];
+rm_this = [find(strcmp('cached_log.mat',{allfiles.name})) find(strcmp('consolidated_data.mat',{allfiles.name})) find(strcmp('cached.mat',{allfiles.name})) find(strcmp('template.mat',{allfiles.name}))];
 if ~isempty(rm_this)
 	allfiles(rm_this) = [];
 end
 
 % always be caching. 
-if use_cache
-	cached_data = [];
+hash = dataHash(allfiles);
+if options.use_cache
+	consolidated_data = [];
 	try
-		cached_data = load([pathname 'consolidated_data.mat'],'cached_data');
+		consolidated_data = load([pathname 'consolidated_data.mat'],'consolidated_data');
+		consolidated_data = consolidated_data.consolidated_data;
 	catch
 	end
-	if ~isempty(cached_data)
-		output_data = cached_data.output_data;
-		all_control_paradigms = cached_data.all_control_paradigms;
+	if ~isempty(consolidated_data)
 		return
 	end
 end
 
-% make placeholders for all_control_paradigms
-all_control_paradigms = struct;
-all_control_paradigms.Name = '';
-all_control_paradigms.Outputs = [];
-all_control_paradigms(1) = [];
-
-
 % find the longest trial in all the data. this will be the length of the combined data
 disp('Determining longest data length...')
 ll = 0;
-all_variable_names = {};
 for i = 1:length(allfiles)
 	load(strcat(pathname,allfiles(i).name));
-	% get all variable names
-	all_variable_names = [all_variable_names; fieldnames(data)];
 	for j = 1:length(data)
 		if ~isempty(data(j).PID)
 			ll = max([ll length(data(j).PID)]);
@@ -66,30 +108,228 @@ for i = 1:length(allfiles)
 end
 disp('Longest trial observed is:')
 disp(ll)
+ll = ceil(ll/10);
 
-disp('The following variables were observed, and I will attempt to merge these:')
-all_variable_names = unique(all_variable_names);
-disp(all_variable_names);
-
-% make placeholders for output_data based on observed variable names
-for i = 1:length(all_variable_names)
-	eval(['output_data.' all_variable_names{i} '=zeros(ll,0);'])
-end
-% don't forget about the spiking
-output_data.fA = zeros(ll,0);
-all_variable_names = [all_variable_names; 'fA'];
+% make placeholders
+LFP = zeros(ll,0);
+PID = zeros(ll,0);
+fA = zeros(ll,0);
+fB = zeros(ll,0);
+A_spikes = sparse(ll*10,0);
+B_spikes = sparse(ll*10,0);
 
 for i = 1:length(allfiles)
-	clear spikes data ControlParadigm SamplingRate
+	clear spikes data metadata
 	load(strcat(pathname,allfiles(i).name));
 	disp(strcat(pathname,allfiles(i).name));
 	for j = 1:length(data)
-		textbar(j,length(data))
-		for k = 1:size(data(j).PID,1)
-			for v = 1:length(all_variable_names)
-				load_this = [];
-				eval(['load_this = data(j).' all_variable_names{v}, '(k,:);']);
+		clear this_PID this_LFP this_A_spikes this_B_spikes this_hash this_paradigm 
+		if ~isempty(data(j).PID)
+
+			disp(['Paradigm : ' mat2str(j)]) 
+			% figure out which control paradigm this is
+			this_hash = dataHash(ControlParadigm(j));
+			if isempty(find(strcmp(this_hash,paradigm_hashes)))
+				AllControlParadigms(end+1) = orderfields(ControlParadigm(j));
+				this_paradigm = length(AllControlParadigms);
+				paradigm_hashes{end+1} = this_hash;
+			else
+				this_paradigm = find(strcmp(this_hash,paradigm_hashes));
 			end
+
+			disp('Loading PID and raw voltage...')
+			this_PID = data(j).PID;
+			this_LFP = data(j).voltage;
+			this_fA = NaN*this_LFP(:,1:10:end)';
+			this_fB = NaN*this_LFP(:,1:10:end)';
+
+			disp(['There appear to be ' mat2str(width(this_PID)) ' trials for this paradigm.'])
+
+			if exist('spikes','var')
+				disp('spikes variable exists for this file.')
+				if length(spikes) < j
+					disp('No spike info for this paradigm.')
+					this_A_spikes = sparse(size(this_LFP,1),size(this_LFP,2));
+					this_B_spikes = sparse(size(this_LFP,1),size(this_LFP,2));
+				else
+					if length(spikes(j).A) > 10 && max(max(spikes(j).A)) > 0
+						disp('A Spikes exist for this paradigm, loading...')
+						this_A_spikes = spikes(j).A;
+						if width(this_A_spikes) < width(this_PID)
+							disp('Spike width less than data width, padding...')
+							this_A_spikes = sparse(size(this_LFP,1),size(this_LFP,2));
+							for k = 1:width(this_A_spikes)
+								try
+									this_A_spikes(k,:) = spikes(j).A(k,:);
+								catch
+								end
+							end
+						end
+					else
+						disp('No A spikes found!')
+						% create dummy this_A_spikes
+						this_A_spikes = sparse(size(this_LFP,1),size(this_LFP,2));
+					end
+
+					% grab B spikes
+					if length(spikes(j).B) > 10 && max(max(spikes(j).B)) > 0
+						disp('B Spikes exist for this paradigm, loading...')
+						this_B_spikes = spikes(j).B;
+						if width(this_B_spikes) < width(this_PID)
+							disp('Spike width less than data width, padding...')
+							this_B_spikes = sparse(size(this_LFP,1),size(this_LFP,2));
+							for k = 1:width(this_B_spikes)
+								try
+									this_B_spikes(k,:) = spikes(j).B(k,:);
+								catch
+								end
+							end
+						end
+					else
+						disp('No B spikes found!')
+						% create dummy this_B_spikes
+						this_B_spikes = sparse(size(this_LFP,1),size(this_LFP,2));
+					end
+				
+
+
+					% censor trace use use_trace_fragment
+					use_trace_fragment = [];
+					try
+						use_trace_fragment = spikes(j).use_trace_fragment;
+					catch
+					end
+
+					if ~isempty(use_trace_fragment)
+						disp('Censoring parts of trial based on annotation...')
+						if width(use_trace_fragment) == width(this_PID)
+							this_LFP(~logical(use_trace_fragment)) = NaN;
+						else
+							for k = 1:width(use_trace_fragment)
+								this_LFP(k,~logical(use_trace_fragment(k,:))) = NaN;
+							end
+						end
+					end
+				end
+			end
+
+			% convert to firing rate
+			this_fA = spiketimes2f(this_A_spikes,1e-4*(1:length(this_A_spikes)),1e-3,3e-2);
+			this_fB = spiketimes2f(this_B_spikes,1e-4*(1:length(this_B_spikes)),1e-3,3e-2);
+
+			rm_this = [];
+			try
+				rm_this = find(spikes(j).discard);
+			catch
+			end
+			if ~isempty(rm_this)
+				disp('Discarding some trials acc. to annotation:')
+				this_PID(rm_this,:) = [];
+				this_LFP(rm_this,:) = [];
+				this_A_spikes(rm_this,:) = [];
+				this_B_spikes(rm_this,:) = [];
+				this_fA(:,rm_this) = [];
+				this_fB(:,rm_this) = [];
+
+			else
+				disp('No trials to discard')
+			end
+
+			disp('Downsampling data...')
+			this_PID = this_PID(:,1:10:end)';
+			this_LFP = this_LFP(:,1:10:end)';
+
+
+			if length(this_LFP) < size(LFP,1) && length(this_LFP) > 1% this is to account for shorter paradigms, and pad them
+				padding = NaN(size(LFP,1)-length(this_LFP),width(this_LFP));
+				this_LFP = [this_LFP; padding];
+				padding = NaN(size(PID,1)-length(this_PID),width(this_PID));
+				this_PID = [this_PID; padding];
+				padding = NaN(size(fA,1)-length(this_fA),width(this_fA));
+				try
+					this_fA = [this_fA; padding];
+					this_fB = [this_fB; padding];
+				catch
+					this_fA = [this_fA(:); padding];
+					this_fB = [this_fB(:); padding];
+				end
+
+				% pad spikes too
+				padding = NaN(size(spikes,1)-length(this_A_spikes),width(this_A_spikes));
+				this_A_spikes = [this_A_spikes; padding];
+
+				padding = NaN(size(spikes,1)-length(this_B_spikes),width(this_B_spikes));
+				this_B_spikes = [this_B_spikes; padding];
+			end
+
+			% check that PID and fA match
+			if length(unique([width(this_PID) width(this_fA) width(this_LFP) width(this_A_spikes)])) > 1
+				disp('Non matching PID and fA widths')
+				keyboard
+			end
+
+			if length(unique([width(PID) width(fA) width(LFP) width(A_spikes)])) > 1
+				disp('Non matching all_PID and fA widths')
+				keyboard
+			end
+
+			% consolidate
+			try
+				LFP = [LFP this_LFP];
+				PID = [PID this_PID];
+				fA =  [fA  this_fA ];
+				fB =  [fB  this_fB ];
+				A_spikes = [A_spikes; this_A_spikes];
+				B_spikes = [B_spikes; this_B_spikes];
+			catch er
+				er
+				keyboard
+				
+			end
+			
+
+			paradigm = [paradigm  this_paradigm*ones(1,width(this_PID))];
+			orn = [orn  i*ones(1,width(this_PID))];
+
+			% figure out the fly # from the file name
+			try
+				us = strfind(allfiles(i).name,'_'); % underscores
+				this_fly = str2double(allfiles(i).name(strfind(allfiles(i).name,'_F')+2:us(find(us>strfind(allfiles(i).name,'_F')+2,1,'first'))-1));
+				this_fly = 100*str2double(strrep(allfiles(i).name(1:us(3)-1),'_','')) + this_fly;
+				fly = [fly; this_fly*ones(width(this_PID),1)];
+			catch
+				warning('Error in determining fly ID. Fly IDs may not match data.')
+			end
+
+			% also add the sequence 
+			try
+			this_sequence = find(timestamps(1,:)==j);
+			if length(rm_this) 
+				this_sequence(rm_this) = [];	
+			end
+			catch
+				warning('Error in assembling sequence info.')
+			end
+			sequence = [sequence this_sequence];
+
 		end
 	end
 end
+
+
+% cache all of this
+consolidated_data = struct;
+consolidated_data.PID = PID;
+consolidated_data.LFP = LFP;
+consolidated_data.fA = fA;
+consolidated_data.fB = fB;
+consolidated_data.paradigm = paradigm;
+consolidated_data.AllControlParadigms = AllControlParadigms;
+consolidated_data.paradigm_hashes = paradigm_hashes;
+consolidated_data.orn = orn;
+consolidated_data.fly = fly;
+consolidated_data.A_spikes  = A_spikes;
+consolidated_data.B_spikes  = B_spikes;
+consolidated_data.sequence = sequence;
+save([pathname 'consolidated_data.mat'],'consolidated_data');
+

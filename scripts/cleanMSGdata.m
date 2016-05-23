@@ -1,5 +1,10 @@
 %% cleanMSGdata
-% helper script for webers_generally_observed
+% helper function for webers_generally_observed
+
+function cdata = cleanMSGdata(cdata)
+
+% unpack
+v2struct(cdata);
 
 % remove baseline from all PIDs
 for i = 1:width(PID)
@@ -22,22 +27,17 @@ end
 paradigm = paradigm_new;
 
 % throw our bad traces
-try
-	bad_trials = (sum(fA) == 0 | isnan(sum(fA)));
-	PID(:,bad_trials) = [];
-	LFP(:,bad_trials) = [];
-	fA(:,bad_trials) = [];
-	paradigm(bad_trials) = [];
-	orn(bad_trials) = [];
-catch
-	bad_trials = isnan(sum(LFP));
-	PID(:,bad_trials) = [];
-	LFP(:,bad_trials) = [];
-	paradigm(bad_trials) = [];
-	orn(bad_trials) = [];
-end
 
-% extract filters and find gain
+bad_trials = (sum(fA) == 0 | isnan(sum(fA)));
+PID(:,bad_trials) = [];
+LFP(:,bad_trials) = [];
+fA(:,bad_trials) = [];
+fB(:,bad_trials) = [];
+paradigm(bad_trials) = [];
+fly(bad_trials) = [];
+orn(bad_trials) = [];
+
+% extract filters and find gain for the firing rate
 a = 35e3; z = 55e3;
 try
 	[K2,fA_pred,fA_gain] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
@@ -50,5 +50,9 @@ for i = 1:width(LFP)
 	LFP(:,i) = LFP(:,i)*10; % to get the units right, now in mV
 end
 
-% extract filters and find gain
+% extract filters and find gain for the LFP
 [K1,LFP_pred,LFP_gain] = extractFilters(PID,LFP,'use_cache',true,'a',a,'z',z);
+
+% repack everything
+clear cdata
+cdata = v2struct(a,z,K1,K2,PID,LFP,fA,fB,LFP_pred,fA_pred,fA_gain,LFP_gain,orn,fly,paradigm);

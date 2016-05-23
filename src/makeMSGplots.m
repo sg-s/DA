@@ -18,6 +18,9 @@ M = max([mean_stim(:); std_stim(:)]);
 plot([0 M],[0 M],'k--')
 xlabel('\mu_{Stimulus} (V)')
 ylabel('\sigma_{Stimulus} (V)')
+ff = fit(mean_stim(:),std_stim(:),'poly1');
+l = plot(sort(mean_stim),ff(sort(mean_stim)),'r');
+legend(l,['m=' oval(ff.p1)])
 
 subplot(2,2,2), hold on
 plot(mean_stim,nanmean(fA(a:z,:)),'r+')

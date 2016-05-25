@@ -20,11 +20,11 @@ frac_var = NaN(width(PID),1);
 frac_var_LFP = NaN(width(PID),1);
 for i = 1:width(PID)
 	try
-		frac_var(i) = std(fA(a:z,i))/std(PID(a:z,i));
+		frac_var(i) = nanstd(fA(a:z,i))/nanstd(PID(a:z,i));
 	catch
 	end
 	try
-		frac_var_LFP(i) = std(LFP(a:z,i))/std(PID(a:z,i));
+		frac_var_LFP(i) = nanstd(LFP(a:z,i))/nanstd(PID(a:z,i));
 	catch
 	end
 end
@@ -39,10 +39,17 @@ for i = 1:width(PID)
 	plot(ax(1),mean_stim(ii),frac_var_LFP(ii),'+','Color',c(i,:))
 end
 
-options = fitoptions(fittype('power1'));
-options.Lower = [-Inf -1];
-options.Upper = [Inf -1];
-cf = fit(nonnans(mean_stim),nonnans(frac_var_LFP),'power1',options);
+x = mean_stim(~isnan(frac_var_LFP));
+y = frac_var_LFP(~isnan(frac_var_LFP));
+options = fitoptions(fittype('poly1'));
+options.Lower = [-1 -Inf];
+options.Upper = [-1 Inf];
+cf_temp = fit(log(x(:)),log(y(:)),'poly1',options);
+cf = fit(x(:),y(:),'power1');
+warning off
+cf.a = exp(cf_temp.p2); cf.b = -1;
+warning on
+
 plot(ax(1),sort(mean_stim),cf(sort(mean_stim)),'r');
 set(ax(1),'XScale','log','YScale','log')
 xlabel(ax(1),'Mean Stimulus (V)')
@@ -55,10 +62,17 @@ for i = 1:width(PID)
 	plot(ax(2),mean_stim(ii),frac_var(ii),'+','Color',c(i,:))
 end
 
-options = fitoptions(fittype('power1'));
-options.Lower = [-Inf -1];
-options.Upper = [Inf -1];
-cf = fit(nonnans(mean_stim),nonnans(frac_var),'power1',options);
+x = mean_stim(~isnan(frac_var));
+y = frac_var(~isnan(frac_var));
+options = fitoptions(fittype('poly1'));
+options.Lower = [-1 -Inf];
+options.Upper = [-1 Inf];
+cf_temp = fit(log(x(:)),log(y(:)),'poly1',options);
+cf = fit(x(:),y(:),'power1');
+warning off
+cf.a = exp(cf_temp.p2); cf.b = -1;
+warning on
+
 plot(ax(2),sort(mean_stim),cf(sort(mean_stim)),'r');
 set(ax(2),'XScale','log','YScale','log')
 xlabel(ax(2),'Mean Stimulus (V)')

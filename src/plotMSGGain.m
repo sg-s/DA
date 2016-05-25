@@ -23,10 +23,18 @@ end
 % fit a power law with exponent -1
 mean_stim = mean_stim(:);
 fA_gain = fA_gain(:);
-options = fitoptions(fittype('power1'));
-options.Lower = [-Inf -1];
-options.Upper = [Inf -1];
-cf = fit(mean_stim(~isnan(fA_gain)),fA_gain(~isnan(fA_gain)),'power1',options);
+
+x = mean_stim(~isnan(fA_gain));
+y = fA_gain(~isnan(fA_gain));
+options = fitoptions(fittype('poly1'));
+options.Lower = [-1 -Inf];
+options.Upper = [-1 Inf];
+cf_temp = fit(log(x(:)),log(y(:)),'poly1',options);
+cf = fit(x,y,'power1');
+warning off
+cf.a = exp(cf_temp.p2); cf.b = -1;
+warning on
+
 l = plot(ax(2),sort(mean_stim),cf(sort(mean_stim)),'r');
 r2 = rsquare(nonnans(fA_gain),cf(nonnans(mean_stim)));
 set(ax(2),'XScale','log','YScale','log')
@@ -43,12 +51,19 @@ end
 % fit a power law with exponent -1
 mean_stim = mean_stim(:);
 LFP_gain = LFP_gain(:);
-options = fitoptions(fittype('power1'));
-options.Lower = [-Inf -1];
-options.Upper = [Inf -1];
-cf = fit(mean_stim(~isnan(LFP_gain)),LFP_gain(~isnan(LFP_gain)),'power1',options);
+
+x = mean_stim(~isnan(LFP_gain));
+y = LFP_gain(~isnan(LFP_gain));
+options = fitoptions(fittype('poly1'));
+options.Lower = [-1 -Inf];
+options.Upper = [-1 Inf];
+cf_temp = fit(log(x(:)),log(y(:)),'poly1',options);
+cf = fit(x,y,'power1');
+warning off
+cf.a = exp(cf_temp.p2); cf.b = -1;
+warning on
+
 l = plot(ax(1),sort(mean_stim),cf(sort(mean_stim)),'r');
-r2 = rsquare(nonnans(LFP_gain),cf(nonnans(mean_stim)));
 set(ax(1),'XScale','log','YScale','log')
 xlabel(ax(1),'Mean Stimulus (V)')
 ylabel(ax(1),'LFP Gain (mV/V)')

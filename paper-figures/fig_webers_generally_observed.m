@@ -7,17 +7,17 @@ pHeader;
 dm = dataManager;
 
 % define what we want to work on
-data_hashes = {'29e79fc10c3dfd3c6cc9ad82a834f41b','cd6753c0e4cf02895cd5e2c5cb58aa1a','3ea08ccfa892c6545d74bbdaaa6cbee1','2fd8239d788ef142be24f19e85e70427'};
-odour_names = {'1-pentanol','1-pentanol','2-butanone','ethanol'};
-orn_names = {'ab3A','ab2A','ab2A','ab3A'};
+data_hashes = {'d06180a4de81dea98526d349e925dd40','dbaf184b0b69939fb4d949eb4bd38995','ae5f11c1671c863a09c4bf9ec683ec16','491d3534557c9a36e35f1cd92d984487'};
+odour_names = {'1-pentanol','1-pentanol','2-butanone','isoamyl-acetate'};
+orn_names = {'ab3A','ab2A','ab2A','pb1A'};
 
-f1 = figure('outerposition',[0 0 1400 800],'PaperUnits','points','PaperSize',[1400 800]); hold on
+f1 = figure('outerposition',[0 0 1400 700],'PaperUnits','points','PaperSize',[1400 700]); hold on
 clear ax axs
 for i = 1:2*length(data_hashes)
 	ax(i) = subplot(2,length(data_hashes),i); hold on
 end
 
-f2 = figure('outerposition',[0 0 1400 800],'PaperUnits','points','PaperSize',[1400 800]); hold on
+f2 = figure('outerposition',[0 0 1400 700],'PaperUnits','points','PaperSize',[1400 700]); hold on
 for i = 1:2*length(data_hashes)
 	axs(i) = subplot(2,length(data_hashes),i); hold on
 end
@@ -46,6 +46,11 @@ end
 
 prettyFig(f1,'FixLogX',true);
 prettyFig(f2,'FixLogX',true);
+
+for i = 1:length(ax)
+	deintersectAxes(ax(i));
+	deintersectAxes(axs(i));
+end
 
 if being_published
 	snapnow

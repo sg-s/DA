@@ -45,40 +45,24 @@ for i = 1:length(axes_handles)
 	hold(axes_handles(i),'on');
 end  
 
-% load data 
-[PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData(dm.getPath('bf79dfd769a97089e42beb0660174e84'),1);
+clear cdata
+cdata = consolidateData2(dm.getPath('28ee201995ff7a193f072bd30f556348'));
+cdata = cleanMSGdata(cdata);
 
-% remove baseline from all PIDs
-for i = 1:width(PID)
-	PID(:,i) = PID(:,i) - mean(PID(1:5e3,i));
-end
+v2struct(cdata)
 
-% sort the paradigms sensibly
-sort_value = [];
-for i = 1:length(AllControlParadigms)
-	sort_value(i) = (mean(AllControlParadigms(i).Outputs(1,:)));
-end
-[~,idx] = sort(sort_value);
+clearvars LFP K1 LFP_pred LFP_gain cdata fB
 
-
-AllControlParadigms = AllControlParadigms(idx);
-paradigm_new = paradigm*NaN;
-for i = 1:length(idx)
-	paradigm_new(paradigm == idx(i)) = i;
-end
-paradigm = paradigm_new;
-
-% throw our bad traces
-bad_trials = (sum(fA) == 0 | isnan(sum(fA)));
-PID(:,bad_trials) = [];
-LFP(:,bad_trials) = [];
+% remove some bad trials
+bad_trials =  max(fA) == 0;
 fA(:,bad_trials) = [];
-paradigm(bad_trials) = [];
+fA_pred(:,bad_trials) = [];
+PID(:,bad_trials) = [];
+K2(:,bad_trials) = [];
 orn(bad_trials) = [];
-
-% extract filters and find gain
-a = 35e3; z = 55e3;
-[K,fA_pred,fA_gain] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
+fly(bad_trials) = [];
+fA_gain(bad_trials) = [];
+paradigm(bad_trials) = [];
 
 % some core variables
 dt = 1e-3;
@@ -97,7 +81,7 @@ set(axes_handles(1),'XLim',[35 55])
 % plot the filter for the lowest dose 
 filtertime = (-100:599)*1e-3;
 axes(axes_handles(3))
-shadedErrorBar(filtertime,mean(K(:,paradigm==example_dose),2),sem(K'),{'Color',c(example_dose,:)})
+shadedErrorBar(filtertime,mean(K2(:,paradigm==example_dose),2),sem(K2'),{'Color',c(example_dose,:)})
 set(axes_handles(3),'XLim',[-.1 .6])
 xlabel(axes_handles(3),'Lag (s)')
 ylabel(axes_handles(3),'Filter K (norm)')
@@ -164,7 +148,7 @@ xlabel(axes_handles(6),'Mean Stimulus (V)')
 ylabel(axes_handles(6),'\sigma_{Firing Rate}/\sigma_{Stimulus} (Hz/V)')
 xlabel(axes_handles(2),'Time (s)')
 
-prettyFig('plw',1.3,'lw',1.5,'fs',.5)
+prettyFig('plw',1.3,'lw',1.5,'fs',.5,'font_units','centimeters')
 set(lh,'Position',[0.72 0.62 0.2112 0.0275],'box','off')
 
 
@@ -219,6 +203,7 @@ end
 % plot the responses
 for i = 1:max(paradigm)
 	temp = fA(a:z,paradigm==i);
+	temp(:,sum(temp) == 0) = [];
 	plot(ax(3),time,nanmean(temp,2),'Color',c(i,:));
 	[hx,hy] = hist(mean(temp,2),30);
 	hx = hx/sum(hx);
@@ -231,9 +216,16 @@ ss = 100;
 all_x = 0:0.1:2;
 axes(ax(5)), hold(ax(5),'on')
 for i = 1:max(paradigm) % iterate over all paradigms 
-	y = nanmean(fA(a:z,paradigm == i),2);
-	x = nanmean(fA_pred(a:z,paradigm == i),2);
-	s = nanmean(PID(a:z,paradigm == i),2);
+	y = fA(a:z,paradigm == i);
+	x = fA_pred(a:z,paradigm == i);
+	s = PID(a:z,paradigm == i);
+	rm_this = sum(y)==0;
+	y(:,rm_this) = [];
+	x(:,rm_this) = [];
+	s(:,rm_this) = [];
+	y = nanmean(y,2);
+	x = nanmean(x,2);
+	s = nanmean(s,2);
 	x = x - nanmean(x);
 	x = x + nanmean(nanmean(s));
 	[~,orn_io_data(i)] = plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:));
@@ -254,8 +246,7 @@ options = fitoptions(fittype('power1'));
 options.Lower = [-Inf -1];
 options.Upper = [Inf -1];
 cf = fit(mean_stim(~isnan(fA_gain)),fA_gain(~isnan(fA_gain)),'power1',options);
-l = plot(ax(6),sort(mean_stim),cf(sort(mean_stim)),'r');
-r2 = rsquare(nonnans(fA_gain),cf(nonnans(mean_stim)));
+plot(ax(6),sort(mean_stim),cf(sort(mean_stim)),'r');
 set(ax(6),'XScale','log','YScale','log','YLim',[10 300],'XLim',[.1 2.5])
 
 % rescale by Weber law
@@ -301,7 +292,7 @@ ylabel(ax(6),'ab3A Firing Gain (Hz/V)')
 xlabel(ax(7),[' Projected Stimulus ' char(10) 'Rescaled by Weber Law'])
 ylabel(ax(7),'ab3A Firing Rate (Hz)')
 
-prettyFig('plw',1.3,'lw',1.5,'fs',.5)
+prettyFig('plw',1.3,'lw',1.5,'fs',.5,'font_units','centimeters')
 
 axes(ax(6))
 text(.2, 30,'$\sim 1/s$','interpreter','latex','Color','r','FontSize',20)
@@ -332,7 +323,7 @@ end
 % In this section, we check if my filter extractions works (comparing it to Damon's FFT-based methods) if we still see the overall phenomenology if we only use a single filter to project all the data. 
 
 % back out Damon's filters here
-K_Damon = NaN*K;
+K_Damon = NaN*K2;
 for i = 1:width(PID)
 	if (paradigm(i)==1)
 		K_Damon(:,i) = backOutFilter(PID(a:z,i),fA(a:z,i),'offset',100,'filter_length',700);
@@ -342,7 +333,7 @@ end
 figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
 subplot(2,3,1), hold on
 for i = 1:max(paradigm)
-	temp = nanmean(K(:,paradigm==i),2);
+	temp = nanmean(K2(:,paradigm==i),2);
 	plot(filtertime,temp,'Color',c(i,:))
 end
 xlabel('Filter Lag (s)')
@@ -351,7 +342,7 @@ title('Filters extracted at different mean stimuli')
 
 
 subplot(2,3,2), hold on
-temp = nanmean(K(:,paradigm==1),2);
+temp = nanmean(K2(:,paradigm==1),2);
 single_K = temp;
 temp =temp/max(temp);
 plot(filtertime,temp,'k')
@@ -536,8 +527,8 @@ for i = 1:width(LFP)
 end
 
 % extract filter from lowest dose
-K_LFP = K*NaN;
-K_LFP_Damon = K*NaN;
+K_LFP = K2*NaN;
+K_LFP_Damon = K2*NaN;
 a_LFP = 15e3; % to avoid the long, 10s filter
 z_LFP = 45e3; % ditto
 for i = 1:width(PID)

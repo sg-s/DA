@@ -7,7 +7,7 @@ pHeader;
 dm = dataManager;
 
 % define what we want to work on
-data_hashes = {'d06180a4de81dea98526d349e925dd40','dbaf184b0b69939fb4d949eb4bd38995','ae5f11c1671c863a09c4bf9ec683ec16','491d3534557c9a36e35f1cd92d984487'};
+data_hashes = {'d06180a4de81dea98526d349e925dd40','dbaf184b0b69939fb4d949eb4bd38995','ae5f11c1671c863a09c4bf9ec683ec16','a9ce591b1ec29a56c35db8f19b374b97'};
 odour_names = {'1-pentanol','1-pentanol','2-butanone','isoamyl-acetate'};
 orn_names = {'ab3A','ab2A','ab2A','pb1A'};
 
@@ -26,6 +26,9 @@ end
 for i = 1:length(data_hashes)
 	clear cdata
 	cdata = consolidateData2(dm.getPath(data_hashes{i}));
+	if i == 4
+		cdata.a = 25e3; cdata.z = 45e3;
+	end
 	cdata = cleanMSGdata(cdata);
 
 	% plot gain as we normally calculate it

@@ -9,7 +9,7 @@
 pHeader;
 dm = dataManager;
 
-figure('outerposition',[0 0 1100 700],'PaperUnits','points','PaperSize',[1100 700]); hold on
+figure('outerposition',[0 0 1400 600],'PaperUnits','points','PaperSize',[1400 600]); hold on
 
 % ##    ##    ###    ######## ##     ## ########     ###    ##       
 % ###   ##   ## ##      ##    ##     ## ##     ##   ## ##   ##       
@@ -31,12 +31,13 @@ figure('outerposition',[0 0 1100 700],'PaperUnits','points','PaperSize',[1100 70
 % analyse kinetics of LFP and firing rate during the naturalistic stimulus presentation
 load(dm.getPath('aeb361c027b71938021c12a6a12a85cd'),'-mat');
 
-subplot(2,3,4), hold on
+top_row(1) = subplot(2,6,1); hold on
 
 c = lines(3);
 
 min_acceptable_corr = .5;
 min_acceptable_lag = 2;
+clear l
 for i = 1:length(od)
 	S = nanmean(od(i).stimulus,2); 
 	R = nanmean(od(i).firing_rate,2);
@@ -47,7 +48,7 @@ for i = 1:length(od)
 	lag(rm_this) = [];
 	mean_x(rm_this) = [];
 
-	plotPieceWiseLinear(mean_x,lag,'Color',c(1,:),'nbins',19);
+	l(2) = plotPieceWiseLinear(mean_x,lag,'Color',c(1,:),'nbins',19);
 
 
 	[lag, mean_x, max_corr] = findLagAndMeanInWindow(S,X,1e3,25);
@@ -55,266 +56,127 @@ for i = 1:length(od)
 	lag(rm_this) = [];
 	mean_x(rm_this) = [];
 
-	plotPieceWiseLinear(mean_x,lag,'Color',c(2,:),'nbins',19);
+	l(1) = plotPieceWiseLinear(mean_x,lag,'Color',c(2,:),'nbins',19);
 end
 xlabel('\mu_{Stimulus} in preceding 1s (V)')
 ylabel('Lag (ms)')
+set(gca,'YLim',[0 200],'XLim',[0 0.6])
+title(['ab3A' char(10) 'ethyl-acetate'])
+L = legend(l,'LFP','Firing Rate');
+
+% ##     ##  ######   ######   
+% ###   ### ##    ## ##    ##  
+% #### #### ##       ##        
+% ## ### ##  ######  ##   #### 
+% ##     ##       ## ##    ##  
+% ##     ## ##    ## ##    ##  
+% ##     ##  ######   ######   
 
 
-% also show an example whiff
-a = 2.95e4;
-S = S(a:a+500); S = S - min(S); S = S/max(S);
-X = X(a:a+500); X = X - min(X); X = X/max(X);
-R = R(a:a+500); R = R - min(R); R = R/max(R);
-subplot(2,3,1), hold on
-title('Naturalistic Stimulus')
-plot(S,'k')
-plot(X,'Color',c(2,:))
-plot(R,'Color',c(1,:))
-xlabel('Time since whiff onset (ms)')
-legend({'Stimulus','LFP','Firing Rate'})
-[~,sp] = max(S);
-[~,xp] = max(X);
-[~,rp] = max(R);
-plot([sp rp],[1.05 1.05],'LineWidth',3,'Color',c(1,:))
-plot([sp xp],[1.1 1.1],'LineWidth',3,'Color',c(2,:))
+% define what we want to work on
+data_hashes = {'28ee201995ff7a193f072bd30f556348','d06180a4de81dea98526d349e925dd40','dbaf184b0b69939fb4d949eb4bd38995','ae5f11c1671c863a09c4bf9ec683ec16','a9ce591b1ec29a56c35db8f19b374b97'};
+odour_names = {'ethyl-acetate','1-pentanol','1-pentanol','2-butanone','isoamyl-acetate'};
+orn_names = {'ab3A','ab3A','ab2A','ab2A','pb1A'};
 
 
-% ##     ## ########    ###    ##    ## 
-% ###   ### ##         ## ##   ###   ## 
-% #### #### ##        ##   ##  ####  ## 
-% ## ### ## ######   ##     ## ## ## ## 
-% ##     ## ##       ######### ##  #### 
-% ##     ## ##       ##     ## ##   ### 
-% ##     ## ######## ##     ## ##    ## 
+% core loop
+for i = 1:length(data_hashes)
+	clear cdata
 
-%  ######  ##     ## #### ######## ######## ######## ########  
-% ##    ## ##     ##  ##  ##          ##    ##       ##     ## 
-% ##       ##     ##  ##  ##          ##    ##       ##     ## 
-%  ######  #########  ##  ######      ##    ######   ##     ## 
-%       ## ##     ##  ##  ##          ##    ##       ##     ## 
-% ##    ## ##     ##  ##  ##          ##    ##       ##     ## 
-%  ######  ##     ## #### ##          ##    ######## ########  
-
-%  ######      ###    ##     ##  ######   ######  ####    ###    ##    ##  ######  
-% ##    ##    ## ##   ##     ## ##    ## ##    ##  ##    ## ##   ###   ## ##    ## 
-% ##         ##   ##  ##     ## ##       ##        ##   ##   ##  ####  ## ##       
-% ##   #### ##     ## ##     ##  ######   ######   ##  ##     ## ## ## ##  ######  
-% ##    ##  ######### ##     ##       ##       ##  ##  ######### ##  ####       ## 
-% ##    ##  ##     ## ##     ## ##    ## ##    ##  ##  ##     ## ##   ### ##    ## 
-%  ######   ##     ##  #######   ######   ######  #### ##     ## ##    ##  ######  
-
-clearvars -except being_published dm c
-[PID, LFP, fA, paradigm, orn, ~, AllControlParadigms, paradigm_hashes] = consolidateData(dm.getPath('bf79dfd769a97089e42beb0660174e84'),1);
-
-% remove baseline from all PIDs
-for i = 1:width(PID)
-	PID(:,i) = PID(:,i) - mean(PID(1:5e3,i));
-end
-
-% sort the paradigms sensibly
-sort_value = [];
-for i = 1:length(AllControlParadigms)
-	sort_value(i) = (mean(AllControlParadigms(i).Outputs(1,:)));
-end
-[~,idx] = sort(sort_value);
-
-
-AllControlParadigms = AllControlParadigms(idx);
-paradigm_new = paradigm*NaN;
-for i = 1:length(idx)
-	paradigm_new(paradigm == idx(i)) = i;
-end
-paradigm = paradigm_new;
-
-% throw our bad traces
-bad_trials = (sum(fA) == 0 | isnan(sum(fA)));
-PID(:,bad_trials) = [];
-LFP(:,bad_trials) = [];
-fA(:,bad_trials) = [];
-paradigm(bad_trials) = [];
-orn(bad_trials) = [];
-
-% band pass all the LFP
-filtered_LFP = LFP;
-for i = 1:width(LFP)
-	filtered_LFP(:,i) = filtered_LFP(:,i) - fastFiltFilt(ones(1e4,1),1e4,filtered_LFP(:,i));
-	filtered_LFP(:,i) = filtered_LFP(:,i)*10; % to get the units right, now in mV
-end
-
-% some core variables
-dt = 1e-3;
-lag_LFP = NaN(1,width(PID));
-lag_fA = NaN(1,width(PID));
-max_corr_LFP = NaN(1,width(PID));
-max_corr_fA = NaN(1,width(PID));
-
-subplot(2,3,2), hold on
-title('Changing Stimulus Mean')
-
-
-for i = 1:width(PID)
-	s = PID(25e3:45e3,i)-mean(PID(25e3:45e3,i)); s = s/std(s);
-	r = fA(25e3:45e3,i)-mean(fA(25e3:45e3,i)); r = r/std(r);
-	x = filtered_LFP(25e3:45e3,i)-mean(filtered_LFP(25e3:45e3,i)); x = x/std(x); x = -x;
-
-	[temp,lags] = xcorr(r,s); temp = temp/20e3;
-	[max_corr_fA(i),lag_fA(i)] = max(temp);
-
-	if i == 1
-		plot(s(1.42e4:1.5e4),'k')
-		plot(x(1.42e4:1.5e4),'Color',c(2,:))
-		plot(r(1.42e4:1.5e4),'Color',c(1,:))
+	cdata = consolidateData2(dm.getPath(data_hashes{i}));
+	if i < 3
+		cdata.a = 25e3; cdata.z = 45e3;
 	end
-	% if i == width(PID)
-	% 	plot(lags,temp/max(temp),'r--')
-	% end
+	cdata = cleanMSGdata(cdata,'extract_filter',false);
 
-	[temp,lags] = xcorr(x,s);  temp = temp/20e3;
-	[max_corr_LFP(i),lag_LFP(i)] = max(temp);
-
-	% if i == 1
-	% 	plot(lags,temp/max(temp),'b-')
-	% end
-	% if i == width(PID)
-	% 	plot(lags,temp/max(temp),'b--')
-	% end
-end
-xlabel('Time (ms)')
-% ylabel('Cross correlation (norm)')
-
-lag_LFP = lag_LFP - 20e3;
-lag_fA = lag_fA - 20e3;
-mean_stim =  nanmean(PID(25e3:45e3,:));  
-lag_fA(lag_fA<0) = NaN;
-lag_LFP(lag_LFP<0) = NaN;
-
-subplot(2,3,5), hold on
-plot(mean_stim,lag_LFP,'+','Color',c(2,:))
-plot(mean_stim,lag_fA,'+','Color',c(1,:))
-xlabel('\mu_{Stimulus} (V)')
-ylabel('Lag (ms)')
-
-
-
-%  ######   #######  ##    ## ######## ########     ###     ######  ######## 
-% ##    ## ##     ## ###   ##    ##    ##     ##   ## ##   ##    ##    ##    
-% ##       ##     ## ####  ##    ##    ##     ##  ##   ##  ##          ##    
-% ##       ##     ## ## ## ##    ##    ########  ##     ##  ######     ##    
-% ##       ##     ## ##  ####    ##    ##   ##   #########       ##    ##    
-% ##    ## ##     ## ##   ###    ##    ##    ##  ##     ## ##    ##    ##    
-%  ######   #######  ##    ##    ##    ##     ## ##     ##  ######     ##    
-
-clearvars -except being_published dm c
-[PID, LFP, fA, paradigm, orn] = consolidateData(dm.getPath('7955d1ed77512dfe3452b39d71a50e1b'),1);
-
-global_start = 40e3; % 40 seconds
-global_end = length(PID) - 5e3; 
-% bandpass to remove spikes and slow fluctuations
-for i = 1:width(LFP)
-	a = find(~isnan(LFP(:,i)),1,'first');
-	z = find(~isnan(LFP(:,i)),1,'last');
-	LFP(a:z,i) = bandPass(LFP(a:z,i),1000,10)*10; % now in mV
-end
-
-% reshape the LFP signals
-block_length = 1e4;
-reshaped_LFP = LFP(global_start:end-1e4-1,1:width(PID));
-reshaped_LFP = reshape(reshaped_LFP,block_length,width(reshaped_LFP)*length(reshaped_LFP)/block_length);
-
-% also reshape the PID
-reshaped_PID = PID(global_start:end-1e4-1,1:width(PID));
-reshaped_PID = reshape(reshaped_PID,block_length,width(reshaped_PID)*length(reshaped_PID)/block_length);
-
-% reshape the firing rate signals
-reshaped_fA = fA(global_start:end-1e4-1,1:width(PID));
-reshaped_fA = reshape(reshaped_fA,block_length,width(reshaped_fA)*length(reshaped_fA)/block_length);
-
-
-% also reshape the orn ID
-reshaped_orn = repmat(orn,length(global_start:length(PID)-1e4-1)/block_length,1);
-reshaped_orn = reshaped_orn(:);
-
-% throw our NaNs globally. so we're throwing out epochs where the data is incomplete
-rm_this = isnan(sum(reshaped_LFP));
-reshaped_LFP(:,rm_this) = [];
-reshaped_PID(:,rm_this) = [];
-reshaped_fA(:,rm_this) = [];
-reshaped_orn(rm_this) = [];
-
-
-
-lag_LFP = NaN(2,width(reshaped_PID));
-lag_fA = NaN(2,width(reshaped_PID));
-max_corr_LFP = NaN(2,width(reshaped_PID));
-max_corr_fA = NaN(2,width(reshaped_PID));
-
-
-subplot(2,3,3), hold on
-title('Changing Stimulus variance')
-for i = 1:width(reshaped_PID)
-	s = reshaped_PID(1:5e3,i); s = s - mean(s); s = s/std(s);
-	r = reshaped_fA(1:5e3,i); r = r - mean(r); r = r/std(r);
-	x = reshaped_LFP(1:5e3,i); x = x - mean(x); x = -x/std(x); 
-
-	[temp,lags] = xcorr(r,s); temp = temp/5e3;
-	[max_corr_fA(1,i),lag_fA(1,i)] = max(temp);
-
-	if i == 2
-		plot(s(2223:2500),'k')
-		plot(x(2223:2500),'Color',c(2,:))
-		plot(r(2223:2500),'Color',c(1,:))
-	end
-
-	[temp,lags] = xcorr(x,s);  temp = temp/5e3;
-	[max_corr_LFP(1,i),lag_LFP(1,i)] = max(temp);
-
-	% if i == 2
-	% 	plot(lags,temp/max(temp),'r-')
-	% end
-
-	s = reshaped_PID(5e3:end,i); s = s - mean(s); s = s/std(s);
-	r = reshaped_fA(5e3:end,i); r = r - mean(r); r = r/std(r);
-	x = reshaped_LFP(5e3:end,i); x = x - mean(x); x = -x/std(x); 
-
-	[temp,lags] = xcorr(r,s); temp = temp/5e3;
-	[max_corr_fA(2,i),lag_fA(2,i)] = max(temp);
-
-	% if i == 2
-	% 	plot(lags,temp/max(temp),'b--')
-	% end
-
-	[temp,lags] = xcorr(x,s);  temp = temp/5e3;
-	[max_corr_LFP(2,i),lag_LFP(2,i)] = max(temp);
-
-	% if i == 2
-	% 	plot(lags,temp/max(temp),'b-')
-	% end
+	top_row(i+1) = subplot(2,length(data_hashes)+1,i+1); hold on
+	plotMSGKinetics(cdata,top_row(i+1));
+	set(gca,'YLim',[0 200],'XLim',[0 max(nanmean(cdata.PID))*1.1])
+	t = [orn_names{i} char(10) odour_names{i}];
+	title(t);
 
 end
 
-xlabel('Lag (ms)')
+%% Now, show the timescale of gain control using Carlotta's data
 
-sigma_stim = [std(reshaped_PID(1e3:5e3,:)); std(reshaped_PID(6e3:9e3,:))];
+%% global parameters
+history_lengths = round(logspace(1.7,4,50)); % all the history lengths we look at, in ms
+example_history_length = 300; % this history length shown in the first row, in ms
 
-lag_fA = lag_fA - 5e3;
-lag_LFP = lag_LFP - 5e3;
-lag_LFP(lag_LFP<0) = NaN;
-lag_fA(lag_fA<0) = NaN;
+% load the data
+if ~exist('orn_data','var')
+	load('/local-data/DA-paper/fig4/Carlotta_Data.mat')
+end
 
+do_these = [18 7 8 10 14 17 12];
+odour_names = {'1-pentanol','methyl-butyrate','1-octen-3-ol','diethyl-succinate','ethyl-acetate','2-butanone','isoamyl-acetate'};
 
+for i = 1:length(do_these)
+	temp = orn_data(do_these(i));
+	pred = nanmean(temp.firing_projected,2); pred = pred(temp.use_this_segment);
+	resp = nanmean(temp.firing_rate,2);  resp = resp(temp.use_this_segment);
+	stim = nanmean(temp.stimulus,2); stim = stim(temp.use_this_segment);
+ 	stim = stim/nanmean(stim);
 
-subplot(2,3,6), hold on
-plot(sigma_stim(1,:),lag_LFP(1,:),'+','Color',c(2,:))
-plot(sigma_stim(2,:),lag_LFP(2,:),'+','Color',c(2,:))
-plot(sigma_stim(1,:),lag_fA(1,:),'+','Color',c(1,:))
-plot(sigma_stim(2,:),lag_fA(2,:),'+','Color',c(1,:))
-set(gca,'YLim',[0 200])
-xlabel('\sigma_{Stimulus} (V)')
-ylabel('Lag (ms)')
+	% find when the valve opens
+	[ons,offs] = findValveWhiffs(temp);
 
-legend('boxoff')
-prettyFig('fs',18)
+	% plot the gain in each of these windows
+	[gain,gain_err] = findGainInWindows(ons,offs,pred,resp);
+
+	gain = gain/nanmean(gain);
+
+	rm_this = gain<0.4 | gain_err < .8;
+	gain(rm_this) = [];
+	ons(rm_this) = [];
+	offs(rm_this) = [];
+
+	% find the mean stimulus in the preceding X ms in these windows
+	mean_stim = findMeanInWindows(ons,offs,computeSmoothedStimulus(stim,example_history_length));
+
+	% also find rho for various values of the history length and plot it
+	rho = findRhoForHistoryLengths(gain,stim,ons,offs,history_lengths);
+
+	bottom_row(i) = subplot(2,7,7+i); hold on
+	plot(bottom_row(i),history_lengths,rho,'k.-')
+	set(bottom_row(i),'XScale','log','YLim',[-1 0],'XTick',[1e2 1e3 1e4],'XLim',[100 1e4])
+	xlabel(bottom_row(i),'Gain control timescale (ms)')
+	ylabel(bottom_row(i),'Spearman''s \rho')
+	t = [orn_data(do_these(i)).neuron_name char(10) odour_names{i}];
+	title(bottom_row(i),t);
+	drawnow;
+
+end
+
+% cosmetic fixes:
+
+% make top row smaller, move them up a bit
+for i = 1:length(top_row)
+	top_row(i).Position(2) = .6;
+	top_row(i).Position(4) = .3;
+end
+
+% remove extra labels from top row
+for i = 2:length(top_row)
+	ylabel(top_row(i),'');
+end
+
+% spread out the bottom row a bit
+padding_left = .07;
+padding_right = 0;
+for i = 1:length(bottom_row)
+	bottom_row(i).Position(1) = (1-padding_left-padding_right)*(i-1)*(1/length(bottom_row)) + padding_left;
+	bottom_row(i).Position(4) = .3;
+end
+
+prettyFig('fs',.5,'font_units','centimeters')
+
+% deintersect the bottom row
+for i = 1:length(bottom_row)
+	deintersectAxes(bottom_row(i));
+end
+
+L.Box = 'off';
 
 if being_published	
 	snapnow	

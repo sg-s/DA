@@ -24,8 +24,9 @@ end
 mean_stim = mean_stim(:);
 fA_gain = fA_gain(:);
 
-x = mean_stim(~isnan(fA_gain));
-y = fA_gain(~isnan(fA_gain));
+rm_this = isnan(fA_gain) | fA_gain == 0 | isnan(mean_stim);
+x = mean_stim(~rm_this);
+y = fA_gain(~rm_this);
 options = fitoptions(fittype('poly1'));
 options.Lower = [-1 -Inf];
 options.Upper = [-1 Inf];
@@ -35,11 +36,10 @@ warning off
 cf.a = exp(cf_temp.p2); cf.b = -1;
 warning on
 
-l = plot(ax(2),sort(mean_stim),cf(sort(mean_stim)),'r');
-r2 = rsquare(nonnans(fA_gain),cf(nonnans(mean_stim)));
+plot(ax(2),sort(x),cf(sort(x)),'r');
 set(ax(2),'XScale','log','YScale','log')
 xlabel(ax(2),'Mean Stimulus (V)')
-ylabel(ax(2),'ORN Gain (Hz/V)')
+ylabel(ax(2),'Firing Gain (Hz/V)')
 
 
 % show gain changes -- LFP gain vs. mean stimulus
@@ -63,8 +63,8 @@ warning off
 cf.a = exp(cf_temp.p2); cf.b = -1;
 warning on
 
-l = plot(ax(1),sort(mean_stim),cf(sort(mean_stim)),'r');
+plot(ax(1),sort(x),cf(sort(x)),'r');
 set(ax(1),'XScale','log','YScale','log')
 xlabel(ax(1),'Mean Stimulus (V)')
-ylabel(ax(1),'LFP Gain (mV/V)')
+ylabel(ax(1),'Transduction Gain (mV/V)')
 

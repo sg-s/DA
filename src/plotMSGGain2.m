@@ -39,8 +39,9 @@ for i = 1:width(PID)
 	plot(ax(1),mean_stim(ii),frac_var_LFP(ii),'+','Color',c(i,:))
 end
 
-x = mean_stim(~isnan(frac_var_LFP));
-y = frac_var_LFP(~isnan(frac_var_LFP));
+rm_this = isnan(frac_var_LFP) | isinf(frac_var_LFP) | frac_var_LFP == 0;
+x = mean_stim(~rm_this);
+y = frac_var_LFP(~rm_this);
 options = fitoptions(fittype('poly1'));
 options.Lower = [-1 -Inf];
 options.Upper = [-1 Inf];
@@ -50,7 +51,7 @@ warning off
 cf.a = exp(cf_temp.p2); cf.b = -1;
 warning on
 
-plot(ax(1),sort(mean_stim),cf(sort(mean_stim)),'r');
+plot(ax(1),sort(x),cf(sort(x)),'r');
 set(ax(1),'XScale','log','YScale','log')
 xlabel(ax(1),'Mean Stimulus (V)')
 ylabel(ax(1),'\sigma_{LFP}/\sigma_{Stimulus} (Hz/V)')
@@ -62,8 +63,9 @@ for i = 1:width(PID)
 	plot(ax(2),mean_stim(ii),frac_var(ii),'+','Color',c(i,:))
 end
 
-x = mean_stim(~isnan(frac_var));
-y = frac_var(~isnan(frac_var));
+rm_this = isnan(frac_var) | isinf(frac_var) | frac_var == 0;
+x = mean_stim(~rm_this);
+y = frac_var(~rm_this);
 options = fitoptions(fittype('poly1'));
 options.Lower = [-1 -Inf];
 options.Upper = [-1 Inf];
@@ -73,7 +75,7 @@ warning off
 cf.a = exp(cf_temp.p2); cf.b = -1;
 warning on
 
-plot(ax(2),sort(mean_stim),cf(sort(mean_stim)),'r');
+plot(ax(2),sort(x),cf(sort(x)),'r');
 set(ax(2),'XScale','log','YScale','log')
 xlabel(ax(2),'Mean Stimulus (V)')
 ylabel(ax(2),'\sigma_{Firing Rate}/\sigma_{Stimulus} (Hz/V)')

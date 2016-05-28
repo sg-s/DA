@@ -156,8 +156,8 @@ end
 
 ylabel(ax(1),'Stimulus')
 ylabel(ax(2),'C_{open} (rescaled)')
-set(ax(1),'XLim',[4000 10e3])
-set(ax(2),'XLim',[4000 10e3])
+set(ax(1),'XLim',[4000 8e3])
+set(ax(2),'XLim',[4000 8e3],'YLim',[0 1])
 
 
 prettyFig();

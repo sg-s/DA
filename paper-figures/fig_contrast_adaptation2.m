@@ -27,7 +27,7 @@ dm = dataManager;
 %      ########  ##     ##    ##    ##     ## 
 
 
-[PID, LFP, fA, paradigm, orn] = consolidateData(dm.getPath('7955d1ed77512dfe3452b39d71a50e1b'),1);
+[PID, LFP, fA, paradigm, orn] = consolidateData(dm.getPath('e30707e8e8ef6c0d832eee31eaa585aa'),1);
 
 global_start = 40e3; % 40 seconds
 global_end = length(PID) - 5e3; 
@@ -115,7 +115,6 @@ else
 end
 
 
-
 % make linear predictions on the de-trended data using a mean filter averaged over all cases
 K2_mean = nanmean(squeeze(nanmean(K2,1)),2);
 ft = -99:700;
@@ -124,7 +123,7 @@ for i = 1:width(reshaped_fA)
 	fA_pred(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K2_mean,ft);
 end
 
-% compute gains per trial
+% compute gains per trial on the uncorrected data
 lo_gain = NaN(width(reshaped_PID),1);
 hi_gain = NaN(width(reshaped_PID),1);
 for i = 1:width(reshaped_PID)
@@ -148,6 +147,47 @@ for i = 1:width(reshaped_PID)
 	catch
 	end
 end
+
+lo_gain(lo_gain == 0) = NaN;
+hi_gain(hi_gain == 0) = NaN;
+
+% correct the projected by a 1/S scaling
+fp_corrected = NaN*fA_pred;
+for i = 1:width(fp_corrected)
+	fp_corrected(1:5e3,i) = fA_pred(1:5e3,i)/mean(reshaped_PID(1e3:4e3,i));
+	fp_corrected(5e3+1:end,i) = fA_pred(5e3+1:end,i)/mean(reshaped_PID(6e3:9e3,i));
+end
+
+fp_corrected = fp_corrected*mean(reshaped_PID(:)); % overall correction to get the units right
+
+
+% compute gains per trial on the corrected data
+lo_gain2 = NaN(width(reshaped_PID),1);
+hi_gain2 = NaN(width(reshaped_PID),1);
+for i = 1:width(reshaped_PID)
+	y = reshaped_fA(1e3:4e3,i);
+	x = fp_corrected(1e3:4e3,i);
+	r = max(y) - min(y);
+	l = (y > (r/3 + min(y))) & (y < (max(y) - r/3));
+	try
+		ff = fit(x(:),y(:),'poly1');
+		hi_gain2(i) = ff.p1;
+	catch
+	end
+
+	y = reshaped_fA(6e3:9e3,i);
+	x = fp_corrected(6e3:9e3,i);
+	r = max(y) - min(y);
+	l = (y > (r/3 + min(y))) & (y < (max(y) - r/3));
+	try
+		ff = fit(x(:),y(:),'poly1');
+		lo_gain2(i) = ff.p1;
+	catch
+	end
+end
+
+lo_gain2(lo_gain2==0) = NaN;
+hi_gain2(hi_gain2==0) = NaN;
 
 % ##     ##    ###    ##    ## ########    ########  ##        #######  ######## 
 % ###   ###   ## ##   ##   ##  ##          ##     ## ##       ##     ##    ##    
@@ -235,26 +275,26 @@ plot(ax(4),hy,hxx,'b')
 xlabel(ax(4),'Probability')
 
 % integrate stimulus distributions and re-plot as a prediction
-temp = fA_pred(1e3:5e3,:); temp = nonnans(temp(:));
-x = min(min(fA_pred)):0.02:max(max(fA_pred));
+temp = fp_corrected(1e3:5e3,:); temp = nonnans(temp(:));
+x = min(min(fp_corrected)):0.02:max(max(fp_corrected));
 y = histcounts(temp,x);
 y = y/sum(y); 
 plot(ax(5),x(2:end),cumsum(y),'r--')
 
-temp = fA_pred(6e3:end,:); temp = nonnans(temp(:));
+temp = fp_corrected(6e3:end,:); temp = nonnans(temp(:));
 y = histcounts(temp,x);
 y = y/sum(y);
 plot(ax(5),x(2:end),cumsum(y),'b--')
 
 % now plot the actual i/o curve: high contrast
-x = fA_pred(1e3:5e3,:);
+x = fp_corrected(1e3:5e3,:);
 y = reshaped_fA(1e3:5e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)) | max(y) < 40 | min(y) > 10);
 x(:,rm_this) = []; y(:,rm_this) = []; 
 [~,data_hi] = plotPieceWiseLinear(x,y,'nbins',50,'make_plot',false);
 
 % low contrast
-x = fA_pred(6e3:9e3,:);
+x = fp_corrected(6e3:9e3,:);
 y = reshaped_fA(6e3:9e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)) | max(y) < 40 | min(y) > 10);
 x(:,rm_this) = []; y(:,rm_this) = [];
@@ -272,12 +312,12 @@ plot(ax(5),data_hi.x,data_hi.y,'r','LineWidth',2)
 plot(ax(5),data_lo.x,data_lo.y,'b','LineWidth',2)
 
 % show gain as function of contrast
-lo_gain(lo_gain==0) = NaN;
-hi_gain(hi_gain==0) = NaN;
+lo_gain2(lo_gain2==0) = NaN;
+hi_gain2(hi_gain2==0) = NaN;
 x = std(reshaped_PID(1e3:4e3,:));
-plot(ax(6),x,hi_gain,'r+')
+plot(ax(6),x,hi_gain2,'r+')
 x = std(reshaped_PID(6e3:9e3,:));
-plot(ax(6),x,lo_gain,'b+')
+plot(ax(6),x,lo_gain2,'b+')
 xlabel(ax(6),'\sigma_{Stimulus} (V)')
 ylabel(ax(6),'ab3A Firing Gain (Hz/V)')
 
@@ -299,7 +339,8 @@ l(2) = plot(ax(5),NaN,NaN,'k');
 lh = legend(l,{'c.d.f.','Measured'},'Location','southeast');
 lh.FontSize = 10; lh.Box = 'off';
 
-% now use Laughlin to compute the gains per trial
+
+% now use Simon Laughlin's predictions to compute the gains per trial
 x = linspace(min(min(reshaped_PID)),max(max(reshaped_PID)),100);
 laughlin_hi_gain = NaN*hi_gain;
 laughlin_lo_gain = NaN*lo_gain;
@@ -323,10 +364,13 @@ for i = 1:width(reshaped_PID)
 	laughlin_lo_gain(i) = ff.p1;
 end
 
+% remove some edge cases
+laughlin_lo_gain(laughlin_lo_gain == 0) = NaN;
+laughlin_hi_gain(laughlin_hi_gain == 0) = NaN;
 
-plot(ax(7),laughlin_lo_gain,lo_gain,'b+')
-plot(ax(7),laughlin_hi_gain,hi_gain,'r+')
-r2 = rsquare([laughlin_lo_gain; laughlin_hi_gain],[lo_gain; hi_gain]);
+plot(ax(7),laughlin_lo_gain,lo_gain2,'b+')
+plot(ax(7),laughlin_hi_gain,hi_gain2,'r+')
+r2 = rsquare([laughlin_lo_gain; laughlin_hi_gain],[lo_gain2; hi_gain2]);
 ylabel(ax(7),'ab3A Firing Gain (Hz/V)')
 xlabel(ax(7),'c.d.f slope (a.u.)')
 l = plot(ax(7),NaN,NaN,'k+');
@@ -339,12 +383,12 @@ ax(3).Position(3) = .53;
 set(ax(2),'YTick',[],'YLim',ax(1).YLim)
 set(ax(4),'YTick',[],'YLim',ax(3).YLim)
 
-xlabel(ax(5),'Projected Stimulus (V)')
+xlabel(ax(5),['Projected Stimulus/' char(10) 'Mean Stimulus (a.u.)'])
 ylabel(ax(5),'ab3A Firing Rate (norm)')
 
 ax(6).XLim = [0 .22];
 
-prettyFig('fs',.5,'lw',1.5)
+prettyFig('fs',.5,'lw',1.5,'font_units','centimeters')
 
 ax(5).XLim(1) = 0;
 ax(5).YLim(1) = 0;
@@ -365,9 +409,12 @@ end
 
 
 %% Supplementary Figure
+% 
 
 figure('PaperUnits','centimeters','PaperSize',[15 5],'Position',[100 100 1000 620]); hold on
 
+
+% this plot estimates gain by standard deviations of responses and stimuli -- no filter estimation needed
 subplot(2,3,1), hold on
 x = std(reshaped_PID(1e3:4e3,:));
 y = std(reshaped_fA(1e3:4e3,:))./x; y(y==0) = NaN;
@@ -377,8 +424,9 @@ y = std(reshaped_fA(6e3:9e3,:))./x; y (y==0) = NaN;
 plot(x,y,'b+')
 ylabel('\sigma_{Firing Rate}/\sigma_{Stimulus} (Hz/V)')
 xlabel(gca,'\sigma_{Stimulus} (V)')
-set(gca,'XLim',[0 .22])
+set(gca,'XLim',[0 .22],'YLim',[0 250])
 
+% this plot compares the Laughlin predicted gains in the two cases
 subplot(2,3,4), hold on
 x = std(reshaped_PID(1e3:4e3,:));
 plot(x,laughlin_hi_gain,'r+')
@@ -404,17 +452,10 @@ xlabel('\mu_{Stimulus} (V)')
 ylabel('ab3A Firing gain (Hz/V)')
 set(gca,'XLim',[0 .6],'YLim',[0 150])
 
-% correct the projected by a 1/S scaling
-fp_corrected = NaN*fA_pred;
-for i = 1:width(fp_corrected)
-	fp_corrected(1:5e3,i) = fA_pred(1:5e3,i)/mean(reshaped_PID(1e3:4e3,i));
-	fp_corrected(5e3+1:end,i) = fA_pred(5e3+1:end,i)/mean(reshaped_PID(6e3:9e3,i));
-end
-
-% now plot I/O curves after correcting for changing mean
+% now plot I/O curves before correcting for changing mean
 subplot(2,3,3); hold on
 % high contrast
-x = fp_corrected(1e3:5e3,:);
+x = fA_pred(1e3:5e3,:);
 y = reshaped_fA(1e3:5e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)) | max(y) < 40 | min(y) > 10);
 x(:,rm_this) = []; y(:,rm_this) = []; 
@@ -422,42 +463,14 @@ x(:,rm_this) = []; y(:,rm_this) = [];
 plot(data_hi.x,data_hi.y,'r')
 
 % low contrast
-x = fp_corrected(6e3:9e3,:);
+x = fA_pred(6e3:9e3,:);
 y = reshaped_fA(6e3:9e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)) | max(y) < 40 | min(y) > 10);
 x(:,rm_this) = []; y(:,rm_this) = [];
 [~,data_lo] = plotPieceWiseLinear(x,y,'nbins',50,'make_plot',false);
 plot(data_lo.x,data_lo.y,'b')
-xlabel(['Projected Stimulus/' char(10) 'Mean Stimulus (a.u.)'])
+xlabel('Projected Stimulus')
 ylabel('Firing Rate (Hz)')
-
-% compute gains per trial
-lo_gain2 = NaN(width(reshaped_PID),1);
-hi_gain2 = NaN(width(reshaped_PID),1);
-for i = 1:width(reshaped_PID)
-	y = reshaped_fA(1e3:4e3,i);
-	x = fp_corrected(1e3:4e3,i);
-	r = max(y) - min(y);
-	l = (y > (r/3 + min(y))) & (y < (max(y) - r/3));
-	try
-		ff = fit(x(:),y(:),'poly1');
-		hi_gain2(i) = ff.p1;
-	catch
-	end
-
-	y = reshaped_fA(6e3:9e3,i);
-	x = fp_corrected(6e3:9e3,i);
-	r = max(y) - min(y);
-	l = (y > (r/3 + min(y))) & (y < (max(y) - r/3));
-	try
-		ff = fit(x(:),y(:),'poly1');
-		lo_gain2(i) = ff.p1;
-	catch
-	end
-end
-
-lo_gain2(lo_gain2==0) = NaN;
-hi_gain2(hi_gain2==0) = NaN;
 
 % plot gain vs. the mean stimulus
 subplot(2,3,6), hold on
@@ -467,7 +480,7 @@ xlabel('\sigma_{Stimulus} (V)')
 ylabel('ab3A Firing gain (corrected) (a.u.)')
 set(gca,'XLim',[0 .21],'YLim',[0 100])
 
-prettyFig('fs',.5,'lw',1.5)
+prettyFig('fs',.5,'lw',1.5,'font_units','centimeters')
 
 if being_published
 	snapnow

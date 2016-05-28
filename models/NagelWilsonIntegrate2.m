@@ -25,7 +25,8 @@ ic(5) = .4;
 time = 1e-3*(1:length(S));
 Tspan = [min(time) max(time)];
 
-[T, Y] = ode23t(@(t,y) NagelWilsonModelReduced(t,y,time,S,p),Tspan,ic); % Solve ODE
+options = odeset('MaxStep',.1);
+[T, Y] = ode23t(@(t,y) NagelWilsonModelReduced(t,y,time,S,p),Tspan,ic,options); % Solve ODE
 
 % re-interpolate the solution to fit the stimulus
 C = interp1(T,Y(:,4),time);

@@ -4,6 +4,11 @@
 
 pHeader;
 
+% core parameters 
+T = 20e3; % total length
+pulse_on = 15e3;
+pulse_off = 16e3;
+
 %% 1: Using the Nagel-Wilson Model as is
 % In this section, we use the Nagel-Wilson model as described in the paper. This has 6 ODEs, and the output of the model is the channel open probability. In the following figure, I plot the response of this model to a test pulse of stimulus. 
 
@@ -19,8 +24,8 @@ p.    B = 0.6000;
 p.   ko = 500;
 p.   kc = 10;
 
-S = .1+zeros(10e3,1);
-S(4e3:5e3) = 1;
+S = .1+zeros(T,1);
+S(pulse_on:pulse_off) = 1;
 [C,D,R] = NagelWilsonIntegrate(S,p);
 
 figure('outerposition',[0 0 1200 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
@@ -29,7 +34,7 @@ plot(S)
 ylabel('Stimulus')
 subplot(2,2,2), hold on
 plot(R)
-legend({'R','R*','OR','OR*'})
+legend({'R','R*','OR','OR*'},'Location','northwest')
 ylabel('Receptor Species')
 subplot(2,2,3), hold on
 plot(C)
@@ -66,23 +71,27 @@ end
 %%
 % In the following figure, we plot the responses to a pulse of odorant.
 
-S = .1+zeros(10e3,1);
-S(4e3:5e3) = 1;
+S = .1+zeros(T,1);
+S(pulse_on:pulse_off) = .2;
 [C,D,R] = NagelWilsonIntegrate2(S,p);
 
 figure('outerposition',[0 0 1200 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
 subplot(2,2,1), hold on
 plot(S)
+set(gca,'XLim',[length(S)-10e3 length(S)])
 ylabel('Stimulus')
 subplot(2,2,2), hold on
 plot(R)
+set(gca,'XLim',[length(S)-10e3 length(S)])
 legend({'R','R*','OR','OR*'})
 ylabel('Receptor Species')
 subplot(2,2,3), hold on
 plot(C)
+set(gca,'XLim',[length(S)-10e3 length(S)])
 ylabel('C_{open}')
 subplot(2,2,4), hold on
 plot(D)
+set(gca,'XLim',[length(S)-10e3 length(S)])
 ylabel('Diffusible factor')
 
 prettyFig();
@@ -103,11 +112,11 @@ end
 
 background_levels = logspace(-2,0,5);
 c = parula(length(background_levels)+1);
-foreground_level = 2;
+
 
 for i = 1:length(background_levels)
-  S = background_levels(i) + zeros(10e3,1);
-  S(5e3:6e3) = foreground_level;
+  S = background_levels(i) + zeros(T,1);
+  S(pulse_on:pulse_off) = 2*background_levels(i);
   plot(ax(1),S,'Color',c(i,:));
 
   [C,D,R] = NagelWilsonIntegrate2(S,p);
@@ -118,6 +127,11 @@ for i = 1:length(background_levels)
   plot(ax(4),D,'Color',c(i,:))
 end
 
+for i = 1:length(ax)
+  set(ax(i),'XLim',[length(S) - 10e3 length(S)])
+end
+
+set(ax(1),'YScale','log')
 ylabel(ax(1),'Stimulus')
 ylabel(ax(2),'R* + OR*')
 ylabel(ax(3),'C_{open}')
@@ -136,29 +150,42 @@ end
 
 
 clear ax
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-for i = 1:2
-  ax(i) = subplot(1,2,i); hold on
+figure('outerposition',[0 0 1200 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
+for i = 1:4
+  ax(i) = subplot(2,2,i); hold on
 end
 
 for i = 1:length(background_levels)
-  S = background_levels(i) + zeros(10e3,1);
-  S(5e3:6e3) = foreground_level;
+  S = background_levels(i) + zeros(T,1);
+  S(pulse_on:pulse_off) = 2*background_levels(i);
   plot(ax(1),S,'Color',c(i,:));
 
   [C,D,R] = NagelWilsonIntegrate2(S,p);
 
-  C = C - mean(C(4e3:5e3));
-  C = C/max(C(5e3:6e3));
+  R = R(:,2) + R(:,4);
+  R = R - mean(R(pulse_on-1e3:pulse_on));
+  R = R/max(R(pulse_on:pulse_off));
+  plot(ax(2),R,'Color',c(i,:))
 
-  plot(ax(2),C,'Color',c(i,:))
+  C = C - mean(C(pulse_on-1e3:pulse_on));
+  C = C/max(C(pulse_on:pulse_off));
+
+  plot(ax(3),C,'Color',c(i,:));
+
+  D = D - mean(D(pulse_on-1e3:pulse_on));
+  D = D/max(D(pulse_on:pulse_off));
+
+  plot(ax(4),D,'Color',c(i,:))
 end
 
 ylabel(ax(1),'Stimulus')
-ylabel(ax(2),'C_{open} (rescaled)')
-set(ax(1),'XLim',[4000 8e3])
-set(ax(2),'XLim',[4000 8e3],'YLim',[0 1])
-
+ylabel(ax(2),'R* + OR* (rescaled)')
+ylabel(ax(3),'C_{open} (rescaled)')
+ylabel(ax(4),'Diffusible Factor (rescaled)')
+set(ax(1),'XLim',[length(S) - 10e3 length(S)],'YScale','log')
+set(ax(2),'XLim',[length(S) - 10e3 length(S)],'YLim',[-.1 1.1])
+set(ax(3),'XLim',[length(S) - 10e3 length(S)],'YLim',[-.5 1.1])
+set(ax(4),'XLim',[length(S) - 10e3 length(S)],'YLim',[-.1 1.1])
 
 prettyFig();
 
@@ -169,7 +196,7 @@ end
 
 
 %%
-% We clearly see that it slows down with increasing background stimulus. 
+% We clearly see that it slows down with increasing background stimulus. Furthermore, it looks like the slowdown comes from the diffusible factor and the channel opening, and not from the receptor binding. Note that if we had a simple receptor binding-unbinding model (with one ODE), the receptor dynamics would speed up with increasing stimulus. Here, since the channel open probability depends on (R* + OR*) instead of (OR* and OR), the effective receptor dynamics is invariant to the stimulus mean. 
 
 
 %% Version Info

@@ -1,5 +1,5 @@
 % NWModelEuler.m
-% Euler-integration impelemtation of Nagel-Wilson Model
+% Euler-integration implementation of Nagel-Wilson Model
 % 
 % created by Srinivas Gorur-Shandilya at 6:24 , 15 October 2015. Contact me at http://srinivas.gs/contact/
 % 

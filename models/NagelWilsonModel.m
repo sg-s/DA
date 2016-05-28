@@ -31,7 +31,5 @@ dy(1:4) = M*y(1:4);
 
 % diffusible factor and channel opening
 dy(5) = (y(2)+y(4))*p.ko*(1/y(6))*(1-y(5)) - p.kc*y(5); % according to Nagel and Wilson
-dy(6) = p.a*y(5) - p.b*y(6);
+dy(6) = p.A*y(5) - p.B*y(6);
 
-% channel opening -> voltage
-dy(7) = (p.V0 + p.R*y(5)*(p.Ec-y(7)) - y(7))/p.tau;

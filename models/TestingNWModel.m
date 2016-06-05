@@ -102,15 +102,15 @@ if being_published
 end
 
 %%
-% OK, this is somewhat reasonable. Now, we check to see if this model predicts a slowdown in response with increased stimulus. We do this by stimulating the model with pulses on top of increasing backgrounds. 
+% OK, this is somewhat reasonable. Now, we check to see if this model predicts a slowdown in response with increased stimulus. We do this by stimulating the model with pulses on top of increasing backgrounds. We also check to see if the responses follow Weber's Law.
 
 clear ax
 figure('outerposition',[0 0 1200 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
-for i = 1:4
-  ax(i) = subplot(2,2,i); hold on
+for i = 1:6
+  ax(i) = subplot(2,3,i); hold on
 end
 
-background_levels = logspace(-2,0,5);
+background_levels = logspace(-2,2,10);
 c = parula(length(background_levels)+1);
 
 
@@ -125,9 +125,18 @@ for i = 1:length(background_levels)
   plot(ax(3),C,'Color',c(i,:))
 
   plot(ax(4),D,'Color',c(i,:))
+
+  % compute gain at receptors 
+  y = R(:,2) + R(:,4);
+  g = max(y(pulse_on:pulse_off))/(max(S) - min(S));
+  plot(ax(5),min(S),g,'+','Color',c(i,:));
+
+  % plot total gain
+  g = max(C(pulse_on:pulse_off))/(max(S) - min(S));
+  plot(ax(6),min(S),g,'+','Color',c(i,:));
 end
 
-for i = 1:length(ax)
+for i = 1:4
   set(ax(i),'XLim',[length(S) - 10e3 length(S)])
 end
 
@@ -136,6 +145,16 @@ ylabel(ax(1),'Stimulus')
 ylabel(ax(2),'R* + OR*')
 ylabel(ax(3),'C_{open}')
 ylabel(ax(4),'Diffusible factor')
+
+title(ax(5),'Receptor Gain')
+ylabel(ax(5),'\DeltaR/\DeltaS')
+set(ax(5),'YScale','log','XScale','log')
+xlabel(ax(5),'Background Stim')
+
+title(ax(6),'Channel Gain')
+ylabel(ax(6),'\DeltaR/\DeltaS')
+set(ax(6),'YScale','log','XScale','log')
+xlabel(ax(6),'Background Stim')
 
 prettyFig();
 

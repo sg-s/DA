@@ -253,7 +253,7 @@ for i = 1:50:width(reshaped_PID)
 	plot(ax(3),time(1:10:end),reshaped_fA(1:10:end,i),'Color',c(ceil(i/50),:));
 end
 xlabel(ax(3),'Time since switch (s)')
-ylabel(ax(3),'ab3A Firing Rate (Hz)')
+ylabel(ax(3),'ab3A firing rate (Hz)')
 set(ax(3),'XLim',[0 10],'YLim',[0 85])
 plot(ax(3),[1 5],[80 80],'r','LineWidth',3)
 plot(ax(3),[6 10],[80 80],'b','LineWidth',3)
@@ -319,7 +319,7 @@ plot(ax(6),x,hi_gain2,'r+')
 x = std(reshaped_PID(6e3:9e3,:));
 plot(ax(6),x,lo_gain2,'b+')
 xlabel(ax(6),'\sigma_{Stimulus} (V)')
-ylabel(ax(6),'ab3A ORN Gain (Hz/V)')
+ylabel(ax(6),'ab3A ORN gain (Hz/V)')
 
 % % can we fit this with 1/x?
 % x = [std(reshaped_PID(1e3:4e3,:)) std(reshaped_PID(6e3:9e3,:))]; x = x(:);
@@ -371,7 +371,7 @@ laughlin_hi_gain(laughlin_hi_gain == 0) = NaN;
 plot(ax(7),laughlin_lo_gain,lo_gain2,'b+')
 plot(ax(7),laughlin_hi_gain,hi_gain2,'r+')
 r2 = rsquare([laughlin_lo_gain; laughlin_hi_gain],[lo_gain2; hi_gain2]);
-ylabel(ax(7),'ab3A ORN Gain (Hz/V)')
+ylabel(ax(7),'ab3A ORN gain (Hz/V)')
 xlabel(ax(7),'c.d.f slope (a.u.)')
 l = plot(ax(7),NaN,NaN,'k+');
 lh = legend(l,['r^2 = ' oval(r2)]);
@@ -383,8 +383,8 @@ ax(3).Position(3) = .53;
 set(ax(2),'YTick',[],'YLim',ax(1).YLim)
 set(ax(4),'YTick',[],'YLim',ax(3).YLim)
 
-xlabel(ax(5),['Projected Stimulus/' char(10) 'Mean Stimulus (a.u.)'])
-ylabel(ax(5),'ab3A Firing Rate (norm)')
+xlabel(ax(5),['Projected stimulus/' char(10) 'mean stimulus (a.u.)'])
+ylabel(ax(5),'ab3A firing rate (norm)')
 
 ax(6).XLim = [0 .22];
 
@@ -437,8 +437,8 @@ rm_this = (isnan(sum(y)) | isnan(sum(x)) | max(y) < 40 | min(y) > 10);
 x(:,rm_this) = []; y(:,rm_this) = [];
 [~,data_lo] = plotPieceWiseLinear(x,y,'nbins',50,'make_plot',false);
 plot(data_lo.x,data_lo.y,'b')
-xlabel('Projected Stimulus')
-ylabel('ab3A Firing Rate (Hz)')
+xlabel('Projected stimulus')
+ylabel('ab3A firing rate (Hz)')
 set(gca,'XLim',[0 1.4],'YLim',[0 60])
 
 % 3. uncorrected gain vs. sigma stim ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -450,7 +450,7 @@ plot(x,hi_gain,'r+')
 x = std(reshaped_PID(6e3:9e3,:));
 plot(x,lo_gain,'b+')
 xlabel('\sigma_{Stimulus} (V)')
-ylabel('ab3A ORN Gain (Hz/V)')
+ylabel('ab3A ORN gain (Hz/V)')
 set(gca,'XLim',[0 .25],'YLim',[0 150])
 
 % 4. gain as ratio of std. devs. -- corrected for mean ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -465,7 +465,7 @@ y = std(reshaped_fA(6e3:9e3,:))./x;
 y = y./mean(reshaped_PID(6e3:9e3,:));
 y (y==0) = NaN;
 plot(x,y,'b+')
-ylabel('\sigma_{Firing Rate}/\sigma_{Stimulus}/\mu_{Stimulus} (a.u.)')
+ylabel('\sigma_{Firing rate}/\sigma_{Stimulus}/\mu_{Stimulus} (a.u.)')
 xlabel(gca,'\sigma_{Stimulus} (V)')
 set(gca,'XLim',[0 .22],'YLim',[0 600])
 
@@ -475,7 +475,7 @@ x = std(reshaped_PID(1e3:4e3,:));
 plot(x,laughlin_hi_gain,'r+')
 x = std(reshaped_PID(6e3:9e3,:));
 plot(x,laughlin_lo_gain,'b+')
-ylabel(gca,'c.d.f Slope (a.u.)')
+ylabel(gca,'c.d.f slope (a.u.)')
 xlabel(gca,'\sigma_{Stimulus} (V)')
 set(gca,'XLim',[0 .22])
 
@@ -531,7 +531,7 @@ figure('outerposition',[0 0 800 500],'PaperUnits','points','PaperSize',[800 500]
 set(h1,'Marker','+','LineStyle','none')
 set(h2,'Marker','.','LineStyle','none')
 xlabel(ax(1),'Time since switch (s)')
-ylabel(ax(1),'Inst. Gain (Hz/V)')
+ylabel(ax(1),'Inst. gain (Hz/V)')
 ylabel(ax(2),'Stimulus contrast')
 
 % put a timescale on this change by finding the time to half asymptote 

@@ -96,8 +96,8 @@ set(ax(1),'XLim',[35 55],'YLim',[min(y(5e3:end)) max(y(5e3:end))],'YColor',c(exa
 set(ax(2),'XLim',[35 55],'YLim',[min(x(5e3:end)) max(x(5e3:end))],'YColor','r')
 set(plot1,'Color',c(example_dose,:))
 set(plot2,'Color','r')
-ylabel(ax(1),'ab3A Firing Rate (Hz)')
-ylabel(ax(2),'Projected Stimulus (V)')
+ylabel(ax(1),'ab3A firing rate (Hz)')
+ylabel(ax(2),'Projected stimulus (V)')
 set(axes_handles(2),'box','off')
 set(ax(2),'XMinorTick','on','YMinorTick','on','YTick',[0:0.1:0.5],'YTickLabel',{'0','.1','.2','.3','.4','.5'})
 set(ax(1),'XMinorTick','on','YMinorTick','on','YTick',[0:10:50],'YTickLabel',{'0','10','20','30','40','50'})
@@ -110,8 +110,8 @@ L = {};
 L{1} = strcat('Gain=',oval(ff.p1),'Hz/V, r^2=',oval(rsquare(y,x)));
 
 
-xlabel(axes_handles(4),'Projected Stimulus (V)')
-ylabel(axes_handles(4),'ab3A Firing Rate (Hz)')
+xlabel(axes_handles(4),'Projected stimulus (V)')
+ylabel(axes_handles(4),'ab3A firing rate (Hz)')
 set(axes_handles(4),'YColor',c(example_dose,:),'XColor','r')
 
 lh = legend(l,L,'Location','northwest');
@@ -144,8 +144,8 @@ options.Upper = [Inf -1];
 cf = fit(nonnans(mean_stim),nonnans(frac_var),'power1',options);
 plot(axes_handles(6),sort(mean_stim),cf(sort(mean_stim)),'r');
 set(axes_handles(6),'XScale','log','YScale','log')
-xlabel(axes_handles(6),'Mean Stimulus (V)')
-ylabel(axes_handles(6),'\sigma_{Firing Rate}/\sigma_{Stimulus} (Hz/V)')
+xlabel(axes_handles(6),'Mean stimulus (V)')
+ylabel(axes_handles(6),'\sigma_{Firing rate}/\sigma_{Stimulus} (Hz/V)')
 xlabel(axes_handles(2),'Time (s)')
 
 prettyFig('plw',1.3,'lw',1.5,'fs',.5,'font_units','centimeters')
@@ -281,16 +281,16 @@ set(ax(4),'YLim',[0 70])
 set(ax(7),'XLim',[0 70],'YLim',[0 70])
 
 ylabel(ax(1),'Stimulus (V)')
-ylabel(ax(3),'ab3A Firing Rate (Hz)')
+ylabel(ax(3),'ab3A firing rate (Hz)')
 xlabel(ax(3),'Time (s)')
 xlabel(ax(4),'Probability')
-xlabel(ax(5),'Projected Stimulus (V)')
-ylabel(ax(5),'ab3A Firing Rate (Hz)')
-xlabel(ax(6),'Mean Stimulus (V)')
-ylabel(ax(6),'ab3A ORN Gain (Hz/V)')
+xlabel(ax(5),'Projected stimulus (V)')
+ylabel(ax(5),'ab3A firing rate (Hz)')
+xlabel(ax(6),'Mean stimulus (V)')
+ylabel(ax(6),'ab3A ORN gain (Hz/V)')
 
-xlabel(ax(7),[' Projected Stimulus ' char(10) 'Rescaled by Weber Law'])
-ylabel(ax(7),'ab3A Firing Rate (Hz)')
+xlabel(ax(7),[' Projected stimulus ' char(10) 'rescaled by Weber''s law'])
+ylabel(ax(7),'ab3A firing rate (Hz)')
 
 prettyFig('plw',1.3,'lw',1.5,'fs',.5,'font_units','centimeters')
 
@@ -318,6 +318,8 @@ if being_published
 	delete(gcf)
 end
 
+
+return
 
 %% Sanity Check
 % In this section, we check if my filter extractions works (comparing it to Damon's FFT-based methods) if we still see the overall phenomenology if we only use a single filter to project all the data. 
@@ -439,7 +441,7 @@ cf = fit(nonnans(mean_stim),nonnans(frac_var),'power1',options);
 plot(sort(mean_stim),cf(sort(mean_stim)),'r');
 set(gca,'XScale','log','YScale','log')
 xlabel('Mean Stimulus (V)')
-ylabel('\sigma_{Firing Rate}/\sigma_{Stimulus} (Hz/V)')
+ylabel('\sigma_{Firing rate}/\sigma_{Stimulus} (Hz/V)')
 
 prettyFig('plw',1.3,'lw',1.5,'fs',14,'FixLogX',true)
 labelFigure

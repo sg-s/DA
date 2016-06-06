@@ -481,10 +481,11 @@ end
 % In this supplementary figure, we show the same result by estimating gain as ratios of standard deviations of output to input
 
 
-figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
+figure('outerposition',[0 0 1500 800],'PaperUnits','points','PaperSize',[1500 800]); hold on
 
 % first column: changing mean ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-subplot(2,3,1); hold on
+subplot(2,4,1); hold on
+title(['Changing stimulus mean' char(10) 'direct gain estimation'])
 x = mean(msg_data.PID(20e3:45e3,:));
 y = std(msg_data.LFP(20e3:45e3,:))./std(msg_data.PID(20e3:45e3,:));
 c = parula(length(unique(msg_data.paradigm))+1);
@@ -497,7 +498,7 @@ set(gca,'XScale','log','YScale','log','YLim',[10 1e3],'XTick',[.1 1],'XLim',[.1 
 xlabel('\mu_{Stimulus} (V)')
 ylabel('\sigma_{LFP}/\sigma_{Stimulus} (mV/V)')
 
-subplot(2,3,4); hold on
+subplot(2,4,5); hold on
 x = mean(msg_data.PID(20e3:45e3,:));
 y = 10*std(msg_data.fA(20e3:45e3,:))./std(msg_data.LFP(20e3:45e3,:));
 c = parula(length(unique(msg_data.paradigm))+1);
@@ -510,15 +511,18 @@ xlabel('\mu_{Stimulus} (V)')
 
 % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 % second column: changing variance, gain as ratio of stds; and correcting for change in mean ~~
-subplot(2,3,2), hold on
+subplot(2,4,2), hold on
+title(['Changing stimulus variance' char(10) 'direct gain estimation'])
 y = std(reshaped_LFP(1e3:5e3,:))./std(reshaped_PID(1e3:5e3,:));
 y = y./mean(reshaped_PID(1e3:5e3,:));
+y(r2_K1p<min_r2) = NaN;
 x = std(reshaped_PID(1e3:5e3,:));
 plot(x,y,'+','Color',[1 opacity opacity])
 errorbar(nanmean(x),nanmean(y),nanstd(y),'r','LineWidth',4,'Marker','o','MarkerSize',10);
 
 y = std(reshaped_LFP(6e3:9e3,:))./std(reshaped_PID(6e3:9e3,:));
 y = y./mean(reshaped_PID(6e3:9e3,:));
+y(r2_K1p<min_r2) = NaN;
 x = std(reshaped_PID(6e3:9e3,:));
 plot(x,y,'+','Color',[opacity opacity 1])
 errorbar(nanmean(x),nanmean(y),nanstd(y),'b','LineWidth',4,'Marker','o','MarkerSize',10);
@@ -526,9 +530,10 @@ xlabel('\sigma_{Stimulus} (V)')
 ylabel('\sigma_{LFP}/\sigma_{Stimulus} / \mu_{Stimulus} (a.u.)')
 set(gca,'YLim',[0 40],'XLim',[0 .2])
 
-subplot(2,3,5), hold on
+subplot(2,4,6), hold on
 y = std(reshaped_fA(1e3:5e3,:))./std(reshaped_LFP(1e3:5e3,:));
 y = y./mean(reshaped_PID(1e3:5e3,:));
+y(r2_K2p<min_r2) = NaN;
 x = std(reshaped_PID(1e3:5e3,:));
 plot(x,y,'+','Color',[1 opacity opacity])
 errorbar(nanmean(x),nanmean(y),nanstd(y),'r','LineWidth',4,'Marker','o','MarkerSize',10);
@@ -537,6 +542,7 @@ xlabel('\sigma_{Stimulus} (V)')
 
 y = std(reshaped_fA(6e3:9e3,:))./std(reshaped_LFP(6e3:9e3,:));
 y = y./mean(reshaped_PID(6e3:9e3,:));
+y(r2_K2p<min_r2) = NaN;
 x = std(reshaped_PID(6e3:9e3,:));
 plot(x,y,'+','Color',[opacity opacity 1])
 errorbar(nanmean(x),nanmean(y),nanstd(y),'b','LineWidth',4,'Marker','o','MarkerSize',10);
@@ -546,13 +552,14 @@ xlabel('\sigma_{Stimulus} (V)')
 
 % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 %% third column: just like in main figure but we don't correct for change in mean ~~~~~~~~
-subplot(2,3,3); hold on
-x = std(reshaped_PID(1e3:4e3,r2_K1p>.8));
-y = hi_gain_LFP(r2_K1p>.8);
+subplot(2,4,3); hold on
+title(['Changing stimulus variance' char(10) 'no correction for changing mean'])
+x = std(reshaped_PID(1e3:4e3,r2_K1p>min_r2));
+y = hi_gain_LFP(r2_K1p>min_r2);
 plot(x,y,'+','Color',[1 opacity opacity])
 errorbar(nanmean(x),nanmean(y),nanstd(y),'r','LineWidth',4,'Marker','o','MarkerSize',10);
-x = std(reshaped_PID(6e3:9e3,r2_K1p>.8));
-y = lo_gain_LFP(r2_K1p>.8);
+x = std(reshaped_PID(6e3:9e3,r2_K1p>min_r2));
+y = lo_gain_LFP(r2_K1p>min_r2);
 plot(x,y,'+','Color',[opacity opacity 1])
 errorbar(nanmean(x),nanmean(y),nanstd(y),'b','LineWidth',4,'Marker','o','MarkerSize',10);
 xlabel('\sigma_{Stimulus} (V)')
@@ -560,18 +567,51 @@ ylabel('ab3 transduction gain (mV/V)')
 set(gca,'XLim',[0 .2],'YLim',[0 15])
 
 % plot firing gain change
-subplot(2,3,6); hold on; 
-x = std(reshaped_PID(1e3:4e3,r2_K2p>.8));
-y = hi_gain_firing(r2_K2p>.8);
+subplot(2,4,7); hold on; 
+x = std(reshaped_PID(1e3:4e3,r2_K2p>min_r2));
+y = hi_gain_firing(r2_K2p>min_r2);
 plot(x,y,'+','Color',[1 opacity opacity])
 errorbar(nanmean(x),nanmean(y),nanstd(y),'r','LineWidth',4,'Marker','o','MarkerSize',10);
-x = std(reshaped_PID(6e3:9e3,r2_K2p>.8));
-y = lo_gain_firing(r2_K2p>.8);
+x = std(reshaped_PID(6e3:9e3,r2_K2p>min_r2));
+y = lo_gain_firing(r2_K2p>min_r2);
 plot(x,y,'+','Color',[opacity opacity 1])
 errorbar(nanmean(x),nanmean(y),nanstd(y),'b','LineWidth',4,'Marker','o','MarkerSize',10);
 xlabel('\sigma_{Stimulus} (V)')
 ylabel('ab3A firing gain (Hz/mV)')
 set(gca,'YLim',[0 50],'XLim',[0 .2])
+
+% fourth column: comparison of change in gain in variance switch at lfp and firing ~~~~~~~~
+subplot(2,4,4), hold on
+x = lo_gain_LFP./hi_gain_LFP;
+x(x<0) = NaN;
+x(r2_K1p<min_r2) = NaN;
+y = lo_gain_firing./hi_gain_firing;
+y(y<0) = NaN;
+y(r2_K2p<min_r2) = NaN;
+plot(x,y,'k+')
+plot([1 2],[1 2],'k--')
+plot([1 1],[0 1],'k--')
+plot([0 1],[1 1],'k--')
+xlabel('LFP gain_{low} / LFP gain_{high}')
+ylabel('Firing gain_{low} / firing gain_{high}')
+title(['Changing stimulus variance' char(10) 'no correction for changing mean'])
+set(gca,'XLim',[0 2],'YLim',[0 2])
+
+subplot(2,4,8), hold on
+x = lo_gain_LFP_corrected./hi_gain_LFP_corrected;
+x(x<0) = NaN;
+x(r2_K1p<min_r2) = NaN;
+y = lo_gain_firing_corrected./hi_gain_firing_corrected;
+y(y<0) = NaN;
+y(r2_K2p<min_r2) = NaN;
+plot(x,y,'k+')
+plot([1 2.5],[1 2.5],'k--')
+plot([1 1],[0 1],'k--')
+plot([0 1],[1 1],'k--')
+xlabel('LFP gain_{low} / LFP gain_{high}')
+ylabel('Firing gain_{low} / firing gain_{high}')
+title('corrected for change in mean')
+set(gca,'XLim',[0 2.5],'YLim',[0 2.5])
 
 prettyFig
 

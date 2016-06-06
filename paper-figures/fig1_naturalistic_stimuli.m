@@ -15,7 +15,7 @@ dm = dataManager;
 %% Figure 1: Gain changes with a naturalistic stimulus
 % In this figure, we show that the gain of ab3A and ab2A ORNs changes dramatically in response to a naturalistic stimulus, and that this gain change can be correlated to the mean or the variance of the stimulus in the last 500ms. 
 
-clearvars -except being_published dm
+clearvars -except being_published dm 
 
 scatter_size = 12;
 
@@ -318,22 +318,22 @@ plot(axes_handles(9),[1e-3 2],[1e-3 2],'k--')
 
 % label all the axes, set the scales, etc.
 
-ylabel(ax(1),'ab3A Firing Rate (Hz)')
-ylabel(ax(2),'Projected Stimulus (V)')
+ylabel(ax(1),'ab3A firing rate (Hz)')
+ylabel(ax(2),'Projected stimulus (V)')
 
 ylabel(axes_handles(3),'Stimulus (V)')
 
 xlabel(axes_handles(4),'Time (s)')
 
 
-xlabel(axes_handles(6),'Projected Stimulus (V)')
-ylabel(axes_handles(6),'ab3A Firing Rate (Hz)')
+xlabel(axes_handles(6),'Projected stimulus (V)')
+ylabel(axes_handles(6),'ab3A firing rate (Hz)')
 set(axes_handles(6),'XLim',[-.1 5.1],'YColor','k','XColor','r','box','off')
 
 
 
 xlabel(axes_handles(7),'\mu_{Stimulus} in preceding 500ms (V)')
-ylabel(axes_handles(7),'ORN Gain (Hz/V)')
+ylabel(axes_handles(7),'ORN gain (Hz/V)')
 set(axes_handles(7),'YLim',[10 1e4],'YScale','log','XScale','log','XLim',[.001 10],'XTick',[.001 .01 .1 1 10])
 
 xlabel(axes_handles(8),'\sigma_{Stimulus} in preceding 500ms (V)')
@@ -348,7 +348,7 @@ end
 
 % fix position of some plots
 axes_handles(5).Position(1) = .1;
-xlabel(axes_handles(5),'Filter Lag (s)')
+xlabel(axes_handles(5),'Filter lag (s)')
 ylabel(axes_handles(5),'Filter')
 
 set(axes_handles(6),'box','off')
@@ -364,7 +364,7 @@ ylabel(axes_handles(9),'\sigma_{stimulus} (V)')
 set(axes_handles(9),'YScale','log','XScale','log','XLim',[1e-3 1e1],'XTick',[1e-3 1e-2 1e-1 1e0 1e1],'YLim',[1e-3 1e1],'YTick',[1e-3 1e-2 1e-1 1 10])
 
 
-prettyFig('plw',1.5,'lw',1.5,'fs',.5,'FixLogX',true)
+prettyFig('plw',1.5,'lw',1.5,'fs',.5,'FixLogX',true,'font_units','centimeters')
 
 legend('boxoff')
 
@@ -455,7 +455,7 @@ set(gca,'YScale','log','XScale','log','XTick',[1e2 1e3 1e4 1e5])
 xlabel('Blank duration (ms)')
 ylabel(gca,'Probability')
 
-prettyFig('fs',.5,'FixLogX',false)
+prettyFig('fs',.5,'FixLogX',false,'font_units','centimeters')
 
 legend('boxoff')
 
@@ -539,8 +539,8 @@ ff = fit(mean_stim,gain,'power1',options);
 ff.a = 6;
 plot(gca,mean_stim,ff(mean_stim),'r')
 set(gca,'XScale','log','YScale','log','XTick',[1e-2 1e-1 1e0 1e1])
-ylabel('ab3A Firing Gain (Hz/V)')
-xlabel('Mean Stimulus in preceding 500ms')
+ylabel('ab3A firing gain (Hz/V)')
+xlabel('Mean stimulus in preceding 500ms')
 title(['Gain estimation using' char(10) 'white-noise filter'])
 
 % now show ab2A filters

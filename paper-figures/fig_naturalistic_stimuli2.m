@@ -333,7 +333,7 @@ set(axes_handles(6),'XLim',[-.1 5.1],'YColor','k','XColor','r','box','off')
 
 
 xlabel(axes_handles(7),'\mu_{Stimulus} in preceding 500ms (V)')
-ylabel(axes_handles(7),'Firing Gain (Hz/V)')
+ylabel(axes_handles(7),'ORN Gain (Hz/V)')
 set(axes_handles(7),'YLim',[10 1e4],'YScale','log','XScale','log','XLim',[.001 10],'XTick',[.001 .01 .1 1 10])
 
 xlabel(axes_handles(8),'\sigma_{Stimulus} in preceding 500ms (V)')

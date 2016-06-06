@@ -32,11 +32,11 @@ dm = dataManager;
 global_start = 40e3; % 40 seconds
 global_end = length(PID) - 5e3; 
 % bandpass to remove spikes and slow fluctuations
-for i = 1:width(LFP)
-	a = find(~isnan(LFP(:,i)),1,'first');
-	z = find(~isnan(LFP(:,i)),1,'last');
-	LFP(a:z,i) = bandPass(LFP(a:z,i),1000,10)*10; % now in mV
-end
+% for i = 1:width(LFP)
+% 	a = find(~isnan(LFP(:,i)),1,'first');
+% 	z = find(~isnan(LFP(:,i)),1,'last');
+% 	LFP(a:z,i) = bandPass(LFP(a:z,i),1000,10)*10; % now in mV
+% end
 
 % reshape the LFP signals
 block_length = 1e4;
@@ -319,7 +319,7 @@ plot(ax(6),x,hi_gain2,'r+')
 x = std(reshaped_PID(6e3:9e3,:));
 plot(ax(6),x,lo_gain2,'b+')
 xlabel(ax(6),'\sigma_{Stimulus} (V)')
-ylabel(ax(6),'ab3A Firing Gain (Hz/V)')
+ylabel(ax(6),'ab3A ORN Gain (Hz/V)')
 
 % % can we fit this with 1/x?
 % x = [std(reshaped_PID(1e3:4e3,:)) std(reshaped_PID(6e3:9e3,:))]; x = x(:);
@@ -371,7 +371,7 @@ laughlin_hi_gain(laughlin_hi_gain == 0) = NaN;
 plot(ax(7),laughlin_lo_gain,lo_gain2,'b+')
 plot(ax(7),laughlin_hi_gain,hi_gain2,'r+')
 r2 = rsquare([laughlin_lo_gain; laughlin_hi_gain],[lo_gain2; hi_gain2]);
-ylabel(ax(7),'ab3A Firing Gain (Hz/V)')
+ylabel(ax(7),'ab3A ORN Gain (Hz/V)')
 xlabel(ax(7),'c.d.f slope (a.u.)')
 l = plot(ax(7),NaN,NaN,'k+');
 lh = legend(l,['r^2 = ' oval(r2)]);
@@ -438,7 +438,7 @@ x(:,rm_this) = []; y(:,rm_this) = [];
 [~,data_lo] = plotPieceWiseLinear(x,y,'nbins',50,'make_plot',false);
 plot(data_lo.x,data_lo.y,'b')
 xlabel('Projected Stimulus')
-ylabel('Firing Rate (Hz)')
+ylabel('ab3A Firing Rate (Hz)')
 set(gca,'XLim',[0 1.4],'YLim',[0 60])
 
 % 3. uncorrected gain vs. sigma stim ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -450,7 +450,7 @@ plot(x,hi_gain,'r+')
 x = std(reshaped_PID(6e3:9e3,:));
 plot(x,lo_gain,'b+')
 xlabel('\sigma_{Stimulus} (V)')
-ylabel('ab3A Firing Gain (Hz/V)')
+ylabel('ab3A ORN Gain (Hz/V)')
 set(gca,'XLim',[0 .25],'YLim',[0 150])
 
 % 4. gain as ratio of std. devs. -- corrected for mean ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -468,7 +468,6 @@ plot(x,y,'b+')
 ylabel('\sigma_{Firing Rate}/\sigma_{Stimulus}/\mu_{Stimulus} (a.u.)')
 xlabel(gca,'\sigma_{Stimulus} (V)')
 set(gca,'XLim',[0 .22],'YLim',[0 600])
-
 
 % 5. this plot compares the Laughlin predicted gains in the two cases ~~~~~~~~~~~~~~~~~~~
 subplot(2,3,5), hold on

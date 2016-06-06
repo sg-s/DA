@@ -46,7 +46,7 @@ for i = 1:length(axes_handles)
 end  
 
 clear cdata
-cdata = consolidateData2(dm.getPath('28ee201995ff7a193f072bd30f556348'));
+cdata = consolidateData2(dm.getPath('93ba5d68174e3df9f462a1fc48c581da'));
 cdata = cleanMSGdata(cdata);
 
 v2struct(cdata)
@@ -287,7 +287,7 @@ xlabel(ax(4),'Probability')
 xlabel(ax(5),'Projected Stimulus (V)')
 ylabel(ax(5),'ab3A Firing Rate (Hz)')
 xlabel(ax(6),'Mean Stimulus (V)')
-ylabel(ax(6),'ab3A Firing Gain (Hz/V)')
+ylabel(ax(6),'ab3A ORN Gain (Hz/V)')
 
 xlabel(ax(7),[' Projected Stimulus ' char(10) 'Rescaled by Weber Law'])
 ylabel(ax(7),'ab3A Firing Rate (Hz)')

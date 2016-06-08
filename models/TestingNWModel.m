@@ -215,7 +215,7 @@ end
 
 
 %%
-% We clearly see that it slows down with increasing background stimulus. Furthermore, it looks like the slowdown comes from the diffusible factor and the channel opening, and not from the receptor binding. Note that if we had a simple receptor binding-unbinding model (with one ODE), the receptor dynamics would speed up with increasing stimulus. Here, since the channel open probability depends on (R* + OR*) instead of (OR* and OR), the effective receptor dynamics is invariant to the stimulus mean. 
+% The time course of the response seems to change, but it doesn't look like the kinetics seem to slow down with increasing background. If anything, the time to peak decreases with increasing background stimulus. 
 
 
 %% Version Info

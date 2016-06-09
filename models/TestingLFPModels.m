@@ -115,6 +115,10 @@ for i = 1:length(background_levels)
   plot(ax(2),R,'Color',c(i,:))
 
   temp = R - mean(R(pulse_on-1e3:pulse_on-1));
+
+  % temp = diff(R); temp = temp/max(temp(pulse_on:pulse_off));
+  % plot(ax(3),temp,'Color',c(i,:))
+
   plot(ax(3),temp/max(temp),'Color',c(i,:))
 
   % compute gain 

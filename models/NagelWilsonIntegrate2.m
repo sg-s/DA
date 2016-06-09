@@ -17,7 +17,7 @@ p.B;
 
 % define initial conditions for ode system
 ic = zeros(5,1);
-ic(1) = .1; ic(2) = .1; ic(3) = .1; 
+ic(1:3) = .25;
 ic(4) = 0.4;
 ic(5) = .4; 
 

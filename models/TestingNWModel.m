@@ -128,11 +128,13 @@ for i = 1:length(background_levels)
 
   % compute gain at receptors 
   y = R(:,2) + R(:,4);
-  g = max(y(pulse_on:pulse_off))/(max(S) - min(S));
+  delta_r = max(y(pulse_on:pulse_off)) - y(pulse_on-1);
+  g = delta_r/(max(S) - min(S));
   plot(ax(5),min(S),g,'+','Color',c(i,:));
 
   % plot total gain
-  g = max(C(pulse_on:pulse_off))/(max(S) - min(S));
+  delta_r = max(C(pulse_on:pulse_off)) - C(pulse_on-1);
+  g = delta_r/(max(S) - min(S));
   plot(ax(6),min(S),g,'+','Color',c(i,:));
 end
 
@@ -162,6 +164,9 @@ if being_published
   snapnow
   delete(gcf)
 end
+
+%%
+% This model doesn't follow Weber's Law, at least for these parameters. Gain appears to fall off faster than expected. 
 
 
 %%

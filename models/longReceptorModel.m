@@ -7,7 +7,7 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [R,b,d] = longReceptorModel(S,p)
+function [b,d] = longReceptorModel(S,p)
 
 % parameters
 p.r_b; % binding rate
@@ -19,52 +19,34 @@ p.theta_d;
 
 p.k;
 
-% output linear mapping 
-p.A;
-p.R0;
+% define initial conditions
+ic = [.1; .1];
 
-% bounds
-lb.r_b = 0;
-lb.r_d = 0;
-lb.theta_b = 0;
-lb.theta_d = 0;
-ub.theta_b = 20;
-ub.theta_d = 20;
+time = 1e-3*(1:length(S));
+Tspan = [min(time) max(time)];
 
-lb.A = 0;
-lb.k = 0;
+options = odeset('MaxStep',.1);
+[T, Y] = ode23t(@(t,y) lRM(t,y,time,S,p),Tspan,ic,options); % Solve ODE
 
-b = 0*S; b(1) = .5;
-d = 0*S; d(1) = 1;
+% re-interpolate the solution to fit the stimulus
+Y = interp1(T,Y,time);
+b = Y(:,1); d = Y(:,2);
 
-for i = 2:length(S)
-	fx = (1-b(i-1))*p.r_b*S(i) - b(i-1)*p.r_b*p.theta_b*(d(i-1));
-	b(i) = fx + b(i-1);
+	function dy = lRM(t,y,time,odor,p)
+		% calculate the odor at the time point
+		O = interp1(time,odor,t); % Interpolate the data set (ft,f) at time t
 
-	if b(i) < 0
-		b(i) = 0;
+		b = y(1);
+		d = y(2);
+
+		db = (1-b)*p.r_b*O - p.r_b*p.theta_b*b*d;
+		dd = p.r_d*((1-b)/b)*exp(b/p.k) - p.r_d*p.theta_d*d;
+
+		dy = [db; dd];
 	end
-
-	if b(i) > 1
-		b(i) = 1;
-	end
-
-	fx = p.r_d*((1-b(i-1))/(b(i-1)))*exp(b(i-1)/p.k) - p.r_d*p.theta_d*d(i-1);
-
-	d(i) = d(i-1) + fx;
-
-	% if d(i) > 1e3
-	% 	d(i) = d(i-1);
-	% end
-
-	if d(i) < 0
-		d(i) = 0;
-	end
-
 
 end
 
-R = p.A*b + p.R0;
 
 
 

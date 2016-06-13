@@ -113,6 +113,12 @@ end
 background_levels = logspace(-2,2,10);
 c = parula(length(background_levels)+1);
 
+% plot 1/S guide lines
+guide_A = logspace(-4,-1,4);
+for i = 1:length(guide_A)
+  plot(ax(5),background_levels,guide_A(i)./background_levels,'r--') 
+  plot(ax(6),background_levels,guide_A(i)./background_levels,'r--')
+end
 
 for i = 1:length(background_levels)
   S = background_levels(i) + zeros(T,1);
@@ -130,12 +136,12 @@ for i = 1:length(background_levels)
   y = R(:,2) + R(:,4);
   delta_r = max(y(pulse_on:pulse_off)) - y(pulse_on-1);
   g = delta_r/(max(S) - min(S));
-  plot(ax(5),min(S),g,'+','Color',c(i,:));
+  plot(ax(5),min(S),g,'+','Color',c(i,:),'MarkerSize',24);
 
   % plot total gain
   delta_r = max(C(pulse_on:pulse_off)) - C(pulse_on-1);
   g = delta_r/(max(S) - min(S));
-  plot(ax(6),min(S),g,'+','Color',c(i,:));
+  plot(ax(6),min(S),g,'+','Color',c(i,:),'MarkerSize',24);
 end
 
 for i = 1:4

@@ -143,7 +143,19 @@ msg_data.paradigm = paradigm;
 
 clearvars -except dm msg_data being_published opacity ax lo_gain_firing hi_gain_firing lo_gain_firing_corrected hi_gain_firing_corrected
 
-[PID, LFP, fA, ~, orn] = consolidateData(dm.getPath('e30707e8e8ef6c0d832eee31eaa585aa'),1);
+[PID, LFP, fA, ~, orn,~,~,~,~,all_spikes] = consolidateData(dm.getPath('e30707e8e8ef6c0d832eee31eaa585aa'),1);
+
+% compress all_spikes into a 1ms time step
+all_spikes = all_spikes';
+all_spikes2 = 0*LFP;
+for i = 1:width(all_spikes)
+	temp = ones(10,1);
+	temp2 = filter(temp,10,full(all_spikes(:,i)));
+	temp2(temp2>0) = 1;
+	temp2(temp2<1) = 0;
+	all_spikes2(:,i) = temp2(1:10:end);
+end
+clear all_spikes
 
 global_start = 40e3; % 40 seconds
 global_end = length(PID) - 5e3; 
@@ -167,6 +179,10 @@ reshaped_PID = reshape(reshaped_PID,block_length,width(reshaped_PID)*length(resh
 reshaped_fA = fA(global_start:end-1e4-1,1:width(PID));
 reshaped_fA = reshape(reshaped_fA,block_length,width(reshaped_fA)*length(reshaped_fA)/block_length);
 
+% reshape the raw spike times
+reshaped_spikes = all_spikes2(global_start:end-1e4-1,1:width(PID));
+reshaped_spikes = reshape(reshaped_spikes,block_length,width(reshaped_spikes)*length(reshaped_spikes)/block_length);
+
 
 % also reshape the orn ID
 reshaped_orn = repmat(orn,length(global_start:length(PID)-1e4-1)/block_length,1);
@@ -178,6 +194,7 @@ reshaped_LFP(:,rm_this) = [];
 reshaped_PID(:,rm_this) = [];
 reshaped_fA(:,rm_this) = [];
 reshaped_orn(rm_this) = [];
+reshaped_spikes(:,rm_this) = [];
 
 % filter to remove spikes
 for i = 1:width(reshaped_LFP)
@@ -695,10 +712,83 @@ end
 
 prettyFig('fs',14)
 
-if being_published	
-	snapnow	
+if being_published
+	snapnow
 	delete(gcf)
 end
+
+
+%% Extra figure
+% Computing gain properties from the raw spikes
+
+% build histograms conditional on spike. we look at windows hist_length ms in the past. 
+hist_length = 1;
+rs = flipud(reshaped_spikes);
+if hist_length > 1
+	K = ones(hist_length,1);
+	for i = 1:width(rs)
+		rs(:,i) = filter(K,length(K),rs(:,i));
+	end
+end
+rs(rs>0) = 1;
+rs(rs<1) = 0;
+rs = logical(flipud(rs));
+
+hi = rs; hi(:) = false;
+hi(1:5e3,:) = true;
+
+cPID_lo = reshaped_PID(rs & ~hi);
+cPID_hi = reshaped_PID(rs & hi);
+cLFP_lo = reshaped_LFP(rs & ~hi);
+cLFP_hi = reshaped_LFP(rs & hi);
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1), hold on
+
+% define x axis
+hx = linspace(min(reshaped_PID(:)),max(reshaped_PID(:)),100);
+hxx = hx(1:end-1) + mean(diff(hx));
+
+% x = vectorise(reshaped_PID(1e3:5e3,:));
+% hy = histcounts(x,hx); hy = hy/sum(hy); hy = cumsum(hy);
+% plot(hxx,hy,'r')
+% x = vectorise(reshaped_PID(6e3:9e3,:));
+% hy = histcounts(x,hx); hy = hy/sum(hy); hy = cumsum(hy);
+% plot(hxx,hy,'b')
+
+hy = histcounts(cPID_hi,hx); hy = hy/sum(hy); hy = cumsum(hy);
+plot(hxx,hy,'r')
+hy = histcounts(cPID_lo,hx); hy = hy/sum(hy); hy = cumsum(hy);
+plot(hxx,hy,'b')
+set(gca,'XLim',[min(hx) max(hx)],'YLim',[0 1])
+xlabel('Stimulus (V)')
+ylabel('c.d.f')
+legend({'high \sigma','low \sigma'},'Location','southeast')
+
+subplot(1,2,2), hold on
+
+% define x axis
+hx = linspace(min(reshaped_LFP(:)),max(reshaped_LFP(:)),100);
+hxx = hx(1:end-1) + mean(diff(hx));
+
+% build histograms conditional on spike. we look at windows hist_length ms in the past. 
+hy = histcounts(cLFP_hi,hx); hy = hy/sum(hy); hy = cumsum(hy);
+plot(hxx,hy,'r')
+hy = histcounts(cLFP_lo,hx); hy = hy/sum(hy); hy = cumsum(hy);
+plot(hxx,hy,'b')
+set(gca,'XLim',[min(hx) max(hx)],'YLim',[0 1])
+xlabel('\DeltaLFP (mV)')
+ylabel('c.d.f')
+
+suptitle(['Stimulus and LFP distributions' char(10) 'conditional on spike'])
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 %% Version Info
 %

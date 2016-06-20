@@ -141,7 +141,7 @@ msg_data.paradigm = paradigm;
 % ##    ## ##     ## ##   ###    ##    ##    ##  ##     ## ##    ##    ##    
 %  ######   #######  ##    ##    ##    ##     ## ##     ##  ######     ##    
 
-clearvars -except dm msg_data being_published opacity ax lo_gain_firing hi_gain_firing lo_gain_firing_corrected hi_gain_firing_corrected lo_gain_total hi_gain_total
+clearvars -except dm msg_data being_published opacity ax lo_gain_firing hi_gain_firing lo_gain_firing_corrected hi_gain_firing_corrected lo_gain_total hi_gain_total hi_gain_total_corrected lo_gain_total_corrected
 
 [PID, LFP, fA, ~, orn,~,~,~,~,all_spikes] = consolidateData(dm.getPath('e30707e8e8ef6c0d832eee31eaa585aa'),1);
 

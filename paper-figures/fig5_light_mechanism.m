@@ -18,7 +18,15 @@ y = [0 4 12.8 24.1 36.2 48.1 60 70 95 114 134 151 167 184 201 219 236 252 269 28
 y = [0*(0:0.1:0.7) y ];
 light_power_fit = fit(x(:),y(:),'spline');
 
-figure('outerposition',[0 0 850 850],'PaperUnits','points','PaperSize',[850 850]); hold on
+main_fig = figure('outerposition',[0 0 850 850],'PaperUnits','points','PaperSize',[850 850]); hold on
+for i = 9:-1:1
+	ax(i) = subplot(3,3,i); hold on
+end
+
+supp_fig = figure('outerposition',[0 0 1100 700],'PaperUnits','points','PaperSize',[1100 700]); hold on
+for i = 6:-1:1
+	axs(i) = subplot(2,3,i); hold on
+end
 
 % ##       ####  ######   ##     ## ######## 
 % ##        ##  ##    ##  ##     ##    ##    
@@ -36,7 +44,7 @@ figure('outerposition',[0 0 850 850],'PaperUnits','points','PaperSize',[850 850]
 % ##    ## ##     ## ##   ###    ##    ##    ##  ##     ## ##    ##    ##    
 %  ######   #######  ##    ##    ##    ##     ## ##     ##  ######     ##    
 
-[~, ~, fA, paradigm, orn, fly, AllControlParadigms] = consolidateData(dm.getPath('95bb3793a09b64923a7feea179a33dce'),true);
+[~, ~, fA, paradigm, orn, fly, AllControlParadigms] = consolidateData(dm.getPath('38901017007c50ea52637891619ab91c'),true);
 
 
 % make new vectors for mean and range of the stimulus
@@ -55,6 +63,13 @@ end
 
 % extract filters
 [K,fp,gain,gain_err] = extractFilters(LED,fA,'use_cache',true,'a',a,'z',z);
+
+% also compute gains as ratio of std. devs. 
+gain_s = NaN*gain;
+for i = 1:length(gain)
+	gain_s(i) = std(fA(a:z,i))/std(LED(a:z,i));
+end
+gain_s(gain_s == 0) = NaN;
 
 contrast_levels = sort(unique(light_s(m==2)));
 light_m = NaN*contrast_levels;
@@ -75,8 +90,7 @@ for i = 1:length(contrast_levels)
 	yy = yy/sum(yy);
 end
 
-subplot(3,3,8), hold on
-% plot i/o curves and distributions for lowest contrast
+% plot i/o curves for lowest and highest contrast
 do_these = [4 1];
 c = [0 0 1; 0 0 0; 0 0 0 ; 1 0 0];
 for i = do_these
@@ -88,20 +102,34 @@ for i = do_these
 	if ~isvector(x)
 		x = nanmean(x,2);
 	end
-	x = x - mean(x) + mean(mean(LED(a:z,light_s == contrast_levels(i))));
+	%x = x - mean(x) + mean(mean(LED(a:z,light_s == contrast_levels(i))));
 
 	[~,data] = plotPieceWiseLinear(x,y,'make_plot',false,'nbins',40);
-	plot(data.x,data.y,'Color',c(i,:),'LineWidth',3)
+	plot(ax(8),data.x,data.y,'Color',c(i,:),'LineWidth',3)
 end
-xlabel('Projected Light Stimulus (\muW)')
-ylabel('Firing Rate (Hz)')
+xlabel(ax(8),'Projected light stimulus (\muW)')
+ylabel(ax(8),'ab3A firing rate (Hz)')
+set(ax(8),'XLim',[0 500],'YLim',[0 50])
+orn(find(m==2,1,'first')) = 6;
 
 % plot gain vs. contrast
-subplot(3,3,9), hold on
-plot(light_s(m==2),gain(m==2),'k+')
-xlabel('\sigma_{Light} (\muW)')
-ylabel('ORN Gain (Hz/\muW)')
+these_orns = unique(orn(m==2));
+norns = length(these_orns); 
+c = lines(norns);
+for i = 1:length(c)
+	plot(ax(9),light_s(m==2 & orn == these_orns(i)),gain(m==2 & orn == these_orns(i)),'-+','Color',c(i,:))
+end
+xlabel(ax(9),'\sigma_{Light} (\muW)')
+ylabel(ax(9),'ab3A ORN gain (Hz/\muW)')
+set(ax(9),'YLim',[0 .16])
 
+% make the supp. figures. 
+for i = 1:length(c)
+	plot(axs(6),light_s(m==2 & orn == these_orns(i)),gain(m==2 & orn == these_orns(i)),'-+','Color',c(i,:))
+end
+xlabel(axs(6),'\sigma_{Light} (\muW)')
+ylabel(axs(6),'\sigma_{Firing rate}/\sigma_{Stimulus} (Hz/\muW)')
+set(axs(6),'XLim',[30 130],'YLim',[0 .17])
 
 %    ##       ####  ######   ##     ## ########    ########   ######   
 %    ##        ##  ##    ##  ##     ##    ##       ##     ## ##    ##  
@@ -111,8 +139,9 @@ ylabel('ORN Gain (Hz/\muW)')
 %    ##        ##  ##    ##  ##     ##    ##       ##     ## ##    ##  
 %    ######## ####  ######   ##     ##    ##       ########   ######   
 
+clearvars -except ax axs being_published dm light_power_fit od od_odour uts main_fig supp_fig
 
-[PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData(dm.getPath('54db648b8724ae1201fb4844f2f80f89'),true);
+[PID, LFP, fA, paradigm, orn, fly, AllControlParadigms, paradigm_hashes] = consolidateData(dm.getPath('9df40545ca5197f63f2dd4af7c905316'),true);
 a = 15e3; z = 55e3;
 
 % clean up the data
@@ -151,99 +180,65 @@ for i = 1:width(LFP)
 end
 
 
-% extract filters everywhere for LFP and gain
+% extract filters and compute gain for LFP and firing rate
 [K_LFP,LFP_pred,LFP_gain] = extractFilters(PID,filtered_LFP,'use_cache',true,'a',a,'z',z);
 [K_fA,fA_pred,fA_gain] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
 
-
-% % plot the firing gain for odour and odour
-% plot_these_paradigms = sort(unique(paradigm(odour_background_paradigms)));
-% x = []; y = []; base_gain = [];
-% for i = 1:length(paradigm)
-% 	if odour_background_paradigms(i)
-% 		ci = find(paradigm(i) == plot_these_paradigms);
-% 		plot(axes_handles(7),mean_PID(i),fA_gain(i),'k+');
-% 		x = [x mean_PID(i)];
-% 		y = [y fA_gain(i)];
-% 		if ci == 1
-% 			base_gain = [base_gain fA_gain(i)];
-% 		end
-% 	end
-% end
-% set(axes_handles(7),'XScale','log','YScale','log')
-% rm_this = isnan(x) | isnan(y);
-% x(rm_this) = []; y(rm_this) = [];
-% ff = fit(x(:),y(:),'power1','Lower',[-Inf -1],'Upper',[Inf -1]);
-% % also plot a flat line for comparison
-% plot(axes_handles(7),[min(x) max(x)],[nanmean(base_gain) nanmean(base_gain)],'k--')
-% plot(axes_handles(7),sort(x),ff(sort(x)),'k')
-% ylabel(axes_handles(7),'ORN Gain (Hz/V)')
-% xlabel(axes_handles(7),'Odor concentration (V)')
+% also compute gains directly w/o LN model
+LFP_gain_s = NaN*LFP_gain;
+fA_gain_s = NaN*fA_gain;
+for i = 1:length(fA_gain)
+	LFP_gain_s(i) = std(LFP(a:z,i))/std(PID(a:z,i));
+	fA_gain_s(i) = std(fA(a:z,i))/std(PID(a:z,i));
+end
+LFP_gain_s(LFP_gain_s == 0) = NaN;
+fA_gain_s(fA_gain_s == 0) = NaN;
 
 
-% % also plot the LFP gain
-% x = []; y = []; base_gain = [];
-% for i = 1:length(paradigm)
-% 	if odour_background_paradigms(i)
-% 		ci = find(paradigm(i) == plot_these_paradigms);
-% 		plot(axes_handles(8),mean_PID(i),LFP_gain(i),'k+');
-% 		x = [x mean_PID(i)];
-% 		y = [y LFP_gain(i)];
-% 		if ci == 1
-% 			base_gain = [base_gain LFP_gain(i)];
-% 		end
-% 	end
-% end
-% plot(axes_handles(8),[min(x) max(x)],[nanmean(base_gain) nanmean(base_gain)],'k--')
-% set(axes_handles(8),'XScale','log','YScale','log','YLim',[.05 2])
-% rm_this = isnan(x) | isnan(y);
-% x(rm_this) = []; y(rm_this) = [];
-% ff = fit(x(:),y(:),'power1','Lower',[-Inf -1],'Upper',[Inf -1]);
-% plot(axes_handles(8),sort(x),ff(sort(x)),'k')
-% ylabel(axes_handles(8),'LFP Gain (mV/V)')
-% xlabel(axes_handles(8),'Odor concentration (V)')
-
-% plot the light background odour flicker cases -- firing gain
+% plot the light background odour flicker cases -- total gain
 plot_these_paradigms = sort(unique(paradigm(light_background_paradigms)));
-subplot(3,3,3), hold on
-x = []; y = []; base_gain = [];
-for i = 1:length(paradigm)
-	if light_background_paradigms(i)
-		ci = find(paradigm(i) == plot_these_paradigms);
-		plot(mean_light_power(i),fA_gain(i),'k+');
-		x = [x; mean_light_power(i)];
-		y = [y; fA_gain(i)];
-		if ci == 1
-			base_gain = [base_gain fA_gain(i)];
-		end
+these_orns = unique(orn(light_background_paradigms));
+c = lines(length(these_orns));
+for i = 1:length(these_orns)
+	ii = orn == these_orns(i) & ismember(paradigm,plot_these_paradigms);
+	if sum(ii) > 3
+		plot(ax(3),mean_light_power(ii),fA_gain(ii),'-+','Color',c(i,:));
+		plot(axs(2),mean_light_power(ii),fA_gain_s(ii),'-+','Color',c(i,:));
 	end
 end
 
-plot([min(x) max(x)],[nanmean(base_gain) nanmean(base_gain)],'k--')
-set(gca,'XScale','linear','YScale','log','YLim',[10 1000])
-ylabel('ORN Gain (Hz/V)')
-xlabel('Mean Light Power (\muW)')
+set(ax(3),'XScale','linear','YScale','log','YLim',[10 1000])
+ylabel(ax(3),'ab3A ORN gain (Hz/V)')
+xlabel(ax(3),'Mean light power (\muW)')
+set(axs(2),'XScale','linear','YScale','log','YLim',[10 1000])
+ylabel(axs(2),'\sigma_{Firing rate}/\sigma_{Stimulus} (Hz/V)')
+xlabel(axs(2),'Mean light power (\muW)')
 
-% odour flicker light background -- LFP gain
-subplot(3,3,2), hold on
-x = []; y = []; base_gain = [];
-for i = 1:length(paradigm)
-	if light_background_paradigms(i)
-		ci = find(paradigm(i) == plot_these_paradigms);
-		plot(mean_light_power(i),LFP_gain(i),'k+');
-		x = [x; mean_light_power(i)];
-		y = [y; LFP_gain(i)];
-		if ci == 1
-			base_gain = [base_gain LFP_gain(i)];
-		end
+
+% plot the transduction gain
+for i = 1:length(these_orns)
+	ii = orn == these_orns(i) & ismember(paradigm,plot_these_paradigms);
+	if sum(ii) > 3
+		plot(ax(2),mean_light_power(ii),LFP_gain(ii),'-+','Color',c(i,:));
+		plot(axs(1),mean_light_power(ii),10*LFP_gain_s(ii),'-+','Color',c(i,:));
 	end
 end
-plot([min(x) max(x)],[nanmean(base_gain) nanmean(base_gain)],'k--')
-set(gca,'XScale','linear','YScale','log','YLim',[1e0 1e2])
-ylabel('LFP Gain (mV/V)')
-xlabel('Mean Light Power (\muW)')
 
+set(ax(2),'XScale','linear','YScale','log','YLim',[1 100])
+ylabel(ax(2),'ab3 transduction gain (mV/V)')
+xlabel(ax(2),'Mean light power (\muW)')
+set(axs(1),'XScale','linear','YScale','log','YLim',[1 100])
+ylabel(axs(1),'\sigma_{LFP}/\sigma_{Stimulus} (mV/V)')
+xlabel(axs(1),'Mean light power (\muW)')
 
+% show that firing rate increases with increasing light stim
+for i = 1:length(these_orns)
+	ii = orn == these_orns(i) & ismember(paradigm,plot_these_paradigms);
+	plot(axs(3),mean_light_power(ii),max(fA(1:5e3,ii)),'-+','Color',c(i,:));
+end
+ylabel(axs(3),'Light-induced firing rate (Hz)')
+xlabel(axs(3),'Mean light power (\muW)')
+set(axs(3),'XLim',[0 500],'YLim',[0 90])
 
 % % ##       ####  ######   ##     ## ########    ########       ##  ######   
 % % ##        ##  ##    ##  ##     ##    ##       ##            ##  ##    ##  
@@ -254,7 +249,7 @@ xlabel('Mean Light Power (\muW)')
 % % ######## ####  ######   ##     ##    ##       ##       ##        ######   
 
 if ~exist('od','var')
-	p = dm.getPath('03c38ea82aea99b7ea1b16114b48a853');
+	p = dm.getPath('6c02fb233f8221b2d22d98ebf8a48edb');
 	od = raw2ORNData(p,'led_power_func',light_power_fit,'use_led',true,'filter_LFP',false);
 
 	uts = false(length(od(1,1).stimulus),1);
@@ -293,9 +288,6 @@ for i = 1:size(od_odour,1)
 	end
 end
 
-clear ax
-ax(1) = subplot(3,3,5); hold on
-ax(2) = subplot(3,3,6); hold on
 c2 = lines(size(od,1));
 for i = 1:size(od,1)
 	c = parula(length(find([od(i,:).n_trials]))+1);
@@ -308,7 +300,7 @@ for i = 1:size(od,1)
 			x = (nanmean(od(i,j).firing_projected(uts,:),2)); x = x(:);
 			y = (nanmean(od(i,j).firing_rate(uts,:),2)); y = y(:);
 			if i == 4
-				axes(ax(1))
+				axes(ax(5))
 				[~,data] = plotPieceWiseLinear(x,y,'nbins',50,'Color',c(ci,:));
 			end
 			middle_segment = (y > max(y)/3 & y < 2*max(y)/3);
@@ -319,20 +311,24 @@ for i = 1:size(od,1)
 		end
 		rm_this = isnan(odour_levels) | isnan(gain) | gain == 0 ;
 		odour_levels(rm_this) = []; gain(rm_this) = [];
-		plot(ax(2),odour_levels,gain,'-+','Color',c2(i,:))
 	end
+	% weird outlier which is obviously wrong
+	if i == 2 & length(gain) == 5
+		gain(2) = []; odour_levels(2) = [];
+	end
+	plot(ax(6),odour_levels,gain,'-+','Color',c2(i,:))
 end
-xlabel(ax(1),'Projected Light Stimulus (\muW)')
-ylabel(ax(1),'ab3A Firing Rate (Hz)')
 
-set(ax(2),'XScale','log','YLim',[0 2],'XTick',[1e-4 1e-3 1e-2 1e-1 1e0])
-xlabel(ax(2),'Odor Background (V)')
-ylabel(ax(2),'ORN Gain (Hz/\muW)')
 
-% add an inset showing how the odour affects the neuron
-ax = axes(); hold on
-ax.Position = [0.8 0.52 0.12 0.12];
-ax.Tag = 'inset';
+xlabel(ax(5),'Projected Light Stimulus (\muW)')
+ylabel(ax(5),'ab3A Firing Rate (Hz)')
+set(ax(5),'XLim',[0 150],'YLim',[0 65])
+
+set(ax(6),'XScale','log','YLim',[0 1],'XTick',[1e-4 1e-3 1e-2 1e-1 1e0],'XLim',[1e-4 1])
+xlabel(ax(6),'Odor background (V)')
+ylabel(ax(6),'ab3A ORN gain (Hz/\muW)')
+
+% show that firing rate increases with odour in supp. figure. 
 c = lines(size(od,1));
 for i = 1:size(od,1)
 	% for each neuron
@@ -345,39 +341,65 @@ for i = 1:size(od,1)
 	end
 	rm_this = isnan(s) | isnan(f);
 	s(rm_this) = []; f(rm_this) = [];
-	plot(ax,s,f,'-+','Color',c(i,:))
+	plot(axs(5),s,f,'-+','Color',c(i,:))
 end
-set(ax,'XScale','log','XTick',[1e-4 1e-3 1e-2 1e-1 1e0])
-ylabel(ax,'Firing rate (Hz)')
+set(axs(5),'XScale','log','XTick',[1e-4 1e-3 1e-2 1e-1 1e0])
+ylabel(axs(5),'Odor-induced firing rate (Hz)')
+xlabel(axs(5),'Odor Background (V)')
 
-subplot(3,3,1), hold on
+% also show gain computed directly
+for i = 1:size(od,1)
+	gain = NaN(size(od,2),1);
+	odour_levels = NaN(size(od,2),1);
+	for j = 1:size(od,2)
+		if od(i,j).n_trials > 0
+			x = (nanmean(od(i,j).firing_projected(uts,:),2)); x = x(:);
+			y = (nanmean(od(i,j).firing_rate(uts,:),2)); y = y(:);
+			gain(j) = std(y)/std(x);
+			odour_levels(j) = nanmean((nanmean(od_odour(i,j).stimulus(:,:),2)));
+		end
+		rm_this = isnan(odour_levels) | isnan(gain) | gain == 0 ;
+		odour_levels(rm_this) = []; gain(rm_this) = [];
+		plot(axs(4),odour_levels,gain,'-+','Color',c2(i,:))
+	end
+end
+set(axs(4),'XScale','log','XTick',[1e-4 1e-3 1e-2 1e-1 1e0],'YLim',[0 1],'XLim',[1e-4 1])
+ylabel(axs(4),'ab3A ORN gain (Hz/\muW)')
+xlabel(axs(4),'Odor background (V)')
+
+axes(ax(1))
 o = imread('../images/chrimson-1.png');
 imagesc(o);
 axis ij
 axis image
 axis off
 
-subplot(3,3,4), hold on
+axes(ax(4))
 o = imread('../images/chrimson-2.png');
 imagesc(o);
 axis ij
 axis image
 axis off
 
-subplot(3,3,7), hold on
+axes(ax(7))
 o = imread('../images/chrimson-3.png');
 imagesc(o);
 axis ij
 axis image
 axis off
 
-prettyFig('fs',13,'FixLogX',true,'lw',1.3,'plw',1.2)
-labelFigure
-
+prettyFig(main_fig,'fs',13,'FixLogX',true,'lw',1.5,'plw',1.2)
 
 if being_published
 	snapnow
-	delete(gcf)
+	delete(main_fig)
+end
+
+prettyFig(supp_fig,'fs',15,'FixLogX',true,'lw',1.7,'plw',2)
+
+if being_published
+	snapnow
+	delete(supp_fig)
 end
 
 

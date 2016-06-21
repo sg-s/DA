@@ -1,7 +1,7 @@
 %% plotMSGKinetics.m
 % makes a plot LFP and firing rate delays as a function of the mean stimulus from the mean-shifted gaussians experiment
 
-function [] = plotMSGKinetics(cdata,ax)
+function plot_handles = plotMSGKinetics(cdata,ax)
 
 % unpack data
 v2struct(cdata)
@@ -37,11 +37,12 @@ lag_LFP = lag_LFP - (z-a);
 lag_LFP(lag_LFP<0) = NaN; lag_LFP(lag_LFP>1e3) = NaN;
 
 c = lines(2);
-plot(ax,mean_stim,lag_LFP,'+','Color',c(2,:))
+[~,idx] = sort(mean_stim);
+plot_handles(1) = plot(ax,mean_stim(idx),lag_LFP(idx),'+','Color',c(2,:));
 xlabel(ax,'Mean Stimulus (V)')
 ylabel(ax,'Lag (ms)')
 
-plot(ax,mean_stim,lag_fA,'+','Color',c(1,:))
+plot_handles(2) = plot(ax,mean_stim(idx),lag_fA(idx),'+','Color',c(1,:));
 xlabel(ax,'Mean Stimulus (V)')
 set(ax,'YLim',[0 max([lag_LFP lag_fA])],'XScale','linear')
 

@@ -14,6 +14,30 @@ c = parula(length(paradigm));
 mean_stim = nanmean(PID(a:z,:));
 [~,idx]=sort(mean_stim,'ascend');
 
+% if length(fA_gain)==86
+% 	keyboard
+% end
+% figure, hold on
+% for i = 1:max(orn)
+% 	try
+% 		x = mean_stim(orn==i); x=  x(:);
+% 		y = LFP_gain(orn==i); y = y(:);
+% 		rm_this = isnan(x) | isnan(y);
+% 		plot(x(~rm_this),y(~rm_this),'-+')
+% 		options = fitoptions(fittype('poly1'));
+% 		options.Lower = [-1 -Inf];
+% 		options.Upper = [-1 Inf];
+% 		cf_temp = fit(log(x(~rm_this)),log(y(~rm_this)),'poly1',options);
+% 		cf = fit(x(~rm_this),y(~rm_this),'power1');
+% 		warning off
+% 		cf.a = exp(cf_temp.p2); cf.b = -1;
+% 		warning on
+% 		plot(sort(x),cf(sort(x)),'r');
+% 		disp(i)
+% 	catch
+% 	end
+% end
+
 % show gain changes -- firing gain vs. mean stimulus
 for i = 1:width(PID)
 	ii = idx(i);
@@ -38,8 +62,8 @@ warning on
 
 plot(ax(2),sort(x),cf(sort(x)),'r');
 set(ax(2),'XScale','log','YScale','log')
-xlabel(ax(2),'Mean Stimulus (V)')
-ylabel(ax(2),'Firing Gain (Hz/V)')
+xlabel(ax(2),'Mean stimulus (V)')
+ylabel(ax(2),'ORN gain (Hz/V)')
 
 
 % show gain changes -- LFP gain vs. mean stimulus
@@ -65,6 +89,6 @@ warning on
 
 plot(ax(1),sort(x),cf(sort(x)),'r');
 set(ax(1),'XScale','log','YScale','log')
-xlabel(ax(1),'Mean Stimulus (V)')
-ylabel(ax(1),'Transduction Gain (mV/V)')
+xlabel(ax(1),'Mean stimulus (V)')
+ylabel(ax(1),'Transduction gain (mV/V)')
 

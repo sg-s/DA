@@ -53,7 +53,7 @@ warning on
 
 plot(ax(1),sort(x),cf(sort(x)),'r');
 set(ax(1),'XScale','log','YScale','log')
-xlabel(ax(1),'Mean Stimulus (V)')
+xlabel(ax(1),'Mean stimulus (V)')
 ylabel(ax(1),'\sigma_{LFP}/\sigma_{Stimulus} (Hz/V)')
 
 
@@ -77,5 +77,5 @@ warning on
 
 plot(ax(2),sort(x),cf(sort(x)),'r');
 set(ax(2),'XScale','log','YScale','log')
-xlabel(ax(2),'Mean Stimulus (V)')
+xlabel(ax(2),'Mean stimulus (V)')
 ylabel(ax(2),'\sigma_{Firing Rate}/\sigma_{Stimulus} (Hz/V)')

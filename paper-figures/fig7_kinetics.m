@@ -9,11 +9,10 @@
 pHeader;
 dm = dataManager;
 
-figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
-for i = 6:-1:1
-	ax(i) = subplot(2,3,i); hold on
+figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
+for i = 4:-1:1
+	ax(i) = subplot(2,2,i); hold on
 end
-delete(ax(3)); delete(ax(6))
 
 
 % ##    ##    ###    ######## ##     ## ########     ###    ##       
@@ -57,8 +56,7 @@ for i = 1:length(od)
 	axes(ax(1))
 	l(2) = plotPieceWiseLinear(mean_x,lag,'Color',c(1,:),'nbins',19);
 
-	axes(ax(4))
-
+	axes(ax(3))
 	plotPieceWiseLinear(t,lag,'Color',c(1,:),'nbins',19);
 
 
@@ -72,7 +70,7 @@ for i = 1:length(od)
 	axes(ax(1))
 	l(1) = plotPieceWiseLinear(mean_x,lag,'Color',c(2,:),'nbins',19);
 
-	axes(ax(4))
+	axes(ax(3))
 	plotPieceWiseLinear(t,lag,'Color',c(2,:),'nbins',19);
 
 end
@@ -82,10 +80,109 @@ set(ax(1),'YLim',[0 140],'XLim',[0 0.6])
 L = legend(l,{'LFP','Firing Rate'},'Location','southeast');
 title(ax(1),['ab3A' char(10) 'ethyl-acetate'])
 
-set(ax(4),'YLim',[0 140],'XLim',[10 5000],'XScale','log')
-xlabel(ax(4),'Time since odor encounter (ms)')
-ylabel(ax(4),'Lag (ms)')
+set(ax(3),'YLim',[0 140],'XLim',[10 5000],'XScale','log')
+xlabel(ax(3),'Time since odor encounter (ms)')
+ylabel(ax(3),'Lag (ms)')
 
+
+% Now we 
+
+history_lengths = round(logspace(1.7,4,50)); % all the history lengths we look at, in ms
+example_history_lengths = [100 10e3];
+gain_mu = struct; gain_mu(length(example_history_lengths)).gain = []; gain_mu(1).mu = [];
+rho = NaN(length(history_lengths),length(od));
+
+use_this_segment = false(length(od(1).firing_rate),1);
+use_this_segment(5e3:end-5e3) = true;
+
+for i = [2 3 5 6]
+	temp = od(i);
+	pred = nanmean(temp.firing_projected,2); pred = pred(use_this_segment);
+	resp = nanmean(temp.firing_rate,2);  resp = resp(use_this_segment);
+	stim = nanmean(temp.stimulus,2); stim = stim - mean(stim(1:5e3));
+	stim = stim(use_this_segment);
+
+	% find when the valve opens
+	[ons,offs] = findWhiffs(stim);
+
+	% plot the gain in each of these windows
+	[gain,gain_err] = findGainInWindows(ons,offs,pred,resp);
+
+	rm_this = gain < 0 | gain_err < .8;
+	gain(rm_this) = [];
+	ons(rm_this) = [];
+	offs(rm_this) = [];
+
+	% find the mean stimulus in the preceding X ms in these windows
+	for j = 1:length(example_history_lengths)
+		mu = findMeanInWindows(ons,offs,computeSmoothedStimulus(stim,example_history_lengths(j)));
+		gain_mu(j).mu = [gain_mu(j).mu(:); mu(:)];
+		gain_mu(j).gain = [gain_mu(j).gain(:); gain(:)];
+	end
+
+	% also find rho for various values of the history length and plot it
+	rho(:,i) = findRhoForHistoryLengths(gain,stim,ons,offs,history_lengths);
+
+end
+
+errorbar(ax(4),history_lengths,nanmean(rho,2),nanstd(rho,[],2),'k')
+set(ax(4),'XScale','log','YLim',[-1 .4],'XTick',[10 1e2 1e3 1e4],'XLim',[10 1e4])
+xlabel(ax(4),'Gain control timescale (ms)')
+ylabel(ax(4),['Correlation between' char(10) 'sgain and \mu_{stimulus}'])
+
+% show the gain vs. the mean stimulus
+c = lines(4);
+axes(ax(2))
+plotPieceWiseLinear(gain_mu(end).mu,gain_mu(end).gain,'nbins',10,'Color',c(3,:));
+
+axes(ax(2))
+plotPieceWiseLinear(gain_mu(1).mu,gain_mu(1).gain,'nbins',10,'Color',c(4,:));
+
+% fit Weber's Law to this
+x = gain_mu(1).mu;
+y = gain_mu(1).gain;
+options = fitoptions(fittype('poly1'));
+options.Lower = [-1 -Inf];
+options.Upper = [-1 Inf];
+cf_temp = fit(log(x(:)),log(y(:)),'poly1',options);
+cf = fit(x(:),y(:),'power1');
+warning off
+cf.a = exp(cf_temp.p2); cf.b = -1;
+warning on
+plot(ax(2),sort(x),cf(sort(x)),'r')
+
+
+
+set(ax(2),'XScale','log','YScale','log')
+xlabel(ax(2),'\mu_{Stimulus} (V)')
+ylabel(ax(2),'Gain (Hz/V)')
+
+prettyFig('fs',14);
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%  ######  ##     ## ########  ########     ######## ####  ######   
+% ##    ## ##     ## ##     ## ##     ##    ##        ##  ##    ##  
+% ##       ##     ## ##     ## ##     ##    ##        ##  ##        
+%  ######  ##     ## ########  ########     ######    ##  ##   #### 
+%       ## ##     ## ##        ##           ##        ##  ##    ##  
+% ##    ## ##     ## ##        ##           ##        ##  ##    ##  
+%  ######   #######  ##        ##           ##       ####  ######   
+    
+figure('outerposition',[0 0 1200 801],'PaperUnits','points','PaperSize',[1200 801]); hold on
+clear ax
+for i = 8:-1:1
+	ax(i) = subplot(2,4,i); hold on
+end
+delete(ax(4)); delete(ax(8))
+
+% make space for the legend 
+for i = [2 3 6 7]
+	movePlot(ax(i),'right',.2)
+end
 
 % ##     ##  ######   ######   
 % ###   ### ##    ## ##    ##  
@@ -110,7 +207,7 @@ for i = 1:length(data_hashes)-1
 	end
 	cdata = cleanMSGdata(cdata,'extract_filter',false);
 
-	plot_handles = plotMSGKinetics(cdata,ax(2));
+	plot_handles = plotMSGKinetics(cdata,ax(1));
 
 	% rescale the x axis
 	temp = plot_handles(1).XData;
@@ -128,7 +225,6 @@ for i = 1:length(data_hashes)-1
 	plot_handles(1).Marker = markers{i};
 	plot_handles(2).Marker = markers{i};
 	t = [orn_names{i} char(10) odour_names{i}];
-	%title(t);
 end
 
 % fake some plots for a nice legend
@@ -138,11 +234,11 @@ for i = 1:length(markers)-1
 	L{i} = [orn_names{i} ' ' odour_names{i}];
 end
 lh = legend(l,L,'Location','southeast');
-lh.Position = [0.66 0.7 0.15 0.1];
+lh.Position = [0.31 0.7 0.15 0.1];
 lh.FontSize = 15;
 
-set(ax(2),'YLim',[0 200],'XLim',[-0.1 1.1])
-xlabel(ax(2),'Mean stimulus (rescaled)')
+set(ax(1),'YLim',[0 200],'XLim',[-0.1 1.1])
+xlabel(ax(1),'Mean stimulus (rescaled)')
 
 
 %% Now, show the timescale of gain control using Carlotta's data
@@ -200,24 +296,9 @@ for i = 1:length(plot_handles)
 	L{i} = [orn_data(do_these(i)).neuron_name ' ' odour_names{i}];
 end
 lh = legend(plot_handles,L,'Location','southeast');
-lh.Position = [0.66 0.15 0.15 0.2];
+lh.Position = [0.31 0.15 0.15 0.2];
 lh.FontSize = 15;
 
-prettyFig('fs',.5,'font_units','centimeters')
 
-% deintersect the bottom row
-for i = 4:5
-	deintersectAxes(ax(i));
-end
-
-if being_published	
-	snapnow	
-	delete(gcf)
-end
-
-
-%% Version Info
-%
-pFooter;
 
 

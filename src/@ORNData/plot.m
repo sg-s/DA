@@ -26,7 +26,7 @@ plot_type = 'trial-wise'; % can also be "sem", or "mean"
 grouping = [];
 plot_here = [];
 history_length = 500; % in ms, or the time step of the data (which is the same)
-hl_min = 50; % in ms
+hl_min = 10; % in ms
 hl_max = 1e4;
 history_lengths = unique([logspace(log10(hl_min),log10(500),15) logspace(log10(500),log10(hl_max),15)]);
 min_inst_gain_r2 = .8; % r2 values of inst. gain below this are discarded
@@ -150,7 +150,7 @@ end
 
 if strfind(plot_what,'whiffGainAnalysis.')
 	% verify that we get three arguments
-	assert(length(strfind(plot_what,'.'))==2,'string specfiying what to plot should have 3 parts, since you are asking for a inst. gain analysis. e.g, "instGainAnalysis.firing_rate.mu')
+	assert(length(strfind(plot_what,'.'))==2,'string specfiying what to plot should have 3 parts, since you are asking for a inst. gain analysis. e.g, "whiffGainAnalysis.firing_rate.mu')
 
 	if isempty(plot_here)
 	 	clear plot_here % so that plot_here gets the right class (axes object)
@@ -202,15 +202,15 @@ if strfind(plot_what,'whiffGainAnalysis.')
 	for j = 1:length(whiff_ons)
 		shat(j) = mean(temp(whiff_ons(j):whiff_offs(j)));
 	end
-	shat = shat - nanmean(shat);
-	shat = shat/nanstd(shat);
+	% shat = shat - nanmean(shat);
+	% shat = shat/nanstd(shat);
 	plot(plot_here(1),shat(gain>0 & gain_err > .8),gain(gain>0 & gain_err > .8),'k+')
 
 	% colour the plot 
-	shat = shat - nanmin(shat);
-	shat = shat/nanmax(shat);
+	% shat = shat - nanmin(shat);
+	% shat = shat/nanmax(shat);
 	c = parula(100);
-	for i = 1:length(valve_ons)
+	for i = 1:length(whiff_ons)
 		try
 			plot_handles(1).dots(i).Color = c(1+floor(shat(i)*99),:);
 		catch
@@ -219,13 +219,11 @@ if strfind(plot_what,'whiffGainAnalysis.')
 	
 
 	% cosmetics
-	xlabel(plot_here(3),'History Length (ms)')
-	ylabel(plot_here(3),'\rho')
-	xlabel(plot_here(2),'\mu_{stimulus} in preceding window (norm)')
-	ylabel(plot_here(2),'Gain (norm)')
-	xlabel(plot_here(1),'LN Model prediction (Hz)')
-	ylabel(plot_here(1),'ORN Response (Hz)')
-	set(plot_here(3),'YLim',[-1 1])
+	xlabel(plot_here(2),'History Length (ms)')
+	ylabel(plot_here(2),'\rho')
+	xlabel(plot_here(1),'\mu_{stimulus} in preceding window (norm)')
+	ylabel(plot_here(1),'Gain (norm)')
+	set(plot_here(2),'YLim',[-1 1])
 
 
 end

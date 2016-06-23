@@ -273,6 +273,10 @@ title(ax(4),['ab3A' char(10) 'ethyl acetate'])
 
 % define what we want to work on
 data_hashes = {'bcd4cf4fe12817d084a2b06f981161ee','cd6753c0e4cf02895cd5e2c5cb58aa1a','3ea08ccfa892c6545d74bbdaaa6cbee1','f11c4a5792d0c9fec7c40fd6aa2fce40'};
+% for i = 1:length(data_hashes)
+% 	cdata = consolidateData2(dm.getPath(data_hashes{i}));
+% 	[oval(length(cdata.orn)) ' ' oval(length(unique(cdata.orn))) ' ' oval(length(unique(cdata.fly)))]
+% end
 odour_names = {'1-pentanol','1-pentanol','2-butanone','isoamyl-acetate'};
 orn_names = {'ab3A','ab2A','ab2A','pb1A'};
 

@@ -394,6 +394,7 @@ plot(ax(5),x,y,'+','Color',[opacity opacity 1])
 errorbar(ax(5),nanmean(x),nanmean(y),nanstd(y),'b','LineWidth',4,'Marker','o','MarkerSize',10);
 xlabel('\sigma_{Stimulus} (V)')
 ylabel('ab3 transduction Gain (mV/V)')
+set(ax(5),'XLim',[0 .2],'YLim',[0 15])
 
 % show firing i/o curves
 ax(9) = subplot(2,5,9); hold on
@@ -432,14 +433,8 @@ plot(ax(10),x,y,'+','Color',[opacity opacity 1])
 errorbar(ax(10),nanmean(x),nanmean(y),nanstd(y),'b','LineWidth',4,'Marker','o','MarkerSize',10);
 xlabel('\sigma_{Stimulus} (V)')
 ylabel('ab3A Firing gain (Hz/mV)')
+set(ax(10),'XLim',[0 .2],'YLim',[0 50])
 
-% add an explanatory graphic
-% ax(1) = subplot(1,5,1); hold on
-% o = imread('../images/fig-LFP-cartoon.png');
-% imagesc(o);
-% axis ij
-% axis image
-% axis off
 
 prettyFig('fs',16)
 
@@ -491,19 +486,6 @@ a.TickLength = [0 0];
 a.XLim = [0 1];
 a.YLim = [0 1];
 
-% % draw a couple of rectangles to box things in
-% r1 = rectangle('Position',[0.1 0.1 .4 .4],'Curvature',0);
-% r1.Position = [.255 .025 .34 .95];
-% r1.FaceColor = [.9 .9 .9];
-% r1.LineStyle = 'none';
-% r1.Parent = a;
-
-% r2 = rectangle('Position',[0.1 0.1 .4 .4],'Curvature',0);
-% r2.Position = [.64 .025 .345 .95];
-% r2.FaceColor = [.9 .9 .9];
-% r2.LineStyle = 'none';
-% r2.Parent = a;
-
 % add some text
 t1 = text;
 t1.String = 'Changing stimulus mean';
@@ -526,200 +508,165 @@ end
 
 
 %% Supplementary Figure
-% In this supplementary figure, we show the same result by estimating gain as ratios of standard deviations of output to input. We also show many other checks, described below: 
+% Supplementary figure for figure 4. 
 
-% clear ax
-% figure('outerposition',[0 0 800 1000],'PaperUnits','points','PaperSize',[800 1000]); hold on
+figure('outerposition',[0 0 800 910],'PaperUnits','points','PaperSize',[800 910]); hold on
 
-% % % first set of plots: changing mean ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-% subplot(4,3,1); hold on
-% title(['Changing stimulus mean' char(10) 'direct gain estimation'])
-% x = mean(msg_data.PID(20e3:45e3,:));
-% y = std(msg_data.LFP(20e3:45e3,:))./std(msg_data.PID(20e3:45e3,:));
-% c = parula(length(unique(msg_data.paradigm))+1);
-% for i = 1:length(x)
-% 	plot(x(i),.1*y(i),'+','Color',c(msg_data.paradigm(i),:)); % unit correction
-% end
-% ff = fit(x(:),.1*y(:),'power1','Upper',[Inf -1],'Lower',[0 -1]);
-% plot(x,ff(x),'r')
-% set(gca,'XScale','log','YScale','log','YLim',[10 1e3],'XTick',[.1 1],'XLim',[.1 2])
-% xlabel('\mu_{Stimulus} (V)')
-% ylabel('\sigma_{LFP}/\sigma_{Stimulus} (mV/V)')
+% changing mean stimulus, estimating gain directly without a LN model ~~~~~~~~~~~~~~~~~~~~ 
+subplot(4,3,1); hold on
+title(['Changing stimulus mean' char(10) 'direct gain estimation'])
+x = mean(msg_data.PID(20e3:45e3,:));
+y = std(msg_data.LFP(20e3:45e3,:))./std(msg_data.PID(20e3:45e3,:));
+c = parula(length(unique(msg_data.paradigm))+1);
+for i = 1:length(x)
+	plot(x(i),.1*y(i),'+','Color',c(msg_data.paradigm(i),:)); % unit correction
+end
+ff = fit(x(:),.1*y(:),'power1','Upper',[Inf -1],'Lower',[0 -1]);
+plot(x,ff(x),'r')
+set(gca,'XScale','log','YScale','log','YLim',[10 1e3],'XTick',[.1 1],'XLim',[.1 2])
+xlabel('\mu_{Stimulus} (V)')
+ylabel('\sigma_{LFP}/\sigma_{Stimulus} (mV/V)')
 
-% subplot(4,3,4); hold on
-% x = mean(msg_data.PID(20e3:45e3,:));
-% y = 10*std(msg_data.fA(20e3:45e3,:))./std(msg_data.LFP(20e3:45e3,:));
-% c = parula(length(unique(msg_data.paradigm))+1);
-% for i = 1:length(x)
-% 	plot(x(i),y(i),'+','Color',c(msg_data.paradigm(i),:));
-% end
-% set(gca,'XScale','log','YScale','log','YLim',[.1 10],'XTick',[.1 1],'XLim',[.1 2])
-% ylabel('\sigma_{Firing rate}/\sigma_{LFP} (Hz/mV)')
-% xlabel('\mu_{Stimulus} (V)')
+subplot(4,3,4); hold on
+x = mean(msg_data.PID(20e3:45e3,:));
+y = 10*std(msg_data.fA(20e3:45e3,:))./std(msg_data.LFP(20e3:45e3,:));
+c = parula(length(unique(msg_data.paradigm))+1);
+for i = 1:length(x)
+	plot(x(i),y(i),'+','Color',c(msg_data.paradigm(i),:));
+end
+set(gca,'XScale','log','YScale','log','YLim',[.1 10],'XTick',[.1 1],'XLim',[.1 2])
+ylabel('\sigma_{Firing rate}/\sigma_{LFP} (Hz/mV)')
+xlabel('\mu_{Stimulus} (V)')
 
-% % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-% % second set: changing variance, gain as ratio of stds; and correcting for change in mean ~~
-% subplot(4,3,2), hold on
-% title(['Changing stimulus variance' char(10) 'direct gain estimation'])
-% y = std(reshaped_LFP(1e3:5e3,:))./std(reshaped_PID(1e3:5e3,:));
-% y = y./mean(reshaped_PID(1e3:5e3,:));
-% y(r2_K1p<min_r2) = NaN;
-% x = std(reshaped_PID(1e3:5e3,:));
-% plot(x,y,'+','Color',[1 opacity opacity])
-% errorbar(nanmean(x),nanmean(y),nanstd(y),'r','LineWidth',4,'Marker','o','MarkerSize',10);
+%% changing stimulus variance, comparing fold change in gain at LFP to fold change in gain at transduction  ~~~~~~ ~~~~~~~~~~~~ ~~~~~~~~~~~~ ~~~~~~~~~~~~ ~~~~~~~~~~~~ ~~~~~~~~~~~~ ~~~~~~
 
-% y = std(reshaped_LFP(6e3:9e3,:))./std(reshaped_PID(6e3:9e3,:));
-% y = y./mean(reshaped_PID(6e3:9e3,:));
-% y(r2_K1p<min_r2) = NaN;
-% x = std(reshaped_PID(6e3:9e3,:));
-% plot(x,y,'+','Color',[opacity opacity 1])
-% errorbar(nanmean(x),nanmean(y),nanstd(y),'b','LineWidth',4,'Marker','o','MarkerSize',10);
-% xlabel('\sigma_{s} (V)')
-% ylabel('\sigma_{LFP}/\sigma_{s} /\mu_{s} (a.u.)')
-% set(gca,'YLim',[0 40],'XLim',[0 .2])
+clear ax gains
+gains.gL_hi = hi_gain_LFP_corrected(ok);
+gains.gL_lo = lo_gain_LFP_corrected(ok);
+gains.gF_hi = hi_gain_firing(ok);
+gains.gF_lo = lo_gain_firing(ok);
+gains.gT_hi = hi_gain_total_corrected(ok);
+gains.gT_lo = lo_gain_total_corrected(ok);
+gains.s_lo = std(reshaped_PID(6e3:9e3,ok));
+gains.s_hi = std(reshaped_PID(1e3:5e3,ok));
 
-% subplot(4,3,5), hold on
-% y = std(reshaped_fA(1e3:5e3,:))./std(reshaped_LFP(1e3:5e3,:));
-% y = y./mean(reshaped_PID(1e3:5e3,:));
-% y(r2_K2p<min_r2) = NaN;
-% x = std(reshaped_PID(1e3:5e3,:));
-% plot(x,y,'+','Color',[1 opacity opacity])
-% errorbar(nanmean(x),nanmean(y),nanstd(y),'r','LineWidth',4,'Marker','o','MarkerSize',10);
-% ylabel('\sigma_{LFP}/\sigma_{s} /\mu_{s} (a.u.)')
-% xlabel('\sigma_{s} (V)')
+ax(5) = subplot(4,3,7); hold on
+ax(6) = subplot(4,3,10); hold on
+make_plot = false(6,1); make_plot(5:6) = true;
+ax = compareGainsInFig4(gains,ax,make_plot);
 
-% y = std(reshaped_fA(6e3:9e3,:))./std(reshaped_LFP(6e3:9e3,:));
-% y = y./mean(reshaped_PID(6e3:9e3,:));
-% y(r2_K2p<min_r2) = NaN;
-% x = std(reshaped_PID(6e3:9e3,:));
-% plot(x,y,'+','Color',[opacity opacity 1])
-% errorbar(nanmean(x),nanmean(y),nanstd(y),'b','LineWidth',4,'Marker','o','MarkerSize',10);
-% set(gca,'YLim',[0 100],'XLim',[0 .2])
-% ylabel('\sigma_{firing}/\sigma_{LFP}/\mu_{s} (a.u.)')
-% xlabel('\sigma_{s} (V)')
+% move pie chart, prettify it
+ax(7).Position = [0.27 0.18 0.07 0.15];
+ax(7).Children(1).String = strrep(ax(7).Children(1).String,'%','');
+ax(7).Children(1).Position = [.6 -.24];
+ax(7).Children(1).Color = 'w';
+ax(7).Children(3).String = strrep(ax(7).Children(3).String,'%','');
+ax(7).Children(3).Position = [-.55 .21];
+ax(7).Children(3).Color = 'w';
 
-% % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-% %% third set: just like in main figure but we don't correct for change in mean ~~~~~~~~
-% subplot(4,3,3); hold on
-% title(['Changing stimulus variance' char(10) 'no correction for \mu'])
-% x = std(reshaped_PID(1e3:4e3,r2_K1p>min_r2));
-% y = hi_gain_LFP(r2_K1p>min_r2);
-% plot(x,y,'+','Color',[1 opacity opacity])
-% errorbar(nanmean(x),nanmean(y),nanstd(y),'r','LineWidth',4,'Marker','o','MarkerSize',10);
-% x = std(reshaped_PID(6e3:9e3,r2_K1p>min_r2));
-% y = lo_gain_LFP(r2_K1p>min_r2);
-% plot(x,y,'+','Color',[opacity opacity 1])
-% errorbar(nanmean(x),nanmean(y),nanstd(y),'b','LineWidth',4,'Marker','o','MarkerSize',10);
-% xlabel('\sigma_{s} (V)')
-% ylabel(['ab3 transduction' char(10) 'gain (mV/V)'])
-% set(gca,'XLim',[0 .2],'YLim',[0 15])
+% ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ changing stimulus variance, directly estimating gains and then correcting for change in mean. 
 
-% % plot firing gain change
-% subplot(4,3,6); hold on; 
-% x = std(reshaped_PID(1e3:4e3,r2_K2p>min_r2));
-% y = hi_gain_firing(r2_K2p>min_r2);
-% plot(x,y,'+','Color',[1 opacity opacity])
-% errorbar(nanmean(x),nanmean(y),nanstd(y),'r','LineWidth',4,'Marker','o','MarkerSize',10);
-% x = std(reshaped_PID(6e3:9e3,r2_K2p>min_r2));
-% y = lo_gain_firing(r2_K2p>min_r2);
-% plot(x,y,'+','Color',[opacity opacity 1])
-% errorbar(nanmean(x),nanmean(y),nanstd(y),'b','LineWidth',4,'Marker','o','MarkerSize',10);
-% xlabel('\sigma_{s} (V)')
-% ylabel('ab3A firing gain (Hz/mV)')
-% set(gca,'YLim',[0 50],'XLim',[0 .2])
+clear gains
+gains.gL_hi = std(reshaped_LFP(1e3:5e3,ok))./std(reshaped_PID(1e3:5e3,ok));
+gains.gL_lo = std(reshaped_LFP(6e3:9e3,ok))./std(reshaped_PID(6e3:9e3,ok));
+gains.gF_hi = std(reshaped_fA(1e3:5e3,ok))./std(reshaped_LFP(1e3:5e3,ok));
+gains.gF_lo = std(reshaped_fA(6e3:9e3,ok))./std(reshaped_LFP(6e3:9e3,ok));
+gains.gT_hi = std(reshaped_fA(1e3:5e3,ok))./std(reshaped_PID(1e3:5e3,ok));
+gains.gT_lo = std(reshaped_fA(6e3:9e3,ok))./std(reshaped_PID(6e3:9e3,ok));
+gains.s_lo = std(reshaped_PID(6e3:9e3,ok));
+gains.s_hi = std(reshaped_PID(1e3:5e3,ok));
+% correct for change in mean
+gains.gL_hi = gains.gL_hi.*mean(reshaped_PID(1e3:5e3,ok));
+gains.gL_lo = gains.gL_lo.*mean(reshaped_PID(6e3:9e3,ok));
+gains.gT_hi = gains.gT_hi.*mean(reshaped_PID(1e3:5e3,ok));
+gains.gT_lo = gains.gT_lo.*mean(reshaped_PID(6e3:9e3,ok));
 
 
-% % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-% % fourth set: comparing where gain happens in the uncorrected data
-% subplot(4,3,7), hold on
-% plot(lo_gain_firing(ok).*lo_gain_LFP(ok),lo_gain_total(ok),'r+')
-% xlabel('gain_{LFP} \times gain_{firing} (Hz/V)'); ylabel('Total gain (Hz/V)')
-% plot(hi_gain_firing(ok).*hi_gain_LFP(ok),hi_gain_total(ok),'b+')
-% plot([0 500],[0 500],'k--')
-% title('no correction for \mu')
-% set(gca,'XLim',[0 500],'YLim',[0 500])
+subplot(4,3,8); hold on
+plot(gains.s_hi,gains.gL_hi,'+','Color',[1 opacity opacity])
+errorbar(nanmean(gains.s_hi),nanmean(gains.gL_hi),nanstd(gains.gL_hi),'r','LineWidth',4,'Marker','o','MarkerSize',10);
+plot(gains.s_lo,gains.gL_lo,'+','Color',[opacity opacity 1]);
+errorbar(nanmean(gains.s_lo),nanmean(gains.gL_lo),nanstd(gains.gL_lo),'b','LineWidth',4,'Marker','o','MarkerSize',10);
+xlabel('\sigma_{Stimulus} (V)')
+ylabel(['(\sigma_{LFP}/\sigma_{Stimulus})' char(10) '\times \mu_{Stimulus} (a.u.)'])
+set(gca,'XLim',[0 0.2],'YLim',[0 5])
 
-% subplot(4,3,8), hold on
-% x = (lo_gain_LFP./hi_gain_LFP).*(lo_gain_firing./hi_gain_firing);
-% y = lo_gain_total./hi_gain_total;
-% plot(x(ok),y(ok),'k+')
-% plot([0 2.5],[0 2.5],'k--')
-% xlabel(['Product of fold changes' char(10) 'in gains at firing and LFP'])
-% ylabel('Overall fold change in gain')
-% title('no correction for \mu')
-% set(gca,'XLim',[0 2.5],'YLim',[0 2.5])
+subplot(4,3,11); hold on
+plot(gains.s_hi,gains.gF_hi,'+','Color',[1 opacity opacity])
+errorbar(nanmean(gains.s_hi),nanmean(gains.gF_hi),nanstd(gains.gF_hi),'r','LineWidth',4,'Marker','o','MarkerSize',10);
+plot(gains.s_lo,gains.gF_lo,'+','Color',[opacity opacity 1]);
+errorbar(nanmean(gains.s_lo),nanmean(gains.gF_lo),nanstd(gains.gF_lo),'b','LineWidth',4,'Marker','o','MarkerSize',10);
+xlabel('\sigma_{Stimulus} (V)')
+ylabel('\sigma_{Firing}/\sigma_{LFP} (a.u.)')
+set(gca,'XLim',[0 0.2],'YLim',[0 50])
 
-% subplot(4,3,9); hold on
-% c = lines(2);
-% f = log(lo_gain_firing./hi_gain_firing); f = f(ok);
-% f = f./log(x(ok));
-% errorbar(2,mean(f),sem(f),'Color',c(1,:))
-% plot(2,mean(f),'o','Color',c(1,:),'LineWidth',3)
-% title('no correction')
+clear ax 
+ax(5) = subplot(4,3,9); hold on
+ax(6) = subplot(4,3,12); hold on
+make_plot = false(6,1); make_plot(5:6) = true;
+ax = compareGainsInFig4(gains,ax,make_plot);
 
-% f = log(lo_gain_LFP./hi_gain_LFP); f = f(ok);
-% f = f./log(x(ok));
-% errorbar(1,mean(f),sem(f))
-% set(gca,'XTick',[1 2],'XTickLabel',{'LFP','Firing'})
-% ylabel('Fraction contributed')
-% xlabel('Module')
-% plot(1,mean(f),'o','Color',c(2,:),'LineWidth',3)
-% set(gca,'XLim',[0.5 2.5],'YLim',[0 1],'XMinorTick','off')
+% move pie chart, prettify it
+ax(7).Position = [0.86 0.18 0.07 0.15];
+ax(7).Children(1).String = strrep(ax(7).Children(1).String,'%','');
+ax(7).Children(1).Position = [.6 -.24];
+ax(7).Children(1).Color = 'w';
+ax(7).Children(3).String = strrep(ax(7).Children(3).String,'%','');
+ax(7).Children(3).Position = [-.55 .21];
+ax(7).Children(3).Color = 'w';
 
-% % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-% % fifth set: comparing where gain happens in the corrected data
-% ax(10) = subplot(4,3,10); hold on
-% plot(lo_gain_firing(ok).*lo_gain_LFP_corrected(ok),lo_gain_total_corrected(ok),'r+')
-% plot(hi_gain_firing(ok).*hi_gain_LFP_corrected(ok),hi_gain_total_corrected(ok),'b+')
-% plot([0 500],[0 500],'k--')
-% xlabel('gain_{LFP} \times gain_{firing} (Hz/V)'); ylabel('Total gain (Hz/V)')
-% title('corrected for \mu')
+%% Weber's Law in transduction for other odors/receptors \
+% define what we want to work on
+data_hashes = {'bcd4cf4fe12817d084a2b06f981161ee','cd6753c0e4cf02895cd5e2c5cb58aa1a','3ea08ccfa892c6545d74bbdaaa6cbee1','f11c4a5792d0c9fec7c40fd6aa2fce40'};
+odour_names = {'1-pentanol','1-pentanol','2-butanone','isoamyl-acetate'};
+orn_names = {'ab3A','ab2A','ab2A','pb1A'};
 
-% set(gca,'XLim',[0 500],'YLim',[0 500])
+clear plot_here
+plot_here(1) = subplot(4,3,2); hold on
+plot_here(2) = subplot(4,3,3); hold on
+plot_here(3) = subplot(4,3,5); hold on
+plot_here(4) = subplot(4,3,6); hold on
 
-% ax(11) = subplot(4,3,11); hold on
-% x = (lo_gain_LFP_corrected./hi_gain_LFP_corrected).*(lo_gain_firing./hi_gain_firing);
-% y = lo_gain_total_corrected./hi_gain_total_corrected;
-% plot(x(ok),y(ok),'k+')
-% plot([0 2.5],[0 2.5],'k--')
-% xlabel(['Product of fold changes' char(10) 'in gains at firing and LFP'])
-% ylabel('Overall fold change in gain')
-% title('corrected for \mu')
-% set(gca,'XLim',[0 2.5],'YLim',[0 2.5])
+% core loop
+for i = length(data_hashes):-1:1
+	clear cdata
+	cdata = consolidateData2(dm.getPath(data_hashes{i}));
+	cdata = cleanMSGdata(cdata);
 
-% ax(12) = subplot(4,3,12); hold on
-% c = lines(2);
-% f = log(lo_gain_firing./hi_gain_firing); f = f(ok);
-% f = f./log(x(ok));
-% errorbar(2,mean(f),sem(f),'Color',c(1,:))
-% plot(2,mean(f),'o','Color',c(1,:),'LineWidth',3)
-% title('corrected for \mu')
+	% plot gain as we normally calculate it
+	clear ph
+	ph = plot_here(i);
+	plotMSGGain(cdata,ph);
 
-% f = log(lo_gain_LFP_corrected./hi_gain_LFP_corrected); f = f(ok);
-% f = f./log(x(ok));
-% errorbar(1,mean(f),sem(f))
-% set(gca,'XTick',[1 2],'XTickLabel',{'LFP','Firing'})
-% ylabel('Fraction contributed')
-% xlabel('Module')
-% plot(1,mean(f),'o','Color',c(2,:),'LineWidth',3)
-% set(gca,'XLim',[0.5 2.5],'YLim',[0 1])
+	t = [orn_names{i} char(10) odour_names{i}];
+	title(ph,t);
+end
 
-% % move the bottom row down
-% for i = 10:12
-% 	ax(i).Position(2) = .1;
-% end
+prettyFig('fs',14,'lw',1.5);
 
-% prettyFig('fs',14)
+if being_published
+	snapnow
+	delete(gcf)
+end
 
-% if being_published
-% 	snapnow
-% 	delete(gcf)
-% end
+% ######## ##     ## ######## ########     ###    
+% ##        ##   ##     ##    ##     ##   ## ##   
+% ##         ## ##      ##    ##     ##  ##   ##  
+% ######      ###       ##    ########  ##     ## 
+% ##         ## ##      ##    ##   ##   ######### 
+% ##        ##   ##     ##    ##    ##  ##     ## 
+% ######## ##     ##    ##    ##     ## ##     ## 
+
+% ########  ##        #######  ########  ######  
+% ##     ## ##       ##     ##    ##    ##    ## 
+% ##     ## ##       ##     ##    ##    ##       
+% ########  ##       ##     ##    ##     ######  
+% ##        ##       ##     ##    ##          ## 
+% ##        ##       ##     ##    ##    ##    ## 
+% ##        ########  #######     ##     ######  
+
 
 %% Extra plots showing modular gain
-% 
-
-%%
 % First, we compute gains directly, and don't correct for the change in mean
 
 clear gains

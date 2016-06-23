@@ -27,7 +27,7 @@ dm = dataManager;
 %      ########  ##     ##    ##    ##     ## 
 
 
-[PID, LFP, fA, paradigm, orn] = consolidateData(dm.getPath('e30707e8e8ef6c0d832eee31eaa585aa'),1);
+[PID, LFP, fA, paradigm, orn, fly] = consolidateData(dm.getPath('e30707e8e8ef6c0d832eee31eaa585aa'),1);
 
 global_start = 40e3; % 40 seconds
 global_end = length(PID) - 5e3; 
@@ -455,7 +455,7 @@ x = std(reshaped_PID(6e3:9e3,:));
 y = std(reshaped_fA(6e3:9e3,:))./x; 
 y(y==0) = NaN;
 plot(x,y,'b+')
-ylabel('(\sigma_{Firing rate}/\sigma_{Stimulus}) (a.u.)')
+ylabel('\sigma_{Firing rate}/\sigma_{Stimulus} (a.u.)')
 xlabel(gca,'\sigma_{Stimulus} (V)')
 set(gca,'XLim',[0 .22],'YLim',[0 300])
 

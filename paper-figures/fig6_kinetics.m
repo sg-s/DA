@@ -151,7 +151,14 @@ cf.a = exp(cf_temp.p2); cf.b = -1;
 warning on
 plot(ax(2),sort(x),cf(sort(x)),'r')
 
-
+% fake some plots for a nice legend
+clear l L
+for i = 1:2
+	l(i) = plot(ax(2),NaN,NaN,'Marker','o','MarkerFaceColor',c(i+2,:),'MarkerEdgeColor',c(i+2,:),'LineStyle','none');
+end
+L{2} = 'tau_{gain} = 10^2ms';
+L{1} = 'tau_{gain} = 10^4ms';
+lh = legend(l,L,'Location','southwest');
 
 set(ax(2),'XScale','log','YScale','log')
 xlabel(ax(2),'\mu_{Stimulus} (V)')
@@ -292,7 +299,7 @@ for i = 1:length(do_these)
 	plot(ax(5),history_lengths,rho,'-','Color',c(i,:));
 end
 
-set(ax(5),'XScale','log','YLim',[-1 0],'XTick',[1e2 1e3 1e4],'XLim',[100 1e4])
+set(ax(5),'XScale','log','YLim',[-1 0],'XTick',[1e1 1e2 1e3 1e4],'XLim',[10 1e4])
 xlabel(ax(5),'Gain control timescale (ms)')
 ylabel(ax(5),['Correlation between' char(10) 'gain and \mu_{stimulus}'])
 

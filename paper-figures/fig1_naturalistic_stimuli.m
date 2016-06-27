@@ -368,8 +368,20 @@ prettyFig('plw',1.5,'lw',1.5,'fs',.5,'FixLogX',true,'font_units','centimeters')
 
 legend('boxoff')
 
+% compress some plots to make small EPS files
+shrinkDataInPlot(axes_handles(3),1);
+shrinkDataInPlot(axes_handles(4),2);
+shrinkDataInPlot(ax(2),1);
+shrinkDataInPlot(axes_handles(5),2)
+shrinkDataInPlot(axes_handles(6),1)
+
+axes_handles(9).XLim(2) = 11;
 deintersectAxes(axes_handles(9))
+
+axes_handles(8).XLim(2) = 11;
 deintersectAxes(axes_handles(8))
+
+axes_handles(7).XLim(2) = 11;
 deintersectAxes(axes_handles(7))
 deintersectAxes(axes_handles(5))
 
@@ -378,6 +390,8 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+return
 
 
 %      ######  ##     ## ########  ########     ######## ####  ######   

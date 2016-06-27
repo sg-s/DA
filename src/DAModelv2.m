@@ -33,7 +33,7 @@ ub.C = 1;
 
 % extra bound
 lb.n_y = 2; lb.n_z = 2;
-ub.n_y = 2; ub.n_z = 2;
+ub.n_y = 4; ub.n_z = 4;
 lb.s0 = -5; ub.s0 = 1;
 ub.tau_z = 300; ub.tau_y = 100;
 

@@ -9,10 +9,22 @@
 pHeader;
 dm = dataManager;
 
-figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
+main_fig = figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
 for i = 4:-1:1
 	ax(i) = subplot(2,2,i); hold on
 end
+
+supp_fig = figure('outerposition',[0 0 1400 712],'PaperUnits','points','PaperSize',[1400 712]); hold on
+for i = 10:-1:1
+	axs(i) = subplot(2,5,i); hold on
+end
+delete(axs(5)); delete(axs(10));
+axs(5) = []; axs(end) = [];
+
+% define colors, etc. 
+LFP_color = lines(1);
+firing_color = [0 0 0];
+model_color = [1 0 0];
 
 
 % ##    ##    ###    ######## ##     ## ########     ###    ##       
@@ -35,7 +47,17 @@ end
 % analyse kinetics of LFP and firing rate during the naturalistic stimulus presentation
 load(dm.getPath('aeb361c027b71938021c12a6a12a85cd'),'-mat');
 
-c = lines(3);
+% first, fit the DA model to the data. (this was pre-fit, we're simply loading the fit here)
+load(dm.getPath('b1b883899ab8c5ce1aed465819e75fce'));
+
+% generate DA model responses
+dd = ORNData;
+for i = 1:length(od)
+	dd(i).stimulus = nanmean(od(i).stimulus,2);
+	dd(i).firing_rate = DAModelv2(dd(i).stimulus,p(i));
+end
+
+
 
 min_acceptable_corr = .5;
 min_acceptable_lag = 2;
@@ -44,6 +66,8 @@ for i = 1:length(od)
 	S = nanmean(od(i).stimulus,2); S = S - mean(S(1:5e3));
 	R = nanmean(od(i).firing_rate,2);
 	X = -nanmean(od(i).LFP,2);
+
+	DA_R = dd(i).firing_rate;
 
 	[lag, mean_x, max_corr] = findLagAndMeanInWindow(S,R,1e3,25);
 	time_since_thresh_crossing = findTimeSinceThresholdCrossing(S,mean(S));
@@ -54,10 +78,31 @@ for i = 1:length(od)
 	t(rm_this) = []; t(t<10) = NaN;
 	lag(lag>300) = NaN; % remove some obvious outliers
 	axes(ax(1))
-	l(2) = plotPieceWiseLinear(mean_x,lag,'Color',c(1,:),'nbins',19);
+	l(2) = plotPieceWiseLinear(mean_x,lag,'Color',firing_color,'nbins',19);
 
-	axes(ax(3))
-	plotPieceWiseLinear(t,lag,'Color',c(1,:),'nbins',19);
+	axes(ax(2))
+	plotPieceWiseLinear(t,lag,'Color',firing_color,'nbins',19);
+
+	% also plot this in the supp. figure
+	axes(axs(1))
+	l(2) = plotPieceWiseLinear(mean_x,lag,'Color',firing_color,'nbins',19);
+
+	axes(axs(5))
+	plotPieceWiseLinear(t,lag,'Color',firing_color,'nbins',19);
+
+	% now do the same with the DA model prediction
+	[lag, mean_x, max_corr] = findLagAndMeanInWindow(S,DA_R,1e3,25);
+	rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr;
+	lag(rm_this) = [];
+	mean_x(rm_this) = [];
+	t = time_since_thresh_crossing;
+	t(rm_this) = []; t(t<10) = NaN;
+	lag(lag>300) = NaN; % remove some obvious outliers
+	axes(axs(1))
+	plotPieceWiseLinear(mean_x,lag,'Color',model_color,'nbins',19);
+
+	axes(axs(5))
+	plotPieceWiseLinear(t,lag,'Color',model_color,'nbins',19);
 
 
 	[lag, mean_x, max_corr] = findLagAndMeanInWindow(S,X,1e3,25);
@@ -68,24 +113,41 @@ for i = 1:length(od)
 	t(rm_this) = []; t(t<10) = NaN;
 
 	axes(ax(1))
-	l(1) = plotPieceWiseLinear(mean_x,lag,'Color',c(2,:),'nbins',19);
+	l(1) = plotPieceWiseLinear(mean_x,lag,'Color',LFP_color,'nbins',19);
 
-	axes(ax(3))
-	plotPieceWiseLinear(t,lag,'Color',c(2,:),'nbins',19);
+	axes(ax(2))
+	plotPieceWiseLinear(t,lag,'Color',LFP_color,'nbins',19);
+
+	% also plot this on the supp. figure
+	axes(axs(1))
+	plotPieceWiseLinear(mean_x,lag,'Color',LFP_color,'nbins',19);
+
+	axes(axs(5))
+	plotPieceWiseLinear(t,lag,'Color',LFP_color,'nbins',19);
 
 end
+
+% labels -- main figure
 xlabel(ax(1),'\mu_{Stimulus} in preceding 1s (V)')
 ylabel(ax(1),'Lag (ms)')
 set(ax(1),'YLim',[0 140],'XLim',[0 0.6])
 L = legend(l,{'LFP','Firing Rate'},'Location','southeast');
-title(ax(1),['ab3A' char(10) 'ethyl-acetate'])
 
-set(ax(3),'YLim',[0 140],'XLim',[10 5000],'XScale','log')
-xlabel(ax(3),'Time since odor encounter (ms)')
-ylabel(ax(3),'Lag (ms)')
+set(ax(2),'YLim',[0 140],'XLim',[10 5000],'XScale','log')
+xlabel(ax(2),'Time since odor encounter (ms)')
+ylabel(ax(2),'Lag (ms)')
 
 
-% Now we 
+% labels -- supp. figure
+xlabel(axs(1),'\mu_{Stimulus} in preceding 1s (V)')
+ylabel(axs(1),'Lag (ms)')
+set(axs(1),'YLim',[0 140],'XLim',[0 0.6])
+
+set(axs(5),'YLim',[0 140],'XLim',[10 5000],'XScale','log')
+xlabel(axs(5),'Time since odor encounter (ms)')
+ylabel(axs(5),'Lag (ms)')
+
+% Now we compute the gain control timescale
 
 history_lengths = round(logspace(1.7,4,50)); % all the history lengths we look at, in ms
 example_history_lengths = [100 10e3];
@@ -132,10 +194,10 @@ ylabel(ax(4),['Correlation between' char(10) 'sgain and \mu_{stimulus}'])
 
 % show the gain vs. the mean stimulus
 c = lines(4);
-axes(ax(2))
+axes(ax(3))
 plotPieceWiseLinear(gain_mu(end).mu,gain_mu(end).gain,'nbins',10,'Color',c(3,:));
 
-axes(ax(2))
+axes(ax(3))
 plotPieceWiseLinear(gain_mu(1).mu,gain_mu(1).gain,'nbins',10,'Color',c(4,:));
 
 % fit Weber's Law to this
@@ -149,27 +211,28 @@ cf = fit(x(:),y(:),'power1');
 warning off
 cf.a = exp(cf_temp.p2); cf.b = -1;
 warning on
-plot(ax(2),sort(x),cf(sort(x)),'r')
+plot(ax(3),sort(x),cf(sort(x)),'r')
 
 % fake some plots for a nice legend
 clear l L
 for i = 1:2
-	l(i) = plot(ax(2),NaN,NaN,'Marker','o','MarkerFaceColor',c(i+2,:),'MarkerEdgeColor',c(i+2,:),'LineStyle','none');
+	l(i) = plot(ax(3),NaN,NaN,'Marker','o','MarkerFaceColor',c(i+2,:),'MarkerEdgeColor',c(i+2,:),'LineStyle','none');
 end
 L{2} = 'tau_{gain} = 10^2ms';
 L{1} = 'tau_{gain} = 10^4ms';
 lh = legend(l,L,'Location','southwest');
 
-set(ax(2),'XScale','log','YScale','log')
-xlabel(ax(2),'\mu_{Stimulus} (V)')
-ylabel(ax(2),'Gain (Hz/V)')
+set(ax(3),'XScale','log','YScale','log')
+xlabel(ax(3),'\mu_{Stimulus} (V)')
+ylabel(ax(3),'Gain (Hz/V)')
 
-prettyFig('fs',14);
+prettyFig(main_fig,'fs',14);
 
 if being_published
 	snapnow
 	delete(gcf)
 end
+
 
 %  ######  ##     ## ########  ########     ######## ####  ######   
 % ##    ## ##     ## ##     ## ##     ##    ##        ##  ##    ##  
@@ -178,17 +241,11 @@ end
 %       ## ##     ## ##        ##           ##        ##  ##    ##  
 % ##    ## ##     ## ##        ##           ##        ##  ##    ##  
 %  ######   #######  ##        ##           ##       ####  ######   
-    
-figure('outerposition',[0 0 1200 712],'PaperUnits','points','PaperSize',[1200 712]); hold on
-clear ax
-for i = 8:-1:1
-	ax(i) = subplot(2,4,i); hold on
-end
-delete(ax(4)); delete(ax(8))
+   
 
 % make space for the legend 
-for i = [2 3 6 7]
-	movePlot(ax(i),'right',.2)
+for i = [3 4 7 8]
+	movePlot(axs(i),'right',.2)
 end
 
 % ##     ##  ######   ######   
@@ -214,7 +271,9 @@ for i = 1:length(data_hashes)-1
 	end
 	cdata = cleanMSGdata(cdata,'extract_filter',false);
 
-	plot_handles = plotMSGKinetics(cdata,ax(1));
+	plot_handles = plotMSGKinetics(cdata,axs(2));
+	plot_handles(2).Color = firing_color;
+	plot_handles(1).Color = LFP_color;
 
 	% rescale the x axis
 	temp = plot_handles(1).XData;
@@ -237,15 +296,15 @@ end
 % fake some plots for a nice legend
 clear l L
 for i = 1:length(markers)-1
-	l(i) = plot(ax(1),NaN,NaN,'Marker',markers{i},'Color','k','LineStyle','none');
+	l(i) = plot(axs(2),NaN,NaN,'Marker',markers{i},'Color','k','LineStyle','none');
 	L{i} = [orn_names{i} ' ' odour_names{i}];
 end
 lh1 = legend(l,L,'Location','southeast');
-lh1.Position = [0.31 0.7 0.15 0.1];
+lh1.Position = [0.43 0.7 0.12 0.1];
 lh1.FontSize = 15;
 
-set(ax(1),'YLim',[0 200],'XLim',[-0.1 1.1])
-xlabel(ax(1),'Mean stimulus (rescaled)')
+set(axs(2),'YLim',[0 200],'XLim',[-0.1 1.1])
+xlabel(axs(2),'Mean stimulus (rescaled)')
 
 %  ######     ###    ########  ##        #######  ######## ########    ###    
 % ##    ##   ## ##   ##     ## ##       ##     ##    ##       ##      ## ##   
@@ -296,23 +355,23 @@ for i = 1:length(do_these)
 	% also find rho for various values of the history length and plot it
 	rho = findRhoForHistoryLengths(gain,stim,ons,offs,history_lengths);
 
-	plot(ax(5),history_lengths,rho,'-','Color',c(i,:));
+	plot(axs(6),history_lengths,rho,'-','Color',c(i,:));
 end
 
-set(ax(5),'XScale','log','YLim',[-1 0],'XTick',[1e1 1e2 1e3 1e4],'XLim',[10 1e4])
-xlabel(ax(5),'Gain control timescale (ms)')
-ylabel(ax(5),['Correlation between' char(10) 'gain and \mu_{stimulus}'])
+set(axs(6),'XScale','log','YLim',[-1 0],'XTick',[1e1 1e2 1e3 1e4],'XLim',[10 1e4])
+xlabel(axs(6),'Gain control timescale (ms)')
+ylabel(axs(6),['Correlation between' char(10) 'gain and \mu_{stimulus}'])
 
 
 
 % fake some plots for a nice legend
 clear L l
 for i = 1:length(do_these)
-	l(i) = plot(ax(5),NaN,NaN,'Marker','o','MarkerFaceColor',c(i,:),'LineStyle','none');
+	l(i) = plot(axs(6),NaN,NaN,'Marker','o','MarkerFaceColor',c(i,:),'LineStyle','none');
 	L{i} = [orn_data(do_these(i)).neuron_name ' ' odour_names{i}];
 end
 lh2 = legend(l,L,'Location','southeast');
-lh2.Position = [0.31 0.15 0.15 0.2];
+lh2.Position = [0.43 0.15 0.15 0.2];
 lh2.FontSize = 15;
 
 
@@ -353,26 +412,26 @@ for i = 1:length(do_these)
 
 	% % plot the gain vs. the mean stim after sorting it
 	[mean_stim,idx] = sort(mean_stim);
-	plot(ax(2),mean_stim,gain(idx),'+-','Color',c(i,:));
+	plot(axs(3),mean_stim,gain(idx),'+-','Color',c(i,:));
 
 	% also find rho for various values of the history length and plot it
 	rho = findRhoForHistoryLengths(gain,stim,ons,offs,history_lengths);
 
-	plot(ax(6),history_lengths,rho,'.-','Color',c(i,:))
+	plot(axs(7),history_lengths,rho,'.-','Color',c(i,:))
 end
 
-set(ax(6),'XScale','log','YLim',[-1 0],'XTick',[10 100 1e3 1e4])
-set(ax(2),'XScale','log','YScale','log','XLim',[.1 2],'YLim',[.1 10])
-xlabel(ax(2),['\mu_{Stimulus} in preceding ' oval(example_history_length) 'ms (norm)'])
-ylabel(ax(2),'Gain (norm)')
-xlabel(ax(6),'Gain control timescale (ms)')
-ylabel(ax(6),['Correlation between' char(10) 'gain and \mu_{stimulus}'])
-title(ax(2),['ab3A ORN,' char(10) ' methyl butyrate odorant'])
+set(axs(7),'XScale','log','YLim',[-1 0],'XTick',[10 100 1e3 1e4])
+set(axs(3),'XScale','log','YScale','log','XLim',[.1 2],'YLim',[.1 10])
+xlabel(axs(3),['\mu_{Stimulus} in preceding ' oval(example_history_length) 'ms (norm)'])
+ylabel(axs(3),'Gain (norm)')
+xlabel(axs(7),'Gain control timescale (ms)')
+ylabel(axs(7),['Correlation between' char(10) 'gain and \mu_{stimulus}'])
+title(axs(3),['ab3A ORN,' char(10) ' methyl butyrate odorant'])
 
 % fake some plots for a nice legend
 clear l
 for i = 1:length(c)
-	l(i) = plot(ax(2),NaN,NaN,'Marker','o','MarkerFaceColor',c(i,:),'LineStyle','none','MarkerEdgeColor',c(i,:));
+	l(i) = plot(axs(3),NaN,NaN,'Marker','o','MarkerFaceColor',c(i,:),'LineStyle','none','MarkerEdgeColor',c(i,:));
 end
 lh3 = legend(l,{'5/28','6/05','6/12','6/19','6/19'},'Location','southwest');
 
@@ -436,29 +495,28 @@ for i = 1:length(tau_gain)
 
 	% % plot the gain vs. the mean stim after sorting it
 	[mean_stim,idx] = sort(mean_stim);
-	l(i) = plot(ax(3),mean_stim,gain(idx),'+-','Color',c(i,:));
+	l(i) = plot(axs(4),mean_stim,gain(idx),'+-','Color',c(i,:));
 
 	% also find rho for various values of the history length and plot it
 	rho = findRhoForHistoryLengths(gain,stim,ons,offs,history_lengths);
 
-	plot(ax(7),history_lengths,rho,'.-','Color',c(i,:))
+	plot(axs(8),history_lengths,rho,'.-','Color',c(i,:))
 end
-set(ax(7),'XScale','log','YLim',[-1 0],'XTick',[10 100 1e3 1e4])
-set(ax(3),'XScale','log','YScale','log','XLim',[.1 2],'YLim',[.05 10])
-title(ax(3),['Simulations with ' char(10) 'varying \tau_{gain}'])
-xlabel(ax(3),'\mu_{Stimulus} in preceding 300ms (V)')
+set(axs(8),'XScale','log','YLim',[-1 0],'XTick',[10 100 1e3 1e4])
+set(axs(4),'XScale','log','YScale','log','XLim',[.1 2],'YLim',[.05 10])
+title(axs(4),['Simulations with ' char(10) 'varying \tau_{gain}'])
+xlabel(axs(4),'\mu_{Stimulus} in preceding 300ms (V)')
 
 clear l L
 for i = 1:length(tau_gain)
-	l(i) = plot(ax(3),NaN,NaN,'Marker','o','MarkerFaceColor',c(i,:),'LineStyle','none','MarkerEdgeColor',c(i,:));
+	l(i) = plot(axs(4),NaN,NaN,'Marker','o','MarkerFaceColor',c(i,:),'LineStyle','none','MarkerEdgeColor',c(i,:));
 	L{i} = ['\tau_{gain} = ' oval(4*tau_gain(i)) 'ms'];
 end 
 lh4 = legend(l,L);
-lh4.Position = [0.795   0.62    0.038    0.08];
-xlabel(ax(7),'Gain control timescale (ms)')
-ylabel(ax(7),['Correlation between' char(10) 'gain and \mu_{stimulus}'])
+lh4.Position = [0.855   0.62    0.035    0.08];
+xlabel(axs(8),'Gain control timescale (ms)')
 
-prettyFig('fs',14);
+prettyFig(supp_fig,'fs',14);
 
 if being_published
 	snapnow
@@ -466,10 +524,11 @@ if being_published
 end
 
 % move some plots
-ax(3).Position(1) = .76;
-ax(7).Position(1) = .76;
+axs(4).Position(1) = .82;
+axs(8).Position(1) = .82;
 
-
+axs(1).Position(1) = .12;
+axs(5).Position(1) = .12;
 
 %% Version Info
 %

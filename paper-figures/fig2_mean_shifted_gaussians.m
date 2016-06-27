@@ -109,7 +109,7 @@ for i = 1:max(paradigm) % iterate over all paradigms
 	s = nanmean(s,2);
 	x = x - nanmean(x);
 	x = x + nanmean(nanmean(s));
-	[~,orn_io_data(i)] = plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:));
+	[~,orn_io_data(i)] = plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:),'show_error',false,'LineWidth',3);
 end
 
 mean_stim = nanmean(PID(a:z,:));
@@ -146,7 +146,7 @@ for i = 1:8 % iterate over all paradigms
 	x = cf(nanmean(s))*(x);
 	x = x - nanmean(x);
 	x = x + nanmean(y);
-	plotPieceWiseLinear(x(1e3:end),y(1e3:end),'nbins',40,'Color',c(i,:));
+	plotPieceWiseLinear(x(1e3:end),y(1e3:end),'nbins',40,'Color',c(i,:),'show_error',false,'LineWidth',3);
 end
 
 plot(ax(7),[0 80],[0 80],'r')
@@ -182,9 +182,15 @@ text(.2, 30,'$\sim 1/s$','interpreter','latex','Color','r','FontSize',20)
 ax(2).Position(1) = .8;
 ax(4).Position(1) = .8;
 
+% shrink data for smaller file sizes
+shrinkDataInPlot(ax(1),4)
+shrinkDataInPlot(ax(3),4)
+
 % deinteresect some axes
+ax(1).XLim(2) = 55.05;
 deintersectAxes(ax(1))
 deintersectAxes(ax(2))
+ax(3).XLim(2) = 55.05;
 deintersectAxes(ax(3))
 deintersectAxes(ax(4))
 deintersectAxes(ax(6))
@@ -198,6 +204,7 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
 
 %  ######  ##     ## ########  ########     ######## ####  ######   
 % ##    ## ##     ## ##     ## ##     ##    ##        ##  ##    ##  

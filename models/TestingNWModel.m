@@ -110,16 +110,11 @@ for i = 1:6
   ax(i) = subplot(2,3,i); hold on
 end
 
-background_levels = logspace(-2,2,10);
+background_levels = logspace(-2,0,10);
 c = parula(length(background_levels)+1);
 
-% plot 1/S guide lines
-guide_A = logspace(-4,-1,4);
-for i = 1:length(guide_A)
-  plot(ax(5),background_levels,guide_A(i)./background_levels,'r--') 
-  plot(ax(6),background_levels,guide_A(i)./background_levels,'r--')
-end
-
+receptor_gain = NaN*background_levels;
+channel_gain = NaN*background_levels;
 for i = 1:length(background_levels)
   S = background_levels(i) + zeros(T,1);
   S(pulse_on:pulse_off) = 2*background_levels(i);
@@ -136,17 +131,44 @@ for i = 1:length(background_levels)
   y = R(:,2) + R(:,4);
   delta_r = max(y(pulse_on:pulse_off)) - y(pulse_on-1);
   g = delta_r/(max(S) - min(S));
-  plot(ax(5),min(S),g,'+','Color',c(i,:),'MarkerSize',24);
+  receptor_gain(i) = g;
+  plot(ax(5),min(S),g,'+','Color',c(i,:));
 
   % plot total gain
   delta_r = max(C(pulse_on:pulse_off)) - C(pulse_on-1);
   g = delta_r/(max(S) - min(S));
-  plot(ax(6),min(S),g,'+','Color',c(i,:),'MarkerSize',24);
+  channel_gain(i) = g;
+  plot(ax(6),min(S),g,'+','Color',c(i,:));
 end
 
 for i = 1:4
   set(ax(i),'XLim',[length(S) - 10e3 length(S)])
 end
+
+% draw a weber's fit to receptor gain
+x = background_levels;
+y = receptor_gain;
+options = fitoptions(fittype('poly1'));
+options.Lower = [-1 -Inf];
+options.Upper = [-1 Inf];
+cf_temp = fit(log(x(:)),log(y(:)),'poly1',options);
+cf = fit(x(:),y(:),'power1');
+warning off
+cf.a = exp(cf_temp.p2); cf.b = -1;
+warning on
+plot(ax(5),sort(x),cf(sort(x)),'r')
+
+% and also for channel gain
+y = channel_gain;
+options = fitoptions(fittype('poly1'));
+options.Lower = [-1 -Inf];
+options.Upper = [-1 Inf];
+cf_temp = fit(log(x(:)),log(y(:)),'poly1',options);
+cf = fit(x(:),y(:),'power1');
+warning off
+cf.a = exp(cf_temp.p2); cf.b = -1;
+warning on
+plot(ax(6),sort(x),cf(sort(x)),'r')
 
 set(ax(1),'YScale','log')
 ylabel(ax(1),'Stimulus')
@@ -172,50 +194,70 @@ if being_published
 end
 
 %%
-% This model doesn't follow Weber's Law, at least for these parameters. Gain appears to fall off faster than expected. 
+% This model doesn't exactly follow Weber's Law, at least for these parameters, but it's close. We note that the channels alone seem to be obeying Weber's Law. We consider only the channel opening and the diffusible factor ODEs, and assume that receptor binding is so fast that the activated receptor species are exactly some scaled version of the stimulus. Then, the system collapses to just the last two ODEs in their model. This simplification leaves just four parameters, and we can show that this reduced model can show Weber-Fechner gain scaling. 
 
-
-%%
-% That looks interesting. What if we rescale the channel open probabilities to look more closely at the kinetics? 
+% generate model responses
+clear p
+p.    r_b = 20;
+p.    r_d = 10;
+p.theta_b = .05;
+p.theta_d = 1e-1;
 
 
 clear ax
-figure('outerposition',[0 0 1200 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
+figure('outerposition',[0 0 800 700],'PaperUnits','points','PaperSize',[800 700]); hold on
 for i = 1:4
-  ax(i) = subplot(2,2,i); hold on
+	ax(i) = subplot(2,2,i); hold on
 end
 
+background_levels = logspace(-2,0,10);
+c = parula(length(background_levels)+1);
+
+all_gain = NaN*background_levels;
 for i = 1:length(background_levels)
-  S = background_levels(i) + zeros(T,1);
-  S(pulse_on:pulse_off) = 2*background_levels(i);
-  plot(ax(1),S,'Color',c(i,:));
+	S = background_levels(i) + zeros(T,1);
+	S(pulse_on:pulse_off) = 2*background_levels(i);
+	plot(ax(1),S,'Color',c(i,:));
 
-  [C,D,R] = NagelWilsonIntegrate2(S,p);
+	[R,D] = simpleReceptorModelX(S,p);
+	plot(ax(2),R,'Color',c(i,:))
 
-  R = R(:,2) + R(:,4);
-  R = R - mean(R(pulse_on-1e3:pulse_on));
-  R = R/max(R(pulse_on:pulse_off));
-  plot(ax(2),R,'Color',c(i,:))
+	plot(ax(3),D,'Color',c(i,:))
 
-  C = C - mean(C(pulse_on-1e3:pulse_on));
-  C = C/max(C(pulse_on:pulse_off));
-
-  plot(ax(3),C,'Color',c(i,:));
-
-  D = D - mean(D(pulse_on-1e3:pulse_on));
-  D = D/max(D(pulse_on:pulse_off));
-
-  plot(ax(4),D,'Color',c(i,:))
+	% plot total gain
+	delta_r = max(R(pulse_on:pulse_off)) - R(pulse_on-1);
+	g = delta_r/(max(S) - min(S));
+	all_gain(i) = g;
+	plot(ax(4),min(S),g,'+','Color',c(i,:));
 end
 
+for i = 1:3
+	set(ax(i),'XLim',[length(S) - 10e3 length(S)])
+end
+
+% draw a weber's fit to gain
+x = background_levels;
+y = all_gain;
+options = fitoptions(fittype('poly1'));
+options.Lower = [-1 -Inf];
+options.Upper = [-1 Inf];
+cf_temp = fit(log(x(:)),log(y(:)),'poly1',options);
+cf = fit(x(:),y(:),'power1');
+warning off
+cf.a = exp(cf_temp.p2); cf.b = -1;
+warning on
+plot(ax(4),sort(x),cf(sort(x)),'r')
+
+
+set(ax(1),'YScale','log')
 ylabel(ax(1),'Stimulus')
-ylabel(ax(2),'R* + OR* (rescaled)')
-ylabel(ax(3),'C_{open} (rescaled)')
-ylabel(ax(4),'Diffusible Factor (rescaled)')
-set(ax(1),'XLim',[length(S) - 10e3 length(S)],'YScale','log')
-set(ax(2),'XLim',[length(S) - 10e3 length(S)],'YLim',[-.1 1.1])
-set(ax(3),'XLim',[length(S) - 10e3 length(S)],'YLim',[-.5 1.1])
-set(ax(4),'XLim',[length(S) - 10e3 length(S)],'YLim',[-.1 1.1])
+ylabel(ax(2),'C_{open}')
+ylabel(ax(3),'Diffusible factor')
+
+title(ax(4),'Gain')
+ylabel(ax(4),'\DeltaR/\DeltaS')
+set(ax(4),'YScale','log','XScale','log')
+xlabel(ax(4),'Background Stim')
 
 prettyFig();
 
@@ -223,12 +265,6 @@ if being_published
   snapnow
   delete(gcf)
 end
-
-
-%%
-% The time course of the response seems to change, but it doesn't look like the kinetics seem to slow down with increasing background. If anything, the time to peak decreases with increasing background stimulus. 
-
-
 
 
 

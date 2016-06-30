@@ -110,17 +110,17 @@ p.   a1 = 2;
 p.   a2 = 1;
 p.   a3 = 0;
 p.   b1 = 100;
-p.   b2 = 8.6300;
-p.   b3 = 2.4000;
-p.   b4 = 0.5000;
-p.   b5 = 0.5000;
-p.theta = 1;
-p.    n = 2;
+p.   b2 = 10;
+p.   b3 = 1;
+p.   b4 = 0;
+p.   b5 = 1;
+p.theta = 0;
+p.    n = 0;
 
 clear ax
-figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
-for i = 1:4
-  ax(i) = subplot(2,2,i); hold on
+figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
+for i = 1:5
+ 	ax(i) = subplot(2,3,i); hold on
 end
 
 background_levels = logspace(0,2,10);
@@ -129,25 +129,27 @@ c = parula(length(background_levels)+1);
 all_gain = NaN*background_levels;
 all_mu = NaN*background_levels;
 for i = 1:length(background_levels)
-  S = background_levels(i) + zeros(T,1);
-  S(pulse_on:pulse_off) = 2*background_levels(i);
-  plot(ax(1),S,'Color',c(i,:));
+	S = background_levels(i) + zeros(T,1);
+	S(pulse_on:pulse_off) = 2*background_levels(i);
+	plot(ax(1),S,'Color',c(i,:));
 
-  R = SchulzeLouisModel(S,p);
-  plot(ax(2),R,'Color',c(i,:))
+	[R,U] = SchulzeLouisModel(S,p);
+	plot(ax(2),R,'Color',c(i,:))
 
-  temp = R - mean(R(pulse_on-1e3:pulse_on-1));
+	temp = R - mean(R(pulse_on-1e3:pulse_on-1));
 
-  plot(ax(3),temp/max(temp(pulse_on:pulse_off)),'Color',c(i,:))
+	plot(ax(3),temp/max(temp(pulse_on:pulse_off)),'Color',c(i,:))
 
-  % compute gain 
-  g = max(temp(pulse_on:pulse_off))/(max(S) - min(S));
-  plot(ax(4),min(S),g,'+','Color',c(i,:));
-  all_gain(i) = g;
-  all_mu(i) = max(S) - min(S);
+	plot(ax(4),U,'Color',c(i,:))
+
+	% compute gain 
+	g = max(temp(pulse_on:pulse_off))/(max(S) - min(S));
+	plot(ax(5),min(S),g,'+','Color',c(i,:));
+	all_gain(i) = g;
+	all_mu(i) = max(S) - min(S);
 end
 
-for i = 1:3
+for i = 1:4
   set(ax(i),'XLim',[length(S) - 10e3 length(S)])
 end
 
@@ -162,18 +164,19 @@ cf = fit(x(:),y(:),'power1');
 warning off
 cf.a = exp(cf_temp.p2); cf.b = -1;
 warning on
-plot(ax(4),sort(x),cf(sort(x)),'r')
+plot(ax(5),sort(x),cf(sort(x)),'r')
 
 
 set(ax(1),'YScale','log')
 ylabel(ax(1),'Stimulus')
 ylabel(ax(2),'r(t)')
 xlabel(ax(2),'Time')
+ylabel(ax(4),'u(t)')
 ylabel(ax(3),'r(t) (rescaled)')
 set(ax(3),'YLim',[-.1 1])
-set(ax(4),'XScale','log','YScale','log','XTick',logspace(-2,2,5),'YTick',logspace(-2,2,5))
-xlabel(ax(4),'Background S')
-ylabel(ax(4),'Gain (\DeltaR / \DeltaS)')
+set(ax(5),'XScale','log','YScale','log','XTick',logspace(-2,2,5),'YTick',logspace(-2,2,5))
+xlabel(ax(5),'Background S')
+ylabel(ax(5),'Gain (\DeltaR / \DeltaS)')
 
 
 prettyFig('FixLogX','true')

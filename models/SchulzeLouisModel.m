@@ -6,7 +6,7 @@
 
 
 
-function R = SchulzeLouisModel(S,p)
+function [R,U] = SchulzeLouisModel(S,p)
 
 	% list parameters for legibility
 	p.a1;
@@ -44,6 +44,7 @@ function R = SchulzeLouisModel(S,p)
 
 	% re-interpolate the solution to fit the stimulus
 	R = interp1(T,Y(:,2),time);
+	U = interp1(T,Y(:,1),time);
 
 		function dY = SchulzeLouisModel_ode(t,Y,time,odor,p)
 			% calculate the odor at the time point

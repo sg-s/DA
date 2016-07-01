@@ -8,6 +8,17 @@
 
 function [R,U] = SchulzeLouisModel(S,p)
 
+
+	if size(S,2) > 1
+		R = NaN*S;
+		U = NaN*S;
+		for i = 1:size(S,2)
+			[R(:,i),U(:,i)] = SchulzeLouisModel(S(:,i),p);
+		end
+
+		return
+	end
+
 	% list parameters for legibility
 	p.a1;
 	p.a2;

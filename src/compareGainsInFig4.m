@@ -69,8 +69,8 @@ if make_plot(5)
 	plot(ax(5),fL.*fF,fT,'k+')
 	z = max(fF);
 	plot(ax(5),[0 z],[0 z],'k--')
-	xlabel(ax(5),['Product of fold changes' char(10) 'in gains at firing (f_F) and LFP (f_L)'])
-	ylabel(ax(5),['Overall fold change' char(10) 'in gain (f_{Total})'])
+	xlabel(ax(5),['Product of fold changes' char(10) 'in gains at firing (\gamma_F) and LFP (\gamma_L)'])
+	ylabel(ax(5),['Overall fold change' char(10) 'in gain (\gamma_{Total})'])
 end
 
 
@@ -82,7 +82,7 @@ if make_plot(6)
 	errorbar(ax(6),3,mean(fL)*mean(fF),(std(fL)+std(fF))/2,'LineWidth',4,'Marker','o','MarkerSize',10)
 	temp(1) = errorbar(4,mean(fL),std(fL),'LineWidth',4,'Marker','o','MarkerSize',10);
 	temp(2) = errorbar(5,mean(fF),std(fF),'LineWidth',4,'Marker','o','MarkerSize',10);
-	set(ax(6),'XTick',1:6,'XTickLabel',{'<f_{Total}>','<f_{L} f_{F}>','<f_{L}><f_{F}>','<f_{L}>','<f_{F}>',''},'XTickLabelRotation',90)
+	set(ax(6),'XTick',1:6,'XTickLabel',{'\langle\gamma_{Total}\rangle','\langle\gamma_{L} \gamma_{F}\rangle','\langle\gamma_{L}\rangle\langle\gamma_{F}\rangle','\langle\gamma_{L}\rangle','\langle\gamma_{F}\rangle',''},'XTickLabelRotation',45)
 
 	% add a pie chart showing fraction contributed
 	ax(7) = axes();

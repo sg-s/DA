@@ -506,37 +506,36 @@ if being_published
 	delete(gcf)
 end
 
-
 %% Supplementary Figure
 % Supplementary figure for figure 4. 
 
-figure('outerposition',[0 0 800 910],'PaperUnits','points','PaperSize',[800 910]); hold on
+figure('outerposition',[0 0 1200 801],'PaperUnits','points','PaperSize',[1200 801]); hold on
 
 % changing mean stimulus, estimating gain directly without a LN model ~~~~~~~~~~~~~~~~~~~~ 
-subplot(4,3,1); hold on
-title(['Changing stimulus mean' char(10) 'direct gain estimation'])
-x = mean(msg_data.PID(20e3:45e3,:));
-y = std(msg_data.LFP(20e3:45e3,:))./std(msg_data.PID(20e3:45e3,:));
-c = parula(length(unique(msg_data.paradigm))+1);
-for i = 1:length(x)
-	plot(x(i),.1*y(i),'+','Color',c(msg_data.paradigm(i),:)); % unit correction
-end
-ff = fit(x(:),.1*y(:),'power1','Upper',[Inf -1],'Lower',[0 -1]);
-plot(x,ff(x),'r')
-set(gca,'XScale','log','YScale','log','YLim',[10 1e3],'XTick',[.1 1],'XLim',[.1 2])
-xlabel('\mu_{Stimulus} (V)')
-ylabel('\sigma_{LFP}/\sigma_{Stimulus} (mV/V)')
+% subplot(4,3,1); hold on
+% title(['Changing stimulus mean' char(10) 'direct gain estimation'])
+% x = mean(msg_data.PID(20e3:45e3,:));
+% y = std(msg_data.LFP(20e3:45e3,:))./std(msg_data.PID(20e3:45e3,:));
+% c = parula(length(unique(msg_data.paradigm))+1);
+% for i = 1:length(x)
+% 	plot(x(i),.1*y(i),'+','Color',c(msg_data.paradigm(i),:)); % unit correction
+% end
+% ff = fit(x(:),.1*y(:),'power1','Upper',[Inf -1],'Lower',[0 -1]);
+% plot(x,ff(x),'r')
+% set(gca,'XScale','log','YScale','log','YLim',[10 1e3],'XTick',[.1 1],'XLim',[.1 2])
+% xlabel('\mu_{Stimulus} (V)')
+% ylabel('\sigma_{LFP}/\sigma_{Stimulus} (mV/V)')
 
-subplot(4,3,4); hold on
-x = mean(msg_data.PID(20e3:45e3,:));
-y = 10*std(msg_data.fA(20e3:45e3,:))./std(msg_data.LFP(20e3:45e3,:));
-c = parula(length(unique(msg_data.paradigm))+1);
-for i = 1:length(x)
-	plot(x(i),y(i),'+','Color',c(msg_data.paradigm(i),:));
-end
-set(gca,'XScale','log','YScale','log','YLim',[.1 10],'XTick',[.1 1],'XLim',[.1 2])
-ylabel('\sigma_{Firing rate}/\sigma_{LFP} (Hz/mV)')
-xlabel('\mu_{Stimulus} (V)')
+% subplot(4,3,4); hold on
+% x = mean(msg_data.PID(20e3:45e3,:));
+% y = 10*std(msg_data.fA(20e3:45e3,:))./std(msg_data.LFP(20e3:45e3,:));
+% c = parula(length(unique(msg_data.paradigm))+1);
+% for i = 1:length(x)
+% 	plot(x(i),y(i),'+','Color',c(msg_data.paradigm(i),:));
+% end
+% set(gca,'XScale','log','YScale','log','YLim',[.1 10],'XTick',[.1 1],'XLim',[.1 2])
+% ylabel('\sigma_{Firing rate}/\sigma_{LFP} (Hz/mV)')
+% xlabel('\mu_{Stimulus} (V)')
 
 %% changing stimulus variance, comparing fold change in gain at LFP to fold change in gain at transduction  ~~~~~~ ~~~~~~~~~~~~ ~~~~~~~~~~~~ ~~~~~~~~~~~~ ~~~~~~~~~~~~ ~~~~~~~~~~~~ ~~~~~~
 
@@ -550,13 +549,14 @@ gains.gT_lo = lo_gain_total_corrected(ok);
 gains.s_lo = std(reshaped_PID(6e3:9e3,ok));
 gains.s_hi = std(reshaped_PID(1e3:5e3,ok));
 
-ax(5) = subplot(4,3,7); hold on
-ax(6) = subplot(4,3,10); hold on
+ax(5) = subplot(2,3,3); hold on
+ax(6) = subplot(2,3,6); hold on
 make_plot = false(6,1); make_plot(5:6) = true;
 ax = compareGainsInFig4(gains,ax,make_plot);
+set(ax(5),'XLim',[0 3],'YLim',[0 3])
 
 % move pie chart, prettify it
-ax(7).Position = [0.27 0.18 0.07 0.15];
+%ax(7).Position = [0.27 0.18 0.07 0.15];
 ax(7).Children(1).String = strrep(ax(7).Children(1).String,'%','');
 ax(7).Children(1).Position = [.6 -.24];
 ax(7).Children(1).Color = 'w';
@@ -566,66 +566,66 @@ ax(7).Children(3).Color = 'w';
 
 % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ changing stimulus variance, directly estimating gains and then correcting for change in mean. 
 
-clear gains
-gains.gL_hi = std(reshaped_LFP(1e3:5e3,ok))./std(reshaped_PID(1e3:5e3,ok));
-gains.gL_lo = std(reshaped_LFP(6e3:9e3,ok))./std(reshaped_PID(6e3:9e3,ok));
-gains.gF_hi = std(reshaped_fA(1e3:5e3,ok))./std(reshaped_LFP(1e3:5e3,ok));
-gains.gF_lo = std(reshaped_fA(6e3:9e3,ok))./std(reshaped_LFP(6e3:9e3,ok));
-gains.gT_hi = std(reshaped_fA(1e3:5e3,ok))./std(reshaped_PID(1e3:5e3,ok));
-gains.gT_lo = std(reshaped_fA(6e3:9e3,ok))./std(reshaped_PID(6e3:9e3,ok));
-gains.s_lo = std(reshaped_PID(6e3:9e3,ok));
-gains.s_hi = std(reshaped_PID(1e3:5e3,ok));
-% correct for change in mean
-gains.gL_hi = gains.gL_hi.*mean(reshaped_PID(1e3:5e3,ok));
-gains.gL_lo = gains.gL_lo.*mean(reshaped_PID(6e3:9e3,ok));
-gains.gT_hi = gains.gT_hi.*mean(reshaped_PID(1e3:5e3,ok));
-gains.gT_lo = gains.gT_lo.*mean(reshaped_PID(6e3:9e3,ok));
+% clear gains
+% gains.gL_hi = std(reshaped_LFP(1e3:5e3,ok))./std(reshaped_PID(1e3:5e3,ok));
+% gains.gL_lo = std(reshaped_LFP(6e3:9e3,ok))./std(reshaped_PID(6e3:9e3,ok));
+% gains.gF_hi = std(reshaped_fA(1e3:5e3,ok))./std(reshaped_LFP(1e3:5e3,ok));
+% gains.gF_lo = std(reshaped_fA(6e3:9e3,ok))./std(reshaped_LFP(6e3:9e3,ok));
+% gains.gT_hi = std(reshaped_fA(1e3:5e3,ok))./std(reshaped_PID(1e3:5e3,ok));
+% gains.gT_lo = std(reshaped_fA(6e3:9e3,ok))./std(reshaped_PID(6e3:9e3,ok));
+% gains.s_lo = std(reshaped_PID(6e3:9e3,ok));
+% gains.s_hi = std(reshaped_PID(1e3:5e3,ok));
+% % correct for change in mean
+% gains.gL_hi = gains.gL_hi.*mean(reshaped_PID(1e3:5e3,ok));
+% gains.gL_lo = gains.gL_lo.*mean(reshaped_PID(6e3:9e3,ok));
+% gains.gT_hi = gains.gT_hi.*mean(reshaped_PID(1e3:5e3,ok));
+% gains.gT_lo = gains.gT_lo.*mean(reshaped_PID(6e3:9e3,ok));
 
 
-subplot(4,3,8); hold on
-plot(gains.s_hi,gains.gL_hi,'+','Color',[1 opacity opacity])
-errorbar(nanmean(gains.s_hi),nanmean(gains.gL_hi),nanstd(gains.gL_hi),'r','LineWidth',4,'Marker','o','MarkerSize',10);
-plot(gains.s_lo,gains.gL_lo,'+','Color',[opacity opacity 1]);
-errorbar(nanmean(gains.s_lo),nanmean(gains.gL_lo),nanstd(gains.gL_lo),'b','LineWidth',4,'Marker','o','MarkerSize',10);
-xlabel('\sigma_{Stimulus} (V)')
-ylabel(['(\sigma_{LFP}/\sigma_{Stimulus})' char(10) '\times \mu_{Stimulus} (a.u.)'])
-set(gca,'XLim',[0 0.2],'YLim',[0 5])
+% subplot(4,3,8); hold on
+% plot(gains.s_hi,gains.gL_hi,'+','Color',[1 opacity opacity])
+% errorbar(nanmean(gains.s_hi),nanmean(gains.gL_hi),nanstd(gains.gL_hi),'r','LineWidth',4,'Marker','o','MarkerSize',10);
+% plot(gains.s_lo,gains.gL_lo,'+','Color',[opacity opacity 1]);
+% errorbar(nanmean(gains.s_lo),nanmean(gains.gL_lo),nanstd(gains.gL_lo),'b','LineWidth',4,'Marker','o','MarkerSize',10);
+% xlabel('\sigma_{Stimulus} (V)')
+% ylabel(['(\sigma_{LFP}/\sigma_{Stimulus})' char(10) '\times \mu_{Stimulus} (a.u.)'])
+% set(gca,'XLim',[0 0.2],'YLim',[0 5])
 
-subplot(4,3,11); hold on
-plot(gains.s_hi,gains.gF_hi,'+','Color',[1 opacity opacity])
-errorbar(nanmean(gains.s_hi),nanmean(gains.gF_hi),nanstd(gains.gF_hi),'r','LineWidth',4,'Marker','o','MarkerSize',10);
-plot(gains.s_lo,gains.gF_lo,'+','Color',[opacity opacity 1]);
-errorbar(nanmean(gains.s_lo),nanmean(gains.gF_lo),nanstd(gains.gF_lo),'b','LineWidth',4,'Marker','o','MarkerSize',10);
-xlabel('\sigma_{Stimulus} (V)')
-ylabel('\sigma_{Firing}/\sigma_{LFP} (a.u.)')
-set(gca,'XLim',[0 0.2],'YLim',[0 50])
+% subplot(4,3,11); hold on
+% plot(gains.s_hi,gains.gF_hi,'+','Color',[1 opacity opacity])
+% errorbar(nanmean(gains.s_hi),nanmean(gains.gF_hi),nanstd(gains.gF_hi),'r','LineWidth',4,'Marker','o','MarkerSize',10);
+% plot(gains.s_lo,gains.gF_lo,'+','Color',[opacity opacity 1]);
+% errorbar(nanmean(gains.s_lo),nanmean(gains.gF_lo),nanstd(gains.gF_lo),'b','LineWidth',4,'Marker','o','MarkerSize',10);
+% xlabel('\sigma_{Stimulus} (V)')
+% ylabel('\sigma_{Firing}/\sigma_{LFP} (a.u.)')
+% set(gca,'XLim',[0 0.2],'YLim',[0 50])
 
-clear ax 
-ax(5) = subplot(4,3,9); hold on
-ax(6) = subplot(4,3,12); hold on
-make_plot = false(6,1); make_plot(5:6) = true;
-ax = compareGainsInFig4(gains,ax,make_plot);
+% clear ax 
+% ax(5) = subplot(4,3,9); hold on
+% ax(6) = subplot(4,3,12); hold on
+% make_plot = false(6,1); make_plot(5:6) = true;
+% ax = compareGainsInFig4(gains,ax,make_plot);
 
-% move pie chart, prettify it
-ax(7).Position = [0.86 0.18 0.07 0.15];
-ax(7).Children(1).String = strrep(ax(7).Children(1).String,'%','');
-ax(7).Children(1).Position = [.6 -.24];
-ax(7).Children(1).Color = 'w';
-ax(7).Children(3).String = strrep(ax(7).Children(3).String,'%','');
-ax(7).Children(3).Position = [-.55 .21];
-ax(7).Children(3).Color = 'w';
+% % move pie chart, prettify it
+% ax(7).Position = [0.86 0.18 0.07 0.15];
+% ax(7).Children(1).String = strrep(ax(7).Children(1).String,'%','');
+% ax(7).Children(1).Position = [.6 -.24];
+% ax(7).Children(1).Color = 'w';
+% ax(7).Children(3).String = strrep(ax(7).Children(3).String,'%','');
+% ax(7).Children(3).Position = [-.55 .21];
+% ax(7).Children(3).Color = 'w';
 
-%% Weber's Law in transduction for other odors/receptors \
-% define what we want to work on
+%% Weber's Law in transduction for other odors/receptors \~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% define what we want to work on~~~~
 data_hashes = {'bcd4cf4fe12817d084a2b06f981161ee','cd6753c0e4cf02895cd5e2c5cb58aa1a','3ea08ccfa892c6545d74bbdaaa6cbee1','f11c4a5792d0c9fec7c40fd6aa2fce40'};
 odour_names = {'1-pentanol','1-pentanol','2-butanone','isoamyl-acetate'};
 orn_names = {'ab3A','ab2A','ab2A','pb1A'};
 
 clear plot_here
-plot_here(1) = subplot(4,3,2); hold on
-plot_here(2) = subplot(4,3,3); hold on
-plot_here(3) = subplot(4,3,5); hold on
-plot_here(4) = subplot(4,3,6); hold on
+plot_here(1) = subplot(2,3,1); hold on
+plot_here(2) = subplot(2,3,2); hold on
+plot_here(3) = subplot(2,3,4); hold on
+plot_here(4) = subplot(2,3,5); hold on
 
 % core loop
 for i = length(data_hashes):-1:1
@@ -642,7 +642,17 @@ for i = length(data_hashes):-1:1
 	title(ph,t);
 end
 
-prettyFig('fs',14,'lw',1.5);
+plot_here(4).XLim = [3e-3 3];
+
+prettyFig('fs',14,'lw',1.5,'FixLogX',true);
+
+for i = 1:length(plot_here)
+	plot_here(i).XLim(2) = plot_here(i).XLim(2)*1.06;
+	deintersectAxes(plot_here(i));
+end
+
+deintersectAxes(ax(6))
+uistack(ax(7),'top')
 
 if being_published
 	snapnow

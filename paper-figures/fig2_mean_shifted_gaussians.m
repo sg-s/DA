@@ -253,6 +253,9 @@ xlabel(ax(4),'Mean stimulus (V)')
 ylabel(ax(4),'\sigma_{Firing rate}/\sigma_{Stimulus} (Hz/V)')
 title(ax(4),['ab3A' char(10) 'ethyl acetate'])
 
+% we're not going to use ratio of std. devs
+delete(ax(4))
+
 % ##      ## ######## ########  ######## ########   ######  
 % ##  ##  ## ##       ##     ## ##       ##     ## ##    ## 
 % ##  ##  ## ##       ##     ## ##       ##     ## ##       
@@ -303,11 +306,19 @@ for i = length(data_hashes):-1:1
 	title(ph(2),t);
 end
 
+% fix some axes
+plot_here(4).YLim = [.7e2 .7e4];
+for i = 1:length(plot_here)
+	plot_here(i).XLim(2) = 1.06*plot_here(i).XLim(2);
+end
 
-prettyFig('plw',1.3,'lw',1.5,'fs',.5,'font_units','centimeters')
+prettyFig('plw',1.3,'lw',1.5,'fs',.5,'font_units','centimeters','FixLogX',true)
 
 for i = 2:length(ax)
-	deintersectAxes(ax(i));
+	try
+		deintersectAxes(ax(i));
+	catch
+	end
 end
 
 if being_published

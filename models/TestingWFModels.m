@@ -32,7 +32,7 @@ p.ko = 1;
 clear ax
 figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
 for i = 1:4
-  ax(i) = subplot(2,2,i); hold on
+	ax(i) = subplot(2,2,i); hold on
 end
 
 background_levels = logspace(-2,2,10);
@@ -44,27 +44,27 @@ p.ko = -log(background_levels(1))*1.1;
 all_gain = NaN*background_levels;
 all_mu = NaN*background_levels;
 for i = 1:length(background_levels)
-  S = background_levels(i) + zeros(T,1);
-  S(pulse_on:pulse_off) = 2*background_levels(i);
-  plot(ax(1),S,'Color',c(i,:));
+	S = background_levels(i) + zeros(T,1);
+	S(pulse_on:pulse_off) = 2*background_levels(i);
+	plot(ax(1),S,'Color',c(i,:));
 
-  R = LFPmodel(S,p);
-  plot(ax(2),R,'Color',c(i,:))
+	R = LFPmodel(S,p);
+	plot(ax(2),R,'Color',c(i,:))
 
-  temp = R - mean(R(pulse_on-1e3:pulse_on-1));
+	temp = R - mean(R(pulse_on-1e3:pulse_on-1));
 
-  plot(ax(3),temp/max(temp),'Color',c(i,:))
+	plot(ax(3),temp/max(temp),'Color',c(i,:))
 
 
-  % compute gain 
-  g = max(temp)/(max(S) - min(S));
-  plot(ax(4),min(S),g,'+','Color',c(i,:));
-  all_gain(i) = g;
-  all_mu(i) = max(S) - min(S);
+	% compute gain 
+	g = max(temp)/(max(S) - min(S));
+	plot(ax(4),min(S),g,'+','Color',c(i,:));
+	all_gain(i) = g;
+	all_mu(i) = max(S) - min(S);
 end
 
 for i = 1:3
-  set(ax(i),'XLim',[length(S) - 10e3 length(S)])
+ 	set(ax(i),'XLim',[length(S) - 10e3 length(S)])
 end
 
 % draw a weber's fit to this
@@ -94,8 +94,8 @@ ylabel(ax(4),'Gain (\DeltaR / \DeltaS)')
 prettyFig('FixLogX','true')
 
 if being_published  
-  snapnow  
-  delete(gcf)
+	snapnow  
+	delete(gcf)
 end
 
 %% 
@@ -120,7 +120,7 @@ p.    n = 0;
 clear ax
 figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
 for i = 1:5
- 	ax(i) = subplot(2,3,i); hold on
+	ax(i) = subplot(2,3,i); hold on
 end
 
 background_levels = logspace(0,2,10);
@@ -150,7 +150,7 @@ for i = 1:length(background_levels)
 end
 
 for i = 1:4
-  set(ax(i),'XLim',[length(S) - 10e3 length(S)])
+ 	set(ax(i),'XLim',[length(S) - 10e3 length(S)])
 end
 
 % draw a weber's fit to this
@@ -182,8 +182,8 @@ ylabel(ax(5),'Gain (\DeltaR / \DeltaS)')
 prettyFig('FixLogX','true')
 
 if being_published  
-  snapnow  
-  delete(gcf)
+	snapnow  
+	delete(gcf)
 end
 
 

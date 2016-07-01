@@ -391,8 +391,6 @@ if being_published
 	delete(gcf)
 end
 
-return
-
 
 %      ######  ##     ## ########  ########     ######## ####  ######   
 %     ##    ## ##     ## ##     ## ##     ##    ##        ##  ##    ##  
@@ -413,11 +411,11 @@ figure('PaperUnits','centimeters','PaperSize',[20 5],'Position',[100 100 1300 30
 % show the rsquare of the mean and variance as a function of box size
 ax(1) = subplot(1,4,1); hold on
 for i = 1:length(all_block_sizes)
-	plot(all_block_sizes(i),r2(i),'k+')
+	plot(ax(1),all_block_sizes(i),r2(i),'k+')
 end
-set(gca,'XScale','log','XTick',[1 1e1 1e2 1e3 1e4])
-xlabel('Window (ms)')
-ylabel('r^2 (\mu, \sigma)')
+set(ax(1),'XScale','log','XTick',[1 1e1 1e2 1e3 1e4],'XLim',[1 1.1e4])
+xlabel(ax(1),'Window (ms)')
+ylabel(ax(1),'r^2 (\mu, \sigma)')
 
 % show the PDF of the stimulus
 ax(2) = subplot(1,4,2); hold on
@@ -428,9 +426,9 @@ for i = 1:width(ab3.PID)
 end
 errorShade(x,mean(y,2),sem(y'),'Color',[.2 .2 .2]);
 warning off % because there are some -ve values on the log scale
-set(gca,'XScale','log','YScale','log','XLim',[min(x) 10],'YLim',[1e-5 1],'YTick',logspace(-5,0,6),'XTick',[1e-2 1e-1 1 10 100])
-xlabel(gca,'Stimulus (V)')
-ylabel(gca,'Probability')
+set(ax(2),'XScale','log','YScale','log','XLim',[min(x) 11],'YLim',[1e-5 1],'YTick',logspace(-5,0,6),'XTick',[1e-2 1e-1 1 10])
+xlabel(ax(2),'Stimulus (V)')
+ylabel(ax(2),'Probability')
 warning on
 
 % show the whiff durations 
@@ -445,11 +443,11 @@ whiff_durations = nonzeros(whiff_durations);
 y = y/sum(y);
 a = 1; m = fittype('a*(x).^n');
 ff = fit(x(a:end)',y(a:end)',m,'Upper',[Inf -1.5],'Lower',[-Inf -1.5],'StartPoint',[300 -1.5]);
-plot(x,y,'k+')
-plot(x,ff(x),'r')
-ylabel(gca,'Probability')
-set(gca,'YScale','log','XScale','log','XTick',[1e1 1e2 1e3 1e4])
-xlabel('Whiff duration (ms)')
+plot(ax(3),x,y,'k+')
+plot(ax(3),x,ff(x),'r')
+ylabel(ax(3),'Probability')
+set(ax(3),'YScale','log','XScale','log','XTick',[1e1 1e2 1e3 1e4],'XLim',[10 1.1e4])
+xlabel(ax(3),'Whiff duration (ms)')
 
 % show the blank durations 
 ax(4) = subplot(1,4,4); hold on
@@ -463,11 +461,11 @@ whiff_durations = nonzeros(whiff_durations);
 y = y/sum(y);
 a = 1; m = fittype('a*(x).^n');
 ff = fit(x(a:end)',y(a:end)',m,'Upper',[Inf -1.5],'Lower',[-Inf -1.5],'StartPoint',[300 -1.5]);
-plot(x,y,'k+')
-plot(x,ff(x),'r')
-set(gca,'YScale','log','XScale','log','XTick',[1e2 1e3 1e4 1e5])
+plot(ax(4),x,y,'k+')
+plot(ax(4),x,ff(x),'r')
+set(ax(4),'YScale','log','XScale','log','XTick',[1e2 1e3 1e4],'XLim',[30 3e4])
 xlabel('Blank duration (ms)')
-ylabel(gca,'Probability')
+ylabel(ax(4),'Probability')
 
 prettyFig('fs',.5,'FixLogX',false,'font_units','centimeters')
 

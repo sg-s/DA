@@ -46,8 +46,8 @@ ylabel('Diffusible factor')
 prettyFig();
 
 if being_published
-  snapnow
-  delete(gcf)
+	snapnow
+	delete(gcf)
 end
 
 %%
@@ -73,7 +73,7 @@ end
 
 S = .1+zeros(T,1);
 S(pulse_on:pulse_off) = .2;
-[C,D,R] = NagelWilsonIntegrate2(S,p);
+[C,D,R] = NagelWilsonModelReduced(S,p);
 
 figure('outerposition',[0 0 1200 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
 subplot(2,2,1), hold on
@@ -97,8 +97,8 @@ ylabel('Diffusible factor')
 prettyFig();
 
 if being_published
-  snapnow
-  delete(gcf)
+	snapnow
+	delete(gcf)
 end
 
 %%
@@ -116,33 +116,33 @@ c = parula(length(background_levels)+1);
 receptor_gain = NaN*background_levels;
 channel_gain = NaN*background_levels;
 for i = 1:length(background_levels)
-  S = background_levels(i) + zeros(T,1);
-  S(pulse_on:pulse_off) = 2*background_levels(i);
-  plot(ax(1),S,'Color',c(i,:));
+	S = background_levels(i) + zeros(T,1);
+	S(pulse_on:pulse_off) = 2*background_levels(i);
+	plot(ax(1),S,'Color',c(i,:));
 
-  [C,D,R] = NagelWilsonIntegrate2(S,p);
-  plot(ax(2),R(:,2)+R(:,4),'Color',c(i,:))
+	[C,D,R] = NagelWilsonModelReduced(S,p);
+	plot(ax(2),R(:,2)+R(:,4),'Color',c(i,:))
 
-  plot(ax(3),C,'Color',c(i,:))
+	plot(ax(3),C,'Color',c(i,:))
 
-  plot(ax(4),D,'Color',c(i,:))
+	plot(ax(4),D,'Color',c(i,:))
 
-  % compute gain at receptors 
-  y = R(:,2) + R(:,4);
-  delta_r = max(y(pulse_on:pulse_off)) - y(pulse_on-1);
-  g = delta_r/(max(S) - min(S));
-  receptor_gain(i) = g;
-  plot(ax(5),min(S),g,'+','Color',c(i,:));
+	% compute gain at receptors 
+	y = R(:,2) + R(:,4);
+	delta_r = max(y(pulse_on:pulse_off)) - y(pulse_on-1);
+	g = delta_r/(max(S) - min(S));
+	receptor_gain(i) = g;
+	plot(ax(5),min(S),g,'+','Color',c(i,:));
 
-  % plot total gain
-  delta_r = max(C(pulse_on:pulse_off)) - C(pulse_on-1);
-  g = delta_r/(max(S) - min(S));
-  channel_gain(i) = g;
-  plot(ax(6),min(S),g,'+','Color',c(i,:));
+	% plot total gain
+	delta_r = max(C(pulse_on:pulse_off)) - C(pulse_on-1);
+	g = delta_r/(max(S) - min(S));
+	channel_gain(i) = g;
+	plot(ax(6),min(S),g,'+','Color',c(i,:));
 end
 
 for i = 1:4
-  set(ax(i),'XLim',[length(S) - 10e3 length(S)])
+	set(ax(i),'XLim',[length(S) - 10e3 length(S)])
 end
 
 % draw a weber's fit to receptor gain
@@ -189,8 +189,8 @@ xlabel(ax(6),'Background Stim')
 prettyFig();
 
 if being_published
-  snapnow
-  delete(gcf)
+	snapnow
+	delete(gcf)
 end
 
 %%
@@ -262,10 +262,101 @@ xlabel(ax(4),'Background Stim')
 prettyFig();
 
 if being_published
-  snapnow
-  delete(gcf)
+	snapnow
+	delete(gcf)
 end
 
+%% The model with an error
+% A previous implementation of the model had an error in a sign of first term in the second ODE. Bizarrely, this model had some nice properties:
+
+clear ax
+figure('outerposition',[0 0 1200 700],'PaperUnits','points','PaperSize',[1200 700]); hold on
+for i = 1:6
+  ax(i) = subplot(2,3,i); hold on
+end
+
+background_levels = logspace(-2,0,10);
+c = parula(length(background_levels)+1);
+
+receptor_gain = NaN*background_levels;
+channel_gain = NaN*background_levels;
+for i = 1:length(background_levels)
+	S = background_levels(i) + zeros(T,1);
+	S(pulse_on:pulse_off) = 2*background_levels(i);
+	plot(ax(1),S,'Color',c(i,:));
+
+	[C,D,R] = NagelWilsonModelReduced_error(S,p);
+	plot(ax(2),R(:,2)+R(:,4),'Color',c(i,:))
+
+	plot(ax(3),C,'Color',c(i,:))
+
+	plot(ax(4),D,'Color',c(i,:))
+
+	% compute gain at receptors 
+	y = R(:,2) + R(:,4);
+	delta_r = max(y(pulse_on:pulse_off)) - y(pulse_on-1);
+	g = delta_r/(max(S) - min(S));
+	receptor_gain(i) = g;
+	plot(ax(5),min(S),g,'+','Color',c(i,:));
+
+	% plot total gain
+	delta_r = max(C(pulse_on:pulse_off)) - C(pulse_on-1);
+	g = delta_r/(max(S) - min(S));
+	channel_gain(i) = g;
+	plot(ax(6),min(S),g,'+','Color',c(i,:));
+end
+
+for i = 1:4
+	set(ax(i),'XLim',[length(S) - 10e3 length(S)])
+end
+
+% draw a weber's fit to receptor gain
+x = background_levels;
+y = receptor_gain;
+options = fitoptions(fittype('poly1'));
+options.Lower = [-1 -Inf];
+options.Upper = [-1 Inf];
+cf_temp = fit(log(x(:)),log(y(:)),'poly1',options);
+cf = fit(x(:),y(:),'power1');
+warning off
+cf.a = exp(cf_temp.p2); cf.b = -1;
+warning on
+plot(ax(5),sort(x),cf(sort(x)),'r')
+
+% and also for channel gain
+y = channel_gain;
+options = fitoptions(fittype('poly1'));
+options.Lower = [-1 -Inf];
+options.Upper = [-1 Inf];
+cf_temp = fit(log(x(:)),log(y(:)),'poly1',options);
+cf = fit(x(:),y(:),'power1');
+warning off
+cf.a = exp(cf_temp.p2); cf.b = -1;
+warning on
+plot(ax(6),sort(x),cf(sort(x)),'r')
+
+set(ax(1),'YScale','log')
+ylabel(ax(1),'Stimulus')
+ylabel(ax(2),'R* + OR*')
+ylabel(ax(3),'C_{open}')
+ylabel(ax(4),'Diffusible factor')
+
+title(ax(5),'Receptor Gain')
+ylabel(ax(5),'\DeltaR/\DeltaS')
+set(ax(5),'YScale','log','XScale','log')
+xlabel(ax(5),'Background Stim')
+
+title(ax(6),'Channel Gain')
+ylabel(ax(6),'\DeltaR/\DeltaS')
+set(ax(6),'YScale','log','XScale','log')
+xlabel(ax(6),'Background Stim')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 
 %% Version Info

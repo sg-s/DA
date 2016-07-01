@@ -1,5 +1,5 @@
-% fig_contrast_adaptation2.m
-% makes figure: contrast adaptation in ORNs
+% fig3_variance_adaptation.m
+% makes figure: variance adaptation in ORNs
 % 
 % created by Srinivas Gorur-Shandilya at 7:10 , 03 October 2015. Contact me at http://srinivas.gs/contact/
 % 
@@ -410,10 +410,10 @@ end
 %% Supplementary Figure
 % 
 
-figure('PaperUnits','centimeters','PaperSize',[15 5],'Position',[100 100 1000 620]); hold on
+figure('outerposition',[0 0 801 800],'PaperUnits','points','PaperSize',[801 800]); hold on
 
 % 1. uncorrected I/O curves ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-subplot(2,3,1); hold on
+subplot(2,2,3); hold on
 % high contrast
 x = fA_pred(1e3:5e3,:);
 y = reshaped_fA(1e3:5e3,:);
@@ -434,7 +434,7 @@ ylabel('ab3A firing rate (Hz)')
 set(gca,'XLim',[0 1.4],'YLim',[0 60])
 
 % 2. uncorrected gain vs. sigma stim ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-subplot(2,3,2); hold on
+subplot(2,2,4); hold on
 lo_gain(lo_gain==0) = NaN;
 hi_gain(hi_gain==0) = NaN;
 x = std(reshaped_PID(1e3:4e3,:));
@@ -445,23 +445,23 @@ xlabel('\sigma_{Stimulus} (V)')
 ylabel('ab3A ORN gain (Hz/V)')
 set(gca,'XLim',[0 .25],'YLim',[0 150])
 
-% 3. gain as ratio of std. devs. -- no correction for mean ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-subplot(2,3,3), hold on
-x = std(reshaped_PID(1e3:4e3,:));
-y = std(reshaped_fA(1e3:4e3,:))./x; 
-y(y==0) = NaN;
-plot(x,y,'r+')
-x = std(reshaped_PID(6e3:9e3,:));
-y = std(reshaped_fA(6e3:9e3,:))./x; 
-y(y==0) = NaN;
-plot(x,y,'b+')
-ylabel('\sigma_{Firing rate}/\sigma_{Stimulus} (a.u.)')
-xlabel(gca,'\sigma_{Stimulus} (V)')
-set(gca,'XLim',[0 .22],'YLim',[0 300])
+% % 3. gain as ratio of std. devs. -- no correction for mean ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% subplot(2,3,3), hold on
+% x = std(reshaped_PID(1e3:4e3,:));
+% y = std(reshaped_fA(1e3:4e3,:))./x; 
+% y(y==0) = NaN;
+% plot(x,y,'r+')
+% x = std(reshaped_PID(6e3:9e3,:));
+% y = std(reshaped_fA(6e3:9e3,:))./x; 
+% y(y==0) = NaN;
+% plot(x,y,'b+')
+% ylabel('\sigma_{Firing rate}/\sigma_{Stimulus} (a.u.)')
+% xlabel(gca,'\sigma_{Stimulus} (V)')
+% set(gca,'XLim',[0 .22],'YLim',[0 300])
 
 
 % 4. mean vs. sigma of the stimulus showing small change in mean ~~~~~~~~~~~~~~~~~~~~~~~~
-subplot(2,3,4), hold on
+subplot(2,2,2), hold on
 plot(std(reshaped_PID(1e3:4e3,:)),mean(reshaped_PID(1e3:4e3,:)),'r+');
 plot(std(reshaped_PID(6e3:9e3,:)),mean(reshaped_PID(6e3:9e3,:)),'b+');
 set(gca,'XLim',[0 .21],'YLim',[0 .6])
@@ -470,24 +470,24 @@ ylabel('\mu_{Stimulus} (V)')
 
 
 
-% 5. gain as ratio of std. devs. -- corrected for mean ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-subplot(2,3,5), hold on
-x = std(reshaped_PID(1e3:4e3,:));
-y = std(reshaped_fA(1e3:4e3,:))./x; 
-y = y.*mean(reshaped_PID(1e3:4e3,:));
-y(y==0) = NaN;
-plot(x,y,'r+')
-x = std(reshaped_PID(6e3:9e3,:));
-y = std(reshaped_fA(6e3:9e3,:))./x; 
-y = y.*mean(reshaped_PID(6e3:9e3,:));
-y(y==0) = NaN;
-plot(x,y,'b+')
-ylabel('(\sigma_{Firing rate}/\sigma_{Stimulus})\times \mu_{Stimulus} (a.u.)')
-xlabel(gca,'\sigma_{Stimulus} (V)')
-set(gca,'XLim',[0 .22],'YLim',[0 150])
+% % 5. gain as ratio of std. devs. -- corrected for mean ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% subplot(2,3,5), hold on
+% x = std(reshaped_PID(1e3:4e3,:));
+% y = std(reshaped_fA(1e3:4e3,:))./x; 
+% y = y.*mean(reshaped_PID(1e3:4e3,:));
+% y(y==0) = NaN;
+% plot(x,y,'r+')
+% x = std(reshaped_PID(6e3:9e3,:));
+% y = std(reshaped_fA(6e3:9e3,:))./x; 
+% y = y.*mean(reshaped_PID(6e3:9e3,:));
+% y(y==0) = NaN;
+% plot(x,y,'b+')
+% ylabel('(\sigma_{Firing rate}/\sigma_{Stimulus})\times \mu_{Stimulus} (a.u.)')
+% xlabel(gca,'\sigma_{Stimulus} (V)')
+% set(gca,'XLim',[0 .22],'YLim',[0 150])
 
 % 6. this plot compares the Laughlin predicted gains in the two cases ~~~~~~~~~~~~~~~~~~~
-subplot(2,3,6), hold on
+subplot(2,2,1), hold on
 x = std(reshaped_PID(1e3:4e3,:));
 plot(x,laughlin_hi_gain,'r+')
 x = std(reshaped_PID(6e3:9e3,:));

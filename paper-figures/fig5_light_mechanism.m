@@ -23,10 +23,19 @@ for i = 9:-1:1
 	ax(i) = subplot(3,3,i); hold on
 end
 
-supp_fig = figure('outerposition',[0 0 1100 700],'PaperUnits','points','PaperSize',[1100 700]); hold on
-for i = 6:-1:1
-	axs(i) = subplot(2,3,i); hold on
-end
+axs(5) = axes;
+axs(5).Position = [0.8 0.53 0.1 0.1];
+hold on
+
+axs(3) = axes;
+axs(3).Position = [0.8 0.85 0.1 0.1];
+hold on
+
+% we're killing the supplementary figure; replacing it with insets in the main figure
+% supp_fig = figure('outerposition',[0 0 1100 700],'PaperUnits','points','PaperSize',[1100 700]); hold on
+% for i = 6:-1:1
+% 	axs(i) = subplot(2,3,i); hold on
+% end
 
 % ##       ####  ######   ##     ## ######## 
 % ##        ##  ##    ##  ##     ##    ##    
@@ -121,15 +130,15 @@ for i = 1:length(c)
 end
 xlabel(ax(9),'\sigma_{Light} (\muW)')
 ylabel(ax(9),'ab3A ORN gain (Hz/\muW)')
-set(ax(9),'YLim',[0 .16])
+set(ax(9),'YLim',[0 .16],'XLim',[0 130])
 
 % make the supp. figures. 
-for i = 1:length(c)
-	plot(axs(6),light_s(m==2 & orn == these_orns(i)),gain(m==2 & orn == these_orns(i)),'-+','Color',c(i,:))
-end
-xlabel(axs(6),'\sigma_{Light} (\muW)')
-ylabel(axs(6),'\sigma_{Firing rate}/\sigma_{Stimulus} (Hz/\muW)')
-set(axs(6),'XLim',[30 130],'YLim',[0 .17])
+% for i = 1:length(c)
+% 	plot(axs(6),light_s(m==2 & orn == these_orns(i)),gain(m==2 & orn == these_orns(i)),'-+','Color',c(i,:))
+% end
+% xlabel(axs(6),'\sigma_{Light} (\muW)')
+% ylabel(axs(6),'\sigma_{Firing rate}/\sigma_{Stimulus} (Hz/\muW)')
+% set(axs(6),'XLim',[30 130],'YLim',[0 .17])
 
 %    ##       ####  ######   ##     ## ########    ########   ######   
 %    ##        ##  ##    ##  ##     ##    ##       ##     ## ##    ##  
@@ -203,16 +212,16 @@ for i = 1:length(these_orns)
 	ii = orn == these_orns(i) & ismember(paradigm,plot_these_paradigms);
 	if sum(ii) > 3
 		plot(ax(3),mean_light_power(ii),fA_gain(ii),'-+','Color',c(i,:));
-		plot(axs(2),mean_light_power(ii),fA_gain_s(ii),'-+','Color',c(i,:));
+		%plot(axs(2),mean_light_power(ii),fA_gain_s(ii),'-+','Color',c(i,:));
 	end
 end
 
 set(ax(3),'XScale','linear','YScale','log','YLim',[10 1000])
 ylabel(ax(3),'ab3A ORN gain (Hz/V)')
 xlabel(ax(3),'Mean light power (\muW)')
-set(axs(2),'XScale','linear','YScale','log','YLim',[10 1000])
-ylabel(axs(2),'\sigma_{Firing rate}/\sigma_{Stimulus} (Hz/V)')
-xlabel(axs(2),'Mean light power (\muW)')
+% set(axs(2),'XScale','linear','YScale','log','YLim',[10 1000])
+% ylabel(axs(2),'\sigma_{Firing rate}/\sigma_{Stimulus} (Hz/V)')
+% xlabel(axs(2),'Mean light power (\muW)')
 
 
 % plot the transduction gain
@@ -220,23 +229,23 @@ for i = 1:length(these_orns)
 	ii = orn == these_orns(i) & ismember(paradigm,plot_these_paradigms);
 	if sum(ii) > 3
 		plot(ax(2),mean_light_power(ii),LFP_gain(ii),'-+','Color',c(i,:));
-		plot(axs(1),mean_light_power(ii),10*LFP_gain_s(ii),'-+','Color',c(i,:));
+		%plot(axs(1),mean_light_power(ii),10*LFP_gain_s(ii),'-+','Color',c(i,:));
 	end
 end
 
 set(ax(2),'XScale','linear','YScale','log','YLim',[1 100])
 ylabel(ax(2),'ab3 transduction gain (mV/V)')
 xlabel(ax(2),'Mean light power (\muW)')
-set(axs(1),'XScale','linear','YScale','log','YLim',[1 100])
-ylabel(axs(1),'\sigma_{LFP}/\sigma_{Stimulus} (mV/V)')
-xlabel(axs(1),'Mean light power (\muW)')
+% set(axs(1),'XScale','linear','YScale','log','YLim',[1 100])
+% ylabel(axs(1),'\sigma_{LFP}/\sigma_{Stimulus} (mV/V)')
+% xlabel(axs(1),'Mean light power (\muW)')
 
 % show that firing rate increases with increasing light stim
 for i = 1:length(these_orns)
 	ii = orn == these_orns(i) & ismember(paradigm,plot_these_paradigms);
 	plot(axs(3),mean_light_power(ii),max(fA(1:5e3,ii)),'-+','Color',c(i,:));
 end
-ylabel(axs(3),'Light-induced firing rate (Hz)')
+ylabel(axs(3),['Light-induced' char(10) 'firing rate (Hz)'])
 xlabel(axs(3),'Mean light power (\muW)')
 set(axs(3),'XLim',[0 500],'YLim',[0 90])
 
@@ -324,7 +333,7 @@ xlabel(ax(5),'Projected Light Stimulus (\muW)')
 ylabel(ax(5),'ab3A Firing Rate (Hz)')
 set(ax(5),'XLim',[0 150],'YLim',[0 65])
 
-set(ax(6),'XScale','log','YLim',[0 1],'XTick',[1e-4 1e-3 1e-2 1e-1 1e0],'XLim',[1e-4 1])
+set(ax(6),'XScale','log','YLim',[0 4],'XTick',[1e-4 1e-3 1e-2 1e-1 1e0],'XLim',[1e-4 1])
 xlabel(ax(6),'Odor background (V)')
 ylabel(ax(6),'ab3A ORN gain (Hz/\muW)')
 
@@ -343,29 +352,29 @@ for i = 1:size(od,1)
 	s(rm_this) = []; f(rm_this) = [];
 	plot(axs(5),s,f,'-+','Color',c(i,:))
 end
-set(axs(5),'XScale','log','XTick',[1e-4 1e-3 1e-2 1e-1 1e0])
-ylabel(axs(5),'Odor-induced firing rate (Hz)')
+set(axs(5),'XScale','log','XTick',[1e-4 1e-2 1e0])
+ylabel(axs(5),['Odor-induced' char(10) 'firing rate (Hz)'])
 xlabel(axs(5),'Odor Background (V)')
 
-% also show gain computed directly
-for i = 1:size(od,1)
-	gain = NaN(size(od,2),1);
-	odour_levels = NaN(size(od,2),1);
-	for j = 1:size(od,2)
-		if od(i,j).n_trials > 0
-			x = (nanmean(od(i,j).firing_projected(uts,:),2)); x = x(:);
-			y = (nanmean(od(i,j).firing_rate(uts,:),2)); y = y(:);
-			gain(j) = std(y)/std(x);
-			odour_levels(j) = nanmean((nanmean(od_odour(i,j).stimulus(:,:),2)));
-		end
-		rm_this = isnan(odour_levels) | isnan(gain) | gain == 0 ;
-		odour_levels(rm_this) = []; gain(rm_this) = [];
-		plot(axs(4),odour_levels,gain,'-+','Color',c2(i,:))
-	end
-end
-set(axs(4),'XScale','log','XTick',[1e-4 1e-3 1e-2 1e-1 1e0],'YLim',[0 1],'XLim',[1e-4 1])
-ylabel(axs(4),'ab3A ORN gain (Hz/\muW)')
-xlabel(axs(4),'Odor background (V)')
+% % also show gain computed directly
+% for i = 1:size(od,1)
+% 	gain = NaN(size(od,2),1);
+% 	odour_levels = NaN(size(od,2),1);
+% 	for j = 1:size(od,2)
+% 		if od(i,j).n_trials > 0
+% 			x = (nanmean(od(i,j).firing_projected(uts,:),2)); x = x(:);
+% 			y = (nanmean(od(i,j).firing_rate(uts,:),2)); y = y(:);
+% 			gain(j) = std(y)/std(x);
+% 			odour_levels(j) = nanmean((nanmean(od_odour(i,j).stimulus(:,:),2)));
+% 		end
+% 		rm_this = isnan(odour_levels) | isnan(gain) | gain == 0 ;
+% 		odour_levels(rm_this) = []; gain(rm_this) = [];
+% 		plot(axs(4),odour_levels,gain,'-+','Color',c2(i,:))
+% 	end
+% end
+% set(axs(4),'XScale','log','XTick',[1e-4 1e-3 1e-2 1e-1 1e0],'YLim',[0 1],'XLim',[1e-4 1])
+% ylabel(axs(4),'ab3A ORN gain (Hz/\muW)')
+% xlabel(axs(4),'Odor background (V)')
 
 axes(ax(1))
 o = imread('../images/chrimson-1.png');
@@ -388,19 +397,26 @@ axis ij
 axis image
 axis off
 
+% cosmetic fixes
+ax(3).YLim = [50 5e3];
+
 prettyFig(main_fig,'fs',13,'FixLogX',true,'lw',1.5,'plw',1.2)
+
+deintersectAxes(ax([2 3 6]))
+uistack(axs(3),'top')
+uistack(axs(5),'top')
 
 if being_published
 	snapnow
 	delete(main_fig)
 end
 
-prettyFig(supp_fig,'fs',15,'FixLogX',true,'lw',1.7,'plw',2)
+% prettyFig(supp_fig,'fs',15,'FixLogX',true,'lw',1.7,'plw',2)
 
-if being_published
-	snapnow
-	delete(supp_fig)
-end
+% if being_published
+% 	snapnow
+% 	delete(supp_fig)
+% end
 
 
 %% Version Info

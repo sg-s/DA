@@ -66,6 +66,14 @@ paradigm = paradigm_new;
 % fly(bad_trials) = [];
 % orn(bad_trials) = [];
 
+% save the original LFP
+raw_LFP = 10*LFP;
+% filter raw LFP to remove spikes, and remove baseline
+for i = 1:width(raw_LFP)
+	raw_LFP(:,i) = filtfilt(ones(30,1),30,raw_LFP(:,i));
+	raw_LFP(:,i) = raw_LFP(:,i) - nanmean(raw_LFP(1:5e3,i));
+end
+
 % filter the LFP
 for i = 1:width(LFP)
 	LFP(:,i) = LFP(:,i) - fastFiltFilt(ones(1e4,1),1e4,LFP(:,i));
@@ -87,4 +95,4 @@ end
 
 % repack everything
 clear cdata
-cdata = v2struct(a,z,K1,K2,PID,LFP,fA,fB,LFP_pred,fA_pred,fA_gain,LFP_gain,orn,fly,paradigm,AllControlParadigms);
+cdata = v2struct(a,z,K1,K2,PID,LFP,raw_LFP,fA,fB,LFP_pred,fA_pred,fA_gain,LFP_gain,orn,fly,paradigm,AllControlParadigms);

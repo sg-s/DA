@@ -22,8 +22,9 @@ delete(axs(5)); delete(axs(10));
 axs(5) = []; axs(end) = [];
 
 % define colors, etc. 
-LFP_color = lines(1);
-firing_color = [0 0 0];
+c = lines(10);
+LFP_color = c(4,:);
+firing_color = c(5,:);
 model_color = [1 0 0];
 
 
@@ -150,7 +151,7 @@ ylabel(axs(5),'Lag (ms)')
 % Now we compute the gain control timescale
 
 history_lengths = round(logspace(1.7,4,50)); % all the history lengths we look at, in ms
-example_history_lengths = [100 10e3];
+example_history_lengths = [100 300 1e3 1e4];
 gain_mu = struct; gain_mu(length(example_history_lengths)).gain = []; gain_mu(1).mu = [];
 rho = NaN(length(history_lengths),length(od));
 
@@ -187,46 +188,88 @@ for i = [2 3 5 6]
 
 end
 
+% make four smaller plots in the third subplot
+delete(subplots)
+subplots(1) = axes('Parent',main_fig);
+subplots(2) = axes('Parent',main_fig);
+subplots(3) = axes('Parent',main_fig);
+subplots(4) = axes('Parent',main_fig);
+
+subplots(1).Position = [.12 .3 .17 .17];
+subplots(2).Position = [.3 .3 .17 .17];
+subplots(3).Position = [.12 .11 .17 .17];
+subplots(4).Position = [.3 .11 .17 .17];
+
+c = lines(10);
+c(4:5,:) = [];
+c(4,:) = [];
+for i = 1:length(example_history_lengths)
+	axes(subplots(i))
+	plotPieceWiseLinear(gain_mu(i).mu,gain_mu(i).gain,'Color',c(i,:));
+end
+
+% equalise axes
+for i = 1:length(subplots)
+	subplots(i).XLim = [1e-3 .4];
+	subplots(i).YLim = [1 400];
+	subplots(i).Box = 'off';
+end
+
+subplots(2).YTickLabel = '';
+subplots(2).XTickLabel = '';
+subplots(1).XTickLabel = '';
+subplots(4).YTickLabel = '';
+
+ax(3).YColor = 'w';
+ax(3).XColor = 'w';
+xlabel(ax(3),'\mu_{Stimulus} (V)','Color','k')
+ylabel(ax(3),'Gain (Hz/V)','Color','k')
+ax(3).Position(1) = .08;
+ax(3).Position(2) = .09;
+ax(3).Position(3) = .4;
+ax(3).XTick = [];
+ax(3).YTick = [];
+
+
+% indicate these times on the fourth plot
+for i = 1:length(example_history_lengths)
+	plot(ax(4),[example_history_lengths(i) example_history_lengths(i)],[-1 ,.3],'-','Color',c(i,:))
+end
+
 errorbar(ax(4),history_lengths,nanmean(rho,2),nanstd(rho,[],2),'k')
 set(ax(4),'XScale','log','YLim',[-1 .4],'XTick',[10 1e2 1e3 1e4],'XLim',[10 1e4])
 xlabel(ax(4),'Gain control timescale (ms)')
 ylabel(ax(4),['Correlation between' char(10) 'sgain and \mu_{stimulus}'])
 
-% show the gain vs. the mean stimulus
-c = lines(4);
-axes(ax(3))
-plotPieceWiseLinear(gain_mu(end).mu,gain_mu(end).gain,'nbins',10,'Color',c(3,:));
+% % fit Weber's Law to this
+% x = gain_mu(1).mu;
+% y = gain_mu(1).gain;
+% options = fitoptions(fittype('poly1'));
+% options.Lower = [-1 -Inf];
+% options.Upper = [-1 Inf];
+% cf_temp = fit(log(x(:)),log(y(:)),'poly1',options);
+% cf = fit(x(:),y(:),'power1');
+% warning off
+% cf.a = exp(cf_temp.p2); cf.b = -1;
+% warning on
+% plot(ax(3),sort(x),cf(sort(x)),'r')
 
-axes(ax(3))
-plotPieceWiseLinear(gain_mu(1).mu,gain_mu(1).gain,'nbins',10,'Color',c(4,:));
+% % fake some plots for a nice legend
+% clear l L
+% for i = 1:2
+% 	l(i) = plot(ax(3),NaN,NaN,'Marker','o','MarkerFaceColor',c(i+2,:),'MarkerEdgeColor',c(i+2,:),'LineStyle','none');
+% end
+% L{2} = 'tau_{gain} = 10^2ms';
+% L{1} = 'tau_{gain} = 10^4ms';
+% lh = legend(l,L,'Location','southwest');
 
-% fit Weber's Law to this
-x = gain_mu(1).mu;
-y = gain_mu(1).gain;
-options = fitoptions(fittype('poly1'));
-options.Lower = [-1 -Inf];
-options.Upper = [-1 Inf];
-cf_temp = fit(log(x(:)),log(y(:)),'poly1',options);
-cf = fit(x(:),y(:),'power1');
-warning off
-cf.a = exp(cf_temp.p2); cf.b = -1;
-warning on
-plot(ax(3),sort(x),cf(sort(x)),'r')
-
-% fake some plots for a nice legend
-clear l L
-for i = 1:2
-	l(i) = plot(ax(3),NaN,NaN,'Marker','o','MarkerFaceColor',c(i+2,:),'MarkerEdgeColor',c(i+2,:),'LineStyle','none');
-end
-L{2} = 'tau_{gain} = 10^2ms';
-L{1} = 'tau_{gain} = 10^4ms';
-lh = legend(l,L,'Location','southwest');
-
-set(ax(3),'XScale','log','YScale','log')
-xlabel(ax(3),'\mu_{Stimulus} (V)')
-ylabel(ax(3),'Gain (Hz/V)')
+% set(ax(3),'XScale','log','YScale','log')
+% xlabel(ax(3),'\mu_{Stimulus} (V)')
+% ylabel(ax(3),'Gain (Hz/V)')
 
 prettyFig(main_fig,'fs',14);
+
+return
 
 if being_published
 	snapnow

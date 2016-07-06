@@ -17,7 +17,7 @@ if length(o) > 1
 	original_dimensions = size(o);
 	o = o(:);
 	for i = 1:length(o)
-		o(i) = fitNL(o(i));
+		o(i) = fitNL(o(i),NL_type);
 	end
 	o = reshape(o,original_dimensions);
 	return
@@ -45,20 +45,19 @@ if strcmp(NL_type,'all') || strcmp(NL_type,'firing_rate')
 
 		for i = 1:width(r)
 			if ismember(i,find(utt))
+				disp('Fitting Hill function...')
 				temp1 = p(:,i); temp2 = r(:,i);
 				rm_this = isnan(temp1) | isnan(temp2);
 				temp1(rm_this) = []; temp2(rm_this) = [];
-				temp2 = temp2/max(temp2);
+				temp2 = temp2/nanmax(temp2);
 
-				ft = fittype('hill2(x,k,n,x_offset)');
-				ff = fit(temp1,temp2,ft,'StartPoint',[.5 2 nanmean(temp1)],'Lower',[0 1 -1],'Upper',[max(temp1)*100 10 1],'MaxIter',1e4);
-
-				% figure, hold on
-				% plot(temp1,temp2,'k.')
-				% plot(temp1,ff(temp1),'rx')
-
-				temp1 = o.firing_projected(:,i);
-				o.firing_projected(:,i) = ff(temp1)*max(o.firing_rate(uts,i));
+				try
+					ft = fittype('hill2(x,k,n,x_offset)');
+					ff = fit(temp1,temp2,ft,'StartPoint',[.5 2 nanmean(temp1)],'Lower',[0 1 -1],'Upper',[max(temp1)*100 10 1],'MaxIter',1e4);
+					temp1 = o.firing_projected(:,i);
+					o.firing_projected(:,i) = ff(temp1)*max(o.firing_rate(uts,i));
+				catch
+				end
 			end
 		end
 	end

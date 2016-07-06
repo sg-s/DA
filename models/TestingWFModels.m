@@ -104,18 +104,19 @@ end
 %% 2. Schulze-Louis Model 
 % Here we test models from Mathieu Louis' eLife paper. I tried using the parameters in their paper, but those parameters didn't yield Weber-Fechner scaling. Fitting their model to our data was very hard, as it's very expensive to solve the model. Instead, I played with the parameters a bit, and found a set that gave Weber-Fechner gain scaling: 
 
+return
 
 clear p
-p.   a1 = 2;
-p.   a2 = 1;
+p.   a1 = 100;
+p.   a2 = 30;
 p.   a3 = 0;
 p.   b1 = 100;
 p.   b2 = 10;
 p.   b3 = 1;
-p.   b4 = 0;
+p.   b4 = -100;
 p.   b5 = 1;
-p.theta = 0;
-p.    n = 0;
+p.theta = 50;
+p.    n = 2;
 
 clear ax
 figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on

@@ -59,7 +59,6 @@ for i = 1:length(od)
 end
 
 
-
 min_acceptable_corr = .5;
 min_acceptable_lag = 2;
 clear l
@@ -67,71 +66,103 @@ for i = 1:length(od)
 	S = nanmean(od(i).stimulus,2); S = S - mean(S(1:5e3));
 	R = nanmean(od(i).firing_rate,2);
 	X = -nanmean(od(i).LFP,2);
-
 	DA_R = dd(i).firing_rate;
 
+	% % crop data % this doesn't change anything
+	% S = S(1e4:end-1e4);
+	% R = R(1e4:end-1e4);
+	% X = X(1e4:end-1e4);
+	% DA_R = DA_R(1e4:end-1e4);
+
+
+	mean_x = vectorise(computeSmoothedStimulus(S,200));
 	[lag, mean_x, max_corr] = findLagAndMeanInWindow(S,R,1e3,25);
+
 	time_since_thresh_crossing = findTimeSinceThresholdCrossing(S,mean(S));
-	rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr;
-	lag(rm_this) = [];
-	mean_x(rm_this) = [];
-	t = time_since_thresh_crossing;
-	t(rm_this) = []; t(t<10) = NaN;
-	lag(lag>300) = NaN; % remove some obvious outliers
+
+	% first strip out the NaNs
+	rm_this = isnan(lag);
+	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
+	time_since_thresh_crossing(rm_this) = [];
+
+	% then throw out some shitty data
+	rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr | time_since_thresh_crossing < 10 | lag > 300;
+	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
+	time_since_thresh_crossing(rm_this) = [];
+
+	% raw_xcorrs(1).firing(:,i) = mean(raw_xcorr(mean_x > 0 & mean_x < .1,:));
+	% raw_xcorrs(2).firing(:,i) = mean(raw_xcorr(mean_x > .3 & mean_x < .4,:));
+
+
+	% plot
 	axes(ax(1))
 	l(2) = plotPieceWiseLinear(mean_x,lag,'Color',firing_color,'nbins',19);
 
 	axes(ax(2))
-	plotPieceWiseLinear(t,lag,'Color',firing_color,'nbins',19);
+	plotPieceWiseLinear(time_since_thresh_crossing,lag,'Color',firing_color,'nbins',19);
 
-	% also plot this in the supp. figure
-	axes(axs(1))
-	l(2) = plotPieceWiseLinear(mean_x,lag,'Color',firing_color,'nbins',19);
-
-	axes(axs(5))
-	plotPieceWiseLinear(t,lag,'Color',firing_color,'nbins',19);
-
-	% now do the same with the DA model prediction
-	[lag, mean_x, max_corr] = findLagAndMeanInWindow(S,DA_R,1e3,25);
-	rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr;
-	lag(rm_this) = [];
-	mean_x(rm_this) = [];
-	t = time_since_thresh_crossing;
-	t(rm_this) = []; t(t<10) = NaN;
-	lag(lag>300) = NaN; % remove some obvious outliers
-	axes(axs(1))
-	plotPieceWiseLinear(mean_x,lag,'Color',model_color,'nbins',19);
-
-	axes(axs(5))
-	plotPieceWiseLinear(t,lag,'Color',model_color,'nbins',19);
+	% save the raw xcorrs 
 
 
+	% % also plot this in the supp. figure
+	% axes(axs(1))
+	% l(2) = plotPieceWiseLinear(mean_x,lag,'Color',firing_color,'nbins',19);
+
+	% axes(axs(5))
+	% plotPieceWiseLinear(t,lag,'Color',firing_color,'nbins',19);
+
+	% % now do the same with the DA model prediction
+	% [lag, mean_x, max_corr] = findLagAndMeanInWindow(S,DA_R,1e3,25);
+	% rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr;
+	% lag(rm_this) = [];
+	% mean_x(rm_this) = [];
+	% t = time_since_thresh_crossing;
+	% t(rm_this) = []; t(t<10) = NaN;
+	% lag(lag>300) = NaN; % remove some obvious outliers
+	% axes(axs(1))
+	% plotPieceWiseLinear(mean_x,lag,'Color',model_color,'nbins',19);
+
+	% axes(axs(5))
+	% plotPieceWiseLinear(t,lag,'Color',model_color,'nbins',19);
+
+	mean_x = vectorise(computeSmoothedStimulus(S,200));
 	[lag, mean_x, max_corr] = findLagAndMeanInWindow(S,X,1e3,25);
-	rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr;
-	lag(rm_this) = [];
-	mean_x(rm_this) = [];
-	t = time_since_thresh_crossing;
-	t(rm_this) = []; t(t<10) = NaN;
+	time_since_thresh_crossing = findTimeSinceThresholdCrossing(S,mean(S));
 
+	% first strip out the NaNs
+	rm_this = isnan(lag);
+	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
+	time_since_thresh_crossing(rm_this) = [];
+
+	% then throw out some shitty data
+	rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr | time_since_thresh_crossing < 10 | lag > 300;
+	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
+	time_since_thresh_crossing(rm_this) = [];
+
+	% raw_xcorrs(1).LFP(:,i) = mean(raw_xcorr(mean_x > 0 & mean_x < .1,:));
+	% raw_xcorrs(2).LFP(:,i) = mean(raw_xcorr(mean_x > .3 & mean_x < .4,:));
+
+	% plot
 	axes(ax(1))
 	l(1) = plotPieceWiseLinear(mean_x,lag,'Color',LFP_color,'nbins',19);
 
 	axes(ax(2))
-	plotPieceWiseLinear(t,lag,'Color',LFP_color,'nbins',19);
+	plotPieceWiseLinear(time_since_thresh_crossing,lag,'Color',LFP_color,'nbins',19);
 
-	% also plot this on the supp. figure
-	axes(axs(1))
-	plotPieceWiseLinear(mean_x,lag,'Color',LFP_color,'nbins',19);
+	% % also plot this on the supp. figure
+	% axes(axs(1))
+	% plotPieceWiseLinear(mean_x,lag,'Color',LFP_color,'nbins',19);
 
-	axes(axs(5))
-	plotPieceWiseLinear(t,lag,'Color',LFP_color,'nbins',19);
+	% axes(axs(5))
+	% plotPieceWiseLinear(t,lag,'Color',LFP_color,'nbins',19);
 
 end
 
+
 % labels -- main figure
-xlabel(ax(1),'\mu_{Stimulus} in preceding 1s (V)')
+xlabel(ax(1),'\mu_{Stimulus} in preceding 200ms (V)')
 ylabel(ax(1),'Lag (ms)')
-set(ax(1),'YLim',[0 140],'XLim',[0 0.6])
+set(ax(1),'YLim',[0 140],'XLim',[0 0.45])
 L = legend(l,{'LFP','Firing Rate'},'Location','southeast');
 
 set(ax(2),'YLim',[0 140],'XLim',[10 5000],'XScale','log')
@@ -140,7 +171,7 @@ ylabel(ax(2),'Lag (ms)')
 
 
 % labels -- supp. figure
-xlabel(axs(1),'\mu_{Stimulus} in preceding 1s (V)')
+xlabel(axs(1),'\mu_{Stimulus} in preceding 200ms (V)')
 ylabel(axs(1),'Lag (ms)')
 set(axs(1),'YLim',[0 140],'XLim',[0 0.6])
 
@@ -189,7 +220,6 @@ for i = [2 3 5 6]
 end
 
 % make four smaller plots in the third subplot
-delete(subplots)
 subplots(1) = axes('Parent',main_fig);
 subplots(2) = axes('Parent',main_fig);
 subplots(3) = axes('Parent',main_fig);
@@ -210,9 +240,12 @@ end
 
 % equalise axes
 for i = 1:length(subplots)
-	subplots(i).XLim = [1e-3 .4];
-	subplots(i).YLim = [1 400];
+	subplots(i).XLim = [2e-2 1];
+	subplots(i).YLim = [100 500];
+	subplots(i).YTick = [100 200 400];
 	subplots(i).Box = 'off';
+	subplots(i).YScale = 'log';
+	subplots(i).XScale = 'log';
 end
 
 subplots(2).YTickLabel = '';
@@ -223,7 +256,7 @@ subplots(4).YTickLabel = '';
 ax(3).YColor = 'w';
 ax(3).XColor = 'w';
 xlabel(ax(3),'\mu_{Stimulus} (V)','Color','k')
-ylabel(ax(3),'Gain (Hz/V)','Color','k')
+ylabel(ax(3),'ORN Gain (Hz/V)','Color','k')
 ax(3).Position(1) = .08;
 ax(3).Position(2) = .09;
 ax(3).Position(3) = .4;
@@ -239,7 +272,7 @@ end
 errorbar(ax(4),history_lengths,nanmean(rho,2),nanstd(rho,[],2),'k')
 set(ax(4),'XScale','log','YLim',[-1 .4],'XTick',[10 1e2 1e3 1e4],'XLim',[10 1e4])
 xlabel(ax(4),'Gain control timescale (ms)')
-ylabel(ax(4),['Correlation between' char(10) 'sgain and \mu_{stimulus}'])
+ylabel(ax(4),['Correlation between' char(10) 'gain and \mu_{stimulus}'])
 
 % % fit Weber's Law to this
 % x = gain_mu(1).mu;

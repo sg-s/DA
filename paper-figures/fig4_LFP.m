@@ -132,6 +132,7 @@ msg_data.LFP = dLFP;
 msg_data.fA = fA;
 msg_data.paradigm = paradigm;
 
+return
 
 %  ######   #######  ##    ## ######## ########     ###     ######  ######## 
 % ##    ## ##     ## ###   ##    ##    ##     ##   ## ##   ##    ##    ##    

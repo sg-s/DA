@@ -62,6 +62,10 @@ end
 min_acceptable_corr = .5;
 min_acceptable_lag = 2;
 clear l
+
+p_reg1 = zeros(length(od),1);
+p_reg2 = zeros(length(od),1);
+
 for i = 1:length(od)
 	S = nanmean(od(i).stimulus,2); S = S - mean(S(1:5e3));
 	R = nanmean(od(i).firing_rate,2);
@@ -101,29 +105,15 @@ for i = 1:length(od)
 	axes(ax(2))
 	plotPieceWiseLinear(time_since_thresh_crossing,lag,'Color',firing_color,'nbins',19);
 
-	% save the raw xcorrs 
+	% % regression statistics
+	% [ff,gof] = fit(mean_x(:),lag(:),'poly1');
+	% tscore = abs(ff.p1/gof.rmse);
+	% p_reg1(i) = tcdf(tscore,gof.dfe);
 
+	% [ff,gof] = fit(time_since_thresh_crossing(~isnan(time_since_thresh_crossing)),lag(~isnan(time_since_thresh_crossing)),'poly1');
+	% tscore = abs(ff.p1/gof.rmse);
+	% p_reg2(i) = tcdf(tscore,gof.dfe);
 
-	% % also plot this in the supp. figure
-	% axes(axs(1))
-	% l(2) = plotPieceWiseLinear(mean_x,lag,'Color',firing_color,'nbins',19);
-
-	% axes(axs(5))
-	% plotPieceWiseLinear(t,lag,'Color',firing_color,'nbins',19);
-
-	% % now do the same with the DA model prediction
-	% [lag, mean_x, max_corr] = findLagAndMeanInWindow(S,DA_R,1e3,25);
-	% rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr;
-	% lag(rm_this) = [];
-	% mean_x(rm_this) = [];
-	% t = time_since_thresh_crossing;
-	% t(rm_this) = []; t(t<10) = NaN;
-	% lag(lag>300) = NaN; % remove some obvious outliers
-	% axes(axs(1))
-	% plotPieceWiseLinear(mean_x,lag,'Color',model_color,'nbins',19);
-
-	% axes(axs(5))
-	% plotPieceWiseLinear(t,lag,'Color',model_color,'nbins',19);
 
 	mean_x = vectorise(computeSmoothedStimulus(S,200));
 	[lag, mean_x, max_corr] = findLagAndMeanInWindow(S,X,1e3,25);
@@ -158,6 +148,7 @@ for i = 1:length(od)
 
 end
 
+return
 
 % labels -- main figure
 xlabel(ax(1),'\mu_{Stimulus} in preceding 200ms (V)')

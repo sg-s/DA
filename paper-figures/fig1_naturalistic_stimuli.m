@@ -271,7 +271,7 @@ caxis([min(shat) max(shat)]);
 % plot whiff gain vs. mean stimulus preceding whiff
 l(1) = plot(axes_handles(7),ab3.mean_stim,ab3.gain,'k+');
 l(2) = plot(axes_handles(7),ab2.mean_stim,ab2.gain,'ko');
-legend(l,{'ab3A','ab2A'},'Location','southwest')
+legend1 = legend(l,{'ab3A','ab2A'},'Location','southwest');
 set(axes_handles(7),'XScale','log','YScale','log')
 
 % fit a inverse relationship to all the data
@@ -286,7 +286,7 @@ plot(axes_handles(7),sort([ab2.mean_stim; ab3.mean_stim]),ff(sort([ab2.mean_stim
 l(1) = plot(axes_handles(8),ab3.std_stim,ab3.gain,'k+');
 l(2) = plot(axes_handles(8),ab2.std_stim,ab2.gain,'ko');
 set(axes_handles(8),'XScale','log','YScale','log')
-legend(l,{'ab3A','ab2A'},'Location','southwest')
+legend2 = legend(l,{'ab3A','ab2A'},'Location','southwest');
 
 % fit a inverse relationship to all the data
 options = fitoptions(fittype('power1'));
@@ -366,7 +366,7 @@ set(axes_handles(9),'YScale','log','XScale','log','XLim',[1e-3 1e1],'XTick',[1e-
 
 prettyFig('plw',1.5,'lw',1.5,'fs',.5,'FixLogX',true,'font_units','centimeters')
 
-legend('boxoff')
+
 
 % compress some plots to make small EPS files
 shrinkDataInPlot(axes_handles(3),1);
@@ -384,6 +384,9 @@ deintersectAxes(axes_handles(8))
 axes_handles(7).XLim(2) = 11;
 deintersectAxes(axes_handles(7))
 deintersectAxes(axes_handles(5))
+
+% fix some cosmetics
+return
 
 
 if being_published
@@ -469,7 +472,7 @@ ylabel(ax(4),'Probability')
 
 prettyFig('fs',.5,'FixLogX',false,'font_units','centimeters')
 
-legend('boxoff')
+
 
 % fix some plots
 ax(1).Position(1)=.11;
@@ -486,6 +489,9 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+return
+
 
 %% Supplementary Figure 2
 % This supplementary figure shows that the choice of filter doesn't affect our results of large, rapid gain control. 

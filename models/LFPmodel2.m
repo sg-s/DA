@@ -1,43 +1,73 @@
-%% LFPmodel2.m
-% a simple LFP model that slows down as well as Weber-Fechner gain scaling
-% this is modified from LFPmodel as follows:
-% instead of a logarithmic activation function, we use a DA-style activation model.
+%% modified version of DA model designed to slow down
+% 
 
-function R = LFPmodel2(S,p)
+function [R,y,z] = LFPmodel2(S,p)
 
-	% list parameters for legibility
-	p.A;
-	p.B;
-	p.ko;
-	p.tau;
 
-	% filter parameters
-	p.tau_y;
 
-	ic = .1;
+% list parameters for legibility
+p.A;
+p.B;
+p.tau_A;
+p.tau_y;
+p.tau_z;
+p.tau_r;
 
-	time = 1e-3*(1:length(S));
-	Tspan = [min(time) max(time)];
+t = 0:3000; % filters to be this long; don't use n*tau longer than a few hundred ms in this case...
+% Kz and Ky are the filters described in equations 12 and 13
+Ky = generate_simple_filter(p.tau_y,2,t);
+Kz = generate_simple_filter(p.tau_z,2,t);
 
-	% compute the filter
-	t = 0:3000;
-	K = t.^n.*exp(-t/tau); 
-	K = K/tau^(n+1)/gamma(n+1); % normalize appropriately
+% y and z are the stimulus convolved with the filters Ky and Kz
+y = filter(Ky,1,S);
+z = filter(Kz,1,S);
 
-	options = odeset('MaxStep',.1);
-	[T, Y] = ode23t(@(t,y) LFPmodel2_ode(t,y,time,S,p),Tspan,ic,options); % Solve ODE
-
-	% re-interpolate the solution to fit the stimulus
-	R = interp1(T,Y,time);
-
-		function dy = LFPmodel2_ode(t,y,time,odor,p)
-			% calculate the odor at the time point
-			O = interp1(time,odor,t); % Interpolate the data set (ft,f) at time t
-
-			% cal
-
-			eff_tau = p.tau*(1 + p.A*O)/(1 + p.B*O);
-			dy = p.ko + log(O) - y;
-			dy = dy/eff_tau;
-		end
+% in the case that tau_r is 0, don't have to integrate; this approximation can
+% also be used when tau_r/(1+p.B*z) << other time scales in y or z, for all or most z
+if p.tau_r == 0
+    R = p.A*y./(1+p.B*z);
+    R = R(:);
+    return;
 end
+
+% set up some variables to pass to the integration routine
+pass.y = y;
+pass.z = z;
+pass.A = p.A;
+pass.B = p.B;
+pass.tau_A = p.tau_A;
+pass.tau_r = p.tau_r;
+
+
+% these options seem to work well, but can be modified, of course
+opts = odeset('reltol',1e-6,'abstol',1e-5,'MaxStep',25);
+T0 = [1,length(z)];
+X0 = 0; % start from 0
+
+% the equations can be quite stiff, and this ode solver works quite well
+[tout,xout]=ode23t(@dxdt,T0,X0,opts,pass);
+
+% linearly interpolate the output to time intervals of the inputs
+R = interp1(tout,xout,1:length(z),'linear');
+R = R(:);
+
+
+
+
+function f = generate_simple_filter(tau,n,t)
+f = t.^n.*exp(-t/tau); % functional form in paper
+f = f/tau^(n+1)/gamma(n+1); % normalize appropriately
+
+function dx = dxdt(t,x,pass)
+
+zt = interp1(1:length(pass.z),pass.z,t,'linear'); % this is really slow
+yt = interp1(1:length(pass.y),pass.y,t,'linear');
+
+tau_r = (1+pass.tau_A*zt)*(1+pass.B*zt)/(1+zt)*pass.tau_r;
+
+% this is the DA model equation at time t
+dx = 1/tau_r * (pass.A*yt - (1 + pass.B*zt) * x);
+
+
+
+

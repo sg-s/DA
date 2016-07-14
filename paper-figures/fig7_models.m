@@ -216,6 +216,7 @@ plot(ax.r2_DA_LN,r2_LN,r2_DA,'k+')
 ylabel(ax.r2_DA_LN,'r^2 (DA Model)')
 xlabel(ax.r2_DA_LN,'r^2 (LN Model)')
 set(ax.r2_DA_LN,'XLim',[0 1],'YLim',[0 1])
+r2_DA
 
 % now show that the lags are constant with the DA model
 
@@ -426,6 +427,7 @@ end
 c = lines(5);
 ax.r2_DA_LN.NextPlot = 'add';
 plot(ax.r2_DA_LN,r2_LN,r2_DA,'o','Color',c(2,:))
+r2_DA
 
 
 % ##       ######## ########     ##     ##  #######  ########  ######## ##       
@@ -445,10 +447,12 @@ pulse_on = 15e3;
 pulse_off = 16e3;
 
 clear p
-p.A = 1e3;
-p.B = 1;
-p.tau = 1e-3;
-p.ko = 1;
+p.    A = 1e3;
+p.    B = 100;
+p.tau_y = 20;
+p.tau_z = 400;
+p.tau_r = 10;
+p.tau_A = 100;
 
 
 background_levels = logspace(-2,2,10);
@@ -465,16 +469,16 @@ for i = 1:length(background_levels)
 	time = 1e-3*(1:length(S)) - 10;
 	plot(ax.LFP_model_stim,time,S,'Color',c(i,:));
 
-	R = LFPmodel(S,p);
+	R = LFPmodel2(S,p);
 	% plot(ax(2),R,'Color',c(i,:))
 
 	temp = R - mean(R(pulse_on-1e3:pulse_on-1));
 
-	plot(ax.LFP_model_resp,time,temp/max(temp),'Color',c(i,:))
+	plot(ax.LFP_model_resp,time,temp/max(temp(pulse_on:pulse_off)),'Color',c(i,:))
 
 
 	% compute gain 
-	g = max(temp)/(max(S) - min(S));
+	g = max(temp(pulse_on:pulse_off))/(max(S) - min(S));
 	plot(ax.LFP_model_gain,min(S),g,'+','Color',c(i,:));
 	all_gain(i) = g;
 	all_mu(i) = max(S) - min(S);

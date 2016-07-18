@@ -56,93 +56,11 @@ subplot(2,1,2), hold on
 plot(b)
 title('Output of filter')
 
-PrettyFig;
+prettyFig;
 snapnow;
 delete(gcf);
 
-
-%%
-% The following figure shows filters estimated using the two methods shown above, with zero regularisation. The actual filter is in black, and each method is coloured differently. As you can see, for zero regularisation, these method are almost perfect. 
-
-figure('outerposition',[0 0 800 350],'PaperUnits','points','PaperSize',[800 350]); hold on
-subplot(1,2,1), hold on
-K1 = FitFilter2Data(a,b,[],'reg=0;','regtype=1;');
-plot(filtertime,Kexp,'k','LineWidth',2)
-plot(filtertime,K1,'r','LineWidth',2)
-title('Reg method 1 (r=0)','FontSize',font_size)
-set(gca,'LineWidth',2,'FontSize',font_size,'box','on')
-xlabel('Time')
-ylabel('Filter amplitude')
-
-subplot(1,2,2), hold on
-K2 = FitFilter2Data(a,b,[],'reg=0;','regtype=2;');
-plot(filtertime,Kexp,'k','LineWidth',2)
-plot(filtertime,K2,'b','LineWidth',2)
-title('Reg method 2 (r=0)','FontSize',font_size)
-set(gca,'LineWidth',2,'FontSize',font_size,'box','on')
-xlabel('Time')
-ylabel('Filter amplitude')
-
-snapnow;
-delete(gcf);
-
-
-
-%% Synthetic Data: effect of regularisation 
-% what is the effect of increasing _r_, the regularisation parameter on each of these methods? Here we systematically vary _r_, and pick the best filter that minimises 
-% 
-% $$ \arg\min_{r}\left\Vert \frac{e(r)-1}{1},\frac{S(r)-\min(S)}{\min(S)},\frac{\left|m(r)-1\right|}{1}\right\Vert _{\infty} $$
-% 
-% where _e_ is the coefficient of determination (r-square) of the prediction w.r.t to the actual data, _S_ is the sum of absolute values of the derivative of the filter _K_, and _m_ is the slope of the best fit of the prediction to the data. Minimising (_e_ - 1) minimises the error of the fit. Minimising _S_ minimises the high-frequency components in the filter, and prevents over-fitting. We also want the slope _m_ to be as close to 1 as possible. If _S_ has a minimum, that value of _r_ is automatically chosen. 
-
-
-regstr = 'regtype=1;';
-if ~(exist('K1best') == 1)
-	[K1best, diagnostics1, filtertime] = FindBestFilter(a,b,[],regstr);
-	filtertime = filtertime*3e-3;
-end
-
-regstr = 'regtype=2;';
-if ~(exist('K2best') == 1)
-	[K2best, diagnostics2] = FindBestFilter(a,b,[],regstr);
-end
-
-%%
-% In each of the plots below, the variation of error, filter sum, filter height, gain, and condition number of _C_ is show with _r_, the regularisation factor, in units of $\mu$. The error is calculated from the prediction to the actual output. The filter sum is the sum of the absolute values of the filter. Very high values here indicate the filter dominated by high-frequency components. The filter height is the peak of the filter. The gain is the slope of the best fit line of the data to the prediction. The condition number is the ratio of the largest to the smallest eigenvalue of _C_. Values of the condition number close to 1 mean that the matrix is easier to invert.  The figure below shows how varying _r_ affects reg method 1:
-PlotFilterDiagnostics2(diagnostics1,marker_size,marker_size2,font_size,'Method 1')
-
-snapnow;
-delete(gcf);
-
-%%
-% the figure below shows how varying _r_ affects reg method 2:
-PlotFilterDiagnostics2(diagnostics2,marker_size,marker_size2,font_size,'Method 2')
-
-snapnow;
-delete(gcf);
-
-%%
-% The best filters are shown below for the two reg. methods:
-figure('outerposition',[0 0 800 350],'PaperUnits','points','PaperSize',[800 350]); hold on
-subplot(1,2,1), hold on
-plot(filtertime,K1best,'r','LineWidth',2)
-title('Reg method 1','FontSize',font_size)
-set(gca,'LineWidth',2,'FontSize',font_size,'box','on','XLim',[min(filtertime) max(filtertime)])
-xlabel('Time')
-ylabel('Filter amplitude')
-
-subplot(1,2,2), hold on
-plot(filtertime,K2best,'b','LineWidth',2)
-title('Reg method 2','FontSize',font_size)
-set(gca,'LineWidth',2,'FontSize',font_size,'box','on','XLim',[min(filtertime) max(filtertime)])
-xlabel('Time')
-ylabel('Filter amplitude')
-
-
-
-snapnow;
-delete(gcf);
-
+return
 
 
 %% Synthetic Data 2: effect of regularisation 
@@ -158,7 +76,7 @@ subplot(2,1,2), hold on
 plot(b2)
 title('Output of filter')
 
-PrettyFig;
+prettyFig;
 snapnow;
 delete(gcf);
 
@@ -236,7 +154,7 @@ plot(time,f,'LineWidth',2)
 set(gca,'box','on','LineWidth',2,'XLim',[18 22])
 ylabel('Firing rate (Hz)')
 
-PrettyFig;
+prettyFig;
 
 snapnow;
 delete(gcf);
@@ -467,7 +385,7 @@ legend Filter ResidualFilter Sum
 set(gca,'FontSize',font_size,'LineWidth',2,'box','on','XLim',[min(filtertime) max(filtertime)])
 ylabel('Filter Amplitude (Hz)','FontSize',font_size)
 
-K_lowreg = FitFilter2Data(PID,f,[],'reg=1e-1;');
+K_lowreg = fitFilter2Data(PID,f,[],'reg',1e-1');
 subplot(1,2,2), hold on
 plot(0:3e-3:1,K_lowreg,'k','LineWidth',2)
 title('Filter with low regularisation','FontSize',font_size)
@@ -508,7 +426,7 @@ plot(time,f,'k','LineWidth',2)
 set(gca,'box','on','LineWidth',2,'XLim',[18 22])
 ylabel('Firing rate (Hz)')
 
-PrettyFig;
+prettyFig;
 
 snapnow;
 delete(gcf);
@@ -525,7 +443,7 @@ xlabel('Filter Lag (s)')
 ylabel('Filter Amplitude (Hz)')
 set(gca,'XLim',[min(filtertime) max(filtertime)])
 
-PrettyFig;
+prettyFig;
 snapnow;
 delete(gcf);
 
@@ -551,7 +469,7 @@ xlabel('Time (s)','FontSize',20)
 ylabel('Firing Rate (Hz)','FontSize',font_size)
 legend Data ScaledPrediction
 
-PrettyFig;
+prettyFig;
 
 snapnow;
 delete(gcf);
@@ -569,7 +487,7 @@ xlabel('Time (s)','FontSize',20)
 ylabel('Firing Rate (Hz)','FontSize',font_size)
 legend Data ScaledPrediction
 
-PrettyFig;
+prettyFig;
 
 snapnow;
 delete(gcf);
@@ -607,7 +525,7 @@ set(gca,'box','on','LineWidth',2,'XLim',[10 22])
 ylabel('Firing rate (Hz)')
 xlabel('Time (s)')
 
-PrettyFig;
+prettyFig;
 
 snapnow;
 delete(gcf);
@@ -624,7 +542,7 @@ xlabel('Filter Lag (s)')
 ylabel('Filter Amplitude (Hz)')
 set(gca,'XLim',[min(filtertime) max(filtertime)])
 
-PrettyFig;
+prettyFig;
 
 snapnow;
 delete(gcf);
@@ -651,7 +569,7 @@ xlabel('Time (s)','FontSize',20)
 ylabel('Firing Rate (Hz)','FontSize',font_size)
 legend Data ScaledPrediction
 
-PrettyFig;
+prettyFig;
 
 snapnow;
 delete(gcf);
@@ -669,7 +587,7 @@ xlabel('Time (s)','FontSize',20)
 ylabel('Firing Rate (Hz)','FontSize',font_size)
 legend Data ScaledPrediction
 
-PrettyFig;
+prettyFig;
 
 snapnow;
 delete(gcf);
@@ -680,10 +598,6 @@ delete(gcf);
 
 
 %% Version Info
-% The file that generated this document is called:
-disp(mfilename)
 
-%%
-% and its md5 hash is:
-Opt.Input = 'file';
-disp(DataHash(strcat(mfilename,'.m'),Opt))
+
+pFooter;

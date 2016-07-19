@@ -48,9 +48,10 @@ p.    B = 2.7656;
 RandStream.setGlobalStream(RandStream('mt19937ar','Seed',1984)); 
 S = randn(20e3,1);
 [R,~,~,Ky,Kz] = DAModelv2(S,p);
+RandStream.setGlobalStream(RandStream('mt19937ar','Seed',1984));
 R = R + .5*randn(length(R),1);
 
-filterset = fitFirstOrderModel(S(5e3:end),R(5e3:end),'filter_length',1e3,'reg',0,'offset',100);
+filterset = fitNOrderModel(S(5e3:end),R(5e3:end),'filter_length',1e3,'reg',0,'offset',100);
 R_pred = firstOrderModel(S,filterset);
 
 
@@ -97,12 +98,13 @@ end
 % Despite these hacks, the procedure works well in that no tuning is required to get the filters out: it runs automatically on the data, and generates very good approximations of the filters. See below. 
 
 tc = 50;
-RandStream.setGlobalStream(RandStream('mt19937ar','Seed',3)); 
+RandStream.setGlobalStream(RandStream('mt19937ar','Seed',1984));
 S = filtfilt(ones(tc,1),tc,randn(20e3,1));
 [R,~,~,Ky,Kz] = DAModelv2(S,p);
+RandStream.setGlobalStream(RandStream('mt19937ar','Seed',1984));
 R = R + .1*randn(length(R),1);
 
-[filterset, diagnostics] = fitFirstOrderModel(S(5e3:end),R(5e3:end),'filter_length',1200,'reg','best','filter_low_pass',50);
+[filterset, diagnostics] = fitNOrderModel(S(5e3:end),R(5e3:end),'filter_length',1200,'reg','best','filter_low_pass',50);
 
 figure('outerposition',[0 0 1500 501],'PaperUnits','points','PaperSize',[1500 501]); hold on
 subplot(1,3,1); hold on
@@ -115,7 +117,7 @@ subplot(1,3,2); hold on
 plot(filterset.time,filterset.K1,'r')
 plot(Kz*p.B,'k'); hold on
 xlabel('Filter lag (a.u.)')
-legend({'-K_1','\beta K_z'});
+legend({'K_1','\beta K_z'});
 
 subplot(1,3,3); hold on
 plot(diagnostics.reg_vec,diagnostics.r2,'k+')
@@ -134,6 +136,163 @@ end
 
 %%
 % Note that the filters "bleed" a little before 0 -- which is a consequence of the smoothing that I have to do. 
+
+%% Real Data
+% Now, I attempt to run it on some real data. First, I run it on DA model responses to naturalistic stimuli. Note that I fit this DA model to the ORN response to this stimulus, and it does a very good job at it. 
+
+
+load(getPath(dataManager,'5c7dacc5b42ff0eebb980d80fec120c3'),'data','spikes')
+PID = data(2).PID;
+time = 1e-4*(1:length(PID));
+all_spikes = spikes(2).A;
+
+% A spikes --> firing rate
+fA = spiketimes2f(all_spikes,time);
+
+tA = 1e-3*(1:length(fA));
+PID2 = fA;
+for i = 1:width(PID2)
+	PID2(:,i) = interp1(time,PID(i,:),tA);
+end
+PID = PID2; clear PID2
+% some minor cleaning up
+PID(end,:) = PID(end-1,:); 
+
+% remove the baseline from the PID, and remember the error
+PID = PID - mean(mean(PID(1:5e3,:)));
+S = nanmean(PID,2);
+
+[R,~,~,Ky,Kz] = DAModelv2(S,p);
+RandStream.setGlobalStream(RandStream('mt19937ar','Seed',1984)); 
+R = R + .1*randn(length(R),1);
+
+filterset = fitNOrderModel(S(5e3:end),R(5e3:end),'filter_length',1200,'reg','best','filter_low_pass',50);
+
+figure('outerposition',[0 0 1500 801],'PaperUnits','points','PaperSize',[1500 801]); hold on
+subplot(2,3,1:3); hold on
+plot(R,'k') 
+R_pred = firstOrderModel(S,filterset);
+plot(R_pred,'r')
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+legend({'DA Model Response','1st order model'})
+text(1e4,100,['r^2=' oval(rsquare(R,R_pred))])
+set(gca,'XLim',[0 70e3])
+
+subplot(2,3,4); hold on
+plot(filterset.time,filterset.K0,'r')
+plot(Ky*p.A,'k')
+xlabel('Filter lag (a.u.)')
+legend({'K_0','\alpha K_y'});
+
+subplot(2,3,5); hold on
+plot(filterset.time,filterset.K1,'r')
+plot(Kz*p.B,'k'); hold on
+xlabel('Filter lag (a.u.)')
+legend({'K_1','\beta K_z'});
+
+subplot(2,3,6); hold on
+plot(R_pred(1:10:end),R(1:10:end),'k.')
+xlabel('Prediction')
+ylabel('DA Model response')
+
+suptitle('naturalistic inputs, DA model responses')
+
+prettyFig('FixLogX',true)
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
+%%
+% OK, that looks good. Now we fit the model to the real data (ORN responses)
+
+R = mean(fA,2);
+
+filterset = fitNOrderModel(S(5e3:end),R(5e3:end),'filter_length',1200,'reg','best','filter_low_pass',20,'cross_validate',false);
+
+figure('outerposition',[0 0 1500 801],'PaperUnits','points','PaperSize',[1500 801]); hold on
+subplot(2,3,1:3); hold on
+plot(R,'k') 
+R_pred = firstOrderModel(S,filterset);
+plot(R_pred,'r')
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+legend({'ab3A','1st order model'})
+text(1e4,100,['r^2=' oval(rsquare(R,R_pred))])
+set(gca,'XLim',[0 70e3])
+
+subplot(2,3,4); hold on
+plot(filterset.time,filterset.K0,'r')
+xlabel('Filter lag (a.u.)')
+legend({'K_0'});
+
+subplot(2,3,5); hold on
+plot(filterset.time,filterset.K1,'r')
+xlabel('Filter lag (a.u.)')
+legend({'K_1'});
+
+subplot(2,3,6); hold on
+plot(R_pred(1:10:end),R(1:10:end),'k.')
+xlabel('Prediction')
+ylabel('ab3A firing rate (Hz)')
+
+suptitle('naturalistic inputs + real ORN data')
+
+prettyFig('FixLogX',true)
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
+%%
+% Now we fit it to another naturalistic stimulus dataset. 
+
+load(getPath(dataManager,'aeb361c027b71938021c12a6a12a85cd'),'-mat');
+example_orn = 4;
+S = nanmean(od(example_orn).stimulus,2);
+R = nanmean(od(example_orn).firing_rate,2);
+S = S - nanmean(S(1:5e3));
+
+filterset = fitNOrderModel(S(5e3:end-5e3),R(5e3:end-5e3),'filter_length',700,'reg',.11,'filter_low_pass',10,'cross_validate',false,'offset',150,'left_trim',50,'right_trim',50);
+
+figure('outerposition',[0 0 1500 801],'PaperUnits','points','PaperSize',[1500 801]); hold on
+subplot(2,3,1:3); hold on
+plot(R,'k') 
+R_pred = firstOrderModel(S,filterset);
+plot(R_pred,'r')
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+legend({'ab3A','1st order model'})
+text(3e3,100,['r^2=' oval(rsquare(R,R_pred))])
+set(gca,'XLim',[0 70e3])
+
+subplot(2,3,4); hold on
+plot(filterset.time,filterset.K0,'r')
+xlabel('Filter lag (a.u.)')
+legend({'K_0'});
+
+subplot(2,3,5); hold on
+plot(filterset.time,filterset.K1,'r')
+xlabel('Filter lag (a.u.)')
+legend({'K_1'});
+
+subplot(2,3,6); hold on
+plot(R_pred(1:10:end),R(1:10:end),'k.')
+xlabel('Prediction')
+ylabel('ab3A firing rate (Hz)')
+
+suptitle('naturalistic inputs + real ORN data')
+
+prettyFig('FixLogX',true)
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
 
 %% Version Info
 %

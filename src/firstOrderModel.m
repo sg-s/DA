@@ -5,7 +5,7 @@
 % and K0 and K1 are filters that are fit non-parametrically 
 % this is basically a non-parametreric, simplified DA model
 
-function [R] = firstOrderModel(S,filterset)
+function R = firstOrderModel(S,filterset)
 
 K0 = filterset.K0;
 K1 = filterset.K1;

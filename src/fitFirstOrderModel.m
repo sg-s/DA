@@ -6,15 +6,20 @@
 % and K0 and K1 are filters that are fit non-parametrically 
 
 
-function [K0,K1] = fitFirstOrderModel(S,R,varargin)
+function [varargout] = fitFirstOrderModel(S,R,varargin)
 
 
 
 % options and defaults
 options.filter_length = 500;
 options.reg = 0;
-options.whiten = 'true';
-
+options.min_reg = 1e-6;
+options.max_reg = 2;
+options.reg_max_iter = 10;
+options.offset = 100;
+options.filter_low_pass = 10;
+options.left_trim = 50;
+options.right_trim = 50;
 
 if nargout && ~nargin 
 	varargout{1} = options;
@@ -32,7 +37,7 @@ if iseven(length(varargin))
     		disp(fieldnames(options))
     		error('UNKNOWN OPTION')
     	else
-    		options = setfield(options,temp,varargin{ii+1});
+    		options.(temp) = varargin{ii+1};
     	end
     end
 end
@@ -43,13 +48,80 @@ else
 	error('Inputs need to be name value pairs')
 end
 
-
 assert(isvector(S),'First argument must be a vector')
 assert(isvector(R),'2nd argument should be a vector')
 assert(length(S) == length(R),'first two arguments should be of equal length')
+assert(length(S)>options.filter_length*2,'Data too short')
 
 S = S(:);
+% make the filter struct that we will ultimately return
+filterset = struct;
+filterset.time = vectorise((1:options.filter_length) - options.offset);
+S = circshift(S,-options.offset);
 R = R(:);
+
+if ischar(options.reg)
+	% find best regularization by cross validation
+	% split the data into two
+	z = floor(length(S)/2);
+	S_test = S(1:z);
+	R_test = R(1:z);
+	S = S(z+1:end);
+	R = R(z+1:end);
+
+	r2 = NaN(options.reg_max_iter,1);
+	d2 = r2;
+
+	% round 1
+	% disp('Round 1...')
+	reg_vec = logspace(log10(options.min_reg),log10(options.max_reg),options.reg_max_iter);
+
+	for i = 1:options.reg_max_iter
+		options.reg = reg_vec(i);
+		temp = fitFirstOrderModel(S,R,options);
+		R_pred = firstOrderModel(S_test,temp);
+		r2(i) = rsquare(R_pred,R_test);
+	end
+	[~,idx] = max(r2);
+	options.min_reg = reg_vec(idx)/2;
+	options.max_reg = reg_vec(idx)*2;
+
+	temp3 = reg_vec(:);
+	temp4 = r2(:);
+
+	% round 2
+	% disp('Round 2...')
+	reg_vec = logspace(log10(options.min_reg),log10(options.max_reg),options.reg_max_iter);
+
+	for i = 1:options.reg_max_iter
+		options.reg = reg_vec(i);
+		temp = fitFirstOrderModel(S,R,options);
+		R_pred = firstOrderModel(S_test,temp);
+		r2(i) = rsquare(R_pred,R_test);
+	end
+	[~,idx]=max(r2);
+	options.reg = reg_vec(idx);
+
+	diagnostics.reg_vec = [temp3; reg_vec(:)];
+	diagnostics.r2 = [temp4; r2(:)];
+
+	if nargout == 2
+		varargout{2} = diagnostics;
+	end
+
+
+end
+
+
+
+assert(options.reg >= 0,'regularisation must not be negative')
+
+
+
+if options.reg > 0
+	S = S + options.reg*randn(length(S),1);
+end
+
 
 only_these_points = options.filter_length+1:length(R);
 
@@ -71,39 +143,29 @@ end
 % combine these two
 shat = [stim; stim_r];
 
-% extract filters, based on regularisation
-if ~options.whiten 
-	% disp('No whitening. Directly computing filters...')
-	K = R'/shat;
 
-else
-	% disp('Whitening stimulus...')
+C = shat*shat';
+K = C\(shat*R);
 
-	% whiten and regularize stimulus separately for each filter
-	C1 = stim*stim';
-	MeanEigenValue = trace(C1)/length(C1); % cheat; this is the same as mean(eig(C1))
-	r = options.reg*MeanEigenValue;
-	C1 = (C1 + r*eye(length(C1)))*trace(C1)/(trace(C1) + options.reg*length(C1));
 
-	C2 = stim_r*stim_r';
-	MeanEigenValue = trace(C2)/length(C2); % cheat; this is the same as mean(eig(C2))
-	r = options.reg*MeanEigenValue;
-	C2 = (C2 + r*eye(length(C2)))*trace(C2)/(trace(C2) + options.reg*length(C2));
+filterset.K0 = K(1:length(K)/2);
+filterset.K1 = -K(length(K)/2+1:end);
 
-	C = shat*shat';
-	MeanEigenValue = trace(C)/length(C); % cheat; this is the same as mean(eig(C))
-	r = options.reg*MeanEigenValue;
-	C = (C + r*eye(length(C)))*trace(C)/(trace(C) + options.reg*length(C));
-	C(1:length(C1),1:length(C1)) = C1;
-	C(length(C1)+1:end,length(C1)+1:end) = C2;
-    
 
-    K = C\(shat*R);
 
+% filter the filters to remove high frequency components, if needed
+if options.filter_low_pass > 0
+	filterset.K0 = filtfilt(ones(options.filter_low_pass,1),options.filter_low_pass,filterset.K0);
+	filterset.K1 = filtfilt(ones(options.filter_low_pass,1),options.filter_low_pass,filterset.K1);
 end
 
-K0 = K(1:length(K)/2);
-K1 = K(length(K)/2+1:end);
+% trim filters if need be
+fn = fieldnames(filterset);
+for i = 1:length(fn)
+	filterset.(fn{i}) = filterset.(fn{i})(options.left_trim+1:end-options.right_trim);
+end
+
+varargout{1} = filterset;
 
 
 

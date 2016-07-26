@@ -20,7 +20,7 @@ clearvars -except being_published dm
 scatter_size = 12;
 
 % make figure placeholders 
-fig_handle = figure('PaperUnits','centimeters','PaperSize',[20 12],'Position',[100 100 1200 720],'toolbar','none'); hold on
+fig_handle = figure('PaperUnits','centimeters','PaperSize',[20 12],'Position',[100 100 1200 720],'toolbar','figure'); hold on
 clf(fig_handle);
 
 axes_handles(3) = subplot(7,4,[2 3 4 6 7 8]); % stimulus 
@@ -54,7 +54,7 @@ end
 %         ######   ########    ##       ##     ## ########   #######  ##     ## 
 
 clear ab3 ab2
-load(dm.getPath('5c7dacc5b42ff0eebb980d80fec120c3'),'data','spikes')
+load(getPath(dataManager,'5c7dacc5b42ff0eebb980d80fec120c3'),'data','spikes')
 PID = data(2).PID;
 time = 1e-4*(1:length(PID));
 all_spikes = spikes(2).A;
@@ -119,20 +119,24 @@ for i = 1:length(whiff_ends)
 	temp = confint(ff);
 	gain_err(i) = diff(temp(:,1))/2;
 end
-clear R
 rm_this = (abs(gain_err./gain)) > .5; % throw out points where the estimate of gain has a more than 50% error
 gain(rm_this) = [];
 gain_err(rm_this) = [];
 mean_stim(rm_this) = [];
 std_stim(rm_this) = [];
 
+
 % save this for a later fit
 ab3.mean_stim = mean_stim;
 ab3.std_stim = std_stim;
 ab3.gain = gain;
 ab3.gain_err = gain_err;
+ab3.ex1 = 36.3280;
+ab3.ex2 = 37.2890;
 
-clear ff gain gain_err Kdiff mean_stim rm_this shat_mean shat_std std_stim temp whiff_starts whiff_ends
+clear ff gain gain_err Kdiff mean_stim rm_this shat_mean shat_std std_stim temp whiff_starts whiff_ends R
+
+
 
 %  ######   ######## ########       ###    ########   #######     ###    
 % ##    ##  ##          ##         ## ##   ##     ## ##     ##   ## ##   
@@ -363,6 +367,10 @@ xlabel(axes_handles(9),'\mu_{stimulus} (V)')
 ylabel(axes_handles(9),'\sigma_{stimulus} (V)')
 set(axes_handles(9),'YScale','log','XScale','log','XLim',[1e-3 1e1],'XTick',[1e-3 1e-2 1e-1 1e0 1e1],'YLim',[1e-3 1e1],'YTick',[1e-3 1e-2 1e-1 1 10])
 
+% add some annotation
+a(1) = annotation('arrow','Position',[0.6194 0.5532 0.0090 -0.0285]);
+a(2) = annotation('arrow','Position',[0.6278 0.6237 0.0090 -0.0255]);
+
 
 prettyFig('plw',1.5,'lw',1.5,'fs',.5,'FixLogX',true,'font_units','centimeters')
 
@@ -384,10 +392,6 @@ deintersectAxes(axes_handles(8))
 axes_handles(7).XLim(2) = 11;
 deintersectAxes(axes_handles(7))
 deintersectAxes(axes_handles(5))
-
-% fix some cosmetics
-return
-
 
 if being_published
 	snapnow
@@ -434,20 +438,23 @@ xlabel(ax(2),'Stimulus (V)')
 ylabel(ax(2),'Probability')
 warning on
 
+odour_thresh = 0.024;
+
 % show the whiff durations 
 ax(3) = subplot(1,4,3); hold on
 whiff_durations = []; 
 for i = 1:width(ab3.PID)
-	[ons,offs] = computeOnsOffs(ab3.PID(:,i) > .024);
+	[ons,offs] = computeOnsOffs(ab3.PID(:,i) > odour_thresh);
 	whiff_durations =  [whiff_durations; offs-ons];
 end
 whiff_durations = nonzeros(whiff_durations);
-[y,x] = histcounts(whiff_durations,50); x(1)  =[];
+[y,x] = histcounts(whiff_durations,50); x(1) = [];
 y = y/sum(y);
-a = 1; m = fittype('a*(x).^n');
-ff = fit(x(a:end)',y(a:end)',m,'Upper',[Inf -1.5],'Lower',[-Inf -1.5],'StartPoint',[300 -1.5]);
+a = 1; m = fittype('a + n*x');
+xx = vectorise(log(x)); yy = vectorise(log(y));
+ff = fit(xx(yy>-Inf),yy(yy>-Inf),m,'Upper',[Inf -1.5],'Lower',[-Inf -1.5],'StartPoint',[300 -1.5]);
 plot(ax(3),x,y,'k+')
-plot(ax(3),x,ff(x),'r')
+plot(ax(3),x,exp(ff(log(x))),'r')
 ylabel(ax(3),'Probability')
 set(ax(3),'YScale','log','XScale','log','XTick',[1e1 1e2 1e3 1e4],'XLim',[10 1.1e4])
 xlabel(ax(3),'Whiff duration (ms)')
@@ -456,7 +463,7 @@ xlabel(ax(3),'Whiff duration (ms)')
 ax(4) = subplot(1,4,4); hold on
 whiff_durations = [];
 for i = 1:width(ab3.PID)
-	[ons,offs] = computeOnsOffs(ab3.PID(:,i) < .024);
+	[ons,offs] = computeOnsOffs(ab3.PID(:,i) < odour_thresh);
 	whiff_durations =  [whiff_durations; offs-ons];
 end
 whiff_durations = nonzeros(whiff_durations);

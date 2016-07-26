@@ -511,7 +511,7 @@ ylabel(ax.LFP_model_gain,'Gain (\DeltaR / \DeltaS)')
 
 
 
-prettyFig(main_fig,'fs',12,'plw',1,'lw',1.5)
+prettyFig(main_fig,'fs',12,'plw',1.5,'lw',1.5)
 
 
 % cosmetic fixes

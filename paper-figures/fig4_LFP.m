@@ -5,15 +5,13 @@
 
 pHeader;
 
-% uses dataManager for data integrity
-dm = dataManager;
 
 opacity = .5;
 
 figure('outerposition',[0 0 1600 720],'PaperUnits','points','PaperSize',[1600 720]); hold on
 
 clear cdata
-cdata = consolidateData2(dm.getPath('93ba5d68174e3df9f462a1fc48c581da'));
+cdata = consolidateData2(getPath(dataManager,'93ba5d68174e3df9f462a1fc48c581da'));
 cdata = cleanMSGdata(cdata);
 
 v2struct(cdata)

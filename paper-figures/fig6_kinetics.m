@@ -46,10 +46,10 @@ model_color = [1 0 0];
 
 
 % analyse kinetics of LFP and firing rate during the naturalistic stimulus presentation
-load(dm.getPath('aeb361c027b71938021c12a6a12a85cd'),'-mat');
+load(getPath(dataManager,'aeb361c027b71938021c12a6a12a85cd'),'-mat');
 
 % first, fit the DA model to the data. (this was pre-fit, we're simply loading the fit here)
-load(dm.getPath('b1b883899ab8c5ce1aed465819e75fce'));
+load(getPath(dataManager,'b1b883899ab8c5ce1aed465819e75fce'));
 
 % generate DA model responses
 dd = ORNData;
@@ -332,7 +332,7 @@ markers = {'+','d','o','x','*'};
 % core loop
 for i = 1:length(data_hashes)-1
 	clear cdata
-	cdata = consolidateData2(dm.getPath(data_hashes{i}));
+	cdata = consolidateData2(getPath(dataManager,data_hashes{i}));
 	if i < 4
 		cdata.a = 25e3; cdata.z = 45e3;
 	end

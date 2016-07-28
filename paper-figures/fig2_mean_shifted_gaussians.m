@@ -13,7 +13,7 @@ dm = dataManager;
 % assemble data
 
 clear cdata
-cdata = consolidateData2(dm.getPath('93ba5d68174e3df9f462a1fc48c581da'));
+cdata = consolidateData2(getPath(dataManager,'93ba5d68174e3df9f462a1fc48c581da'));
 cdata = cleanMSGdata(cdata);
 
 v2struct(cdata)

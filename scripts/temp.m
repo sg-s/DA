@@ -279,6 +279,43 @@ if being_published
 	delete(gcf)
 end
 
+%% 
+% Now, we predict LFP using the LFP filters, and then back out filters from the firing rate to the predicted LFP. 
+
+% predict LFP
+LFP_pred = NaN*LFP;
+for i = 1:length(paradigm)
+	LFP_pred(:,i) = convolve(time,PID(:,i),K1(:,paradigm(i)),filtertime);
+end
+
+% now back out filters from predicted LFP and firing rate
+
+if ~exist('K4','var')
+	K4 = NaN(700,max(paradigm));
+	for i = 1:max(paradigm)
+		X = LFP_pred(:,paradigm==i);
+		R = fA(:,paradigm==i);
+
+		temp_var = NaN(700,width(S));
+		for j = 1:width(X)
+			temp_var(:,j) = fitFilter2Data(nanmean(X(a:z,j),2),nanmean(R(a:z,j),2),'offset',100,'filter_length',700,'reg',rf);
+		end
+		K4(:,i) = nanmean(temp_var,2);
+	end
+end
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+c = parula(11);
+for i = 1:max(paradigm)
+	plot(filtertime,K4(:,i)/min(K4(50:200,i)),'Color',c(i,:))
+end
+set(gca,'YLim',[-1 1])
+title('Predicted LFP -> Firing Rate')
+ylabel('Filter (norm)')
+
+prettyFig();
+
+
 return
 
 

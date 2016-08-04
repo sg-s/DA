@@ -194,7 +194,6 @@ if ~exist('K_dual','var')
 	K_dual = NaN(700,length(paradigm),2);
 
 	for i = 1:width(PID)
-
 		if paradigm(i) == 1
 			S = PID(:,i);
 			ds2 = ([0; diff(filtfilt(ones(20,1),20,S))]).^2;

@@ -1,5 +1,5 @@
-% makeFig1.m
-% makes figure 1 for the paper
+% makeFig2.m
+% makes figure 2 for the paper
 % 
 % created by Srinivas Gorur-Shandilya at 6:52 , 03 October 2015. Contact me at http://srinivas.gs/contact/
 % 
@@ -10,12 +10,13 @@ pHeader;
 
 % this script uses dataManager to ensure data integrity
 dm = dataManager;
+history_length = 200; % ms
 
 
 %% Figure 1: Gain changes with a naturalistic stimulus
-% In this figure, we show that the gain of ab3A and ab2A ORNs changes dramatically in response to a naturalistic stimulus, and that this gain change can be correlated to the mean or the variance of the stimulus in the last 500ms. 
+% In this figure, we show that the gain of ab3A and ab2A ORNs changes dramatically in response to a naturalistic stimulus, and that this gain change can be correlated to the mean or the variance of the stimulus in the last 200ms. 
 
-clearvars -except being_published dm 
+clearvars -except being_published dm history_length
 
 scatter_size = 12;
 
@@ -97,7 +98,7 @@ clear PID fA K R filtertime_full PID_baseline all_spikes data fp spikes time
 [whiff_starts,whiff_ends] = computeOnsOffs(mean(ab3.fA,2)>10);
 
 % filter the stimulus using a box filter
-shat_mean = computeSmoothedStimulus(mean(ab3.PID,2),500);
+shat_mean = computeSmoothedStimulus(mean(ab3.PID,2),200);
 
 
 % filter the stimulus using a diff. filter
@@ -124,7 +125,8 @@ gain(rm_this) = [];
 gain_err(rm_this) = [];
 mean_stim(rm_this) = [];
 std_stim(rm_this) = [];
-
+whiff_ends(rm_this) = [];
+whiff_starts(rm_this) = [];
 
 % save this for a later fit
 ab3.mean_stim = mean_stim;
@@ -191,7 +193,7 @@ clear PID fA K R filtertime_full PID_baseline all_spikes data fp spikes time
 [whiff_starts,whiff_ends] = computeOnsOffs(mean(ab2.fA,2)>10);
 
 % filter the stimulus using a box filter
-shat_mean = computeSmoothedStimulus(mean(ab2.PID,2),500);
+shat_mean = computeSmoothedStimulus(mean(ab2.PID,2),history_length);
 
 
 % filter the stimulus using a diff. filter
@@ -253,7 +255,7 @@ set(plot2,'Color','r')
 
 set(axes_handles(4),'box','off')
 
-shat = computeSmoothedStimulus(mean(ab3.PID,2),500);
+shat = computeSmoothedStimulus(mean(ab3.PID,2),history_length);
 shat = shat-min(shat);
 shat = shat/max(shat);
 shat = 1+ceil(shat*99);
@@ -266,7 +268,7 @@ c = cc(shat,:);
 ab3.c = c;
 scatter(ab3.fp,mean(ab3.fA,2),scatter_size,c,'filled')
 
-shat = computeSmoothedStimulus(mean(ab3.PID,2),500);
+shat = computeSmoothedStimulus(mean(ab3.PID,2),history_length);
 ch = colorbar('east');
 set(ch,'Position',[0.2582    0.1462    0.0115    0.1358])
 caxis([min(shat) max(shat)]);
@@ -310,7 +312,7 @@ r2 = NaN*all_block_sizes;
 for i = 1:length(all_block_sizes)
 	temp = ab3.PID(:);
 	temp = reshape(temp,all_block_sizes(i),length(temp)/all_block_sizes(i));
-	if all_block_sizes(i) == 5e2
+	if all_block_sizes(i) == history_length
 		plot(axes_handles(9),mean(temp),std(temp),'Marker','.','Color',[.5 .5 .5],'LineStyle','none')
 	end
 	r2(i) = rsquare(mean(temp),std(temp));
@@ -336,11 +338,11 @@ set(axes_handles(6),'XLim',[-.1 5.1],'YColor','k','XColor','r','box','off')
 
 
 
-xlabel(axes_handles(7),'\mu_{Stimulus} in preceding 500ms (V)')
+xlabel(axes_handles(7),['\mu_{Stimulus} in preceding ' oval(history_length) 'ms (V)'])
 ylabel(axes_handles(7),'ORN gain (Hz/V)')
 set(axes_handles(7),'YLim',[10 1e4],'YScale','log','XScale','log','XLim',[.001 10],'XTick',[.001 .01 .1 1 10])
 
-xlabel(axes_handles(8),'\sigma_{Stimulus} in preceding 500ms (V)')
+xlabel(axes_handles(8),['\sigma_{Stimulus} in preceding ' oval(history_length) 'ms (V)'])
 set(axes_handles(8),'XTick',[1e-4 1e-3 1e-2 1e-1 1 10],'XScale','log','YScale','log','XLim',[1e-3 10],'YLim',[10 1e4])
 
 % shrink the bottom row a little bit
@@ -368,9 +370,19 @@ ylabel(axes_handles(9),'\sigma_{stimulus} (V)')
 set(axes_handles(9),'YScale','log','XScale','log','XLim',[1e-3 1e1],'XTick',[1e-3 1e-2 1e-1 1e0 1e1],'YLim',[1e-3 1e1],'YTick',[1e-3 1e-2 1e-1 1 10])
 
 % add some annotation
-a(1) = annotation('arrow','Position',[0.6194 0.5532 0.0090 -0.0285]);
-a(2) = annotation('arrow','Position',[0.6278 0.6237 0.0090 -0.0255]);
+% a(1) = annotation('arrow','Position',[0.6194 0.5532 0.0090 -0.0285]);
+% a(2) = annotation('arrow','Position',[0.6278 0.6237 0.0090 -0.0255]);
 
+% add insets showing gain control
+inset(1) = axes('Position',[0.6774 0.7907 0.1012 0.1040]); hold on
+inset(2) = axes('Position',[0.6774 0.56 0.1012 0.1040]); hold on
+S = mean(ab3.PID,2);
+R = mean(ab3.fA,2);
+t = 1e-3*(1:1000)-.8;
+plot(inset(1),t,S(6042-800:6042+199))
+plot(inset(1),t,S(24990-800:24990+199))
+plot(inset(2),t,R(6042-800:6042+199))
+plot(inset(2),t,R(24990-800:24990+199))
 
 prettyFig('plw',1.5,'lw',1.5,'fs',.5,'FixLogX',true,'font_units','centimeters')
 
@@ -398,6 +410,7 @@ if being_published
 	delete(gcf)
 end
 
+return
 
 %      ######  ##     ## ########  ########     ######## ####  ######   
 %     ##    ## ##     ## ##     ## ##     ##    ##        ##  ##    ##  
@@ -536,8 +549,8 @@ ylabel('ab3A Response (Hz)')
 title('using nat. stimulus filter')
 set(gca,'XColor','b','XLim',[-.5 6])
 
-% now also show the gain-per-whiff vs. the mean stimulus in the preceding 500ms for the white-noise-projection
-shat = computeSmoothedStimulus(mean(ab3.PID,2),500);
+% now also show the gain-per-whiff vs. the mean stimulus in the preceding 200ms for the white-noise-projection
+shat = computeSmoothedStimulus(mean(ab3.PID,2),history_length);
 [whiff_starts,whiff_ends] = computeOnsOffs(mean(ab3.fA,2)>10);
 mean_stim = NaN*whiff_ends;
 gain = NaN*whiff_ends;
@@ -565,7 +578,7 @@ ff.a = 6;
 plot(gca,mean_stim,ff(mean_stim),'r')
 set(gca,'XScale','log','YScale','log','XTick',[1e-2 1e-1 1e0 1e1])
 ylabel('ab3A firing gain (Hz/V)')
-xlabel('Mean stimulus in preceding 500ms')
+xlabel(['Mean stimulus in preceding ' oval(history_length) 'ms'])
 title(['Gain estimation using' char(10) 'white-noise filter'])
 
 % now show ab2A filters
@@ -575,7 +588,7 @@ ylabel('ab2A filter')
 xlabel('Lag (s)')
 
 subplot(2,4,6), hold on
-shat = computeSmoothedStimulus(mean(ab2.PID,2),500);
+shat = computeSmoothedStimulus(mean(ab2.PID,2),history_length);
 shat = shat-min(shat);
 shat = shat/max(shat);
 shat = 1+ceil(shat*99);
@@ -587,7 +600,7 @@ c= cc(shat,:);
 scatter(ab2.fp,mean(ab2.fA,2),scatter_size,c,'filled')
 xlabel('Projected Stimulus (V)')
 ylabel('ab2A response (Hz)')
-shat = computeSmoothedStimulus(mean(ab2.PID,2),500);
+shat = computeSmoothedStimulus(mean(ab2.PID,2),history_length);
 ch = colorbar('east');
 set(ch,'Position',[.58 .15 .02 .1])
 caxis([min(shat) max(shat)]);

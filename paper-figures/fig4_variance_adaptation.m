@@ -129,8 +129,6 @@ hi_gain = NaN(width(reshaped_PID),1);
 for i = 1:width(reshaped_PID)
 	y = reshaped_fA(1e3:4e3,i);
 	x = fA_pred(1e3:4e3,i);
-	r = max(y) - min(y);
-	l = (y > (r/3 + min(y))) & (y < (max(y) - r/3));
 	try
 		ff = fit(x(:),y(:),'poly1');
 		hi_gain(i) = ff.p1;
@@ -139,8 +137,6 @@ for i = 1:width(reshaped_PID)
 
 	y = reshaped_fA(6e3:9e3,i);
 	x = fA_pred(6e3:9e3,i);
-	r = max(y) - min(y);
-	l = (y > (r/3 + min(y))) & (y < (max(y) - r/3));
 	try
 		ff = fit(x(:),y(:),'poly1');
 		lo_gain(i) = ff.p1;
@@ -167,8 +163,6 @@ hi_gain2 = NaN(width(reshaped_PID),1);
 for i = 1:width(reshaped_PID)
 	y = reshaped_fA(1e3:4e3,i);
 	x = fp_corrected(1e3:4e3,i);
-	r = max(y) - min(y);
-	l = (y > (r/3 + min(y))) & (y < (max(y) - r/3));
 	try
 		ff = fit(x(:),y(:),'poly1');
 		hi_gain2(i) = ff.p1;
@@ -177,8 +171,6 @@ for i = 1:width(reshaped_PID)
 
 	y = reshaped_fA(6e3:9e3,i);
 	x = fp_corrected(6e3:9e3,i);
-	r = max(y) - min(y);
-	l = (y > (r/3 + min(y))) & (y < (max(y) - r/3));
 	try
 		ff = fit(x(:),y(:),'poly1');
 		lo_gain2(i) = ff.p1;
@@ -398,7 +390,6 @@ if being_published
 	delete(gcf)
 end
 
-
 %  ######  ##     ## ########  ########         ######## ####  ######       
 % ##    ## ##     ## ##     ## ##     ##        ##        ##  ##    ##      
 % ##       ##     ## ##     ## ##     ##        ##        ##  ##            
@@ -410,10 +401,21 @@ end
 %% Supplementary Figure
 % 
 
-figure('outerposition',[0 0 801 800],'PaperUnits','points','PaperSize',[801 800]); hold on
+X = fA_pred;
+Y = reshaped_fA;
+S = reshaped_PID;
+S(1:1e3,:) = NaN;
+X(1:1e3,:) = NaN;
+Y(1:1e3,:) = NaN;
+if ~exist('sc','var')
+	[gain,gain_r2,sc] = findEnsembleGain(X,Y,S,'step_size',10);
+end
+
+
+figure('outerposition',[0 0 1201 800],'PaperUnits','points','PaperSize',[1201 800]); hold on
 
 % 1. uncorrected I/O curves ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-subplot(2,2,3); hold on
+subplot(2,3,2); hold on
 % high contrast
 x = fA_pred(1e3:5e3,:);
 y = reshaped_fA(1e3:5e3,:);
@@ -434,7 +436,7 @@ ylabel('ab3A firing rate (Hz)')
 set(gca,'XLim',[0 1.4],'YLim',[0 60])
 
 % 2. uncorrected gain vs. sigma stim ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-subplot(2,2,4); hold on
+subplot(2,3,5); hold on
 lo_gain(lo_gain==0) = NaN;
 hi_gain(hi_gain==0) = NaN;
 x = std(reshaped_PID(1e3:4e3,:));
@@ -461,7 +463,7 @@ set(gca,'XLim',[0 .25],'YLim',[0 150])
 
 
 % 4. mean vs. sigma of the stimulus showing small change in mean ~~~~~~~~~~~~~~~~~~~~~~~~
-subplot(2,2,2), hold on
+subplot(2,3,1), hold on
 plot(std(reshaped_PID(1e3:4e3,:)),mean(reshaped_PID(1e3:4e3,:)),'r+');
 plot(std(reshaped_PID(6e3:9e3,:)),mean(reshaped_PID(6e3:9e3,:)),'b+');
 set(gca,'XLim',[0 .21],'YLim',[0 .6])
@@ -487,7 +489,7 @@ ylabel('\mu_{Stimulus} (V)')
 % set(gca,'XLim',[0 .22],'YLim',[0 150])
 
 % 6. this plot compares the Laughlin predicted gains in the two cases ~~~~~~~~~~~~~~~~~~~
-subplot(2,2,1), hold on
+subplot(2,3,4), hold on
 x = std(reshaped_PID(1e3:4e3,:));
 plot(x,laughlin_hi_gain,'r+')
 x = std(reshaped_PID(6e3:9e3,:));
@@ -495,6 +497,28 @@ plot(x,laughlin_lo_gain,'b+')
 ylabel(gca,'c.d.f slope (a.u.)')
 xlabel(gca,'\sigma_{Stimulus} (V)')
 set(gca,'XLim',[0 .22])
+
+
+% show r^2 of gain estimates as a function of time 
+subplot(2,3,3); hold on
+cla
+plot(time,gain_r2,'+','Color',[.4 .4 .4])
+set(gca,'YLim',[0 1],'XLim',[0 10])
+xlabel('Time since switch (s)')
+ylabel('r^2 (Proj. Stim., Response)')
+plot([0 10],[.8 .8],'k--')
+
+% show gain as a function of time 
+subplot(2,3,6); hold on
+cla
+[ax,h1,h2] = plotyy(time,gain,time,sc);
+set(h1,'Marker','+','LineStyle','none')
+set(h2,'Marker','.','LineStyle','none')
+xlabel(ax(1),'Time since switch (s)')
+ylabel(ax(1),'Inst. gain (Hz/V)')
+ylabel(ax(2),'Stimulus contrast')
+ax(2).YDir = 'reverse';
+set(ax,'XLim',[4.5 6])
 
 prettyFig('fs',.5,'lw',1.5,'font_units','centimeters')
 
@@ -529,25 +553,12 @@ end
 
 % now do the supplementary figure showing dynamics of gain change
 
-% X = fA_pred;
-% Y = reshaped_fA;
-% S = reshaped_PID;
-% S(1:1e3,:) = NaN;
-% X(1:1e3,:) = NaN;
-% Y(1:1e3,:) = NaN;
-% if ~exist('sc','var')
-% 	[gain,gain_r2,sc] = findEnsembleGain(X,Y,S,'step_size',10);
-% end
+
 
 % figure('outerposition',[0 0 800 500],'PaperUnits','points','PaperSize',[800 500]); hold on
 
 % % show how gain changes with time
-% [ax,h1,h2] = plotyy(time-5,gain,time-5,sc);
-% set(h1,'Marker','+','LineStyle','none')
-% set(h2,'Marker','.','LineStyle','none')
-% xlabel(ax(1),'Time since switch (s)')
-% ylabel(ax(1),'Inst. gain (Hz/V)')
-% ylabel(ax(2),'Stimulus contrast')
+
 
 % % put a timescale on this change by finding the time to half asymptote 
 % a = nanmean(gain(1:4e3));

@@ -8,7 +8,35 @@ pHeader;
 
 opacity = .5;
 
-figure('outerposition',[0 0 1600 720],'PaperUnits','points','PaperSize',[1600 720]); hold on
+figure('outerposition',[0 0 1201 900],'PaperUnits','points','PaperSize',[1201 900]); hold on
+msg_cartoon_plot = subplot(3,4,1:2); hold on
+var_cartoon_plot = subplot(3,4,3:4); hold on
+
+msg_lfp_io_plot = subplot(3,4,5); hold on
+msg_lfp_gain_plot = subplot(3,4,6); hold on
+msg_firing_io_plot = subplot(3,4,9); hold on
+msg_firing_gain_plot = subplot(3,4,10); hold on
+
+var_lfp_io_plot = subplot(3,4,7); hold on
+var_lfp_gain_plot = subplot(3,4,8); hold on
+var_firing_io_plot = subplot(3,4,11); hold on
+var_firing_gain_plot = subplot(3,4,12); hold on
+
+% show the cartoons
+axes(msg_cartoon_plot)
+o = imread('../images/mean_modular.png');
+imagesc(o);
+axis ij
+axis image
+axis off
+
+axes(var_cartoon_plot)
+o = imread('../images/variance_modular.png');
+imagesc(o);
+axis ij
+axis image
+axis off
+
 
 clear cdata
 cdata = consolidateData2(getPath(dataManager,'93ba5d68174e3df9f462a1fc48c581da'));
@@ -16,7 +44,6 @@ cdata = cleanMSGdata(cdata);
 
 v2struct(cdata)
 
-% [PID, LFP, fA, paradigm,~, ~, AllControlParadigms] = consolidateData(dm.getPath('93ba5d68174e3df9f462a1fc48c581da'),1);
 % sort the paradigms sensibly
 sort_value = [];
 for i = 1:length(AllControlParadigms)
@@ -48,7 +75,7 @@ paradigm(bad_trials) = [];
 
 % band pass all the LFP
 try 
-	load(dm.getPath('213e6122b7e0a414debcd5ded135ab20'),'filtered_LFP')
+	load(getPath(dataManager,'213e6122b7e0a414debcd5ded135ab20'),'filtered_LFP')
 catch
 	filtered_LFP = LFP;
 	for i = 1:width(LFP)
@@ -79,50 +106,48 @@ a = 10e3; z = 50e3;
 c = parula(max(paradigm)+1);
 mean_stim = nanmean(PID(a:z,:));
 ms = [min(mean_stim) max(mean_stim)];
-ax(2) = subplot(2,5,2); hold on
+axes(msg_lfp_io_plot)
 for i = 1:max(paradigm) % iterate over all paradigms 
 	y = nanmean(filtered_LFP(a:z,paradigm == i),2);
 	x = nanmean(K1p(a:z,paradigm == i),2);
 	x = x - nanmean(x);
 	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:));
 end
-xlabel('Projected stimulus (V)')
-ylabel('ab3 \DeltaLFP (mV)')
+xlabel(msg_lfp_io_plot,'Projected stimulus (V)')
+ylabel(msg_lfp_io_plot,'ab3 \DeltaLFP (mV)')
 
 % show transduction gain
-ax(3) = subplot(2,5,3); hold on
 for i = 1:length(paradigm)
-	plot(mean_stim(i),K1_gain(i),'+','Color',c(paradigm(i),:))
+	plot(msg_lfp_gain_plot,mean_stim(i),K1_gain(i),'+','Color',c(paradigm(i),:))
 end
-xlabel('\mu_{Stimulus} (V)')
-ylabel('ab3 transduction gain (mV/V)')
-set(gca,'XScale','log','YScale','log')
+xlabel(msg_lfp_gain_plot,'\mu_{Stimulus} (V)')
+ylabel(msg_lfp_gain_plot,'ab3 transduction gain (mV/V)')
+set(msg_lfp_gain_plot,'XScale','log','YScale','log')
 ff = fit(mean_stim(:),K1_gain(:),'power1','Upper',[Inf -1],'Lower',[0 -1]);
-plot(ms,ff(ms),'r')
-set(gca,'XScale','log','YScale','log','YLim',[1 100],'XLim',[.1 2])
-
+plot(msg_lfp_gain_plot,ms,ff(ms),'r')
+set(msg_lfp_gain_plot,'XScale','log','YScale','log','YLim',[1 100],'XLim',[.1 2])
+axes(msg_lfp_gain_plot)
 th = text(.8, 10,'$\sim 1/s$','interpreter','latex','Color','r','FontSize',20);
 
 
 % show firing machinery I/o curves
-ax(7) = subplot(2,5,7); hold on
+axes(msg_firing_io_plot)
 for i = 1:max(paradigm) % iterate over all paradigms 
 	y = nanmean(fA(a:z,paradigm == i),2);
 	x = .1*nanmean(K2p(a:z,paradigm == i),2);
 	x = x - nanmean(x);
 	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:));
 end
-xlabel('Projected LFP (mV)')
-ylabel('ab3A Firing rate (Hz)')
+xlabel(msg_firing_io_plot,'Projected LFP (mV)')
+ylabel(msg_firing_io_plot,'ab3A Firing rate (Hz)')
 
 % show firing machinery gain
-ax(8) = subplot(2,5,8); hold on
 for i = 1:length(paradigm)
-	plot(mean_stim(i),10*K2_gain(i),'+','Color',c(paradigm(i),:))
+	plot(msg_firing_gain_plot,mean_stim(i),10*K2_gain(i),'+','Color',c(paradigm(i),:))
 end
-xlabel('\mu_{Stimulus} (V)')
-ylabel('ab3A Firing gain (Hz/mV)')
-set(ax(8),'XScale','log','YScale','log','YLim',[1e-1 1e1],'XLim',[.1 2])
+xlabel(msg_firing_gain_plot,'\mu_{Stimulus} (V)')
+ylabel(msg_firing_gain_plot,'ab3A Firing gain (Hz/mV)')
+set(msg_firing_gain_plot,'XScale','log','YScale','log','YLim',[1e-1 1e1],'XLim',[.1 2])
 
 clear msg_data
 msg_data.PID = PID;
@@ -130,7 +155,6 @@ msg_data.LFP = dLFP;
 msg_data.fA = fA;
 msg_data.paradigm = paradigm;
 
-return
 
 %  ######   #######  ##    ## ######## ########     ###     ######  ######## 
 % ##    ## ##     ## ###   ##    ##    ##     ##   ## ##   ##    ##    ##    
@@ -140,9 +164,10 @@ return
 % ##    ## ##     ## ##   ###    ##    ##    ##  ##     ## ##    ##    ##    
 %  ######   #######  ##    ##    ##    ##     ## ##     ##  ######     ##    
 
-clearvars -except dm msg_data being_published opacity ax lo_gain_firing hi_gain_firing lo_gain_firing_corrected hi_gain_firing_corrected lo_gain_total hi_gain_total hi_gain_total_corrected lo_gain_total_corrected
+clearvars -except dm msg_data being_published opacity ax lo_gain_firing hi_gain_firing lo_gain_firing_corrected hi_gain_firing_corrected lo_gain_total hi_gain_total hi_gain_total_corrected lo_gain_total_corrected msg_cartoon_plot var_cartoon_plot msg_lfp_io_plot msg_lfp_gain_plot msg_firing_gain_plot var_lfp_io_plot var_lfp_gain_plot var_firing_io_plot var_firing_gain_plot msg_firing_io_plot
 
-[PID, LFP, fA, ~, orn,~,~,~,~,all_spikes] = consolidateData(dm.getPath('e30707e8e8ef6c0d832eee31eaa585aa'),1);
+
+[PID, LFP, fA, ~, orn,~,~,~,~,all_spikes] = consolidateData(getPath(dataManager,'e30707e8e8ef6c0d832eee31eaa585aa'),1);
 
 % compress all_spikes into a 1ms time step
 all_spikes = all_spikes';
@@ -355,7 +380,7 @@ if ~exist('lo_gain_firing','var')
 end
 
 % plot transduction i/o curves
-ax(4) = subplot(2,5,4); hold on
+axes(var_lfp_io_plot)
 x = K1p_corrected(1e3:4e3,:);
 y = reshaped_LFP(1e3:4e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K1p < min_r2)');
@@ -378,25 +403,24 @@ end
 x = x(:); y = y(:);
 x = x(1:ss:end); y = y(1:ss:end);
 plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[0 0 1],'proportional_bins',true,'show_error',false);
-xlabel('Projected stimulus (V)')
-ylabel('ab3 \DeltaLFP (mV)')
+xlabel(var_lfp_io_plot,'Projected stimulus (V)')
+ylabel(var_lfp_io_plot,'ab3 \DeltaLFP (mV)')
 
 % plot transduction gain change
-ax(5) = subplot(2,5,5); hold on
 x = std(reshaped_PID(1e3:4e3,r2_K1p>.8));
 y = hi_gain_LFP_corrected(r2_K1p>.8);
-plot(ax(5),x,y,'+','Color',[1 opacity opacity])
-errorbar(ax(5),nanmean(x),nanmean(y),nanstd(y),'r','LineWidth',4,'Marker','o','MarkerSize',10);
+plot(var_lfp_gain_plot,x,y,'+','Color',[1 opacity opacity])
+errorbar(var_lfp_gain_plot,nanmean(x),nanmean(y),nanstd(y),'r','LineWidth',4,'Marker','o','MarkerSize',10);
 x = std(reshaped_PID(6e3:9e3,r2_K1p>.8));
 y = lo_gain_LFP_corrected(r2_K1p>.8);
-plot(ax(5),x,y,'+','Color',[opacity opacity 1])
-errorbar(ax(5),nanmean(x),nanmean(y),nanstd(y),'b','LineWidth',4,'Marker','o','MarkerSize',10);
-xlabel('\sigma_{Stimulus} (V)')
-ylabel('ab3 transduction Gain (mV/V)')
-set(ax(5),'XLim',[0 .2],'YLim',[0 15])
+plot(var_lfp_gain_plot,x,y,'+','Color',[opacity opacity 1])
+errorbar(var_lfp_gain_plot,nanmean(x),nanmean(y),nanstd(y),'b','LineWidth',4,'Marker','o','MarkerSize',10);
+xlabel(var_lfp_gain_plot,'\sigma_{Stimulus} (V)')
+ylabel(var_lfp_gain_plot,'ab3 transduction Gain (mV/V)')
+set(var_lfp_gain_plot,'XLim',[0 .2],'YLim',[0 15])
 
 % show firing i/o curves
-ax(9) = subplot(2,5,9); hold on
+axes(var_firing_io_plot)
 x = K2p(1e3:4e3,:);
 y = reshaped_fA(1e3:4e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)) | (r2_K2p < min_r2)');
@@ -417,88 +441,42 @@ end
 x = x(:); y = y(:);
 x = x(1:ss:end); y = y(1:ss:end);
 [~,data_lo] = plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[0 0 1],'proportional_bins',true,'show_error',false);
-xlabel('Projected LFP (mV)')
-ylabel('ab3A Firing rate (Hz)')
+xlabel(var_firing_io_plot,'Projected LFP (mV)')
+ylabel(var_firing_io_plot,'ab3A Firing rate (Hz)')
 
 % plot firing gain change
-ax(10) = subplot(2,5,10); hold on; 
 x = std(reshaped_PID(1e3:4e3,r2_K2p>.8));
 y = hi_gain_firing(r2_K2p>.8);
-plot(ax(10),x,y,'+','Color',[1 opacity opacity])
-errorbar(ax(10),nanmean(x),nanmean(y),nanstd(y),'r','LineWidth',4,'Marker','o','MarkerSize',10);
+plot(var_firing_gain_plot,x,y,'+','Color',[1 opacity opacity])
+errorbar(var_firing_gain_plot,nanmean(x),nanmean(y),nanstd(y),'r','LineWidth',4,'Marker','o','MarkerSize',10);
 x = std(reshaped_PID(6e3:9e3,r2_K2p>.8));
 y = lo_gain_firing(r2_K2p>.8);
-plot(ax(10),x,y,'+','Color',[opacity opacity 1])
-errorbar(ax(10),nanmean(x),nanmean(y),nanstd(y),'b','LineWidth',4,'Marker','o','MarkerSize',10);
-xlabel('\sigma_{Stimulus} (V)')
-ylabel('ab3A Firing gain (Hz/mV)')
-set(ax(10),'XLim',[0 .2],'YLim',[0 50])
+plot(var_firing_gain_plot,x,y,'+','Color',[opacity opacity 1])
+errorbar(var_firing_gain_plot,nanmean(x),nanmean(y),nanstd(y),'b','LineWidth',4,'Marker','o','MarkerSize',10);
+xlabel(var_firing_gain_plot,'\sigma_{Stimulus} (V)')
+ylabel(var_firing_gain_plot,'ab3A Firing gain (Hz/mV)')
+set(var_firing_gain_plot,'XLim',[0 .2],'YLim',[0 50])
 
 
 prettyFig('fs',16)
+ 
+% some cosmetic fixes
+var_firing_io_plot.Box = 'off';
+msg_lfp_io_plot.Position(1) = .1;
+msg_firing_io_plot.Position(1) = .1;
+msg_firing_gain_plot.Position(1) = .31;
+msg_lfp_gain_plot.Position(1) = .31;
 
-% plot example traces of the LFP, firing rate and the stimulus
-inset1 = axes;
-inset1.Position = [0.13 0.75 0.1 0.1];
-plot(inset1,1e-3*(1:5e3),reshaped_PID(1:5e3,1),'k','LineWidth',1.5);
+var_lfp_io_plot.Position(1) = .57;
+var_firing_io_plot.Position(1) = .57;
+var_firing_gain_plot.Position(1) = .79;
+var_lfp_gain_plot.Position(1) = .79;
 
-inset2 = axes;
-inset2.Position = [0.13 0.45 0.1 0.1];
-plot(inset2,1e-3*(1:5e3),reshaped_LFP(1:5e3,1),'k','LineWidth',1.5);
+msg_cartoon_plot.Position= [.03 .62 .5 .25];
+var_cartoon_plot.Position= [.53 .62 .5 .25];
 
-inset3 = axes;
-inset3.Position = [0.13 0.12 0.1 0.1];
-plot(inset3,1e-3*(1:5e3),reshaped_fA(1:5e3,1),'k','LineWidth',1.5);
-set(inset1,'LineWidth',1.5,'box','off','XLim',[0 5])
-set(inset2,'LineWidth',1.5,'box','off','XLim',[0 5])
-set(inset3,'LineWidth',1.5,'box','off','XLim',[0 5])
-xlabel(inset3,'Time (s)')
-
-% make all the plots square
-for i = 2:length(ax)
-	try
-		axis(ax(i),'square')
-	catch
-	end
-end
-
-% move some plots around
-% ax(1).Position(1) = .01;
-
-ax(5).Position(1) = .85;
-ax(4).Position(1) = .68;
-ax(9).Position(1) = .68;
-ax(10).Position(1) = .85;
-
-ax(2).Position(2) = .53;
-ax(3).Position(2) = .53;
-ax(4).Position(2) = .53;
-ax(5).Position(2) = .53;
-
-th.FontSize = 20;
-
-% fake a axes that covers the entire figure
-a = axes;
-a.Position = [0 0 1 1];
-uistack(a,'bottom')
-a.TickLength = [0 0];
-a.XLim = [0 1];
-a.YLim = [0 1];
-
-% add some text
-t1 = text;
-t1.String = 'Changing stimulus mean';
-t1.FontSize = 20;
-t1.FontWeight=  'bold';
-t1.Parent = a;
-t1.Position = [0.3500 0.9100 0];
-
-t2 = text;
-t2.String = 'Changing stimulus variance';
-t2.FontSize = 20;
-t2.FontWeight=  'bold';
-t2.Parent = a;
-t2.Position = [0.7400 0.9100 0];
+uistack(msg_cartoon_plot,'bottom');
+uistack(var_cartoon_plot,'bottom');
 
 if being_published	
 	snapnow	

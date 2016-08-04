@@ -21,6 +21,32 @@ end
 delete(axs(5)); delete(axs(10));
 axs(5) = []; axs(end) = [];
 
+% if you change this, you also have to change subplots
+lag_vs_stim_plot = ax(3);
+lag_vs_time_plot = ax(4);
+gain_vs_mean_stim_plot = ax(1);
+rho_vs_history_length_plot = ax(2);
+
+% make four smaller plots in the third subplot
+subplots(1) = axes('Parent',main_fig);
+subplots(2) = axes('Parent',main_fig);
+subplots(3) = axes('Parent',main_fig);
+subplots(4) = axes('Parent',main_fig);
+
+subplots(1).Position = [.12 .75 .17 .17];
+subplots(2).Position = [.3 .75 .17 .17];
+subplots(3).Position = [.12 .56 .17 .17];
+subplots(4).Position = [.3 .56 .17 .17];
+
+
+gain_vs_mean_stim_plot.YColor = 'w';
+gain_vs_mean_stim_plot.XColor = 'w';
+gain_vs_mean_stim_plot.Position(1) = .08;
+gain_vs_mean_stim_plot.Position(2) = .54;
+gain_vs_mean_stim_plot.Position(3) = .4;
+gain_vs_mean_stim_plot.XTick = [];
+gain_vs_mean_stim_plot.YTick = [];
+
 % define colors, etc. 
 c = lines(10);
 LFP_color = c(4,:);
@@ -99,10 +125,10 @@ for i = 1:length(od)
 
 
 	% plot
-	axes(ax(1))
+	axes(lag_vs_stim_plot)
 	l(2) = plotPieceWiseLinear(mean_x,lag,'Color',firing_color,'nbins',19);
 
-	axes(ax(2))
+	axes(lag_vs_time_plot)
 	plotPieceWiseLinear(time_since_thresh_crossing,lag,'Color',firing_color,'nbins',19);
 
 	% % regression statistics
@@ -133,10 +159,10 @@ for i = 1:length(od)
 	% raw_xcorrs(2).LFP(:,i) = mean(raw_xcorr(mean_x > .3 & mean_x < .4,:));
 
 	% plot
-	axes(ax(1))
+	axes(lag_vs_stim_plot)
 	l(1) = plotPieceWiseLinear(mean_x,lag,'Color',LFP_color,'nbins',19);
 
-	axes(ax(2))
+	axes(lag_vs_time_plot)
 	plotPieceWiseLinear(time_since_thresh_crossing,lag,'Color',LFP_color,'nbins',19);
 
 	% % also plot this on the supp. figure
@@ -148,17 +174,15 @@ for i = 1:length(od)
 
 end
 
-return
-
 % labels -- main figure
-xlabel(ax(1),'\mu_{Stimulus} in preceding 200ms (V)')
-ylabel(ax(1),'Lag (ms)')
-set(ax(1),'YLim',[0 140],'XLim',[0 0.45])
+xlabel(lag_vs_stim_plot,'\mu_{Stimulus} in preceding 200ms (V)')
+ylabel(lag_vs_stim_plot,'Lag (ms)')
+set(lag_vs_stim_plot,'YLim',[0 140],'XLim',[0 0.45])
 L = legend(l,{'LFP','Firing Rate'},'Location','southeast');
 
-set(ax(2),'YLim',[0 140],'XLim',[10 5000],'XScale','log')
-xlabel(ax(2),'Time since odor encounter (ms)')
-ylabel(ax(2),'Lag (ms)')
+set(lag_vs_time_plot,'YLim',[0 140],'XLim',[10 5000],'XScale','log')
+xlabel(lag_vs_time_plot,'Time since odor encounter (ms)')
+ylabel(lag_vs_time_plot,'Lag (ms)')
 
 
 % labels -- supp. figure
@@ -210,17 +234,6 @@ for i = [2 3 5 6]
 
 end
 
-% make four smaller plots in the third subplot
-subplots(1) = axes('Parent',main_fig);
-subplots(2) = axes('Parent',main_fig);
-subplots(3) = axes('Parent',main_fig);
-subplots(4) = axes('Parent',main_fig);
-
-subplots(1).Position = [.12 .3 .17 .17];
-subplots(2).Position = [.3 .3 .17 .17];
-subplots(3).Position = [.12 .11 .17 .17];
-subplots(4).Position = [.3 .11 .17 .17];
-
 c = lines(10);
 c(4:5,:) = [];
 c(4,:) = [];
@@ -228,6 +241,27 @@ for i = 1:length(example_history_lengths)
 	axes(subplots(i))
 	plotPieceWiseLinear(gain_mu(i).mu,gain_mu(i).gain,'Color',c(i,:));
 end
+
+
+
+
+xlabel(gain_vs_mean_stim_plot,'\mu_{Stimulus} (V)','Color','k')
+ylabel(gain_vs_mean_stim_plot,'ORN Gain (Hz/V)','Color','k')
+
+
+
+% indicate these times on the fourth plot
+for i = 1:length(example_history_lengths)
+	plot(rho_vs_history_length_plot,[example_history_lengths(i) example_history_lengths(i)],[-1 ,.3],'-','Color',c(i,:))
+end
+
+errorbar(rho_vs_history_length_plot,history_lengths,nanmean(rho,2),nanstd(rho,[],2),'k')
+set(rho_vs_history_length_plot,'XScale','log','YLim',[-1 .4],'XTick',[10 1e2 1e3 1e4],'XLim',[10 1e4])
+xlabel(rho_vs_history_length_plot,'Gain control timescale (ms)')
+ylabel(rho_vs_history_length_plot,['Correlation between' char(10) 'gain and \mu_{stimulus}'])
+
+
+prettyFig(main_fig,'fs',14);
 
 % equalise axes
 for i = 1:length(subplots)
@@ -239,61 +273,12 @@ for i = 1:length(subplots)
 	subplots(i).XScale = 'log';
 end
 
+
 subplots(2).YTickLabel = '';
 subplots(2).XTickLabel = '';
 subplots(1).XTickLabel = '';
 subplots(4).YTickLabel = '';
 
-ax(3).YColor = 'w';
-ax(3).XColor = 'w';
-xlabel(ax(3),'\mu_{Stimulus} (V)','Color','k')
-ylabel(ax(3),'ORN Gain (Hz/V)','Color','k')
-ax(3).Position(1) = .08;
-ax(3).Position(2) = .09;
-ax(3).Position(3) = .4;
-ax(3).XTick = [];
-ax(3).YTick = [];
-
-
-% indicate these times on the fourth plot
-for i = 1:length(example_history_lengths)
-	plot(ax(4),[example_history_lengths(i) example_history_lengths(i)],[-1 ,.3],'-','Color',c(i,:))
-end
-
-errorbar(ax(4),history_lengths,nanmean(rho,2),nanstd(rho,[],2),'k')
-set(ax(4),'XScale','log','YLim',[-1 .4],'XTick',[10 1e2 1e3 1e4],'XLim',[10 1e4])
-xlabel(ax(4),'Gain control timescale (ms)')
-ylabel(ax(4),['Correlation between' char(10) 'gain and \mu_{stimulus}'])
-
-% % fit Weber's Law to this
-% x = gain_mu(1).mu;
-% y = gain_mu(1).gain;
-% options = fitoptions(fittype('poly1'));
-% options.Lower = [-1 -Inf];
-% options.Upper = [-1 Inf];
-% cf_temp = fit(log(x(:)),log(y(:)),'poly1',options);
-% cf = fit(x(:),y(:),'power1');
-% warning off
-% cf.a = exp(cf_temp.p2); cf.b = -1;
-% warning on
-% plot(ax(3),sort(x),cf(sort(x)),'r')
-
-% % fake some plots for a nice legend
-% clear l L
-% for i = 1:2
-% 	l(i) = plot(ax(3),NaN,NaN,'Marker','o','MarkerFaceColor',c(i+2,:),'MarkerEdgeColor',c(i+2,:),'LineStyle','none');
-% end
-% L{2} = 'tau_{gain} = 10^2ms';
-% L{1} = 'tau_{gain} = 10^4ms';
-% lh = legend(l,L,'Location','southwest');
-
-% set(ax(3),'XScale','log','YScale','log')
-% xlabel(ax(3),'\mu_{Stimulus} (V)')
-% ylabel(ax(3),'Gain (Hz/V)')
-
-prettyFig(main_fig,'fs',14);
-
-return
 
 if being_published
 	snapnow

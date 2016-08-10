@@ -63,9 +63,7 @@ if  strcmp(filter_type,'all') || strcmp(filter_type,'firing_rate')
 			end
 		end
 	end
-end
-
-if strcmp(filter_type,'all') || strcmp(filter_type,'LFP')
+elseif strcmp(filter_type,'all') || strcmp(filter_type,'LFP')
 	% do the LFP
 	if ~isempty(obj.LFP) && ~isempty(obj.stimulus) 
 		% use hashes to check if anything has changed since last compute

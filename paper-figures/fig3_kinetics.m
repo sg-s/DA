@@ -9,17 +9,11 @@
 pHeader;
 dm = dataManager;
 
+% main figure
 main_fig = figure('outerposition',[0 0 800 800],'PaperUnits','points','PaperSize',[800 800]); hold on
 for i = 4:-1:1
 	ax(i) = subplot(2,2,i); hold on
 end
-
-supp_fig = figure('outerposition',[0 0 1400 712],'PaperUnits','points','PaperSize',[1400 712]); hold on
-for i = 10:-1:1
-	axs(i) = subplot(2,5,i); hold on
-end
-delete(axs(5)); delete(axs(10));
-axs(5) = []; axs(end) = [];
 
 % if you change this, you also have to change subplots
 lag_vs_stim_plot = ax(3);
@@ -27,7 +21,7 @@ lag_vs_time_plot = ax(4);
 gain_vs_mean_stim_plot = ax(1);
 rho_vs_history_length_plot = ax(2);
 
-% make four smaller plots in the third subplot
+% handle the plot within a plot for the gain vs. mu plot
 subplots(1) = axes('Parent',main_fig);
 subplots(2) = axes('Parent',main_fig);
 subplots(3) = axes('Parent',main_fig);
@@ -38,14 +32,27 @@ subplots(2).Position = [.3 .75 .17 .17];
 subplots(3).Position = [.12 .56 .17 .17];
 subplots(4).Position = [.3 .56 .17 .17];
 
-
 gain_vs_mean_stim_plot.YColor = 'w';
 gain_vs_mean_stim_plot.XColor = 'w';
 gain_vs_mean_stim_plot.Position(1) = .08;
-gain_vs_mean_stim_plot.Position(2) = .54;
+gain_vs_mean_stim_plot.Position(2) = .53;
 gain_vs_mean_stim_plot.Position(3) = .4;
 gain_vs_mean_stim_plot.XTick = [];
 gain_vs_mean_stim_plot.YTick = [];
+
+
+
+% supp figure
+supp_fig = figure('outerposition',[0 0 1400 712],'PaperUnits','points','PaperSize',[1400 712]); hold on
+for i = 10:-1:1
+	axs(i) = subplot(2,5,i); hold on
+end
+delete(axs(5)); delete(axs(10));
+axs(5) = []; axs(end) = [];
+
+
+
+
 
 % define colors, etc. 
 c = lines(10);
@@ -72,43 +79,41 @@ model_color = [1 0 0];
 
 
 % analyse kinetics of LFP and firing rate during the naturalistic stimulus presentation
-load(getPath(dataManager,'aeb361c027b71938021c12a6a12a85cd'),'-mat');
+% load(getPath(dataManager,'aeb361c027b71938021c12a6a12a85cd'),'-mat');
 
-% first, fit the DA model to the data. (this was pre-fit, we're simply loading the fit here)
-load(getPath(dataManager,'b1b883899ab8c5ce1aed465819e75fce'));
+load('/local-data/DA-paper/data-for-paper/nat-stim/v3_nat_stim.ORNData','-mat')
 
-% generate DA model responses
-dd = ORNData;
-for i = 1:length(od)
-	dd(i).stimulus = nanmean(od(i).stimulus,2);
-	dd(i).firing_rate = DAModelv2(dd(i).stimulus,p(i));
-end
+% % first, fit the DA model to the data. (this was pre-fit, we're simply loading the fit here)
+% load(getPath(dataManager,'b1b883899ab8c5ce1aed465819e75fce'));
+
+% % generate DA model responses
+% dd = ORNData;
+% for i = 1:length(od)
+% 	dd(i).stimulus = nanmean(od(i).stimulus,2);
+% 	dd(i).firing_rate = DAModelv2(dd(i).stimulus,p(i));
+% end
 
 
-min_acceptable_corr = .5;
-min_acceptable_lag = 2;
+min_acceptable_corr = .25;
+min_acceptable_lag = 5;
+window_size = 1e3;
+stim_thresh = .035;
 clear l
 
 p_reg1 = zeros(length(od),1);
 p_reg2 = zeros(length(od),1);
 
-for i = 1:length(od)
+
+for i = 2:length(od) % first one has stimulus which is too low, different paradigm 
+	textbar(i,length(od))
 	S = nanmean(od(i).stimulus,2); S = S - mean(S(1:5e3));
 	R = nanmean(od(i).firing_rate,2);
 	X = -nanmean(od(i).LFP,2);
-	DA_R = dd(i).firing_rate;
 
-	% % crop data % this doesn't change anything
-	% S = S(1e4:end-1e4);
-	% R = R(1e4:end-1e4);
-	% X = X(1e4:end-1e4);
-	% DA_R = DA_R(1e4:end-1e4);
-
-
-	mean_x = vectorise(computeSmoothedStimulus(S,200));
-	[lag, mean_x, max_corr] = findLagAndMeanInWindow(S,R,1e3,25);
-
-	time_since_thresh_crossing = findTimeSinceThresholdCrossing(S,mean(S));
+	[lag, mean_x, max_corr] = findLagAndMeanInWindow(S,R,window_size,25);
+	% dS = filter(ones(10,1),1,S);
+	% dS = [0; diff(dS)]; dS(dS<0) = 0; dS=dS/std(dS);
+	time_since_thresh_crossing = findTimeSinceThresholdCrossing(S,stim_thresh);
 
 	% first strip out the NaNs
 	rm_this = isnan(lag);
@@ -116,13 +121,9 @@ for i = 1:length(od)
 	time_since_thresh_crossing(rm_this) = [];
 
 	% then throw out some shitty data
-	rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr | time_since_thresh_crossing < 10 | lag > 300;
+	rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr | time_since_thresh_crossing < 10 | lag > 150;
 	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
 	time_since_thresh_crossing(rm_this) = [];
-
-	% raw_xcorrs(1).firing(:,i) = mean(raw_xcorr(mean_x > 0 & mean_x < .1,:));
-	% raw_xcorrs(2).firing(:,i) = mean(raw_xcorr(mean_x > .3 & mean_x < .4,:));
-
 
 	% plot
 	axes(lag_vs_stim_plot)
@@ -131,19 +132,8 @@ for i = 1:length(od)
 	axes(lag_vs_time_plot)
 	plotPieceWiseLinear(time_since_thresh_crossing,lag,'Color',firing_color,'nbins',19);
 
-	% % regression statistics
-	% [ff,gof] = fit(mean_x(:),lag(:),'poly1');
-	% tscore = abs(ff.p1/gof.rmse);
-	% p_reg1(i) = tcdf(tscore,gof.dfe);
-
-	% [ff,gof] = fit(time_since_thresh_crossing(~isnan(time_since_thresh_crossing)),lag(~isnan(time_since_thresh_crossing)),'poly1');
-	% tscore = abs(ff.p1/gof.rmse);
-	% p_reg2(i) = tcdf(tscore,gof.dfe);
-
-
-	mean_x = vectorise(computeSmoothedStimulus(S,200));
-	[lag, mean_x, max_corr] = findLagAndMeanInWindow(S,X,1e3,25);
-	time_since_thresh_crossing = findTimeSinceThresholdCrossing(S,mean(S));
+	[lag, mean_x, max_corr] = findLagAndMeanInWindow(S,X,window_size,25);
+	time_since_thresh_crossing = findTimeSinceThresholdCrossing(S,stim_thresh);
 
 	% first strip out the NaNs
 	rm_this = isnan(lag);
@@ -155,32 +145,24 @@ for i = 1:length(od)
 	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
 	time_since_thresh_crossing(rm_this) = [];
 
-	% raw_xcorrs(1).LFP(:,i) = mean(raw_xcorr(mean_x > 0 & mean_x < .1,:));
-	% raw_xcorrs(2).LFP(:,i) = mean(raw_xcorr(mean_x > .3 & mean_x < .4,:));
-
 	% plot
 	axes(lag_vs_stim_plot)
+	%plot(lag_vs_stim_plot,mean_x,lag,'.','Color',LFP_color)
 	l(1) = plotPieceWiseLinear(mean_x,lag,'Color',LFP_color,'nbins',19);
 
 	axes(lag_vs_time_plot)
 	plotPieceWiseLinear(time_since_thresh_crossing,lag,'Color',LFP_color,'nbins',19);
 
-	% % also plot this on the supp. figure
-	% axes(axs(1))
-	% plotPieceWiseLinear(mean_x,lag,'Color',LFP_color,'nbins',19);
-
-	% axes(axs(5))
-	% plotPieceWiseLinear(t,lag,'Color',LFP_color,'nbins',19);
-
 end
 
+
 % labels -- main figure
-xlabel(lag_vs_stim_plot,'\mu_{Stimulus} in preceding 200ms (V)')
+xlabel(lag_vs_stim_plot,'\mu_{Stimulus} in preceding 300ms (V)')
 ylabel(lag_vs_stim_plot,'Lag (ms)')
-set(lag_vs_stim_plot,'YLim',[0 140],'XLim',[0 0.45])
+set(lag_vs_stim_plot,'YLim',[0 160],'XLim',[1e-3 1.5],'XScale','log','YScale','linear','XTick',[1e-3 1e-2 1e-1 1],'XMinorTick','off')
 L = legend(l,{'LFP','Firing Rate'},'Location','southeast');
 
-set(lag_vs_time_plot,'YLim',[0 140],'XLim',[10 5000],'XScale','log')
+set(lag_vs_time_plot,'YLim',[0 160],'XLim',[10 1e4],'XScale','log')
 xlabel(lag_vs_time_plot,'Time since odor encounter (ms)')
 ylabel(lag_vs_time_plot,'Lag (ms)')
 
@@ -194,17 +176,27 @@ set(axs(5),'YLim',[0 140],'XLim',[10 5000],'XScale','log')
 xlabel(axs(5),'Time since odor encounter (ms)')
 ylabel(axs(5),'Lag (ms)')
 
+
+% ########    ###    ##     ##     ######      ###    #### ##    ## 
+%    ##      ## ##   ##     ##    ##    ##    ## ##    ##  ###   ## 
+%    ##     ##   ##  ##     ##    ##         ##   ##   ##  ####  ## 
+%    ##    ##     ## ##     ##    ##   #### ##     ##  ##  ## ## ## 
+%    ##    ######### ##     ##    ##    ##  #########  ##  ##  #### 
+%    ##    ##     ## ##     ##    ##    ##  ##     ##  ##  ##   ### 
+%    ##    ##     ##  #######      ######   ##     ## #### ##    ## 
+
+
 % Now we compute the gain control timescale
 
-history_lengths = round(logspace(1.7,4,50)); % all the history lengths we look at, in ms
-example_history_lengths = [100 300 1e3 1e4];
+history_lengths = round(logspace(1,4,30)); % all the history lengths we look at, in ms
+example_history_lengths = [3e2 1e3 3e3 1e4];
 gain_mu = struct; gain_mu(length(example_history_lengths)).gain = []; gain_mu(1).mu = [];
 rho = NaN(length(history_lengths),length(od));
 
 use_this_segment = false(length(od(1).firing_rate),1);
 use_this_segment(5e3:end-5e3) = true;
 
-for i = [2 3 5 6]
+for i = 2:length(od)
 	temp = od(i);
 	pred = nanmean(temp.firing_projected,2); pred = pred(use_this_segment);
 	resp = nanmean(temp.firing_rate,2);  resp = resp(use_this_segment);
@@ -265,12 +257,15 @@ prettyFig(main_fig,'fs',14);
 
 % equalise axes
 for i = 1:length(subplots)
-	subplots(i).XLim = [2e-2 1];
-	subplots(i).YLim = [100 500];
-	subplots(i).YTick = [100 200 400];
+	subplots(i).XLim = [2e-3 10];
+	subplots(i).XTick = [ 1e-2 1e-1 1 1e1];
+	subplots(i).YLim = [1e1 1e5];
+	subplots(i).YTick = [10 100 1e3 1e4 1e5];
 	subplots(i).Box = 'off';
 	subplots(i).YScale = 'log';
 	subplots(i).XScale = 'log';
+	subplots(i).XMinorTick = 'off';
+	subplots(i).YMinorTick = 'off';
 end
 
 
@@ -285,6 +280,7 @@ if being_published
 	delete(gcf)
 end
 
+return
 
 %  ######  ##     ## ########  ########     ######## ####  ######   
 % ##    ## ##     ## ##     ## ##     ##    ##        ##  ##    ##  

@@ -9,10 +9,10 @@
 function [whiff_ons,whiff_offs] = findWhiffs(s)
 
 
-min_whiff_duration = 50; % time units, probably ms
+min_whiff_duration = 10; % time units, probably ms
 
 s = filter(ones(10,1),1,s);
-ds = diff(s); ds(ds<0) = 0; ds=ds/std(ds); ds(ds<1) = 0; ds(ds>0) = 1;
+ds = diff(s); ds(ds<0) = 0; ds=ds/std(ds); ds(ds>0) = 1;
 [whiff_ons,whiff_offs] = computeOnsOffs(ds);
 
 rm_this = (whiff_offs-whiff_ons) < min_whiff_duration;

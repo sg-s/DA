@@ -12,11 +12,14 @@ p.tau_A;
 p.tau_y;
 p.tau_z;
 p.tau_r;
+p.s0;
 
 t = 0:3000; % filters to be this long; don't use n*tau longer than a few hundred ms in this case...
 % Kz and Ky are the filters described in equations 12 and 13
 Ky = generate_simple_filter(p.tau_y,2,t);
 Kz = generate_simple_filter(p.tau_z,2,t);
+
+S = S + p.s0;
 
 % y and z are the stimulus convolved with the filters Ky and Kz
 y = filter(Ky,1,S);

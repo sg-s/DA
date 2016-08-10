@@ -14,32 +14,32 @@ pHeader;
 % ##       ####  ######   ###    #### ##    ## ####    ##    
 
 
-% plots to make
-main_fig = figure('outerposition',[0 0 901 902],'PaperUnits','points','PaperSize',[901 902]); hold on
-supp_fig = figure('outerposition',[0 0 901 603],'PaperUnits','points','PaperSize',[901 603]); hold on
+% make the main figure
+main_fig = figure('outerposition',[0 0 901 602],'PaperUnits','points','PaperSize',[901 602]); hold on
 
 clear ax
-ax.nat_stim = subplot(3,3,1:3,'Parent',main_fig); 
-ax.DA_MSG = subplot(3,3,4,'Parent',main_fig); 
-ax.r2_DA_LN = subplot(3,3,5,'Parent',main_fig); 
-
-ax.LFP_model_stim = subplot(3,3,7,'Parent',main_fig); 
-ax.LFP_model_gain = subplot(3,3,8,'Parent',main_fig); 
-ax.LFP_model_resp = subplot(3,3,9,'Parent',main_fig); 
+ax.nat_stim = subplot(2,3,1:3,'Parent',main_fig); 
+ax.DA_MSG = subplot(2,3,5,'Parent',main_fig); 
+ax.DA_kinetics = subplot(2,3,4); hold on
+ax.r2_DA_LN = subplot(2,3,6,'Parent',main_fig); 
 
 % make insets in the first plot
 ax.inset1 = axes('Parent',main_fig); 
-ax.inset1.Position = [0.2442    0.8625    0.1154    0.0543];
+ax.inset1.Position = [0.2442    0.8625    0.1154    0.1];
 
 ax.inset2 = axes('Parent',main_fig); 
-ax.inset2.Position = [0.58 0.8625 0.17 0.0543];
+ax.inset2.Position = [0.58 0.8625 0.17 0.1];
 
-% supp plots
-ax.DA_lag1 = subplot(2,3,4,'Parent',supp_fig); 
-ax.DA_lag2 = subplot(2,3,5,'Parent',supp_fig); 
-ax.DA_vs_lin_pred = subplot(2,3,2,'Parent',supp_fig); 
-ax.DA_vs_ORN = subplot(2,3,3,'Parent',supp_fig); 
-ax.LN_vs_lin_pred = subplot(2,3,1,'Parent',supp_fig); 
+% % make the supp figure
+% supp_fig = figure('outerposition',[0 0 901 603],'PaperUnits','points','PaperSize',[901 603]); hold on
+
+% % supp plots
+% ax.DA_lag1 = subplot(2,3,4,'Parent',supp_fig); 
+% ax.DA_lag2 = subplot(2,3,5,'Parent',supp_fig); 
+% ax.DA_vs_lin_pred = subplot(2,3,2,'Parent',supp_fig); 
+% ax.DA_vs_ORN = subplot(2,3,3,'Parent',supp_fig); 
+% ax.LN_vs_lin_pred = subplot(2,3,1,'Parent',supp_fig); 
+
 
 % hold all plots
 fn = fieldnames(ax);
@@ -110,7 +110,7 @@ ff = fit(x(:),y(:),ft,'StartPoint',[50 1 2 0],'Lower',[1 0 1 -10],'Upper',[200 5
 % now plot the nonlinearity vs. the linear prediction, and colour by mean stimulus in the preceding 500ms
 LN_pred = ff(fp);
 cc = colourByMeanStimulus(mean(PID,2),true(length(PID),1));
-scatter(ax.LN_vs_lin_pred,fp,LN_pred,20,cc,'filled')
+% scatter(ax.LN_vs_lin_pred,fp,LN_pred,20,cc,'filled')
 
 
 % fit a DA model to this
@@ -127,8 +127,8 @@ p.    B = 2.7656;
 DA_R = DAModelv2(mean(PID,2),p);
 
 % plot the DA response vs the lin pred and the ORN response
-scatter(ax.DA_vs_lin_pred,fp,DA_R,20,cc,'filled')
-scatter(ax.DA_vs_ORN,mean(fA,2),DA_R,20,cc,'filled')
+% scatter(ax.DA_vs_lin_pred,fp,DA_R,20,cc,'filled')
+% scatter(ax.DA_vs_ORN,mean(fA,2),DA_R,20,cc,'filled')
 
 
 % make the first plot
@@ -167,22 +167,44 @@ plot(ax.r2_DA_LN,rsquare(mean(fA,2),ff(fp)),rsquare(mean(fA,2),DAModelv2(mean(PI
 
 %}
 
-% analyse kinetics of LFP and firing rate during the naturalistic stimulus presentation
-load(dm.getPath('aeb361c027b71938021c12a6a12a85cd'),'-mat');
+cdata = consolidateData2('/local-data/DA-paper/data-for-paper/nat-stim/ab3-2ac');
+v2struct(cdata)
+
+% for c = 1:5
+% 	for i = 1:max(orn)
+% 		clear data
+% 		R = fA(:,orn==i);
+% 		X = LFP(:,orn==i);
+% 		S = PID(:,orn==i);
+% 		rm_this = sum(R) == 0 | isnan(sum(X));
+% 		R(:,rm_this) = [];
+% 		S(:,rm_this) = [];
+% 		X(:,rm_this) = [];
+% 		data.response = nanmean(R,2);
+% 		data.response(1:5e3) = NaN;
+% 		data.stimulus = nanmean(S,2);
+% 		data.stimulus = data.stimulus - mean(data.stimulus(1:5e3));
+% 		p(i) = fitModel2Data(@DAModelv2,data,'make_plot',true,'nsteps',10);
+% 	end
+% end
+% save('/local-data/DA-paper/data-for-paper/fig7/DA_Model_fit_to_naturalistic_data.mat','p')
+
 
 % first, fit the DA model to the data. (this was pre-fit, we're simply loading the fit here)
-load(dm.getPath('b1b883899ab8c5ce1aed465819e75fce'));
+load('/local-data/DA-paper/data-for-paper/fig7/DA_Model_fit_to_naturalistic_data.mat','p')
+
 
 % generate DA model responses
 dd = ORNData;
-for i = 1:length(od)
-	dd(i).stimulus = od(i).stimulus;
-	for j = 1:od(i).n_trials
-		dd(i).firing_rate(:,j) = DAModelv2(dd(i).stimulus(:,j),p(i));
-	end
+for i = 1:max(orn)
+	S = PID(:,orn==i);
+	dd(i).stimulus = nanmean(S,2);
+	dd(i).stimulus = dd(i).stimulus - mean(dd(i).stimulus(1:5e3));
+	dd(i).firing_rate = DAModelv2(dd(i).stimulus,p(i));
 end
 
 % fit LN models to this data
+load('/local-data/DA-paper/data-for-paper/nat-stim/v3_nat_stim.ORNData','-mat')
 LN_od = ORNData;
 for i = 1:length(od)
 	LN_od(i).stimulus = nanmean(od(i).stimulus,2);
@@ -218,95 +240,137 @@ xlabel(ax.r2_DA_LN,'r^2 (LN Model)')
 set(ax.r2_DA_LN,'XLim',[0 1],'YLim',[0 1])
 r2_DA
 
-% now show that the lags are constant with the DA model
+% ########     ###       ##     ##  #######  ########  ######## ##       
+% ##     ##   ## ##      ###   ### ##     ## ##     ## ##       ##       
+% ##     ##  ##   ##     #### #### ##     ## ##     ## ##       ##       
+% ##     ## ##     ##    ## ### ## ##     ## ##     ## ######   ##       
+% ##     ## #########    ##     ## ##     ## ##     ## ##       ##       
+% ##     ## ##     ##    ##     ## ##     ## ##     ## ##       ##       
+% ########  ##     ##    ##     ##  #######  ########  ######## ######## 
+
+% ######## #### ########  #### ##    ##  ######      ##          ###     ######   
+% ##        ##  ##     ##  ##  ###   ## ##    ##     ##         ## ##   ##    ##  
+% ##        ##  ##     ##  ##  ####  ## ##           ##        ##   ##  ##        
+% ######    ##  ########   ##  ## ## ## ##   ####    ##       ##     ## ##   #### 
+% ##        ##  ##   ##    ##  ##  #### ##    ##     ##       ######### ##    ##  
+% ##        ##  ##    ##   ##  ##   ### ##    ##     ##       ##     ## ##    ##  
+% ##       #### ##     ## #### ##    ##  ######      ######## ##     ##  ######   
+
+
 
 min_acceptable_corr = .5;
-min_acceptable_lag = 2;
+min_acceptable_lag = 20;
+window_size = 1e3;
+stim_thresh = .035;
 clear l
-for i = 1:length(od)
-	S = nanmean(od(i).stimulus,2); S = S - mean(S(1:5e3));
-	R = nanmean(od(i).firing_rate,2);
-	X = -nanmean(od(i).LFP,2);
-	DA_R = nanmean(dd(i).firing_rate,2);
 
+axes(ax.DA_kinetics)
+for i = 2:length(od) % first one has stimulus which is too low, different paradigm 
+	textbar(i,length(od))
+	S = nanmean(dd(i).stimulus,2); S = S - mean(S(1:5e3));
+	R = nanmean(dd(i).firing_rate,2);
 
-	mean_x = vectorise(computeSmoothedStimulus(S,200));
-	[lag, mean_x, max_corr] = findLagAndMeanInWindow(S,R,1e3,25);
-
-	time_since_thresh_crossing = findTimeSinceThresholdCrossing(S,mean(S));
+	[lag, mean_x, max_corr] = findLagAndMeanInWindow(S,R,window_size,25);
 
 	% first strip out the NaNs
 	rm_this = isnan(lag);
 	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
-	time_since_thresh_crossing(rm_this) = [];
 
 	% then throw out some shitty data
-	rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr | time_since_thresh_crossing < 10 | lag > 300;
+	rm_this = lag < min_acceptable_lag | max_corr < min_acceptable_corr | lag > 150;
 	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
-	time_since_thresh_crossing(rm_this) = [];
 
 	% plot
-	axes(ax.DA_lag1)
+
 	l(2) = plotPieceWiseLinear(mean_x,lag,'Color',firing_color,'nbins',19);
-
-	axes(ax.DA_lag2)
-	plotPieceWiseLinear(time_since_thresh_crossing,lag,'Color',firing_color,'nbins',19);
-
-	% now do the same with the DA model prediction
-	mean_x = vectorise(computeSmoothedStimulus(S,200));
-	[lag, mean_x, max_corr] = findLagAndMeanInWindow(S,DA_R,1e3,25);
-
-	time_since_thresh_crossing = findTimeSinceThresholdCrossing(S,mean(S));
-
-	% first strip out the NaNs
-	rm_this = isnan(lag);
-	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
-	time_since_thresh_crossing(rm_this) = [];
-
-	% then throw out some shitty data
-	rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr | time_since_thresh_crossing < 10 | lag > 300;
-	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
-	time_since_thresh_crossing(rm_this) = [];
-
-	axes(ax.DA_lag1)
-	l(3) = plotPieceWiseLinear(mean_x,lag,'Color',model_color,'nbins',19);
-
-	axes(ax.DA_lag2)
-	plotPieceWiseLinear(time_since_thresh_crossing,lag,'Color',model_color,'nbins',19);
-
-	mean_x = vectorise(computeSmoothedStimulus(S,200));
-	[lag, mean_x, max_corr] = findLagAndMeanInWindow(S,X,1e3,25);
-	time_since_thresh_crossing = findTimeSinceThresholdCrossing(S,mean(S));
-
-	% first strip out the NaNs
-	rm_this = isnan(lag);
-	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
-	time_since_thresh_crossing(rm_this) = [];
-
-	% then throw out some shitty data
-	rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr | time_since_thresh_crossing < 10 | lag > 300;
-	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
-	time_since_thresh_crossing(rm_this) = [];
-
-	% plot
-	axes(ax.DA_lag1)
-	l(1) = plotPieceWiseLinear(mean_x,lag,'Color',LFP_color,'nbins',19);
-
-	axes(ax.DA_lag2)
-	plotPieceWiseLinear(time_since_thresh_crossing,lag,'Color',LFP_color,'nbins',19);
-
 end
 
-% labels -- main figure
-xlabel(ax.DA_lag1,'\mu_{Stimulus} in preceding 200ms (V)')
-ylabel(ax.DA_lag1,'Lag (ms)')
-set(ax.DA_lag1,'YLim',[0 140],'XLim',[0 0.45])
-L = legend(l,{'LFP','Firing Rate','DA Model'},'Location','southeast');
-L.Position(1) = .7;
+set(ax.DA_kinetics,'XScale','log','YLim',[0 160],'XLim',[1e-3 5])
 
-set(ax.DA_lag2,'YLim',[0 140],'XLim',[10 1e4],'XScale','log','XTick',[10 1e2 1e3 1e4])
-xlabel(ax.DA_lag2,'Time since odor encounter (ms)')
-ylabel(ax.DA_lag2,'Lag (ms)')
+
+
+% ##       ######## ########     ##     ##  #######  ########  ######## ##       
+% ##       ##       ##     ##    ###   ### ##     ## ##     ## ##       ##       
+% ##       ##       ##     ##    #### #### ##     ## ##     ## ##       ##       
+% ##       ######   ########     ## ### ## ##     ## ##     ## ######   ##       
+% ##       ##       ##           ##     ## ##     ## ##     ## ##       ##       
+% ##       ##       ##           ##     ## ##     ## ##     ## ##       ##       
+% ######## ##       ##           ##     ##  #######  ########  ######## ######## 
+
+% fit modified DA model to LFP
+
+% for c = 1:5
+% 	for i = 1:max(orn)
+% 		clear data
+% 		R = fA(:,orn==i);
+% 		X = LFP(:,orn==i);
+% 		S = PID(:,orn==i);
+% 		rm_this = sum(R) == 0 | isnan(sum(X));
+% 		R(:,rm_this) = [];
+% 		S(:,rm_this) = [];
+% 		X(:,rm_this) = [];
+% 		data.response = -nanmean(X,2);
+
+% 		data.response(1:5e3) = NaN;
+% 		data.stimulus = nanmean(S,2);
+% 		data.stimulus = data.stimulus - mean(data.stimulus(1:5e3));
+% 		q(i) = orderfields(fitModel2Data(@LFPmodel2_Euler,data,'make_plot',false,'nsteps',100,'p0',q(i)));
+% 	end
+% end
+% save('/local-data/DA-paper/data-for-paper/fig7/LFP_Model_fit_to_naturalistic_data.mat','q')
+
+% generate responses using LFP model
+clear q
+for i = 1:7
+	q(i).tau_A = 1e4;
+	q(i).A = 110;
+	q(i).B = 10;
+	q(i).tau_r = 2;
+	q(i).s0 = 0;
+	q(i).tau_y = 20;
+	q(i).tau_z = 200;
+end
+
+
+dd = ORNData;
+for i = 1:max(orn)
+	S = PID(:,orn==i);
+	dd(i).stimulus = nanmean(S,2);
+	dd(i).stimulus = dd(i).stimulus - mean(dd(i).stimulus(1:5e3));
+	dd(i).LFP = LFPmodel2_Euler(dd(i).stimulus,q(i));
+end
+
+min_acceptable_corr = .5;
+min_acceptable_lag = 20;
+window_size = 1e3;
+stim_thresh = .035;
+
+axes(ax.DA_kinetics)
+for i = 2:length(od) % first one has stimulus which is too low, different paradigm 
+	textbar(i,length(od))
+	S = nanmean(dd(i).stimulus,2); S = S - mean(S(1:5e3));
+	R = nanmean(dd(i).LFP,2);
+
+	[lag, mean_x, max_corr] = findLagAndMeanInWindow(S,R,window_size,25);
+
+	% first strip out the NaNs
+	rm_this = isnan(lag);
+	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
+
+	% then throw out some shitty data
+	rm_this = lag < min_acceptable_lag | max_corr < min_acceptable_corr | lag > 150;
+	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
+
+	% plot
+
+	l(1) = plotPieceWiseLinear(mean_x,lag,'Color',LFP_color,'nbins',19);
+end
+
+set(ax.DA_kinetics,'XScale','log','YLim',[0 160],'XLim',[1e-3 5],'XTick',[1e-3 1e-2 1e-1 1])
+xlabel(ax.DA_kinetics,'\mu_{Stimulus} in preceding 300ms (V)')
+ylabel(ax.DA_kinetics,'Lag (ms)')
+legend2 = legend(l,{'LFP model','DA model'},'Location','northwest');
+
 
 % ##     ##  ######   ######      ########     ###    ########    ###    
 % ###   ### ##    ## ##    ##     ##     ##   ## ##      ##      ## ##   
@@ -407,17 +471,22 @@ for i = 1:max(cdata.orn)
 end
 
 
-% make plot of DA model predictions vs. data, grouped by paradigm
+% make plot of DA model predictions vs. linear prediction, grouped by paradigm
+axes(ax.DA_MSG)
 c = parula(10);
 for j = 1:max(cdata.paradigm)
-	fp = (cdata.DA_R(30e3:55e3, cdata.paradigm == j));
-	f = (cdata.fA(30e3:55e3, cdata.paradigm == j));
+	fp = cdata.fA_pred(30e3:55e3, cdata.paradigm == j);
+	f = cdata.fA(30e3:55e3, cdata.paradigm == j);
+	s = cdata.PID(30e3:55e3, cdata.paradigm == j);
 	if size(f,2) > 0
 		rm_this = isnan(sum(f)) | sum(f) == 0;
 		fp(:,rm_this) = []; f(:,rm_this) = [];
 		fp(fp<0) = NaN;
-		axes(ax.DA_MSG)
-		[plot_handles,temp(j)] = plotPieceWiseLinear(mean(fp,2),mean(f,2),'Color',c(j,:),'nbins',50,'make_plot',true);
+		fp = nanmean(fp,2); 
+		s = nanmean(s,2);
+		fp = fp - nanmean(fp);
+		fp = fp + nanmean(s);
+		[plot_handles,temp(j)] = plotPieceWiseLinear(fp,nanmean(f,2),'Color',c(j,:),'nbins',50,'make_plot',true);
 		delete(plot_handles.line(2:3))
 		delete(plot_handles.shade)
 	end
@@ -430,89 +499,161 @@ plot(ax.r2_DA_LN,r2_LN,r2_DA,'o','Color',c(2,:))
 r2_DA
 
 
-% ##       ######## ########     ##     ##  #######  ########  ######## ##       
-% ##       ##       ##     ##    ###   ### ##     ## ##     ## ##       ##       
-% ##       ##       ##     ##    #### #### ##     ## ##     ## ##       ##       
-% ##       ######   ########     ## ### ## ##     ## ##     ## ######   ##       
-% ##       ##       ##           ##     ## ##     ## ##     ## ##       ##       
-% ##       ##       ##           ##     ## ##     ## ##     ## ##       ##       
-% ######## ##       ##           ##     ##  #######  ########  ######## ######## 
+
+% ##     ##    ###    ########  ####    ###    ##    ##  ######  ######## 
+% ##     ##   ## ##   ##     ##  ##    ## ##   ###   ## ##    ## ##       
+% ##     ##  ##   ##  ##     ##  ##   ##   ##  ####  ## ##       ##       
+% ##     ## ##     ## ########   ##  ##     ## ## ## ## ##       ######   
+%  ##   ##  ######### ##   ##    ##  ######### ##  #### ##       ##       
+%   ## ##   ##     ## ##    ##   ##  ##     ## ##   ### ##    ## ##       
+%    ###    ##     ## ##     ## #### ##     ## ##    ##  ######  ######## 
 
 
-% now the LFP model
+[PID, LFP, fA, paradigm, orn, fly] = consolidateData(dm.getPath('e30707e8e8ef6c0d832eee31eaa585aa'),1);
 
-% core parameters 
-T = 20e3; % total length
-pulse_on = 15e3;
-pulse_off = 16e3;
+global_start = 40e3; % 40 seconds
+global_end = length(PID) - 5e3; 
+% bandpass to remove spikes and slow fluctuations
+% for i = 1:width(LFP)
+% 	a = find(~isnan(LFP(:,i)),1,'first');
+% 	z = find(~isnan(LFP(:,i)),1,'last');
+% 	LFP(a:z,i) = bandPass(LFP(a:z,i),1000,10)*10; % now in mV
+% end
 
-clear p
-p.    A = 1e3;
-p.    B = 100;
-p.tau_y = 20;
-p.tau_z = 400;
-p.tau_r = 10;
-p.tau_A = 100;
+% reshape the LFP signals
+block_length = 1e4;
+reshaped_LFP = LFP(global_start:end-1e4-1,1:width(PID));
+reshaped_LFP = reshape(reshaped_LFP,block_length,width(reshaped_LFP)*length(reshaped_LFP)/block_length);
 
+% also reshape the PID
+reshaped_PID = PID(global_start:end-1e4-1,1:width(PID));
+reshaped_PID = reshape(reshaped_PID,block_length,width(reshaped_PID)*length(reshaped_PID)/block_length);
 
-background_levels = logspace(-2,2,10);
-c = parula(length(background_levels)+1);
-
-% make sure we don't get negative responses
-p.ko = -log(background_levels(1))*1.1;
-
-all_gain = NaN*background_levels;
-all_mu = NaN*background_levels;
-for i = 1:length(background_levels)
-	S = background_levels(i) + zeros(T,1);
-	S(pulse_on:pulse_off) = 2*background_levels(i);
-	time = 1e-3*(1:length(S)) - 10;
-	plot(ax.LFP_model_stim,time,S,'Color',c(i,:));
-
-	R = LFPmodel2(S,p);
-	% plot(ax(2),R,'Color',c(i,:))
-
-	temp = R - mean(R(pulse_on-1e3:pulse_on-1));
-
-	plot(ax.LFP_model_resp,time,temp/max(temp(pulse_on:pulse_off)),'Color',c(i,:))
+% reshape the firing rate signals
+reshaped_fA = fA(global_start:end-1e4-1,1:width(PID));
+reshaped_fA = reshape(reshaped_fA,block_length,width(reshaped_fA)*length(reshaped_fA)/block_length);
 
 
-	% compute gain 
-	g = max(temp(pulse_on:pulse_off))/(max(S) - min(S));
-	plot(ax.LFP_model_gain,min(S),g,'+','Color',c(i,:));
-	all_gain(i) = g;
-	all_mu(i) = max(S) - min(S);
+% also reshape the orn ID
+reshaped_orn = repmat(orn,length(global_start:length(PID)-1e4-1)/block_length,1);
+reshaped_orn = reshaped_orn(:);
+
+% throw our NaNs globally. so we're throwing out epochs where the data is incomplete
+rm_this = isnan(sum(reshaped_LFP));
+reshaped_LFP(:,rm_this) = [];
+reshaped_PID(:,rm_this) = [];
+reshaped_fA(:,rm_this) = [];
+reshaped_orn(rm_this) = [];
+
+
+% we are going to calculate only one filter/epoch
+sr = 1e3; % sampling rate, Hz
+if exist('.cache/VSA_K2.mat','file') == 2
+	load('.cache/VSA_K2.mat','K2')
+else
+	filter_length = 1000;
+	offset = 200;
+	K2 = NaN(2,filter_length-offset,width(reshaped_fA));
+	for i = 1:width(reshaped_fA)
+		textbar(i,width(reshaped_PID))
+
+		% calculate filter for large variance epoch
+		stim = reshaped_PID(:,i);
+		resp = reshaped_fA(:,i);
+
+		resp(1:1e3) = NaN;
+		resp(5e3:end)= NaN;
+
+		try
+			this_K2 = fitFilter2Data(stim,resp,'reg',1,'offset',offset,'filter_length',filter_length);
+			K2(1,:,i) = this_K2(100:end-101);
+		catch 
+		end
+
+		% calculate filter for low variance epoch
+		stim = reshaped_PID(:,i);
+		resp = reshaped_fA(:,i);
+
+		resp(1:6e3) = NaN;
+
+		try
+			this_K2 = fitFilter2Data(stim,resp,'reg',1,'offset',offset,'filter_length',filter_length);
+			K2(2,:,i) = this_K2(100:end-101);
+		catch 
+		end
+	end
+	mkdir('.cache')
+	save('.cache/VSA_K2.mat','K2')
 end
 
 
-set(ax.LFP_model_stim,'XLim',[0 10])
-set(ax.LFP_model_resp,'XLim',[0 10])
+% make linear predictions on the de-trended data using a mean filter averaged over all cases
+K2_mean = nanmean(squeeze(nanmean(K2,1)),2);
+ft = -99:700;
+fA_pred = NaN*reshaped_fA;
+for i = 1:width(reshaped_fA)
+	fA_pred(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K2_mean,ft);
+end
 
-% draw a weber's fit to this
-x = all_mu;
-y = all_gain;
-options = fitoptions(fittype('poly1'));
-options.Lower = [-1 -Inf];
-options.Upper = [-1 Inf];
-cf_temp = fit(log(x(:)),log(y(:)),'poly1',options);
-cf = fit(x(:),y(:),'power1');
-warning off
-cf.a = exp(cf_temp.p2); cf.b = -1;
-warning on
-plot(ax.LFP_model_gain,sort(x),cf(sort(x)),'r')
+% fit a DA Model to this data
+% clear data c p
+% for i = 1:max(orn)
+% 	c = find(orn==i,1,'last');
+% 	data(i).stimulus = PID(2e4:10e4,c);
+% 	data(i).response = fA(2e4:10e4,c);
+% 	data(i).response(1:5e3) = NaN;
+% end
 
-set(ax.LFP_model_stim,'YScale','log')
-ylabel(ax.LFP_model_stim,'Stimulus (a.u.)')
-ylabel(ax.LFP_model_resp,'r(t) (rescaled)')
-set(ax.LFP_model_resp,'YLim',[-.1 1])
-set(ax.LFP_model_gain,'XScale','log','YScale','log','XTick',logspace(-2,2,5),'YTick',logspace(-2,2,5))
-xlabel(ax.LFP_model_gain,'Background S')
-ylabel(ax.LFP_model_gain,'Gain (\DeltaR / \DeltaS)')
+% clear p
+% for j = 1:5
+% 	for i = [1 3 4 5]
+% 		p(i) = fitModel2Data(@DAModelv2,data(i),'make_plot',true,'nsteps',1);
+% 	end
+% end
 
+% we've already fit the model, just load the data
+clear p
+load('.cache/DA_model_fit_to_variance_data.mat','p')
 
+% make DA model prediction on a per-neuron basis
+clear data 
+for i = [1 3 4 5]
+	c = find(orn==i,1,'last');
+	data(i).stimulus = PID(2e4:10e4,c);
+	data(i).response = fA(2e4:10e4,c);
+	
+	data(i).DA_pred = DAModelv2(data(i).stimulus,p(i));
+end
+
+% fit a LN model to this
+for i = [1 3 4 5]
+	ft = -99:700;
+	data(i).linear_pred = convolve(1e-3*(1:length(data(i).stimulus)),data(i).stimulus,K2_mean,ft);
+	ft = fittype('hill4(x,A,K_D,n,x_offset)');
+	x = data(i).linear_pred;
+	y = data(i).response;
+	rm_this = isnan(x)| isnan(y);
+	ff = fit(x(~rm_this),y(~rm_this),ft,'StartPoint',[max(data(i).response) 2 2 0],'Lower',[0 0 1 -1],'Upper',[200 2 10 1],'MaxIter',1e4);
+	data(i).LN_pred = ff(data(i).linear_pred);
+end
+
+% now plot r2 b/w DA and LN models for the contrast
+for i = [1 3 4 5]
+	r2_DA = rsquare(data(i).DA_pred,data(i).response);
+	r2_LN = rsquare(data(i).LN_pred,data(i).response);
+	plot(ax.r2_DA_LN,r2_LN,r2_DA,'bd');
+end
+
+% now fake some plots for a nice legend in the r2 plot
+clear l 
+l(1) = plot(ax.r2_DA_LN,NaN,NaN,'k+');
+c = lines(5);
+l(2) = plot(ax.r2_DA_LN,NaN,NaN,'o','Color',c(2,:));
+l(3) = plot(ax.r2_DA_LN,NaN,NaN,'bd');
+legend3 = legend(l,{'Nat. Stim.','changing mean','changing variance'});
+legend3.Position = [0.7913    0.1512    0.1465    0.0775];
 
 prettyFig(main_fig,'fs',12,'plw',1.5,'lw',1.5)
-
 
 % cosmetic fixes
 ax.nat_stim.XLim = [0 70];
@@ -526,47 +667,44 @@ ax.r2_DA_LN.YTick = [0 .25 .5 .75 1];
 ax.r2_DA_LN.XTick = [0 .25 .5 .75 1];
 
 
-ylabel(ax.DA_MSG,'Firing rate (Hz)');
-xlabel(ax.DA_MSG,'DA Model prediction (Hz)');
+xlabel(ax.DA_MSG,'Projected Stimulus (V)');
+ylabel(ax.DA_MSG,'DA Model prediction (Hz)');
 ax.DA_MSG.XLim(1) = 0;
 ax.DA_MSG.YLim(1) = 0;
 
-ax.LFP_model_stim.YMinorTick = 'off';
-ax.LFP_model_gain.YMinorTick = 'off';
-ax.LFP_model_gain.XMinorTick = 'off';
-xlabel(ax.LFP_model_stim,'Time (s)')
-xlabel(ax.LFP_model_resp,'Time (s)')
 
 legend1.Box = 'off';
+legned2.Box = 'off';
+legend3.Box = 'off';
 
-% now supp figures
-xlabel(ax.LN_vs_lin_pred,'Projected Stimulus (V)')
-ylabel(ax.LN_vs_lin_pred,'LN model prediction (Hz)')
-ax.LN_vs_lin_pred.YLim = [0 100];
-ax.LN_vs_lin_pred.XLim = [0 6];
+% % now supp figures
+% xlabel(ax.LN_vs_lin_pred,'Projected Stimulus (V)')
+% ylabel(ax.LN_vs_lin_pred,'LN model prediction (Hz)')
+% ax.LN_vs_lin_pred.YLim = [0 100];
+% ax.LN_vs_lin_pred.XLim = [0 6];
 
-xlabel(ax.DA_vs_lin_pred,'Projected Stimulus (V)')
-ylabel(ax.DA_vs_lin_pred,'DA model prediction (Hz)')
-ax.DA_vs_lin_pred.YLim = [0 120];
-ax.DA_vs_lin_pred.XLim = [0 6];
+% xlabel(ax.DA_vs_lin_pred,'Projected Stimulus (V)')
+% ylabel(ax.DA_vs_lin_pred,'DA model prediction (Hz)')
+% ax.DA_vs_lin_pred.YLim = [0 120];
+% ax.DA_vs_lin_pred.XLim = [0 6];
 
-xlabel(ax.DA_vs_ORN,'ORN firing rate (Hz)')
-ylabel(ax.DA_vs_ORN,'DA model prediction (Hz)')
-ax.DA_vs_ORN.YLim = [0 120];
-ax.DA_vs_ORN.XLim = [0 120];
+% xlabel(ax.DA_vs_ORN,'ORN firing rate (Hz)')
+% ylabel(ax.DA_vs_ORN,'DA model prediction (Hz)')
+% ax.DA_vs_ORN.YLim = [0 120];
+% ax.DA_vs_ORN.XLim = [0 120];
 
-prettyFig(supp_fig,'fs',12,'plw',1,'lw',1.5)
+% prettyFig(supp_fig,'fs',12,'plw',1,'lw',1.5)
 
-
-if being_published	
-	snapnow	
-	delete(gcf)
-end
 
 if being_published	
 	snapnow	
 	delete(gcf)
 end
+
+% if being_published	
+% 	snapnow	
+% 	delete(gcf)
+% end
 
 
 %% Version Info

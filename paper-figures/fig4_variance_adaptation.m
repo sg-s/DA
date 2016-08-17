@@ -382,6 +382,8 @@ ax(6).XLim = [0 .22];
 
 prettyFig('fs',.5,'lw',1.5,'font_units','centimeters')
 
+labelFigure;
+
 ax(5).XLim(1) = 0;
 ax(5).YLim(1) = 0;
 
@@ -389,7 +391,6 @@ if being_published
 	snapnow
 	delete(gcf)
 end
-
 %  ######  ##     ## ########  ########         ######## ####  ######       
 % ##    ## ##     ## ##     ## ##     ##        ##        ##  ##    ##      
 % ##       ##     ## ##     ## ##     ##        ##        ##  ##            
@@ -513,14 +514,17 @@ subplot(2,3,6); hold on
 cla
 [ax,h1,h2] = plotyy(time,gain,time,sc);
 set(h1,'Marker','+','LineStyle','none')
-set(h2,'Marker','.','LineStyle','none')
+set(h2,'Marker','o','LineStyle','none')
 xlabel(ax(1),'Time since switch (s)')
-ylabel(ax(1),'Inst. gain (Hz/V)')
+ylabel(ax(1),'Instantaneous gain (Hz/V)')
 ylabel(ax(2),'Stimulus contrast')
 ax(2).YDir = 'reverse';
+ax(1).Box = 'off';
 set(ax,'XLim',[4.5 6])
 
-prettyFig('fs',.5,'lw',1.5,'font_units','centimeters')
+prettyFig('fs',.7,'lw',2,'font_units','centimeters')
+
+labelFigure('column_first',true)
 
 if being_published
 	snapnow

@@ -14,4 +14,5 @@ for i = 1:length(history_lengths)
 	mean_stim = findMeanInWindows(ons,offs,shat);
 
 	rho(i) = spear(mean_stim,gain);
+
 end

@@ -146,7 +146,8 @@ for i = 1:8 % iterate over all paradigms
 	x = cf(nanmean(s))*(x);
 	x = x - nanmean(x);
 	x = x + nanmean(y);
-	plotPieceWiseLinear(x(1e3:end),y(1e3:end),'nbins',40,'Color',c(i,:),'show_error',false,'LineWidth',3);
+	[~,temp]= plotPieceWiseLinear(x(1e3:end),y(1e3:end),'nbins',40,'Color',c(i,:),'show_error',false,'LineWidth',3,'make_plot',false);
+	plot(ax(7),temp.x,temp.y,'Color',c(i,:),'LineWidth',3)
 end
 
 plot(ax(7),[0 80],[0 80],'r')
@@ -183,8 +184,16 @@ ax(2).Position(1) = .8;
 ax(4).Position(1) = .8;
 
 % shrink data for smaller file sizes
-shrinkDataInPlot(ax(1),4)
-shrinkDataInPlot(ax(3),4)
+shrinkDataInPlot(ax(1),5)
+shrinkDataInPlot(ax(3),5)
+
+% move top two rows up a bit
+ax(1).Position(2) = .73;
+ax(2).Position(2) = .73;
+ax(3).Position(2) = .44;
+ax(4).Position(2) = .44;
+
+labelFigure;
 
 % deinteresect some axes
 ax(1).XLim(2) = 55.05;
@@ -302,8 +311,10 @@ for i = length(data_hashes):-1:1
 	ph(2) = plot_here(i);
 	plotMSGGain(cdata,ph);
 
-	t = [orn_names{i} char(10) odour_names{i}];
-	title(ph(2),t);
+	title(ph(2),odour_names{i});
+
+	t = [orn_names{i} ' gain (Hz/V)'];
+	ylabel(ph(2),t);
 end
 
 % fix some axes
@@ -312,7 +323,9 @@ for i = 1:length(plot_here)
 	plot_here(i).XLim(2) = 1.06*plot_here(i).XLim(2);
 end
 
-prettyFig('plw',1.3,'lw',1.5,'fs',.5,'font_units','centimeters','FixLogX',true)
+prettyFig('plw',2,'lw',2,'fs',.6,'font_units','centimeters','FixLogX',true)
+
+labelFigure;
 
 for i = 2:length(ax)
 	try
@@ -378,7 +391,8 @@ for i = 1:max(paradigm) % iterate over all paradigms
 	s = nanmean(PID(a:z,paradigm == i),2);
 	x = x - nanmean(x);
 	x = x + nanmean(nanmean(s));
-	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:));
+	[~,temp] = plotPieceWiseLinear(x,y,'nbins',50,'make_plot',false);
+	plot(temp.x,temp.y,'Color',c(i,:));
 end
 xlabel('Projected Stimulus (V)')
 ylabel('ORN Response (Hz)')

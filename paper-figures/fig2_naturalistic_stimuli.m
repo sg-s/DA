@@ -10,7 +10,7 @@ pHeader;
 
 % this script uses dataManager to ensure data integrity
 dm = dataManager;
-history_length = 200; % ms
+history_length = 300; % ms
 
 
 %% Figure 1: Gain changes with a naturalistic stimulus
@@ -98,7 +98,7 @@ clear PID fA K R filtertime_full PID_baseline all_spikes data fp spikes time
 [whiff_starts,whiff_ends] = computeOnsOffs(mean(ab3.fA,2)>10);
 
 % filter the stimulus using a box filter
-shat_mean = computeSmoothedStimulus(mean(ab3.PID,2),200);
+shat_mean = computeSmoothedStimulus(mean(ab3.PID,2),history_length);
 
 
 % filter the stimulus using a diff. filter
@@ -243,7 +243,7 @@ plot(axes_handles(3),tA(1:10:end),mean(ab3.PID(1:10:end,:),2),'Color',[0.2 .2 .2
 set(axes_handles(3),'XLim',[0 70],'YLim',[0 7],'XTick',[])
 
 % show the filter
-plot(axes_handles(5),filtertime,ab3.K,'r');
+plot(axes_handles(5),filtertime,1e3*ab3.K,'r');
 
 % plot the response and the prediction
 clear l
@@ -307,6 +307,7 @@ all_block_sizes = factor2(length(ab3.PID));
 all_block_sizes = all_block_sizes(6:end-1);
 all_block_sizes = all_block_sizes(1:41);
 clear l r2
+all_block_sizes = unique([all_block_sizes history_length]);
 r2 = NaN*all_block_sizes;
 
 for i = 1:length(all_block_sizes)
@@ -318,9 +319,6 @@ for i = 1:length(all_block_sizes)
 	r2(i) = rsquare(mean(temp),std(temp));
 end
 plot(axes_handles(9),[1e-3 2],[1e-3 2],'k--')
-
-
-
 
 % label all the axes, set the scales, etc.
 
@@ -355,7 +353,7 @@ end
 % fix position of some plots
 axes_handles(5).Position(1) = .1;
 xlabel(axes_handles(5),'Filter lag (s)')
-ylabel(axes_handles(5),'Filter')
+ylabel(axes_handles(5),'Filter (a.u.)')
 
 set(axes_handles(6),'box','off')
 axes_handles(6).Position(1) = .1;
@@ -374,18 +372,24 @@ set(axes_handles(9),'YScale','log','XScale','log','XLim',[1e-3 1e1],'XTick',[1e-
 % a(2) = annotation('arrow','Position',[0.6278 0.6237 0.0090 -0.0255]);
 
 % add insets showing gain control
-inset(1) = axes('Position',[0.6774 0.7907 0.1012 0.1040]); hold on
-inset(2) = axes('Position',[0.6774 0.56 0.1012 0.1040]); hold on
-S = mean(ab3.PID,2);
-R = mean(ab3.fA,2);
-t = 1e-3*(1:1000)-.8;
-plot(inset(1),t,S(6042-800:6042+199))
-plot(inset(1),t,S(24990-800:24990+199))
-plot(inset(2),t,R(6042-800:6042+199))
-plot(inset(2),t,R(24990-800:24990+199))
+% inset(1) = axes('Position',[0.6774 0.7907 0.1012 0.1040]); hold on
+% inset(2) = axes('Position',[0.6774 0.56 0.1012 0.1040]); hold on
+% S = mean(ab3.PID,2);
+% R = mean(ab3.fA,2);
+% t = 1e-3*(1:1000)-.8;
+% plot(inset(1),t,S(6042-800:6042+199))
+% plot(inset(1),t,S(24990-800:24990+199))
+% plot(inset(2),t,R(6042-800:6042+199))
+% plot(inset(2),t,R(24990-800:24990+199))
 
-prettyFig('plw',1.5,'lw',1.5,'fs',.5,'FixLogX',true,'font_units','centimeters')
 
+
+prettyFig('plw',1.5,'lw',1.5,'fs',.5,'FixLogX',true,'font_units','centimeters','x_minor_ticks',false,'y_minor_ticks',false)
+
+% add some labels
+[~,lh]= labelFigure;
+lh(2).Position(2) = .67;
+lh(3).Position(2) = .67;
 
 
 % compress some plots to make small EPS files
@@ -410,7 +414,6 @@ if being_published
 	delete(gcf)
 end
 
-return
 
 %      ######  ##     ## ########  ########     ######## ####  ######   
 %     ##    ## ##     ## ##     ## ##     ##    ##        ##  ##    ##  
@@ -434,22 +437,34 @@ for i = 1:length(all_block_sizes)
 	plot(ax(1),all_block_sizes(i),r2(i),'k+')
 end
 set(ax(1),'XScale','log','XTick',[1 1e1 1e2 1e3 1e4],'XLim',[1 1.1e4])
-xlabel(ax(1),'Window (ms)')
+xlabel(ax(1),'Window length (ms)')
 ylabel(ax(1),'r^2 (\mu, \sigma)')
 
-% show the PDF of the stimulus
+
+
+% show the PDF of the whiff intensities 
+odour_thresh = 0.05;
+
+% whiff intensity distribution  
 ax(2) = subplot(1,4,2); hold on
-y = zeros(300,width(ab3.PID));
+whiff_intensities = []; 
 for i = 1:width(ab3.PID)
-	[y(:,i),x] = histcounts(ab3.PID(:,i),300);x(1) = [];
-	y(:,i) = y(:,i)/sum(y(:,i));
+	[ons,offs] = computeOnsOffs(ab3.PID(:,i) > odour_thresh);
+	whiff_intensities =  [whiff_intensities; findMeanInWindows(ons,offs,ab3.PID(:,i));];
 end
-errorShade(x,mean(y,2),sem(y'),'Color',[.2 .2 .2]);
-warning off % because there are some -ve values on the log scale
-set(ax(2),'XScale','log','YScale','log','XLim',[min(x) 11],'YLim',[1e-5 1],'YTick',logspace(-5,0,6),'XTick',[1e-2 1e-1 1 10])
-xlabel(ax(2),'Stimulus (V)')
+
+[y,x] = histcounts(whiff_intensities,50); x(1) = [];
+y = y/sum(y);
+plot(ax(2),x,y,'k+')
+set(ax(2),'YScale','log','XScale','log','XTick',[1e-2 1e-1 1 10],'XLim',[1e-2 11])
 ylabel(ax(2),'Probability')
-warning on
+xlabel(ax(2),'Whiff intensity (V)')
+
+m = fittype('log((a./x).*exp(-x./b))');
+ff = fit(x(y>0)',log(y(y>0))',m,'Upper',[10 100],'Lower',[0 1],'StartPoint',[7e-3 4]);
+plot(ax(2),sort(x),exp(ff(sort(x))),'r')
+
+th(2) = text(.1, .2,'$\sim\frac{1}{c}\exp\left(-\frac{c}{C}\right)$','interpreter','latex','Color','r','FontSize',20);
 
 odour_thresh = 0.024;
 
@@ -472,6 +487,9 @@ ylabel(ax(3),'Probability')
 set(ax(3),'YScale','log','XScale','log','XTick',[1e1 1e2 1e3 1e4],'XLim',[10 1.1e4])
 xlabel(ax(3),'Whiff duration (ms)')
 
+axes(ax(3))
+th(3) = text(1e3, .1,'$\sim t_{w}^{-\frac{3}{2}}$','interpreter','latex','Color','r','FontSize',20);
+
 % show the blank durations 
 ax(4) = subplot(1,4,4); hold on
 whiff_durations = [];
@@ -490,8 +508,10 @@ set(ax(4),'YScale','log','XScale','log','XTick',[1e2 1e3 1e4],'XLim',[30 3e4])
 xlabel('Blank duration (ms)')
 ylabel(ax(4),'Probability')
 
-prettyFig('fs',.5,'FixLogX',false,'font_units','centimeters')
+axes(ax(4))
+th(4) = text(1e3, .1,'$\sim t_{b}^{-\frac{3}{2}}$','interpreter','latex','Color','r','FontSize',20);
 
+prettyFig('fs',.5,'FixLogX',true,'font_units','centimeters')
 
 
 % fix some plots
@@ -499,11 +519,17 @@ ax(1).Position(1)=.11;
 ax(2).Position(2) = ax(1).Position(2);
 ax(2).Position(4) = ax(1).Position(4);
 
+labelFigure
+
 for i = 1:4
 	ax(i).Position(2) = .175;
 	ax(i).Position(4) = .725;
 	deintersectAxes(ax(i))
 end
+
+th(2).FontSize = 20;
+th(3).FontSize = 20;
+th(4).FontSize = 20;
 
 if being_published
 	snapnow

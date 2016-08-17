@@ -478,13 +478,17 @@ var_cartoon_plot.Position= [.53 .62 .5 .25];
 uistack(msg_cartoon_plot,'bottom');
 uistack(var_cartoon_plot,'bottom');
 
+labelFigure('ignore_these',[msg_cartoon_plot var_cartoon_plot])
+
 if being_published	
 	snapnow	
 	delete(gcf)
 end
 
+
+
 %% Supplementary Figure
-% Supplementary figure for figure 4. 
+% Supplementary figure for figure 5. 
 
 figure('outerposition',[0 0 1200 801],'PaperUnits','points','PaperSize',[1200 801]); hold on
 
@@ -607,7 +611,7 @@ plot_here(4) = subplot(2,3,5); hold on
 % core loop
 for i = length(data_hashes):-1:1
 	clear cdata
-	cdata = consolidateData2(dm.getPath(data_hashes{i}));
+	cdata = consolidateData2(getPath(dataManager,data_hashes{i}));
 	cdata = cleanMSGdata(cdata);
 
 	% plot gain as we normally calculate it
@@ -622,6 +626,8 @@ end
 plot_here(4).XLim = [3e-3 3];
 
 prettyFig('fs',14,'lw',1.5,'FixLogX',true);
+
+labelFigure('column_first',true)
 
 for i = 1:length(plot_here)
 	plot_here(i).XLim(2) = plot_here(i).XLim(2)*1.06;

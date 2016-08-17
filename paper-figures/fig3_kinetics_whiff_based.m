@@ -1,4 +1,4 @@
-% fig_kinetics.m
+% fig3_kinetics_whiff_based.m
 % 
 % created by Srinivas Gorur-Shandilya at 2:14 , 07 March 2016. Contact me at http://srinivas.gs/contact/
 % 
@@ -82,23 +82,32 @@ model_color = [1 0 0];
 % load(getPath(dataManager,'aeb361c027b71938021c12a6a12a85cd'),'-mat');
 
 load('/local-data/DA-paper/data-for-paper/nat-stim/v4_nat_stim.ORNData','-mat')
-temp = od([1 3]); % other entries are blank, because we have no data. 
+temp = od([1 3]);
 clear od;
-load('/local-data/DA-paper/data-for-paper/nat-stim/ab3A_nat_stim.ORNData','-mat')
+load('/local-data/DA-paper/data-for-paper/nat-stim/v3_nat_stim.ORNData','-mat')
+od([1 6]) = [];
 od = [temp od];
 clear temp
 
 
+% % first, fit the DA model to the data. (this was pre-fit, we're simply loading the fit here)
+% load(getPath(dataManager,'b1b883899ab8c5ce1aed465819e75fce'));
+
+% % generate DA model responses
+% dd = ORNData;
+% for i = 1:length(od)
+% 	dd(i).stimulus = nanmean(od(i).stimulus,2);
+% 	dd(i).firing_rate = DAModelv2(dd(i).stimulus,p(i));
+% end
+
 l_s = {'-','-','--','--','--','--','--','--','--','--'};
 min_acceptable_corr = .5;
 min_acceptable_lag = 5;
-max_acceptable_lag = 300;
+max_appeptable_lag = 300;
 window_size = 1e3;
-nbins = 40;
-history_length = 300;
+history_length = 1e3;
 stim_thresh = .035;
 clear l
-
 
 for i = 1:length(od) % first one has stimulus which is too low, different paradigm 
 	textbar(i,length(od))
@@ -106,56 +115,59 @@ for i = 1:length(od) % first one has stimulus which is too low, different paradi
 	R = nanmean(od(i).firing_rate,2);
 	X = -nanmean(od(i).LFP,2);
 
-	% firing rate ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	% find all whiffs
+	[ons,offs] = findWhiffs(S);
+	rm_this = offs + window_size > length(S) | ons - history_length < 1;
+	ons(rm_this) = [];
+	offs(rm_this) = [];
 
-	[lag, ~, max_corr] = findLagAndMeanInWindow(S,R,window_size,5);
-	mean_x = vectorise(computeSmoothedStimulus(S,window_size));
 
-	time_since_thresh_crossing = circshift(findTimeSinceThresholdCrossing(S,stim_thresh),-window_size);
+	lag_X = NaN*ons;
+	lag_R = NaN*ons;
+	time_since_last_whiff = NaN*ons;
+	mean_s = NaN*ons;
+	for j = 1:length(ons)
+		s = S(ons(j):offs(j)+window_size); s = s - mean(s); s = s/std(s);
+		x = X(ons(j):offs(j)+window_size); x = x - mean(x); x = x/std(x);
+		r = R(ons(j):offs(j)+window_size); r = r - mean(r); r = r/std(r);
+		lag_X(j) = finddelay(s,x);
+		lag_R(j) = finddelay(s,r);
+		mean_s(j) = mean(S(ons(j)-history_length:ons(j)));
+	end
 
-	% first strip out the NaNs
-	rm_this = isnan(lag);
-	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
-	time_since_thresh_crossing(rm_this) = [];
 
-	% then throw out some shitty data
-	rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr | time_since_thresh_crossing < 10 | lag > max_acceptable_lag;
-	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
-	time_since_thresh_crossing(rm_this) = [];
-
+	rm_this = lag_X < min_acceptable_lag;
 	% plot
-	[~,data] = plotPieceWiseLinear(log(mean_x),lag,'nbins',10,'make_plot',false,'proportional_bins',false);
-	plot(lag_vs_stim_plot,exp(data.x),data.y,'Color',firing_color,'LineStyle',l_s{i});
+	[~,data] = plotPieceWiseLinear(mean_s(~rm_this),lag_X(~rm_this),'nbins',19,'make_plot',false);
+	plot(lag_vs_stim_plot,data.x,data.y,'Color',LFP_color,'LineStyle',l_s{i});
 
-	[~,data] = plotPieceWiseLinear(log(time_since_thresh_crossing),lag,'nbins',nbins,'make_plot',false,'proportional_bins',false);
-	plot(lag_vs_time_plot,exp(data.x),data.y,'Color',firing_color,'LineStyle',l_s{i});
+	% [~,data] = plotPieceWiseLinear(time_since_thresh_crossing,lag,'nbins',19,'make_plot',false);
+	% plot(lag_vs_time_plot,data.x,data.y,'Color',firing_color,'LineStyle',l_s{i});
 
- 	% LFP ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ % 	% LFP ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-	[lag, ~, max_corr] = findLagAndMeanInWindow(S,X,window_size,5);
-	mean_x = vectorise(computeSmoothedStimulus(S,window_size));
+	% [lag, ~, max_corr] = findLagAndMeanInWindow(S,X,window_size,25);
+	% mean_x = circshift(vectorise(computeSmoothedStimulus(S,window_size)),history_length);
+	% time_since_thresh_crossing = circshift(findTimeSinceThresholdCrossing(S,stim_thresh),-window_size);
 
-	time_since_thresh_crossing = circshift(findTimeSinceThresholdCrossing(S,stim_thresh),-window_size);
+	% % first strip out the NaNs
+	% rm_this = isnan(lag);
+	% lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
+	% time_since_thresh_crossing(rm_this) = [];
 
-	% first strip out the NaNs
-	rm_this = isnan(lag);
-	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
-	time_since_thresh_crossing(rm_this) = [];
+	% % then throw out some shitty data
+	% rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr | lag > max_appeptable_lag;
 
-	% then throw out some shitty data
-	rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr | lag > max_acceptable_lag;
+	% [~,data] = plotPieceWiseLinear(mean_x(~rm_this),lag(~rm_this),'nbins',19,'make_plot',false);
+	% plot(lag_vs_stim_plot,data.x,data.y,'LineStyle',l_s{i},'Color',LFP_color)
 
-	[~,data] = plotPieceWiseLinear(log(mean_x(~rm_this)),lag(~rm_this),'nbins',10,'make_plot',false,'proportional_bins',false);
-	plot(lag_vs_stim_plot,exp(data.x),data.y,'LineStyle',l_s{i},'Color',LFP_color)
-
-	rm_this = lag < min_acceptable_lag | max_corr < min_acceptable_corr | time_since_thresh_crossing < 10 | lag > max_acceptable_lag;
-	[~,data] = plotPieceWiseLinear(log(time_since_thresh_crossing(~rm_this)),lag(~rm_this),'make_plot',false,'nbins',nbins,'proportional_bins',false);
-	rm_this = isnan(data.x);
-	data.x(rm_this) = [];
-	data.y(rm_this) = [];
-	plot(lag_vs_time_plot,exp(data.x),data.y,'LineStyle',l_s{i},'Color',LFP_color)
+	% rm_this = lag < min_acceptable_lag | max_corr < min_acceptable_corr | time_since_thresh_crossing < 10 | lag > max_appeptable_lag;
+	% [~,data] = plotPieceWiseLinear(time_since_thresh_crossing(~rm_this),lag(~rm_this),'make_plot',false,'nbins',19);
+	% plot(lag_vs_time_plot,data.x,data.y,'LineStyle',l_s{i},'Color',LFP_color)
 
 end
+
+return
 
 
 % labels -- main figure
@@ -191,7 +203,6 @@ L2 = legend(l,{'ab2A','ab3A'},'Location','northwest');
 L2.Position = [0.1700 0.4023 0.0800 0.0337];
 uistack(lag_vs_time_plot,'top')
 
-return
 
 % ########    ###    ##     ##     ######      ###    #### ##    ## 
 %    ##      ## ##   ##     ##    ##    ##    ## ##    ##  ###   ## 

@@ -30,17 +30,6 @@ ax.inset1.Position = [0.2442    0.8625    0.1154    0.1];
 ax.inset2 = axes('Parent',main_fig); 
 ax.inset2.Position = [0.58 0.8625 0.17 0.1];
 
-% % make the supp figure
-% supp_fig = figure('outerposition',[0 0 901 603],'PaperUnits','points','PaperSize',[901 603]); hold on
-
-% % supp plots
-% ax.DA_lag1 = subplot(2,3,4,'Parent',supp_fig); 
-% ax.DA_lag2 = subplot(2,3,5,'Parent',supp_fig); 
-% ax.DA_vs_lin_pred = subplot(2,3,2,'Parent',supp_fig); 
-% ax.DA_vs_ORN = subplot(2,3,3,'Parent',supp_fig); 
-% ax.LN_vs_lin_pred = subplot(2,3,1,'Parent',supp_fig); 
-
-
 % hold all plots
 fn = fieldnames(ax);
 for i = 1:length(fn)
@@ -257,8 +246,7 @@ r2_DA
 % ##       #### ##     ## #### ##    ##  ######      ######## ##     ##  ######   
 
 
-
-min_acceptable_corr = .5;
+min_acceptable_corr = .8;
 min_acceptable_lag = 20;
 window_size = 1e3;
 stim_thresh = .035;
@@ -277,7 +265,7 @@ for i = 2:length(od) % first one has stimulus which is too low, different paradi
 	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
 
 	% then throw out some shitty data
-	rm_this = lag < min_acceptable_lag | max_corr < min_acceptable_corr | lag > 150;
+	rm_this = lag < min_acceptable_lag | max_corr < min_acceptable_corr | lag > 300;
 	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
 
 	% plot
@@ -340,10 +328,11 @@ for i = 1:max(orn)
 	dd(i).LFP = LFPmodel2_Euler(dd(i).stimulus,q(i));
 end
 
-min_acceptable_corr = .5;
+min_acceptable_corr = .7;
 min_acceptable_lag = 20;
 window_size = 1e3;
 stim_thresh = .035;
+
 
 axes(ax.DA_kinetics)
 for i = 2:length(od) % first one has stimulus which is too low, different paradigm 
@@ -358,7 +347,7 @@ for i = 2:length(od) % first one has stimulus which is too low, different paradi
 	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
 
 	% then throw out some shitty data
-	rm_this = lag < min_acceptable_lag | max_corr < min_acceptable_corr | lag > 150;
+	rm_this = lag < min_acceptable_lag | max_corr < min_acceptable_corr | lag > 300;
 	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
 
 	% plot
@@ -367,7 +356,7 @@ for i = 2:length(od) % first one has stimulus which is too low, different paradi
 end
 
 set(ax.DA_kinetics,'XScale','log','YLim',[0 160],'XLim',[1e-3 5],'XTick',[1e-3 1e-2 1e-1 1])
-xlabel(ax.DA_kinetics,'\mu_{Stimulus} in preceding 300ms (V)')
+xlabel(ax.DA_kinetics,'\mu_{Stimulus} in preceding 1 s (V)')
 ylabel(ax.DA_kinetics,'Lag (ms)')
 legend2 = legend(l,{'LFP model','DA model'},'Location','northwest');
 
@@ -655,6 +644,8 @@ legend3.Position = [0.7913    0.1512    0.1465    0.0775];
 
 prettyFig(main_fig,'fs',12,'plw',1.5,'lw',1.5)
 
+labelFigure('ignore_these',[ax.inset1 ax.inset2])
+
 % cosmetic fixes
 ax.nat_stim.XLim = [0 70];
 ax.nat_stim.YLim(1) = -5;
@@ -672,28 +663,6 @@ ylabel(ax.DA_MSG,'DA Model prediction (Hz)');
 ax.DA_MSG.XLim(1) = 0;
 ax.DA_MSG.YLim(1) = 0;
 
-
-legend1.Box = 'off';
-legned2.Box = 'off';
-legend3.Box = 'off';
-
-% % now supp figures
-% xlabel(ax.LN_vs_lin_pred,'Projected Stimulus (V)')
-% ylabel(ax.LN_vs_lin_pred,'LN model prediction (Hz)')
-% ax.LN_vs_lin_pred.YLim = [0 100];
-% ax.LN_vs_lin_pred.XLim = [0 6];
-
-% xlabel(ax.DA_vs_lin_pred,'Projected Stimulus (V)')
-% ylabel(ax.DA_vs_lin_pred,'DA model prediction (Hz)')
-% ax.DA_vs_lin_pred.YLim = [0 120];
-% ax.DA_vs_lin_pred.XLim = [0 6];
-
-% xlabel(ax.DA_vs_ORN,'ORN firing rate (Hz)')
-% ylabel(ax.DA_vs_ORN,'DA model prediction (Hz)')
-% ax.DA_vs_ORN.YLim = [0 120];
-% ax.DA_vs_ORN.XLim = [0 120];
-
-% prettyFig(supp_fig,'fs',12,'plw',1,'lw',1.5)
 
 
 if being_published	

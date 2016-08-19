@@ -188,8 +188,8 @@ shrinkDataInPlot(ax(1),5)
 shrinkDataInPlot(ax(3),5)
 
 % move top two rows up a bit
-ax(1).Position(2) = .73;
-ax(2).Position(2) = .73;
+ax(1).Position(2) = .75;
+ax(2).Position(2) = .75;
 ax(3).Position(2) = .44;
 ax(4).Position(2) = .44;
 
@@ -325,7 +325,8 @@ end
 
 prettyFig('plw',2,'lw',2,'fs',.6,'font_units','centimeters','FixLogX',true)
 
-labelFigure;
+labelFigure('font_size',25);
+
 
 for i = 2:length(ax)
 	try

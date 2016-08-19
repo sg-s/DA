@@ -17,7 +17,7 @@ end
 
 % if you change this, you also have to change subplots
 lag_vs_stim_plot = ax(3);
-lag_vs_time_plot = ax(4);
+LFP_firing_lag_plot = ax(4);
 gain_vs_mean_stim_plot = ax(1);
 rho_vs_history_length_plot = ax(2);
 
@@ -39,18 +39,6 @@ gain_vs_mean_stim_plot.Position(2) = .53;
 gain_vs_mean_stim_plot.Position(3) = .4;
 gain_vs_mean_stim_plot.XTick = [];
 gain_vs_mean_stim_plot.YTick = [];
-
-
-
-% supp figure
-supp_fig = figure('outerposition',[0 0 1400 712],'PaperUnits','points','PaperSize',[1400 712]); hold on
-for i = 10:-1:1
-	axs(i) = subplot(2,5,i); hold on
-end
-delete(axs(5)); delete(axs(10));
-axs(5) = []; axs(end) = [];
-
-
 
 
 
@@ -100,63 +88,67 @@ stim_thresh = .035;
 clear l
 
 
-for i = 1:length(od) % first one has stimulus which is too low, different paradigm 
+for i = 1:length(od)
 	textbar(i,length(od))
 	S = nanmean(od(i).stimulus,2); S = S - mean(S(1:5e3));
 	R = nanmean(od(i).firing_rate,2);
 	X = -nanmean(od(i).LFP,2);
 
-	% firing rate ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+	% stim --> firing rate ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 	[lag, ~, max_corr] = findLagAndMeanInWindow(S,R,window_size,5);
 	mean_x = vectorise(computeSmoothedStimulus(S,window_size));
 
-	time_since_thresh_crossing = circshift(findTimeSinceThresholdCrossing(S,stim_thresh),-window_size);
 
 	% first strip out the NaNs
 	rm_this = isnan(lag);
 	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
-	time_since_thresh_crossing(rm_this) = [];
 
 	% then throw out some shitty data
-	rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr | time_since_thresh_crossing < 10 | lag > max_acceptable_lag;
+	rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr | lag > max_acceptable_lag;
 	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
-	time_since_thresh_crossing(rm_this) = [];
 
 	% plot
 	[~,data] = plotPieceWiseLinear(log(mean_x),lag,'nbins',10,'make_plot',false,'proportional_bins',false);
 	plot(lag_vs_stim_plot,exp(data.x),data.y,'Color',firing_color,'LineStyle',l_s{i});
 
-	[~,data] = plotPieceWiseLinear(log(time_since_thresh_crossing),lag,'nbins',nbins,'make_plot',false,'proportional_bins',false);
-	plot(lag_vs_time_plot,exp(data.x),data.y,'Color',firing_color,'LineStyle',l_s{i});
 
- 	% LFP ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 	% stm --> LFP ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 	[lag, ~, max_corr] = findLagAndMeanInWindow(S,X,window_size,5);
 	mean_x = vectorise(computeSmoothedStimulus(S,window_size));
 
-	time_since_thresh_crossing = circshift(findTimeSinceThresholdCrossing(S,stim_thresh),-window_size);
-
 	% first strip out the NaNs
 	rm_this = isnan(lag);
 	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
-	time_since_thresh_crossing(rm_this) = [];
+
 
 	% then throw out some shitty data
-	rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr | lag > max_acceptable_lag;
+	rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr | lag > max_acceptable_lag | mean_x < 1e-3;
 
 	[~,data] = plotPieceWiseLinear(log(mean_x(~rm_this)),lag(~rm_this),'nbins',10,'make_plot',false,'proportional_bins',false);
 	plot(lag_vs_stim_plot,exp(data.x),data.y,'LineStyle',l_s{i},'Color',LFP_color)
 
-	rm_this = lag < min_acceptable_lag | max_corr < min_acceptable_corr | time_since_thresh_crossing < 10 | lag > max_acceptable_lag;
-	[~,data] = plotPieceWiseLinear(log(time_since_thresh_crossing(~rm_this)),lag(~rm_this),'make_plot',false,'nbins',nbins,'proportional_bins',false);
-	rm_this = isnan(data.x);
-	data.x(rm_this) = [];
-	data.y(rm_this) = [];
-	plot(lag_vs_time_plot,exp(data.x),data.y,'LineStyle',l_s{i},'Color',LFP_color)
+
+	% LFP --> fring rate
+
+	[lag, ~, max_corr] = findLagAndMeanInWindow(X,R,window_size,5);
+	mean_x = vectorise(computeSmoothedStimulus(S,window_size));
+	mean_x = mean_x - min(mean_x);
+
+	% first strip out the NaNs
+	rm_this = isnan(lag);
+	lag(rm_this) = []; mean_x(rm_this) = []; max_corr(rm_this) = [];
+
+
+	% then throw out some shitty data
+	rm_this = max_corr < min_acceptable_corr | lag < -max_acceptable_lag | lag > max_acceptable_lag | mean_x < 1e-3;
+
+	[~,data] = plotPieceWiseLinear(log(mean_x(~rm_this)),lag(~rm_this),'nbins',10,'make_plot',false,'proportional_bins',false);
+	plot(LFP_firing_lag_plot,exp(data.x),data.y,'LineStyle',l_s{i},'Color','k')
+
 
 end
-
 
 % labels -- main figure
 xlabel(lag_vs_stim_plot,'\mu_{Stimulus} in preceding 300 ms (V)')
@@ -164,19 +156,11 @@ ylabel(lag_vs_stim_plot,'Lag (ms)')
 set(lag_vs_stim_plot,'YLim',[0 160],'XLim',[1e-3 3],'XScale','log','YScale','linear','XTick',[1e-4 1e-3 1e-2 1e-1 1],'XMinorTick','off')
 
 
-set(lag_vs_time_plot,'YLim',[0 160],'XLim',[10 1e4],'XScale','log')
-xlabel(lag_vs_time_plot,'Time since odor encounter (ms)')
-ylabel(lag_vs_time_plot,'Lag (ms)')
 
+set(LFP_firing_lag_plot,'YLim',[-100 60],'XLim',[1e-3 3],'XScale','log','YScale','linear','XTick',[1e-4 1e-3 1e-2 1e-1 1],'XMinorTick','off')
+xlabel(LFP_firing_lag_plot,'\mu_{Stimulus} in preceding 300 ms (V)')
+ylabel(LFP_firing_lag_plot,'LFP \rightarrow firing lag (ms)')
 
-% labels -- supp. figure
-xlabel(axs(1),'\mu_{Stimulus} in preceding 200ms (V)')
-ylabel(axs(1),'Lag (ms)')
-set(axs(1),'YLim',[0 140],'XLim',[0 0.6])
-
-set(axs(5),'YLim',[0 140],'XLim',[10 5000],'XScale','log')
-xlabel(axs(5),'Time since odor encounter (ms)')
-ylabel(axs(5),'Lag (ms)')
 
 % fake a fake legend for visual niceness
 clear l
@@ -185,13 +169,12 @@ l(2) = plot(lag_vs_stim_plot,NaN,NaN,'Color',firing_color);
 L1 = legend(l,{'LFP','Firing rate'},'Location','southeast');
 
 clear l
-l(1) = plot(lag_vs_time_plot,NaN,NaN,'k-');
-l(2) = plot(lag_vs_time_plot,NaN,NaN,'k--');
+l(1) = plot(LFP_firing_lag_plot,NaN,NaN,'k-');
+l(2) = plot(LFP_firing_lag_plot,NaN,NaN,'k--');
 L2 = legend(l,{'ab2A','ab3A'},'Location','northwest');
 L2.Position = [0.1700 0.4023 0.0800 0.0337];
-uistack(lag_vs_time_plot,'top')
+uistack(LFP_firing_lag_plot,'top')
 
-return
 
 % ########    ###    ##     ##     ######      ###    #### ##    ## 
 %    ##      ## ##   ##     ##    ##    ##    ## ##    ##  ###   ## 
@@ -274,7 +257,7 @@ temp.LineStyle = '--';
 
 
 set(rho_vs_history_length_plot,'XScale','log','YLim',[-1 1],'XTick',[10 1e2 1e3 1e4],'XLim',[10 3e4])
-xlabel(rho_vs_history_length_plot,'Gain control timescale (ms)')
+xlabel(rho_vs_history_length_plot,'History length (ms)')
 ylabel(rho_vs_history_length_plot,['Correlation between' char(10) 'gain and \mu_{stimulus}'])
 
 
@@ -306,309 +289,5 @@ if being_published
 	snapnow
 	delete(gcf)
 end
-
-return
-
-%  ######  ##     ## ########  ########     ######## ####  ######   
-% ##    ## ##     ## ##     ## ##     ##    ##        ##  ##    ##  
-% ##       ##     ## ##     ## ##     ##    ##        ##  ##        
-%  ######  ##     ## ########  ########     ######    ##  ##   #### 
-%       ## ##     ## ##        ##           ##        ##  ##    ##  
-% ##    ## ##     ## ##        ##           ##        ##  ##    ##  
-%  ######   #######  ##        ##           ##       ####  ######   
-   
-
-% make space for the legend 
-for i = [3 4 7 8]
-	movePlot(axs(i),'right',.2)
-end
-
-% ##     ##  ######   ######   
-% ###   ### ##    ## ##    ##  
-% #### #### ##       ##        
-% ## ### ##  ######  ##   #### 
-% ##     ##       ## ##    ##  
-% ##     ## ##    ## ##    ##  
-% ##     ##  ######   ######   
-
-% define what we want to work on
-data_hashes = {'93ba5d68174e3df9f462a1fc48c581da','bcd4cf4fe12817d084a2b06f981161ee','cd6753c0e4cf02895cd5e2c5cb58aa1a','3ea08ccfa892c6545d74bbdaaa6cbee1','a33723c87a1216b274750734b4ee8820'};
-odour_names = {'ethyl-acetate','1-pentanol','1-pentanol','2-butanone','isoamyl-acetate'};
-orn_names = {'ab3A','ab3A','ab2A','ab2A','pb1A'};
-
-markers = {'+','d','o','x','*'};
-% core loop
-for i = 1:length(data_hashes)-1
-	clear cdata
-	cdata = consolidateData2(getPath(dataManager,data_hashes{i}));
-	if i < 4
-		cdata.a = 25e3; cdata.z = 45e3;
-	end
-	cdata = cleanMSGdata(cdata,'extract_filter',false);
-
-	plot_handles = plotMSGKinetics(cdata,axs(2));
-	plot_handles(2).Color = firing_color;
-	plot_handles(1).Color = LFP_color;
-
-	% rescale the x axis
-	temp = plot_handles(1).XData;
-	temp = temp - min(temp);
-	temp = temp/max(temp);
-	plot_handles(1).XData =  temp;
-	temp = plot_handles(2).XData;
-	temp = temp - min(temp);
-	temp = temp/max(temp);
-	plot_handles(2).XData =  temp;
-
-	plot_handles(1).MarkerSize = 10;
-	plot_handles(2).MarkerSize = 10;
-
-	plot_handles(1).Marker = markers{i};
-	plot_handles(2).Marker = markers{i};
-	t = [orn_names{i} char(10) odour_names{i}];
-end
-
-% fake some plots for a nice legend
-clear l L
-for i = 1:length(markers)-1
-	l(i) = plot(axs(2),NaN,NaN,'Marker',markers{i},'Color','k','LineStyle','none');
-	L{i} = [orn_names{i} ' ' odour_names{i}];
-end
-lh1 = legend(l,L,'Location','southeast');
-lh1.Position = [0.43 0.7 0.12 0.1];
-lh1.FontSize = 15;
-
-set(axs(2),'YLim',[0 200],'XLim',[-0.1 1.1])
-xlabel(axs(2),'Mean stimulus (rescaled)')
-
-%  ######     ###    ########  ##        #######  ######## ########    ###    
-% ##    ##   ## ##   ##     ## ##       ##     ##    ##       ##      ## ##   
-% ##        ##   ##  ##     ## ##       ##     ##    ##       ##     ##   ##  
-% ##       ##     ## ########  ##       ##     ##    ##       ##    ##     ## 
-% ##       ######### ##   ##   ##       ##     ##    ##       ##    ######### 
-% ##    ## ##     ## ##    ##  ##       ##     ##    ##       ##    ##     ## 
-%  ######  ##     ## ##     ## ########  #######     ##       ##    ##     ## 
-
-%% Now, show the timescale of gain control using Carlotta's data
-
-%% global parameters
-history_lengths = round(logspace(1.7,4,50)); % all the history lengths we look at, in ms
-example_history_length = 300; % this history length shown in the first row, in ms
-
-% load the data
-if ~exist('orn_data','var')
-	load(dm.getPath('86946ed05ec73186d8371166583141ba'))
-end
-
-do_these = [18 7 8 10 14 17 12];
-odour_names = {'1-pentanol','methyl-butyrate','1-octen-3-ol','diethyl-succinate','ethyl-acetate','2-butanone','isoamyl-acetate'};
-
-c = lines(length(do_these));
-for i = 1:length(do_these)
-	temp = orn_data(do_these(i));
-	pred = nanmean(temp.firing_projected,2); pred = pred(temp.use_this_segment);
-	resp = nanmean(temp.firing_rate,2);  resp = resp(temp.use_this_segment);
-	stim = nanmean(temp.stimulus,2); stim = stim(temp.use_this_segment);
- 	stim = stim/nanmean(stim);
-
-	% find when the valve opens
-	[ons,offs] = findValveWhiffs(temp);
-
-	% plot the gain in each of these windows
-	[gain,gain_err] = findGainInWindows(ons,offs,pred,resp);
-
-	gain = gain/nanmean(gain);
-
-	rm_this = gain<0.4 | gain_err < .8;
-	gain(rm_this) = [];
-	ons(rm_this) = [];
-	offs(rm_this) = [];
-
-	% find the mean stimulus in the preceding X ms in these windows
-	mean_stim = findMeanInWindows(ons,offs,computeSmoothedStimulus(stim,example_history_length));
-
-	% also find rho for various values of the history length and plot it
-	rho = findRhoForHistoryLengths(gain,stim,ons,offs,history_lengths);
-
-	plot(axs(6),history_lengths,rho,'-','Color',c(i,:));
-end
-
-set(axs(6),'XScale','log','YLim',[-1 0],'XTick',[1e1 1e2 1e3 1e4],'XLim',[10 1e4])
-xlabel(axs(6),'Gain control timescale (ms)')
-ylabel(axs(6),['Correlation between' char(10) 'gain and \mu_{stimulus}'])
-
-
-
-% fake some plots for a nice legend
-clear L l
-for i = 1:length(do_these)
-	l(i) = plot(axs(6),NaN,NaN,'Marker','o','MarkerFaceColor',c(i,:),'LineStyle','none');
-	L{i} = [orn_data(do_these(i)).neuron_name ' ' odour_names{i}];
-end
-lh2 = legend(l,L,'Location','southeast');
-lh2.Position = [0.43 0.15 0.15 0.2];
-lh2.FontSize = 15;
-
-
-% ########  ######## ########  ##       ####  ######     ###    ######## ########  ######  
-% ##     ## ##       ##     ## ##        ##  ##    ##   ## ##      ##    ##       ##    ## 
-% ##     ## ##       ##     ## ##        ##  ##        ##   ##     ##    ##       ##       
-% ########  ######   ########  ##        ##  ##       ##     ##    ##    ######    ######  
-% ##   ##   ##       ##        ##        ##  ##       #########    ##    ##             ## 
-% ##    ##  ##       ##        ##        ##  ##    ## ##     ##    ##    ##       ##    ## 
-% ##     ## ######## ##        ######## ####  ######  ##     ##    ##    ########  ######  
-
-
-do_these = [7 9 13 15 16];
-c = lines(length(do_these));
-clear l
-for i = 1:length(do_these)
-	temp = orn_data(do_these(i));
-	pred = nanmean(temp.firing_projected,2); pred = pred(temp.use_this_segment);
-	resp = nanmean(temp.firing_rate,2);  resp = resp(temp.use_this_segment);
-	stim = nanmean(temp.stimulus,2); stim = stim(temp.use_this_segment);
- 	stim = stim/nanmean(stim);
-
-	% find when the valve opens
-	[ons,offs] = findValveWhiffs(temp);
-
-	% plot the gain in each of these windows
-	[gain,gain_err] = findGainInWindows(ons,offs,pred,resp);
-
-	gain = gain/nanmean(gain);
-
-	rm_this = gain<0.4 | gain_err < .8;
-	gain(rm_this) = [];
-	ons(rm_this) = [];
-	offs(rm_this) = [];
-
-	% find the mean stimulus in the preceding X ms in these windows
-	mean_stim = findMeanInWindows(ons,offs,computeSmoothedStimulus(stim,example_history_length));
-
-	% % plot the gain vs. the mean stim after sorting it
-	[mean_stim,idx] = sort(mean_stim);
-	plot(axs(3),mean_stim,gain(idx),'+-','Color',c(i,:));
-
-	% also find rho for various values of the history length and plot it
-	rho = findRhoForHistoryLengths(gain,stim,ons,offs,history_lengths);
-
-	plot(axs(7),history_lengths,rho,'.-','Color',c(i,:))
-end
-
-set(axs(7),'XScale','log','YLim',[-1 0],'XTick',[10 100 1e3 1e4])
-set(axs(3),'XScale','log','YScale','log','XLim',[.1 2],'YLim',[.1 10])
-xlabel(axs(3),['\mu_{Stimulus} in preceding ' oval(example_history_length) 'ms (norm)'])
-ylabel(axs(3),'Gain (norm)')
-xlabel(axs(7),'Gain control timescale (ms)')
-ylabel(axs(7),['Correlation between' char(10) 'gain and \mu_{stimulus}'])
-title(axs(3),['ab3A ORN,' char(10) ' methyl butyrate odorant'])
-
-% fake some plots for a nice legend
-clear l
-for i = 1:length(c)
-	l(i) = plot(axs(3),NaN,NaN,'Marker','o','MarkerFaceColor',c(i,:),'LineStyle','none','MarkerEdgeColor',c(i,:));
-end
-lh3 = legend(l,{'5/28','6/05','6/12','6/19','6/19'},'Location','southwest');
-
-
-
-%  ######  #### ##     ## ##     ## ##          ###    ######## ####  #######  ##    ##  ######  
-% ##    ##  ##  ###   ### ##     ## ##         ## ##      ##     ##  ##     ## ###   ## ##    ## 
-% ##        ##  #### #### ##     ## ##        ##   ##     ##     ##  ##     ## ####  ## ##       
-%  ######   ##  ## ### ## ##     ## ##       ##     ##    ##     ##  ##     ## ## ## ##  ######  
-%       ##  ##  ##     ## ##     ## ##       #########    ##     ##  ##     ## ##  ####       ## 
-% ##    ##  ##  ##     ## ##     ## ##       ##     ##    ##     ##  ##     ## ##   ### ##    ## 
-%  ######  #### ##     ##  #######  ######## ##     ##    ##    ####  #######  ##    ##  ######  
-
-% first, fit a DA model to the methyl butyrate ab3A data
-clear p
-p.   s0 = -0.0011;
-p.  n_z = 2;
-p.tau_z = 50; % rounded off
-p.  n_y = 2;
-p.tau_y = 15.4531;
-p.    C = 0.0126;
-p.    A = 2.5013e+04;
-p.    B = 384.5000;
-
-% generate synthetic data responses and do the analyses on that
-
-% tweak the model's tau_gain
-tau_gain = [50 100 200 400];
-stim = mean(orn_data(16).stimulus,2);
-stim = stim(30e3:end);
-stim = stim/nanmean(stim);
-
-
-c = parula(length(tau_gain)+1);
-clear l
-for i = 1:length(tau_gain)
-	p.tau_z = tau_gain(i);
-
-	% generate responses
-	resp = DAModelv2(stim,p);
-
-	% fit a filter to this
-	K = fitFilter2Data(stim,resp,'filter_length',1e3,'offset',200);
-	K = K(100:end-100);
-	filtertime = (1:length(K)) - 100;
-	pred = convolve(1:length(stim),stim,K,filtertime);
-
-
-	% plot the gain in each of these windows
-	[gain,gain_err] = findGainInWindows(ons,offs,pred,resp);
-
-	gain = gain/nanmean(gain);
-
-	rm_this = gain<0.4 | gain_err < .8;
-	gain(rm_this) = [];
-	ons(rm_this) = [];
-	offs(rm_this) = [];
-
-	% find the mean stimulus in the preceding X ms in these windows
-	mean_stim = findMeanInWindows(ons,offs,computeSmoothedStimulus(stim,example_history_length));
-
-	% % plot the gain vs. the mean stim after sorting it
-	[mean_stim,idx] = sort(mean_stim);
-	l(i) = plot(axs(4),mean_stim,gain(idx),'+-','Color',c(i,:));
-
-	% also find rho for various values of the history length and plot it
-	rho = findRhoForHistoryLengths(gain,stim,ons,offs,history_lengths);
-
-	plot(axs(8),history_lengths,rho,'.-','Color',c(i,:))
-end
-set(axs(8),'XScale','log','YLim',[-1 0],'XTick',[10 100 1e3 1e4])
-set(axs(4),'XScale','log','YScale','log','XLim',[.1 2],'YLim',[.05 10])
-title(axs(4),['Simulations with ' char(10) 'varying \tau_{gain}'])
-xlabel(axs(4),'\mu_{Stimulus} in preceding 300ms (V)')
-
-clear l L
-for i = 1:length(tau_gain)
-	l(i) = plot(axs(4),NaN,NaN,'Marker','o','MarkerFaceColor',c(i,:),'LineStyle','none','MarkerEdgeColor',c(i,:));
-	L{i} = ['\tau_{gain} = ' oval(4*tau_gain(i)) 'ms'];
-end 
-lh4 = legend(l,L);
-lh4.Position = [0.855   0.62    0.035    0.08];
-xlabel(axs(8),'Gain control timescale (ms)')
-
-prettyFig(supp_fig,'fs',14);
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-% move some plots
-axs(4).Position(1) = .82;
-axs(8).Position(1) = .82;
-
-axs(1).Position(1) = .12;
-axs(5).Position(1) = .12;
-
-%% Version Info
-%
-pFooter;
-
-
 
 

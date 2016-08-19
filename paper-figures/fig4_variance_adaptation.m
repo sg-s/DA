@@ -193,16 +193,18 @@ hi_gain2(hi_gain2==0) = NaN;
 time = 1e-3*(1:length(reshaped_PID));
 s = .5; % shading opacity
 
-figure('PaperUnits','centimeters','PaperSize',[20 18],'Position',[100 100 888 800]); hold on
+figure('PaperUnits','centimeters','Position',[100 100 1200 800]); hold on
 clear ax
-ax(1) = subplot(3,10,1:7);
-ax(2) = subplot(3,10,8:10);
-ax(3) = subplot(3,10,11:17);
-ax(4) = subplot(3,10,18:20);
+ax(1) = subplot(3,4,1:3);
+ax(2) = subplot(3,4,4);
+ax(3) = subplot(3,4,5:7);
+ax(4) = subplot(3,4,8);
 
-ax(5) = subplot(3,3,7); 
-ax(6) = subplot(3,3,8);
-ax(7) = subplot(3,3,9);
+ax(5) = subplot(3,4,9); 
+ax(6) = subplot(3,4,10);
+ax(7) = subplot(3,4,11);
+ax(8) = subplot(3,4,12);
+
 for i = 1:length(ax)
 	hold(ax(i),'on');
 end  
@@ -313,17 +315,6 @@ plot(ax(6),x,lo_gain2,'b+')
 xlabel(ax(6),'\sigma_{Stimulus} (V)')
 ylabel(ax(6),'ab3A ORN gain (Hz/V)')
 
-% % can we fit this with 1/x?
-% x = [std(reshaped_PID(1e3:4e3,:)) std(reshaped_PID(6e3:9e3,:))]; x = x(:);
-% y = [hi_gain; lo_gain];
-% rm_this = isnan(y) | isnan(x);
-% x(rm_this) = []; y(rm_this) = [];
-% options = fitoptions(fittype('power1'));
-% options.Lower = [-Inf -1];
-% options.Upper = [Inf -1];
-% ff = fit(x(:),y(:),'power1',options);
-% plot(ax(6),sort(x),ff(sort(x)),'k')
-
 % create  some phantom plots for a nice legend
 clear l
 l(1) = plot(ax(5),NaN,NaN,'k--');
@@ -356,7 +347,7 @@ for i = 1:width(reshaped_PID)
 	laughlin_lo_gain(i) = ff.p1;
 end
 
-% remove some edge cases
+% remove some junk
 laughlin_lo_gain(laughlin_lo_gain == 0) = NaN;
 laughlin_hi_gain(laughlin_hi_gain == 0) = NaN;
 
@@ -368,12 +359,34 @@ xlabel(ax(7),'c.d.f slope (a.u.)')
 l = plot(ax(7),NaN,NaN,'k+');
 lh = legend(l,['r^2 = ' oval(r2)]);
 lh.Location = 'southeast';
+lh.Position = [0.6050    0.14    0.08    0.0250];
+
+% gain as a function of time
+
+X = fA_pred;
+Y = reshaped_fA;
+S = reshaped_PID;
+S(1:1e3,:) = NaN;
+X(1:1e3,:) = NaN;
+Y(1:1e3,:) = NaN;
+[gain,gain_r2,sc] = findEnsembleGain(X,Y,S,'step_size',10);
+
+[axyy,h1,h2] = plotyy(ax(8),time,gain,time,sc);
+set(h1,'Marker','+','LineStyle','none')
+set(h2,'Marker','o','LineStyle','none')
+xlabel(axyy(1),'Time since switch (s)')
+ylabel(axyy(1),'Instantaneous gain (Hz/V)')
+ylabel(axyy(2),'Stimulus contrast')
+axyy(2).YDir = 'reverse';
+axyy(1).Box = 'off';
+set(axyy,'XLim',[4.5 6])
+
 
 % cosmetics
 ax(1).Position(3) = .53;
 ax(3).Position(3) = .53;
-set(ax(2),'YTick',[],'YLim',ax(1).YLim)
-set(ax(4),'YTick',[],'YLim',ax(3).YLim)
+set(ax(2),'YLim',ax(1).YLim)
+set(ax(4),'YLim',ax(3).YLim)
 
 xlabel(ax(5),['Projected stimulus/' char(10) 'mean stimulus (a.u.)'])
 ylabel(ax(5),'ab3A firing rate (norm)')
@@ -382,7 +395,7 @@ ax(6).XLim = [0 .22];
 
 prettyFig('fs',.5,'lw',1.5,'font_units','centimeters')
 
-labelFigure;
+labelFigure('x_offset',-.025)
 
 ax(5).XLim(1) = 0;
 ax(5).YLim(1) = 0;
@@ -391,6 +404,9 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+return
+
 %  ######  ##     ## ########  ########         ######## ####  ######       
 % ##    ## ##     ## ##     ## ##     ##        ##        ##  ##    ##      
 % ##       ##     ## ##     ## ##     ##        ##        ##  ##            
@@ -402,28 +418,28 @@ end
 %% Supplementary Figure
 % 
 
-X = fA_pred;
-Y = reshaped_fA;
-S = reshaped_PID;
-S(1:1e3,:) = NaN;
-X(1:1e3,:) = NaN;
-Y(1:1e3,:) = NaN;
-if ~exist('sc','var')
-	[gain,gain_r2,sc] = findEnsembleGain(X,Y,S,'step_size',10);
+figure('outerposition',[0 0 1101 700],'PaperUnits','points','PaperSize',[1101 700]); hold on
+clear ax
+for i = 1:6
+	ax(i) = subplot(2,3,i); hold on
 end
+% first do variance switching data...
 
+% 1. mean vs. sigma of the stimulus showing small change in mean ~~~~~~~~~~~~~~~~~~~~~~~~
+plot(ax(4),std(reshaped_PID(1e3:4e3,:)),mean(reshaped_PID(1e3:4e3,:)),'r+');
+plot(ax(4),std(reshaped_PID(6e3:9e3,:)),mean(reshaped_PID(6e3:9e3,:)),'b+');
+set(ax(4),'XLim',[0 .21],'YLim',[0 .6])
+xlabel(ax(4),'\sigma_{Stimulus} (V)')
+ylabel(ax(4),'\mu_{Stimulus} (V)')
 
-figure('outerposition',[0 0 1201 800],'PaperUnits','points','PaperSize',[1201 800]); hold on
-
-% 1. uncorrected I/O curves ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-subplot(2,3,2); hold on
+% 2. uncorrected I/O curves ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 % high contrast
 x = fA_pred(1e3:5e3,:);
 y = reshaped_fA(1e3:5e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)) | max(y) < 40 | min(y) > 10);
 x(:,rm_this) = []; y(:,rm_this) = []; 
 [~,data_hi] = plotPieceWiseLinear(x,y,'nbins',50,'make_plot',false);
-plot(data_hi.x,data_hi.y,'r')
+plot(ax(5),data_hi.x,data_hi.y,'r')
 
 % low contrast
 x = fA_pred(6e3:9e3,:);
@@ -431,22 +447,71 @@ y = reshaped_fA(6e3:9e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)) | max(y) < 40 | min(y) > 10);
 x(:,rm_this) = []; y(:,rm_this) = [];
 [~,data_lo] = plotPieceWiseLinear(x,y,'nbins',50,'make_plot',false);
-plot(data_lo.x,data_lo.y,'b')
-xlabel('Projected stimulus')
-ylabel('ab3A firing rate (Hz)')
-set(gca,'XLim',[0 1.4],'YLim',[0 60])
+plot(ax(5),data_lo.x,data_lo.y,'b')
+xlabel(ax(5),'Projected stimulus')
+ylabel(ax(5),'ab3A firing rate (Hz)')
+set(ax(5),'XLim',[0 1.4],'YLim',[0 60])
 
-% 2. uncorrected gain vs. sigma stim ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-subplot(2,3,5); hold on
+% 3. uncorrected gain vs. sigma stim ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 lo_gain(lo_gain==0) = NaN;
 hi_gain(hi_gain==0) = NaN;
 x = std(reshaped_PID(1e3:4e3,:));
 plot(x,hi_gain,'r+')
 x = std(reshaped_PID(6e3:9e3,:));
-plot(x,lo_gain,'b+')
-xlabel('\sigma_{Stimulus} (V)')
-ylabel('ab3A ORN gain (Hz/V)')
-set(gca,'XLim',[0 .25],'YLim',[0 150])
+plot(ax(6),x,lo_gain,'b+')
+xlabel(ax(6),'\sigma_{Stimulus} (V)')
+ylabel(ax(6),'ab3A ORN gain (Hz/V)')
+set(ax(6),'XLim',[0 .25],'YLim',[0 150])
+
+% now do nat. stim, and for that, load the data
+load('nat_stim_stats')
+load('nat_stim_data')
+
+% 4. mu vs. sigma for nat. stim
+plot(ax(1),nat_stim_stats.sigma,nat_stim_stats.mu,'.','Color',[.5 .5 .5])
+ylabel(ax(1),'\mu_{stimulus} (V)')
+xlabel(ax(1),'\sigma_{stimulus} (V)')
+set(ax(1),'YScale','log','XScale','log','XLim',[1e-3 1e1],'XTick',[1e-3 1e-2 1e-1 1e0 1e1],'YLim',[1e-3 1e1],'YTick',[1e-3 1e-2 1e-1 1 10])
+plot(ax(1),[1e-3 10],[1e-3 10],'k--')
+
+% 5. show the rsquare of the mean and variance as a function of box size
+plot(ax(2),nat_stim_stats.all_block_sizes,nat_stim_stats.r2,'k+')
+set(ax(2),'XScale','log','XTick',[1 1e1 1e2 1e3 1e4],'XLim',[1 1.1e4])
+xlabel(ax(2),'Window length (ms)')
+ylabel(ax(2),'r^2 (\mu, \sigma)')
+
+% 6. gain as function of the std. dev. in the naturalistic stimulus
+% plot whiff gain vs. std. dev. stimulus preceding whiff
+l(1) = plot(ax(3),ab3.std_stim,ab3.gain,'k+');
+l(2) = plot(ax(3),ab2.std_stim,ab2.gain,'ko');
+set(ax(3),'XScale','log','YScale','log')
+legend2 = legend(l,{'ab3A','ab2A'},'Location','southwest');
+history_length = 300;
+xlabel(ax(3),['\sigma_{Stimulus} in preceding ' oval(history_length) 'ms (V)'])
+ylabel(ax(3),'ORN gain (Hz/V) ')
+
+% fit a inverse relationship to all the data
+options = fitoptions(fittype('power1'));
+options.Lower = [-Inf -1];
+options.Upper = [Inf -1];
+ff = fit([ab2.std_stim; ab3.std_stim],[ab2.gain; ab3.gain],'power1',options);
+ff.a = 10;
+plot(ax(3),sort([ab2.std_stim; ab3.std_stim]),ff(sort([ab2.std_stim; ab3.std_stim])),'r');
+
+prettyFig('fs',.5,'lw',2,'font_units','centimeters','FixLogX',true,'FixLogY',true)
+labelFigure('font_size',25)
+
+for i = 1:3
+	deintersectAxes(ax(i))
+end
+
+
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 % % 3. gain as ratio of std. devs. -- no correction for mean ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 % subplot(2,3,3), hold on
@@ -463,13 +528,7 @@ set(gca,'XLim',[0 .25],'YLim',[0 150])
 % set(gca,'XLim',[0 .22],'YLim',[0 300])
 
 
-% 4. mean vs. sigma of the stimulus showing small change in mean ~~~~~~~~~~~~~~~~~~~~~~~~
-subplot(2,3,1), hold on
-plot(std(reshaped_PID(1e3:4e3,:)),mean(reshaped_PID(1e3:4e3,:)),'r+');
-plot(std(reshaped_PID(6e3:9e3,:)),mean(reshaped_PID(6e3:9e3,:)),'b+');
-set(gca,'XLim',[0 .21],'YLim',[0 .6])
-xlabel('\sigma_{Stimulus} (V)')
-ylabel('\mu_{Stimulus} (V)')
+
 
 
 
@@ -489,47 +548,29 @@ ylabel('\mu_{Stimulus} (V)')
 % xlabel(gca,'\sigma_{Stimulus} (V)')
 % set(gca,'XLim',[0 .22],'YLim',[0 150])
 
-% 6. this plot compares the Laughlin predicted gains in the two cases ~~~~~~~~~~~~~~~~~~~
-subplot(2,3,4), hold on
-x = std(reshaped_PID(1e3:4e3,:));
-plot(x,laughlin_hi_gain,'r+')
-x = std(reshaped_PID(6e3:9e3,:));
-plot(x,laughlin_lo_gain,'b+')
-ylabel(gca,'c.d.f slope (a.u.)')
-xlabel(gca,'\sigma_{Stimulus} (V)')
-set(gca,'XLim',[0 .22])
+% % 6. this plot compares the Laughlin predicted gains in the two cases ~~~~~~~~~~~~~~~~~~~
+% subplot(2,3,4), hold on
+% x = std(reshaped_PID(1e3:4e3,:));
+% plot(x,laughlin_hi_gain,'r+')
+% x = std(reshaped_PID(6e3:9e3,:));
+% plot(x,laughlin_lo_gain,'b+')
+% ylabel(gca,'c.d.f slope (a.u.)')
+% xlabel(gca,'\sigma_{Stimulus} (V)')
+% set(gca,'XLim',[0 .22])
 
 
-% show r^2 of gain estimates as a function of time 
-subplot(2,3,3); hold on
-cla
-plot(time,gain_r2,'+','Color',[.4 .4 .4])
-set(gca,'YLim',[0 1],'XLim',[0 10])
-xlabel('Time since switch (s)')
-ylabel('r^2 (Proj. Stim., Response)')
-plot([0 10],[.8 .8],'k--')
+% % show r^2 of gain estimates as a function of time 
+% subplot(2,3,3); hold on
+% cla
+% plot(time,gain_r2,'+','Color',[.4 .4 .4])
+% set(gca,'YLim',[0 1],'XLim',[0 10])
+% xlabel('Time since switch (s)')
+% ylabel('r^2 (Proj. Stim., Response)')
+% plot([0 10],[.8 .8],'k--')
 
-% show gain as a function of time 
-subplot(2,3,6); hold on
-cla
-[ax,h1,h2] = plotyy(time,gain,time,sc);
-set(h1,'Marker','+','LineStyle','none')
-set(h2,'Marker','o','LineStyle','none')
-xlabel(ax(1),'Time since switch (s)')
-ylabel(ax(1),'Instantaneous gain (Hz/V)')
-ylabel(ax(2),'Stimulus contrast')
-ax(2).YDir = 'reverse';
-ax(1).Box = 'off';
-set(ax,'XLim',[4.5 6])
 
-prettyFig('fs',.7,'lw',2,'font_units','centimeters')
 
-labelFigure('column_first',true)
 
-if being_published
-	snapnow
-	delete(gcf)
-end
 
 % ########  ##    ## ##    ##    ###    ##     ## ####  ######   ######      #######  ######## 
 % ##     ##  ##  ##  ###   ##   ## ##   ###   ###  ##  ##    ## ##    ##    ##     ## ##       

@@ -21,28 +21,16 @@ clearvars -except being_published dm history_length
 scatter_size = 12;
 
 % make figure placeholders 
-fig_handle = figure('PaperUnits','centimeters','PaperSize',[20 12],'Position',[100 100 1200 720],'toolbar','figure'); hold on
+fig_handle = figure('PaperUnits','centimeters','PaperSize',[14 14],'Position',[100 100 800 801],'toolbar','figure'); hold on
 clf(fig_handle);
 
-axes_handles(3) = subplot(7,4,[2 3 4 6 7 8]); % stimulus 
-axes_handles(4) = subplot(7,4,[10 11 12 14 15 16]); % response + linear prediction 
-axes_handles(5) = subplot(7,4,[9 13]);  % linear filter
+clear ax
+ax.stim = subplot(3,3,1:3); hold on
+ax.resp = subplot(3,3,4:6); hold on
+ax.L = subplot(3,3,7); hold on
+ax.N = subplot(3,3,8); hold on
+ax.gain = subplot(3,3,9); hold on
 
-axes_handles(6) = subplot(7,4,[17:4:25]);
-axes_handles(7) = subplot(7,4,1+[17:4:25]);
-axes_handles(8) = subplot(7,4,2+[17:4:25]);
-axes_handles(9) = subplot(7,4,3+[17:4:25]);
-
-for i = 3:length(axes_handles)
-	hold(axes_handles(i),'on');
-end
-
-% axes_handles(2).Position  = [0.1300    0.4738    0.12    0.34];
-% axes(axes_handles(2));
-% imagesc(imread('../images/fig-1-cartoon.png'));
-% axis ij
-% axis image
-% axis off
 
 % first, grab the ab3 and ab2 data
 
@@ -239,21 +227,21 @@ clear ff gain gain_err Kdiff mean_stim rm_this shat_mean shat_std std_stim temp 
 % ##     ## ##     ## ##    ## ########    ##        ########  #######     ##    
 
 % plot the stimulus
-plot(axes_handles(3),tA(1:10:end),mean(ab3.PID(1:10:end,:),2),'Color',[0.2 .2 .2]);
-set(axes_handles(3),'XLim',[0 70],'YLim',[0 7],'XTick',[])
+plot(ax.stim,tA(1:10:end),mean(ab3.PID(1:10:end,:),2),'Color',[0.2 .2 .2]);
+set(ax.stim,'XLim',[0 70],'YLim',[0 7],'XTick',[])
 
 % show the filter
-plot(axes_handles(5),filtertime,1e3*ab3.K,'r');
+plot(ax.L,filtertime,1e3*ab3.K,'r');
 
 % plot the response and the prediction
 clear l
-[ax,plot1,plot2] = plotyy(axes_handles(4),tA,mean(ab3.fA,2),tA,ab3.fp);
-set(ax(1),'XLim',[0 70],'YLim',[0 150],'YColor','k')
-set(ax(2),'XLim',[0 70],'YLim',[0 6],'YColor','r','YTick',[0 2 4 6])
+[axyy,plot1,plot2] = plotyy(ax.resp,tA,mean(ab3.fA,2),tA,ab3.fp);
+set(axyy(1),'XLim',[0 70],'YLim',[0 150],'YColor','k')
+set(axyy(2),'XLim',[0 70],'YLim',[0 6],'YColor','r','YTick',[0 2 4 6])
 set(plot1,'Color','k')
 set(plot2,'Color','r')
 
-set(axes_handles(4),'box','off')
+set(ax.resp,'box','off')
 
 shat = computeSmoothedStimulus(mean(ab3.PID,2),history_length);
 shat = shat-min(shat);
@@ -262,7 +250,7 @@ shat = 1+ceil(shat*99);
 shat(isnan(shat)) = 1;
 
 % make the output analysis plot
-axes(axes_handles(6))
+axes(ax.N)
 cc = parula(100);
 c = cc(shat,:);
 ab3.c = c;
@@ -270,15 +258,15 @@ scatter(ab3.fp,mean(ab3.fA,2),scatter_size,c,'filled')
 
 shat = computeSmoothedStimulus(mean(ab3.PID,2),history_length);
 ch = colorbar('east');
-set(ch,'Position',[0.2582    0.1462    0.0115    0.1358])
+ch.Position = [0.582    0.14    0.01    0.06];
 caxis([min(shat) max(shat)]);
 
 
 % plot whiff gain vs. mean stimulus preceding whiff
-l(1) = plot(axes_handles(7),ab3.mean_stim,ab3.gain,'k+');
-l(2) = plot(axes_handles(7),ab2.mean_stim,ab2.gain,'ko');
+l(1) = plot(ax.gain,ab3.mean_stim,ab3.gain,'k+');
+l(2) = plot(ax.gain,ab2.mean_stim,ab2.gain,'ko');
 legend1 = legend(l,{'ab3A','ab2A'},'Location','southwest');
-set(axes_handles(7),'XScale','log','YScale','log')
+set(ax.gain,'XScale','log','YScale','log')
 
 % fit a inverse relationship to all the data
 options = fitoptions(fittype('power1'));
@@ -286,21 +274,8 @@ options.Lower = [-Inf -1];
 options.Upper = [Inf -1];
 options.Weights = 1./[ab2.gain_err; ab3.gain_err];
 ff = fit([ab2.mean_stim; ab3.mean_stim],[ab2.gain; ab3.gain],'power1',options);
-plot(axes_handles(7),sort([ab2.mean_stim; ab3.mean_stim]),ff(sort([ab2.mean_stim; ab3.mean_stim])),'r');
+plot(ax.gain,sort([ab2.mean_stim; ab3.mean_stim]),ff(sort([ab2.mean_stim; ab3.mean_stim])),'r');
 
-% plot whiff gain vs. std. dev. stimulus preceding whiff
-l(1) = plot(axes_handles(8),ab3.std_stim,ab3.gain,'k+');
-l(2) = plot(axes_handles(8),ab2.std_stim,ab2.gain,'ko');
-set(axes_handles(8),'XScale','log','YScale','log')
-legend2 = legend(l,{'ab3A','ab2A'},'Location','southwest');
-
-% fit a inverse relationship to all the data
-options = fitoptions(fittype('power1'));
-options.Lower = [-Inf -1];
-options.Upper = [Inf -1];
-ff = fit([ab2.std_stim; ab3.std_stim],[ab2.gain; ab3.gain],'power1',options);
-ff.a = 10;
-plot(axes_handles(8),sort([ab2.std_stim; ab3.std_stim]),ff(sort([ab2.std_stim; ab3.std_stim])),'r');
 
 % now show that the variance and the mean are correlated 
 all_block_sizes = factor2(length(ab3.PID));
@@ -310,109 +285,70 @@ clear l r2
 all_block_sizes = unique([all_block_sizes history_length]);
 r2 = NaN*all_block_sizes;
 
+% save this data for later
+nat_stim_stats.all_block_sizes = all_block_sizes;
+
 for i = 1:length(all_block_sizes)
 	temp = ab3.PID(:);
 	temp = reshape(temp,all_block_sizes(i),length(temp)/all_block_sizes(i));
 	if all_block_sizes(i) == history_length
-		plot(axes_handles(9),mean(temp),std(temp),'Marker','.','Color',[.5 .5 .5],'LineStyle','none')
+		nat_stim_stats.history_length = history_length;
+		nat_stim_stats.mu = mean(temp);
+		nat_stim_stats.sigma = std(temp);
+		% plot(axes_handles(9),mean(temp),std(temp),'Marker','.','Color',[.5 .5 .5],'LineStyle','none')
 	end
 	r2(i) = rsquare(mean(temp),std(temp));
 end
-plot(axes_handles(9),[1e-3 2],[1e-3 2],'k--')
+nat_stim_stats.r2 = r2;
 
 % label all the axes, set the scales, etc.
 
-ylabel(ax(1),'ab3A firing rate (Hz)')
-ylabel(ax(2),'Projected stimulus (V)')
+ylabel(axyy(1),'ab3A firing rate (Hz)')
+ylabel(axyy(2),'Projected stimulus (V)')
+ylabel(ax.stim,'Stimulus (V)')
+xlabel(ax.resp,'Time (s)')
+xlabel(ax.N,'Projected stimulus (V)')
+ylabel(ax.N,'ab3A firing rate (Hz)')
+set(ax.N,'XLim',[-.1 5.1],'YColor','k','XColor','r','box','off')
+xlabel(ax.gain,['\mu_{Stimulus} in preceding ' oval(history_length) 'ms (V)'])
+ylabel(ax.gain,'ORN gain (Hz/V)')
+set(ax.gain,'YLim',[10 1e4],'YScale','log','XScale','log','XLim',[.001 10],'XTick',[.001 .01 .1 1 10])
+xlabel(ax.L,'Filter lag (s)')
+ylabel(ax.L,'Filter (a.u.)')
+set(ax.N,'box','off','XTick',[0 2 4 6],'box','off')
+set(ax.L,'XLim',[-.2 1])
 
-ylabel(axes_handles(3),'Stimulus (V)')
 
-xlabel(axes_handles(4),'Time (s)')
-
-
-xlabel(axes_handles(6),'Projected stimulus (V)')
-ylabel(axes_handles(6),'ab3A firing rate (Hz)')
-set(axes_handles(6),'XLim',[-.1 5.1],'YColor','k','XColor','r','box','off')
-
-
-
-xlabel(axes_handles(7),['\mu_{Stimulus} in preceding ' oval(history_length) 'ms (V)'])
-ylabel(axes_handles(7),'ORN gain (Hz/V)')
-set(axes_handles(7),'YLim',[10 1e4],'YScale','log','XScale','log','XLim',[.001 10],'XTick',[.001 .01 .1 1 10])
-
-xlabel(axes_handles(8),['\sigma_{Stimulus} in preceding ' oval(history_length) 'ms (V)'])
-set(axes_handles(8),'XTick',[1e-4 1e-3 1e-2 1e-1 1 10],'XScale','log','YScale','log','XLim',[1e-3 10],'YLim',[10 1e4])
-
-% shrink the bottom row a little bit
-for i = 6:9
-	temp = get(axes_handles(i),'Position');
-	temp(4) = .27;
-	set(axes_handles(i),'Position',temp);
-end
-
-% fix position of some plots
-axes_handles(5).Position(1) = .1;
-xlabel(axes_handles(5),'Filter lag (s)')
-ylabel(axes_handles(5),'Filter (a.u.)')
-
-set(axes_handles(6),'box','off')
-axes_handles(6).Position(1) = .1;
-axes_handles(9).Position(1) = .8;
-axes_handles(8).Position(1) = .57;
-axes_handles(7).Position(1) = .35;
-
-set(axes_handles(6),'XTick',[0 2 4 6],'box','off')
-
-xlabel(axes_handles(9),'\mu_{stimulus} (V)')
-ylabel(axes_handles(9),'\sigma_{stimulus} (V)')
-set(axes_handles(9),'YScale','log','XScale','log','XLim',[1e-3 1e1],'XTick',[1e-3 1e-2 1e-1 1e0 1e1],'YLim',[1e-3 1e1],'YTick',[1e-3 1e-2 1e-1 1 10])
-
-% add some annotation
-% a(1) = annotation('arrow','Position',[0.6194 0.5532 0.0090 -0.0285]);
-% a(2) = annotation('arrow','Position',[0.6278 0.6237 0.0090 -0.0255]);
-
-% add insets showing gain control
-% inset(1) = axes('Position',[0.6774 0.7907 0.1012 0.1040]); hold on
-% inset(2) = axes('Position',[0.6774 0.56 0.1012 0.1040]); hold on
-% S = mean(ab3.PID,2);
-% R = mean(ab3.fA,2);
-% t = 1e-3*(1:1000)-.8;
-% plot(inset(1),t,S(6042-800:6042+199))
-% plot(inset(1),t,S(24990-800:24990+199))
-% plot(inset(2),t,R(6042-800:6042+199))
-% plot(inset(2),t,R(24990-800:24990+199))
+% fix position of top two rows
+ax.resp.Position = [0.1300    0.4096    0.7750    0.19];
+ax.stim.Position = [0.1300    0.64    0.7750    0.19];
 
 
 
 prettyFig('plw',1.5,'lw',1.5,'fs',.5,'FixLogX',true,'font_units','centimeters','x_minor_ticks',false,'y_minor_ticks',false)
 
 % add some labels
-[~,lh]= labelFigure;
-lh(2).Position(2) = .67;
-lh(3).Position(2) = .67;
-
+labelFigure;
 
 % compress some plots to make small EPS files
-shrinkDataInPlot(axes_handles(3),1);
-shrinkDataInPlot(axes_handles(4),2);
-shrinkDataInPlot(ax(2),1);
-shrinkDataInPlot(axes_handles(5),2)
-shrinkDataInPlot(axes_handles(6),1)
+shrinkDataInPlot(ax.stim,1);
+shrinkDataInPlot(ax.resp,2);
+shrinkDataInPlot(axyy(2),2);
+shrinkDataInPlot(ax.L,2)
+shrinkDataInPlot(ax.N,1)
 
-axes_handles(9).XLim(2) = 11;
-deintersectAxes(axes_handles(9))
-
-axes_handles(8).XLim(2) = 11;
-deintersectAxes(axes_handles(8))
-
-axes_handles(7).XLim(2) = 11;
-deintersectAxes(axes_handles(7))
-deintersectAxes(axes_handles(5))
+ax.gain.XLim(2) = 11;
+deintersectAxes(ax.gain)
+deintersectAxes(ax.L)
 
 if being_published
 	snapnow
 	delete(gcf)
 end
+
+% save some stuff for later
+save('nat_stim_stats','nat_stim_stats')
+save('nat_stim_data','ab3','ab2')
 
 
 %      ######  ##     ## ########  ########     ######## ####  ######   
@@ -428,25 +364,17 @@ end
 % This figure shows some statistics of the stimulus. 
 
 
+
 clear ax
-figure('PaperUnits','centimeters','PaperSize',[20 5],'Position',[100 100 1300 300],'toolbar','none'); hold on
+figure('PaperUnits','centimeters','PaperSize',[15 5],'Position',[100 100 1500 400],'toolbar','none'); hold on
 
-% show the rsquare of the mean and variance as a function of box size
-ax(1) = subplot(1,4,1); hold on
-for i = 1:length(all_block_sizes)
-	plot(ax(1),all_block_sizes(i),r2(i),'k+')
-end
-set(ax(1),'XScale','log','XTick',[1 1e1 1e2 1e3 1e4],'XLim',[1 1.1e4])
-xlabel(ax(1),'Window length (ms)')
-ylabel(ax(1),'r^2 (\mu, \sigma)')
-
-
+fs = 25; % font size
 
 % show the PDF of the whiff intensities 
-odour_thresh = 0.05;
+odour_thresh = 0.024;
 
 % whiff intensity distribution  
-ax(2) = subplot(1,4,2); hold on
+ax(2) = subplot(1,3,1); hold on
 whiff_intensities = []; 
 for i = 1:width(ab3.PID)
 	[ons,offs] = computeOnsOffs(ab3.PID(:,i) > odour_thresh);
@@ -464,12 +392,10 @@ m = fittype('log((a./x).*exp(-x./b))');
 ff = fit(x(y>0)',log(y(y>0))',m,'Upper',[10 100],'Lower',[0 1],'StartPoint',[7e-3 4]);
 plot(ax(2),sort(x),exp(ff(sort(x))),'r')
 
-th(2) = text(.1, .2,'$\sim\frac{1}{c}\exp\left(-\frac{c}{C}\right)$','interpreter','latex','Color','r','FontSize',20);
-
-odour_thresh = 0.024;
+th(2) = text(.1, .2,'$\sim\frac{1}{c}\exp\left(-\frac{c}{C}\right)$','interpreter','latex','Color','r','FontSize',fs);
 
 % show the whiff durations 
-ax(3) = subplot(1,4,3); hold on
+ax(3) = subplot(1,3,2); hold on
 whiff_durations = []; 
 for i = 1:width(ab3.PID)
 	[ons,offs] = computeOnsOffs(ab3.PID(:,i) > odour_thresh);
@@ -488,10 +414,10 @@ set(ax(3),'YScale','log','XScale','log','XTick',[1e1 1e2 1e3 1e4],'XLim',[10 1.1
 xlabel(ax(3),'Whiff duration (ms)')
 
 axes(ax(3))
-th(3) = text(1e3, .1,'$\sim t_{w}^{-\frac{3}{2}}$','interpreter','latex','Color','r','FontSize',20);
+th(3) = text(1e3, .1,'$\sim t_{w}^{-\frac{3}{2}}$','interpreter','latex','Color','r','FontSize',fs);
 
 % show the blank durations 
-ax(4) = subplot(1,4,4); hold on
+ax(4) = subplot(1,3,3); hold on
 whiff_durations = [];
 for i = 1:width(ab3.PID)
 	[ons,offs] = computeOnsOffs(ab3.PID(:,i) < odour_thresh);
@@ -509,27 +435,28 @@ xlabel('Blank duration (ms)')
 ylabel(ax(4),'Probability')
 
 axes(ax(4))
-th(4) = text(1e3, .1,'$\sim t_{b}^{-\frac{3}{2}}$','interpreter','latex','Color','r','FontSize',20);
+th(4) = text(1e3, .1,'$\sim t_{b}^{-\frac{3}{2}}$','interpreter','latex','Color','r','FontSize',fs);
 
-prettyFig('fs',.5,'FixLogX',true,'font_units','centimeters')
-
+prettyFig('fs',.7,'FixLogX',true,'font_units','centimeters')
 
 % fix some plots
-ax(1).Position(1)=.11;
-ax(2).Position(2) = ax(1).Position(2);
-ax(2).Position(4) = ax(1).Position(4);
+ax(3).Position(2) = ax(2).Position(2);
+ax(3).Position(4) = ax(2).Position(4);
+ax(4).Position(2) = ax(2).Position(2);
+ax(4).Position(4) = ax(2).Position(4);
 
-labelFigure
+labelFigure('delete_all',true)
+labelFigure('font_size',fs)
 
-for i = 1:4
+for i = 2:4
 	ax(i).Position(2) = .175;
 	ax(i).Position(4) = .725;
 	deintersectAxes(ax(i))
 end
 
-th(2).FontSize = 20;
-th(3).FontSize = 20;
-th(4).FontSize = 20;
+th(2).FontSize = fs;
+th(3).FontSize = fs;
+th(4).FontSize = fs;
 
 if being_published
 	snapnow
@@ -628,7 +555,7 @@ xlabel('Projected Stimulus (V)')
 ylabel('ab2A response (Hz)')
 shat = computeSmoothedStimulus(mean(ab2.PID,2),history_length);
 ch = colorbar('east');
-set(ch,'Position',[.58 .15 .02 .1])
+ch.Position = [.58 .15 .02 .1];
 caxis([min(shat) max(shat)]);
 set(gca,'XLim',[-.15 4],'XColor','b')
 

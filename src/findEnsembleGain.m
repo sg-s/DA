@@ -36,6 +36,18 @@ else
 	error('Inputs need to be name value pairs')
 end
 
+hash1 = dataHash(options);
+hash2 = dataHash([X;Y;S]);
+hash = dataHash([hash1 hash2]);
+data = cache(hash);
+if ~isempty(data)
+	gain = data.gain;
+	gain_r2 = data.gain_r2;
+	stimulus_contrast = data.stimulus_contrast;
+	return
+end
+
+
 gain = NaN(size(X,1),1); gain_r2 = gain;
 stimulus_contrast = gain;
 a = round(options.window_size/2) + 1;
@@ -66,6 +78,11 @@ for i = a:options.step_size:z
 		stimulus_contrast(i) = nanstd(s)/nanmean(s);
 	end
 end
+
+data.stimulus_contrast = stimulus_contrast;
+data.gain = gain;
+data.gain_r2 = gain_r2;
+cache(hash,data);
 
 
 

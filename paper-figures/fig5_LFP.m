@@ -478,7 +478,8 @@ var_cartoon_plot.Position= [.53 .62 .5 .25];
 uistack(msg_cartoon_plot,'bottom');
 uistack(var_cartoon_plot,'bottom');
 
-labelFigure('ignore_these',[msg_cartoon_plot var_cartoon_plot])
+labelFigure('delete_all',true)
+labelFigure('ignore_these',[msg_cartoon_plot var_cartoon_plot],'column_first',true,'x_offset',-.025)
 
 if being_published	
 	snapnow	
@@ -486,12 +487,8 @@ if being_published
 end
 
 
-
 %% Supplementary Figure
 % Supplementary figure for figure 5. 
-
-figure('outerposition',[0 0 1200 801],'PaperUnits','points','PaperSize',[1200 801]); hold on
-
 % changing mean stimulus, estimating gain directly without a LN model ~~~~~~~~~~~~~~~~~~~~ 
 % subplot(4,3,1); hold on
 % title(['Changing stimulus mean' char(10) 'direct gain estimation'])
@@ -517,33 +514,6 @@ figure('outerposition',[0 0 1200 801],'PaperUnits','points','PaperSize',[1200 80
 % set(gca,'XScale','log','YScale','log','YLim',[.1 10],'XTick',[.1 1],'XLim',[.1 2])
 % ylabel('\sigma_{Firing rate}/\sigma_{LFP} (Hz/mV)')
 % xlabel('\mu_{Stimulus} (V)')
-
-%% changing stimulus variance, comparing fold change in gain at LFP to fold change in gain at transduction  ~~~~~~ ~~~~~~~~~~~~ ~~~~~~~~~~~~ ~~~~~~~~~~~~ ~~~~~~~~~~~~ ~~~~~~~~~~~~ ~~~~~~
-
-clear ax gains
-gains.gL_hi = hi_gain_LFP_corrected(ok);
-gains.gL_lo = lo_gain_LFP_corrected(ok);
-gains.gF_hi = hi_gain_firing(ok);
-gains.gF_lo = lo_gain_firing(ok);
-gains.gT_hi = hi_gain_total_corrected(ok);
-gains.gT_lo = lo_gain_total_corrected(ok);
-gains.s_lo = std(reshaped_PID(6e3:9e3,ok));
-gains.s_hi = std(reshaped_PID(1e3:5e3,ok));
-
-ax(5) = subplot(2,3,3); hold on
-ax(6) = subplot(2,3,6); hold on
-make_plot = false(6,1); make_plot(5:6) = true;
-ax = compareGainsInFig4(gains,ax,make_plot);
-set(ax(5),'XLim',[0 3],'YLim',[0 3])
-
-% move pie chart, prettify it
-%ax(7).Position = [0.27 0.18 0.07 0.15];
-ax(7).Children(1).String = strrep(ax(7).Children(1).String,'%','');
-ax(7).Children(1).Position = [.6 -.24];
-ax(7).Children(1).Color = 'w';
-ax(7).Children(3).String = strrep(ax(7).Children(3).String,'%','');
-ax(7).Children(3).Position = [-.55 .21];
-ax(7).Children(3).Color = 'w';
 
 % ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ changing stimulus variance, directly estimating gains and then correcting for change in mean. 
 
@@ -596,6 +566,36 @@ ax(7).Children(3).Color = 'w';
 % ax(7).Children(3).Position = [-.55 .21];
 % ax(7).Children(3).Color = 'w';
 
+%% changing stimulus variance, comparing fold change in gain at LFP to fold change in gain at transduction  ~~~~~~ ~~~~~~~~~~~~ ~~~~~~~~~~~~ ~~~~~~~~~~~~ ~~~~~~~~~~~~ ~~~~~~~~~~~~ ~~~~~~
+
+
+figure('outerposition',[0 0 1200 801],'PaperUnits','points','PaperSize',[1200 801]); hold on
+
+clear ax gains
+gains.gL_hi = hi_gain_LFP_corrected(ok);
+gains.gL_lo = lo_gain_LFP_corrected(ok);
+gains.gF_hi = hi_gain_firing(ok);
+gains.gF_lo = lo_gain_firing(ok);
+gains.gT_hi = hi_gain_total_corrected(ok);
+gains.gT_lo = lo_gain_total_corrected(ok);
+gains.s_lo = std(reshaped_PID(6e3:9e3,ok));
+gains.s_hi = std(reshaped_PID(1e3:5e3,ok));
+
+ax(5) = subplot(2,3,3); hold on
+ax(6) = subplot(2,3,6); hold on
+make_plot = false(6,1); make_plot(5:6) = true;
+ax = compareGainsInFig4(gains,ax,make_plot);
+set(ax(5),'XLim',[0 3],'YLim',[0 3])
+
+% move pie chart, prettify it
+%ax(7).Position = [0.27 0.18 0.07 0.15];
+ax(7).Children(1).String = strrep(ax(7).Children(1).String,'%','');
+ax(7).Children(1).Position = [.6 -.24];
+ax(7).Children(1).Color = 'w';
+ax(7).Children(3).String = strrep(ax(7).Children(3).String,'%','');
+ax(7).Children(3).Position = [-.55 .21];
+ax(7).Children(3).Color = 'w';
+
 %% Weber's Law in transduction for other odors/receptors \~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 % define what we want to work on~~~~
 data_hashes = {'bcd4cf4fe12817d084a2b06f981161ee','cd6753c0e4cf02895cd5e2c5cb58aa1a','3ea08ccfa892c6545d74bbdaaa6cbee1','f11c4a5792d0c9fec7c40fd6aa2fce40'};
@@ -627,7 +627,7 @@ plot_here(4).XLim = [3e-3 3];
 
 prettyFig('fs',14,'lw',1.5,'FixLogX',true);
 
-labelFigure('column_first',true)
+labelFigure('column_first',true,'font_size',25,'ignore_these',ax(7))
 
 for i = 1:length(plot_here)
 	plot_here(i).XLim(2) = plot_here(i).XLim(2)*1.06;

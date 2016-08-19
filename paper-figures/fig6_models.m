@@ -25,7 +25,7 @@ ax.r2_DA_LN = subplot(2,3,6,'Parent',main_fig);
 
 % make insets in the first plot
 ax.inset1 = axes('Parent',main_fig); 
-ax.inset1.Position = [0.2442    0.8625    0.1154    0.1];
+ax.inset1.Position = [0.22    0.8625    0.15    0.1];
 
 ax.inset2 = axes('Parent',main_fig); 
 ax.inset2.Position = [0.58 0.8625 0.17 0.1];
@@ -44,13 +44,13 @@ model_color = [1 0 0];
 
 %{
 
- #######  ##       ########     ##    ##    ###    ########     ######  ######## #### ##     ## 
-##     ## ##       ##     ##    ###   ##   ## ##      ##       ##    ##    ##     ##  ###   ### 
-##     ## ##       ##     ##    ####  ##  ##   ##     ##       ##          ##     ##  #### #### 
-##     ## ##       ##     ##    ## ## ## ##     ##    ##        ######     ##     ##  ## ### ## 
-##     ## ##       ##     ##    ##  #### #########    ##             ##    ##     ##  ##     ## 
-##     ## ##       ##     ##    ##   ### ##     ##    ##       ##    ##    ##     ##  ##     ## 
- #######  ######## ########     ##    ## ##     ##    ##        ######     ##    #### ##     ## 
+ ##    ##    ###    ########     ######  ######## #### ##     ## 
+ ###   ##   ## ##      ##       ##    ##    ##     ##  ###   ### 
+ ####  ##  ##   ##     ##       ##          ##     ##  #### #### 
+ ## ## ## ##     ##    ##        ######     ##     ##  ## ### ## 
+ ##  #### #########    ##             ##    ##     ##  ##     ## 
+ ##   ### ##     ##    ##       ##    ##    ##     ##  ##     ## 
+ ##    ## ##     ##    ##        ######     ##    #### ##     ## 
 
 %}
 
@@ -138,7 +138,7 @@ plot(ax.inset2,time(1:10:end),mean(fA,2),'k')
 plot(ax.inset2,time(1:10:end),DAModelv2(mean(PID,2),p),'r')
 plot(ax.inset2,time(1:10:end),ff(fp),'b')
 
-set(ax.inset1,'Xlim',[8.5 9.5])
+set(ax.inset1,'Xlim',[7.5 10.5])
 set(ax.inset2,'Xlim',[26 29])
 
 ax.r2_DA_LN.NextPlot = 'add';
@@ -358,7 +358,7 @@ end
 set(ax.DA_kinetics,'XScale','log','YLim',[0 160],'XLim',[1e-3 5],'XTick',[1e-3 1e-2 1e-1 1])
 xlabel(ax.DA_kinetics,'\mu_{Stimulus} in preceding 1 s (V)')
 ylabel(ax.DA_kinetics,'Lag (ms)')
-legend2 = legend(l,{'LFP model','DA model'},'Location','northwest');
+legend2 = legend(l,{'LFP DA model','Firing DA model'},'Location','northwest');
 
 
 % ##     ##  ######   ######      ########     ###    ########    ###    

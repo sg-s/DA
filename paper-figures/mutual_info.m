@@ -187,6 +187,16 @@ else
 	save('.cache/VSA_K2.mat','K2')
 end
 
+
+% make linear predictions on the de-trended data using a mean filter averaged over all cases
+K2_mean = nanmean(squeeze(nanmean(K2,1)),2);
+ft = -99:700;
+fA_pred = NaN*reshaped_fA;
+for i = 1:width(reshaped_fA)
+	fA_pred(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K2_mean,ft);
+end
+
+
 % compute gains per trial on the uncorrected data
 lo_gain = NaN(width(reshaped_PID),1);
 hi_gain = NaN(width(reshaped_PID),1);
@@ -210,14 +220,6 @@ end
 
 lo_gain(lo_gain == 0) = NaN;
 hi_gain(hi_gain == 0) = NaN;
-
-% make linear predictions on the de-trended data using a mean filter averaged over all cases
-K2_mean = nanmean(squeeze(nanmean(K2,1)),2);
-ft = -99:700;
-fA_pred = NaN*reshaped_fA;
-for i = 1:width(reshaped_fA)
-	fA_pred(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),K2_mean,ft);
-end
 
 %%
 % First, we compute the mutual information between the stimulus and the time-shifted stimulus in the data. 

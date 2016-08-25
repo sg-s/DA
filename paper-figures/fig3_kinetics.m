@@ -175,6 +175,9 @@ L2 = legend(l,{'ab2A','ab3A'},'Location','northwest');
 L2.Position = [0.1700 0.4023 0.0800 0.0337];
 uistack(LFP_firing_lag_plot,'top')
 
+% add a dashed horizontal line
+plot(LFP_firing_lag_plot,[1e-3 15],[0 0],':','Color',[.5 .5 .5])
+
 
 % ########    ###    ##     ##     ######      ###    #### ##    ## 
 %    ##      ## ##   ##     ##    ##    ##    ## ##    ##  ###   ## 
@@ -259,6 +262,8 @@ temp.LineStyle = '--';
 set(rho_vs_history_length_plot,'XScale','log','YLim',[-1 1],'XTick',[10 1e2 1e3 1e4],'XLim',[10 3e4])
 xlabel(rho_vs_history_length_plot,'History length (ms)')
 ylabel(rho_vs_history_length_plot,['Correlation between' char(10) 'gain and \mu_{stimulus}'])
+
+plot(rho_vs_history_length_plot,[10 3e4],[0 0],':','Color',[.5 .5 .5])
 
 
 prettyFig(main_fig,'fs',14);

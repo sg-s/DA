@@ -284,7 +284,7 @@ for i = 1:length(do_these)
 
 	gain = gain/nanmean(gain);
 
-	rm_this = gain<0.4 | gain_err < .8;
+	rm_this = gain < 0 | gain_err < .8;
 	gain(rm_this) = [];
 	ons(rm_this) = [];
 	offs(rm_this) = [];
@@ -302,10 +302,11 @@ for i = 1:length(do_these)
 	plot(axs(8),history_lengths,rho,'.-','Color',c(i,:))
 end
 
-set(axs(8),'XScale','log','YLim',[-1 0],'XTick',[10 100 1e3 1e4],'XLim',[10 1.1e4])
 set(axs(3),'XScale','log','YScale','log','XLim',[.1 2],'YLim',[.1 10])
 xlabel(axs(3),['\mu_{Stimulus} in preceding ' oval(example_history_length) ' ms (norm)'])
 ylabel(axs(3),'ORN gain (norm)')
+
+set(axs(8),'XScale','log','YLim',[-1 0],'XTick',[10 100 1e3 1e4],'XLim',[10 1.1e4])
 xlabel(axs(8),'History length (ms)')
 
 % fake some plots for a nice legend
@@ -328,31 +329,42 @@ title(axs(3),['Binary stimulus' char(10) 'Experimental replicates'])
 
 % first, fit a DA model to the methyl butyrate ab3A data
 clear p
-p.   s0 = -0.0011;
+p.   s0 = -8.5586e-04;
 p.  n_z = 2;
-p.tau_z = 50; % rounded off
-p.  n_y = 2;
-p.tau_y = 15.4531;
+p.tau_z = 48.3750;
+p.  n_y = 1.9688;
+p.tau_y = 15.6406;
 p.    C = 0.0126;
-p.    A = 2.5013e+04;
-p.    B = 384.5000;
+p.    A = 2.5139e+04;
+p.    B = 423.0312;
 
 % generate synthetic data responses and do the analyses on that
 
 % tweak the model's tau_gain
 tau_gain = [50 100 200 400];
-stim = mean(orn_data(16).stimulus,2);
-stim = stim(30e3:end);
-stim = stim/nanmean(stim);
+actual_tau_gain = NaN*tau_gain;
 
+resp = mean(orn_data(16).firing_rate,2);
+resp = resp(30e3:end);
+
+
+% return
 
 c = parula(length(tau_gain)+1);
 clear l
 for i = 1:length(tau_gain)
-	p.tau_z = tau_gain(i);
+	textbar(i,length(tau_gain));
 
+	stim = nanmean(orn_data(16).stimulus,2);
+	% stim = stim/nanmean(stim);
 	% generate responses
-	resp = DAModelv2(stim,p);
+	p.tau_z = tau_gain(i);
+	[resp,~,~,~,Kz] = DAModelv2(stim,p);
+	[~,actual_tau_gain(i)] = max(Kz);
+
+	resp = resp(30e3:end);
+	stim = stim(30e3:end);
+
 
 	% fit a filter to this
 	K = fitFilter2Data(stim,resp,'filter_length',1e3,'offset',200);
@@ -366,7 +378,7 @@ for i = 1:length(tau_gain)
 
 	gain = gain/nanmean(gain);
 
-	rm_this = gain<0.4 | gain_err < .8;
+	rm_this = gain < 0 | gain_err < .8;
 	gain(rm_this) = [];
 	ons(rm_this) = [];
 	offs(rm_this) = [];
@@ -380,21 +392,24 @@ for i = 1:length(tau_gain)
 
 	% also find rho for various values of the history length and plot it
 	rho = findRhoForHistoryLengths(gain,stim,ons,offs,history_lengths);
+	[~,temp] = min(rho);
+	min_hist_lengths(i) = history_lengths(temp);
+
 
 	plot(axs(7),history_lengths,rho,'.-','Color',c(i,:))
 end
 set(axs(7),'XScale','log','YLim',[-1 0],'XTick',[10 100 1e3 1e4],'XLim',[10 1.1e4])
-set(axs(2),'XScale','log','YScale','log','XLim',[.1 2],'YLim',[.05 10])
+set(axs(2),'XScale','log','YScale','log','XLim',[5e-4 5e-3],'YLim',[.1 10],'XTick',[1e-3 2e-3 4e-3])
 title(axs(2),['Binary stimulus' char(10) 'DA model simulations'])
 xlabel(axs(2),'\mu_{Stimulus} in preceding 300 ms (V)')
 
 clear l L
 for i = 1:length(tau_gain)
 	l(i) = plot(axs(2),NaN,NaN,'Marker','o','MarkerFaceColor',c(i,:),'LineStyle','none','MarkerEdgeColor',c(i,:));
-	L{i} = ['\tau_{gain} = ' oval(4*tau_gain(i)) 'ms'];
+	L{i} = ['\tau_{gain} = ' oval(p.n_z*tau_gain(i)) 'ms'];
 end 
 lh(4) = legend(l,L);
-lh(4).Position = [0.3121 0.6041 0.0736 0.0952];
+lh(4).Position = [0.3121 0.6241 0.0736 0.0952];
 xlabel(axs(7),'History length (ms)')
 
 
@@ -411,8 +426,16 @@ for i = 6:10
 end
 
 % fix some positions
+
+axs(1).Position(1) = axs(1).Position(1) - .01;
+axs(2).Position(1) = axs(2).Position(1) - .01;
+
 axs(6).Position(1) = axs(1).Position(1);
 axs(6).Position(3) = axs(1).Position(3);
+
+axs(7).Position(1) = axs(2).Position(1);
+axs(7).Position(3) = axs(2).Position(3);
+
 
 % deintersect some axes
 for i = 1:10

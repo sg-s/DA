@@ -372,6 +372,7 @@ X(1:1e3,:) = NaN;
 Y(1:1e3,:) = NaN;
 [gain,gain_r2,sc] = findEnsembleGain(X,Y,S,'step_size',10);
 
+
 [axyy,h1,h2] = plotyy(ax(8),time,gain,time,sc);
 set(h1,'Marker','+','LineStyle','none')
 set(h2,'Marker','o','LineStyle','none')
@@ -381,7 +382,23 @@ ylabel(axyy(2),'Stimulus contrast')
 axyy(2).YDir = 'reverse';
 axyy(1).Box = 'off';
 set(axyy,'XLim',[4.5 6])
+axyy(2).YLim(1) = 0;
+hold(axyy(2),'on')
+hold(axyy(1),'on')
 
+
+% draw illustrative lines
+hi_contrast = nanmean(sc(1e3:5e3));
+lo_contrast = nanmean(sc(6e3:end));
+crossover_point = 1e-3*find(sc < (hi_contrast - lo_contrast)/2 + lo_contrast,1,'first');
+c = lines(2);
+plot(axyy(2),[crossover_point crossover_point],[0 .4],'--','Color',c(2,:));
+
+hi_contrast = nanmean(gain(1e3:5e3));
+lo_contrast = nanmean(gain(6e3:end));
+crossover_point2 = 5 + 1e-3*find(gain(5e3:end) > (hi_contrast - lo_contrast)/2 + lo_contrast,1,'first');
+c = lines(2);
+plot(axyy(1),[crossover_point2 crossover_point2],[40 180],'--','Color',c(1,:));
 
 % cosmetics
 ax(1).Position(3) = .53;

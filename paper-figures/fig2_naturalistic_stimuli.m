@@ -366,7 +366,7 @@ save('nat_stim_data','ab3','ab2')
 
 
 clear ax
-figure('PaperUnits','centimeters','PaperSize',[15 5],'Position',[100 100 1500 400],'toolbar','none'); hold on
+figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
 
 fs = 25; % font size
 
@@ -374,7 +374,7 @@ fs = 25; % font size
 odour_thresh = 0.024;
 
 % whiff intensity distribution  
-ax(2) = subplot(1,3,1); hold on
+ax(2) = subplot(2,3,1); hold on
 whiff_intensities = []; 
 for i = 1:width(ab3.PID)
 	[ons,offs] = computeOnsOffs(ab3.PID(:,i) > odour_thresh);
@@ -395,7 +395,7 @@ plot(ax(2),sort(x),exp(ff(sort(x))),'r')
 th(2) = text(.1, .2,'$\sim\frac{1}{c}\exp\left(-\frac{c}{C}\right)$','interpreter','latex','Color','r','FontSize',fs);
 
 % show the whiff durations 
-ax(3) = subplot(1,3,2); hold on
+ax(3) = subplot(2,3,2); hold on
 whiff_durations = []; 
 for i = 1:width(ab3.PID)
 	[ons,offs] = computeOnsOffs(ab3.PID(:,i) > odour_thresh);
@@ -417,7 +417,7 @@ axes(ax(3))
 th(3) = text(1e3, .1,'$\sim t_{w}^{-\frac{3}{2}}$','interpreter','latex','Color','r','FontSize',fs);
 
 % show the blank durations 
-ax(4) = subplot(1,3,3); hold on
+ax(4) = subplot(2,3,3); hold on
 whiff_durations = [];
 for i = 1:width(ab3.PID)
 	[ons,offs] = computeOnsOffs(ab3.PID(:,i) < odour_thresh);
@@ -437,70 +437,47 @@ ylabel(ax(4),'Probability')
 axes(ax(4))
 th(4) = text(1e3, .1,'$\sim t_{b}^{-\frac{3}{2}}$','interpreter','latex','Color','r','FontSize',fs);
 
-prettyFig('fs',.7,'FixLogX',true,'font_units','centimeters')
-
-% fix some plots
-ax(3).Position(2) = ax(2).Position(2);
-ax(3).Position(4) = ax(2).Position(4);
-ax(4).Position(2) = ax(2).Position(2);
-ax(4).Position(4) = ax(2).Position(4);
-
-labelFigure('delete_all',true)
-labelFigure('font_size',fs)
-
-for i = 2:4
-	ax(i).Position(2) = .175;
-	ax(i).Position(4) = .725;
-	deintersectAxes(ax(i))
-end
-
-th(2).FontSize = fs;
-th(3).FontSize = fs;
-th(4).FontSize = fs;
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-return
-
-
-%% Supplementary Figure 2
-% This supplementary figure shows that the choice of filter doesn't affect our results of large, rapid gain control. 
-
-
-figure('outerposition',[0 0 1400 800],'PaperUnits','points','PaperSize',[1400 800]); hold on
 
 % ab3A filters and projections
-subplot(2,4,1), hold on
-plot(filtertime,ab3.K,'b');
+ax(5) = subplot(2,3,4); hold on
+plot(ax(5),filtertime,ab3.K/max(max(ab3.K)),'r');
 
 % load MSG filter for ab3
-load(dm.getPath('b934ad74a78cb20df400b67e107037e3'));
+load(getPath(dataManager,'b934ad74a78cb20df400b67e107037e3'));
 ab3.K_white = mean(reshape([MSG_data(1,:).K],1001,11),2);
+
+% also show the Ky filter from the DA model
+clear p
+p.   s0 = 0;
+p.  n_z = 2;
+p.tau_z = 147.3750;
+p.  n_y = 2;
+p.tau_y = 27.2500;
+p.    C = 0.5000;
+p.    A = 170.4375;
+p.    B = 2.7656;
+[~,~,~,Ky,Kz] = DAModelv2(ones(1e4,1),p);
+plot(ax(5),1e-3*(1:length(Ky)),Ky/max(Ky),'b')
+
+
 t = 1e-3*(1:length(ab3.K_white))- .2;
-plot(t,ab3.K_white,'r')
-legend({'Nat. Stimulus Filter','White Noise filter'})
-ylabel('ab3A filter')
-xlabel('Lag (s)')
-set(gca,'YLim',[-.005 .04])
+plot(ax(5),t,ab3.K_white/max(ab3.K_white),'k')
+legend({'Natural stimulus','K_y from DA model','Gaussian stimulus'})
+ylabel(ax(5),'ab3A filter (norm)')
+xlabel(ax(5),'Lag (s)')
+set(ax(5),'YLim',[-.2 1.5])
 
 ab3.fp2 = convolve(1e-3*(1:length(mean(ab3.PID,2))),mean(ab3.PID,2),ab3.K_white,t);
 
-subplot(2,4,3), hold on
-scatter(ab3.fp2,mean(ab3.fA,2),scatter_size,ab3.c,'filled')
-xlabel('Projected Stimulus (V)')
-title('using white-noise filter')
-ylabel('ab3A Response (Hz)')
-set(gca,'XColor','r','XLim',[-1 14])
+ax(6) = subplot(2,3,5); hold on
+scatter(ax(6),ab3.fp2,mean(ab3.fA,2),scatter_size,ab3.c,'filled')
+xlabel(ax(6),['Stimulus projected' char(10) ' using Gaussian filter (V)'])
+ylabel(ax(6),'ab3A Response (Hz)')
+set(ax(6),'XColor','k','XLim',[-1 14])
 
-subplot(2,4,2), hold on
-scatter(ab3.fp,mean(ab3.fA,2),scatter_size,ab3.c,'filled')
-xlabel('Projected Stimulus (V)')
-ylabel('ab3A Response (Hz)')
-title('using nat. stimulus filter')
-set(gca,'XColor','b','XLim',[-.5 6])
+t = ['r^2=' oval(rsquare(ab3.fp2,nanmean(ab3.fA,2)))]; 
+axes(ax(6))
+th(5) = text(7,40,t);
 
 % now also show the gain-per-whiff vs. the mean stimulus in the preceding 200ms for the white-noise-projection
 shat = computeSmoothedStimulus(mean(ab3.PID,2),history_length);
@@ -521,18 +498,37 @@ gain(rm_this) = [];
 gain_err(rm_this) = [];
 mean_stim(rm_this) = [];
 
-subplot(2,4,4), hold on
-plot(mean_stim,gain,'ro');
+ax(7) = subplot(2,3,6); hold on
+plot(ax(7),mean_stim,gain,'ko');
 options = fitoptions(fittype('power1'));
 options.Lower = [-Inf -1];
 options.Upper = [Inf -1];
 ff = fit(mean_stim,gain,'power1',options);
-ff.a = 6;
-plot(gca,mean_stim,ff(mean_stim),'r')
-set(gca,'XScale','log','YScale','log','XTick',[1e-2 1e-1 1e0 1e1])
-ylabel('ab3A firing gain (Hz/V)')
-xlabel(['Mean stimulus in preceding ' oval(history_length) 'ms'])
-title(['Gain estimation using' char(10) 'white-noise filter'])
+ff.a = 8;
+plot(ax(7),mean_stim,ff(mean_stim),'r')
+set(ax(7),'XScale','log','YScale','log','XTick',[1e-2 1e-1 1e0 1e1])
+ylabel(ax(7),'ab3A firing gain (Hz/V)')
+xlabel(ax(7),['Mean stimulus in preceding ' oval(history_length) 'ms'])
+
+prettyFig('fs',.6,'FixLogX',true,'font_units','centimeters')
+
+labelFigure('delete_all',true)
+labelFigure('font_size',fs)
+
+for i = 2:7
+	deintersectAxes(ax(i))
+end
+
+for i = 2:5
+	th(i).FontSize = fs;
+end
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+return
 
 % now show ab2A filters
 subplot(2,4,5), hold on

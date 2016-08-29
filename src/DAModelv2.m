@@ -32,19 +32,9 @@ ub.C = 1;
 
 % extra bound
 lb.tau_y = 1; 
-ub.tau_y = 50;
+lb.tau_z = 1;
 
-lb.tau_z = 10;
-ub.tau_z = 150;
 
-lb.n_y = 1;
-ub.n_y = 5;
-
-lb.n_z = 1;
-ub.n_z = 3;
-
-lb.s0 = -5; 
-ub.s0 = 1;
 
 
 

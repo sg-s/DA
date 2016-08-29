@@ -18,7 +18,7 @@ cdata = cleanMSGdata(cdata);
 
 v2struct(cdata)
 
-clearvars LFP K1 LFP_pred LFP_gain cdata fB
+clearvars LFP LFP_pred LFP_gain cdata fB
 
 % remove some bad trials
 bad_trials =  max(fA) == 0;
@@ -140,7 +140,7 @@ for i = 1:8 % iterate over all paradigms
 	x = nanmean(fA_pred(a:z,paradigm == i),2);
 	s = nanmean(PID(a:z,paradigm == i),2);
 
-	allx = [allx mean(y)+cf(mean(s))*(x(1:ss:end))];
+	allx = [allx mean(y) + cf(mean(s))*(x(1:ss:end))];
 	ally = [ally y(1:ss:end)];
 
 	x = cf(nanmean(s))*(x);
@@ -246,24 +246,63 @@ for i = 1:width(PID)
 	catch
 	end
 end
-for i = 1:width(PID)
-	plot(ax(4),mean_stim(i),frac_var(i),'+','Color',c(paradigm(i),:))
-end
+% for i = 1:width(PID)
+% 	plot(ax(4),mean_stim(i),frac_var(i),'+','Color',c(paradigm(i),:))
+% end
 % fit a power law with exponent -1
 
-frac_var = frac_var(:);
-options = fitoptions(fittype('power1'));
-options.Lower = [-Inf -1];
-options.Upper = [Inf -1];
-cf = fit(nonnans(mean_stim),nonnans(frac_var),'power1',options);
-plot(ax(4),sort(mean_stim),cf(sort(mean_stim)),'r');
-set(ax(4),'XScale','log','YScale','log','XLim',[.1 3])
-xlabel(ax(4),'Mean stimulus (V)')
-ylabel(ax(4),'\sigma_{Firing rate}/\sigma_{Stimulus} (Hz/V)')
-title(ax(4),['ab3A' char(10) 'ethyl acetate'])
+% frac_var = frac_var(:);
+% options = fitoptions(fittype('power1'));
+% options.Lower = [-Inf -1];
+% options.Upper = [Inf -1];
+% cf = fit(nonnans(mean_stim),nonnans(frac_var),'power1',options);
+% plot(ax(4),sort(mean_stim),cf(sort(mean_stim)),'r');
+% set(ax(4),'XScale','log','YScale','log','XLim',[.1 3])
+% xlabel(ax(4),'Mean stimulus (V)')
+% ylabel(ax(4),'\sigma_{Firing rate}/\sigma_{Stimulus} (Hz/V)')
+% title(ax(4),['ab3A' char(10) 'ethyl acetate'])
 
 % we're not going to use ratio of std. devs
-delete(ax(4))
+cla(ax(4))
+
+% instead, plot single-filter gain estimation 
+
+% compute a single filter
+temp1 = PID(:,paradigm==1);
+temp2 = fA(:,paradigm==1);
+temp1(:,5) = [];
+temp2(:,5) = [];
+K = fitFilter2Data(nanmean(temp1(30e3:55e3,:),2),nanmean(temp2(30e3:55e3,:),2),'offset',200,'reg',1);
+K = K(100:end-101);
+filtertime = 1e-3*((1:length(K)) - 100);
+
+% re-project and re-calculate gain
+single_K_pred = fA_pred*NaN;
+single_K_gain = fA_gain*NaN;
+
+for i = 1:length(orn)
+	single_K_pred(:,i) = convolve(time,PID(:,i),K,filtertime);
+	[ff,gof] = fit(single_K_pred(35e3:55e3,i),fA(35e3:55e3,i),'poly1');
+	single_K_gain(i) = ff.p1;
+end
+
+mean_stim = mean(PID);
+rm_this = isnan(single_K_gain) | single_K_gain == 0;
+mean_stim(rm_this) = NaN;
+single_K_gain(rm_this) = NaN;
+
+for i = 1:width(PID)
+	plot(ax(4),mean_stim(i),single_K_gain(i),'+','Color',c(paradigm(i),:))
+end
+set(ax(4),'XScale','log','YScale','log')
+
+cf = fit(vectorise(mean_stim),single_K_gain,'power1','Upper',[Inf -1],'Lower',[-Inf -1]);
+plot(ax(4),mean_stim,cf(mean_stim),'r')
+ax(4).XLim = [.1 10];
+ax(4).YLim = [10 1e3];
+xlabel(ax(4),'Mean Stimulus (V)')
+title(ax(4),'single filter gain estimation')
+ylabel(ax(4),'ab3A ORN gain (Hz/V)')
 
 % ##      ## ######## ########  ######## ########   ######  
 % ##  ##  ## ##       ##     ## ##       ##     ## ##    ## 
@@ -325,7 +364,7 @@ end
 
 prettyFig('plw',2,'lw',2,'fs',.6,'font_units','centimeters','FixLogX',true)
 
-labelFigure('font_size',25);
+labelFigure('font_size',25,'column_first',true);
 
 
 for i = 2:length(ax)

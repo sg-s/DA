@@ -9,8 +9,8 @@ function [f,K,shat] = pLinearModel(s,p)
 
 % set lower bounds
 lb.n = 1; 
-lb.tau1 = 15;
-lb.tau2 = 20;
+lb.tau1 = 1;
+lb.tau2 = 2;
 lb.A = 0;
 lb.x_offset = -100;
 
@@ -19,7 +19,7 @@ ub.n = 4;
 ub.tau1 = 400;
 ub.tau2 = 600;
 ub.A = 1;
-ub.x_offset = 10;
+ub.x_offset = 20;
 
 
 % show parameters for readability

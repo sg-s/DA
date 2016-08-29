@@ -26,16 +26,26 @@ case 2
 	assert(isstruct(p),'Second argument should be a structure')
 end
 
-% specify bounds for fitModel2Data
-lb.A = 1; lb.B = 1; lb.C = 0 ; 
-lb.tau_y = 1; lb.tau_z = 10;
+% hard bounds
+lb.A = 1; lb.B = 1; lb.C = 0; 
 ub.C = 1; 
 
 % extra bound
-lb.n_y = 1; lb.n_z = 3;
-ub.n_y = 1; ub.n_z = 3;
-lb.s0 = -5; ub.s0 = 1;
-ub.tau_z = 150; ub.tau_y = 50;
+lb.tau_y = 1; 
+ub.tau_y = 50;
+
+lb.tau_z = 10;
+ub.tau_z = 150;
+
+lb.n_y = 1;
+ub.n_y = 5;
+
+lb.n_z = 1;
+ub.n_z = 3;
+
+lb.s0 = -5; 
+ub.s0 = 1;
+
 
 
 

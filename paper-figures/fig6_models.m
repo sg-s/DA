@@ -370,38 +370,45 @@ legend2 = legend(l,{'LFP DA model','Firing DA model'},'Location','northwest');
 % ##     ##  ######   ######      ########  ##     ##    ##    ##     ## 
 
 
-%% fit DA model to data from fig 2
+%% fit DA model to mean shifted gaussian data
 clear cdata
 cdata = consolidateData2(dm.getPath('93ba5d68174e3df9f462a1fc48c581da'));
 cdata = cleanMSGdata(cdata);
 
+% fit one DA model for each neuron
+
+% clear p
+% p.   s0 = -0.1503;
+% p.  n_z = 2;
+% p.tau_z = 255.3750;
+% p.  n_y = 2;
+% p.tau_y = 20.0748;
+% p.    C = 0.2345;
+% p.    A = 2.8700e+03;
+% p.    B = 100;
+
 % % average across paradigms
-% data = [];
-% for i = 1:max(cdata.paradigm)
-% 	s = (cdata.PID(30e3:55e3,cdata.paradigm == i));
-% 	f = (cdata.fA(30e3:55e3,cdata.paradigm == i));
-% 	rm_this = sum(f) == 0 | isnan(sum(f));
-% 	s(:,rm_this) = []; f(:,rm_this) = [];
-% 	data(i).stimulus = mean(s,2);
-% 	data(i).response = mean(f,2);
-% 	data(i).response(1:1e3) = NaN;
+% for j = 1:max(orn)
+% 	data = [];
+% 	for i = 1:max(cdata.paradigm)
+% 		s = (cdata.PID(30e3:55e3,cdata.paradigm == i & cdata.orn == j));
+% 		f = (cdata.fA(30e3:55e3,cdata.paradigm == i & cdata.orn == j));
+
+% 		rm_this = sum(f) == 0 | isnan(sum(f));
+% 		s(:,rm_this) = []; f(:,rm_this) = [];
+% 		if size(s,2) > 0
+% 			data(i).stimulus = mean(s,2);
+% 			data(i).response = mean(f,2);
+% 			data(i).response(1:1e3) = NaN;
+% 		end
+% 	end
+% 	% remove empty entries
+% 	rm_this = (cell2mat(arrayfun(@(x) size(x.stimulus,2),data,'UniformOutput',false)) == 0);
+% 	data(rm_this) = [];
+% 	p(j) = fitModel2Data(@DAModelv2,data,'p0',p(1));
 % end
 
-clear p
-p.   s0 = -0.1503;
-p.  n_z = 2;
-p.tau_z = 255.3750;
-p.  n_y = 2;
-p.tau_y = 20.0748;
-p.    C = 0.2345;
-p.    A = 2.8700e+03;
-p.    B = 100;
 
-% now generate responses using the DA model
-cdata.DA_R = NaN*cdata.fA;
-for i = 1:width(cdata.PID)
-	cdata.DA_R(:,i) = DAModelv2(cdata.PID(:,i),p);
-end
 
 % fit a nonlinearity to the linear predictions
 a = 25e3;
@@ -425,6 +432,12 @@ ff = fit(x(1:100:end),y(1:100:end),ft,'StartPoint',[50 1 2 0],'Lower',[1 0 1 -10
 
 for i = 1:length(cdata.paradigm)
 	cdata.LN_pred(:,i) = ff(cdata.LN_pred(:,i));
+end
+
+% generate neuron-specific DA model predictions
+load('DA_model_fit_to_MSG.mat','p')
+for i = 1:width(cdata.PID)
+	cdata.DA_R(:,i) = DAModelv2(cdata.PID(:,i),p(cdata.orn(i)));
 end
 
 
@@ -459,17 +472,64 @@ for i = 1:max(cdata.orn)
 	r2_LN(i) = rsquare(vectorise([temp.x]),vectorise([temp.y]));
 end
 
+r2_DA
+
+% % this works, don't fuck with it
+clear p
+p.   s0 = -0.1503;
+p.  n_z = 2;
+p.tau_z = 255.3750;
+p.  n_y = 2;
+p.tau_y = 20.0748;
+p.    C = 0.2345;
+p.    A = 2.8700e+03;
+p.    B = 100;
+
+% clear p
+% p.   s0 = -0.1503;
+% p.  n_z = 2.7500;
+% p.tau_z = 150;
+% p.  n_y = 4.8750;
+% p.tau_y = 10.6998;
+% p.    C = 0.2345;
+% p.    A = 2.6589e+03;
+% p.    B = 94.5000;
+
+% data = [];
+% for i = 1:max(cdata.paradigm)/2
+% 	s = (cdata.PID(30e3:55e3,cdata.paradigm == i));
+% 	f = (cdata.fA(30e3:55e3,cdata.paradigm == i));
+
+% 	rm_this = sum(f) == 0 | isnan(sum(f));
+% 	s(:,rm_this) = []; f(:,rm_this) = [];
+% 	if size(s,2) > 0
+% 		data(i).stimulus = mean(s,2);
+% 		data(i).response = mean(f,2);
+% 		data(i).response(1:2e3) = NaN;
+% 	end
+% end
+% % remove empty entries
+% rm_this = (cell2mat(arrayfun(@(x) size(x.stimulus,2),data,'UniformOutput',false)) == 0);
+% data(rm_this) = [];
+% p = fitModel2Data(@DAModelv2,data,'p0',p);
+
+
+% now generate responses using the DA model
+cdata.DA_R = NaN*cdata.fA;
+for i = 1:width(cdata.PID)
+	cdata.DA_R(:,i) = DAModelv2(cdata.PID(:,i),p);
+end
 
 % make plot of DA model predictions vs. linear prediction, grouped by paradigm
 axes(ax.DA_MSG)
 c = parula(10);
 for j = 1:max(cdata.paradigm)
 	fp = cdata.fA_pred(30e3:55e3, cdata.paradigm == j);
-	f = cdata.fA(30e3:55e3, cdata.paradigm == j);
+	f = cdata.DA_R(30e3:55e3, cdata.paradigm == j);
 	s = cdata.PID(30e3:55e3, cdata.paradigm == j);
 	if size(f,2) > 0
-		rm_this = isnan(sum(f)) | sum(f) == 0;
-		fp(:,rm_this) = []; f(:,rm_this) = [];
+		rm_this = isnan(sum(f)) | sum(f) == 0 | max(f) > 200;
+		fp(:,rm_this) = []; f(:,rm_this) = []; f(f<0) = 0; f(f>70) = NaN;
 		fp(fp<0) = NaN;
 		fp = nanmean(fp,2); 
 		s = nanmean(s,2);

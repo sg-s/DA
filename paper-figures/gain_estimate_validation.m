@@ -122,7 +122,7 @@ for i = 1:width(cdata.PID)
 	cdata2.fA(:,i) = DAModelv2(cdata.PID(:,i),p(cdata.orn(i))) + filtfilt(ones(50,1),50,randn(60e3,1))*noise;
 end
 cdata2.LFP = NaN*cdata2.LFP;
-cdata2 = cleanMSGdata(cdata2,'use_cache',false);
+cdata2 = cleanMSGdata(cdata2,'use_cache',true);
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 plot(mean_stim,cdata2.fA_gain,'k+')

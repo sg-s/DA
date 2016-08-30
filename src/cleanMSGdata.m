@@ -5,6 +5,7 @@ function cdata = cleanMSGdata(cdata,varargin)
 
 % options and defaults
 options.extract_filter = true;
+options.use_cache = true;
 
 if nargout && ~nargin 
 	varargout{1} = options;
@@ -87,8 +88,8 @@ end
 % extract filters 
 K1 = []; K2 = []; fA_pred = []; LFP_pred = []; LFP_gain = []; fA_gain = [];
 if options.extract_filter
-	[K2,fA_pred,fA_gain] = extractFilters(PID,fA,'use_cache',true,'a',a,'z',z);
-	[K1,LFP_pred,LFP_gain] = extractFilters(PID,LFP,'use_cache',true,'a',a,'z',z);
+	[K2,fA_pred,fA_gain] = extractFilters(PID,fA,'use_cache',options.use_cache,'a',a,'z',z);
+	[K1,LFP_pred,LFP_gain] = extractFilters(PID,LFP,'use_cache',options.use_cache,'a',a,'z',z);
 end
 
 

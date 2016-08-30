@@ -108,10 +108,12 @@ if isempty(K)
 			end
 		end
 	end
-	cache(hash,[]);
-	cache(hash,K);
-	disp('Writing to cache with key:')
-	disp(hash)
+	if use_cache
+		cache(hash,[]);
+		cache(hash,K);
+		disp('Writing to cache with key:')
+		disp(hash)
+	end
 end
 
 % % normalise all the filters

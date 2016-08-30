@@ -91,7 +91,6 @@ for i = 1:max(paradigm)
 	plot(ax(4),hx,hy,'Color',c(i,:));
 end
 
-
 % show gain changes for all paradigms -- average over neurons 
 ss = 100;
 all_x = 0:0.1:2;
@@ -285,6 +284,15 @@ for i = 1:length(orn)
 	[ff,gof] = fit(single_K_pred(35e3:55e3,i),fA(35e3:55e3,i),'poly1');
 	single_K_gain(i) = ff.p1;
 end
+% for i = 1:length(orn)
+% 	temp = K2(:,i);
+% 	temp = temp/norm(temp);
+% 	filtertime = 1e-3*((1:length(temp)) - 100);
+% 	single_K_pred(:,i) = convolve(time,PID(:,i),temp,filtertime);
+% 	[ff,gof] = fit(single_K_pred(45e3:55e3,i),fA(45e3:55e3,i),'poly1');
+% 	single_K_gain(i) = ff.p1;
+% end
+
 
 mean_stim = mean(PID);
 rm_this = isnan(single_K_gain) | single_K_gain == 0;
@@ -303,6 +311,7 @@ ax(4).YLim = [10 1e3];
 xlabel(ax(4),'Mean Stimulus (V)')
 title(ax(4),'single filter gain estimation')
 ylabel(ax(4),'ab3A ORN gain (Hz/V)')
+
 
 % ##      ## ######## ########  ######## ########   ######  
 % ##  ##  ## ##       ##     ## ##       ##     ## ##    ## 

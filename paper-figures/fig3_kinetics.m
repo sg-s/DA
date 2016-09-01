@@ -265,7 +265,6 @@ ylabel(rho_vs_history_length_plot,['Correlation between' char(10) 'gain and \mu_
 
 plot(rho_vs_history_length_plot,[10 3e4],[0 0],':','Color',[.5 .5 .5])
 
-
 prettyFig(main_fig,'fs',14);
 
 % equalise axes

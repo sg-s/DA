@@ -6,64 +6,56 @@
 % 
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
-function [x,y,e] = findInstGain(stimulus,response,prediction,history_length)
+function [gain,gain_err] = findInstGain(response,prediction,window_size,skip)
 if ~nargin
 	help findInstGain
 	return
 end
-if ~isvector(stimulus) || ~isvector(response) || ~isvector(prediction)
-	error('First three arguments should be vectors')
+if ~isvector(response) || ~isvector(prediction)
+	error('First two arguments should be vectors')
 else
-	stimulus = stimulus(:);
 	response =  response(:);
 	prediction = prediction(:);
-	if length(stimulus) ~= length(response)
-		error('Stimulus and response have to have the same length')
-	end
 	if length(prediction) ~= length(response)
 		error('prediction and response have to have the same length')
 	end
 end
-if length(history_length) > 1
+if length(window_size) > 1
 	error('History Length has to be a scalar')
 end
 
 % check cache for results
-temp.stimulus = stimulus;
 temp.response = response;
 temp.prediction = prediction;
-temp.history_length = history_length;
+temp.window_size = window_size;
 hash = dataHash(temp);
 cached_data = cache(hash);
 if ~isempty(cached_data)
-	x = cached_data.x;
-	y = cached_data.y;
-	e = cached_data.e;
+	gain = cached_data.gain;
+	gain_err = cached_data.gain_err;
 	return
 end
 
 disp('cache miss:')
 disp(hash)
 
-x = NaN*stimulus;
-y = NaN*stimulus;
-e = NaN*stimulus;
+gain = NaN*response;
+gain_err = NaN*response;
 
-parfor i = (history_length+1):length(stimulus)
-	x(i) = mean(stimulus(i-history_length:i));
-	if any(isnan(prediction(i-history_length:i))) || any(isnan(response(i-history_length:i)))
+for i = (window_size+1):skip:length(response)
+	if any(isnan(prediction(i-window_size:i))) || any(isnan(response(i-window_size:i)))
 	else
-		[cf,gof] = fit(prediction(i-history_length:i),response(i-history_length:i),'Poly1');
-		y(i) = cf.p1;
-		e(i) = gof.rsquare;
+		textbar(i,length(response))
+		[cf,gof] = fit(prediction(i-window_size:i),response(i-window_size:i),'Poly1');
+		gain(i) = cf.p1;
+		gain_err(i) = gof.rsquare;
 	end
 
 end
 
 clear temp
-temp.x = x;
-temp.y = y;
-temp.e = e;
+temp.gain = gain;
+temp.gain_err = gain_err;
 cache(hash,[])
 cache(hash,temp);
 

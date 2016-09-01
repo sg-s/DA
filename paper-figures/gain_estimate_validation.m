@@ -96,7 +96,7 @@ plot(back_stim,cdata3.fA_gain,'k+')
 set(gca,'XScale','log','YScale','log','XLim',[.15 1.5],'YLim',[2 200])
 cf = fit(vectorise(back_stim),cdata3.fA_gain,'power1','Upper',[Inf -1],'Lower',[-Inf -1]);
 plot(back_stim,cf(back_stim),'r')
-title('Gain estimation using pulses on background')
+title('Gain estimation with offsets in stimulus')
 xlabel('Mean (background stimulus)')
 ylabel('Gain (Hz/V)')
 

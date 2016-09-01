@@ -6,24 +6,7 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-n
 
-% add homebrew path
-path1 = getenv('PATH');
-if isempty(strfind(path1,':/usr/local/bin'))
-    path1 = [path1 ':/usr/local/bin'];
-end
-setenv('PATH', path1);
-
-% this code determines if this function is being called
-calling_func = dbstack;
-being_published = 0;
-if ~isempty(calling_func)
-	if find(strcmp('publish',{calling_func.name}))
-		being_published = 1;
-		unix(['tag -a publish-failed ',which(mfilename)]);
-		unix(['tag -r published ',which(mfilename)]);
-	end
-end
-tic
+pHeader;
 
 
 %% Locust EAG Analysis
@@ -33,7 +16,7 @@ tic
 % This is what the data looks like. In the following figure, the PID signals have been low-passed filtered by a 30ms filter, and the EAG signals have been high-pass filtered above a 2 second timescale. There are five trials in this dataset, and the shading indicates the standard error of the mean. 
 
 % load data
-load('/local-data/DA-paper/locust/example-data.mat')
+load('/local-data/DA-paper/data-for-paper/fig4/locust/example-data.mat')
 
 % clean up, sub-sample to 1ms
 PID = PID1; clear PID1
@@ -54,7 +37,7 @@ end
 % compute the derivative of the EAG
 dEAG = EAG;
 for i = 1:width(PID)
-	dEAG(:,i) = filtfilt(ones(30,1),30,[0; diff(dEAG(:,i))]);
+	dEAG(:,i) = filtfilt(ones(50,1),50,[0; diff(dEAG(:,i))]);
 end
 
 % filter
@@ -132,31 +115,35 @@ if being_published
 	delete(gcf)
 end
 
-%% Relationship between gain and stimulus
-% We now measure the gain in a 500ms window after every valve onset, and see how that correlates with the mean stimulus in some history length. Estimates of gain are computed by fitting a straight line to a plot of response vs. linear prediction over a 500ms window. Gain estimates are accepted only if linear fits has a r-squared value > 0.8.
+%% Timescale of gain control
+% We now measure the gain in 100 ms windows over the entire time trace, and see how that correlates with the mean stimulus in some history length. Estimates of gain are computed by fitting a straight line to a plot of response vs. linear prediction over a 100ms window. Gain estimates are accepted only if linear fits has a r-squared value > 0.8.
 
 %%
-% In the following figure, the panel on the left shows the gain evaluated at every valve onset as a function of time, showing that there is some variability in the instantaneous gain. What is the origin of this variability? One hypothesis is that this gain depends on the stimulus in some recent past. To check this, I plot the inst. gain vs. the stimulus in the preceding 250ms. The goodness of fit is measured by a Spearman rank correlation coefficient. 
+% In the following figure, I plot the instantaneous gain vs. the mean stimulus over some window size. The window size is indicated in the title of each panel, and the Spearman correlation between the inst. gain and mean stimulus in that window is shown in the legend. 
 
-[mean_stim,inst_gain,e] = findInstGain(mean(PID,2),mean(EAG,2),mean(EAG_prediction,2),500);
+[inst_gain,e] = findInstGain(mean(EAG,2),mean(EAG_prediction,2),100,10);
 
-inst_gain(e < .8) = NaN;
+history_lengths = [100 400 1600 3200];
+
+inst_gain(e < .8 | inst_gain < 0) = NaN;
 inst_gain(1:5e3) = NaN;
 
-figure('outerposition',[0 0 1400 500],'PaperUnits','points','PaperSize',[1400 500]); hold on
-subplot(1,4,1:3), hold on
-plot(time(1:50:end),inst_gain(1:50:end),'k+')
-set(gca,'XLim',[5 30],'YLim',[0 2.5])
-xlabel('Time (s)')
-ylabel('Inst. gain')
-
-subplot(1,4,4), hold on
-plotPieceWiseLinear(mean_stim(~isnan(inst_gain)),inst_gain(~isnan(inst_gain)),'nbins',40,'make_plot',true,'use_std',true);
-
-legend(['\rho = ' oval(spear(mean_stim(~isnan(inst_gain)),inst_gain(~isnan(inst_gain))))])
-xlabel('Mean Stimulus in preceding 250ms (mV)')
-ylabel('Inst. Gain')
-set(gca,'YLim',[0 2.5])
+figure('outerposition',[0 0 800 801],'PaperUnits','points','PaperSize',[800 801]); hold on
+for i = 1:length(history_lengths)
+	autoPlot(length(history_lengths),i); hold on
+	mean_stim = vectorise(computeSmoothedStimulus(mean(PID,2),history_lengths(i)));
+	l = plot(mean_stim,inst_gain,'k.');
+	set(gca,'XScale','log','YScale','log')
+	x = mean_stim(1:10:end);
+	y = inst_gain(1:10:end);
+	rm_this = isnan(x) | isnan(y);
+	x(rm_this) = []; y(rm_this) = [];
+	rho = spear(x,y);
+	legend(['\rho= ' oval(rho)])
+	title(['History length  = ' oval(history_lengths(i)) ' ms'])
+	xlabel('Mean stimulus in window')
+	ylabel('Inst. gain ')
+end
 
 prettyFig();
 
@@ -166,7 +153,153 @@ if being_published
 end
 
 
+%%
+% Now we want to determine the window size when the instantaneous gain is maximally correlated to the mean stimulus. To do this, we repeat this analysis over many window sizes, and plot the Spearman correlation vs. the window size. We also compare the gain to the mean stimulus for the window size where there is best correlation, and see what the relationship between the two is. 
+
+history_lengths = round(logspace(1,log10(3e4),30)); % all the history lengths we look at, in ms
+history_lengths(28) = [];
+rho = NaN*history_lengths;
+
+for i = 1:length(history_lengths)
+	mean_stim = vectorise(computeSmoothedStimulus(mean(PID,2),history_lengths(i)));
+	x = mean_stim(1:10:end);
+	y = inst_gain(1:10:end);
+	rm_this = isnan(x) | isnan(y);
+	x(rm_this) = []; y(rm_this) = [];
+	rho(i) = spear(x,y);
+end
+
+figure('outerposition',[0 0 1001 500],'PaperUnits','points','PaperSize',[1001 500]); hold on
+subplot(1,2,1); hold on
+plot(history_lengths,rho,'k+')
+xlabel('History lengths (ms)')
+set(gca,'XScale','log','YScale','linear')
+ylabel('\rho (Inst. gain, mean stimulus)')
+
+subplot(1,2,2); hold on
+[~,idx] = min(rho);
+mean_stim = vectorise(computeSmoothedStimulus(mean(PID,2),history_lengths(idx)));
+plot(mean_stim,inst_gain,'k.')
+set(gca,'XScale','log','YScale','log')
+x = mean_stim(:); y = inst_gain(:);
+rm_this = isnan(mean_stim) | isnan(inst_gain);
+ff = fit(x(~rm_this),y(~rm_this),'power1','Upper',[Inf -1],'Lower',[-Inf -1]);
+l = plot(sort(x(~rm_this)),ff(sort(x(~rm_this))),'r');
+legend(l,'Weber-Fechner Law')
+xlabel(['Mean Stimulus in ' char(10) oval(history_lengths(idx)) ' ms'])
+ylabel('EAG gain (a.u.)')
+
+prettyFig('FixLogX',true);
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%% EAG derivative 
+%  Now, we repeat this analysis with the derivative of the EAG. The advantage of using the derivative is we don't have to filter the EAG to remove slow fluctuations (here, we're still smoothing over 50 ms because the derivative is noisy). 
+
 [K2, dEAG_pred, K1_gain] = extractFilters(PID,dEAG,'filter_length',2e3,'filter_offset',offset);
+
+[inst_gain,e] = findInstGain(mean(dEAG,2),mean(dEAG_pred,2),100,10);
+
+inst_gain(e < .8 | inst_gain < 0) = NaN;
+inst_gain(1:5e3) = NaN;
+
+history_lengths = round(logspace(1,log10(3e4),30)); % all the history lengths we look at, in ms
+history_lengths(28) = [];
+rho = NaN*history_lengths;
+
+for i = 1:length(history_lengths)
+	mean_stim = vectorise(computeSmoothedStimulus(mean(PID,2),history_lengths(i)));
+	x = mean_stim(1:10:end);
+	y = inst_gain(1:10:end);
+	rm_this = isnan(x) | isnan(y);
+	x(rm_this) = []; y(rm_this) = [];
+	rho(i) = spear(x,y);
+end
+
+
+figure('outerposition',[0 0 1502 500],'PaperUnits','points','PaperSize',[1502 500]); hold on
+subplot(1,3,1); hold on
+filtertime = (1:length(K2)) - offset;
+plot(filtertime,mean(K2,2),'k')
+xlabel('Filter lag (ms)')
+ylabel('Filter to EAG derivative')
+
+subplot(1,3,2), hold on
+plot(history_lengths,rho,'k+')
+xlabel('History lengths (ms)')
+set(gca,'XScale','log','YScale','linear')
+ylabel('\rho (Inst. gain, mean stimulus)')
+
+subplot(1,3,3), hold on
+[~,idx] = min(rho);
+mean_stim = vectorise(computeSmoothedStimulus(mean(PID,2),history_lengths(idx)));
+plot(mean_stim,inst_gain,'k.')
+set(gca,'XScale','log','YScale','log')
+x = mean_stim(:); y = inst_gain(:);
+rm_this = isnan(mean_stim) | isnan(inst_gain);
+ff = fit(x(~rm_this),y(~rm_this),'power1','Upper',[Inf -1],'Lower',[-Inf -1]);
+l = plot(sort(x(~rm_this)),ff(sort(x(~rm_this))),'r');
+legend(l,'Weber-Fechner Law')
+xlabel(['Mean Stimulus in ' char(10) oval(history_lengths(idx)) ' ms'])
+ylabel('EAG gain (a.u.)')
+
+prettyFig('FixLogX',true);
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%% Whiff-based analysis
+% Now, we perform a whiff-based analysis. Instead of finding the "instantenous" gain, which is hard to measure, and not very instantaneous, we define gains over whiffs of odorants, identified as rising phases in the stimulus. 
+
+
+history_lengths = round(logspace(1,log10(3e4),30)); % all the history lengths we look at, in ms
+history_lengths(28) = [];
+
+pred = nanmean(EAG_prediction,2); 
+resp = nanmean(EAG,2);  
+stim = nanmean(PID,2); 
+
+% find when the valve opens
+[ons,offs] = findWhiffs(stim);
+ons = ons+finddelay(stim,resp);
+offs = offs+finddelay(stim,resp);
+
+rm_this = ons>length(stim);
+ons(rm_this) = [];
+offs(rm_this) = [];
+
+% plot the gain in each of these windows
+[gain,gain_err] = findGainInWindows(ons,offs,pred,resp);
+
+rm_this = gain < 0 | gain_err < .5;
+gain(rm_this) = [];
+ons(rm_this) = [];
+offs(rm_this) = [];
+gain_err(rm_this) = [];
+
+% find the mean stimulus in the preceding X ms in these windows
+
+% also find rho for various values of the history length and plot it
+rho = findRhoForHistoryLengths(gain,stim,ons,offs,history_lengths);
+
+figure('outerposition',[0 0 501 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(history_lengths,rho,'k+')
+xlabel('history length (ms)')
+title('Gain computed during "whiffs"')
+ylabel('\rho')
+set(gca,'XScale','log')
+
+prettyFig('FixLogX',true);
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 
 %% Version Info

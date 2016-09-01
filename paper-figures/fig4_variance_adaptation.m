@@ -411,6 +411,8 @@ ylabel(ax(5),'ab3A firing rate (norm)')
 
 ax(6).XLim = [0 .22];
 
+axyy(2).YTick = [0 axyy(2).YTick];
+
 prettyFig('fs',.5,'lw',1.5,'font_units','centimeters')
 
 labelFigure('x_offset',-.025)

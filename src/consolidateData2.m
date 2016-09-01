@@ -26,6 +26,7 @@ options.fly = true;
 options.orn = true;
 options.AllControlParadigms = true;
 options.paradigm_hashes = true;
+options.max_length = 70e3; % for firing rate, etc.
 
 if nargout && ~nargin 
 	varargout{1} = options;
@@ -62,6 +63,8 @@ fly = [];
 paradigm = [];
 A_spikes = [];
 B_spikes = [];
+A_spike_amp = [];
+B_spike_amp = [];
 orn = [];
 AllControlParadigms = struct;
 AllControlParadigms.Name = '';
@@ -101,11 +104,16 @@ ll = 0;
 for i = 1:length(allfiles)
 	load(strcat(pathname,allfiles(i).name));
 	for j = 1:length(data)
-		if ~isempty(data(j).PID)
-			ll = max([ll length(data(j).PID)]);
+		if ~isempty(data(j).voltage)
+			ll = max([ll length(data(j).voltage)]);
 		end
 	end
 end
+
+if ll > options.max_length*10
+	ll = options.max_length*10;
+end
+
 disp('Longest trial observed is:')
 disp(ll)
 ll = ceil(ll/10);
@@ -117,6 +125,9 @@ fA = zeros(ll,0);
 fB = zeros(ll,0);
 A_spikes = sparse(ll*10,0);
 B_spikes = sparse(ll*10,0);
+A_spike_amp = sparse(ll*10,0);
+B_spike_amp = sparse(ll*10,0);
+
 
 for i = 1:length(allfiles)
 	clear spikes data metadata
@@ -124,7 +135,7 @@ for i = 1:length(allfiles)
 	disp(strcat(pathname,allfiles(i).name));
 	for j = 1:length(data)
 		clear this_PID this_LFP this_A_spikes this_B_spikes this_hash this_paradigm 
-		if ~isempty(data(j).PID)
+		if ~isempty(data(j).voltage)
 
 			disp(['Paradigm : ' mat2str(j)]) 
 			% figure out which control paradigm this is
@@ -137,9 +148,26 @@ for i = 1:length(allfiles)
 				this_paradigm = find(strcmp(this_hash,paradigm_hashes));
 			end
 
+			% intercept early to get max length correctly
+			if length(data(j).voltage) > ll*10
+
+				data(j).voltage = data(j).voltage(:,1:ll*10);
+				data(j).PID = data(j).PID(:,1:ll*10);
+				try
+					spikes(j).A = spikes(j).A(:,1:ll*10);
+					spikes(j).B = spikes(j).B(:,1:ll*10);
+					spikes(j).amplitudes_A = spikes(j).A(:,1:ll*10);
+					spikes(j).amplitudes_B = spikes(j).B(:,1:ll*10);
+					
+				catch
+					
+				end
+			end
+
 			disp('Loading PID and raw voltage...')
-			this_PID = data(j).PID;
 			this_LFP = data(j).voltage;
+			this_PID = data(j).PID;
+
 			this_fA = NaN*this_LFP(:,1:10:end)';
 			this_fB = NaN*this_LFP(:,1:10:end)';
 
@@ -151,17 +179,22 @@ for i = 1:length(allfiles)
 					disp('No spike info for this paradigm.')
 					this_A_spikes = sparse(size(this_LFP,1),size(this_LFP,2));
 					this_B_spikes = sparse(size(this_LFP,1),size(this_LFP,2));
+					this_A_spike_amp = sparse(size(this_LFP,1),size(this_LFP,2));
+					this_B_spike_amp = sparse(size(this_LFP,1),size(this_LFP,2));
 				else
 					if length(spikes(j).A) > 10 && max(max(spikes(j).A)) > 0
 						disp('A Spikes exist for this paradigm, loading...')
 						this_A_spikes = spikes(j).A;
+						this_A_spike_amp = spikes(j).amplitudes_A;
+
 						if width(this_A_spikes) < width(this_PID)
 							disp('Spike width less than data width, padding...')
 							this_A_spikes = sparse(size(this_LFP,1),size(this_LFP,2));
+							this_A_spike_amp = sparse(size(this_LFP,1),size(this_LFP,2));
 							for k = 1:width(this_A_spikes)
 								try
 									this_A_spikes(k,:) = spikes(j).A(k,:);
-								catch
+									this_A_spike_amp(k,:) = spikes(j).amplitudes_A(k,:);
 								end
 							end
 						end
@@ -169,18 +202,22 @@ for i = 1:length(allfiles)
 						disp('No A spikes found!')
 						% create dummy this_A_spikes
 						this_A_spikes = sparse(size(this_LFP,1),size(this_LFP,2));
+						this_A_spike_amp = sparse(size(this_LFP,1),size(this_LFP,2));
 					end
 
 					% grab B spikes
 					if length(spikes(j).B) > 10 && max(max(spikes(j).B)) > 0
 						disp('B Spikes exist for this paradigm, loading...')
 						this_B_spikes = spikes(j).B;
+						this_B_spike_amp = spikes(j).amplitudes_B;
 						if width(this_B_spikes) < width(this_PID)
 							disp('Spike width less than data width, padding...')
 							this_B_spikes = sparse(size(this_LFP,1),size(this_LFP,2));
+							this_B_spike_amp = sparse(size(this_LFP,1),size(this_LFP,2));
 							for k = 1:width(this_B_spikes)
 								try
 									this_B_spikes(k,:) = spikes(j).B(k,:);
+									this_B_spike_amp(k,:) = spikes(j).amplitudes_B(k,:);
 								catch
 								end
 							end
@@ -189,6 +226,7 @@ for i = 1:length(allfiles)
 						disp('No B spikes found!')
 						% create dummy this_B_spikes
 						this_B_spikes = sparse(size(this_LFP,1),size(this_LFP,2));
+						this_B_spike_amp = sparse(size(this_LFP,1),size(this_LFP,2));
 					end
 				
 
@@ -228,6 +266,8 @@ for i = 1:length(allfiles)
 				this_LFP(rm_this,:) = [];
 				this_A_spikes(rm_this,:) = [];
 				this_B_spikes(rm_this,:) = [];
+				this_A_spike_amp(rm_this,:) = [];
+				this_B_spike_amp(rm_this,:) = [];
 				this_fA(:,rm_this) = [];
 				this_fB(:,rm_this) = [];
 
@@ -241,6 +281,7 @@ for i = 1:length(allfiles)
 
 
 			if length(this_LFP) < size(LFP,1) && length(this_LFP) > 1% this is to account for shorter paradigms, and pad them
+				disp('Short paradgim, need to pad...')
 				padding = NaN(size(LFP,1)-length(this_LFP),width(this_LFP));
 				this_LFP = [this_LFP; padding];
 				padding = NaN(size(PID,1)-length(this_PID),width(this_PID));
@@ -255,11 +296,25 @@ for i = 1:length(allfiles)
 				end
 
 				% pad spikes too
-				padding = NaN(size(spikes,1)-length(this_A_spikes),width(this_A_spikes));
-				this_A_spikes = [this_A_spikes; padding];
+				disp('Padding spikes...')
+				
+				padding = NaN(size(A_spikes,1)-length(this_A_spikes),width(this_A_spikes));
+				this_A_spikes = [this_A_spikes'; padding];
+				this_A_spike_amp = [this_A_spike_amp'; padding];
 
-				padding = NaN(size(spikes,1)-length(this_B_spikes),width(this_B_spikes));
-				this_B_spikes = [this_B_spikes; padding];
+				padding = NaN(size(B_spikes,1)-length(this_B_spikes),width(this_B_spikes));
+				this_B_spikes = [this_B_spikes'; padding];
+				this_B_spike_amp = [this_B_spike_amp'; padding];
+			else
+				disp('No padding, rotating spike matrix...')
+				% still need to pad spikes because of stupidity (the spike lengths may be slightly off because we divide the longest length by 10, then multiply by 10 again)
+				padding = NaN(size(A_spikes,1)-length(this_A_spikes),width(this_A_spikes));
+				this_A_spikes = [this_A_spikes'; padding];
+				this_A_spike_amp = [this_A_spike_amp'; padding];
+
+				padding = NaN(size(B_spikes,1)-length(this_B_spikes),width(this_B_spikes));
+				this_B_spikes = [this_B_spikes'; padding];
+				this_B_spike_amp = [this_B_spike_amp'; padding];
 			end
 
 			% check that PID and fA match
@@ -279,10 +334,12 @@ for i = 1:length(allfiles)
 				PID = [PID this_PID];
 				fA =  [fA  this_fA ];
 				fB =  [fB  this_fB ];
-				A_spikes = [A_spikes; this_A_spikes];
-				B_spikes = [B_spikes; this_B_spikes];
+				A_spikes = [A_spikes this_A_spikes];
+				B_spikes = [B_spikes this_B_spikes];
+				A_spike_amp = [A_spike_amp this_A_spike_amp];
+				B_spike_amp = [B_spike_amp this_B_spike_amp];
 			catch er
-				er
+				disp(er)
 				keyboard
 				
 			end
@@ -303,14 +360,15 @@ for i = 1:length(allfiles)
 
 			% also add the sequence 
 			try
-			this_sequence = find(timestamps(1,:)==j);
-			if length(rm_this) 
-				this_sequence(rm_this) = [];	
-			end
+				this_sequence = find(timestamps(1,:)==j);
+				if length(rm_this) 
+					this_sequence(rm_this) = [];	
+				end
+				sequence = [sequence this_sequence];
 			catch
 				warning('Error in assembling sequence info.')
 			end
-			sequence = [sequence this_sequence];
+			
 
 		end
 	end
@@ -330,6 +388,8 @@ consolidated_data.orn = orn;
 consolidated_data.fly = fly;
 consolidated_data.A_spikes  = A_spikes;
 consolidated_data.B_spikes  = B_spikes;
+consolidated_data.A_spike_amp  = A_spike_amp;
+consolidated_data.B_spike_amp  = B_spike_amp;
 consolidated_data.sequence = sequence;
 save([pathname 'consolidated_data.mat'],'consolidated_data');
 

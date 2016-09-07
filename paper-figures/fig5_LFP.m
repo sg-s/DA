@@ -155,7 +155,6 @@ msg_data.LFP = dLFP;
 msg_data.fA = fA;
 msg_data.paradigm = paradigm;
 
-
 %  ######   #######  ##    ## ######## ########     ###     ######  ######## 
 % ##    ## ##     ## ###   ##    ##    ##     ##   ## ##   ##    ##    ##    
 % ##       ##     ## ####  ##    ##    ##     ##  ##   ##  ##          ##    
@@ -456,7 +455,6 @@ errorbar(var_firing_gain_plot,nanmean(x),nanmean(y),nanstd(y),'b','LineWidth',4,
 xlabel(var_firing_gain_plot,'\sigma_{Stimulus} (V)')
 ylabel(var_firing_gain_plot,'ab3A Firing gain (Hz/mV)')
 set(var_firing_gain_plot,'XLim',[0 .2],'YLim',[0 50])
-
 
 prettyFig('fs',16)
  

@@ -270,7 +270,8 @@ for i = 2:length(od) % first one has stimulus which is too low, different paradi
 
 	% plot
 
-	l(2) = plotPieceWiseLinear(mean_x,lag,'Color',firing_color,'nbins',19);
+	[~,data] = plotPieceWiseLinear(mean_x,lag,'nbins',19,'make_plot',false);
+	l(2) = plot(data.x,data.y,'Color',firing_color);
 end
 
 set(ax.DA_kinetics,'XScale','log','YLim',[0 160],'XLim',[1e-3 5])
@@ -352,11 +353,12 @@ for i = 2:length(od) % first one has stimulus which is too low, different paradi
 
 	% plot
 
-	l(1) = plotPieceWiseLinear(mean_x,lag,'Color',LFP_color,'nbins',19);
+	[~,data] = plotPieceWiseLinear(mean_x,lag,'nbins',19,'make_plot',false);
+	l(1) = plot(data.x,data.y,'Color',LFP_color);
 end
 
 set(ax.DA_kinetics,'XScale','log','YLim',[0 160],'XLim',[1e-3 5],'XTick',[1e-3 1e-2 1e-1 1])
-xlabel(ax.DA_kinetics,'\mu_{Stimulus} in preceding 1 s (V)')
+xlabel(ax.DA_kinetics,'\mu_{Stimulus} in preceding 300 ms (V)')
 ylabel(ax.DA_kinetics,'Lag (ms)')
 legend2 = legend(l,{'LFP DA model','Firing DA model'},'Location','northwest');
 

@@ -197,7 +197,7 @@ if being_published
 end
 
 %% EAG derivative 
-%  Now, we repeat this analysis with the derivative of the EAG. The advantage of using the derivative is we don't have to filter the EAG to remove slow fluctuations (here, we're still smoothing over 50 ms because the derivative is noisy). 
+% Now, we repeat this analysis with the derivative of the EAG. The advantage of using the derivative is we don't have to filter the EAG to remove slow fluctuations (here, we're still smoothing over 50 ms because the derivative is noisy). 
 
 [K2, dEAG_pred, K1_gain] = extractFilters(PID,dEAG,'filter_length',2e3,'filter_offset',offset);
 

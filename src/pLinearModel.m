@@ -12,14 +12,13 @@ lb.n = 1;
 lb.tau1 = 1;
 lb.tau2 = 2;
 lb.A = 0;
-lb.x_offset = -100;
 
 % set upper bounds
 ub.n = 4;
 ub.tau1 = 400;
 ub.tau2 = 600;
 ub.A = 1;
-ub.x_offset = 20;
+
 
 
 % show parameters for readability
@@ -29,7 +28,6 @@ p.tau1;
 p.tau2;
 p.scale;
 p.offset;
-p.x_offset;
 
 % make the filters
 filter_length = 10*max([p.n*p.tau2  p.n*p.tau1]);
@@ -40,8 +38,6 @@ end
 t = 0:filter_length; 
 K = filter_gamma2(t,p);
 
-% offset the stimulus
-s = circshift(s,round(p.x_offset));
 
 % filter the input
 shat = filter(K,1,s);

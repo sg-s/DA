@@ -323,8 +323,6 @@ set(ax.L,'XLim',[-.2 1])
 ax.resp.Position = [0.1300    0.4096    0.7750    0.19];
 ax.stim.Position = [0.1300    0.64    0.7750    0.19];
 
-
-
 prettyFig('plw',1.5,'lw',1.5,'fs',.5,'FixLogX',true,'font_units','centimeters','x_minor_ticks',false,'y_minor_ticks',false)
 
 % add some labels

@@ -5,24 +5,7 @@
 % This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-% add homebrew path
-path1 = getenv('PATH');
-if isempty(strfind(path1,':/usr/local/bin'))
-    path1 = [path1 ':/usr/local/bin'];
-end
-setenv('PATH', path1);
-
-% this code determines if this function is being called
-calling_func = dbstack;
-being_published = 0;
-if ~isempty(calling_func)
-	if find(strcmp('publish',{calling_func.name}))
-		being_published = 1;
-		unix(['tag -a publish-failed ',which(mfilename)]);
-		unix(['tag -r published ',which(mfilename)]);
-	end
-end
-tic
+pHeader;
 
 %% PID Calibration
 % In this document, we calibrate the PID and odour delivery system with known quantities of odorant, so that we can map out the relationships between flow rate, PID values, and gas-phase concentration. 
@@ -48,6 +31,10 @@ for i = 1:length(alldata)
 	min_pid = min([min_pid; alldata(i).PID]);
 end
 
+% remove minimum
+for i = 1:length(alldata)
+	alldata(i).PID = alldata(i).PID - min_pid;
+end
 
 figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 800]); hold on
 subplot(2,1,1), hold on
@@ -56,7 +43,7 @@ L = {};
 
 for i = 1:length(alldata)
 	t = alldata(i).t;
-	plot(t-t(1),alldata(i).PID - min_pid,'Color',c(i,:))
+	plot(t-t(1),alldata(i).PID,'Color',c(i,:))
 	L{i} = [mat2str(alldata(i).flowrate) 'mL/min'];
 
 end
@@ -69,7 +56,7 @@ for i = 1:length(alldata)
 	t = alldata(i).t;
 	t = t-t(1);
 	t = t*alldata(i).flowrate/60;
-	plot(t,alldata(i).PID-min_pid,'Color',c(i,:))
+	plot(t,alldata(i).PID,'Color',c(i,:))
 end
 xlabel('Cumulative Air Flow (mL)')
 ylabel('PID (V)')
@@ -89,24 +76,25 @@ figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 50
 subplot(1,2,1), hold on
 clear l 
 for i = 1:length(alldata)
-	l(1) = plot(alldata(i).flowrate,mean(alldata(i).PID),'k+');
-	l(2) = plot(alldata(i).flowrate,max(alldata(i).PID),'r+');
+	l(1) = plot(alldata(i).flowrate/60,mean(alldata(i).PID),'k+');
+	l(2) = plot(alldata(i).flowrate/60,max(alldata(i).PID),'r+');
 end
-xlabel('Flow Rate (mL/min)')
+xlabel('Flow Rate (mL/s)')
 ylabel('PID (V)')
 legend(l,{'Mean','Peak'},'Location','northwest')
 
 subplot(1,2,2), hold on
 x = []; y = [];
 for i = 1:length(alldata)
-	x = [alldata(i).flowrate x];
-	y = [mean(diff(alldata(i).t))*sum((alldata(i).PID)) y];
+	x = [alldata(i).flowrate/60 x]; % units now in mL/s
+	y = [mean(diff(alldata(i).t))*sum((alldata(i).PID)) y]; % this is the time integrated PID signal
 end
 ff = fit(x(:),y(:),'smoothingspline');
-plot(1:max(x),ff(1:max(x)),'r')
+plot(linspace(0.5,max(x),100),ff(linspace(0.5,max(x),100)),'r')
 plot(x,y,'k+')
 ylabel('\int PID (V s)')
-xlabel('Flow Rate (mL/min)')
+xlabel('Flow Rate (mL/s)')
+set(gca,'XLim',[0 max(x)],'YLim',[0 1.1*max(y)])
 
 prettyFig()
 
@@ -118,10 +106,14 @@ end
 %%
 % We now use this expected value of integrated PID signal to back-calculate the odour flux as a function of time for these long pulses. The bottom panel also shows the cumulative odour delivered as a function of time, for the different flow rates. The dashed line is the expected # of moles delivered, based on the volume of odourant put into the vial in the first place. 
 
+peak_flux = NaN(length(alldata),1);
+
 figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
 subplot(2,1,1), hold on
 for i = 1:length(alldata)
-	plot(alldata(i).t,mean(diff(alldata(i).t))*alldata(i).PID*(1.023e-3)/ff(alldata(i).flowrate),'Color',c(i,:))
+	odour_flux = mean(diff(alldata(i).t))*alldata(i).PID*(1.023e-3)/ff(alldata(i).flowrate/60);
+	peak_flux(i) = max(odour_flux);
+	plot(alldata(i).t,odour_flux,'Color',c(i,:))
 end
 legend(L)
 ylabel('Odour flux (mol/s)')
@@ -129,9 +121,9 @@ ylabel('Odour flux (mol/s)')
 subplot(2,1,2), hold on
 odour_flux = [];
 for i = 1:length(alldata)
-	plot(alldata(i).t,mean(diff(alldata(i).t))*cumsum(alldata(i).PID*(1.023e-3)/ff(alldata(i).flowrate)),'Color',c(i,:))
+	plot(alldata(i).t,mean(diff(alldata(i).t))*cumsum(alldata(i).PID*(1.023e-3)/ff(alldata(i).flowrate/60)),'Color',c(i,:))
 	x = alldata(i).t;
-	y = mean(diff(alldata(i).t))*cumsum(alldata(i).PID*(1.023e-3)/ff(alldata(i).flowrate));
+	y = mean(diff(alldata(i).t))*cumsum(alldata(i).PID*(1.023e-3)/ff(alldata(i).flowrate/60));
 	x = x(:); y = y(:);
 	temp = fit(x,y,'poly1');
 	odour_flux(i) = temp.p1;
@@ -165,35 +157,26 @@ if being_published
 end
 
 
-%% Version Info
-% The file that generated this document is called:
-disp(mfilename)
+%% Linearity of Response
+% In this section, we check for the linearity of the PID response by plotting the PIF value as a function of the odor flux. 
 
-%%
-% and its md5 hash is:
-Opt.Input = 'file';
-disp(dataHash(strcat(mfilename,'.m'),Opt))
-
-%%
-% This file should be in this commit:
-[status,m]=unix('git rev-parse HEAD');
-if ~status
-	disp(m)
-end
-
-%%
-% This file has the following external dependencies:
-showDependencyHash(mfilename);
-
-t = toc;
-
-%% 
-% This document was built in: 
-disp(strcat(oval(t,3),' seconds.'))
-
-% tag the file as being published 
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+y = cellfun(@max,{alldata.PID});
+plot(peak_flux,y,'k+');
+lf = fit(peak_flux,y(:),'poly1');
+l = plot(sort(peak_flux),lf(sort(peak_flux)),'r');
+L = ['r^2 = ' oval(rsquare(y,lf(peak_flux)))];
+legend(l,L,'Location','southeast')
+xlabel('ethyl acetate flux (mol/s)')
+ylabel('PID response (V)')
+set(gca,'XLim',[0 1.3e-5],'YLim',[0  2.2])
+prettyFig();
 
 if being_published
-	unix(['tag -a published ',which(mfilename)]);
-	unix(['tag -r publish-failed ',which(mfilename)]);
+	snapnow
+	delete(gcf)
 end
+
+%% Version Info
+
+pFooter;

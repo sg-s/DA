@@ -200,7 +200,9 @@ figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500
 plot(peak_PID,peak_flux,'r+');
 plot(asym_PID,asym_flux,'ro');
 plot(x,lf(x),'r');
+warning off
 r2_2ac = rsquare(lf(peak_flux),peak_PID);
+warning on
 
 ylabel('odorant flux (mol/s)')
 xlabel('PID response (V)')
@@ -250,7 +252,9 @@ x = linspace(0,max(peak_PID),10);
 plot(peak_PID,peak_flux,'b+');
 plot(asym_PID,asym_flux,'bo');
 plot(x,lf(x),'b');
+warning off
 r2_2but = rsquare(lf(peak_flux),peak_PID);
+warning on
 
 clear l L
 l(1) = plot(NaN,NaN,'r');

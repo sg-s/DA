@@ -14,11 +14,12 @@ dm = dataManager;
 
 clear cdata
 cdata = consolidateData2(getPath(dataManager,'93ba5d68174e3df9f462a1fc48c581da'));
+A_spikes = cdata.A_spikes;
 cdata = cleanMSGdata(cdata);
 
 v2struct(cdata)
 
-clearvars LFP LFP_pred LFP_gain cdata fB
+clearvars LFP_pred LFP_gain fB cdata
 
 % remove some bad trials
 bad_trials =  max(fA) == 0;
@@ -30,6 +31,9 @@ orn(bad_trials) = [];
 fly(bad_trials) = [];
 fA_gain(bad_trials) = [];
 paradigm(bad_trials) = [];
+LFP(:,bad_trials) = [];
+A_spikes(bad_trials,:) = [];
+
 
 % some core variables
 dt = 1e-3;
@@ -213,6 +217,52 @@ if being_published
 	delete(gcf)
 end
 
+%  ######  ##     ## ########  ########     ######## ####  ######   
+% ##    ## ##     ## ##     ## ##     ##    ##        ##  ##    ##  
+% ##       ##     ## ##     ## ##     ##    ##        ##  ##        
+%  ######  ##     ## ########  ########     ######    ##  ##   #### 
+%       ## ##     ## ##        ##           ##        ##  ##    ##  
+% ##    ## ##     ## ##        ##           ##        ##  ##    ##  
+%  ######   #######  ##        ##           ##       ####  ######   
+
+%% Supp Fig for eLIFE
+
+figure('outerposition',[0 0 1000 801],'PaperUnits','points','PaperSize',[1000 801]); hold on
+clear ax
+
+p = find(paradigm == 1); p(5) = []; 
+c = [.7 .7 .7];
+
+ax(1) = subplot(3,1,1); hold on
+plot(time,PID(:,p),'Color',c)
+plot(time,mean(PID(:,p),2),'k','LineWidth',2)
+set(gca,'XLim',[35 45.03],'YLim',[0 0.55])
+ylabel('Stimulus (V)')
+
+ax(2) = subplot(3,1,2); hold on
+plot(time,LFP(:,p),'Color',c)
+plot(time,mean(LFP(:,p),2),'k','LineWidth',2)
+set(gca,'XLim',[35 45.03],'YLim',[-4 3])
+ylabel('ab3 LFP (mV)')
+
+ax(3) = subplot(3,1,3); hold on
+raster2(A_spikes(p,:),[],0.5,'k')
+set(gca,'XLim',[35 45.03],'YLim',[.5 7.5])
+ylabel('ORN #')
+xlabel('Time (s)')
+
+prettyFig('plw',1);
+
+for i = 1:3
+	deintersectAxes(ax(i))
+end
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+return
 
 %  ######  ##     ## ########  ########     ######## ####  ######   
 % ##    ## ##     ## ##     ## ##     ##    ##        ##  ##    ##  

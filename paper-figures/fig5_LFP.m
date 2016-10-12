@@ -13,13 +13,13 @@ msg_cartoon_plot = subplot(3,4,1:2); hold on
 var_cartoon_plot = subplot(3,4,3:4); hold on
 
 msg_lfp_io_plot = subplot(3,4,5); hold on
-msg_lfp_gain_plot = subplot(3,4,6); hold on
-msg_firing_io_plot = subplot(3,4,9); hold on
+msg_lfp_gain_plot = subplot(3,4,9); hold on
+msg_firing_io_plot = subplot(3,4,6); hold on
 msg_firing_gain_plot = subplot(3,4,10); hold on
 
 var_lfp_io_plot = subplot(3,4,7); hold on
-var_lfp_gain_plot = subplot(3,4,8); hold on
-var_firing_io_plot = subplot(3,4,11); hold on
+var_lfp_gain_plot = subplot(3,4,11); hold on
+var_firing_io_plot = subplot(3,4,8); hold on
 var_firing_gain_plot = subplot(3,4,12); hold on
 
 % show the cartoons
@@ -139,14 +139,14 @@ for i = 1:max(paradigm) % iterate over all paradigms
 	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:));
 end
 xlabel(msg_firing_io_plot,'Projected LFP (mV)')
-ylabel(msg_firing_io_plot,'ab3A Firing rate (Hz)')
+ylabel(msg_firing_io_plot,'ab3A firing rate (Hz)')
 
 % show firing machinery gain
 for i = 1:length(paradigm)
 	plot(msg_firing_gain_plot,mean_stim(i),10*K2_gain(i),'+','Color',c(paradigm(i),:))
 end
 xlabel(msg_firing_gain_plot,'\mu_{Stimulus} (V)')
-ylabel(msg_firing_gain_plot,'ab3A Firing gain (Hz/mV)')
+ylabel(msg_firing_gain_plot,'ab3A firing gain (Hz/mV)')
 set(msg_firing_gain_plot,'XScale','log','YScale','log','YLim',[1e-1 1e1],'XLim',[.1 2])
 
 clear msg_data
@@ -415,7 +415,7 @@ y = lo_gain_LFP_corrected(r2_K1p>.8);
 plot(var_lfp_gain_plot,x,y,'+','Color',[opacity opacity 1])
 errorbar(var_lfp_gain_plot,nanmean(x),nanmean(y),nanstd(y),'b','LineWidth',4,'Marker','o','MarkerSize',10);
 xlabel(var_lfp_gain_plot,'\sigma_{Stimulus} (V)')
-ylabel(var_lfp_gain_plot,'ab3 transduction Gain (mV/V)')
+ylabel(var_lfp_gain_plot,'ab3 transduction gain (mV/V)')
 set(var_lfp_gain_plot,'XLim',[0 .2],'YLim',[0 15])
 
 % show firing i/o curves
@@ -441,7 +441,7 @@ x = x(:); y = y(:);
 x = x(1:ss:end); y = y(1:ss:end);
 [~,data_lo] = plotPieceWiseLinear(x(:),y(:),'nbins',50,'Color',[0 0 1],'proportional_bins',true,'show_error',false);
 xlabel(var_firing_io_plot,'Projected LFP (mV)')
-ylabel(var_firing_io_plot,'ab3A Firing rate (Hz)')
+ylabel(var_firing_io_plot,'ab3A firing rate (Hz)')
 
 % plot firing gain change
 x = std(reshaped_PID(1e3:4e3,r2_K2p>.8));
@@ -453,25 +453,22 @@ y = lo_gain_firing(r2_K2p>.8);
 plot(var_firing_gain_plot,x,y,'+','Color',[opacity opacity 1])
 errorbar(var_firing_gain_plot,nanmean(x),nanmean(y),nanstd(y),'b','LineWidth',4,'Marker','o','MarkerSize',10);
 xlabel(var_firing_gain_plot,'\sigma_{Stimulus} (V)')
-ylabel(var_firing_gain_plot,'ab3A Firing gain (Hz/mV)')
+ylabel(var_firing_gain_plot,'ab3A firing gain (Hz/mV)')
 set(var_firing_gain_plot,'XLim',[0 .2],'YLim',[0 50])
 
 prettyFig('fs',16)
- 
+
+
 % some cosmetic fixes
 var_firing_io_plot.Box = 'off';
-msg_lfp_io_plot.Position(1) = .1;
-msg_firing_io_plot.Position(1) = .1;
-msg_firing_gain_plot.Position(1) = .31;
-msg_lfp_gain_plot.Position(1) = .31;
 
-var_lfp_io_plot.Position(1) = .57;
-var_firing_io_plot.Position(1) = .57;
-var_firing_gain_plot.Position(1) = .79;
-var_lfp_gain_plot.Position(1) = .79;
+msg_cartoon_plot.Position = [.03 .62 .5 .25];
+var_cartoon_plot.Position = [.53 .62 .5 .25];
 
-msg_cartoon_plot.Position= [.03 .62 .5 .25];
-var_cartoon_plot.Position= [.53 .62 .5 .25];
+movePlot(var_lfp_io_plot,'right',.04)
+movePlot(var_firing_io_plot,'right',.04)
+movePlot(var_firing_gain_plot,'right',.04)
+movePlot(var_lfp_gain_plot,'right',.04)
 
 uistack(msg_cartoon_plot,'bottom');
 uistack(var_cartoon_plot,'bottom');

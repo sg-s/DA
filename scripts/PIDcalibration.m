@@ -197,14 +197,14 @@ clear l
 
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-plot(peak_PID,peak_flux,'r+');
-plot(asym_PID,asym_flux,'ro');
-plot(x,lf(x),'r');
+plot(peak_PID,peak_flux*1e6,'r+');
+plot(asym_PID,asym_flux*1e6,'ro');
+plot(x,1e6*lf(x),'r');
 warning off
 r2_2ac = rsquare(lf(peak_flux),peak_PID);
 warning on
 
-ylabel('odorant flux (mol/s)')
+ylabel('odorant flux (\mu mol/s)')
 xlabel('PID response (V)')
 
 % now also do the 2-butanone calibration
@@ -249,9 +249,9 @@ peak_PID = cellfun(@max,{alldata.PID});
 lf = fit(peak_PID(:),peak_flux,'poly1','Upper',[Inf 0],'Lower',[-Inf 0]);
 x = linspace(0,max(peak_PID),10);
 
-plot(peak_PID,peak_flux,'b+');
-plot(asym_PID,asym_flux,'bo');
-plot(x,lf(x),'b');
+plot(peak_PID,peak_flux*1e6,'b+');
+plot(asym_PID,asym_flux*1e6,'bo');
+plot(x,1e6*lf(x),'b');
 warning off
 r2_2but = rsquare(lf(peak_flux),peak_PID);
 warning on
@@ -264,7 +264,7 @@ L{1} = ['ethyl acetate, r^2 = ' oval(r2_2ac)];
 L{2} = ['2-butanone, r^2 = ' oval(r2_2but)];
 legend(l,L,'Location','northeast');
 
-set(gca,'YLim',[0 1.4e-5],'XLim',[0  8])
+set(gca,'YLim',[0 14],'XLim',[0  8])
 
 prettyFig();
 

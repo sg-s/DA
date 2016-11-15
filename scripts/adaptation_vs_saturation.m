@@ -240,6 +240,90 @@ for ki = 1:length(all_k_d)
 
 end
 
+%% 
+% What do we have to do make the input-output curves in this model look like what the data looks like, for the Gaussian stimuli? One possibility is that there actually is adaptation in the Gaussian stimuli, and that if we change the input nonlinearity in the NLN model, we get curves looking like what our data looks like. That's what I do in this figure: I manually set the $K_D$ of the input nonlinearity to be the mean stimulus for each paradigm, and carry out the analysis as before.  
+
+figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
+clear ax
+for i = 1:3
+	ax(i) = subplot(1,3,i); hold on
+end
+
+% average stimulus for each paradigm value, and then play that through the model
+MSGdata.time = 1e-3*(1:length(MSGdata.PID));
+hill_param = [1 .5 1];
+for i = 1:length(MSGdata.paradigm)
+	hill_param(2) = mean(MSGdata.PID(35e3:55e3,i));
+	MSGdata.NL_pred(:,i) = hill(hill_param,MSGdata.PID(:,i));
+	MSGdata.NL_pred(:,i) = convolve(MSGdata.time,MSGdata.NL_pred(:,i),MSGdata.K,MSGdata.filtertime);
+	MSGdata.NL_pred(MSGdata.NL_pred(:,i)<0,i) = 0;
+end
+
+% show these changing input nonlinearities 
+c = parula(11);
+for i = 1:max(MSGdata.paradigm)
+	hill_param(2) = mean(mean(MSGdata.PID(35e3:55e3,MSGdata.paradigm==i)));
+	x = logspace(-2,2,100);
+	H = hill(hill_param,x); 
+	plot(ax(1),x,H,'Color',c(i,:))
+end
+set(ax(1),'XScale','log')
+
+% recover filters for every trial
+for i = 1:length(MSGdata.paradigm)
+	MSGdata.Khat(:,i) = fitFilter2Data(MSGdata.PID(35e3:55e3,i),MSGdata.NL_pred(35e3:55e3,i),'reg',1,'offset',100,'filter_length',700);
+	MSGdata.Khat(:,i) = MSGdata.Khat(:,i)/norm(MSGdata.Khat(:,i));
+	MSGdata.Khat(:,i) = MSGdata.Khat(:,i)*norm(MSGdata.K);
+end
+
+
+% reproject all the stimuli
+for i = 1:length(MSGdata.paradigm)
+	MSGdata.K_pred(:,i) = convolve(MSGdata.time,MSGdata.PID(:,i),MSGdata.Khat(:,i),MSGdata.filtertime);
+end
+
+% make i/o curves for different mean stimuli and compute gain in each paradigm 
+axes(ax(2)), hold(ax(2),'on')
+for i = 1:max(MSGdata.paradigm)
+	x = mean(MSGdata.K_pred(35e3:55e3,MSGdata.paradigm==i),2);
+	y = mean(MSGdata.NL_pred(35e3:55e3,MSGdata.paradigm==i),2);
+
+	% s = nanmean(MSGdata.PID(:,MSGdata.paradigm==i),2);
+	% x = x - nanmean(x);
+	% x = x + nanmean(nanmean(s));
+
+	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:),'show_error',false,'LineWidth',2);
+	
+end
+xlabel(ax(2),'Projected Stimulus (a.u.)')
+ylabel(ax(2),'R (a.u.)')
+
+for i = 1:length(MSGdata.paradigm)
+	x = MSGdata.K_pred(35e3:55e3,i);
+	y = MSGdata.NL_pred(35e3:55e3,i);
+	ff = fit(x(:),y(:),'poly1');
+	MSGdata.NL_gain(i) = ff.p1;
+end
+
+mean_stim = mean(MSGdata.PID(35e3:55e3,:));
+for i = 1:max(MSGdata.paradigm)
+	plot(ax(3),mean_stim(MSGdata.paradigm == i), MSGdata.NL_gain(MSGdata.paradigm==i),'+','Color',c(i,:))
+end
+set(ax(3),'XScale','log','YScale','log','XLim',[.1 2],'YLim',[1e-2 2],'XTick',[.1 .2 .5 1])
+xlabel(ax(3),'Mean stimulus (V)')
+ylabel(ax(3),'Gain (a.u.)')
+
+prettyFig('fs',12)
+
+suptitle('Changing K_D of input nonlinearity in NLN model reproduces features of data')
+
+drawnow
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
 %% Estimating the input nonlinearity directly from the data
 % In this section, I attempt to directly estimate the input nonlinearity as follows: first, I swap the stimulus and the response from the NLN model data (see prev. section) and extract a filter that when convolved with the response, predicts the stimulus. This filter is mostly a-causal. In the following figure, I first plot the filter from the response to the stimulus. Note that most of the filter is in negative time (the future). Next, I plot the predicted stimulus vs. the actual stimulus (which is the estimate of the input nonlinearity). I also plot the actual input nonlinearity in red (rescaled to fit the max of the reconstructed nonlinearity). 
 
@@ -271,11 +355,13 @@ xlabel('Actual Stimulus (V)')
 ylabel('Predicted Stimulus (a.u.)')
 title('Reconstructed input nonlinearity')
 
-x = logspace(-2,log10(8),100);
+x = logspace(-4,log10(8),100);
 H = hill(hill_param,x); H = H/max(H); H = H*max(rev_proj);
 l = plot(x,H,'r');
 
-legend(l,'Actual NL, rescaled','Location','southeast')
+legend(l,'Actual NL, rescaled','Location','northwest')
+
+set(gca,'XScale','log')
 
 prettyFig('fs',16)
 
@@ -286,6 +372,11 @@ if being_published
 	snapnow	
 	delete(gcf)
 end
+
+%%
+% In a perfect world, this method would show if the input nonlinearity is changing or not. It's hard to tell in this case. 
+
+
 
 %% Version Info
 %

@@ -381,7 +381,7 @@ end
 
 clear p data
 data.stimulus = [NSdata.PID NSdata.fA];
-p.k_D = 0.6692;
+p.k_D = 0.6565;
 p.n = 1;
 [R,K] = NLNmodel(data.stimulus,p);
 
@@ -407,7 +407,7 @@ if being_published
 end
 
 %%
-% This looks like the NLN model can reproduce the naturalistic stimulus data well. What if we fit the NLN model to the denser naturalistic stimulus data? In this dataset, we expand the model to allow the steepness of the input Hill function to vary. Even then, the best-fit NLN model doesn't seem to reproduce the data well, and a plot of the response vs. the best-fit NLN prediction shows a fan-shaped structure, suggesting that gain of response as defined w.r.t to the NLN model vary during the trace. 
+% This looks like the NLN model can reproduce the naturalistic stimulus data well. What if we fit the NLN model to the denser naturalistic stimulus data? For this dataset, we expand the model to also fit the steepness of the static input nonlinearity. This model can reproduce responses to even the dense naturalistic stimuli very well. Note that it underestimates the responses to the first two whiffs, but progressively gets better. This could be a way to estimate the timescale of gain control from this dataset. 
 
 load('/local-data/DA-paper/data-for-paper/fig7/nat-stim-ab3/combined_data.ORNData','-mat')
 
@@ -415,8 +415,8 @@ clear data p
 data.response = mean(od(3).firing_rate,2);
 data.stimulus = [mean(od(3).stimulus,2) mean(od(3).firing_rate,2)];
 data.stimulus(:,1) = data.stimulus(:,1) -min(min(od(3).stimulus(1:5e3,:)));
-p.k_D = 1.57;
-p.n = 2;
+p.k_D = 0.0797;
+p.n = 1.7561;
 [R,K] = NLNmodel(data.stimulus,p);
 
 
@@ -427,7 +427,7 @@ plot(NSdata.time,R,'r');
 legend({'Data',['NLN model, r^2 = ' oval(rsquare(R(10e3:60e3),data.response(10e3:60e3)))]},'Location','northwest')
 xlabel('Time (s)')
 ylabel('Firing rate (Hz)')
-set(gca,'XLim',[10 70])
+set(gca,'XLim',[0 70])
 
 subplot(1,3,3); hold on
 plot(R,data.response,'k')
@@ -442,7 +442,7 @@ if being_published
 end
 
 %%
-% How sure am I that a static NLN model can't do a good job at explaining this data? Since this model has only two explicit parameters (and the other components like the filter and the output nonlinearity are directly estimated from the data), I can sweep over the two parameters and measure the $r^2$ of the fit for each case. That's what I'm doing in this figure:
+% How sensitive is this to the two parameters? 
 
 all_n = linspace(.5,4,8);
 all_k_d = logspace(-3,1,10);
@@ -493,8 +493,9 @@ if being_published
 	delete(gcf)
 end
 
+
 %%
-% In comparison, I then fit a DA model to the same data, to see how well that does. If it does better than this NLN model, this adds to the evidence that there is real, dynamical adaptation that cannot be captured by a NLN model in this data. 
+% In comparison, I then fit a DA model to the same data, to see how well that does. 
 
 clear p
 p.   s0 = -0.0234;
@@ -506,7 +507,6 @@ p.    C = 0.7219;
 p.    A = 897.1875;
 p.    B = 11.4062;
 R = DAModelv2(data.stimulus(:,1),p);
-R(R<0) = 0;
 
 figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
 subplot(1,3,1:2); hold on
@@ -515,7 +515,7 @@ plot(NSdata.time,R,'r');
 legend({'Data',['DA model, r^2 = ' oval(rsquare(R(10e3:60e3),data.response(10e3:60e3)))]},'Location','northwest')
 xlabel('Time (s)')
 ylabel('Firing rate (Hz)')
-set(gca,'XLim',[10 60],'YLim',[0 120])
+set(gca,'XLim',[0 70],'YLim',[0 120])
 
 subplot(1,3,3); hold on
 plot(R(10e3:60e3),data.response(10e3:60e3),'k')

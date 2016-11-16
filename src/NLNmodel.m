@@ -24,11 +24,11 @@ x = (S.^p.n)./(S.^p.n+p.k_D^p.n);
 % fit a filter from x to T
 K = fitFilter2Data(x,T,'reg',1,'filter_length',700,'offset',100);
 
-
 K = K(50:end-50);
 filtertime = 1e-3*(1:length(K)) - 50e-3;
 time = 1e-3*(1:length(T));
-R = convolve(time,S,K,filtertime);
+R = convolve(time,x,K,filtertime);
+
 
 R(R<0) = 0;
 

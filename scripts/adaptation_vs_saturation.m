@@ -376,6 +376,159 @@ end
 %%
 % In a perfect world, this method would show if the input nonlinearity is changing or not. It's hard to tell in this case. 
 
+%% Fitting a NLN model to the data
+% In this section, we fit a NLN model to the naturalistic stimulus data to see how well we can reproduce the data. The NLN model has a simple Hill function (n=1) as the input nonlinearity, with a fixed $K_D$. The output nonlinearity is simply a threshold linear function, and the linear filter is non-parametrically fit. Thus the only free parameter is the $K_D$. 
+
+clear p data
+data.stimulus = [NSdata.PID NSdata.fA];
+p.k_D = 0.6692;
+p.n = 1;
+[R,K] = NLNmodel(data.stimulus,p);
+
+figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
+subplot(1,3,1:2); hold on
+plot(NSdata.time,NSdata.fA,'k')
+plot(NSdata.time,R,'r');
+legend({'Data',['NLN model, r^2 = ' oval(rsquare(R,NSdata.fA))]},'Location','northwest')
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+set(gca,'XLim',[0 70])
+
+subplot(1,3,3); hold on
+plot(R,NSdata.fA,'k')
+xlabel('NLN prediction (Hz)')
+ylabel('ORN response (Hz)')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% This looks like the NLN model can reproduce the naturalistic stimulus data well. What if we fit the NLN model to the denser naturalistic stimulus data? In this dataset, we expand the model to allow the steepness of the input Hill function to vary. Even then, the best-fit NLN model doesn't seem to reproduce the data well, and a plot of the response vs. the best-fit NLN prediction shows a fan-shaped structure, suggesting that gain of response as defined w.r.t to the NLN model vary during the trace. 
+
+load('/local-data/DA-paper/data-for-paper/fig7/nat-stim-ab3/combined_data.ORNData','-mat')
+
+clear data p
+data.response = mean(od(3).firing_rate,2);
+data.stimulus = [mean(od(3).stimulus,2) mean(od(3).firing_rate,2)];
+data.stimulus(:,1) = data.stimulus(:,1) -min(min(od(3).stimulus(1:5e3,:)));
+p.k_D = 1.57;
+p.n = 2;
+[R,K] = NLNmodel(data.stimulus,p);
+
+
+figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
+subplot(1,3,1:2); hold on
+plot(NSdata.time,data.response,'k')
+plot(NSdata.time,R,'r');
+legend({'Data',['NLN model, r^2 = ' oval(rsquare(R(10e3:60e3),data.response(10e3:60e3)))]},'Location','northwest')
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+set(gca,'XLim',[10 70])
+
+subplot(1,3,3); hold on
+plot(R,data.response,'k')
+xlabel('NLN prediction (Hz)')
+ylabel('ORN response (Hz)')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% How sure am I that a static NLN model can't do a good job at explaining this data? Since this model has only two explicit parameters (and the other components like the filter and the output nonlinearity are directly estimated from the data), I can sweep over the two parameters and measure the $r^2$ of the fit for each case. That's what I'm doing in this figure:
+
+all_n = linspace(.5,4,8);
+all_k_d = logspace(-3,1,10);
+r2 = NaN(length(all_n),length(all_k_d));
+if exist('NLN_nat_stim_v2_r2.mat','file')
+	load('NLN_nat_stim_v2_r2.mat','r2')
+else
+	for i = 1:length(all_n)
+		if ~being_published
+			textbar(i,length(all_n))
+		end
+		for j = 1:length(all_k_d)
+			clear p
+			p.k_D = all_k_d(j);
+			p.n = all_n(i);
+			R = NLNmodel(data.stimulus,p);
+			r2(i,j) = rsquare(R(10e3:60e3),data.response(10e3:60e3));
+		end
+		save('NLN_nat_stim_v2_r2.mat','r2')
+	end
+end
+
+k_d_labels = {};
+for i = 1:length(all_k_d)
+	k_d_labels{i} = oval(all_k_d(i));
+end
+
+
+n_labels = {};
+for i = 1:length(all_n)
+	n_labels{i} = oval(all_n(i));
+end
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+imagesc(r2)
+xlabel('K_D')
+ylabel('n')
+set(gca,'XTick',[1:10],'XTickLabel',k_d_labels,'XTickLabelRotation',45)
+set(gca,'YTick',[1:8],'YTickLabel',n_labels)
+set(gca,'XLim',[.6 10.5],'YLim',[.5 8.5])
+colorbar
+caxis([0.3 1])
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% In comparison, I then fit a DA model to the same data, to see how well that does. If it does better than this NLN model, this adds to the evidence that there is real, dynamical adaptation that cannot be captured by a NLN model in this data. 
+
+clear p
+p.   s0 = -0.0234;
+p.  n_z = 2.0938;
+p.tau_z = 98.4531;
+p.  n_y = 3;
+p.tau_y = 10.7500;
+p.    C = 0.7219;
+p.    A = 897.1875;
+p.    B = 11.4062;
+R = DAModelv2(data.stimulus(:,1),p);
+R(R<0) = 0;
+
+figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
+subplot(1,3,1:2); hold on
+plot(NSdata.time,data.response,'k')
+plot(NSdata.time,R,'r');
+legend({'Data',['DA model, r^2 = ' oval(rsquare(R(10e3:60e3),data.response(10e3:60e3)))]},'Location','northwest')
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+set(gca,'XLim',[10 60],'YLim',[0 120])
+
+subplot(1,3,3); hold on
+plot(R(10e3:60e3),data.response(10e3:60e3),'k')
+xlabel('DA prediction (Hz)')
+ylabel('ORN response (Hz)')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 
 %% Version Info

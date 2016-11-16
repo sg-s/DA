@@ -30,16 +30,17 @@ end
 lb.A = 1; lb.B = 1; lb.C = 0; 
 ub.C = 1; 
 
-% extra bound
+% lower bound
 lb.tau_y = 1; 
 lb.tau_z = 1;
-
 lb.n_z = 1;
 lb.n_y = 1;
 
-
-ub.n_y = 10;
-
+% upper bounds
+ub.n_y = 3;
+ub.n_z = 3;
+ub.tau_y = 200;
+ub.tau_z = 300;
 
 
 

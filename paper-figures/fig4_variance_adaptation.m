@@ -427,6 +427,57 @@ if being_published
 	delete(gcf)
 end
 
+%% Fitting NLN models
+% Can a static NLN model explain variance adaptation? To check, I fit this data with a static NLN model. I then generate responses using the best-fit parameters, and plot the I/O curves vs. these generated responses. 
+
+clear data
+c = 1;
+for i = 31:50:width(reshaped_fA)
+	data(c).response = reshaped_fA(:,i);
+	data(c).stimulus = [reshaped_PID(:,i) reshaped_fA(:,i)];
+	c = c + 1;
+end
+
+clear p
+p.n = 3.5;
+p.k_D = .6;
+
+% generate respnses
+NLNpred = reshaped_fA*NaN;
+for i = 1:width(reshaped_fA)
+	textbar(i,width(reshaped_PID))
+	try
+		NLNpred(:,i) = NLNmodel([reshaped_PID(:,i) reshaped_fA(:,i)],p);
+	catch
+	end
+end
+
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+x = NLNpred(1e3:5e3,:);
+y = reshaped_fA(1e3:5e3,:);
+rm_this = (isnan(sum(y)) | isnan(sum(x)) | max(y) < 40 | min(y) > 10);
+x(:,rm_this) = []; y(:,rm_this) = []; 
+[~,data_hi] = plotPieceWiseLinear(x,y,'nbins',50,'make_plot',false);
+plot(data_hi.x,data_hi.y,'r')
+
+x = NLNpred(6e3:end,:);
+y = reshaped_fA(6e3:end,:);
+rm_this = (isnan(sum(y)) | max(y) < 40 | min(y) > 10);
+x(:,rm_this) = []; y(:,rm_this) = []; 
+[~,data_lo] = plotPieceWiseLinear(x,y,'nbins',50,'make_plot',false);
+plot(data_lo.x,data_lo.y,'b')
+
+xlabel('NLN prediction (Hz)')
+ylabel('ORN response (Hz)')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 return
 
 %  ######  ##     ## ########  ########         ######## ####  ######       

@@ -34,4 +34,3 @@ rm_this = isnan(R) | isnan(T);
 ff = fit(R(~rm_this),T(~rm_this),'poly1');
 R = R*ff.p1;
 
-

@@ -5,7 +5,6 @@ pHeader;
 % First, a recap of the data: it is a binary stimulus, so should in principle be free of the problems that plagued the analysis of the naturalistic stimuli. When I performed the analysis of fast gain control on her data, I found a short timescale, and also found that the instatenous stimulus did not correlate with observed changed in gain:
 
 
-%% global parameters
 history_lengths = round(logspace(1.7,4,50)); % all the history lengths we look at, in ms
 example_history_length = 300; % this history length shown in the first row, in ms
 
@@ -63,6 +62,7 @@ ylabel(axs(3),'ORN gain (norm)')
 
 set(axs(8),'XScale','log','YLim',[-1 0],'XTick',[10 100 1e3 1e4],'XLim',[10 1.1e4])
 xlabel(axs(8),'History length (ms)')
+ylabel(axs(8),'Spearman \rho')
 
 % fake some plots for a nice legend
 clear l

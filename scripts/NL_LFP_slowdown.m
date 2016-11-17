@@ -85,6 +85,65 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% Perhaps it's the stimulus correlations that cause this? What if we play back white noise into this model, and then repeat the analysis? I did this for three different NL models, that were identical except for their filters. I then plot the lag as a function of mean stimulus in the preceding 1s (exactly like before), and also overlay the location of the peak of the filter in the NL model. They line up nicely, as expected. 
+
+
+clear p
+p.k0 = 1;
+p.tau = 100; % doesn't matter
+p.B = 0; % no adaptation 
+
+% parameters for filter 
+p.tau1 = 10;
+p.tau2 = 20;
+p.n = 2;
+p.A = 0;
+
+
+% parameters for output scale
+p.C = 1;
+
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+
+all_tau1 = [2 10 20];
+for i = 1:length(all_tau1)
+	% generate some new data
+	S = randn(1e5,1);
+	x = hill([1 .5 1],S);
+	p.tau1 = all_tau1(i);
+	K = filter_gamma2([],p);
+	R = filter(K,1,x);
+
+	[lag, mean_x] = findLagAndMeanInWindow(S(5e3:end-5e3),R(5e3:end-5e3),1e3,50);
+
+	rm_this = isnan(lag) | isnan(mean_x);
+	plotPieceWiseLinear(vectorise(mean_x(~rm_this)),vectorise(lag(~rm_this)),'Color','k','nbins',19);
+
+	[~,loc] = max(K);
+	plot([-5 5],[loc loc],'k--')
+end
+
+
+xlabel('Mean Stimulus (a.u.)')
+ylabel('Lag (ms)')
+title('NL model + white noise')
+set(gca,'XLim',[-.15 .16])
+
+set(gca,'YLim',[0 50])
+
+
+
+prettyFig()
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
+
+
 
 %% Version Info
 %

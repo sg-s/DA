@@ -1,32 +1,37 @@
+% simple NL model with only two  parameter (K_D and n)
+% since we find the filter non-parameterically, we have to give it the response too
+% S is a Tx2 matrix, where S(:,2) is the response we want to fit it to
 % 
-% 
-% created by Srinivas Gorur-Shandilya at 12:08 , 21 March 2016. Contact me at http://srinivas.gs/contact/
-% 
-% This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
-% To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
-function R = NLModel(S,p)
+function [R,K] = NLModel(S,p)
 
-% parameters
-p.K;
+% list parameters for clarity 
+p.k_D;
 p.n;
 
-lb.K = 0;
-lb.n = .1;
 
-R = S(:,1);
-S = S(:,2);
+% bounds
+lb.n = 1;
+lb.k_D = 1e-2;
+
+ub.n = 4;
+
+T = S(:,2); % target response
+S = S(:,1); 
+
+% pass stimulus through input non-linearity 
+x = (S.^p.n)./(S.^p.n+p.k_D^p.n);
+
+% fit a filter from x to T
+K = fitFilter2Data(x,T,'reg',1,'filter_length',700,'offset',100);
+
+K = K(50:end-50);
+filtertime = 1e-3*(1:length(K)) - 50e-3;
+time = 1e-3*(1:length(T));
+R = convolve(time,x,K,filtertime);
+
+rm_this = isnan(R) | isnan(T);
+
+ff = fit(R(~rm_this),T(~rm_this),'poly1');
+R = R*ff.p1;
 
 
-S = real((S.^p.n)./(p.K.^p.n + S.^p.n));
-
-K = fitFilter2Data(S,R,'offset',200,'filter_length',800);
-
-K = K(100:end-100);
-ft = (1:length(K)) - 100;
-X = convolve(1:length(S),S,K,ft);
-
-rm_this = isnan(X) | isnan(R);
-
-ff = fit(X(~rm_this),R(~rm_this),'poly1');
-
-R = ff(X);

@@ -525,7 +525,7 @@ if being_published
 end
 
 %%
-% What if we allow the k_D of the input nonlinearity to vary with the stimulus, and then fit this adapting NLN model to this data? In the following section, I fit a adapting NLN model to the Gaussian data, where the $k_D$ is a filtered version of the stimulus. This allows the $k_D$ to dynamically vary with the stimulus, and gives you "true" gain control and Weber's Law for free. 
+% What if we allow the $k_D$ of the input nonlinearity to vary with the stimulus, and then fit this adapting NLN model to this data? In the following section, I fit a adapting NLN model to the Gaussian data, where the $k_D$ is a filtered version of the stimulus. This allows the $k_D$ to dynamically vary with the stimulus, and gives you "true" gain control and Weber's Law for free. 
 
 clear data
 use_these = [1 3 7];
@@ -567,7 +567,7 @@ end
 % show how k_D changes with the mean stimulus
 c = parula(11);
 for i = 1:length(MSGdata.paradigm)
-	errorbar(ax(1),mean(MSGdata.PID(35e3:55e3,i)),mean(MSGdata.k_D(35e3:55e3,i)),std(MSGdata.k_D(35e3:55e3,i)),'Color',c(MSGdata.paradigm(:,i),:))
+	errorbar(ax(1),mean(MSGdata.PID(35e3:55e3,i)),mean(MSGdata.k_D(35e3:55e3,i)),std(MSGdata.k_D(35e3:55e3,i)),'Color',c(MSGdata.paradigm(i),:))
 end
 xlabel(ax(1),'\mu_{Stimulus} (V)')
 ylabel(ax(1),'k_D (V)')
@@ -610,7 +610,7 @@ set(ax(3),'XScale','log','YScale','log','XLim',[.2 2],'YLim',[20 200],'XTick',[.
 xlabel(ax(3),'Mean stimulus (V)')
 ylabel(ax(3),'Gain (Hz/V)')
 
-prettyFig('fs',12)
+prettyFig('fs',16)
 
 
 if being_published	

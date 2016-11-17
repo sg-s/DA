@@ -39,7 +39,7 @@ end
 
 
 %%
-% Now we perform the analysis of whether the LFP slows down or not, with both the real LFP and the NL model generated LFP. It looks like somehow, the NL model can reproduce what we see as a slowdown in the LFP. This means this is probably not a real effect. 
+% Now we perform the analysis of whether the LFP slows down or not, with both the real LFP and the NL model generated LFP. It looks like somehow, the NL model can reproduce what we see as a slowdown in the LFP. This means this is probably not a real effect. In addition, I plot the stimulus autocorrelation time (measured in 1 s windows), where the stimulus autocorrelation time is defined as the lag when the stimulus autocorrelation function drops below 1/e. 
 
 
 min_acceptable_corr = .5;
@@ -60,10 +60,23 @@ lag(rm_this) = [];
 mean_x(rm_this) = [];
 plotPieceWiseLinear(mean_x,lag,'Color','r','nbins',19);
 
+% find auto correlation time
+act = NaN*PID;
+mean_x = NaN*PID;
+for i = 5e3:50:(length(PID)-5e3)
+	x = PID(i-5e2:i+5e2);
+	a = autocorr(x,length(x)-1);
+	act(i) = find(a<1/exp(1),1,'first');
+	mean_x(i) = mean(x);
+end
+rm_this = isnan(mean_x) | isnan(act);
+mean_x(rm_this) = []; act(rm_this) = [];
+plotPieceWiseLinear(mean_x,act,'Color','g','nbins',19);
+
 xlabel('\mu_{Stimulus} in preceding 1s (V)')
 ylabel('Lag (ms)')
 
-legend({'Data','NL model'})
+legend({'Data','NL model','Stimulus auto corr.'},'Location','northwest')
 
 prettyFig()
 

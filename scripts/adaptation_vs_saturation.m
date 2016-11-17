@@ -287,11 +287,6 @@ axes(ax(2)), hold(ax(2),'on')
 for i = 1:max(MSGdata.paradigm)
 	x = mean(MSGdata.K_pred(35e3:55e3,MSGdata.paradigm==i),2);
 	y = mean(MSGdata.NL_pred(35e3:55e3,MSGdata.paradigm==i),2);
-
-	% s = nanmean(MSGdata.PID(:,MSGdata.paradigm==i),2);
-	% x = x - nanmean(x);
-	% x = x + nanmean(nanmean(s));
-
 	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:),'show_error',false,'LineWidth',2);
 	
 end
@@ -529,7 +524,99 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% What if we allow the k_D of the input nonlinearity to vary with the stimulus, and then fit this adapting NLN model to this data? In the following section, I fit a adapting NLN model to the Gaussian data, where the $k_D$ is a filtered version of the stimulus. This allows the $k_D$ to dynamically vary with the stimulus, and gives you "true" gain control and Weber's Law for free. 
 
+clear data
+use_these = [1 3 7];
+for i = 1:length(use_these)
+	j = use_these(i);
+	S = MSGdata.PID(:,MSGdata.paradigm==j);
+	R = MSGdata.fA(:,MSGdata.paradigm==j);
+	rm_this = sum(R)==0;
+	R(:,rm_this) = [];
+	S(:,rm_this) = [];
+	data(i).response = mean(R,2);
+	data(i).stimulus = mean(S,2);
+end
+
+clear p
+p.  k0 = 0.0537;
+p. tau = 156;
+p.   B = 1.1250;
+p.tau1 = 26.7812;
+p.tau2 = 198;
+p.   n = 3;
+p.   A = 0.2453;
+p.   C = 110.1562;
+
+
+% play stimulus through model
+MSGdata.time = 1e-3*(1:length(MSGdata.PID));
+
+for i = 1:length(MSGdata.paradigm)
+	[MSGdata.aNL_pred(:,i),~,MSGdata.k_D(:,i)] = aNLN(MSGdata.PID(:,i),p);
+end
+
+figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
+clear ax
+for i = 1:3
+	ax(i) = subplot(1,3,i); hold on
+end
+
+% show how k_D changes with the mean stimulus
+c = parula(11);
+for i = 1:length(MSGdata.paradigm)
+	errorbar(ax(1),mean(MSGdata.PID(35e3:55e3,i)),mean(MSGdata.k_D(35e3:55e3,i)),std(MSGdata.k_D(35e3:55e3,i)),'Color',c(MSGdata.paradigm(:,i),:))
+end
+xlabel(ax(1),'\mu_{Stimulus} (V)')
+ylabel(ax(1),'k_D (V)')
+
+% recover filters for every trial
+for i = 1:length(MSGdata.paradigm)
+	MSGdata.Khat(:,i) = fitFilter2Data(MSGdata.PID(35e3:55e3,i),MSGdata.aNL_pred(35e3:55e3,i),'reg',1,'offset',100,'filter_length',700);
+	MSGdata.Khat(:,i) = MSGdata.Khat(:,i)/norm(MSGdata.Khat(:,i));
+	MSGdata.Khat(:,i) = MSGdata.Khat(:,i)*norm(MSGdata.K);
+end
+
+
+% reproject all the stimuli
+for i = 1:length(MSGdata.paradigm)
+	MSGdata.K_pred(:,i) = mean(MSGdata.PID(35e3:55e3,i)) + convolve(MSGdata.time,MSGdata.PID(:,i),MSGdata.Khat(:,i),MSGdata.filtertime);
+end
+
+% make i/o curves for different mean stimuli and compute gain in each paradigm 
+axes(ax(2)), hold(ax(2),'on')
+for i = 1:max(MSGdata.paradigm)
+	x = mean(MSGdata.K_pred(35e3:55e3,MSGdata.paradigm==i),2);
+	y = mean(MSGdata.aNL_pred(35e3:55e3,MSGdata.paradigm==i),2);
+	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:),'show_error',false,'LineWidth',2);
+end
+xlabel(ax(2),'Projected Stimulus (V)')
+ylabel(ax(2),'Adaptive NLN model prediction (Hz)')
+
+for i = 1:length(MSGdata.paradigm)
+	x = MSGdata.K_pred(35e3:55e3,i);
+	y = MSGdata.aNL_pred(35e3:55e3,i);
+	ff = fit(x(:),y(:),'poly1');
+	MSGdata.NL_gain(i) = ff.p1;
+end
+
+mean_stim = mean(MSGdata.PID(35e3:55e3,:));
+for i = 1:max(MSGdata.paradigm)
+	plot(ax(3),mean_stim(MSGdata.paradigm == i), MSGdata.NL_gain(MSGdata.paradigm==i),'+','Color',c(i,:))
+end
+set(ax(3),'XScale','log','YScale','log','XLim',[.2 2],'YLim',[20 200],'XTick',[.1 .2 .5 1])
+xlabel(ax(3),'Mean stimulus (V)')
+ylabel(ax(3),'Gain (Hz/V)')
+
+prettyFig('fs',12)
+
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
 
 %% Version Info
 %

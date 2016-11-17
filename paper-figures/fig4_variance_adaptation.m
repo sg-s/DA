@@ -415,8 +415,6 @@ axyy(2).YTick = [0 axyy(2).YTick];
 
 prettyFig('fs',.5,'lw',1.5,'font_units','centimeters')
 
-return
-
 labelFigure('x_offset',-.025)
 
 ax(5).XLim(1) = 0;
@@ -445,7 +443,9 @@ p.k_D = .6;
 % generate respnses
 NLNpred = reshaped_fA*NaN;
 for i = 1:width(reshaped_fA)
-	textbar(i,width(reshaped_PID))
+	if ~being_published
+		textbar(i,width(reshaped_PID))
+	end
 	try
 		NLNpred(:,i) = NLNmodel([reshaped_PID(:,i) reshaped_fA(:,i)],p);
 	catch

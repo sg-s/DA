@@ -142,7 +142,72 @@ if being_published
 	delete(gcf)
 end
 
-%%
+%% 
+% What if I fit a NLN model to the firing rate data, and then repeat the analysis? In the following figure, I use a NLN model that I fit to the firing rate data, and treat that as data and repeat the analysis of the lag as a function of the mean stimulus. Both a NLN model and a NL model fit to the firing rate have a constant lag that does not depend on the mean stimulus, in contrast to the a NL model fit to the LFP data (see previous section). 
+
+load('/local-data/DA-paper/data-for-paper/fig7/nat-stim-ab3/combined_data.ORNData','-mat')
+
+clear data p
+data.response = mean(od(3).firing_rate,2);
+data.stimulus = [mean(od(3).stimulus,2) mean(od(3).firing_rate,2)];
+data.stimulus(:,1) = data.stimulus(:,1) -min(min(od(3).stimulus(1:5e3,:)));
+p.k_D = 0.0797;
+p.n = 1.7561;
+S = data.stimulus(:,1);
+[R_NLN,K] = NLNmodel(data.stimulus,p);
+filtertime = 1e-3*(1:length(K)) - .05;
+
+
+% also generate NL model responses
+x = hill([1 p.k_D p.n],S);
+time = 1e-3*(1:length(S));
+R_NL = convolve(time,x,K,filtertime);
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1); hold on
+[lag, mean_x, max_corr] = findLagAndMeanInWindow(S(5e3:end-5e3),R(5e3:end-5e3),1e3,50);
+rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr;
+lag(rm_this) = [];
+mean_x(rm_this) = [];
+plotPieceWiseLinear(mean_x,lag,'Color','k','nbins',19);
+
+[lag, mean_x, max_corr] = findLagAndMeanInWindow(S(5e3:end-5e3),R_NLN(5e3:end-5e3),1e3,50);
+rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr;
+lag(rm_this) = [];
+mean_x(rm_this) = [];
+plotPieceWiseLinear(mean_x,lag,'Color','r','nbins',19);
+xlabel('\mu_{Stimulus} (V)')
+ylabel('Lag (ms)')
+legend({'Data','NLN model'})
+set(gca,'YLim',[0 140])
+
+
+subplot(1,2,2); hold on
+[lag, mean_x, max_corr] = findLagAndMeanInWindow(S(5e3:end-5e3),R(5e3:end-5e3),1e3,50);
+rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr;
+lag(rm_this) = [];
+mean_x(rm_this) = [];
+plotPieceWiseLinear(mean_x,lag,'Color','k','nbins',19);
+
+[lag, mean_x, max_corr] = findLagAndMeanInWindow(S(5e3:end-5e3),R_NL(5e3:end-5e3),1e3,50);
+rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr;
+lag(rm_this) = [];
+mean_x(rm_this) = [];
+plotPieceWiseLinear(mean_x,lag,'Color','r','nbins',19);
+xlabel('\mu_{Stimulus} (V)')
+ylabel('Lag (ms)')
+legend({'Data','NL model'})
+set(gca,'YLim',[0 140])
+
+prettyFig();
+ 
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%% Showing slowdown in LFP and invariance of firing kinetics using Gaussian data
 % What does this mean for the validity of this result? Cao et al. and Nagel et al. have showed that the LFP does slow down with adaptation. Martelli et al. have also shown that the firing rate does not. Can we still reconcile these two? We have another dataset where we have both LFP and firing rate measurement (the Gaussian stimulus dataset). In the following figure, I estimate lags using cross-correlations from this dataset, and compare lags of LFP and firing rate vs. the stimulus. 
 
 %%

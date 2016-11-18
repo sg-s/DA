@@ -162,6 +162,7 @@ filtertime = 1e-3*(1:length(K)) - .05;
 x = hill([1 p.k_D p.n],S);
 time = 1e-3*(1:length(S));
 R_NL = convolve(time,x,K,filtertime);
+R = data.response;
 
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 subplot(1,2,1); hold on

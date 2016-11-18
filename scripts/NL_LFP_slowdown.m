@@ -142,8 +142,114 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% What does this mean for the validity of this result? Cao et al. and Nagel et al. have showed that the LFP does slow down with adaptation. Martelli et al. have also shown that the firing rate does not. Can we still reconcile these two? We have another dataset where we have both LFP and firing rate measurement (the Gaussian stimulus dataset). In the following figure, I estimate lags using cross-correlations from this dataset, and compare lags of LFP and firing rate vs. the stimulus. 
 
+%%
+% In the following figure, I first estimate lags from the stimulus to the firing rate and the LFP using cross correlations, and plot that as a function of the mean stimulus (a). The error bars are standard error of the mean. Because we've been so screwed by cross correlations, I want to verify that I can actually see the LFP slowdown in the raw data, with no data analysis whatsoever. To check this, I first plot the LFP responses to odor offsets, (b), and then normalize these responses (c). In both cases, you can clearly see that the LFP slows down with increasing stimulus background (brighter colours). 
 
+% get the gaussian data
+
+% get the filter from the Gaussian stimuli 
+clearvars -except being_published 
+MSGdata = consolidateData2(getPath(dataManager,'93ba5d68174e3df9f462a1fc48c581da'));
+MSGdata = cleanMSGdata(MSGdata);
+v2struct(MSGdata)
+
+figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
+subplot(1,3,1); hold on
+
+LFP_lags = NaN*paradigm;
+LFP_max_corr = NaN*paradigm;
+firing_lags = NaN*paradigm;
+firing_max_corr = NaN*paradigm;
+a = 35e3+1; z = 55e3;
+chunk_size = 1e3;
+
+% compute LFP and firing rate lags
+for i = 1:length(paradigm)
+	S = PID(a:z,i);
+	X = -raw_LFP(a:z,i);
+	R = fA(a:z,i);
+
+	% reshape into chunks
+	S = reshape(S,chunk_size,length(S)/chunk_size);
+	X = reshape(X,chunk_size,length(X)/chunk_size);
+	R = reshape(R,chunk_size,length(R)/chunk_size);
+
+	S = bsxfun(@minus, S, mean(S));
+	X = bsxfun(@minus, X, mean(X));
+	R = bsxfun(@minus, R, mean(R));
+
+	X_lag = NaN(chunk_size*2-1,size(S,2));
+	R_lag = NaN(chunk_size*2-1,size(S,2));
+	clear X_lag R_lag
+	for j = 1:size(S,2)
+		X_lag(:,j) = xcorr(X(:,j)/std(X(:,j)),S(:,j)/std(S(:,j)));
+		R_lag(:,j) = xcorr(R(:,j)/std(R(:,j)),S(:,j)/std(S(:,j)));
+	end
+	X_lag = X_lag/chunk_size;
+	X_lag = mean(X_lag,2);
+	[LFP_max_corr(i),loc] = max(X_lag);
+	LFP_lags(i) = loc - 1e3;
+
+	R_lag = R_lag/chunk_size;
+	R_lag = mean(R_lag,2);
+	[firing_max_corr(i),loc] = max(R_lag);
+	firing_lags(i) = loc - 1e3;
+
+end
+
+firing_lags(firing_lags<-100) = NaN; % obviously wrong
+
+mean_stim = mean(PID(a:z,:));
+for i = 1:max(paradigm)
+	x = nonnans(firing_lags(paradigm==i));
+	errorbar(mean(mean_stim(paradigm==i)),mean(x),sem(x),'k')
+	x = nonnans(LFP_lags(paradigm==i));
+	errorbar(mean(mean_stim(paradigm==i)),mean(x),sem(x),'r')
+end
+xlabel('\mu_{Stimulus} (V)')
+ylabel('Lag (ms)')
+legend({'Firing rate','LFP'},'Location','northwest')
+set(gca,'XLim',[0 1.7],'YLim',[0 200])
+
+subplot(1,3,2); hold on
+xlabel('Time (s)')
+title('LFP offset responses')
+ylabel('\DeltaLFP (mV)')
+
+subplot(1,3,3); hold on
+title('LFP responses to odor offset')
+xlabel('Time (s)')
+ylabel('LFP change (norm)')
+
+c = parula(11);
+za = 54e3; zz = 57e3;
+time = 1e-3*(1:length(PID));
+
+for i = 1:max(paradigm)
+	X = LFP(:,paradigm==i);
+	for j = 1:width(X)
+		X(:,j) = X(:,j) - mean(X(za:55e3,j));
+	end
+	X = nanmean(X,2);
+
+	subplot(1,3,2); hold on
+	plot(time(za:zz),X(za:zz,:),'Color',c(i,:))
+
+	subplot(1,3,3); hold on
+	X = X/max(X(za:zz));
+	plot(time(za:zz),X(za:zz,:),'Color',c(i,:))
+
+end
+
+prettyFig;
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %% Version Info
 %

@@ -524,6 +524,7 @@ if being_published
 	delete(gcf)
 end
 
+
 %%
 % What if we allow the $k_D$ of the input nonlinearity to vary with the stimulus, and then fit this adapting NLN model to this data? In the following section, I fit a adapting NLN model to the Gaussian data, where the $k_D$ is a filtered version of the stimulus. This allows the $k_D$ to dynamically vary with the stimulus, and gives you "true" gain control and Weber's Law for free. 
 

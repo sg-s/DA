@@ -83,6 +83,62 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% Maybe this is simply because the gain filter is so close to the "response" filter. What if I modify the gain filter to be different? 
+
+
+% fit a DA model to this
+clear p
+p.   s0 = 0;
+p.  n_z = 2;
+p.tau_z = 70.3750;
+p.  n_y = 2;
+p.tau_y = 20.2500;
+p.    C = 0;
+p.    A = 170.4375;
+p.    B = 2.7656;
+
+S = mean(PID,2);
+S = S - min(S);
+
+[R,~,~,Ky,Kz] = DAModelv2(S,p);
+
+clear data
+data.response = R;
+data.stimulus = [S R];
+
+% fit a NLN model to this
+clear p
+p.n = 1;
+p.k_D = 2.7574;
+
+R_NLN = NLNmodel(data.stimulus,p);
+time = 1e-3*(1:length(R));
+
+
+figure('outerposition',[0 0 1300 801],'PaperUnits','points','PaperSize',[1300 801]); hold on
+subplot(2,2,1:2); hold on
+plot(time,R,'k')
+plot(time,R_NLN,'r')
+legend({'DA model Response',['NLN model fit, r^2 = ' oval(rsquare(R,R_NLN))]},'Location','northwest')
+subplot(2,2,3); hold on
+plot(Ky)
+plot(Kz)
+title('DA model filters')
+xlabel('Filter lag (ms)')
+ylabel('Filter amplitude')
+
+subplot(2,2,4); hold on
+plot(R_NLN,R)
+xlabel('NLN model prediction')
+ylabel('DA model response')
+
+prettyFig()
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
 
 %% Version Info
 %

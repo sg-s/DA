@@ -10,7 +10,7 @@ p.n;
 
 
 % bounds
-lb.n = 1;
+lb.n = .5;
 lb.k_D = 1e-2;
 
 ub.n = 4;

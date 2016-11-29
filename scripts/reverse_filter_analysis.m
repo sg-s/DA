@@ -58,6 +58,8 @@ K0 = fitFilter2Data(R0,S,'reg',1,'filter_length',1e3,'offset',600);
 filtertime = 1e-3*(1:length(K0)) - .6;
 S0 = convolve(time,R0,K0,filtertime)/max(R0);
 
+return
+
 K1 = fitFilter2Data(R1,S,'reg',1,'filter_length',1e3,'offset',600);
 S1 = convolve(time,R1,K1,filtertime)/max(R1);
 
@@ -190,6 +192,156 @@ if being_published
 	snapnow	
 	delete(gcf)
 end
+
+%% Validation with synthetic data: mean shifted Gaussians
+% In the following figure, I use a DA model fit to ab3A responses to generate synthetic data. The stimulus fed into the DA model is the Gaussian data in Fig 1 in the paper. The filters of the DA model are shown in (a). I then reconstruct filters from the response to the stimulus as before (b). I use that to reconstruct input nonlinearities for each trial, and colour them by mean stimulus (c). We see that the reconstructed input nonlinearity appears to move to the right with increasing mean stimulus. 
+
+% get MSG data
+clear MSGdata
+MSGdata = consolidateData2(getPath(dataManager,'93ba5d68174e3df9f462a1fc48c581da'));
+MSGdata = cleanMSGdata(MSGdata);
+
+% get the DA model fit for this
+clear p
+p.   s0 = -0.1503;
+p.  n_z = 2;
+p.tau_z = 255.3750;
+p.  n_y = 2;
+p.tau_y = 20.0748;
+p.    C = 0.2345;
+p.    A = 2.8700e+03;
+p.    B = 100;
+
+% generate responses using the DA model
+MSGdata.DA_R = NaN*MSGdata.fA;
+for i = 1:length(MSGdata.paradigm)
+	[MSGdata.DA_R(:,i),~,~,Ky,Kz] = DAModelv2(MSGdata.PID(:,i),p);
+end
+
+% extract reverse filters for each trial 
+MSGdata.K = NaN(800,length(MSGdata.paradigm));
+MSGdata.Shat = NaN*MSGdata.fA;
+MSGdata.filtertime = 1e-3*(1:length(MSGdata.K)) - .5;
+time = 1e-3*(1:length(MSGdata.PID));
+for i = 1:length(MSGdata.paradigm)
+	S = MSGdata.PID(35e3:55e3,i);
+	R = MSGdata.DA_R(35e3:55e3,i);
+	K = fitFilter2Data(R,S,'reg',1,'filter_length',1e3,'offset',600);
+	K = K(100:end-101); K = K/norm(K);
+	MSGdata.Shat(:,i) = convolve(time,MSGdata.DA_R(:,i),K,MSGdata.filtertime);
+	MSGdata.K(:,i) = K;
+end
+
+figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
+subplot(1,3,1); hold on
+plot(Ky*1e3)
+plot(Kz*1e3)
+legend({'K_y','K_z'})
+xlabel('Filter lag (ms)')
+ylabel('Filter amplitude (a.u.)')
+title('DA Model parameters')
+
+subplot(1,3,2); hold on
+c = parula(max(MSGdata.paradigm)+1);
+for i = 1:max(MSGdata.paradigm)
+	plot(MSGdata.filtertime,MSGdata.K(:,MSGdata.paradigm == i),'Color',c(i,:))
+end
+xlabel('Filter lag (s)')
+ylabel('Filter amplitude (norm)')
+title('Reconstructed filters')
+
+ax = subplot(1,3,3); hold on
+c = parula(max(MSGdata.paradigm)+1);
+for i = 1:max(MSGdata.paradigm)
+	S = MSGdata.PID(35e3:55e3,MSGdata.paradigm == i);
+	if i == 1
+		S(:,5) = NaN; % outlier
+	end
+	Shat = MSGdata.Shat(35e3:55e3,MSGdata.paradigm == i);
+	plotPieceWiseLinear(S(:),Shat(:),'Color',c(i,:),'nbins',30);
+end
+ax.YLim(1) = 0;
+ax.XLim(1) = 0;
+xlabel('Stimulus (V)')
+ylabel('K \otimes R')
+
+prettyFig();
+
+labelFigure
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% Now, what if we repeat this analysis, but use a DA model with gain controlled turned off? Once again, I do this by setting $K_y = K_z$, so that the DA model effectively becomes a LN model. 
+
+p.s0 = 0;
+p.C = 1;
+
+% generate responses using the DA model
+MSGdata.DA_R = NaN*MSGdata.fA;
+for i = 1:length(MSGdata.paradigm)
+	[MSGdata.DA_R(:,i),~,~,Ky,Kz] = DAModelv2(MSGdata.PID(:,i),p);
+end
+
+% extract reverse filters for each trial 
+MSGdata.K = NaN(800,length(MSGdata.paradigm));
+MSGdata.Shat = NaN*MSGdata.fA;
+MSGdata.filtertime = 1e-3*(1:length(MSGdata.K)) - .5;
+time = 1e-3*(1:length(MSGdata.PID));
+for i = 1:length(MSGdata.paradigm)
+	S = MSGdata.PID(35e3:55e3,i);
+	R = MSGdata.DA_R(35e3:55e3,i);
+	K = fitFilter2Data(R,S,'reg',1,'filter_length',1e3,'offset',600);
+	K = K(100:end-101); K = K/norm(K);
+	MSGdata.Shat(:,i) = convolve(time,MSGdata.DA_R(:,i),K,MSGdata.filtertime);
+	MSGdata.K(:,i) = K;
+end
+
+figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
+subplot(1,3,1); hold on
+plot(Ky*1e3)
+plot(Kz*1e3)
+legend({'K_y','K_z'})
+xlabel('Filter lag (ms)')
+ylabel('Filter amplitude (a.u.)')
+title('DA Model parameters')
+
+subplot(1,3,2); hold on
+c = parula(max(MSGdata.paradigm)+1);
+for i = 1:max(MSGdata.paradigm)
+	plot(MSGdata.filtertime,MSGdata.K(:,MSGdata.paradigm == i),'Color',c(i,:))
+end
+xlabel('Filter lag (s)')
+ylabel('Filter amplitude (norm)')
+title('Reconstructed filters')
+
+ax = subplot(1,3,3); hold on
+c = parula(max(MSGdata.paradigm)+1);
+for i = 1:max(MSGdata.paradigm)
+	S = MSGdata.PID(35e3:55e3,MSGdata.paradigm == i);
+	if i == 1
+		S(:,5) = NaN; % outlier
+	end
+	Shat = MSGdata.Shat(35e3:55e3,MSGdata.paradigm == i);
+	plotPieceWiseLinear(S(:),Shat(:),'Color',c(i,:),'nbins',30);
+end
+ax.YLim(1) = 0;
+ax.XLim(1) = 0;
+xlabel('Stimulus (V)')
+ylabel('K \otimes R')
+
+prettyFig();
+
+labelFigure
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 
 %% Version Info

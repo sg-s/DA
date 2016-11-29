@@ -342,7 +342,105 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% Now, I repeat this analysis on the real data. 
 
+% extract reverse filters for each trial 
+MSGdata.K = NaN(800,length(MSGdata.paradigm));
+MSGdata.Shat = NaN*MSGdata.fA;
+MSGdata.filtertime = 1e-3*(1:length(MSGdata.K)) - .5;
+time = 1e-3*(1:length(MSGdata.PID));
+for i = 1:length(MSGdata.paradigm)
+	S = MSGdata.PID(35e3:55e3,i);
+	R = MSGdata.fA(35e3:55e3,i);
+	try
+		K = fitFilter2Data(R,S,'reg',1,'filter_length',1e3,'offset',600);
+		K = K(100:end-101); K = K/norm(K);
+		MSGdata.Shat(:,i) = convolve(time,MSGdata.fA(:,i),K,MSGdata.filtertime);
+		MSGdata.K(:,i) = K;
+	catch
+	end
+end
+
+figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
+subplot(1,3,1); hold on
+plot(Ky*1e3)
+plot(Kz*1e3)
+legend({'K_y','K_z'})
+xlabel('Filter lag (ms)')
+ylabel('Filter amplitude (a.u.)')
+title('DA Model parameters')
+
+subplot(1,3,2); hold on
+c = parula(max(MSGdata.paradigm)+1);
+for i = 1:max(MSGdata.paradigm)
+	plot(MSGdata.filtertime,MSGdata.K(:,MSGdata.paradigm == i),'Color',c(i,:))
+end
+xlabel('Filter lag (s)')
+ylabel('Filter amplitude (norm)')
+title('Reconstructed filters')
+
+ax = subplot(1,3,3); hold on
+c = parula(max(MSGdata.paradigm)+1);
+for i = 1:max(MSGdata.paradigm)
+	S = MSGdata.PID(35e3:55e3,MSGdata.paradigm == i);
+	if i == 1
+		S(:,5) = NaN; % outlier
+	end
+	Shat = MSGdata.Shat(35e3:55e3,MSGdata.paradigm == i);
+	plotPieceWiseLinear(S(:),Shat(:),'Color',c(i,:),'nbins',30);
+end
+ax.YLim(1) = 0;
+ax.XLim(1) = 0;
+xlabel('Stimulus (V)')
+ylabel('K \otimes R')
+
+prettyFig();
+
+labelFigure
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% Unsurprisingly, filter estimation is hard as the mean stimulus increases. But I still see the basic effect: input nonlinearities still move to the right, meaning that this is "true gain control". 
+
+%%
+% What if I only use filters estimated from the lowest doses (where the responses and signal are cleanest)? Does that then help me estimate the input nonlinearities more cleanly? 
+
+% extract reverse filters for each trial 
+MSGdata.Shat = NaN*MSGdata.fA;
+
+% use K only from the lowest paradigm
+K = mean(MSGdata.K(:,MSGdata.paradigm==1),2);
+for i = 1:length(MSGdata.paradigm)
+	MSGdata.Shat(:,i) = convolve(time,MSGdata.fA(:,i),K,MSGdata.filtertime);
+end
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1001 500]); hold on
+
+c = parula(max(MSGdata.paradigm)+1);
+for i = 1:max(MSGdata.paradigm)
+	S = MSGdata.PID(35e3:55e3,MSGdata.paradigm == i);
+	if i == 1
+		S(:,5) = NaN; % outlier
+	end
+	Shat = MSGdata.Shat(35e3:55e3,MSGdata.paradigm == i);
+	plotPieceWiseLinear(S(:),Shat(:),'Color',c(i,:),'nbins',30);
+end
+xlabel('Stimulus (V)')
+ylabel('K \otimes R')
+title('Using a single filter')
+
+prettyFig();
+
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %% Version Info
 %

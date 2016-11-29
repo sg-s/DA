@@ -156,8 +156,8 @@ if being_published
 	delete(gcf)
 end
 
-%% Sparse naturalistic stimuli: ab3A responses
-% Now I repeat this analysis, but on the real neuron's data. It looks like the input nonlinearity is changing (b), but based on my previous analysis with synthetic data, this result is consistent both with there being "true" gain control and the existence of an output nonlinearity. 
+%% Sparse naturalistic stimuli: ab3A firing responses
+% Now I repeat this analysis, but on the firing responses from ab3A. It looks like the input nonlinearity is changing (b), but based on my previous analysis with synthetic data, this result is consistent both with there being "true" gain control and the existence of an output nonlinearity. 
 
 
 % treat t the stimulus and the response as each other, and flip time
@@ -190,6 +190,57 @@ if being_published
 	snapnow	
 	delete(gcf)
 end
+
+
+%% Sparse naturalistic stimuli: ab3A LFP responses
+% Now I repeat this analysis, but on the LFP responses from ab3A. I do this for the four ab3A neurons we recorded from, and plot the reconstructed nonlinearities, colouring each point by the value of the mean stimulus in the preceding 300ms. 
+
+% get this data
+clearvars -except being_published
+load('/local-data/DA-paper/data-for-paper/nat-stim/ab3A_nat_stim.ORNData','-mat')
+od(1) = [];
+for i = 1:length(od)
+	data(i).LFP = mean(od(i).LFP,2);
+	data(i).stimulus = mean(od(i).stimulus,2);
+end
+
+% extract filters
+time = 1e-3*(1:length(data(1).LFP));
+for i = 1:length(data)
+	data(i).K = fitFilter2Data(data(i).LFP,data(i).stimulus,'reg',1,'filter_length',1e3,'offset',600);
+	filtertime = 1e-3*(1:length(data(i).K)) - .6;
+	data(i).Shat = convolve(time,data(i).LFP,data(i).K,filtertime);
+end
+
+history_length = 300;
+
+figure('outerposition',[0 0 902 801],'PaperUnits','points','PaperSize',[902 801]); hold on
+for i = 1:length(data)
+	subplot(2,2,i); hold on
+	shat = computeSmoothedStimulus(data(i).stimulus,history_length);
+	shat = shat-min(shat);
+	shat = log(1+shat);
+	shat = shat/max(shat);
+	shat = 1 + ceil(shat*99);
+	shat(isnan(shat)) = 1;
+	cc = parula(100);
+	c = cc(shat,:);
+	scatter(data(i).stimulus,data(i).Shat,20,c,'filled')
+	legend(['r^2 = ' oval(rsquare(data(i).stimulus,data(i).Shat))],'Location','southeast')
+	xlabel('Stimulus (V)')
+	ylabel('K \otimes R')
+	title(['ORN #' oval(i)])
+end
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% It sure looks like the input nonlinearities are changing in this figure, but as my previous analysis shows with synthetic data, it is hard to distinguish this from a static output nonlinearity. 
 
 %% Validation with synthetic data: mean shifted Gaussians
 % In the following figure, I use a DA model fit to ab3A responses to generate synthetic data. The stimulus fed into the DA model is the Gaussian data in Fig 1 in the paper. The filters of the DA model are shown in (a). I then reconstruct filters from the response to the stimulus as before (b). I use that to reconstruct input nonlinearities for each trial, and colour them by mean stimulus (c). We see that the reconstructed input nonlinearity appears to move to the right with increasing mean stimulus. 
@@ -360,16 +411,9 @@ for i = 1:length(MSGdata.paradigm)
 	end
 end
 
-figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
-subplot(1,3,1); hold on
-plot(Ky*1e3)
-plot(Kz*1e3)
-legend({'K_y','K_z'})
-xlabel('Filter lag (ms)')
-ylabel('Filter amplitude (a.u.)')
-title('DA Model parameters')
+figure('outerposition',[0 0 1001 500],'PaperUnits','points','PaperSize',[1001 500]); hold on
 
-subplot(1,3,2); hold on
+subplot(1,2,1); hold on
 c = parula(max(MSGdata.paradigm)+1);
 for i = 1:max(MSGdata.paradigm)
 	plot(MSGdata.filtertime,MSGdata.K(:,MSGdata.paradigm == i),'Color',c(i,:))
@@ -378,7 +422,7 @@ xlabel('Filter lag (s)')
 ylabel('Filter amplitude (norm)')
 title('Reconstructed filters')
 
-ax = subplot(1,3,3); hold on
+ax = subplot(1,2,2); hold on
 c = parula(max(MSGdata.paradigm)+1);
 for i = 1:max(MSGdata.paradigm)
 	S = MSGdata.PID(35e3:55e3,MSGdata.paradigm == i);

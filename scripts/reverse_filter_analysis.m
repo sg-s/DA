@@ -223,10 +223,16 @@ end
 
 % extract filters
 time = 1e-3*(1:length(data(1).LFP));
-for i = length(data):-1:1
-	data(i).K = fitFilter2Data(data(i).LFP,data(i).stimulus,'reg',1,'filter_length',1e3,'offset',600);
-	filtertime = 1e-3*(1:length(data(i).K)) - .6;
-	data(i).Shat = convolve(time,data(i).LFP,data(i).K,filtertime);
+if exist('.cache/rfa_sparse_lfp_filters.mat','file') ~= 2
+	disp('Computing reverse filters...')
+	for i = length(data):-1:1
+		data(i).K = fitFilter2Data(data(i).LFP,data(i).stimulus,'reg',1,'filter_length',1e3,'offset',600);
+		filtertime = 1e-3*(1:length(data(i).K)) - .6;
+		data(i).Shat = convolve(time,data(i).LFP,data(i).K,filtertime);
+	end
+	save('.cache/rfa_sparse_lfp_filters.mat','data')
+else
+	load('.cache/rfa_sparse_lfp_filters.mat','data');
 end
 
 history_length = 300;
@@ -246,7 +252,7 @@ for i = 1:length(data)
 	legend(['r^2 = ' oval(rsquare(data(i).stimulus,data(i).Shat))],'Location','southeast')
 	xlabel('Stimulus (V)')
 	ylabel('K \otimes R')
-	title(['ORN ;' oval(i)])
+	title(['ORN #' oval(i)])
 end
 
 prettyFig();
@@ -313,7 +319,6 @@ p.    B =  8.5371;
 for i = length(data):-1:1
 	[data(i).DA_R,~,~,Ky,Kz] = DAModelv2(data(i).stimulus,p);
 end
-
 
 % extract filters
 time = 1e-3*(1:length(data(1).DA_R));
@@ -475,7 +480,11 @@ end
 time = 1e-3*(1:length(data(1).LFP));
 for i = length(data):-1:1
 	data(i).K = fitFilter2Data(data(i).LFP,data(i).stimulus,'reg',1,'filter_length',1e3,'offset',600);
-	filtertime = 1e-3*(1:length(data(i).K)) - .6;
+end
+
+filtertime = 1e-3*(1:length(data(i).K)) - .6;
+
+for i = length(data):-1:1
 	data(i).Shat = convolve(time,data(i).LFP,data(i).K,filtertime);
 end
 
@@ -553,13 +562,24 @@ MSGdata.K = NaN(800,length(MSGdata.paradigm));
 MSGdata.Shat = NaN*MSGdata.fA;
 MSGdata.filtertime = 1e-3*(1:length(MSGdata.K)) - .5;
 time = 1e-3*(1:length(MSGdata.PID));
+hash = dataHash(MSGdata);
+K = cache(hash);
+if isempty(K)
+	for i = 1:length(MSGdata.paradigm)
+		textbar(i,length(MSGdata.paradigm))
+		S = MSGdata.PID(35e3:55e3,i);
+		R = MSGdata.DA_R(35e3:55e3,i);
+		K = fitFilter2Data(R,S,'reg',1,'filter_length',1e3,'offset',600);
+		K = K(100:end-101); K = K/norm(K);
+		MSGdata.K(:,i) = K;
+	end
+	cache(hash,MSGdata.K)
+else
+	MSGdata.K = K;
+end
+
 for i = 1:length(MSGdata.paradigm)
-	S = MSGdata.PID(35e3:55e3,i);
-	R = MSGdata.DA_R(35e3:55e3,i);
-	K = fitFilter2Data(R,S,'reg',1,'filter_length',1e3,'offset',600);
-	K = K(100:end-101); K = K/norm(K);
-	MSGdata.Shat(:,i) = convolve(time,MSGdata.DA_R(:,i),K,MSGdata.filtertime);
-	MSGdata.K(:,i) = K;
+	MSGdata.Shat(:,i) = convolve(time,MSGdata.DA_R(:,i),MSGdata.K(:,i),MSGdata.filtertime);
 end
 
 figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
@@ -621,13 +641,24 @@ MSGdata.K = NaN(800,length(MSGdata.paradigm));
 MSGdata.Shat = NaN*MSGdata.fA;
 MSGdata.filtertime = 1e-3*(1:length(MSGdata.K)) - .5;
 time = 1e-3*(1:length(MSGdata.PID));
+hash = dataHash(MSGdata);
+K = cache(hash);
+if isempty(K)
+	for i = 1:length(MSGdata.paradigm)
+		textbar(i,length(MSGdata.paradigm))
+		S = MSGdata.PID(35e3:55e3,i);
+		R = MSGdata.DA_R(35e3:55e3,i);
+		K = fitFilter2Data(R,S,'reg',1,'filter_length',1e3,'offset',600);
+		K = K(100:end-101); K = K/norm(K);
+		MSGdata.K(:,i) = K;
+	end
+	cache(hash,MSGdata.K);
+else
+	MSGdata.K = K;
+end
+
 for i = 1:length(MSGdata.paradigm)
-	S = MSGdata.PID(35e3:55e3,i);
-	R = MSGdata.DA_R(35e3:55e3,i);
-	K = fitFilter2Data(R,S,'reg',1,'filter_length',1e3,'offset',600);
-	K = K(100:end-101); K = K/norm(K);
-	MSGdata.Shat(:,i) = convolve(time,MSGdata.DA_R(:,i),K,MSGdata.filtertime);
-	MSGdata.K(:,i) = K;
+	MSGdata.Shat(:,i) = convolve(time,MSGdata.DA_R(:,i),MSGdata.K(:,i),MSGdata.filtertime);
 end
 
 figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
@@ -664,7 +695,6 @@ xlabel('Stimulus (V)')
 ylabel('K \otimes R')
 
 prettyFig();
-
 labelFigure
 
 if being_published
@@ -672,7 +702,7 @@ if being_published
 	delete(gcf)
 end
 
-%% Mean SHifted Gaussians: ab3A firing rate
+%% Mean Shifted Gaussians: ab3A firing rate
 % Now, I repeat this analysis on the real data. 
 
 % extract reverse filters for each trial 
@@ -680,14 +710,27 @@ MSGdata.K = NaN(800,length(MSGdata.paradigm));
 MSGdata.Shat = NaN*MSGdata.fA;
 MSGdata.filtertime = 1e-3*(1:length(MSGdata.K)) - .5;
 time = 1e-3*(1:length(MSGdata.PID));
+hash = dataHash(MSGdata);
+K = cache(hash);
+if isempty(K)
+	for i = 1:length(MSGdata.paradigm)
+		S = MSGdata.PID(35e3:55e3,i);
+		R = MSGdata.fA(35e3:55e3,i);
+		try
+			K = fitFilter2Data(R,S,'reg',1,'filter_length',1e3,'offset',600);
+			K = K(100:end-101); K = K/norm(K);
+			MSGdata.K(:,i) = K;
+		catch
+		end
+	end
+	cache(hash,MSGdata.K);
+else
+	MSGdata.K = K;
+end
+
 for i = 1:length(MSGdata.paradigm)
-	S = MSGdata.PID(35e3:55e3,i);
-	R = MSGdata.fA(35e3:55e3,i);
 	try
-		K = fitFilter2Data(R,S,'reg',1,'filter_length',1e3,'offset',600);
-		K = K(100:end-101); K = K/norm(K);
-		MSGdata.Shat(:,i) = convolve(time,MSGdata.fA(:,i),K,MSGdata.filtertime);
-		MSGdata.K(:,i) = K;
+		MSGdata.Shat(:,i) = convolve(time,MSGdata.fA(:,i),MSGdata.K(:,i),MSGdata.filtertime);
 	catch
 	end
 end
@@ -719,7 +762,6 @@ xlabel('Stimulus (V)')
 ylabel('K \otimes R')
 
 prettyFig();
-
 labelFigure
 
 if being_published
@@ -764,6 +806,81 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%% Kinetics of gain change
+% In this section, I plot the nonlinearity at different time bins along the time trace to see how quickly the nonlinearity changes. In the following figure, each panel is the reconstructed input nonlinearity at a given mean stimulus. The colors indicate time since odor onset (see colorbar). The title specifies the mean stimulus for the panel. 
+
+bin_starts = 5.5e3:500:20e3;
+bin_ends = bin_starts + 2e3;
+c = jet(length(bin_starts));
+
+figure('outerposition',[0 0 1000 802],'PaperUnits','points','PaperSize',[1000 802]); hold on
+
+subplot_counter = 1;
+
+for i = [2 3 5  6 7 10]
+	subplot(2,3,subplot_counter); hold on
+	for j = 1:length(bin_starts)
+		S = MSGdata.PID(bin_starts(j):bin_ends(j),MSGdata.paradigm == i);
+		Shat = MSGdata.Shat(bin_starts(j):bin_ends(j),MSGdata.paradigm == i);
+		plotPieceWiseLinear(S(:),Shat(:),'Color',c(j,:),'nbins',30);
+	end
+	colormap jet
+	caxis([bin_starts(1)/1e3 bin_starts(end)/1e3] - 5)
+	if subplot_counter == 1
+		cb = colorbar;
+		cb.Position = [.3 .6 .02 .1];
+	end
+	subplot_counter = subplot_counter + 1;
+	xlabel('Stimulus (V)')
+	ylabel('K \otimes R')
+	title(['\mu_{Stimulus} = ' oval(mean(S(:))) 'V'])
+end
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+% To quantify these changes, I fit a Hill function to each curve, keeping the n fixed. 
+
+% Kd = NaN*MSGdata.PID;
+
+% ft = fittype('hillFit(x,A,k,n,x_offset)');
+
+% for i = 1:max(MSGdata.paradigm)
+% 	textbar(i,max(MSGdata.paradigm))
+% 	for j = 1:length(bin_starts)
+
+% 		temp1 = MSGdata.PID(bin_starts(j):bin_ends(j),MSGdata.paradigm == i);
+% 		temp2 = MSGdata.Shat(bin_starts(j):bin_ends(j),MSGdata.paradigm == i);
+		
+% 		rm_this = isnan(temp2) | temp2 == 0;
+% 		temp1(rm_this) = [];
+% 		temp2(rm_this) = [];
+
+% 		if max(temp2) > 0
+% 			ff = fit(temp1(:),temp2(:),ft,'StartPoint',[max(temp2(:)) mean(temp1(:)) 1 0],'Upper',[max(temp2(:)) 10*max(temp1(:)) 1 0],'Lower',[0 0 1 0],'MaxIter',1e3);
+% 			ii = floor((bin_starts(j) + bin_ends(j))/2);
+% 			Kd(ii,i) = ff.k;
+% 		end
+% 	end
+% end
+
+% figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% c = parula(max(MSGdata.paradigm)+1);
+% for i = 1:max(MSGdata.paradigm)
+% 	temp = Kd(:,i);
+% 	ii = floor((bin_starts + bin_ends)/2);
+% 	temp = temp(ii,:);
+% 	plot(ii*1e-3,temp,'o','Color',c(i,:))
+% end
+
+
+
 
 %% Version Info
 %

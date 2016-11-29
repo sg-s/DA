@@ -58,8 +58,6 @@ K0 = fitFilter2Data(R0,S,'reg',1,'filter_length',1e3,'offset',600);
 filtertime = 1e-3*(1:length(K0)) - .6;
 S0 = convolve(time,R0,K0,filtertime)/max(R0);
 
-return
-
 K1 = fitFilter2Data(R1,S,'reg',1,'filter_length',1e3,'offset',600);
 S1 = convolve(time,R1,K1,filtertime)/max(R1);
 

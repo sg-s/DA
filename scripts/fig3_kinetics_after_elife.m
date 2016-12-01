@@ -6,6 +6,9 @@ pHeader;
 %% Kinetics of LFP and firing rate 
 % In this document, I analyse the kinetics of firing rate and LFP w.r.t the stimulus using cross correlation functions. 
 
+%%
+% In the following figure, I how the lags of the LFP and firing rate vary with stimulus background from the gaussian fluctuation data. (a) Normalised cross correlation computed from stimulus to LFP for the lowest dose (purple) and for the highest dose (yellow). (b) Raw LFP traces at odour offset show that LFP kinetics slow down with increasing mean stimulus (brighter colours). (c) Normalised cross correlation computed from stimulus to firing rate for the lowest dose (purple) and for the highest dose (yellow). No major change is visible. (d) Lags of firing rate (black) and LFP (red) estimated from peaks of cross correlation functions, as a function of the mean stimulus in that trial. Error bars are standard error of the mean. Cross correlations were estimated from 20 seconds of data in each trial, chunked into 1-second long fragments, and then averaged. 
+
 
 % get the filter from the Gaussian stimuli 
 clearvars -except being_published 
@@ -138,6 +141,7 @@ end
 
 prettyFig;
 
+labelFigure('column_first',true)
 
 if being_published	
 	snapnow	

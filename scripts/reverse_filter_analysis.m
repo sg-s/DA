@@ -711,9 +711,11 @@ MSGdata.Shat = NaN*MSGdata.fA;
 MSGdata.filtertime = 1e-3*(1:length(MSGdata.K)) - .5;
 time = 1e-3*(1:length(MSGdata.PID));
 hash = dataHash(MSGdata);
+hash = [hash 'ab3A_firing_rate'];
 K = cache(hash);
 if isempty(K)
 	for i = 1:length(MSGdata.paradigm)
+		textbar(i,length(MSGdata.paradigm))
 		S = MSGdata.PID(35e3:55e3,i);
 		R = MSGdata.fA(35e3:55e3,i);
 		try
@@ -844,40 +846,75 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% To quantify these changes, and to estimate a timescale of gain control, I estimate the slopes of the input nonlinearity in time bins along the trace, for each trial. 
 
-% To quantify these changes, I fit a Hill function to each curve, keeping the n fixed. 
+N_slope = NaN*MSGdata.PID;
+N_slope_r2 = NaN*MSGdata.PID;
 
-% Kd = NaN*MSGdata.PID;
+for i = 1:length(MSGdata.paradigm)
+	textbar(i,length(MSGdata.paradigm))
+	for j = 1:length(bin_starts)
 
-% ft = fittype('hillFit(x,A,k,n,x_offset)');
-
-% for i = 1:max(MSGdata.paradigm)
-% 	textbar(i,max(MSGdata.paradigm))
-% 	for j = 1:length(bin_starts)
-
-% 		temp1 = MSGdata.PID(bin_starts(j):bin_ends(j),MSGdata.paradigm == i);
-% 		temp2 = MSGdata.Shat(bin_starts(j):bin_ends(j),MSGdata.paradigm == i);
+		temp1 = MSGdata.PID(bin_starts(j):bin_ends(j),i);
+		temp2 = MSGdata.Shat(bin_starts(j):bin_ends(j),i);
 		
-% 		rm_this = isnan(temp2) | temp2 == 0;
-% 		temp1(rm_this) = [];
-% 		temp2(rm_this) = [];
+		rm_this = isnan(temp2) | temp2 == 0;
+		temp1(rm_this) = [];
+		temp2(rm_this) = [];
 
-% 		if max(temp2) > 0
-% 			ff = fit(temp1(:),temp2(:),ft,'StartPoint',[max(temp2(:)) mean(temp1(:)) 1 0],'Upper',[max(temp2(:)) 10*max(temp1(:)) 1 0],'Lower',[0 0 1 0],'MaxIter',1e3);
-% 			ii = floor((bin_starts(j) + bin_ends(j))/2);
-% 			Kd(ii,i) = ff.k;
-% 		end
-% 	end
-% end
+		if max(temp2) > 0
+			[ff,gof] = fit(temp1,temp2,'poly1');
+			ii = floor((bin_starts(j) + bin_ends(j))/2);
+			N_slope(ii,i) = ff.p1;
+			N_slope_r2(ii,i) = gof.rsquare;
+		end
+	end
+end
 
-% figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-% c = parula(max(MSGdata.paradigm)+1);
-% for i = 1:max(MSGdata.paradigm)
-% 	temp = Kd(:,i);
-% 	ii = floor((bin_starts + bin_ends)/2);
-% 	temp = temp(ii,:);
-% 	plot(ii*1e-3,temp,'o','Color',c(i,:))
-% end
+
+
+figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
+clear ax
+ax(1) = subplot(1,3,1:2); hold on
+ax(2) = subplot(1,3,3); hold on
+ft = fittype('A*exp(-x./tau) + B');
+
+c = parula(max(MSGdata.paradigm)+1);
+x = floor((bin_starts + bin_ends)/2);
+for i = 1:max(MSGdata.paradigm)
+	y = N_slope(x,MSGdata.paradigm == i);
+	errorbar(ax(1),x*1e-3,nanmean(y,2),nanstd(y,[],2)/sqrt(sum(~isnan(mean(y)))),'Color',c(i,:));
+
+	X = x(:)*1e-3;
+	X = X - min(X);
+	Y = nanmean(y,2);
+	Y = Y/Y(1);
+	W = 1./nanstd(y,[],2);
+
+	[ff,gof] = fit(X,Y,ft,'StartPoint',[1 1 1],'Weights',W,'Lower',[0 0 0]);
+	temp = confint(ff); temp = temp(:,3);
+	plot(ax(2),gof.rsquare,ff.tau,'+','MarkerSize',10,'Color',c(i,:));
+end
+
+set(ax(2),'XLim',[0 1],'YLim',[0 5])
+xlabel(ax(2),'r^2 of exponential fit')
+ylabel(ax(2),'Time scale (s)')
+xlabel(ax(1),'Time (s)')
+ylabel(ax(1),'Slope of input NL')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+% fit exponentials to this
+
+
+
 
 
 

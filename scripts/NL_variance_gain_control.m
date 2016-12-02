@@ -7,7 +7,8 @@ pHeader;
 %%
 % First, I construct a nonlinearity that looks like this (it's a simple Hill function with n = 8):
 
-hill_param = [1 .55 8];
+stim_mean = .55;
+hill_param = [1 stim_mean 8];
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 x = linspace(0,1,100);
@@ -113,6 +114,41 @@ end
 
 %%
 % So it looks like the input nonlinearity has be steep enough for this to work. At low n, Hill functions don't seem to be able to reproduce what we see (curves with different slopes that intersect one another). 
+
+%% 
+% Can we ever see something like variance gain control with $n = 1$? To check, I force $n = 1$, and vary $k_D$. 
+
+
+all_k_D = logspace(log10(.1*stim_mean),log10(10*stim_mean),6);
+hill_param = [1 NaN 1];
+
+figure('outerposition',[0 0 1200 802],'PaperUnits','points','PaperSize',[1200 802]); hold on
+for i = 1:length(all_k_D)
+	% construct the NL model
+	hill_param(2) = all_k_D(i);
+	x = hill(hill_param,S);
+	R = filter(K,1,x);
+
+	% fit a LN model
+	Khat = fitFilter2Data(S,R,'reg',0);
+	Rhat = filter(Khat,1,S);
+
+	subplot(2,3,i); hold on
+	plotPieceWiseLinear(Rhat(1e3:5e3),R(1e3:5e3),'Color','b','nbins',25);
+	plotPieceWiseLinear(Rhat(6e3:end),R(6e3:end),'Color','r','nbins',25);
+	xlabel('Projected Stimulus')
+	ylabel('Response')
+	title(['k_D = ' oval(all_k_D(i)/stim_mean) '\mu'])
+
+end
+
+prettyFig()
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
 
 %% Fits to naturalistic data
 % This imposes some pretty severe constraints on any NL-like model we would like to fit to the rest of our data. Can we fit an adapting NL model to the naturalistic stimulus data, with the constraint that only steep input nonlinearities are permissible?

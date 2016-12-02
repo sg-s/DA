@@ -7,10 +7,10 @@ pHeader;
 %%
 % First, I construct a nonlinearity that looks like this (it's a simple Hill function with n = 8):
 
-hill_param = [1 5 8];
+hill_param = [1 .55 8];
 
 figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-x = linspace(0,10,100);
+x = linspace(0,1,100);
 H = hill(hill_param,x);
 plot(x,H,'k')
 xlabel('Stimulus')
@@ -23,9 +23,9 @@ if being_published
 end
 
 %%
-% Then, I consider a stimulus that varies from [4 6] and another that varies from [2 8]. I feed this stimulus through the nonlinearity, and then through a simple filter. 
+% Then, I consider a stimulus that varies from [0.2 0.9] and another that varies from [0.4 0.7], to mimic what we used in the real experiment. I feed this stimulus through the nonlinearity, and then through a simple filter. 
 
-S = [(4+2*rand(1e4,1)); (2+6*rand(1e4,1))];
+S = [(.4+.3*rand(1e4,1)); (.2+.7*rand(1e4,1))];
 x = hill(hill_param,S);
 p.A = .3; p.tau1 = 20; p.tau2 = 70; p.n = 2;
 K = filter_gamma2(1:1e3,p);

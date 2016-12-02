@@ -14,7 +14,6 @@ MSGdata.K = mean(MSG_filter(:,[2 5]),2);
 MSGdata.filtertime = 1e-3*(1:length(MSGdata.K)) - .1;
 
 % get the naturalistic stimuli 
-
 clear ab3 ab2
 load(getPath(dataManager,'5c7dacc5b42ff0eebb980d80fec120c3'),'data','spikes')
 PID = data(2).PID;

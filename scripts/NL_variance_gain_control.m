@@ -114,6 +114,105 @@ end
 %%
 % So it looks like the input nonlinearity has be steep enough for this to work. At low n, Hill functions don't seem to be able to reproduce what we see (curves with different slopes that intersect one another). 
 
+%% Fits to naturalistic data
+% This imposes some pretty severe constraints on any NL-like model we would like to fit to the rest of our data. Can we fit an adapting NL model to the naturalistic stimulus data, with the constraint that only steep input nonlinearities are permissible?
+
+%%
+% In the following figure, I first fit a adaptive NL model where the $K_D$ can vary with the stimulus to real ab3A firing data. (a) shows the firing rate of the ab3A ORN, together with the best fit adaptive NL model. This adaptive model significantly changes its input nonlinearity (b). Then, I use this model to generate responses using the naturalistic stimulus (c). I then fit a static NL model to this synthetic data (c, blue). It fits the data well, but the static nonlinearity that I fit is much shallower (c). 
+
+% get the naturalistic stimuli 
+clear ab3 ab2
+load(getPath(dataManager,'5c7dacc5b42ff0eebb980d80fec120c3'),'data','spikes')
+PID = data(2).PID;
+time = 1e-4*(1:length(PID));
+all_spikes = spikes(2).A;
+
+% A spikes --> firing rate
+fA = spiketimes2f(all_spikes,time);
+
+tA = 1e-3*(1:length(fA));
+PID2 = fA;
+for i = 1:width(PID2)
+	PID2(:,i) = interp1(time,PID(i,:),tA);
+end
+PID = PID2; clear PID2
+% some minor cleaning up
+PID(end,:) = PID(end-1,:); 
+
+PID = mean(PID,2);
+
+NSdata.fA = mean(fA,2);
+NSdata.PID = PID - min(PID);
+NSdata.time = 1e-3*(1:length(NSdata.fA));
+
+% fit an adapting NL model to this
+clear data
+data.response = NSdata.fA;
+data.stimulus = NSdata.PID;
+
+clear p
+p.  k0 = 0.1210;
+p. tau = 100;
+p.   B = 1.1874;
+p.tau1 = 42.1992;
+p.tau2 = 400;
+p.   n = 8;
+p.   A = 0.2125;
+p.   C = 170.6618;
+
+% generate responses using this
+[R,~,K_D] = aNLN(NSdata.PID,p);
+
+% now fit a NL model to this
+clear data
+data.response = R;
+data.stimulus = [NSdata.PID R];
+
+clear p
+p.k_D = 0.3702;
+p.  n = 1.3086;
+
+R2 = NLNmodel(data.stimulus,p);
+
+time = 1e-3*(1:length(R));
+
+figure('outerposition',[0 0 1300 600],'PaperUnits','points','PaperSize',[1300 600]); hold on
+subplot(2,6,1:4); hold on
+plot(time,NSdata.fA,'k')
+plot(time,R,'r');
+legend({'ab3A data',['adaptive NL model, r^2 = ' oval(rsquare(R,NSdata.fA))]})
+set(gca,'XLim',[0 70],'YLim',[0 140])
+
+subplot(2,6,7:10); hold on
+plot(time,R,'r');
+plot(time,R2,'b');
+legend({'adaptive NL model',['fixed NL model, r^2 = ' oval(rsquare(R,R2))]})
+set(gca,'XLim',[0 70],'YLim',[0 140])
+
+subplot(2,6,[5 6 11 12]); hold on
+clear ax
+all_k_d = logspace(log10(min(K_D)),log10(max(K_D)),5);
+x = logspace(-3,log10(max(NSdata.PID)),100);
+for i = 1:length(all_k_d)
+	ax(1) = plot(x,hill([1 all_k_d(i) 8],x),'r');
+end
+set(gca,'XScale','log')
+
+ax(2) = plot(x,hill([1 p.k_D p.n],x),'b');
+title('Input nonlinearities')
+legend(ax,{'Actual adapting NLs','Best-fit static NL'},'Location','northwest')
+xlabel('Stimulus (V)')
+
+movePlot(gca,'right',.05)
+
+prettyFig();
+
+labelFigure
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 
 %% Version Info

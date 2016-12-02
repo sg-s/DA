@@ -22,19 +22,20 @@ p.A;
 p.C; 
 
 % hard bounds
-lb.k0 = 1e-3;
-lb.n = 1;
-lb.tau = 1;
+lb.k0 = 1e-6;
+lb.tau = 100;
 lb.A = 0;
 lb.B = 0;
 lb.C = 0;
-lb.tau1 = 10;
+lb.tau1 = 5;
 lb.tau2 = 20;
+
+lb.n = 8; % constrained by the variance data?
 
 % upper bounds
 ub.tau = 1e3;
-ub.tau2 = 200;
-ub.n = 4; % anything more is unreasonable 
+ub.tau2 = 400;
+ub.n = 32; 
 
 
 % generate the dynamically updating k_D 
@@ -44,7 +45,8 @@ k_D = p.k0 + p.B*filter(K,length(K),S);
 % pass stimulus through input non-linearity 
 x = (S.^p.n)./(S.^p.n+k_D.^p.n);
 
-% make the parametric filter 
+% make the parametric filter
+p.n = 2; 
 K = filter_gamma2(1:1e3,p);
 
 % pass through filter

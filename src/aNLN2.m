@@ -29,7 +29,7 @@ lb.A = 0;
 lb.B = 0;
 lb.C = 0;
 lb.tau_y = 5;
-lb.tau_z = 20;
+lb.tau_z = 10;
 lb.n_y = 1;
 lb.n_z = 5;
 
@@ -53,7 +53,7 @@ t = 0:filter_length;
 
 % generate the dynamically updating k_D 
 Kz = generate_simple_filter(p.tau_z,p.n_z,t);
-k_D = p.k0*0 + p.B*filter(Kz,1,S);
+k_D = p.k0 + p.B*filter(Kz,1,S);
 
 % pass stimulus through input non-linearity 
 x = (S.^p.n)./(S.^p.n+k_D.^p.n);

@@ -148,6 +148,38 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% Can we also see signs of this adaptation in kinetics in naturalistic odor stimuli? 
+
+% get this data
+clearvars -except being_published
+load('/local-data/DA-paper/data-for-paper/nat-stim/ab3A_nat_stim.ORNData','-mat')
+od(1) = [];
+for i = length(od):-1:1
+	data(i).LFP = nanmean(od(i).LFP,2);
+	data(i).stimulus = nanmean(od(i).stimulus,2);
+	data(i).firing_rate = nanmean(od(i).firing_rate,2);
+end
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+
+X = data(1).firing_rate;
+
+for i = 1:length(loc)
+	temp = X(loc(i)-200:loc(i)+500);
+	temp = temp - mean(temp(1:200));
+	plot(temp/max(temp(200:end)))
+end
+
+
+[~,loc] = findpeaks(S,'MinPeakProminence',.1);
+% ignore all peaks with another peak 200 ms afterwards
+rm_this = false(length(loc),1);
+for i = 1:length(loc)
+	if any(find(loc<loc(i) + 300 & loc > loc(i)))
+		rm_this(i) = true;
+	end
+end
 
 %% Version Info
 %

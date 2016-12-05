@@ -204,5 +204,3 @@ end
 %
 pFooter;
 
-
-%% Supplementary Figure

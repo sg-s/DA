@@ -27,14 +27,14 @@ lb.C = 0;
 lb.tau1 = 5;
 lb.tau2 = 20;
 lb.n = 1; 
-lb.Hill_n = 8;
+lb.Hill_n = 1;
 lb.Hill_K = 1e-3;
 
 % upper bounds
 ub.tau1 = 200;
 ub.tau2 = 400;
 ub.n = 10;
-ub.Hill_n = 32; 
+ub.Hill_n = 16; 
 
 
 % pass stimulus through input non-linearity 

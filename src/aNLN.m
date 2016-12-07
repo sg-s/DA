@@ -23,19 +23,21 @@ p.C;
 
 % hard bounds
 lb.k0 = 1e-6;
-lb.tau = 100;
+lb.tau = 500;
 lb.A = 0;
 lb.B = 0;
 lb.C = 0;
-lb.tau1 = 5;
-lb.tau2 = 20;
+lb.tau1 = 1;
+lb.tau2 = 2;
 
-lb.n = 8; % constrained by the variance data?
+lb.n = 1; % constrained by the variance data?
 
 % upper bounds
-ub.tau = 1e3;
+ub.tau = 5e3;
+ub.tau1 = 200;
 ub.tau2 = 400;
 ub.n = 32; 
+ub.C = 1e3;
 
 
 % generate the dynamically updating k_D 

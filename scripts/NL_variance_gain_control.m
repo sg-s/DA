@@ -240,6 +240,14 @@ if being_published
 	delete(gcf)
 end
 
+;;;;;;;;  ;;;;;;;;    ;;;    ;;          ;;;;;;;;     ;;;    ;;;;;;;;    ;;;    
+;;     ;; ;;         ;; ;;   ;;          ;;     ;;   ;; ;;      ;;      ;; ;;   
+;;     ;; ;;        ;;   ;;  ;;          ;;     ;;  ;;   ;;     ;;     ;;   ;;  
+;;;;;;;;  ;;;;;;   ;;     ;; ;;          ;;     ;; ;;     ;;    ;;    ;;     ;; 
+;;   ;;   ;;       ;;;;;;;;; ;;          ;;     ;; ;;;;;;;;;    ;;    ;;;;;;;;; 
+;;    ;;  ;;       ;;     ;; ;;          ;;     ;; ;;     ;;    ;;    ;;     ;; 
+;;     ;; ;;;;;;;; ;;     ;; ;;;;;;;;    ;;;;;;;;  ;;     ;;    ;;    ;;     ;; 
+
 
 %% Fits to real data
 % Can we fit a NL model to real data and account for apparent variance gain control? 
@@ -254,31 +262,30 @@ global_end = length(PID) - 5e3;
 % choose example
 i = 8;
 
-return
 
-clear data
-data.response = fA(global_start:global_end,i);
-data.stimulus = PID(global_start:global_end,i) - min(PID(:,i));
-data.response(1:1e3) = NaN;
-p = fitModel2Data(@pNL,data,'nsteps',30,'p0',p);
+% clear data
+% data.response = fA(global_start:global_end,i);
+% data.stimulus = PID(global_start:global_end,i) - min(PID(:,i));
+% data.response(1:1e3) = NaN;
+% p = fitModel2Data(@pNL,data,'nsteps',30,'p0',p);
 
-p.Hill_n = 4;
-p.Hill_K = 0.4176;
-p.  tau1 = 20.3359;
-p.  tau2 = 49.3125;
-p.     n = 3.6250;
-p.     A = 0.3324;
-p.     C = 99.9383;
-
-
-% clear p
-% p.Hill_n = 8;
-% p.Hill_K = 0.4277;
-% p.  tau1 = 23.0859;
-% p.  tau2 = 31.3125;
-% p.     n = 3.2656;
-% p.     A = 0.3334;
+% p.Hill_n = 4;
+% p.Hill_K = 0.4176;
+% p.  tau1 = 20.3359;
+% p.  tau2 = 49.3125;
+% p.     n = 3.6250;
+% p.     A = 0.3324;
 % p.     C = 99.9383;
+
+
+clear p
+p.Hill_n = 8;
+p.Hill_K = 0.4277;
+p.  tau1 = 23.0859;
+p.  tau2 = 31.3125;
+p.     n = 3.2656;
+p.     A = 0.3334;
+p.     C = 99.9383;
 
 % synthesize reponses using this best-fit model
 S = PID(:,i) - min(PID(:,i));
@@ -296,21 +303,93 @@ xlabel('Time (s)')
 ylabel('Response (Hz)')
 
 
+subplot(1,3,3); hold on
+
 % back out filters
 Khat = fitFilter2Data(S(global_start:global_end),R(global_start:global_end),'reg',1);
 Rhat = filter(Khat,1,S);
 
 Y = R(40e3+1:190e3);
 X = Rhat(40e3+1:190e3);
+s = S(40e3+1:190e3);
 
 Y = reshape(Y,10e3,15);
 X = reshape(X,10e3,15);
+s = reshape(s,10e3,15);
 
-subplot(1,3,3); hold on
+% X = X - .1;
+% X = X*1.5;
+
+% % % correct for change in mean
+% % for i = 1:15
+% % 	X(1:5e3,i) = X(1:5e3,i)/mean(s(1:5e3,i));
+% % 	X(5e3+1:end,i) = X(5e3+1:end,i)/mean(s(1:end,i));
+% % end
+
 plotPieceWiseLinear(vectorise(X(1e3:5e3,:)),vectorise(Y(1e3:5e3,:)),'Color','r','nbins',25);
 plotPieceWiseLinear(vectorise(X(6e3:end,:)),vectorise(Y(6e3:end,:)),'Color','b','nbins',25);
 xlabel('Projected Stimulus')
-ylabel('NL model Response')
+ylabel('NL model Response (Hz)')
+
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% To compare, we also fit a DA model to this data to show that it is incapable of doing variance gain control. 
+
+clear data
+i = 8;
+data.response = fA(global_start:global_end,i);
+data.stimulus = PID(global_start:global_end,i) - min(PID(:,i));
+data.response(1:5e3) = NaN;
+
+clear p
+p.   s0 = 0;
+p.  n_z = 2;
+p.tau_z = 100;
+p.  n_y = 2;
+p.tau_y = 27.2812;
+p.    C = 0.0187;
+p.    A = 672.7750;
+p.    B = 17.8125;
+
+% synthesize reponses using this best-fit model
+S = PID(:,i) - min(PID(:,i));
+R = DAModelv2(S,p);
+time = 1e-3*(1:length(S));
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+
+% back out filters
+Khat = fitFilter2Data(S(global_start:global_end),R(global_start:global_end),'reg',1);
+Rhat = filter(Khat,1,S);
+
+Y = R(40e3+1:190e3);
+X = Rhat(40e3+1:190e3);
+s = S(40e3+1:190e3);
+
+Y = reshape(Y,10e3,15);
+X = reshape(X,10e3,15);
+s = reshape(s,10e3,15);
+
+X = X + .3;
+X = X*1.5;
+
+% % % correct for change in mean
+% % for i = 1:15
+% % 	X(1:5e3,i) = X(1:5e3,i)/mean(s(1:5e3,i));
+% % 	X(5e3+1:end,i) = X(5e3+1:end,i)/mean(s(1:end,i));
+% % end
+
+plotPieceWiseLinear(vectorise(X(1e3:5e3,:)),vectorise(Y(1e3:5e3,:)),'Color','r','nbins',25);
+plotPieceWiseLinear(vectorise(X(6e3:end,:)),vectorise(Y(6e3:end,:)),'Color','b','nbins',25);
+xlabel('Projected Stimulus')
+ylabel('DA model Response (Hz)')
 
 
 prettyFig();

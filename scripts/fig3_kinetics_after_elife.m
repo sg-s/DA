@@ -67,14 +67,18 @@ end
 firing_lags(firing_lags<-100) = NaN; % obviously wrong
 
 
-
-
+figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
+for i = 1:3
+	ax(i) = subplot(1,3,i); hold on
+end
+ax(4) = ax(3);
 
 figure('outerposition',[0 0 901 802],'PaperUnits','points','PaperSize',[901 802]); hold on
 clear ax
 for i = 1:4
 	ax(i) = subplot(2,2,i); hold on
 end
+
 set(ax(1),'XLim',[0 1],'YLim',[-.5 1.1])
 set(ax(2),'XLim',[0 1],'YLim',[-.5 1.1])
 xlabel(ax(1),'Lag (s)')
@@ -113,11 +117,14 @@ plot(ax(2),lags,nanmean(temp,2)/max(nanmean(temp,2)),'Color',c(10,:))
 
 % show lags of firing rate and LFP for all doses
 mean_stim = mean(PID(a:z,:));
+c = lines(10);
+LFP_color = c(5,:);
+firing_color = c(4,:);
 for i = 1:max(paradigm)
 	x = nonnans(firing_lags(paradigm==i));
-	errorbar(ax(4),mean(mean_stim(paradigm==i)),mean(x),sem(x),'k')
+	errorbar(ax(4),mean(mean_stim(paradigm==i)),mean(x),sem(x),'Color',LFP_color)
 	x = nonnans(LFP_lags(paradigm==i));
-	errorbar(ax(4),mean(mean_stim(paradigm==i)),mean(x),sem(x),'r')
+	errorbar(ax(4),mean(mean_stim(paradigm==i)),mean(x),sem(x),'Color',firing_color)
 end
 xlabel(ax(4),'\mu_{Stimulus} (V)')
 ylabel(ax(4),'Lag (ms)')
@@ -151,35 +158,35 @@ end
 %%
 % Can we also see signs of this adaptation in kinetics in naturalistic odor stimuli? 
 
-% get this data
-clearvars -except being_published
-load('/local-data/DA-paper/data-for-paper/nat-stim/ab3A_nat_stim.ORNData','-mat')
-od(1) = [];
-for i = length(od):-1:1
-	data(i).LFP = nanmean(od(i).LFP,2);
-	data(i).stimulus = nanmean(od(i).stimulus,2);
-	data(i).firing_rate = nanmean(od(i).firing_rate,2);
-end
+% % get this data
+% clearvars -except being_published
+% load('/local-data/DA-paper/data-for-paper/nat-stim/ab3A_nat_stim.ORNData','-mat')
+% od(1) = [];
+% for i = length(od):-1:1
+% 	data(i).LFP = nanmean(od(i).LFP,2);
+% 	data(i).stimulus = nanmean(od(i).stimulus,2);
+% 	data(i).firing_rate = nanmean(od(i).firing_rate,2);
+% end
 
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
 
-X = data(1).firing_rate;
+% X = data(1).firing_rate;
 
-for i = 1:length(loc)
-	temp = X(loc(i)-200:loc(i)+500);
-	temp = temp - mean(temp(1:200));
-	plot(temp/max(temp(200:end)))
-end
+% for i = 1:length(loc)
+% 	temp = X(loc(i)-200:loc(i)+500);
+% 	temp = temp - mean(temp(1:200));
+% 	plot(temp/max(temp(200:end)))
+% end
 
 
-[~,loc] = findpeaks(S,'MinPeakProminence',.1);
-% ignore all peaks with another peak 200 ms afterwards
-rm_this = false(length(loc),1);
-for i = 1:length(loc)
-	if any(find(loc<loc(i) + 300 & loc > loc(i)))
-		rm_this(i) = true;
-	end
-end
+% [~,loc] = findpeaks(S,'MinPeakProminence',.1);
+% % ignore all peaks with another peak 200 ms afterwards
+% rm_this = false(length(loc),1);
+% for i = 1:length(loc)
+% 	if any(find(loc<loc(i) + 300 & loc > loc(i)))
+% 		rm_this(i) = true;
+% 	end
+% end
 
 %% Version Info
 %

@@ -239,6 +239,69 @@ for ki = 1:length(all_k_d)
 
 end
 
+%% Fitting a NL model to the data
+% In this section, I fit a NL model to the data to see if I can reproduce the observed change in input-output curves.
+
+clear data c
+c = 1;
+for i = [2 5 10]
+	S = MSGdata.PID(:,MSGdata.paradigm==i);
+	R = MSGdata.fA(:,MSGdata.paradigm==i);
+	data(c).response = nanmean(R(35e3:55e3,:),2);
+	data(c).response(1:2e3) = NaN;
+	data(c).stimulus = nanmean(S(35e3:55e3,:),2);
+	c = c + 1;
+end
+
+clear p
+p.Hill_n = 4.3125;
+p.Hill_K = 0.3097;
+p.  tau1 = 6.0312;
+p.  tau2 = 392.6875;
+p.     n = 9.1562;
+p.     A = 52.1258;
+p.     C = 51.4797;
+
+
+
+% generate responses
+MSGdata.time = 1e-3*(1:length(MSGdata.PID));
+for i = 1:length(MSGdata.paradigm)
+	MSGdata.NL_pred(:,i) = pNL(MSGdata.PID(:,i),p);
+end
+
+% recover filters for every trial
+for i = 1:length(MSGdata.paradigm)
+	MSGdata.Khat(:,i) = fitFilter2Data(MSGdata.PID(35e3:55e3,i),MSGdata.NL_pred(35e3:55e3,i),'reg',1,'offset',100,'filter_length',700);
+	MSGdata.Khat(:,i) = MSGdata.Khat(:,i)/norm(MSGdata.Khat(:,i));
+	MSGdata.Khat(:,i) = MSGdata.Khat(:,i)*norm(MSGdata.K);
+end
+
+% reproject all the stimuli
+for i = 1:length(MSGdata.paradigm)
+	MSGdata.K_pred(:,i) = convolve(MSGdata.time,MSGdata.PID(:,i),MSGdata.Khat(:,i),MSGdata.filtertime);
+end
+
+% make i/o curves for different mean stimuli and compute gain in each paradigm 
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+c = parula(10);
+for i = 1:max(MSGdata.paradigm)
+	x = mean(MSGdata.K_pred(35e3:55e3,MSGdata.paradigm==i),2);
+	y = mean(MSGdata.NL_pred(35e3:55e3,MSGdata.paradigm==i),2);
+
+	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:),'show_error',false,'LineWidth',2);
+	
+end
+xlabel('Projected Stimulus (V)')
+ylabel('NL model response (Hz)')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 %% 
 % What do we have to do make the input-output curves in this model look like what the data looks like, for the Gaussian stimuli? One possibility is that there actually is adaptation in the Gaussian stimuli, and that if we change the input nonlinearity in the NLN model, we get curves looking like what our data looks like. That's what I do in this figure: I manually set the $K_D$ of the input nonlinearity to be the mean stimulus for each paradigm, and carry out the analysis as before.  
 
@@ -285,6 +348,7 @@ end
 axes(ax(2)), hold(ax(2),'on')
 for i = 1:max(MSGdata.paradigm)
 	x = mean(MSGdata.K_pred(35e3:55e3,MSGdata.paradigm==i),2);
+
 	y = mean(MSGdata.NL_pred(35e3:55e3,MSGdata.paradigm==i),2);
 	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:),'show_error',false,'LineWidth',2);
 	
@@ -317,6 +381,75 @@ if being_published
 	snapnow	
 	delete(gcf)
 end
+
+%%
+% Now, we fit an adapting NL model to this data to show that it can recover the I/O curves well.
+
+clear data c
+c = 1;
+for i = [2 5 10]
+	S = MSGdata.PID(:,MSGdata.paradigm==i);
+	R = MSGdata.fA(:,MSGdata.paradigm==i);
+	rm_this = (sum(R) == 0);
+	R(:,rm_this) = [];
+	S(:,rm_this) = [];
+	data(c).response = nanmean(R(35e3:55e3,:),2);
+	data(c).response(1:3e3) = NaN;
+	data(c).stimulus = nanmean(S(35e3:55e3,:),2);
+	c = c + 1;
+end
+
+clear p
+p.  k0 = 0.2246;
+p. tau = 2.9856e+03;
+p.   B = 4.9688;
+p.tau1 = 23.1719;
+p.tau2 = 400;
+p.   n = 2.1484;
+p.   A = 7.8125e-04;
+p.   C = 90;
+
+
+% generate responses
+MSGdata.time = 1e-3*(1:length(MSGdata.PID));
+for i = 1:length(MSGdata.paradigm)
+	p.k0 = mean(MSGdata.PID(35e3:55e3,i));
+	p.B = 0;
+	MSGdata.NL_pred(:,i) = aNLN(MSGdata.PID(:,i),p);
+end
+
+% recover filters for every trial
+for i = 1:length(MSGdata.paradigm)
+	MSGdata.Khat(:,i) = fitFilter2Data(MSGdata.PID(35e3:55e3,i),MSGdata.NL_pred(35e3:55e3,i),'reg',1,'offset',100,'filter_length',700);
+	MSGdata.Khat(:,i) = MSGdata.Khat(:,i)/norm(MSGdata.Khat(:,i));
+	MSGdata.Khat(:,i) = MSGdata.Khat(:,i)*norm(MSGdata.K);
+end
+
+% reproject all the stimuli
+for i = 1:length(MSGdata.paradigm)
+	MSGdata.K_pred(:,i) = convolve(MSGdata.time,MSGdata.PID(:,i),MSGdata.Khat(:,i),MSGdata.filtertime);
+end
+
+% make i/o curves for different mean stimuli and compute gain in each paradigm 
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+c = parula(10);
+for i = 1:max(MSGdata.paradigm)
+	x = mean(MSGdata.K_pred(35e3:55e3,MSGdata.paradigm==i),2);
+	y = mean(MSGdata.NL_pred(35e3:55e3,MSGdata.paradigm==i),2);
+
+	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:),'show_error',false,'LineWidth',2);
+	
+end
+xlabel('Projected Stimulus (V)')
+ylabel('adaptive NL model (Hz)')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 %% Estimating the input nonlinearity directly from the data
 % In this section, I attempt to directly estimate the input nonlinearity as follows: first, I swap the stimulus and the response from the NLN model data (see prev. section) and extract a filter that when convolved with the response, predicts the stimulus. This filter is mostly a-causal. In the following figure, I first plot the filter from the response to the stimulus. Note that most of the filter is in negative time (the future). Next, I plot the predicted stimulus vs. the actual stimulus (which is the estimate of the input nonlinearity). I also plot the actual input nonlinearity in red (rescaled to fit the max of the reconstructed nonlinearity). 

@@ -27,20 +27,22 @@ case 2
 end
 
 % hard bounds
-lb.A = 1; lb.B = 1; lb.C = 0; 
+lb.A = 0; lb.B = 0; lb.C = 0; 
 ub.C = 1; 
 
 % lower bound
+lb.s0 = 0;
 lb.tau_y = 1; 
 lb.tau_z = 1;
 lb.n_z = 1;
 lb.n_y = 1;
 
+
 % upper bounds
-ub.n_y = 3;
-ub.n_z = 3;
-ub.tau_y = 200;
-ub.tau_z = 300;
+ub.n_y = 2;
+ub.n_z = 2;
+ub.tau_y = 50;
+ub.tau_z = 100;
 
 
 

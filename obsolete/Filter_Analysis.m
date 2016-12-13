@@ -60,8 +60,6 @@ prettyFig;
 snapnow;
 delete(gcf);
 
-return
-
 
 %% Synthetic Data 2: effect of regularisation 
 % We now create a new synthetic dataset, identical to the old one, except we filter the white noise input with some boxcar filter to remove high frequency components from the input. We find the best filters as before, and look at how regularisation parameter affects the choice of filter. 

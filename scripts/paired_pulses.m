@@ -60,6 +60,8 @@ set(gca,'XLim',[0 20])
 
 prettyFig()
 
+suptitle('ab3 LFP')
+
 if being_published	
 	snapnow	
 	delete(gcf)
@@ -161,6 +163,8 @@ prettyFig();
 
 labelFigure()
 
+suptitle('ab3 LFP')
+
 if being_published
 	snapnow
 	delete(gcf)
@@ -202,8 +206,9 @@ xlabel('Time (s)')
 ylabel('Firing rate (Hz)')
 set(gca,'XLim',[0 20])
 
-
 prettyFig()
+
+suptitle('ab3A firing rate')
 
 if being_published	
 	snapnow	
@@ -303,6 +308,8 @@ legend(l,['\tau = ' oval(ff.tau), 's r^2 = ' oval(rsquare(y,ff(pulse_seperation)
 prettyFig();
 
 labelFigure
+
+suptitle('ab3A firing rate')
 
 if being_published
 	snapnow
@@ -462,6 +469,10 @@ l = plot(x,ff(x),'r');
 legend(l,['\tau = ' oval(ff.tau), 's r^2 = ' oval(rsquare(y,ff(pulse_seperation)))],'Location','southeast')
 
 prettyFig();
+
+labelFigure
+
+suptitle('ab2 LFP')
 
 if being_published
 	snapnow

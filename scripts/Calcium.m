@@ -9,30 +9,14 @@
 % In this document we manipulate the extra-cellular calcium concentration using EDTA (1mM, to lower it), or increasing the Calcium concentration to 10mM (from a normal conc. of 1mM). 
 
 
-% add homebrew path
-path1 = getenv('PATH');
-if isempty(strfind(path1,':/usr/local/bin'))
-    path1 = [path1 ':/usr/local/bin'];
-end
-setenv('PATH', path1);
 
-% this code determines if this function is being called
-calling_func = dbstack;
-being_published = 0;
-if ~isempty(calling_func)
-	if find(strcmp('publish',{calling_func.name}))
-		being_published = 1;
-		unix(['tag -a publish-failed ',which(mfilename)]);
-		unix(['tag -r published ',which(mfilename)]);
-	end
-end
-tic
+pHeader;
 
-[alldata(1).PID, alldata(1).LFP, alldata(1).fA, alldata(1).paradigm, alldata(1).orn, alldata(1).fly, alldata(1).AllControlParadigms, alldata(1).paradigm_hashes] = consolidateData('/local-data/DA-paper/calcium/low/',true);
+[alldata(1).PID, alldata(1).LFP, alldata(1).fA, alldata(1).paradigm, alldata(1).orn, alldata(1).fly, alldata(1).AllControlParadigms, alldata(1).paradigm_hashes] = consolidateData('/Volumes/sgs_data/Dropbox (emonetlab)/users/srinivas_gs/data/DA-project/electrode-calcium/low/',true);
 
-[alldata(2).PID, alldata(2).LFP, alldata(2).fA, alldata(2).paradigm, alldata(2).orn, alldata(2).fly, alldata(2).AllControlParadigms, alldata(2).paradigm_hashes] = consolidateData('/local-data/DA-paper/calcium/normal/',true);
+[alldata(2).PID, alldata(2).LFP, alldata(2).fA, alldata(2).paradigm, alldata(2).orn, alldata(2).fly, alldata(2).AllControlParadigms, alldata(2).paradigm_hashes] = consolidateData('/Volumes/sgs_data/Dropbox (emonetlab)/users/srinivas_gs/data/DA-project/electrode-calcium/normal/',true);
 
-[alldata(3).PID, alldata(3).LFP, alldata(3).fA, alldata(3).paradigm, alldata(3).orn, alldata(3).fly, alldata(3).AllControlParadigms, alldata(3).paradigm_hashes] = consolidateData('/local-data/DA-paper/calcium/high/',true);
+[alldata(3).PID, alldata(3).LFP, alldata(3).fA, alldata(3).paradigm, alldata(3).orn, alldata(3).fly, alldata(3).AllControlParadigms, alldata(3).paradigm_hashes] = consolidateData('/Volumes/sgs_data/Dropbox (emonetlab)/users/srinivas_gs/data/DA-project/electrode-calcium/high/',true);
 
 for ai = 1:length(alldata)
 	% remove baseline from all PIDs
@@ -152,34 +136,109 @@ if being_published
 	delete(gcf)
 end
 
+;;       ;;;;;;;; ;;;;;;;;     ;;    ;; ;;;; ;;    ;; ;;;;;;;; ;;;;;;;; ;;;;  ;;;;;;   ;;;;;;  
+;;       ;;       ;;     ;;    ;;   ;;   ;;  ;;;   ;; ;;          ;;     ;;  ;;    ;; ;;    ;; 
+;;       ;;       ;;     ;;    ;;  ;;    ;;  ;;;;  ;; ;;          ;;     ;;  ;;       ;;       
+;;       ;;;;;;   ;;;;;;;;     ;;;;;     ;;  ;; ;; ;; ;;;;;;      ;;     ;;  ;;        ;;;;;;  
+;;       ;;       ;;           ;;  ;;    ;;  ;;  ;;;; ;;          ;;     ;;  ;;             ;; 
+;;       ;;       ;;           ;;   ;;   ;;  ;;   ;;; ;;          ;;     ;;  ;;    ;; ;;    ;; 
+;;;;;;;; ;;       ;;           ;;    ;; ;;;; ;;    ;; ;;;;;;;;    ;;    ;;;;  ;;;;;;   ;;;;;;  
 
 
+%% Kinetics
+% In this section, I look at how the kinetics of the LFP changes as a function of the extracellular calcium. 
 
-%% Version Info
-% The file that generated this document is called:
-disp(mfilename)
+a = 35e3+1; z = 55e3;
+chunk_size = 1e3;
 
-%%
-% and its md5 hash is:
-Opt.Input = 'file';
-disp(dataHash(strcat(mfilename,'.m'),Opt))
-
-%%
-% This file should be in this commit:
-[status,m]=unix('git rev-parse HEAD');
-if ~status
-	disp(m)
+for i = 1:length(alldata)
+	paradigm = alldata(i).paradigm;
+	alldata(i).LFP_lags = NaN*paradigm;
+	alldata(i).LFP_max_corr = NaN*paradigm;
+	alldata(i).firing_lags = NaN*paradigm;
+	alldata(i).firing_max_corr = NaN*paradigm;
+	alldata(i).LFP_xcorr = NaN(chunk_size*2 - 1,20,length(paradigm));
+	alldata(i).fA_xcorr = NaN(chunk_size*2 - 1,20,length(paradigm));
 end
 
-t = toc;
+% compute LFP and firing rate lags
+for k = 1:length(alldata)
 
-%% 
-% This document was built in: 
-disp(strcat(oval(t,3),' seconds.'))
+	PID = alldata(k).PID;
+	LFP = alldata(k).LFP;
+	fA = alldata(k).fA;
+	paradigm = alldata(k).paradigm;
 
-% tag the file as being published 
+	for i = 1:length(paradigm)
+
+		S = PID(a:z,i);
+		X = -LFP(a:z,i);
+		R = fA(a:z,i);
+
+		% reshape into chunks
+		S = reshape(S,chunk_size,length(S)/chunk_size);
+		X = reshape(X,chunk_size,length(X)/chunk_size);
+		R = reshape(R,chunk_size,length(R)/chunk_size);
+
+		S = bsxfun(@minus, S, mean(S));
+		X = bsxfun(@minus, X, mean(X));
+		R = bsxfun(@minus, R, mean(R));
+
+		X_lag = NaN(chunk_size*2-1,size(S,2));
+		R_lag = NaN(chunk_size*2-1,size(S,2));
+		clear X_lag R_lag
+		for j = 1:size(S,2)
+			X_lag(:,j) = xcorr(X(:,j)/std(X(:,j)),S(:,j)/std(S(:,j)));
+			R_lag(:,j) = xcorr(R(:,j)/std(R(:,j)),S(:,j)/std(S(:,j)));
+		end
+		X_lag = X_lag/chunk_size;
+		alldata(k).LFP_xcorr(:,:,i) = X_lag;
+		X_lag = mean(X_lag,2);
+		[alldata(k).LFP_max_corr(i),loc] = max(X_lag);
+		alldata(k).LFP_lags(i) = loc - 1e3;
+
+		R_lag = R_lag/chunk_size;
+		alldata(k).fA_xcorr(:,:,i) = R_lag;
+		R_lag = mean(R_lag,2);
+		[alldata(k).firing_max_corr(i),loc] = max(R_lag);
+		alldata(k).firing_lags(i) = loc - 1e3;
+	end
+end
+
+figure('outerposition',[0 0 1501 802],'PaperUnits','points','PaperSize',[1501 802]); hold on
+c = [0 0 1; 0 0 0; 1 0 0];
+for i = 1:3 % because we have 3 values
+	subplot(2,3,i); hold on
+	set(gca,'XLim',[-100 500])
+	xlabel('Lag (ms)')
+	ylabel('Cross correlation (norm)')
+	title(['\mu_{Stimulus} = ' oval(mean(alldata(1).PID(a:z,i)))])
+	% for each calcium conc, plot the xcorr b/w stimulus and LFP
+	for j = 1:length(alldata)
+		y = mean(alldata(j).LFP_xcorr(:,:,i),2);
+		y = y/max(y);
+		plot(-chunk_size+1:chunk_size-1,y,'Color',c(j,:))
+	end
+end
+
+subplot(2,3,4); hold on
+for i = 1:length(alldata)
+	plot(mean(alldata(i).PID(a:z,:)),alldata(i).LFP_lags,'+-','Color',c(i,:))
+end
+xlabel('\mu_{Stimulus}')
+ylabel('Stim \rightarrow LFP Lag (ms)')
+legend({'Low Ca','Normal Ca','High Ca'})
+
+prettyFig()
 
 if being_published
-	unix(['tag -a published ',which(mfilename)]);
-	unix(['tag -r publish-failed ',which(mfilename)]);
+	snapnow
+	delete(gcf)
 end
+
+%% Version Info
+%
+pFooter;
+
+
+

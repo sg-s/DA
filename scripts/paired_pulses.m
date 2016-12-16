@@ -80,7 +80,7 @@ for i = 1:length(orn)
 	loc_A = round(a + loc_A);
 	P1(i) = x(loc_A);
 
-	[S1,sA] = max(s(a:z));
+	[S1(i),sA] = max(s(a:z));
 	sA = sA + a;
 
 	% second pulse peak
@@ -89,7 +89,7 @@ for i = 1:length(orn)
 	loc_B = round(a + loc_B);
 	P2(i) = x(loc_B);
 
-	[S2,sB] = max(s(a:z));
+	[S2(i),sB] = max(s(a:z));
 	sB = sB + a;
 
 	% find the maximum value b/w the peaks
@@ -114,13 +114,13 @@ figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 50
 subplot(1,3,1); hold on
 plot(pulse_seperation,-P2./-P1,'k+')
 xlabel('\Delta T (s)')
-ylabel('R_{a}/R_0')
+ylabel('R_{2}/R_0')
 
 subplot(1,3,2); hold on
 y = -(P2-B2)./-(P1-B1);
 plot(pulse_seperation,y,'k+')
 xlabel('\Delta T (s)')
-ylabel('\DeltaR/\DeltaR_0')
+ylabel('\DeltaR_2/\DeltaR_1')
 
 
 cf = fittype('1-exp(-x./tau)');
@@ -137,7 +137,7 @@ y1 = -(P1-B1)./(S1);
 y = y2./y1;
 plot(pulse_seperation,y,'k+')
 xlabel('\Delta T (s)')
-ylabel('\DeltaG/\DeltaG_0')
+ylabel('\G_2/\G_1')
 
 cf = fittype('1-exp(-x./tau)');
 ff = fit(pulse_seperation,y(:),cf,'Start',.5,'Lower',0,'Upper',10);
@@ -152,6 +152,140 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+
+%% Firing rate
+% Now I make the same plots for firing rate. 
+
+
+c = parula(length(unique(pulse_seperation))+1);
+all_pulse_sep = unique(pulse_seperation);
+
+figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
+subplot(2,1,1); hold on
+for i = length(all_pulse_sep):-1:1
+	plot(time,mean(PID(:,pulse_seperation == all_pulse_sep(i)),2),'Color',c(i,:));
+end
+xlabel('Time (s)')
+ylabel('Stimulus (V)')
+set(gca,'XLim',[0 20])
+
+subplot(2,1,2); hold on
+for i = length(all_pulse_sep):-1:1
+	temp = fA(:,pulse_seperation == all_pulse_sep(i));
+	temp(:,sum(temp)==0) = [];
+	plot(time,mean(temp,2),'Color',c(i,:));
+end
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+set(gca,'XLim',[0 20])
+
+
+prettyFig()
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
+%%
+% Now I plot the ratios of responses or gain as a function of pulse spacing, as in Cao et al. 
+
+
+% measure peak response for each pulse
+B1 = NaN*orn;
+B2 = NaN*orn;
+P1 = NaN*orn;
+P2 = NaN*orn;
+S1 = NaN*orn;
+S2 = NaN*orn;
+
+for i = 1:length(orn)
+	x = fA(:,i);
+	B1(i) = mean(x(4e3:5e3));
+
+	s = PID(:,i);
+
+
+	% first pulse peak
+	a = 5.05e3; z = a + 150;
+	[~,loc_A] = max(x(a:z));
+	loc_A = round(a + loc_A);
+	P1(i) = x(loc_A);
+
+	[S1(i),sA] = max(s(a:z));
+	sA = sA + a;
+
+	% second pulse peak
+	a = round(5.05e3 + pulse_seperation(i)*1e3 + 50); z = a + 150;
+	[~,loc_B] = max(x(a:z));
+	loc_B = round(a + loc_B);
+	P2(i) = x(loc_B);
+
+	[S2(i),sB] = max(s(a:z));
+	sB = sB + a;
+
+	% find the min value b/w the peaks
+	[~,loc_C] = min(x(loc_A:loc_B));
+	loc_C = round(loc_C + loc_A);
+
+	B2(i) = x(loc_C);
+
+end
+
+rm_this = P1 == 0 | P2 == 0;
+P1(rm_this) = NaN;
+P2(rm_this) = NaN;
+B1(rm_this) = NaN;
+B2(rm_this) = NaN;
+S1(rm_this) = NaN;
+S2(rm_this) = NaN;
+
+figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
+
+subplot(1,3,1); hold on
+plot(pulse_seperation,-P2./-P1,'k+')
+xlabel('\Delta T (s)')
+ylabel('R_{a}/R_0')
+
+subplot(1,3,2); hold on
+y = -(P2-B2)./-(P1-B1);
+plot(pulse_seperation,y,'k+')
+xlabel('\Delta T (s)')
+ylabel('\DeltaR_{2}/\DeltaR_1')
+
+
+cf = fittype('1-exp(-x./tau)');
+
+ff = fit(pulse_seperation(~isnan(y)),nonnans(y(:)),cf,'Start',.5,'Lower',0,'Upper',10);
+x = logspace(-1,1,1e3);
+l = plot(x,ff(x),'r');
+
+legend(l,['\tau = ' oval(ff.tau), 's r^2 = ' oval(rsquare(y,ff(pulse_seperation)))],'Location','southeast')
+
+
+subplot(1,3,3); hold on
+y2 = -(P2-B2)./(S2);
+y1 = -(P1-B1)./(S1);
+y = y2./y1;
+plot(pulse_seperation,y,'k+')
+xlabel('\Delta T (s)')
+ylabel('G_2/G_1')
+
+cf = fittype('1-exp(-x./tau)');
+ff = fit(pulse_seperation(~isnan(y)),nonnans(y(:)),cf,'Start',.5,'Lower',0,'Upper',10);
+x = logspace(-1,1,1e3);
+l = plot(x,ff(x),'r');
+
+legend(l,['\tau = ' oval(ff.tau), 's r^2 = ' oval(rsquare(y,ff(pulse_seperation)))],'Location','southeast')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 %% Version Info
 %

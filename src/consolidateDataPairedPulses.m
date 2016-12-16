@@ -49,6 +49,7 @@ PID = [];
 fly = [];
 paradigm = [];
 orn = [];
+fA = [];
 
 
 % paired pulse specific
@@ -102,12 +103,15 @@ ll = ceil(ll/10); % because we want everything at a 1ms timestep
 % make placeholders
 LFP = zeros(ll,0);
 PID = zeros(ll,0);
+fA = zeros(ll,0);
 
 
 for i = 1:length(allfiles)
 	clear spikes data metadata
 	load(strcat(pathname,allfiles(i).name));
 	disp(strcat(pathname,allfiles(i).name));
+
+	assert(length(spikes) == length(data),'Data and spikes are of different sizes')
 
 	% concat everythign
 	this_PID = vertcat(data.PID);
@@ -116,6 +120,16 @@ for i = 1:length(allfiles)
 	% rotate, and subsample
 	this_LFP = this_LFP(:,1:10:end)';
 	this_PID = this_PID(:,1:10:end)';
+
+
+	% calculate the A firing rates
+	this_fA = zeros(ll,0);
+	for j = 1:length(spikes)
+		temp = spiketimes2f(spikes(j).A,1e-4*(1:length(spikes(j).A)),1e-3,3e-2);
+		this_fA = [this_fA temp];
+	end
+
+	assert(size(this_fA,2) == size(this_PID,2),'unequal stimulus and response sizes!')	
 
 	% get fly ID
 	us = strfind(allfiles(i).name,'_'); % underscores
@@ -147,6 +161,7 @@ for i = 1:length(allfiles)
 	% merge
 	LFP = [LFP this_LFP];
 	PID = [PID this_PID];
+	fA = [fA  this_fA];
 	pulse_seperation = [pulse_seperation; this_pulse_sep(:)];
 	orn = [orn; this_orn(:)];
 	fly = [fly; this_fly(:)];
@@ -158,6 +173,7 @@ end
 % cache all of this
 consolidated_data = struct;
 consolidated_data.PID = PID;
+consolidated_data.fA = fA;
 consolidated_data.LFP = LFP;
 consolidated_data.orn = orn;
 consolidated_data.fly = fly;

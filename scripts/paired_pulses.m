@@ -57,10 +57,8 @@ xlabel('Time (s)')
 ylabel('\DeltaLFP (mV)')
 set(gca,'XLim',[0 20])
 
-
-prettyFig()
-
 suptitle('ab3 LFP')
+prettyFig()
 
 if being_published	
 	snapnow	
@@ -69,7 +67,7 @@ end
 
 
 %%
-% I now plot the ratio of the response to the second pulse to the first as a function of the pulse spacing. There are many various to do this, and I do all of them. First, in (a), I plot the ratios of peak response to the second pulse to the response to the first pulse, as in Cao et al. Our data differs from theirs: we never see a decrease in the peak response amplitude. It instead increases at short pulse separations, before decaying to 1. Next, in (b), I plot the ratio of the increase in response to the two pulses. Finally, in (c), I plot the ratio of the gains measured at the two pulses, measured as change in response divided by change in stimulus. In (b) and (c), I fit an exponential to the data to determine the timescale of putative gain control. Note that our timescales are much faster than what was reported in Cao et al., and agree with the timescales we reported in the paper (<1s). 
+% I now plot the ratio of the response to the second pulse to the first as a function of the pulse spacing. There are many various to do this, and I do all of them. First, in (a), I plot the ratios of peak response to the second pulse to the response to the first pulse, as in Cao et al. Our data differs from theirs: we never see a decrease in the peak response amplitude. It instead increases at short pulse separations, before decaying to 1.  Finally, in (b), I plot the ratio of the gains measured at the two pulses, measured as change in response divided by change in stimulus. In (b), I fit an exponential to the data to determine the timescale of putative gain control. Note that our timescales are much faster than what was reported in Cao et al., and agree with the timescales we reported in the paper (<1s). 
 
 
 % measure peak response for each pulse
@@ -122,29 +120,29 @@ for i = 1:length(orn)
 end
 
 
-figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
+figure('outerposition',[0 0 1001 500],'PaperUnits','points','PaperSize',[1001 500]); hold on
 
-subplot(1,3,1); hold on
+subplot(1,2,1); hold on
 plot(pulse_seperation,-P2./-P1,'k+')
 xlabel('\Delta T (s)')
 ylabel('R_{2}/R_0')
 
-subplot(1,3,2); hold on
-y = -(P2-B2)./-(P1-B1);
-plot(pulse_seperation,y,'k+')
-xlabel('\Delta T (s)')
-ylabel('\DeltaR_2/\DeltaR_1')
+% subplot(1,3,2); hold on
+% y = -(P2-B2)./-(P1-B1);
+% plot(pulse_seperation,y,'k+')
+% xlabel('\Delta T (s)')
+% ylabel('\DeltaR_2/\DeltaR_1')
 
 
-cf = fittype('1-exp(-x./tau)');
-ff = fit(pulse_seperation,y(:),cf,'Start',.5,'Lower',0,'Upper',10);
-x = logspace(-1,1,1e3);
-l = plot(x,ff(x),'r');
+% cf = fittype('1-exp(-x./tau)');
+% ff = fit(pulse_seperation,y(:),cf,'Start',.5,'Lower',0,'Upper',10);
+% x = logspace(-1,1,1e3);
+% l = plot(x,ff(x),'r');
 
-legend(l,['\tau = ' oval(ff.tau), 's r^2 = ' oval(rsquare(y,ff(pulse_seperation)))],'Location','southeast')
+% legend(l,['\tau = ' oval(ff.tau), 's r^2 = ' oval(rsquare(y,ff(pulse_seperation)))],'Location','southeast')
 
 
-subplot(1,3,3); hold on
+subplot(1,2,2); hold on
 y2 = -(P2-B2)./(S2);
 y1 = -(P1-B1)./(S1);
 y = y2./y1;
@@ -159,11 +157,8 @@ l = plot(x,ff(x),'r');
 
 legend(l,['\tau = ' oval(ff.tau), 's r^2 = ' oval(rsquare(y,ff(pulse_seperation)))],'Location','southeast')
 
-prettyFig();
-
-labelFigure()
-
 suptitle('ab3 LFP')
+prettyFig();
 
 if being_published
 	snapnow
@@ -206,9 +201,8 @@ xlabel('Time (s)')
 ylabel('Firing rate (Hz)')
 set(gca,'XLim',[0 20])
 
-prettyFig()
-
 suptitle('ab3A firing rate')
+prettyFig()
 
 if being_published	
 	snapnow	
@@ -216,7 +210,7 @@ if being_published
 end
 
 %%
-% I now plot the ratio of the response to the second pulse to the first as a function of the pulse spacing. There are many various to do this, and I do all of them. First, in (a), I plot the ratios of peak response to the second pulse to the response to the first pulse, as in Cao et al. Our data differs from theirs: we never see a decrease in the peak response amplitude. It instead increases at short pulse separations, before decaying to 1. Next, in (b), I plot the ratio of the increase in response to the two pulses. Finally, in (c), I plot the ratio of the gains measured at the two pulses, measured as change in response divided by change in stimulus. In (b) and (c), I fit an exponential to the data to determine the timescale of putative gain control. Note that our timescales are much faster than what was reported in Cao et al., and agree with the timescales we reported in the paper (<1s). 
+% I now plot the ratio of the response to the second pulse to the first as a function of the pulse spacing. There are many various to do this, and I do all of them. First, in (a), I plot the ratios of peak response to the second pulse to the response to the first pulse, as in Cao et al. Our data differs from theirs: we never see a decrease in the peak response amplitude. It instead increases at short pulse separations, before decaying to 1.  Finally, in (b), I plot the ratio of the gains measured at the two pulses, measured as change in response divided by change in stimulus. In (b), I fit an exponential to the data to determine the timescale of putative gain control. Note that our timescales are much faster than what was reported in Cao et al., and agree with the timescales we reported in the paper (<1s). 
 
 % measure peak response for each pulse
 B1 = NaN*orn;
@@ -267,30 +261,30 @@ B2(rm_this) = NaN;
 S1(rm_this) = NaN;
 S2(rm_this) = NaN;
 
-figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
+figure('outerposition',[0 0 1001 500],'PaperUnits','points','PaperSize',[1001 500]); hold on
 
-subplot(1,3,1); hold on
+subplot(1,2,1); hold on
 plot(pulse_seperation,-P2./-P1,'k+')
 xlabel('\Delta T (s)')
 ylabel('R_{a}/R_0')
 
-subplot(1,3,2); hold on
-y = -(P2-B2)./-(P1-B1);
-plot(pulse_seperation,y,'k+')
-xlabel('\Delta T (s)')
-ylabel('\DeltaR_{2}/\DeltaR_1')
+% subplot(1,3,2); hold on
+% y = -(P2-B2)./-(P1-B1);
+% plot(pulse_seperation,y,'k+')
+% xlabel('\Delta T (s)')
+% ylabel('\DeltaR_{2}/\DeltaR_1')
 
 
-cf = fittype('1-exp(-x./tau)');
+% cf = fittype('1-exp(-x./tau)');
 
-ff = fit(pulse_seperation(~isnan(y)),nonnans(y(:)),cf,'Start',.5,'Lower',0,'Upper',10);
-x = logspace(-1,1,1e3);
-l = plot(x,ff(x),'r');
+% ff = fit(pulse_seperation(~isnan(y)),nonnans(y(:)),cf,'Start',.5,'Lower',0,'Upper',10);
+% x = logspace(-1,1,1e3);
+% l = plot(x,ff(x),'r');
 
-legend(l,['\tau = ' oval(ff.tau), 's r^2 = ' oval(rsquare(y,ff(pulse_seperation)))],'Location','southeast')
+% legend(l,['\tau = ' oval(ff.tau), 's r^2 = ' oval(rsquare(y,ff(pulse_seperation)))],'Location','southeast')
 
 
-subplot(1,3,3); hold on
+subplot(1,2,2); hold on
 y2 = -(P2-B2)./(S2);
 y1 = -(P1-B1)./(S1);
 y = y2./y1;
@@ -305,11 +299,8 @@ l = plot(x,ff(x),'r');
 
 legend(l,['\tau = ' oval(ff.tau), 's r^2 = ' oval(rsquare(y,ff(pulse_seperation)))],'Location','southeast')
 
-prettyFig();
-
-labelFigure
-
 suptitle('ab3A firing rate')
+prettyFig();
 
 if being_published
 	snapnow
@@ -365,10 +356,8 @@ xlabel('Time (s)')
 ylabel('ab2 \DeltaLFP (mV)')
 set(gca,'XLim',[0 20])
 
-
+suptitle('ab2 LFP')
 prettyFig()
-
-labelFigure
 
 if being_published	
 	snapnow	
@@ -431,29 +420,29 @@ for i = 1:length(orn)
 end
 
 
-figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
+figure('outerposition',[0 0 1001 500],'PaperUnits','points','PaperSize',[1001 500]); hold on
 
-subplot(1,3,1); hold on
+subplot(1,2,1); hold on
 plot(pulse_seperation,-P2./-P1,'k+')
 xlabel('\Delta T (s)')
 ylabel('R_{2}/R_0')
 
-subplot(1,3,2); hold on
-y = -(P2-B2)./-(P1-B1);
-plot(pulse_seperation,y,'k+')
-xlabel('\Delta T (s)')
-ylabel('\DeltaR_2/\DeltaR_1')
+% subplot(1,3,2); hold on
+% y = -(P2-B2)./-(P1-B1);
+% plot(pulse_seperation,y,'k+')
+% xlabel('\Delta T (s)')
+% ylabel('\DeltaR_2/\DeltaR_1')
 
 
-cf = fittype('1-exp(-x./tau)');
-ff = fit(pulse_seperation,y(:),cf,'Start',.5,'Lower',0,'Upper',10);
-x = logspace(-1,1,1e3);
-l = plot(x,ff(x),'r');
+% cf = fittype('1-exp(-x./tau)');
+% ff = fit(pulse_seperation,y(:),cf,'Start',.5,'Lower',0,'Upper',10);
+% x = logspace(-1,1,1e3);
+% l = plot(x,ff(x),'r');
 
-legend(l,['\tau = ' oval(ff.tau), 's r^2 = ' oval(rsquare(y,ff(pulse_seperation)))],'Location','southeast')
+% legend(l,['\tau = ' oval(ff.tau), 's r^2 = ' oval(rsquare(y,ff(pulse_seperation)))],'Location','southeast')
 
 
-subplot(1,3,3); hold on
+subplot(1,2,2); hold on
 y2 = -(P2-B2)./(S2);
 y1 = -(P1-B1)./(S1);
 y = y2./y1;
@@ -468,11 +457,10 @@ l = plot(x,ff(x),'r');
 
 legend(l,['\tau = ' oval(ff.tau), 's r^2 = ' oval(rsquare(y,ff(pulse_seperation)))],'Location','southeast')
 
+suptitle('ab2 LFP')
 prettyFig();
 
-labelFigure
 
-suptitle('ab2 LFP')
 
 if being_published
 	snapnow

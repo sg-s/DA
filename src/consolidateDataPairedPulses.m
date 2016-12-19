@@ -60,7 +60,7 @@ if ~strcmp(pathname(end),oss)
 	pathname = [pathname oss];
 end
 
-allfiles = dir([pathname '*.mat']);
+allfiles = [vectorise(dir([pathname '*.mat'])); vectorise(dir([pathname '*.kontroller']))];
 % remove the consolidated data from this
 rm_this = [find(strcmp('cached_log.mat',{allfiles.name})) find(strcmp('consolidated_data.mat',{allfiles.name})) find(strcmp('cached.mat',{allfiles.name})) find(strcmp('template.mat',{allfiles.name}))];
 if ~isempty(rm_this)
@@ -88,7 +88,7 @@ end
 disp('Determining longest data length...')
 ll = 0;
 for i = 1:length(allfiles)
-	load(strcat(pathname,allfiles(i).name));
+	load(strcat(pathname,allfiles(i).name),'-mat');
 	for j = 1:length(data)
 		if ~isempty(data(j).voltage)
 			ll = max([ll length(data(j).voltage)]);
@@ -108,7 +108,7 @@ fA = zeros(ll,0);
 
 for i = 1:length(allfiles)
 	clear spikes data metadata
-	load(strcat(pathname,allfiles(i).name));
+	load(strcat(pathname,allfiles(i).name),'-mat');
 	disp(strcat(pathname,allfiles(i).name));
 
 	assert(length(spikes) == length(data),'Data and spikes are of different sizes')
@@ -165,6 +165,10 @@ for i = 1:length(allfiles)
 	pulse_seperation = [pulse_seperation; this_pulse_sep(:)];
 	orn = [orn; this_orn(:)];
 	fly = [fly; this_fly(:)];
+
+	if(length(pulse_seperation) ~= length(orn))
+		keyboard
+	end
 
 
 end

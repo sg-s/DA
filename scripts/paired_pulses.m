@@ -120,18 +120,17 @@ for i = 1:length(orn)
 end
 
 
-figure('outerposition',[0 0 1001 500],'PaperUnits','points','PaperSize',[1001 500]); hold on
+figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
 
-subplot(1,2,1); hold on
+subplot(1,3,1); hold on
 plot(pulse_seperation,-P2./-P1,'k+')
 xlabel('\Delta T (s)')
-ylabel('R_{2}/R_0')
+ylabel('R_{2}/R_1')
 
-% subplot(1,3,2); hold on
-% y = -(P2-B2)./-(P1-B1);
-% plot(pulse_seperation,y,'k+')
-% xlabel('\Delta T (s)')
-% ylabel('\DeltaR_2/\DeltaR_1')
+subplot(1,3,2); hold on
+plot(pulse_seperation,S2./S1,'k+')
+xlabel('\Delta T (s)')
+ylabel('S_2/S_1')
 
 
 % cf = fittype('1-exp(-x./tau)');
@@ -142,7 +141,7 @@ ylabel('R_{2}/R_0')
 % legend(l,['\tau = ' oval(ff.tau), 's r^2 = ' oval(rsquare(y,ff(pulse_seperation)))],'Location','southeast')
 
 
-subplot(1,2,2); hold on
+subplot(1,3,3); hold on
 y2 = -(P2-B2)./(S2);
 y1 = -(P1-B1)./(S1);
 y = y2./y1;
@@ -164,7 +163,6 @@ if being_published
 	snapnow
 	delete(gcf)
 end
-
 
    ;;;    ;;;;;;;;   ;;;;;;;     ;;;;;;;; ;;;; ;;;;;;;;  ;;;; ;;    ;;  ;;;;;;   
   ;; ;;   ;;     ;; ;;     ;;    ;;        ;;  ;;     ;;  ;;  ;;;   ;; ;;    ;;  
@@ -266,7 +264,7 @@ figure('outerposition',[0 0 1001 500],'PaperUnits','points','PaperSize',[1001 50
 subplot(1,2,1); hold on
 plot(pulse_seperation,-P2./-P1,'k+')
 xlabel('\Delta T (s)')
-ylabel('R_{a}/R_0')
+ylabel('R_2/R_1')
 
 % subplot(1,3,2); hold on
 % y = -(P2-B2)./-(P1-B1);
@@ -420,18 +418,17 @@ for i = 1:length(orn)
 end
 
 
-figure('outerposition',[0 0 1001 500],'PaperUnits','points','PaperSize',[1001 500]); hold on
+figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
 
-subplot(1,2,1); hold on
+subplot(1,3,1); hold on
 plot(pulse_seperation,-P2./-P1,'k+')
 xlabel('\Delta T (s)')
-ylabel('R_{2}/R_0')
+ylabel('R_2/R_1')
 
-% subplot(1,3,2); hold on
-% y = -(P2-B2)./-(P1-B1);
-% plot(pulse_seperation,y,'k+')
-% xlabel('\Delta T (s)')
-% ylabel('\DeltaR_2/\DeltaR_1')
+subplot(1,3,2); hold on
+plot(pulse_seperation,S2./S1,'k+')
+xlabel('\Delta T (s)')
+ylabel('S_2/S_1')
 
 
 % cf = fittype('1-exp(-x./tau)');
@@ -442,7 +439,7 @@ ylabel('R_{2}/R_0')
 % legend(l,['\tau = ' oval(ff.tau), 's r^2 = ' oval(rsquare(y,ff(pulse_seperation)))],'Location','southeast')
 
 
-subplot(1,2,2); hold on
+subplot(1,3,3); hold on
 y2 = -(P2-B2)./(S2);
 y1 = -(P1-B1)./(S1);
 y = y2./y1;

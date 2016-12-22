@@ -533,7 +533,6 @@ if being_published
 	delete(gcf)
 end
 
-return
 
 %%
 % This looks like the NLN model can reproduce the naturalistic stimulus data well. What if we fit the NLN model to the denser naturalistic stimulus data? For this dataset, we expand the model to also fit the steepness of the static input nonlinearity. This model can reproduce responses to even the dense naturalistic stimuli very well. Note that it underestimates the responses to the first two whiffs, but progressively gets better. This could be a way to estimate the timescale of gain control from this dataset. 

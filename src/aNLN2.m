@@ -42,8 +42,8 @@ lb.tau_z = 1;
 lb.n_z = 1;
 
 ub.B = Inf;
-ub.tau_z = 1000;
-ub.n_z = 10;
+ub.tau_z = 1e3;
+ub.n_z = 2;
 
 
 

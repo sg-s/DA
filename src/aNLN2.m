@@ -38,12 +38,12 @@ ub.n_y = 2;
 
 % bounds for adaptation 
 lb.B = 0;
-lb.tau_z = 10;
+lb.tau_z = 1;
 lb.n_z = 1;
 
-ub.B = 0;
-ub.tau_z = 10;
-ub.n_z = 1;
+ub.B = Inf;
+ub.tau_z = 1000;
+ub.n_z = 10;
 
 
 

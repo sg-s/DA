@@ -125,6 +125,117 @@ if being_published
 	delete(gcf)
 end
 
+%% 
+% Does the addition of a adapting front-end improve the fit? I now allow the $k_D$ of the input nonlinearity to change with the stimulus over some recent history. 
+
+clear p
+p.   k0 = 0.1210;
+p.tau_z = 8.0586;
+p.    B = 0.0664;
+p.  n_z = 9.8750;
+p.    n = 1;
+p. tau1 = 26.4727;
+p. tau2 = 83.9062;
+p.  n_y = 2;
+p.    A = 0.5513;
+p.    C = 187.5902;
+
+figure('outerposition',[0 0 1000 803],'PaperUnits','points','PaperSize',[1000 803]); hold on
+
+% solve
+[Rhat,Ky,Kz,k_D] = aNLN2(S,p);
+
+subplot(2,3,1); hold on
+all_k_D = [min(k_D) mean(k_D) max(k_D)];
+c = parula(3);
+for i = 1:length(all_k_D)
+	x = logspace(-4,log10(max(S)*10),100);
+	a = hill([1 all_k_D(i) p.n],x);
+	plot(x/mean(S),a,'Color',c(i,:))
+end
+xlabel('S/<S>')
+ylabel('a')
+set(gca,'XScale','log','XLim',[1e-3 1e2],'XTick',[1e-3  1e-2 1e-1 1 10])
+legend({'min k_D','mean k_D','max k_D'},'Location','northwest')
+
+subplot(2,3,2); hold on
+plot(1:length(Ky),Ky,'r')
+plot(1:length(Kz),Kz,'b')
+legend({'Response filter','Adaptation filter'})
+xlabel('Lag (ms)')
+
+subplot(2,3,3); hold on
+plot(Rhat,R,'k.')
+xlabel('NLN prediction (Hz)')
+ylabel('ab3A firing rate (Hz)')
+legend(['r^2 = ' oval(rsquare(R,Rhat))],'Location','northwest')
+
+subplot(2,3,4); hold on
+[hy,hx] = histcounts(k_D,100);
+hy = hy/sum(hy);
+plot(hx(2:end)/mean(S),hy,'k')
+set(gca,'XScale','log','YScale','log')
+xlabel('k_D/<S>')
+ylabel('Probability')
+
+% vary B and tau_gain
+all_tau_z = unique(round(logspace(0,3,31)));
+all_B = unique(logspace(-3,3,31));
+r2 = NaN(length(all_tau_z),length(all_n));
+if exist('.cache/sparse_nat_stim_B_tau.mat','file')
+	load('.cache/sparse_nat_stim_B_tau.mat')
+else
+	for i = 1:length(all_tau_z)
+		textbar(i,length(all_tau_z))
+		for j = 1:length(all_B)
+			q = p;
+			q.tau_z = all_tau_z(i);
+			q.B = all_B(j);
+			Rhat = aNLN2(S,q);
+			r2(i,j) = rsquare(Rhat,R);
+		end
+	end
+	save('.cache/sparse_nat_stim_B_tau.mat','r2')
+end
+
+
+B_labels = {};
+b_tick = false(length(all_B),1);
+for i = 1:length(all_B)
+	if log10(all_B(i)) == round(log10(all_B(i)))
+		B_labels{i} = ['10^{' oval(log10(all_B(i))) '}'];
+		b_tick(i) = true;
+	end
+end
+
+
+tau_labels = {};
+tau_tick = false(length(all_tau_z),1);
+for i = 1:length(all_tau_z)
+	if log10(all_tau_z(i)) == round(log10(all_tau_z(i)))
+		tau_labels{i} = ['10^{' oval(log10(all_tau_z(i))) '}'];
+		tau_tick(i) = true;
+	end
+end
+
+subplot(2,3,5:6); hold on
+imagesc(r2)
+ylabel('\tau_{adaptation} (ms)')
+xlabel('\beta')
+colorbar
+caxis([0.5 1])
+set(gca,'XTick',find(b_tick),'XTickLabel',B_labels(b_tick),'XTickLabelRotation',45)
+set(gca,'YTick',find(tau_tick),'YTickLabel',tau_labels(tau_tick),'YTickLabelRotation',45)
+set(gca,'XLim',[.5 size(r2,2)+.5],'YLim',[.5 size(r2,1)+.5])
+title('r^2(data, NLN model)')
+
+prettyFig()
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
 
 %% Firing rate: dense naturalistic stimulus
 %
@@ -139,12 +250,6 @@ end
 % 
 
 
-prettyFig()
-
-if being_published	
-	snapnow	
-	delete(gcf)
-end
 
 
 %% Version Info

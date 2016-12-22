@@ -508,7 +508,31 @@ end
 
 
 %% Firing rate: mean shifted Gaussians
-% 
+% Now, I attempt to fit a non-adapting NLN model to the mean shifted gaussian data. 
+
+c = 1;
+for i = [2:10]
+	R = MSGdata.fA(35e3:55e3,MSGdata.paradigm == i);
+	S = MSGdata.PID(35e3:55e3,MSGdata.paradigm == i);
+	S(:,sum(R)==0) = [];
+	R(:,sum(R)==0) = [];
+	data(c).response = nanmean(R,2);
+	data(c).response(1:2e3) = NaN;
+	data(c).stimulus = nanmean(S,2);
+	c = c + 1;
+end
+
+clear p
+p.   k0 = 0.2291;
+p.tau_z = 1;
+p.    B = 0;
+p.  n_z = 1;
+p.    n = 2.3042;
+p. tau1 = 25.4347;
+p. tau2 = 116.9375;
+p.  n_y = 2;
+p.    A = 0.7906;
+p.    C = 137.4257;
 
 %% Firing rate: variance gain control
 % 

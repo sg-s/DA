@@ -1,7 +1,5 @@
 % fully parametric adapting NLN model
 % 
-% since we find the filter non-parameterically, we have to give it the response too
-% S is a Tx2 matrix, where S(:,2) is the response we want to fit it to
 % 
 function [R,K,k_D] = aNLN(S,p)
 

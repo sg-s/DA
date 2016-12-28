@@ -28,20 +28,20 @@ lb.A = 0;
 lb.C = 0;
 lb.tau1 = 5;
 lb.tau2 = 5;
-lb.n_y = 2;
+lb.n_y = 1;
 lb.n = 1;
 
 ub.tau1 = 100;
 ub.tau2 = 200;
 ub.n = 32; 
-ub.n_y = 2;
+ub.n_y = 10;
 
 % bounds for adaptation 
 lb.B = 0;
 lb.tau_z = 1;
 lb.n_z = 1;
 
-ub.B = Inf;
+ub.B = 2;
 ub.tau_z = 200;
 ub.n_z = 2;
 

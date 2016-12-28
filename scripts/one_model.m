@@ -58,6 +58,12 @@ for i = 1:size(DNSdata.PID,2)
 	DNSdata.PID(:,i) = DNSdata.PID(:,i) - min(DNSdata.PID(1:5e3,i));
 end
 
+% get the variance switching data
+clear VSdata
+[VSdata.PID, VSdata.LFP, VSdata.fA, VSdata.paradigm, VSdata.orn, VSdata.fly] = consolidateData(getPath(dataManager,'e30707e8e8ef6c0d832eee31eaa585aa'),1);
+% remove baseline from stimulus
+VSdata.PID = bsxfun(@minus, VSdata.PID, min(VSdata.PID));
+
  ;;;;;;  ;;;;;;;;     ;;;    ;;;;;;;;   ;;;;;;  ;;;;;;;;    ;;    ;;    ;;;    ;;;;;;;; 
 ;;    ;; ;;     ;;   ;; ;;   ;;     ;; ;;    ;; ;;          ;;;   ;;   ;; ;;      ;;    
 ;;       ;;     ;;  ;;   ;;  ;;     ;; ;;       ;;          ;;;;  ;;  ;;   ;;     ;;    
@@ -76,7 +82,7 @@ end
 
 
 %% Firing rate: Sparse naturalistic stimulus
-% First, I fit a NLN model to the firing rate responses to sparse naturalistic stimuli. The following figure shows the best fit model responses, and I also plot the 
+% First, I fit a NLN model to the firing rate responses to sparse naturalistic stimuli. The following figure shows the ORN firing rate with the best-fit NLN model (top). In the next two panels, I plot the best-fit input nonlinearity and the best-fit filter (together, the NL model). I compare the data to the best-fit prediction, and show the $r^2$ of the prediction (it's very good). Finally, I vary two parameters of the input nonlinearity (it is a Hill function), to determine how strongly this data constrains the shape of the input nonlinearity (it looks like it doesn't constrain it very tightly). 
 
 clear p
 p.   k0 = 0.1386;
@@ -184,7 +190,7 @@ end
 
 
 %% 
-% Does the addition of a adapting front-end improve the fit? I now allow the $k_D$ of the input nonlinearity to change with the stimulus over some recent history. 
+% Does the addition of a adapting front-end improve the fit? I now allow the $k_D$ of the input nonlinearity to change with the stimulus over some recent history, and then fit this model to the same data. First, I plot the extememum and mean values of $k_D$ from this model, to show how the effect of this adaptation on the model (top left). I then show the response and "adaptation" filters, and then compare the data to the model prediction (top right). I also plot the probability distribution of the dynamically-updating $k_D$, and we see that it barely changes from its mean value. Finally, I vary the parameters of update of $k_D$, the timescale and the degree, and show that this data does not strongly constrain the timescale of front-end gain control (nor does it really need it). 
 
 clear p
 p.   k0 = 0.1210;
@@ -550,7 +556,7 @@ end
 
 
 %% Firing rate: mean shifted Gaussians
-% Now, I attempt to fit a non-adapting NLN model to the mean shifted gaussian data. 
+% Now, I attempt to fit a non-adapting NLN model to the mean shifted gaussian data. In the top row, I plot the responses of the neuron in black to four different mean stimuli, and compare it to the model predictions in red. We clearly see that 1) the model tends to over-estimate mean firing rates as the mean stimulus increases, a consequence of saturation, and 2) the fluctuations in the model response fall of much faster with increasing mean stimulus than in the data. This is also visible in the comparison of ORN responses to model responses for the different mean stimuli. 
 
 c = 1;
 for i = [2:10]
@@ -586,7 +592,7 @@ c = parula(11);
 
 time = 1e-3*(1:length(MSGdata.PID));
 
-show_these_paradigms = [2 6 8 10];
+show_these_paradigms = [2 4 6 8];
 for i = 1:4
 	subplot(2,4,i); hold on
 	R = MSGdata.fA(:,MSGdata.paradigm == show_these_paradigms(i));
@@ -596,7 +602,7 @@ for i = 1:4
 	X = nanmean(X,2);
 	plot(time,R,'k')
 	plot(time,X,'r')
-	set(gca,'XLim',[40 50])
+	set(gca,'XLim',[40 50],'YLim',[0 70])
 end
 
 subplot(2,4,5); hold on
@@ -626,7 +632,8 @@ for i = 1:10
 	plot(X(1:50:end),R(1:50:end),'.','Color',c(i,:));
 	all_X = [all_X; X]; all_R = [all_R; R];
 end
-
+xlabel('Model prediction (Hz)')
+ylabel('ab3A firing rate (Hz)')
 
 % vary k_D and n
 all_k_D = logspace(log10(p.k0/10),log10(p.k0*10),31);
@@ -699,7 +706,7 @@ end
 
 
 %%
-% Now I fit an adapting NLN model to the same data, and see if we can capture the observed change in gain. 
+% Now I fit an adapting NLN model to the same data, and see if we can capture the observed change in gain. We see that this modification allows the model to change its input nonlinearity, moving it to the right with increasing mean stimulus, and allows it to approximate the ORN response much better. However, we see that this data poorly constrains the timescale of gain control in this model. 
 
 clear p
 p.   k0 = 0.1080;
@@ -864,7 +871,111 @@ end
 
 
 %% Firing rate: variance gain control
-% 
+% In this section, I fit a non-adapting NLN model to the variance switch data. The top panel shows the neuron's response with the best fit model. In the bottom left panel, I plot the neuron's firing rate vs. the best-fit NLN model prediction, seperately for the low-variance epochs (blue) and the high-variance epochs (red). Note that both curves have the same slope, indicating that the model has captured whatever gain change the neuron has done. This suggests that this data can precisely constrain some parameters of the input. In the bottom middle panel, I plot the ratio of gains (calcualted w.r.t to the NLN model) during the low and high variance epochs. When the curve crosses 1, the model shows the same degree of variance gain control that is seen in the data. I also plot the $r^2$ as a function of the steepness parameter. Note that the maximum of this plot does not occur at the same value of $n$ as when the model shows the same amount of variance gain control. 
+
+example_trial = 4;
+S = VSdata.PID(:,example_trial);
+R = VSdata.fA(:,example_trial);
+
+clear p
+p.   k0 = 0.4115;
+p.tau_z = 1;
+p.    B = 0;
+p.  n_z = 1;
+p.    n = 3.9336;
+p.n = 7;
+p. tau1 = 14.1570;
+p. tau2 = 44.6878;
+p.  n_y = 4.6729;
+p.    A = 0.3812;
+p.    C = 86.2114;
+
+X = aNLN2(S,p);
+time = 1e-3*(1:length(X));
+
+figure('outerposition',[0 0 1400 901],'PaperUnits','points','PaperSize',[1400 901]); hold on
+subplot(2,1,1); hold on
+plot(time,R,'k')
+plot(time,X,'r')
+set(gca,'XLim',[40 50])
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+
+% reshape the response and the prediction
+R = reshape(R,1e4,length(R)/1e4);
+X = reshape(X,1e4,length(X)/1e4);
+X(:,1) = []; X(:,end) = [];
+R(:,1) = []; R(:,end) = [];
+
+subplot(2,3,4); hold on
+plotPieceWiseLinear(vectorise(X(1e3:5e3,:)),vectorise(R(1e3:5e3,:)),'nbins',40,'Color',[1 0 0]); 
+plotPieceWiseLinear(vectorise(X(6e3:end,:)),vectorise(R(6e3:end,:)),'nbins',40,'Color',[0 0 1]); 
+xlabel('NLN model prediction (Hz)')
+ylabel('ab3A firing rate (Hz)')
+
+% vary n, measure slopes and r^2
+all_n = 1:21;
+r2 = NaN(length(all_n),1);
+slopes_lo = NaN(length(all_n),1);
+slopes_hi = NaN(length(all_n),1);
+
+if exist('.cache/variance_n.mat','file')
+	load('.cache/variance_n.mat')
+else
+	for i = 1:length(all_n)
+		textbar(i,length(all_n))
+		q = p;
+		q.n = all_n(i);
+
+		Rhat = aNLN2(S,q);
+
+		r2(i) = rsquare(VSdata.fA(1e4:end-1e4,example_trial), Rhat(1e4:end-1e4));
+
+		Rhat = reshape(Rhat,1e4,length(Rhat)/1e4);
+		Rhat(:,1) = []; Rhat(:,end) = [];
+
+		ff = fit(vectorise(Rhat(1e3:5e3,:)),vectorise(R(1e3:5e3,:)),'poly1');
+		slopes_hi(i) = ff.p1;
+
+		ff = fit(vectorise(Rhat(6e3:end,:)),vectorise(R(6e3:end,:)),'poly1');
+		slopes_lo(i) = ff.p1;
+		
+	end
+	save('.cache/variance_n.mat','r2','slopes_lo','slopes_hi')
+end
+
+subplot(2,3,5); hold on
+plot(all_n,slopes_lo(:)./slopes_hi(:),'k')
+xlabel('n')
+ylabel('gain_{low}/gain_{high}')
+plot(all_n,0*all_n+1,'k--')
+
+subplot(2,3,6); hold on
+plot(all_n,r2,'k+-')
+xlabel('n')
+ylabel('r^2')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% OK, what if I allow the $k_D$ to vary with time? How does this change our fits to this data?
+
+       k0: 0.4115
+    tau_z: 200
+        B: 0.0234
+      n_z: 2
+        n: 3.7266
+     tau1: 14.1179
+     tau2: 43.8987
+      n_y: 4.7002
+        A: 0.3851
+        C: 90.0161
+
 
 %% Firing rate: All data
 % 

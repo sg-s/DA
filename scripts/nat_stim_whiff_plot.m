@@ -24,7 +24,7 @@ for i = 1:length(od)
 end
 
 % pick an example orn
-example_orn = 2;
+example_orn = 3;
 R = nanmean(od(example_orn).firing_rate,2);
 S = nanmean(od(example_orn).stimulus,2);
 X = nanmean(od(example_orn).LFP,2);

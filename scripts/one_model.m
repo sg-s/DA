@@ -20,6 +20,11 @@ clear MSGdata
 MSGdata = consolidateData2(getPath(dataManager,'93ba5d68174e3df9f462a1fc48c581da'));
 MSGdata = cleanMSGdata(MSGdata);
 
+% make sure stimulus is always positive
+for i = 1:size(MSGdata.PID,2)
+	MSGdata.PID(:,i) = MSGdata.PID(:,i) - min(MSGdata.PID(:,i));
+end
+
 % get the sparse naturalistic stimuli with LFP
 % get this data
 clearvars -except being_published MSGdata
@@ -506,6 +511,22 @@ if being_published
 	delete(gcf)
 end
 
+;;     ;;  ;;;;;;   ;;;;;;   
+;;;   ;;; ;;    ;; ;;    ;;  
+;;;; ;;;; ;;       ;;        
+;; ;;; ;;  ;;;;;;  ;;   ;;;; 
+;;     ;;       ;; ;;    ;;  
+;;     ;; ;;    ;; ;;    ;;  
+;;     ;;  ;;;;;;   ;;;;;;   
+
+;;;;;;;; ;;;; ;;;;;;;;  ;;;; ;;    ;;  ;;;;;;      ;;;;;;;;     ;;;    ;;;;;;;; ;;;;;;;; 
+;;        ;;  ;;     ;;  ;;  ;;;   ;; ;;    ;;     ;;     ;;   ;; ;;      ;;    ;;       
+;;        ;;  ;;     ;;  ;;  ;;;;  ;; ;;           ;;     ;;  ;;   ;;     ;;    ;;       
+;;;;;;    ;;  ;;;;;;;;   ;;  ;; ;; ;; ;;   ;;;;    ;;;;;;;;  ;;     ;;    ;;    ;;;;;;   
+;;        ;;  ;;   ;;    ;;  ;;  ;;;; ;;    ;;     ;;   ;;   ;;;;;;;;;    ;;    ;;       
+;;        ;;  ;;    ;;   ;;  ;;   ;;; ;;    ;;     ;;    ;;  ;;     ;;    ;;    ;;       
+;;       ;;;; ;;     ;; ;;;; ;;    ;;  ;;;;;;      ;;     ;; ;;     ;;    ;;    ;;;;;;;; 
+
 
 %% Firing rate: mean shifted Gaussians
 % Now, I attempt to fit a non-adapting NLN model to the mean shifted gaussian data. 
@@ -523,16 +544,285 @@ for i = [2:10]
 end
 
 clear p
-p.   k0 = 0.2291;
+p.   k0 = 0.2994;
 p.tau_z = 1;
 p.    B = 0;
 p.  n_z = 1;
-p.    n = 2.3042;
-p. tau1 = 25.4347;
-p. tau2 = 116.9375;
+p.    n = 3.8003;
+p. tau1 = 32.6495;
+p. tau2 = 40.0469;
 p.  n_y = 2;
 p.    A = 0.7906;
-p.    C = 137.4257;
+p.    C = 225.1171;
+
+% generate responses 
+for i = 1:size(MSGdata.PID,2)
+	MSGdata.NLN_R(:,i) = aNLN2(MSGdata.PID(:,i),p);
+end
+
+figure('outerposition',[0 0 1300 901],'PaperUnits','points','PaperSize',[1300 901]); hold on
+c = parula(11);
+
+time = 1e-3*(1:length(MSGdata.PID));
+
+show_these_paradigms = [2 6 8 10];
+for i = 1:4
+	subplot(2,4,i); hold on
+	R = MSGdata.fA(:,MSGdata.paradigm == show_these_paradigms(i));
+	X = MSGdata.NLN_R(:,MSGdata.paradigm == show_these_paradigms(i));
+	R(:,sum(R)==0) = [];
+	R = nanmean(R,2);
+	X = nanmean(X,2);
+	plot(time,R,'k')
+	plot(time,X,'r')
+	set(gca,'XLim',[40 50])
+end
+
+subplot(2,4,5); hold on
+x = logspace(-2,1,100);
+a = hill([1 p.k0 p.n],x);
+plot(x,a,'r')
+xlabel('S')
+ylabel('a')
+set(gca,'XScale','log','XLim',[1e-2 1e1],'XTick',[1e-3  1e-2 1e-1 1 10])
+
+[~,Ky] = aNLN2(MSGdata.PID(:,1),p);
+subplot(2,4,6); hold on
+filtertime = 1e-3*(1:length(Ky));
+plot(filtertime,Ky,'r')
+xlabel('Lag (s)')
+ylabel('Filter')
+
+subplot(2,4,7); hold on
+all_X = []; all_R = [];
+for i = 1:10
+	R = MSGdata.fA(35e3:55e3,MSGdata.paradigm == i);
+	X = MSGdata.NLN_R(35e3:55e3,MSGdata.paradigm == i);
+	R(:,sum(R)==0) = [];
+	X(:,sum(X)==0) = [];
+	R = nanmean(R,2);
+	X = nanmean(X,2);
+	plot(X(1:50:end),R(1:50:end),'.','Color',c(i,:));
+	all_X = [all_X; X]; all_R = [all_R; R];
+end
+
+
+% vary k_D and n
+all_k_D = logspace(log10(p.k0/10),log10(p.k0*10),31);
+all_n = 1:10;
+r2 = NaN(length(all_k_D),length(all_n));
+if exist('.cache/msg_k_D_n.mat','file')
+	load('.cache/msg_k_D_n.mat')
+else
+	for i = 1:length(all_k_D)
+		textbar(i,length(all_k_D))
+		for j = 1:length(all_n)
+			all_X = []; 
+			Rhat = MSGdata.fA;
+			q = p;
+			q.k0 = all_k_D(i);
+			q.n = all_n(j);
+			for k = 1:size(MSGdata.PID,2)
+				Rhat(:,k) = aNLN2(MSGdata.PID(:,k),q);
+			end
+
+			for k = 1:10
+				R = MSGdata.fA(35e3:55e3,MSGdata.paradigm == k);
+				X = Rhat(35e3:55e3,MSGdata.paradigm == k);
+				R(:,sum(R)==0) = [];
+				X(:,sum(X)==0) = [];
+				R = nanmean(R,2);
+				X = nanmean(X,2);
+				all_X = [all_X; X]; 
+			end
+			r2(i,j) = rsquare(all_R, all_X);
+		end
+	end
+	save('.cache/msg_k_D_n.mat','r2')
+end
+
+
+n_labels = {};
+for i = 1:2:length(all_n)
+	n_labels{i} = oval(all_n(i));
+end
+k_D_labels = {'1/10','1','10'};
+
+subplot(2,4,8); hold on
+imagesc(r2)
+ylabel('K_D/k_{D best fit}')
+xlabel('n')
+colorbar
+caxis([0 1])
+set(gca,'XTick',[1:2:10],'XTickLabel',n_labels(cellfun(@(x) ~isempty(x),(n_labels))),'XTickLabelRotation',45)
+set(gca,'YTick',[1 16 31],'YTickLabel',k_D_labels)
+set(gca,'XLim',[.6 10.5],'YLim',[.5 31.5])
+title('r^2(data, NLN model)')
+
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% Now I fit an adapting NLN model to the same data, and see if we can capture the observed change in gain. 
+
+clear p
+p.   k0 = 0.1080;
+p.tau_z = 44.3828;
+p.    B = 0.3164;
+p.  n_z = 1.0312;
+p.    n = 2.2026;
+p. tau1 = 32.0323;
+p. tau2 = 199.9961;
+p.  n_y = 2;
+p.    A = 0.7906;
+p.    C = 144.6366;
+
+
+% generate responses 
+for i = 1:size(MSGdata.PID,2)
+	MSGdata.NLN_R(:,i) = aNLN2(MSGdata.PID(:,i),p);
+end
+
+figure('outerposition',[0 0 1400 901],'PaperUnits','points','PaperSize',[1400 901]); hold on
+c = parula(11);
+
+time = 1e-3*(1:length(MSGdata.PID));
+
+show_these_paradigms = [2 4 6 8];
+for i = 1:4
+	subplot(2,4,i); hold on
+	R = MSGdata.fA(:,MSGdata.paradigm == show_these_paradigms(i));
+	X = MSGdata.NLN_R(:,MSGdata.paradigm == show_these_paradigms(i));
+	R(:,sum(R)==0) = [];
+	R = nanmean(R,2);
+	X = nanmean(X,2);
+	plot(time,R,'k')
+	plot(time,X,'r')
+	set(gca,'XLim',[45 55],'YLim',[0 70])
+	xlabel('Time (s)')
+	ylabel('Firing rate (Hz)')
+end
+
+subplot(2,4,5); hold on
+x = logspace(-2,1,100);
+for i = 1:10
+	mean_k_D = [];
+	for j = 1:size(MSGdata.PID,2)
+		if MSGdata.paradigm(j) == i
+			[~,~,~,k_D] = aNLN2(MSGdata.PID(:,j),p);
+			mean_k_D = [mean_k_D k_D(35e3:55e3)];
+		end
+	end
+	mean_k_D = mean(mean(mean_k_D));
+	a = hill([1 mean_k_D p.n],x);
+	plot(x,a,'Color',c(i,:))
+end
+xlabel('S')
+ylabel('a')
+set(gca,'XScale','log','XLim',[1e-2 1e1],'XTick',[1e-3  1e-2 1e-1 1 10])
+
+[~,Ky,Kz] = aNLN2(MSGdata.PID(:,1),p);
+subplot(2,4,6); hold on
+plot(1:length(Ky),Ky,'r')
+plot(1:length(Kz),Kz,'b')
+legend({'Response filter','Adaptation filter'})
+xlabel('Lag (ms)')
+ylabel('Filter')
+
+
+subplot(2,4,7); hold on
+all_X = []; all_R = [];
+for i = 1:10
+	R = MSGdata.fA(35e3:55e3,MSGdata.paradigm == i);
+	X = MSGdata.NLN_R(35e3:55e3,MSGdata.paradigm == i);
+	R(:,sum(R)==0) = [];
+	X(:,sum(X)==0) = [];
+	R = nanmean(R,2);
+	X = nanmean(X,2);
+	plot(X(1:50:end),R(1:50:end),'.','Color',c(i,:));
+	all_X = [all_X; X]; all_R = [all_R; R];
+end
+xlabel('model prediction (Hz)')
+ylabel('ab3A firing rate (Hz)')
+
+
+% vary tau_gain and B
+all_tau_z = unique(round(logspace(0,4,21)));
+all_B = unique(logspace(-3,3,31));
+r2 = NaN(length(all_tau_z),length(all_B));
+if exist('.cache/msg_tau_B.mat','file')
+	load('.cache/msg_tau_B.mat')
+else
+	for i = 1:length(all_tau_z)
+		textbar(i,length(all_tau_z))
+		for j = 1:length(all_B)
+			all_X = []; 
+			Rhat = MSGdata.fA;
+			q = p;
+			q.tau_z = all_tau_z(i);
+			q.B = all_B(j);
+			for k = 1:size(MSGdata.PID,2)
+				Rhat(:,k) = aNLN2(MSGdata.PID(:,k),q);
+			end
+
+			for k = 1:10
+				R = MSGdata.fA(35e3:55e3,MSGdata.paradigm == k);
+				X = Rhat(35e3:55e3,MSGdata.paradigm == k);
+				R(:,sum(R)==0) = [];
+				X(:,sum(R)==0) = [];
+				R = nanmean(R,2);
+				X = nanmean(X,2);
+				all_X = [all_X; X]; 
+			end
+			r2(i,j) = rsquare(all_R, all_X);
+		end
+	end
+	save('.cache/msg_tau_B.mat','r2')
+end
+
+B_labels = {};
+b_tick = false(length(all_B),1);
+for i = 1:length(all_B)
+	if log10(all_B(i)) == round(log10(all_B(i)))
+		B_labels{i} = ['10^{' oval(log10(all_B(i))) '}'];
+		b_tick(i) = true;
+	end
+end
+
+
+tau_labels = {};
+tau_tick = false(length(all_tau_z),1);
+for i = 1:length(all_tau_z)
+	if log10(all_tau_z(i)) == round(log10(all_tau_z(i)))
+		tau_labels{i} = ['10^{' oval(log10(all_tau_z(i))) '}'];
+		tau_tick(i) = true;
+	end
+end
+
+ax = subplot(2,4,8); hold on
+imagesc(r2)
+ylabel('\tau_{adaptation} (ms)')
+xlabel('\beta')
+colorbar
+caxis([0 1])
+set(gca,'XTick',find(b_tick),'XTickLabel',B_labels(b_tick),'XTickLabelRotation',45)
+set(gca,'YTick',find(tau_tick),'YTickLabel',tau_labels(tau_tick),'YTickLabelRotation',45)
+set(gca,'XLim',[.5 size(r2,2)+.5],'YLim',[.5 size(r2,1)+.5])
+title('r^2(data, NLN model)')
+ax.Position = [0.7619    0.1100    0.15    0.3412];
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 %% Firing rate: variance gain control
 % 

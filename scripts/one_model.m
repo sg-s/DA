@@ -158,7 +158,7 @@ imagesc(r2)
 ylabel('K_D/<S>')
 xlabel('n')
 colorbar
-caxis([0.5 1])
+caxis([0 1])
 set(gca,'XTick',[1:2:10],'XTickLabel',n_labels(cellfun(@(x) ~isempty(x),(n_labels))),'XTickLabelRotation',45)
 set(gca,'YTick',[1 16 31],'YTickLabel',k_D_labels)
 set(gca,'XLim',[.6 10.5],'YLim',[.5 31.5])
@@ -171,6 +171,17 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+                         ;;;    ;;;;;;;;     ;;;    ;;;;;;;;  ;;;;;;;; 
+           ;;           ;; ;;   ;;     ;;   ;; ;;   ;;     ;;    ;;    
+           ;;          ;;   ;;  ;;     ;;  ;;   ;;  ;;     ;;    ;;    
+         ;;;;;;       ;;     ;; ;;     ;; ;;     ;; ;;;;;;;;     ;;    
+           ;;         ;;;;;;;;; ;;     ;; ;;;;;;;;; ;;           ;;    
+           ;;         ;;     ;; ;;     ;; ;;     ;; ;;           ;;    
+                      ;;     ;; ;;;;;;;;  ;;     ;; ;;           ;;    
+
+
+
 
 %% 
 % Does the addition of a adapting front-end improve the fit? I now allow the $k_D$ of the input nonlinearity to change with the stimulus over some recent history. 
@@ -270,7 +281,7 @@ imagesc(r2)
 ylabel('\tau_{adaptation} (ms)')
 xlabel('\beta')
 colorbar
-caxis([0.5 1])
+caxis([0 1])
 set(gca,'XTick',find(b_tick),'XTickLabel',B_labels(b_tick),'XTickLabelRotation',45)
 set(gca,'YTick',find(tau_tick),'YTickLabel',tau_labels(tau_tick),'YTickLabelRotation',45)
 set(gca,'XLim',[.5 size(r2,2)+.5],'YLim',[.5 size(r2,1)+.5])
@@ -398,6 +409,16 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+                         ;;;    ;;;;;;;;     ;;;    ;;;;;;;;  ;;;;;;;; 
+           ;;           ;; ;;   ;;     ;;   ;; ;;   ;;     ;;    ;;    
+           ;;          ;;   ;;  ;;     ;;  ;;   ;;  ;;     ;;    ;;    
+         ;;;;;;       ;;     ;; ;;     ;; ;;     ;; ;;;;;;;;     ;;    
+           ;;         ;;;;;;;;; ;;     ;; ;;;;;;;;; ;;           ;;    
+           ;;         ;;     ;; ;;     ;; ;;     ;; ;;           ;;    
+                      ;;     ;; ;;;;;;;;  ;;     ;; ;;           ;;    
+
+
 
 
 %% 
@@ -666,6 +687,16 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+      
+                         ;;;    ;;;;;;;;     ;;;    ;;;;;;;;  ;;;;;;;; 
+           ;;           ;; ;;   ;;     ;;   ;; ;;   ;;     ;;    ;;    
+           ;;          ;;   ;;  ;;     ;;  ;;   ;;  ;;     ;;    ;;    
+         ;;;;;;       ;;     ;; ;;     ;; ;;     ;; ;;;;;;;;     ;;    
+           ;;         ;;;;;;;;; ;;     ;; ;;;;;;;;; ;;           ;;    
+           ;;         ;;     ;; ;;     ;; ;;     ;; ;;           ;;    
+                      ;;     ;; ;;;;;;;;  ;;     ;; ;;           ;;    
+
+
 
 %%
 % Now I fit an adapting NLN model to the same data, and see if we can capture the observed change in gain. 
@@ -822,6 +853,14 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+;;     ;;    ;;;    ;;;;;;;;  ;;;;    ;;;    ;;    ;;  ;;;;;;  ;;;;;;;; 
+;;     ;;   ;; ;;   ;;     ;;  ;;    ;; ;;   ;;;   ;; ;;    ;; ;;       
+;;     ;;  ;;   ;;  ;;     ;;  ;;   ;;   ;;  ;;;;  ;; ;;       ;;       
+;;     ;; ;;     ;; ;;;;;;;;   ;;  ;;     ;; ;; ;; ;; ;;       ;;;;;;   
+ ;;   ;;  ;;;;;;;;; ;;   ;;    ;;  ;;;;;;;;; ;;  ;;;; ;;       ;;       
+  ;; ;;   ;;     ;; ;;    ;;   ;;  ;;     ;; ;;   ;;; ;;    ;; ;;       
+   ;;;    ;;     ;; ;;     ;; ;;;; ;;     ;; ;;    ;;  ;;;;;;  ;;;;;;;; 
 
 
 %% Firing rate: variance gain control

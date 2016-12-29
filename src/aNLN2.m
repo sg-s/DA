@@ -31,6 +31,7 @@ lb.tau2 = 5;
 lb.n_y = 1;
 lb.n = 1;
 
+ub.k0 = 1e-6;
 ub.tau1 = 100;
 ub.tau2 = 200;
 ub.n = 32; 
@@ -41,8 +42,8 @@ lb.B = 0;
 lb.tau_z = 1;
 lb.n_z = 1;
 
-ub.B = 2;
-ub.tau_z = 200;
+ub.B = 20;
+ub.tau_z = 600;
 ub.n_z = 2;
 
 

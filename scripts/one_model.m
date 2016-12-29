@@ -963,18 +963,173 @@ if being_published
 end
 
 %%
-% OK, what if I allow the $k_D$ to vary with time? How does this change our fits to this data?
+% Notice in the precious plot that even though the models got the gain in the high and low variance epochs right, it mis-estimated the mean response. This is because the mean stimulus changes slightly, and since there is no adaptation in this model, it doesn't get this right. What if add in mean adaptation? We see that now it gets the slopes right, and the mean response right. 
 
-       k0: 0.4115
-    tau_z: 200
-        B: 0.0234
-      n_z: 2
-        n: 3.7266
-     tau1: 14.1179
-     tau2: 43.8987
-      n_y: 4.7002
-        A: 0.3851
-        C: 90.0161
+example_trial = 4;
+S = VSdata.PID(:,example_trial);
+R = VSdata.fA(:,example_trial);
+
+clear p
+p.    k0 = 1.0000e-06;
+p. tau_z = 500;
+p.B = .95;
+p.   n_z = 1;
+p.n = 7;
+p.  tau1 = 15.8211;
+p.  tau2 = 32.7425;
+p.   n_y = 4.4971;
+p.     A = 0.3851;
+p.     C = 87.2973;
+X = aNLN2(S,p);
+time = 1e-3*(1:length(X));
+
+figure('outerposition',[0 0 1450 802],'PaperUnits','points','PaperSize',[1450 802]); hold on
+subplot(2,4,1:3); hold on
+plot(time,R,'k')
+plot(time,X,'r')
+set(gca,'XLim',[40 50])
+xlabel('Time (s)')
+ylabel('Firing rate (Hz)')
+
+% reshape the response and the prediction
+R = reshape(R,1e4,length(R)/1e4);
+X = reshape(X,1e4,length(X)/1e4);
+X(:,1) = []; X(:,end) = [];
+R(:,1) = []; R(:,end) = [];
+
+subplot(2,4,4); hold on
+plotPieceWiseLinear(vectorise(X(1e3:5e3,:)),vectorise(R(1e3:5e3,:)),'nbins',40,'Color',[1 0 0]); 
+plotPieceWiseLinear(vectorise(X(6e3:end,:)),vectorise(R(6e3:end,:)),'nbins',40,'Color',[0 0 1]); 
+xlabel('adapting NLN model prediction (Hz)')
+ylabel('ab3A firing rate (Hz)')
+
+% vary n, measure slopes and r^2
+all_n = 1:21;
+r2 = NaN(length(all_n),1);
+slopes_lo = NaN(length(all_n),1);
+slopes_hi = NaN(length(all_n),1);
+
+if exist('.cache/variance_adapt_n.mat','file')
+	load('.cache/variance_adapt_n.mat')
+else
+	for i = 1:length(all_n)
+		textbar(i,length(all_n))
+		q = p;
+		q.n = all_n(i);
+
+		Rhat = aNLN2(S,q);
+
+		r2(i) = rsquare(VSdata.fA(1e4:end-1e4,example_trial), Rhat(1e4:end-1e4));
+
+		Rhat = reshape(Rhat,1e4,length(Rhat)/1e4);
+		Rhat(:,1) = []; Rhat(:,end) = [];
+
+		ff = fit(vectorise(Rhat(1e3:5e3,:)),vectorise(R(1e3:5e3,:)),'poly1');
+		slopes_hi(i) = ff.p1;
+
+		ff = fit(vectorise(Rhat(6e3:end,:)),vectorise(R(6e3:end,:)),'poly1');
+		slopes_lo(i) = ff.p1;
+		
+	end
+	save('.cache/variance_adapt_n.mat','r2','slopes_lo','slopes_hi')
+end
+
+subplot(2,4,5); hold on
+plot(all_n,slopes_lo(:)./slopes_hi(:),'k')
+xlabel('n')
+ylabel('gain_{low}/gain_{high}')
+plot(all_n,0*all_n+1,'k--')
+
+subplot(2,4,6); hold on
+plot(all_n,r2,'k+-')
+xlabel('n')
+ylabel('r^2')
+
+% now vary the adaptation parameters 
+all_tau_z = unique(round(logspace(1,4,31)));
+all_B = unique(logspace(-1,1,31));
+r2 = NaN(length(all_tau_z),length(all_B));
+slopes_hi = NaN(length(all_tau_z),length(all_B));
+slopes_lo = NaN(length(all_tau_z),length(all_B));
+if exist('.cache/variance_adapt_tau_B.mat','file')
+	load('.cache/variance_adapt_tau_B.mat')
+else
+	for i = 1:length(all_tau_z)
+		textbar(i,length(all_tau_z))
+		for j = 1:length(all_B)
+			q = p;
+			q.tau_z = all_tau_z(i);
+			q.B = all_B(j);
+
+			Rhat = aNLN2(S,q);
+
+			r2(i,j) = rsquare(VSdata.fA(1e4:end-1e4,example_trial), Rhat(1e4:end-1e4));
+
+			Rhat = reshape(Rhat,1e4,length(Rhat)/1e4);
+			Rhat(:,1) = []; Rhat(:,end) = [];
+
+			ff = fit(vectorise(Rhat(1e3:5e3,:)),vectorise(R(1e3:5e3,:)),'poly1');
+			slopes_hi(i,j) = ff.p1;
+
+			ff = fit(vectorise(Rhat(6e3:end,:)),vectorise(R(6e3:end,:)),'poly1');
+			slopes_lo(i,j) = ff.p1;
+
+		end
+	end
+	save('.cache/variance_adapt_tau_B.mat','r2','slopes_lo','slopes_hi')
+end
+
+B_labels = {};
+b_tick = false(length(all_B),1);
+for i = 1:length(all_B)
+	if log10(all_B(i)) == round(log10(all_B(i)))
+		B_labels{i} = ['10^{' oval(log10(all_B(i))) '}'];
+		b_tick(i) = true;
+	end
+end
+
+
+tau_labels = {};
+tau_tick = false(length(all_tau_z),1);
+for i = 1:length(all_tau_z)
+	if log10(all_tau_z(i)) == round(log10(all_tau_z(i)))
+		tau_labels{i} = ['10^{' oval(log10(all_tau_z(i))) '}'];
+		tau_tick(i) = true;
+	end
+end
+
+ax = subplot(2,4,7); hold on
+imagesc(r2)
+ylabel('\tau_{adaptation} (ms)')
+xlabel('\beta')
+h = colorbar;
+caxis([0 1])
+set(gca,'XTick',find(b_tick),'XTickLabel',B_labels(b_tick),'XTickLabelRotation',45)
+set(gca,'YTick',find(tau_tick),'YTickLabel',tau_labels(tau_tick),'YTickLabelRotation',45)
+set(gca,'XLim',[.5 size(r2,2)+.5],'YLim',[.5 size(r2,1)+.5])
+title('r^2(data, adapting NLN model)')
+
+ax2 = subplot(2,4,8); hold on
+imagesc(abs(log(slopes_lo./slopes_hi)))
+ylabel('\tau_{adaptation} (ms)')
+xlabel('\beta')
+colorbar
+colormap(ax2,flipud(colormap))
+caxis([0 10])
+set(gca,'XTick',find(b_tick),'XTickLabel',B_labels(b_tick),'XTickLabelRotation',45)
+set(gca,'YTick',find(tau_tick),'YTickLabel',tau_labels(tau_tick),'YTickLabelRotation',45)
+set(gca,'XLim',[.5 size(r2,2)+.5],'YLim',[.5 size(r2,1)+.5])
+title('abs(log(gain_{low}/gain_{high})')
+
+
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 
 %% Firing rate: All data

@@ -230,7 +230,7 @@ xlabel('Lag (ms)')
 
 subplot(2,3,3); hold on
 plot(Rhat,R,'k.')
-xlabel('NLN prediction (Hz)')
+xlabel('adapting NLN prediction (Hz)')
 ylabel('ab3A firing rate (Hz)')
 legend(['r^2 = ' oval(rsquare(R,Rhat))],'Location','northwest')
 
@@ -291,7 +291,7 @@ caxis([0 1])
 set(gca,'XTick',find(b_tick),'XTickLabel',B_labels(b_tick),'XTickLabelRotation',45)
 set(gca,'YTick',find(tau_tick),'YTickLabel',tau_labels(tau_tick),'YTickLabelRotation',45)
 set(gca,'XLim',[.5 size(r2,2)+.5],'YLim',[.5 size(r2,1)+.5])
-title('r^2(data, NLN model)')
+title('r^2(data, adapting NLN model)')
 
 prettyFig()
 
@@ -468,7 +468,7 @@ xlabel('Lag (ms)')
 
 subplot(2,3,3); hold on
 plot(Rhat,R,'k.')
-xlabel('NLN prediction (Hz)')
+xlabel('adapting NLN prediction (Hz)')
 ylabel('ab3A firing rate (Hz)')
 legend(['r^2 = ' oval(rsquare(R,Rhat))],'Location','northwest')
 
@@ -529,7 +529,7 @@ caxis([0 1])
 set(gca,'XTick',find(b_tick),'XTickLabel',B_labels(b_tick),'XTickLabelRotation',45)
 set(gca,'YTick',find(tau_tick),'YTickLabel',tau_labels(tau_tick),'YTickLabelRotation',45)
 set(gca,'XLim',[.5 size(r2,2)+.5],'YLim',[.5 size(r2,1)+.5])
-title('r^2(data, NLN model)')
+title('r^2(data, adapting NLN model)')
 
 prettyFig()
 
@@ -587,7 +587,7 @@ for i = 1:size(MSGdata.PID,2)
 	MSGdata.NLN_R(:,i) = aNLN2(MSGdata.PID(:,i),p);
 end
 
-figure('outerposition',[0 0 1300 901],'PaperUnits','points','PaperSize',[1300 901]); hold on
+figure('outerposition',[0 0 1300 744],'PaperUnits','points','PaperSize',[1300 744]); hold on
 c = parula(11);
 
 time = 1e-3*(1:length(MSGdata.PID));
@@ -603,6 +603,10 @@ for i = 1:4
 	plot(time,R,'k')
 	plot(time,X,'r')
 	set(gca,'XLim',[40 50],'YLim',[0 70])
+	if i == 1
+		xlabel('Time (s)')
+		ylabel('Firing rate (Hz)')
+	end
 end
 
 subplot(2,4,5); hold on
@@ -851,7 +855,7 @@ caxis([0 1])
 set(gca,'XTick',find(b_tick),'XTickLabel',B_labels(b_tick),'XTickLabelRotation',45)
 set(gca,'YTick',find(tau_tick),'YTickLabel',tau_labels(tau_tick),'YTickLabelRotation',45)
 set(gca,'XLim',[.5 size(r2,2)+.5],'YLim',[.5 size(r2,1)+.5])
-title('r^2(data, NLN model)')
+title('r^2(data, adapting NLN model)')
 ax.Position = [0.7619    0.1100    0.15    0.3412];
 
 prettyFig();
@@ -963,7 +967,7 @@ if being_published
 end
 
 %%
-% Notice in the precious plot that even though the models got the gain in the high and low variance epochs right, it mis-estimated the mean response. This is because the mean stimulus changes slightly, and since there is no adaptation in this model, it doesn't get this right. What if add in mean adaptation? We see that now it gets the slopes right, and the mean response right. 
+% Notice in the previous plot that even though the models got the gain in the high and low variance epochs right, it mis-estimated the mean response. This is because the mean stimulus changes slightly, and since there is no adaptation in this model, it doesn't get this right. What if I add in mean adaptation? We see that now it gets the slopes right, and the mean response right (top right). 
 
 example_trial = 4;
 S = VSdata.PID(:,example_trial);

@@ -1,8 +1,12 @@
-% fully parametric adapting NLN model
-% this version is more DA-like, and uses a mono-lobed gamma filter to change K_D
+% aNL.m
+% adaptive LN model, where we have mean and contrast adaptation baked in
 % 
+% created by Srinivas Gorur-Shandilya at 1:14 , 16 March 2016. Contact me at http://srinivas.gs/contact/
+% 
+% This work is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. 
+% To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
-function [R,Ky,Kz,k_D,x] = aNLN2(S,p)
+function [R,Ky,Kz,k_D,x] = aNL(S,p)
 
 % list parameters for clarity 
 
@@ -41,9 +45,9 @@ lb.B = 0;
 lb.tau_z = 1;
 lb.n_z = 1;
 
-ub.B = 0;
-ub.tau_z = 1;
-ub.n_z = 1;
+ub.B = Inf;
+ub.tau_z = 1000;
+ub.n_z = 2;
 
 
 
@@ -70,7 +74,6 @@ Ky = Ky(1:find(temp>1e-2,1,'last'));
 R = filter(Ky,1,x);
 
 % output nonlinearity 
-R(R<0) = 0;
 R = R*p.C;
 
 

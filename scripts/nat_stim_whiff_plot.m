@@ -1,11 +1,4 @@
-
-
-
 pHeader;
-
-
-
-
 
 %% Detailed look at naturalistic stimulus whiffs
 % In this document, I look at the ORN responses (both LFP and firing rate) to individual whiffs in the naturalistic stimulus response, to try to understand what's going on in the response without any filter analysis. 
@@ -45,11 +38,11 @@ ylabel('Stimulus (V)')
 set(gca,'XLim',[0 70],'YLim',[-.2 9])
 
 % indicate the segments we zoom into we use
-plot([a(1,1)-before a(1,1)+after],[4 4],'Color',c(1,:),'LineWidth',4)
-plot([a(1,2)-before a(1,2)+after],[4 4],'Color',c(2,:),'LineWidth',4)
+plot([a(1,1)-before a(1,1)+after],[2 2],'Color',c(1,:),'LineWidth',4)
+plot([a(1,2)-before a(1,2)+after],[2 2],'Color',c(2,:),'LineWidth',4)
 
-plot([a(2,1)-before a(2,1)+after],[8 8],'Color',c(1,:),'LineWidth',4)
-plot([a(2,2)-before a(2,2)+after],[8 8],'Color',c(2,:),'LineWidth',4)
+plot([a(2,1)-before a(2,1)+after],[1.5 1.5],'Color',c(1,:),'LineWidth',4)
+plot([a(2,2)-before a(2,2)+after],[1.5 1.5],'Color',c(2,:),'LineWidth',4)
 
 % show LFP response
 subplot(3,5,6:8); hold on
@@ -57,12 +50,12 @@ plot(tA,X,'k')
 ylabel('ab3 LFP (\DeltamV)')
 set(gca,'XLim',[0 70],'YLim',[-20 5])
 
-% indicate the segments we zoom into we use
-plot([a(1,1)-before a(1,1)+after],[125 125],'Color',c(1,:),'LineWidth',4)
-plot([a(1,2)-before a(1,2)+after],[125 125],'Color',c(2,:),'LineWidth',4)
+% % indicate the segments we zoom into we use
+% plot([a(1,1)-before a(1,1)+after],[125 125],'Color',c(1,:),'LineWidth',4)
+% plot([a(1,2)-before a(1,2)+after],[125 125],'Color',c(2,:),'LineWidth',4)
 
-plot([a(2,1)-before a(2,1)+after],[125 125],'Color',c(1,:),'LineWidth',4)
-plot([a(2,2)-before a(2,2)+after],[125 125],'Color',c(2,:),'LineWidth',4)
+% plot([a(2,1)-before a(2,1)+after],[125 125],'Color',c(1,:),'LineWidth',4)
+% plot([a(2,2)-before a(2,2)+after],[125 125],'Color',c(2,:),'LineWidth',4)
 
 % show the firing rate
 subplot(3,5,11:13); hold on
@@ -70,12 +63,12 @@ plot(tA,R,'k')
 ylabel('ab3A firing rate (Hz)')
 set(gca,'XLim',[0 70],'YLim',[-5 170])
 
-% indicate the segments we zoom into we use
-plot([a(1,1)-before a(1,1)+after],[125 125],'Color',c(1,:),'LineWidth',4)
-plot([a(1,2)-before a(1,2)+after],[125 125],'Color',c(2,:),'LineWidth',4)
+% % indicate the segments we zoom into we use
+% plot([a(1,1)-before a(1,1)+after],[125 125],'Color',c(1,:),'LineWidth',4)
+% plot([a(1,2)-before a(1,2)+after],[125 125],'Color',c(2,:),'LineWidth',4)
 
-plot([a(2,1)-before a(2,1)+after],[125 125],'Color',c(1,:),'LineWidth',4)
-plot([a(2,2)-before a(2,2)+after],[125 125],'Color',c(2,:),'LineWidth',4)
+% plot([a(2,1)-before a(2,1)+after],[125 125],'Color',c(1,:),'LineWidth',4)
+% plot([a(2,2)-before a(2,2)+after],[125 125],'Color',c(2,:),'LineWidth',4)
 
 
 stim_plots = [4 5];

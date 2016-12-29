@@ -47,6 +47,5 @@ K = filter_gamma2(1:1e3,p);
 R = filter(K,1,x);
 
 % output nonlinearity 
-R(R<0) = 0;
 R = R*p.C;
 

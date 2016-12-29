@@ -391,8 +391,9 @@ end
 % generate responses
 R = 0*S;
 for i = 1:length(aps)
-	R(:,i) = aNL(S(:,i),p);
+	 [R(:,i),Ky,Kz,k_D,x1] = aNL(S(:,i),p);
 end
+
 
 figure('outerposition',[0 0 901 888],'PaperUnits','points','PaperSize',[901 888]); hold on
 subplot(3,1,1); hold on
@@ -458,7 +459,8 @@ if being_published
 end
 
 
-
+%% Addendum
+% It now strikes me that this analysis method confuses the timescale of gain control with the amount of gain control. I did some simulations where I increased the strength of adaptation, but kept all other parameters the same. Peaks of subsequent responses now were smaller than the first one -- but Cao's method still failed to recover the actual gain control timescale. 
 
 
    ;;;    ;;;;;;;;   ;;;;;;;     ;;;;;;;; ;;;; ;;;;;;;;  ;;;; ;;    ;;  ;;;;;;   

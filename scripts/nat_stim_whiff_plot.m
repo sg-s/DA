@@ -143,6 +143,29 @@ end
 %% 
 % can we also show the slowdown in the LFP and the constancy of the firing rate response? 
 
+
+clear od
+load('/local-data/DA-paper/data-for-paper/fig7/nat-stim-ab3/combined_data.ORNData','-mat')
+DNSdata.LFP = [];
+DNSdata.fA = [];
+DNSdata.PID = [];
+DNSdata.orn = [];
+for i = length(od):-1:1
+	DNSdata.LFP = [DNSdata.LFP  od(i).LFP];
+	DNSdata.orn = [DNSdata.orn; vectorise(i*ones(od(i).n_trials,1))];
+	DNSdata.fA = [DNSdata.fA  od(i).firing_rate];
+	DNSdata.PID = [DNSdata.PID  od(i).stimulus];
+end
+% remove baseline from stimulus
+for i = 1:size(DNSdata.PID,2)
+	DNSdata.PID(:,i) = DNSdata.PID(:,i) - min(DNSdata.PID(1:5e3,i));
+end
+
+
+S = nanmean(DNSdata.PID(:,DNSdata.orn == 6),2);
+R = nanmean(DNSdata.fA(:,DNSdata.orn == 6),2);
+X = nanmean(DNSdata.LFP(:,DNSdata.orn == 6),2);
+
 % find all peaks in the stimulus
 [stim_peaks,loc] = findpeaks(S,'MinPeakProminence',.25,'MinPeakDistance',200);
 
@@ -162,35 +185,44 @@ end
 
 figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
 subplot(1,3,1); hold on
-plot_this = [9 12 27 36 46];
-for i = 1:length(loc)
-	if ismember(i,plot_this)
-
-		plot(S(loc(i)-300:loc(i)+300))
-	end
+plot_this = [ 12     9    46    36    27];
+set(gca,'ColorOrder',parula(length(plot_this)));
+peak_stim = [];
+for i = plot_this
+	peak_stim = [peak_stim max(S(loc(i)-300:loc(i)+300))];
+	plot(S(loc(i)-300:loc(i)+300))
 end
-
-subplot(1,3,2); hold on
-for i = 1:length(loc)
-	if ismember(i,plot_this)
-		temp = X(loc(i)-300:loc(i)+400);
-		temp = temp - mean(temp(1:200));
-		temp = -temp;
-		plot(temp/max(temp))
-	end
-end
-set(gca,'YLim',[0 1])
 
 
 subplot(1,3,3); hold on
-for i = 1:length(loc)
-	if ismember(i,plot_this)
-		temp = R(loc(i)-300:loc(i)+300);
-		temp = temp - mean(temp(1:200));
-		plot(temp/max(temp))
-	end
+set(gca,'ColorOrder',parula(length(plot_this)));
+peak_response = [];
+for i = plot_this
+	temp = R(loc(i)-300:loc(i)+300);
+	peak_response = [peak_response max(temp)];
+	temp = temp - mean(temp(1:200));
+	plot(temp/max(temp))
+
 end
 set(gca,'YLim',[0 1])
+
+subplot(1,3,2); hold on
+set(gca,'ColorOrder',parula(length(plot_this)));
+for i = plot_this
+	temp = X(loc(i)-300:loc(i)+400);
+	temp = temp - mean(temp(1:200));
+	temp = -temp;
+	plot(temp/max(temp))
+end
+set(gca,'YLim',[0 1])
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 %% Version Info
 %

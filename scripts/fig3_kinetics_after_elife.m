@@ -27,6 +27,8 @@ chunk_size = 1e3;
 LFP_xcorr = NaN(chunk_size*2 - 1,20,length(paradigm));
 fA_xcorr = NaN(chunk_size*2 - 1,20,length(paradigm));
 
+S_a = NaN(chunk_size*2 - 1,20,length(paradigm));
+
 % compute LFP and firing rate lags
 for i = 1:length(paradigm)
 	S = PID(a:z,i);
@@ -44,10 +46,12 @@ for i = 1:length(paradigm)
 
 	X_lag = NaN(chunk_size*2-1,size(S,2));
 	R_lag = NaN(chunk_size*2-1,size(S,2));
+	S_acorr = NaN(chunk_size*2-1,size(S,2));
 	clear X_lag R_lag
 	for j = 1:size(S,2)
 		X_lag(:,j) = xcorr(X(:,j)/std(X(:,j)),S(:,j)/std(S(:,j)));
 		R_lag(:,j) = xcorr(R(:,j)/std(R(:,j)),S(:,j)/std(S(:,j)));
+		S_acorr(:,j) = xcorr(S(:,j)/std(S(:,j)),S(:,j)/std(S(:,j)));
 	end
 	X_lag = X_lag/chunk_size;
 	LFP_xcorr(:,:,i) = X_lag;
@@ -61,6 +65,8 @@ for i = 1:length(paradigm)
 	[firing_max_corr(i),loc] = max(R_lag);
 	firing_lags(i) = loc - 1e3;
 
+	S_acorr = S_acorr/chunk_size;
+	S_a(:,:,i) = S_acorr;
 end
 
 
@@ -72,12 +78,6 @@ for i = 1:3
 	ax(i) = subplot(1,3,i); hold on
 end
 ax(4) = ax(3);
-
-figure('outerposition',[0 0 901 802],'PaperUnits','points','PaperSize',[901 802]); hold on
-clear ax
-for i = 1:4
-	ax(i) = subplot(2,2,i); hold on
-end
 
 set(ax(1),'XLim',[0 1],'YLim',[-.5 1.1])
 set(ax(2),'XLim',[0 1],'YLim',[-.5 1.1])
@@ -154,6 +154,20 @@ if being_published
 	snapnow	
 	delete(gcf)
 end
+
+%% 
+% also check that the autocorrelation functions of all the stimulus is the same
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+c = parula(max(paradigm)+1);
+for i = 1:max(paradigm)
+	temp = S_a(:,:,paradigm==i);
+	temp = reshape(temp,2*chunk_size - 1, size(temp,2)*size(temp,3));
+	lags = 1e-3*(1:length(temp)) - 1;
+	plot(lags,mean(temp,2)/max(mean(temp,2)),'Color',c(i,:))
+end
+
+
+
 
 %%
 % Can we also see signs of this adaptation in kinetics in naturalistic odor stimuli? 

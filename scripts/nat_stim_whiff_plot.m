@@ -140,6 +140,58 @@ if being_published
 	delete(gcf)
 end
 
+%% 
+% can we also show the slowdown in the LFP and the constancy of the firing rate response? 
+
+% find all peaks in the stimulus
+[stim_peaks,loc] = findpeaks(S,'MinPeakProminence',.25,'MinPeakDistance',200);
+
+% for each, find a peak in the LFP corresponding to these peaks
+xloc = NaN*loc;
+for i = 1:length(loc)
+	[~,xloc(i)]= max(-X(loc(i):loc(i)+500));
+	xloc(i) = xloc(i) + loc(i);
+end
+
+% also find a peak in the firing rate
+rloc = NaN*loc;
+for i = 1:length(loc)
+	[~,rloc(i)]= max(R(loc(i):loc(i)+500));
+	rloc(i) = rloc(i) + loc(i);
+end
+
+figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
+subplot(1,3,1); hold on
+plot_this = [9 12 27 36 46];
+for i = 1:length(loc)
+	if ismember(i,plot_this)
+
+		plot(S(loc(i)-300:loc(i)+300))
+	end
+end
+
+subplot(1,3,2); hold on
+for i = 1:length(loc)
+	if ismember(i,plot_this)
+		temp = X(loc(i)-300:loc(i)+400);
+		temp = temp - mean(temp(1:200));
+		temp = -temp;
+		plot(temp/max(temp))
+	end
+end
+set(gca,'YLim',[0 1])
+
+
+subplot(1,3,3); hold on
+for i = 1:length(loc)
+	if ismember(i,plot_this)
+		temp = R(loc(i)-300:loc(i)+300);
+		temp = temp - mean(temp(1:200));
+		plot(temp/max(temp))
+	end
+end
+set(gca,'YLim',[0 1])
+
 %% Version Info
 %
 pFooter;

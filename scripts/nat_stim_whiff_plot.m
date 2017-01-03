@@ -137,7 +137,6 @@ xlabel('Time (s)')
 %% 
 % can we also show the slowdown in the LFP and the constancy of the firing rate response? 
 
-
 clear od
 load('/local-data/DA-paper/data-for-paper/fig7/nat-stim-ab3/combined_data.ORNData','-mat')
 DNSdata.LFP = [];
@@ -227,6 +226,227 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+% now we attempt to quantify this a little more
+
+
+
+% get the sparse naturalistic stimuli 
+load('/local-data/DA-paper/data-for-paper/nat-stim/ab3A_nat_stim.ORNData','-mat')
+
+% remove baseline from stimulus, LFP
+for i = 1:length(od)
+	for j = 1:od(i).n_trials
+		od(i).stimulus(:,j) = od(i).stimulus(:,j) - min(od(i).stimulus(1:5e3,j));
+		od(i).LFP(:,j) = od(i).LFP(:,j) - mean(od(i).LFP(1:5e3,j));
+	end
+end
+
+% build some metrics for all the data we have
+clear whiffs
+whiffs.stim_peaks = [];
+whiffs.stim_300ms_before_whiff = [];
+whiffs.min_stim_before_whiff = [];
+whiffs.peak_LFP = [];
+whiffs.LFP_before_whiff = [];
+whiffs.peak_firing_rate = [];
+whiffs.firing_rate_before_whiff = [];
+whiffs.orn = [];
+for j = 1:length(od)
+
+	R = nanmean(od(j).firing_rate,2);
+	S = nanmean(od(j).stimulus,2);
+	X = nanmean(od(j).LFP,2);
+	Shat = filter(ones(300,1),300,S);
+
+	[stim_peaks, stim_peak_loc] = findpeaks(S,'MinPeakProminence',.25,'MinPeakDistance',100);
+	min_stim_before_whiff = NaN*stim_peak_loc;
+	min_stim_before_whiff_locs = NaN*stim_peak_loc;
+	peak_firing_rate = NaN*stim_peaks;
+	peak_LFP = NaN*stim_peaks;
+	peak_firing_locs = NaN*stim_peaks;
+	peak_LFP_locs = NaN*stim_peaks;
+
+	for i = 2:(length(stim_peak_loc)-1)
+		a = max([stim_peak_loc(i) - 90 stim_peak_loc(i-1)]);
+		[min_stim_before_whiff(i), loc] = min(S(a:stim_peak_loc(i)));
+		min_stim_before_whiff_locs(i) = loc + a;
+	end
+	for i = 2:(length(stim_peak_loc)-1)
+		z = min([stim_peak_loc(i)+200 min_stim_before_whiff_locs(i+1)]);
+		[peak_firing_rate(i),loc] = max(R(stim_peak_loc(i):z));
+		peak_firing_locs(i) = loc + stim_peak_loc(i);
+
+		z = min([stim_peak_loc(i)+200 min_stim_before_whiff_locs(i+1)]);
+		[peak_LFP(i),loc] = min(X(stim_peak_loc(i):z));
+		peak_LFP_locs(i) = loc + stim_peak_loc(i);
+	end
+
+	firing_rate_before_whiff = [NaN; R(nonnans(min_stim_before_whiff_locs)); NaN];
+	LFP_before_whiff = [NaN; X(nonnans(min_stim_before_whiff_locs)); NaN];
+	stim_300ms_before_whiff = [NaN; Shat(nonnans(min_stim_before_whiff_locs)); NaN];
+
+	orn = j*ones(length(LFP_before_whiff),1);
+
+	% assemble
+	f = fieldnames(whiffs);
+	for i = 1:length(f)
+		eval(['whiffs.' f{i} '= [whiffs.' f{i} '(:);  '  f{i} '(:)];']);
+	end
+
+end
+
+% check
+figure('outerposition',[0 0 1300 902],'PaperUnits','points','PaperSize',[1300 902]); hold on
+subplot(3,4,1); hold on
+c = lines(5);
+for i = 1:5
+	plot(whiffs.stim_peaks(whiffs.orn==i),whiffs.peak_LFP(whiffs.orn==i),'+','Color',c(i,:))
+end
+xlabel('Peak stimulus (V)')
+ylabel('Peak LFP response (mV)')
+
+% same plot, but colour by LFP before whiff 
+subplot(3,4,2); hold on
+cinfo = whiffs.LFP_before_whiff;
+cinfo = cinfo - min(cinfo);
+cinfo = cinfo/max(cinfo);
+cinfo = floor(1+cinfo*99);
+ignore_these = isnan(cinfo);
+cinfo(ignore_these) = 1;
+c = parula(100);
+cc = c(cinfo,:);
+scatter(whiffs.stim_peaks,whiffs.peak_LFP,24,cc,'filled')
+ch = colorbar('east');
+ch.Position = [0.4700    0.79    0.0154    0.13];
+caxis([min(whiffs.LFP_before_whiff) max(whiffs.LFP_before_whiff)])
+xlabel('Peak stimulus (V)')
+ylabel('Peak LFP response (mV)')
+title('Color is LFP before whiff (mV)')
+
+subplot(3,4,3); hold on
+c = lines(5);
+for i = 1:5
+	plot(whiffs.stim_peaks(whiffs.orn==i),whiffs.peak_firing_rate(whiffs.orn==i),'+','Color',c(i,:))
+end
+xlabel('Peak stimulus (V)')
+ylabel('Peak firing rate (Hz)')
+
+% same plot, but colour by LFP before whiff 
+subplot(3,4,4); hold on
+cinfo = whiffs.LFP_before_whiff;
+cinfo = cinfo - min(cinfo);
+cinfo = cinfo/max(cinfo);
+cinfo = floor(1+cinfo*99);
+ignore_these = isnan(cinfo);
+cinfo(ignore_these) = 1;
+c = parula(100);
+cc = c(cinfo,:);
+scatter(whiffs.stim_peaks,whiffs.peak_firing_rate,24,cc,'filled')
+ch = colorbar('east');
+ch.Position = [0.8772    0.7288    0.0140    0.0738];
+caxis([min(whiffs.LFP_before_whiff) max(whiffs.LFP_before_whiff)])
+xlabel('Peak stimulus (V)')
+ylabel('Peak firing rate (Hz)')
+title('Color is LFP before whiff (mV)')
+
+
+subplot(3,4,5); hold on
+c = lines(5);
+for i = 1:5
+	plot(whiffs.LFP_before_whiff(whiffs.orn==i),whiffs.peak_firing_rate(whiffs.orn==i),'+','Color',c(i,:))
+end
+xlabel('LFP before whiff (mV)')
+ylabel('Peak firing rate (Hz)')
+
+subplot(3,4,6); hold on
+c = lines(5);
+for i = 1:5
+	x = whiffs.LFP_before_whiff(whiffs.orn==i);
+	y = whiffs.peak_firing_rate(whiffs.orn==i) -  whiffs.firing_rate_before_whiff(whiffs.orn==i);
+	plot(x,y,'+','Color',c(i,:))
+end
+xlabel('LFP before whiff (mV)')
+ylabel('\Delta firing rate (Hz)')
+
+subplot(3,4,7); hold on
+c = lines(5);
+for i = 1:5
+	x = whiffs.LFP_before_whiff(whiffs.orn==i);
+	y = whiffs.peak_firing_rate(whiffs.orn==i) -  whiffs.firing_rate_before_whiff(whiffs.orn==i);
+	y = y./(whiffs.stim_peaks(whiffs.orn==i) - whiffs.min_stim_before_whiff(whiffs.orn==i));
+	plot(x,y,'+','Color',c(i,:))
+end
+xlabel('LFP before whiff (mV)')
+ylabel('\DeltaR/\DeltaS (Hz/V)')
+
+subplot(3,4,8); hold on
+c = lines(5);
+for i = 1:5
+	x = whiffs.LFP_before_whiff(whiffs.orn==i);
+	y = whiffs.peak_firing_rate(whiffs.orn==i);
+	y = y./whiffs.stim_peaks(whiffs.orn==i);
+	plot(x,y,'+','Color',c(i,:))
+end
+xlabel('LFP before whiff (mV)')
+ylabel('R/S (Hz/V)')
+
+subplot(3,4,9); hold on
+c = lines(5);
+for i = 1:5
+	x = whiffs.min_stim_before_whiff(whiffs.orn==i);
+	y = whiffs.peak_firing_rate(whiffs.orn==i) -  whiffs.firing_rate_before_whiff(whiffs.orn==i);
+	y = y./(whiffs.stim_peaks(whiffs.orn==i) - whiffs.min_stim_before_whiff(whiffs.orn==i));
+	plot(x,y,'+','Color',c(i,:))
+end
+xlabel('min S before whiff (V)')
+ylabel('\DeltaR/\DeltaS (Hz/V)')
+set(gca,'XScale','log','YScale','log','XTick',[1e-3 1e-2 1e-1 1 1e1],'YTick',[1e-1 1 10 100 1e3],'XLim',[1e-3 10],'YLim',[1e-1 1e3])
+
+subplot(3,4,10); hold on
+c = lines(5);
+for i = 1:5
+	x = whiffs.stim_300ms_before_whiff(whiffs.orn==i);
+	y = whiffs.peak_firing_rate(whiffs.orn==i) -  whiffs.firing_rate_before_whiff(whiffs.orn==i);
+	y = y./(whiffs.stim_peaks(whiffs.orn==i) - whiffs.min_stim_before_whiff(whiffs.orn==i));
+	plot(x,y,'+','Color',c(i,:))
+end
+xlabel('<S> 300 ms before whiff (V)')
+ylabel('\DeltaR/\DeltaS (Hz/V)')
+set(gca,'XScale','log','YScale','log','XTick',[1e-3 1e-2 1e-1 1 1e1],'YTick',[1e-1 1 10 100 1e3],'XLim',[1e-3 10],'YLim',[1e-1 1e3])
+
+subplot(3,4,11); hold on
+c = lines(5);
+for i = 1:5
+	x = whiffs.stim_300ms_before_whiff(whiffs.orn==i);
+	y = whiffs.peak_LFP(whiffs.orn==i) -  whiffs.LFP_before_whiff(whiffs.orn==i);
+	y = y./(whiffs.stim_peaks(whiffs.orn==i) - whiffs.min_stim_before_whiff(whiffs.orn==i));
+	y = abs(y);
+	plot(x,y,'+','Color',c(i,:))
+end
+xlabel('<S> 300 ms before whiff (V)')
+ylabel('abs(\DeltaLFP)/\DeltaS (Hz/V)')
+set(gca,'XScale','log','YScale','log','XTick',[1e-3 1e-2 1e-1 1 1e1],'YTick',[1e-2 1e-1 1 10 100 1e3],'XLim',[1e-3 10],'YLim',[1e-2 1e2])
+
+subplot(3,4,12); hold on
+c = lines(5);
+for i = 1:5
+	x = whiffs.min_stim_before_whiff(whiffs.orn==i);
+	y = whiffs.peak_firing_rate(whiffs.orn==i);
+	y = y./whiffs.stim_peaks(whiffs.orn==i);
+	plot(x,y,'+','Color',c(i,:))
+end
+xlabel('min S before whiff (V)')
+ylabel('R/S (Hz/V)')
+set(gca,'XScale','log','YScale','log','XTick',[1e-3 1e-2 1e-1 1 1e1],'YTick',[1e-1 1 10 100 1e3],'XLim',[1e-3 10],'YLim',[1e-1 1e3])
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 
 %% Version Info

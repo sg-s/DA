@@ -16,8 +16,22 @@ MSGdata = consolidateData2(getPath(dataManager,'93ba5d68174e3df9f462a1fc48c581da
 MSGdata = cleanMSGdata(MSGdata);
 v2struct(MSGdata)
 
+clear p
+p.A = 30;
+p.adap_tau = 500;
+p.K_n = 2;
+p.K_tau = 100;
+
+% generate responses for every trial
+LFP_model = NaN*PID;
+for i = 1:size(PID,2)
+	textbar(i,size(PID,2))
+	LFP_model(:,i) = asNL_euler(PID(:,i),p);
+end
+
 
 LFP_lags = NaN*paradigm;
+LFP_model_lags = NaN*paradigm;
 LFP_max_corr = NaN*paradigm;
 firing_lags = NaN*paradigm;
 firing_max_corr = NaN*paradigm;
@@ -25,6 +39,8 @@ a = 35e3+1; z = 55e3;
 chunk_size = 1e3;
 
 LFP_xcorr = NaN(chunk_size*2 - 1,20,length(paradigm));
+LFP_model_xcorr = NaN(chunk_size*2 - 1,20,length(paradigm));
+
 fA_xcorr = NaN(chunk_size*2 - 1,20,length(paradigm));
 
 S_a = NaN(chunk_size*2 - 1,20,length(paradigm));
@@ -33,23 +49,27 @@ S_a = NaN(chunk_size*2 - 1,20,length(paradigm));
 for i = 1:length(paradigm)
 	S = PID(a:z,i);
 	X = -raw_LFP(a:z,i);
+	X_pred = LFP_model(a:z,i);
 	R = fA(a:z,i);
 
 	% reshape into chunks
 	S = reshape(S,chunk_size,length(S)/chunk_size);
 	X = reshape(X,chunk_size,length(X)/chunk_size);
+	X_pred = reshape(X_pred,chunk_size,length(X_pred)/chunk_size);
 	R = reshape(R,chunk_size,length(R)/chunk_size);
 
 	S = bsxfun(@minus, S, mean(S));
 	X = bsxfun(@minus, X, mean(X));
+	X_pred = bsxfun(@minus, X_pred, mean(X_pred));
 	R = bsxfun(@minus, R, mean(R));
 
 	X_lag = NaN(chunk_size*2-1,size(S,2));
+	X_pred_lag = NaN(chunk_size*2-1,size(S,2));
 	R_lag = NaN(chunk_size*2-1,size(S,2));
 	S_acorr = NaN(chunk_size*2-1,size(S,2));
-	clear X_lag R_lag
 	for j = 1:size(S,2)
 		X_lag(:,j) = xcorr(X(:,j)/std(X(:,j)),S(:,j)/std(S(:,j)));
+		X_pred_lag(:,j) = xcorr(X_pred(:,j)/std(X_pred(:,j)),S(:,j)/std(S(:,j)));
 		R_lag(:,j) = xcorr(R(:,j)/std(R(:,j)),S(:,j)/std(S(:,j)));
 		S_acorr(:,j) = xcorr(S(:,j)/std(S(:,j)),S(:,j)/std(S(:,j)));
 	end
@@ -58,6 +78,12 @@ for i = 1:length(paradigm)
 	X_lag = mean(X_lag,2);
 	[LFP_max_corr(i),loc] = max(X_lag);
 	LFP_lags(i) = loc - 1e3;
+
+	X_pred_lag = X_pred_lag/chunk_size;
+	LFP_model_xcorr(:,:,i) = X_pred_lag;
+	X_pred_lag = mean(X_pred_lag,2);
+	[~,loc] = max(X_pred_lag);
+	LFP_model_lags(i) = loc - 1e3;
 
 	R_lag = R_lag/chunk_size;
 	fA_xcorr(:,:,i) = R_lag;
@@ -165,6 +191,19 @@ for i = 1:max(paradigm)
 	lags = 1e-3*(1:length(temp)) - 1;
 	plot(lags,mean(temp,2)/max(mean(temp,2)),'Color',c(i,:))
 end
+
+xlabel('Lag (s)')
+ylabel('Autocorrelation (norm)')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%% 
+% Can we reproduce this slowdown with a model? 
 
 
 

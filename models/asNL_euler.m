@@ -1,7 +1,8 @@
 %% asNL.m
 % NL model that slows down as it adapts
+% euler implementation to avoid solving ODEs
 
-function [R,a,k1,k2,k_D,Shat] = asNL(S,p)
+function [R,a,k1,k2,k_D,Shat] = asNL_euler(S,p)
 
 	% list parameters for legibility
 
@@ -10,6 +11,7 @@ function [R,a,k1,k2,k_D,Shat] = asNL(S,p)
 
 	% adaptation parameters
 	p.adap_tau;
+	p.adap_lag;
 
 	% output filter
 	p.K_n;
@@ -19,7 +21,7 @@ function [R,a,k1,k2,k_D,Shat] = asNL(S,p)
 	if size(S,2) > 1
 		R = NaN*S; a = NaN*S; k1 = NaN*S; k2 = NaN*S; k_D = NaN*S; Shat = NaN*S;
 		for i = 1:size(S,2)
-			[R(:,i),a(:,i),k1(:,i),k2(:,i),k_D(:,i),Shat(:,i)] = asNL(S(:,i),p);
+			[R(:,i),a(:,i),k1(:,i),k2(:,i),k_D(:,i),Shat(:,i)] = asNL_euler(S(:,i),p);
 		end
 		return
 	end
@@ -31,6 +33,7 @@ function [R,a,k1,k2,k_D,Shat] = asNL(S,p)
 
 	% filter the stimulus with the adaptation filter
 	Shat = filter(K_adap,sum(K_adap),S);
+	Shat = circshift(Shat,floor(p.adap_lag));
 
 	% compute the rate constants 
 	k2 = p.A./Shat;
@@ -38,16 +41,19 @@ function [R,a,k1,k2,k_D,Shat] = asNL(S,p)
 
 	k_D = k2./k1;
 
-	ic = 0;
+	a = 0.5+0*S;
 
-	time = 1e-3*(1:length(S));
-	Tspan = [min(time) max(time)];
+	for i = 2:length(S)
+		dydt = k1(i-1)*(1-a(i-1))*S(i-1) - k2(i-1)*a(i-1);
+		a(i) = dydt*1e-3 + a(i);
+		if a(i) > 1
+			a(i) = 1;
+		end
+		if a(i) < 0
+			a(i) = 0;
+		end
+	end
 
-	options = odeset('MaxStep',1,'RelTol',1e-3);
-	[T, Y] = ode23t(@(t,y) asNL_ode(t,y,time,S,k1,k2),Tspan,ic,options); % Solve ODE
-
-	% re-interpolate the solution to fit the stimulus
-	a = interp1(T,Y,time);
 
 	% pass through a filter 
 	t = 0:(length(S)/10);
@@ -60,12 +66,4 @@ function [R,a,k1,k2,k_D,Shat] = asNL(S,p)
 			f = f/tau^(n+1)/gamma(n+1); % normalize appropriately
 		end
 
-		function dy = asNL_ode(t,y,time,S,k1,k2)
-			% calculate the stimulus at the time point
-			S_now = interp1(time,S,t); % Interpolate the data set (ft,f) at time t\
-			k1_now = interp1(time,k1,t);
-			k2_now = interp1(time,k2,t); 
-
-			dy = k1_now*(1-y)*S_now - k2_now*y; 
-		end
 end

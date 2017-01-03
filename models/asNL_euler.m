@@ -1,6 +1,5 @@
 %% asNL.m
 % NL model that slows down as it adapts
-% euler implementation to avoid solving ODEs
 
 function [R,a,k1,k2,k_D,Shat] = asNL_euler(S,p)
 
@@ -8,14 +7,14 @@ function [R,a,k1,k2,k_D,Shat] = asNL_euler(S,p)
 
 	% parameters for k1, k2 estimation
 	p.A;
+	p.B;
 
 	% adaptation parameters
 	p.adap_tau;
-	p.adap_lag;
 
 	% output filter
-	p.K_n;
 	p.K_tau;
+
 
 	% work with matrices too
 	if size(S,2) > 1
@@ -33,31 +32,46 @@ function [R,a,k1,k2,k_D,Shat] = asNL_euler(S,p)
 
 	% filter the stimulus with the adaptation filter
 	Shat = filter(K_adap,sum(K_adap),S);
-	Shat = circshift(Shat,floor(p.adap_lag));
 
 	% compute the rate constants 
-	k2 = p.A./Shat;
-	k1 = k2./Shat;
+	% k2 = p.A./Shat;
+	% k1 = k2./Shat;
+
+	% other form
+	k1 = p.A*exp(-Shat./p.B);
+	k2 = k1.*Shat;
 
 	k_D = k2./k1;
 
-	a = 0.5+0*S;
 
-	for i = 2:length(S)
-		dydt = k1(i-1)*(1-a(i-1))*S(i-1) - k2(i-1)*a(i-1);
-		a(i) = dydt*1e-3 + a(i);
+	time = 1e-3*(1:length(S));
+	T = 1e-4:1e-4:max(time);
+
+	% interpolate 
+	vS = interp1(time,S,T); vS(isnan(vS)) = S(1);
+	vk1 = interp1(time,k1,T); vk1(isnan(vk1)) = k1(1);
+	vk2 = interp1(time,k2,T); vk2(isnan(vk2)) = k2(1);
+
+	% use a fixed-step Euler to solve this
+	a = 0.5 + 0*vS;
+	for i = 2:length(vS)
+		dydt = vk1(i-1)*(1-a(i-1))*vS(i-1) - vk2(i-1)*a(i-1);
+		a(i) = dydt*1e-4 + a(i-1);
 		if a(i) > 1
 			a(i) = 1;
-		end
-		if a(i) < 0
+		elseif a(i) < 0
 			a(i) = 0;
 		end
+
 	end
 
 
+	% re-interpolate the solution to fit the stimulus
+	a = interp1(T,a,time);
+
 	% pass through a filter 
 	t = 0:(length(S)/10);
-	K = generate_simple_filter(p.K_tau,p.K_n,t);
+	K = generate_simple_filter(p.K_tau,1,t);
 	K = K(1:find(K>1e-2*max(K),1,'last'));
 	R = filter(K,1,a);
 

@@ -43,7 +43,7 @@ function [R,a,k1,k2,k_D,Shat] = asNL(S,p)
 	time = 1e-3*(1:length(S));
 	Tspan = [min(time) max(time)];
 
-	options = odeset('MaxStep',1,'RelTol',1e-3);
+	options = odeset('InitialStep',1e-3,'MaxStep',1,'RelTol',1e-3);
 	[T, Y] = ode23t(@(t,y) asNL_ode(t,y,time,S,k1,k2),Tspan,ic,options); % Solve ODE
 
 	% re-interpolate the solution to fit the stimulus

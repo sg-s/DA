@@ -1,25 +1,38 @@
 
 % wrapper to visualise LFP slowdown models
 
-function [] = LFP_slowdown_wrapper(p)
+function [lag] = LFP_slowdown_wrapper(S,p)
 
-S = [ones(5e3,1); 2*ones(5e3,1); ones(3e3,1)];
-S = repmat(S,1,10);
 
-b = logspace(log10(.2),log10(2),10);
 
-for i = 1:size(S,2)
-	S(:,i) = S(:,i)*b(i);
+
+% ci = 1;
+% clear data
+% lags = [70 95 113 168];
+% for i = [1 8 9 10]
+% 	data(ci).stimulus = PID(30e3:55e3,find(paradigm==i,1,'last'));
+% 	data(ci).response = lags(ci)*ones(length(data(ci).stimulus),1);
+% 	ci = ci+1;
+% end
+
+
+% list parameters
+p.A;
+p.B;
+p.adap_tau;
+p.K_tau;
+
+% bounds
+lb.A = 0;
+lb.B = 0;
+lb.adap_tau = 100;
+lb.K_tau = 10;
+
+R = asNL_euler(S,p);
+x = S(5e3:end); x = x - mean(x); x = x/std(x);
+y = R(5e3:end); y = y - mean(y); y = y/std(y);
+d = finddelay(x,y);
+if isnan(d) || isinf(d)
+	d = 0;
 end
-
-figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
-subplot(1,3,1); hold on
-set(gca,'ColorOrder',parula(size(S,2)))
-plot(S)
-
-% solve the model
-[R] = asNL(S,p);
-
-subplot(1,3,2); hold on
-set(gca,'ColorOrder',parula(size(S,2)))
-plot(R)
+lag = ones(length(S),1)*d;

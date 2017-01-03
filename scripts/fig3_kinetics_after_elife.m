@@ -17,10 +17,11 @@ MSGdata = cleanMSGdata(MSGdata);
 v2struct(MSGdata)
 
 clear p
-p.A = 30;
-p.adap_tau = 500;
-p.K_n = 2;
-p.K_tau = 100;
+p.A = 1200;
+p.B = .2230;
+p.adap_tau = 1004;
+p.K_n = 1;
+p.K_tau = 46;
 
 % generate responses for every trial
 LFP_model = NaN*PID;
@@ -151,10 +152,14 @@ for i = 1:max(paradigm)
 	errorbar(ax(4),mean(mean_stim(paradigm==i)),mean(x),sem(x),'Color',LFP_color)
 	x = nonnans(LFP_lags(paradigm==i));
 	errorbar(ax(4),mean(mean_stim(paradigm==i)),mean(x),sem(x),'Color',firing_color)
+
+	x = nonnans(LFP_model_lags(paradigm==i));
+	errorbar(ax(4),mean(mean_stim(paradigm==i)),mean(x),sem(x),'Color','r')
+
 end
 xlabel(ax(4),'\mu_{Stimulus} (V)')
 ylabel(ax(4),'Lag (ms)')
-legend({'Firing rate','LFP'},'Location','northwest')
+legend({'Firing rate','LFP','LFP model'},'Location','northwest')
 set(ax(4),'XLim',[0 1.7],'YLim',[0 200])
 
 za = 54e3; zz = 57e3;
@@ -202,44 +207,7 @@ if being_published
 	delete(gcf)
 end
 
-%% 
-% Can we reproduce this slowdown with a model? 
 
-
-
-
-%%
-% Can we also see signs of this adaptation in kinetics in naturalistic odor stimuli? 
-
-% % get this data
-% clearvars -except being_published
-% load('/local-data/DA-paper/data-for-paper/nat-stim/ab3A_nat_stim.ORNData','-mat')
-% od(1) = [];
-% for i = length(od):-1:1
-% 	data(i).LFP = nanmean(od(i).LFP,2);
-% 	data(i).stimulus = nanmean(od(i).stimulus,2);
-% 	data(i).firing_rate = nanmean(od(i).firing_rate,2);
-% end
-
-% figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-
-% X = data(1).firing_rate;
-
-% for i = 1:length(loc)
-% 	temp = X(loc(i)-200:loc(i)+500);
-% 	temp = temp - mean(temp(1:200));
-% 	plot(temp/max(temp(200:end)))
-% end
-
-
-% [~,loc] = findpeaks(S,'MinPeakProminence',.1);
-% % ignore all peaks with another peak 200 ms afterwards
-% rm_this = false(length(loc),1);
-% for i = 1:length(loc)
-% 	if any(find(loc<loc(i) + 300 & loc > loc(i)))
-% 		rm_this(i) = true;
-% 	end
-% end
 
 %% Version Info
 %

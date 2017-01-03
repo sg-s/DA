@@ -23,7 +23,7 @@ S = nanmean(od(example_orn).stimulus,2);
 X = nanmean(od(example_orn).LFP,2);
 tA = 1e-3*(1:length(S));
 
-figure('outerposition',[0 0 1541 902],'PaperUnits','points','PaperSize',[1541 902]); hold on
+figure('outerposition',[0 0 1601 855],'PaperUnits','points','PaperSize',[1601 855]); hold on
 
 a = [36.36 47.9; 47.9 59.46];
 before = .5;
@@ -32,7 +32,7 @@ after = .5;
 c = lines(2);
 
 % show the stimulus
-subplot(3,5,1:3); hold on
+subplot(3,6,1:3); hold on
 plot(tA,S,'k')
 ylabel('Stimulus (V)')
 set(gca,'XLim',[0 70],'YLim',[-.2 9])
@@ -45,7 +45,7 @@ plot([a(2,1)-before a(2,1)+after],[1.5 1.5],'Color',c(1,:),'LineWidth',4)
 plot([a(2,2)-before a(2,2)+after],[1.5 1.5],'Color',c(2,:),'LineWidth',4)
 
 % show LFP response
-subplot(3,5,6:8); hold on
+subplot(3,6,7:9); hold on
 plot(tA,X,'k')
 ylabel('ab3 LFP (\DeltamV)')
 set(gca,'XLim',[0 70],'YLim',[-20 5])
@@ -58,7 +58,7 @@ set(gca,'XLim',[0 70],'YLim',[-20 5])
 % plot([a(2,2)-before a(2,2)+after],[125 125],'Color',c(2,:),'LineWidth',4)
 
 % show the firing rate
-subplot(3,5,11:13); hold on
+subplot(3,6,13:15); hold on
 plot(tA,R,'k')
 ylabel('ab3A firing rate (Hz)')
 set(gca,'XLim',[0 70],'YLim',[-5 170])
@@ -72,12 +72,12 @@ set(gca,'XLim',[0 70],'YLim',[-5 170])
 
 
 stim_plots = [4 5];
-lfp_plots = [9 10];
-firing_plots = [14 15];
+lfp_plots = [10 11];
+firing_plots = [16 17];
 for i = 1:2
 	for j = 1:2
 		% plot the stimulus
-		subplot(3,5,stim_plots(i)); hold on
+		subplot(3,6,stim_plots(i)); hold on
 		s = 1e3*(a(i,j) -  before);
 		e = 1e3*(a(i,j) + after);
 		x = tA(s:e); x = x - a(i,j);
@@ -91,7 +91,7 @@ for i = 1:2
 		set(gca,'XLim',[-.5 .5])
 
 		% plot the LFP
-		subplot(3,5,lfp_plots(i)); hold on
+		subplot(3,6,lfp_plots(i)); hold on
 		s = 1e3*(a(i,j) -  before);
 		e = 1e3*(a(i,j) + after);
 		x = tA(s:e); x = x - a(i,j);
@@ -109,7 +109,7 @@ for i = 1:2
 		set(gca,'XLim',[-.5 .5])
 
 		% plot the firing rate
-		subplot(3,5,firing_plots(i)); hold on
+		subplot(3,6,firing_plots(i)); hold on
 		s = 1e3*(a(i,j) -  before);
 		e = 1e3*(a(i,j) + after);
 		x = tA(s:e); x = x - a(i,j);
@@ -124,21 +124,15 @@ for i = 1:2
 	end
 end
 
-subplot(3,5,4); hold on
+subplot(3,6,4); hold on
 set(gca,'YLim',[-.1 .7])
 
-subplot(3,5,5); hold on
+subplot(3,6,5); hold on
 set(gca,'YLim',[-.1 .7])
 
-subplot(3,5,11:13); hold on
+subplot(3,6,13:15); hold on
 xlabel('Time (s)')
 
-prettyFig();
-
-if being_published
-	snapnow
-	delete(gcf)
-end
 
 %% 
 % can we also show the slowdown in the LFP and the constancy of the firing rate response? 
@@ -183,38 +177,49 @@ for i = 1:length(loc)
 	rloc(i) = rloc(i) + loc(i);
 end
 
-figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
-subplot(1,3,1); hold on
+x = 0:600; x = x - 200; x = x*1e-3;
+
+subplot(3,6,6); hold on
 plot_this = [ 12     9    46    36    27];
 set(gca,'ColorOrder',parula(length(plot_this)));
-peak_stim = [];
 for i = plot_this
-	peak_stim = [peak_stim max(S(loc(i)-300:loc(i)+300))];
-	plot(S(loc(i)-300:loc(i)+300))
+	plot(x,S(loc(i)-300:loc(i)+300))
 end
+set(gca,'XLim',[-.1 .4])
 
 
-subplot(1,3,3); hold on
-set(gca,'ColorOrder',parula(length(plot_this)));
-peak_response = [];
+subplot(3,6,18); hold on
+ci = 1;
+c = parula(length(plot_this));
 for i = plot_this
 	temp = R(loc(i)-300:loc(i)+300);
-	peak_response = [peak_response max(temp)];
 	temp = temp - mean(temp(1:200));
-	plot(temp/max(temp))
+	plot(x,temp/max(temp),'Color',c(ci,:))
+
+	% find the peak
+	mx = find(temp == max(temp));
+	plot([x(mx) x(mx)],[0 1.5],'--','Color',c(ci,:))
+	ci = ci+1;
 
 end
-set(gca,'YLim',[0 1])
+set(gca,'YLim',[0 1.1],'XLim',[-.1 .4])
+ylabel('ab3A firing rate (norm)')
 
-subplot(1,3,2); hold on
-set(gca,'ColorOrder',parula(length(plot_this)));
+subplot(3,6,12); hold on
+ci = 1;
+c = parula(length(plot_this));
 for i = plot_this
-	temp = X(loc(i)-300:loc(i)+400);
+	temp = X(loc(i)-300:loc(i)+300);
 	temp = temp - mean(temp(1:200));
-	temp = -temp;
-	plot(temp/max(temp))
+	plot(x,-temp/min(temp),'Color',c(ci,:))
+
+	% find the peak
+	mx = find(temp == min(temp));
+	plot([x(mx) x(mx)],[-1.5 0],'--','Color',c(ci,:))
+	ci = ci+1;
 end
-set(gca,'YLim',[0 1])
+set(gca,'YLim',[-1.1 0],'XLim',[-.1 .4])
+ylabel('\Delta LFP (norm)')
 
 prettyFig();
 

@@ -4,7 +4,12 @@
 function [lag] = LFP_slowdown_wrapper(S,p)
 
 
-
+% nsteps = 5;
+% b = logspace(log10(.2),log10(2),nsteps);
+% S = repmat([ones(10e3,1); 2*ones(10e3,1); ones(5e3,1)],1,nsteps);
+% for i = 1:nsteps
+% 	S(:,i) = S(:,i)*b(i);
+% end
 
 % ci = 1;
 % clear data
@@ -17,18 +22,28 @@ function [lag] = LFP_slowdown_wrapper(S,p)
 
 
 % list parameters
-p.A;
-p.B;
-p.adap_tau;
+p.E0;
+p.E1;
+p.w_minus;
+p.w_plus;
+
+p.tau_adap;
+p.kT; 
+
+
+% output filter
 p.K_tau;
 
-% bounds
-lb.A = 0;
-lb.B = 0;
-lb.adap_tau = 100;
-lb.K_tau = 10;
+% bounds 
+lb.E0 = 0;
+lb.E1 = 0;
+lb.w_minus = 0;
+lb.w_plus = 0;
+lb.tau_adap = .5;
+lb.kT = 0;
+lb.K_tau = 0;
 
-R = asNL_euler(S,p);
+R = asNL3(S,p);
 x = S(5e3:end); x = x - mean(x); x = x/std(x);
 y = R(5e3:end); y = y - mean(y); y = y/std(y);
 d = finddelay(x,y);

@@ -16,18 +16,23 @@ MSGdata = consolidateData2(getPath(dataManager,'93ba5d68174e3df9f462a1fc48c581da
 MSGdata = cleanMSGdata(MSGdata);
 v2struct(MSGdata)
 
+% remove baseline from PID
+PID = PID - min(min(PID));
+
 clear p
-p.A = 1200;
-p.B = .2230;
-p.adap_tau = 1004;
-p.K_n = 1;
-p.K_tau = 46;
+p.      E0 = 20.5000;
+p.      E1 = 2.2500;
+p. w_minus = 5.0625;
+p.  w_plus = 6.5000;
+p.tau_adap = 7.0625;
+p.      kT = 35.9375;
+p.   K_tau = 29.7500;
 
 % generate responses for every trial
 LFP_model = NaN*PID;
 for i = 1:size(PID,2)
 	textbar(i,size(PID,2))
-	LFP_model(:,i) = asNL_euler(PID(:,i),p);
+	LFP_model(30e3:55e3,i) = asNL3(PID(30e3:55e3,i),p);
 end
 
 

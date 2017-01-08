@@ -31,7 +31,7 @@ lb.A = 0; lb.B = 0; lb.C = 0;
 ub.C = 1; 
 
 % lower bound
-lb.s0 = 0;
+lb.s0 = -1;
 lb.tau_y = 1; 
 lb.tau_z = 1;
 lb.n_z = 1;
@@ -39,10 +39,10 @@ lb.n_y = 1;
 
 
 % upper bounds
-ub.n_y = 2;
-ub.n_z = 2;
-ub.tau_y = 50;
-ub.tau_z = 100;
+ub.n_y = 10;
+ub.n_z = 10;
+ub.tau_y = 100;
+ub.tau_z = 500;
 
 
 

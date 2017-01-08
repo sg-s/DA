@@ -115,6 +115,8 @@ p.    B = 2.7656;
 
 DA_R = DAModelv2(mean(PID,2),p);
 
+return
+
 % plot the DA response vs the lin pred and the ORN response
 % scatter(ax.DA_vs_lin_pred,fp,DA_R,20,cc,'filled')
 % scatter(ax.DA_vs_ORN,mean(fA,2),DA_R,20,cc,'filled')

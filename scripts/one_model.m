@@ -101,6 +101,8 @@ R = mean(SNSdata.fA(:,SNSdata.orn == 1),2);
 Rhat = aNLN2(S,p);
 t = 1e-3*(1:length(R));
 
+return
+
 figure('outerposition',[0 0 1409 801],'PaperUnits','points','PaperSize',[1409 801]); hold on
 subplot(2,4,1:4); hold on
 plot(t,R,'k')

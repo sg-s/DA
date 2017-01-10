@@ -63,6 +63,7 @@ clear VSdata
 [VSdata.PID, VSdata.LFP, VSdata.fA, VSdata.paradigm, VSdata.orn, VSdata.fly] = consolidateData(getPath(dataManager,'e30707e8e8ef6c0d832eee31eaa585aa'),1);
 % remove baseline from stimulus
 VSdata.PID = bsxfun(@minus, VSdata.PID, min(VSdata.PID));
+VSdata.LFP = bsxfun(@minus, VSdata.LFP, mean(VSdata.LFP(1:4000,:)));
 
  ;;;;;;  ;;;;;;;;     ;;;    ;;;;;;;;   ;;;;;;  ;;;;;;;;    ;;    ;;    ;;;    ;;;;;;;; 
 ;;    ;; ;;     ;;   ;; ;;   ;;     ;; ;;    ;; ;;          ;;;   ;;   ;; ;;      ;;    
@@ -100,8 +101,6 @@ S = mean(SNSdata.PID(:,SNSdata.orn == 1),2);
 R = mean(SNSdata.fA(:,SNSdata.orn == 1),2);
 Rhat = aNLN2(S,p);
 t = 1e-3*(1:length(R));
-
-return
 
 figure('outerposition',[0 0 1409 801],'PaperUnits','points','PaperSize',[1409 801]); hold on
 subplot(2,4,1:4); hold on
@@ -875,6 +874,16 @@ end
   ;; ;;   ;;     ;; ;;    ;;   ;;  ;;     ;; ;;   ;;; ;;    ;; ;;       
    ;;;    ;;     ;; ;;     ;; ;;;; ;;     ;; ;;    ;;  ;;;;;;  ;;;;;;;; 
 
+;;;;;;;; ;;;; ;;;;;;;;  ;;;; ;;    ;;  ;;;;;;      ;;;;;;;;     ;;;    ;;;;;;;; ;;;;;;;; 
+;;        ;;  ;;     ;;  ;;  ;;;   ;; ;;    ;;     ;;     ;;   ;; ;;      ;;    ;;       
+;;        ;;  ;;     ;;  ;;  ;;;;  ;; ;;           ;;     ;;  ;;   ;;     ;;    ;;       
+;;;;;;    ;;  ;;;;;;;;   ;;  ;; ;; ;; ;;   ;;;;    ;;;;;;;;  ;;     ;;    ;;    ;;;;;;   
+;;        ;;  ;;   ;;    ;;  ;;  ;;;; ;;    ;;     ;;   ;;   ;;;;;;;;;    ;;    ;;       
+;;        ;;  ;;    ;;   ;;  ;;   ;;; ;;    ;;     ;;    ;;  ;;     ;;    ;;    ;;       
+;;       ;;;; ;;     ;; ;;;; ;;    ;;  ;;;;;;      ;;     ;; ;;     ;;    ;;    ;;;;;;;; 
+
+
+
 
 %% Firing rate: variance gain control
 % In this section, I fit a non-adapting NLN model to the variance switch data. The top panel shows the neuron's response with the best fit model. In the bottom left panel, I plot the neuron's firing rate vs. the best-fit NLN model prediction, seperately for the low-variance epochs (blue) and the high-variance epochs (red). Note that both curves have the same slope, indicating that the model has captured whatever gain change the neuron has done. This suggests that this data can precisely constrain some parameters of the input. In the bottom middle panel, I plot the ratio of gains (calcualted w.r.t to the NLN model) during the low and high variance epochs. When the curve crosses 1, the model shows the same degree of variance gain control that is seen in the data. I also plot the $r^2$ as a function of the steepness parameter. Note that the maximum of this plot does not occur at the same value of $n$ as when the model shows the same amount of variance gain control. 
@@ -1136,12 +1145,54 @@ if being_published
 	delete(gcf)
 end
 
+;;     ;;    ;;;    ;;;;;;;;  ;;;;    ;;;    ;;    ;;  ;;;;;;  ;;;;;;;; 
+;;     ;;   ;; ;;   ;;     ;;  ;;    ;; ;;   ;;;   ;; ;;    ;; ;;       
+;;     ;;  ;;   ;;  ;;     ;;  ;;   ;;   ;;  ;;;;  ;; ;;       ;;       
+;;     ;; ;;     ;; ;;;;;;;;   ;;  ;;     ;; ;; ;; ;; ;;       ;;;;;;   
+ ;;   ;;  ;;;;;;;;; ;;   ;;    ;;  ;;;;;;;;; ;;  ;;;; ;;       ;;       
+  ;; ;;   ;;     ;; ;;    ;;   ;;  ;;     ;; ;;   ;;; ;;    ;; ;;       
+   ;;;    ;;     ;; ;;     ;; ;;;; ;;     ;; ;;    ;;  ;;;;;;  ;;;;;;;; 
+
+;;       ;;;;;;;; ;;;;;;;;  
+;;       ;;       ;;     ;; 
+;;       ;;       ;;     ;; 
+;;       ;;;;;;   ;;;;;;;;  
+;;       ;;       ;;        
+;;       ;;       ;;        
+;;;;;;;; ;;       ;;        
 
 
-%% Firing rate: All data
-% 
+%%
+% This data seems to strongly constrain the $n$, or the co-operativity parameter of the input Hill function. However, we know from other analysis that only part of the variance gain control occurs at the spiking machinery, and a equal portion occurs at transduction. Thus, if we are to interpret $n$ literally, I need to repeat this fit on the LFP data, as that is our proxy for receptor activity, not the firing rate. 
+
+% remove baseline from all LFP 
 
 
+example_trial = 4;
+S = VSdata.PID(:,example_trial);
+R = -VSdata.LFP(:,example_trial);
+
+R = R(1e4:end-1e4); 
+R_mean = mean(R);
+R = bandPass(R,5e3,Inf) + R_mean;
+S = S(1e4:end-1e4);
+
+data.stimulus = S;
+data.response = R;
+data.response(1:1e3) = NaN;
+
+clear p
+p.   k0 = 0.4115;
+p.tau_z = 1;
+p.    B = 0;
+p.  n_z = 1;
+p.    n = 3.9336;
+p.n = 7;
+p. tau1 = 14.1570;
+p. tau2 = 44.6878;
+p.  n_y = 4.6729;
+p.    A = 0.3812;
+p.    C = 86.2114;
 
 
 %% Version Info

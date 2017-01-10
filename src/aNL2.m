@@ -2,7 +2,7 @@
 % this version is more DA-like, and uses a mono-lobed gamma filter to change K_D
 % 
 
-function [R,Ky,Kz,k_D,x] = aNLN2(S,p)
+function [R,Ky,Kz,k_D,x] = aNL2(S,p)
 
 % list parameters for clarity 
 
@@ -14,26 +14,23 @@ p.n_z;
 p.n; % steepness of the Hill function
 
 % parameters for response filter 
-p.tau1;
-p.tau2;
+p.tau_y;
 p.n_y;
-p.A;
 
 % parameters for output scale
 p.C; 
+p.D;
 
 % bounds for response
-lb.k0 = .35;
+lb.k0 = 0;
 lb.A = 0;
 lb.C = 0;
-lb.tau1 = 5;
-lb.tau2 = 5;
+lb.tau_y = 5;
 lb.n_y = 1;
 lb.n = 1;
 
-ub.tau1 = 100;
-ub.tau2 = 200;
-ub.n = 32; 
+ub.tau_y = 100;
+ub.n = 8; 
 ub.n_y = 10;
 
 % bounds for adaptation 
@@ -41,9 +38,9 @@ lb.B = 0;
 lb.tau_z = 1;
 lb.n_z = 1;
 
-ub.B = 0;
-ub.tau_z = 1;
-ub.n_z = 1;
+ub.B = Inf;
+ub.tau_z = 1000;
+ub.n_z = 2;
 
 
 
@@ -61,8 +58,7 @@ k_D = p.k0 + p.B*filter(Kz,1,S);
 x = (S.^p.n)./(S.^p.n+k_D.^p.n);
 
 % make the parametric  respone filter
-p.n = p.n_y;
-Ky = filter_gamma2(t,p);
+Ky = generate_simple_filter(p.tau_y,p.n_y,t);
 temp = abs(Ky); temp = temp/max(temp);
 Ky = Ky(1:find(temp>1e-2,1,'last'));
 
@@ -70,7 +66,7 @@ Ky = Ky(1:find(temp>1e-2,1,'last'));
 R = filter(Ky,1,x);
 
 % output nonlinearity 
-R(R<0) = 0;
+R = R+p.D;
 R = R*p.C;
 
 

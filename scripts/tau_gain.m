@@ -118,6 +118,7 @@ for si = 1:length(all_sensillum)
 	for i = 1:length(all_pulse_times)
 		y = fA(:,pulse_time == all_pulse_times(i) & sensillum == ts);
 		y(:,sum(y)==0) = [];
+		y = mean(y,2);
 		if ~isempty(y)
 			plot(time(1:50:end),y(1:50:end),'Color',c(i,:))
 		end

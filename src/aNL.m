@@ -31,22 +31,23 @@ lb.k0 = 1e-6;
 lb.A = 0;
 lb.C = 0;
 lb.tau1 = 5;
-lb.tau2 = 5;
-lb.n_y = 1;
+lb.tau2 = 1;
+lb.n_y = 2;
 lb.n = 1;
 
-ub.tau1 = 100;
-ub.tau2 = 200;
-ub.n = 32; 
-ub.n_y = 10;
+ub.A = 0;
+ub.tau1 = 1e3;
+ub.tau2 = 1;
+ub.n = 1; 
+ub.n_y = 2;
 
 % bounds for adaptation 
 lb.B = 0;
-lb.tau_z = 1;
-lb.n_z = 1;
+lb.tau_z = 2e3;
+lb.n_z = 2;
 
-ub.B = Inf;
-ub.tau_z = 1000;
+ub.B = 1e6;
+ub.tau_z = 1e4;
 ub.n_z = 2;
 
 
@@ -66,7 +67,13 @@ x = (S.^p.n)./(S.^p.n+k_D.^p.n);
 
 % make the parametric  respone filter
 p.n = p.n_y;
-Ky = filter_gamma2(t,p);
+if p.A == 0
+	p.tau = p.tau1;
+	p.A = 1;
+	Ky = filter_gamma(t,p);
+else
+	Ky = filter_gamma2(t,p);
+end
 temp = abs(Ky); temp = temp/max(temp);
 Ky = Ky(1:find(temp>1e-2,1,'last'));
 

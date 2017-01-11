@@ -73,7 +73,6 @@ function [R,a,k1,k2,k_D,Shat] = asNL_euler(S,p)
 	t = 0:(length(S)/10);
 	K = generate_simple_filter(p.K_tau,1,t);
 	K = K(1:find(K>1e-2*max(K),1,'last'));
-	R = filter(K,1,a);
 
 		function f = generate_simple_filter(tau,n,t)
 			f = t.^n.*exp(-t/tau); % functional form in paper

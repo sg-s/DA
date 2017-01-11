@@ -90,7 +90,7 @@ for si = 1:length(all_sensillum)
 	c = parula(length(all_pulse_times)+1);
 	for i = 1:length(all_pulse_times)
 		y = mean(S(:,pulse_time == all_pulse_times(i) & sensillum == ts),2);
-		plot(time,y,'Color',c(i,:))
+		plot(time(1:50:end),y(1:50:end),'Color',c(i,:))
 	end
 	if si == 1
 		ylabel('Stimulus (V)')
@@ -104,7 +104,7 @@ for si = 1:length(all_sensillum)
 	c = parula(length(all_pulse_times)+1);
 	for i = 1:length(all_pulse_times)
 		y = mean(LFP(:,pulse_time == all_pulse_times(i) & sensillum == ts),2);
-		plot(time,y,'Color',c(i,:))
+		plot(time(1:50:end),y(1:50:end),'Color',c(i,:))
 	end
 	if si == 1
 		ylabel('\Delta LFP (V)')
@@ -119,7 +119,7 @@ for si = 1:length(all_sensillum)
 		y = fA(:,pulse_time == all_pulse_times(i) & sensillum == ts);
 		y(:,sum(y)==0) = [];
 		if ~isempty(y)
-			plot(time,y,'Color',c(i,:))
+			plot(time(1:50:end),y(1:50:end),'Color',c(i,:))
 		end
 	end
 	xlabel('Time (s)')
@@ -142,7 +142,7 @@ end
 % Now, I quantify how these responses vary as a function of time since background odour onset. In the following figure, each column is data from a single neuron, the identity of which is indicated in the title. The first row shows the peak stimulus, the second row the peak LFP response. The third row shows the change in the LFP due to the stimulus, and the fourth row is the effective gain of the LFP (change in LFP response/change in stimulus). For each plot, I also calculate the Spearman correlation coefficient ($\rho$). 
 
 %%
-% Naively, I would expect that the gain decreases with time -- as the neuron adapts to the background pulse, the gain becomes smaller and smaller. However, I see an **increase** in gain in 4/5 neurons (the exception being the fourth column). In all cases, the change in the gain seems small and inconsequential. Does this mean the neuron is not adapting at all? 
+% Naively, I would expect that the gain decreases with time -- as the neuron adapts to the background pulse, the gain becomes smaller and smaller. However, I see an *increase* in gain in 4/5 neurons (the exception being the fourth column). In all cases, the change in the gain seems small and inconsequential. Does this mean the neuron is not adapting at all? 
 
 % compute peak_LFP, etc
 peak_LFP = NaN*pulse_time;

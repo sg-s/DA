@@ -216,20 +216,42 @@ if being_published
 	delete(gcf)
 end
 
+%
+% look at kinetics
+
+% figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+
+% for si = 1:length(all_sensillum)
+% 	ts = all_sensillum(si);
+
+% 	subplot(1,length(all_sensillum),si); hold on
+% 	for i = 1:length(all_pulse_times)
+% 		tpt = all_pulse_times(i);
+% 		a = (tpt+1)*1e3;
+% 		z = a + .5e3;
+% 		y = LFP(a:z,sensillum == ts & pulse_time == tpt);
+% 		y = -mean(y,2); y = y - mean(y(1:10)); y = y/max(y); 
+% 		plot(y,'Color',c(i,:))
+% 	end
+	
+
+% end
+
+% prettyFig();
 
 
 %
 % Now, I attempt to fit a NL model to this data. 
 
-% clear data
-% all_pulse_times = unique(pulse_time);
-% for i = 1:length(all_pulse_times)
-% 	tpt = all_pulse_times(i);
-% 	j = find(pulse_time == tpt & sensillum == 3,1,'first');
-% 	data(i).stimulus = S(1:6e3,j);
-% 	data(i).response = -LFP(1:6e3,j);
-% 	data(i).response(1:1e3) = NaN;
-% end
+clear data
+all_pulse_times = unique(pulse_time);
+for i = 1:length(all_pulse_times)
+	tpt = all_pulse_times(i);
+	j = find(pulse_time == tpt & sensillum == 3,1,'first');
+	data(i).stimulus = S(:,j);
+	data(i).response = -LFP(:,j);
+	%data(i).response(1:1e3) = NaN;
+end
 
 %% Version Info
 %

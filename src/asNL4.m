@@ -9,6 +9,7 @@ function [R,a,k1,k2,k_D,Shat] = asNL4(S,p)
 	lb.B = 0;
 	lb.adap_tau = 1;
 	lb.K_tau = 1;
+	lb.KD_min = eps;
 
 	ub.adap_tau = 1e4;
 	ub.K_tau = 1e3;

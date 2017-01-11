@@ -40,11 +40,12 @@ function [R,a,k1,k2,k_D,Shat] = asNL(S,p)
 
 	ic = 0;
 
-	time = 1e-3*(1:length(S));
+	time = linspace(0,length(S)*1e-3,length(S));
 	Tspan = [min(time) max(time)];
 
 	options = odeset('InitialStep',1e-3,'MaxStep',1,'RelTol',1e-3);
 	[T, Y] = ode23t(@(t,y) asNL_ode(t,y,time,S,k1,k2),Tspan,ic,options); % Solve ODE
+
 
 	% re-interpolate the solution to fit the stimulus
 	a = interp1(T,Y,time);
@@ -62,10 +63,11 @@ function [R,a,k1,k2,k_D,Shat] = asNL(S,p)
 
 		function dy = asNL_ode(t,y,time,S,k1,k2)
 			% calculate the stimulus at the time point
-			S_now = interp1(time,S,t); % Interpolate the data set (ft,f) at time t\
-			k1_now = interp1(time,k1,t);
-			k2_now = interp1(time,k2,t); 
+			S_now = interp1q(time,S,t); % Interpolate the data set (ft,f) at time t\
+			k1_now = interp1q(time,k1,t);
+			k2_now = interp1q(time,k2,t); 
 
 			dy = k1_now*(1-y)*S_now - k2_now*y; 
 		end
+
 end

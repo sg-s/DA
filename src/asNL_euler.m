@@ -53,7 +53,7 @@ function [R,a,k1,k2,k_D,Shat] = asNL_euler(S,p)
 	vk2 = interp1(time,k2,T); vk2(isnan(vk2)) = k2(1);
 
 	% use a fixed-step Euler to solve this
-	a = 0.5 + 0*vS;
+	a = 0*vS;
 	for i = 2:length(vS)
 		dydt = vk1(i-1)*(1-a(i-1))*vS(i-1) - vk2(i-1)*a(i-1);
 		a(i) = dydt*1e-4 + a(i-1);
@@ -70,9 +70,11 @@ function [R,a,k1,k2,k_D,Shat] = asNL_euler(S,p)
 	a = interp1(T,a,time);
 
 	% pass through a filter 
-	t = 0:(length(S)/10);
+	t = 0:length(S);
 	K = generate_simple_filter(p.K_tau,1,t);
 	K = K(1:find(K>1e-2*max(K),1,'last'));
+
+	R = filter(K,1,a);
 
 		function f = generate_simple_filter(tau,n,t)
 			f = t.^n.*exp(-t/tau); % functional form in paper

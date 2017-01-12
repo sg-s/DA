@@ -216,32 +216,11 @@ if being_published
 	delete(gcf)
 end
 
-%
-% look at kinetics
+%% Reproducing LFP responses precisely
+% In this section, I attempt to fit various binding models to the LFP traces, to try to understand what is going on more quantiatively, and also to see if this data constrains the space of models in any way.
 
-% figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-
-% for si = 1:length(all_sensillum)
-% 	ts = all_sensillum(si);
-
-% 	subplot(1,length(all_sensillum),si); hold on
-% 	for i = 1:length(all_pulse_times)
-% 		tpt = all_pulse_times(i);
-% 		a = (tpt+1)*1e3;
-% 		z = a + .5e3;
-% 		y = LFP(a:z,sensillum == ts & pulse_time == tpt);
-% 		y = -mean(y,2); y = y - mean(y(1:10)); y = y/max(y); 
-% 		plot(y,'Color',c(i,:))
-% 	end
-	
-
-% end
-
-% prettyFig();
-
-
-%
-% Now, I attempt to fit a NL model to this data. 
+%%
+% In the following figure, I fit various models to LFP responses from the ab2 sensillum. I fit only two traces from a single neuron here. Each panel shows the ODEs of the model being fit, the responses of the sensillum in black, and the best-fit model predictions in red. In addition, I show some time-scale parameters where possible. The first panel is the fit from a non-adapting model; all other panels show fits from models that adapt in various ways. Note that in every case, it appears as though the kinetics of the response tot he pulse in the LFP data appear to be slower than the kinetics of the model response. Also note that no model appears to get the heights of responses to both pulses correctly. 
 
 clear data
 all_pulse_times = unique(pulse_time);
@@ -250,7 +229,224 @@ for i = 1:length(all_pulse_times)
 	j = find(pulse_time == tpt & sensillum == 3,1,'first');
 	data(i).stimulus = S(:,j);
 	data(i).response = -LFP(:,j);
-	%data(i).response(1:1e3) = NaN;
+	data(i).response(1:1e3) = NaN;
+end
+
+
+
+figure('outerposition',[0 0 1300 900],'PaperUnits','points','PaperSize',[1300 900]); hold on
+
+% no adaptation model (LFPmodelv1)
+clear p
+p.      k1 = 1.5886e+03;
+p.      k2 = 42.9761;
+p. R_scale = 2.4621;
+p.R_offset = -0.1412;
+
+subplot(2,3,1); hold on
+for i = [1 9]
+	plot([data(i).response],'k')
+	R = LFPmodelv1(data(i).stimulus,p);
+	plot(R,'r')
+end
+xlabel('Time (ms)')
+set(gca,'XLim',[1e3 6e3])
+ylabel('\DeltaLFP (mV)')
+text(2000,2.4,'$\dot{a}=k_{+}(1-a)S-k_{-}a$','Interpreter','latex','FontSize',20)
+ 
+
+% adapting model, k_D changes with S, k2 fixed
+clear p
+p.adap_tau = 4.6875;
+p.      k2 = 6.2150;
+p.   k_min = 0.0131;
+p. R_scale = 2.6319;
+p.R_offset = -0.1221;
+
+subplot(2,3,2); hold on
+for i = [1 9]
+	plot([data(i).response],'k')
+	R = LFPmodelv2(data(i).stimulus,p);
+	plot(R,'r')
+end
+xlabel('Time (ms)')
+set(gca,'XLim',[1e3 6e3])
+text(2000,1,'$\tau_{A}\dot{k_{D}}=S-k_{D}$','Interpreter','latex','FontSize',20)
+text(2000,.5,'$k_{+}=k_{-}/k_{D}$','Interpreter','latex','FontSize',20)
+text(2000,0,['$\tau_A$ = ' oval(p.adap_tau) 's'],'Interpreter','latex','FontSize',20)
+ylabel('\DeltaLFP (mV)')
+
+% adapting model, k_D changes with S, k1 fixed 
+clear p
+p.adap_tau = 5.8672;
+p.   k_min = 0.0116;
+p. R_scale = 2.5303;
+p.R_offset = -0.1192;
+p.      k1 = 331;
+subplot(2,3,3); hold on
+for i = [1 9]
+	plot([data(i).response],'k')
+	R = LFPmodelv3(data(i).stimulus,p);
+	plot(R,'r')
+end
+xlabel('Time (ms)')
+set(gca,'XLim',[1e3 6e3])
+text(2000,1,'$\tau_{A}\dot{k_{D}}=S-k_{D}$','Interpreter','latex','FontSize',20)
+text(2000,.5,'$k_{-}=k_{+}k_{D}$','Interpreter','latex','FontSize',20)
+text(2000,0,['$\tau_A$ = ' oval(p.adap_tau) 's'],'Interpreter','latex','FontSize',20)
+ylabel('\DeltaLFP (mV)')
+
+% LFP model v4
+% adapting model, k_D changes like in chemotaxis, k1 fixed
+clear p
+p.adap_tau = 1.3750;
+p.   k_min = 0.0108;
+p. R_scale = 2.4210;
+p.R_offset = -0.1875;
+p.      k1 = 539;
+subplot(2,3,4), hold on
+for i = [1 9]
+	plot([data(i).response],'k')
+	R = LFPmodelv4(data(i).stimulus,p);
+	plot(R,'r')
+end
+xlabel('Time (ms)')
+set(gca,'XLim',[1e3 6e3])
+text(2000,1,'$\tau_{A}\dot{k_{D}}=k_{D}(a-1/2)$','Interpreter','latex','FontSize',20)
+text(2000,.5,'$k_{-}=k_{+}k_{D}$','Interpreter','latex','FontSize',20)
+text(2000,0,['$\tau_A$ = ' oval(p.adap_tau) 's'],'Interpreter','latex','FontSize',20)
+ylabel('\DeltaLFP (mV)')
+
+% LFP model v5
+% adapting model, K_D changes as in chemotaxis, k2 fixed
+clear p
+p.adap_tau=  1.0547;
+p.   k_min=  0.0089;
+p. R_scale=  2.4835;
+p.R_offset=  -0.2036;
+p.      k2=  5.5937;
+subplot(2,3,5), hold on
+for i = [1 9]
+	plot([data(i).response],'k')
+	R = LFPmodelv5(data(i).stimulus,p);
+	plot(R,'r')
+end
+xlabel('Time (ms)')
+set(gca,'XLim',[1e3 6e3])
+text(2000,1,'$\tau_{A}\dot{k_{D}}=k_{D}(a-1/2)$','Interpreter','latex','FontSize',20)
+text(2000,.5,'$k_{+}=k_{-}/k_{D}$','Interpreter','latex','FontSize',20)
+text(2000,0,['$\tau_A$ = ' oval(p.adap_tau) 's'],'Interpreter','latex','FontSize',20)
+ylabel('\DeltaLFP (mV)')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%% 
+% Can I estimate timescales of gain control from the Gaussian data? In the following figure, I fit exponentials to the firing rates from the Gaussian data, and subtract the responses from these exponential fits. I then estimate the absolute deivation from these expoenentials, and fit another exponential to these absolute deviations, which is my proxy for the timescale of gain control. 
+
+% define what we want to work on
+data_hashes = {'93ba5d68174e3df9f462a1fc48c581da','bcd4cf4fe12817d084a2b06f981161ee','cd6753c0e4cf02895cd5e2c5cb58aa1a','3ea08ccfa892c6545d74bbdaaa6cbee1','f11c4a5792d0c9fec7c40fd6aa2fce40'};
+odour_names = {'ethyl-acetate','1-pentanol','1-pentanol','2-butanone','isoamyl-acetate'};
+orn_names = {'ab3A','ab3A','ab2A','ab2A','pb1A'};
+
+if exist('.cache/tau_gain_MSG.mat','file') == 2
+	load('.cache/tau_gain_MSG.mat','allmetrics')
+else
+	allmetrics = struct([]);
+
+	for di = 1:length(data_hashes)
+		clear MSGdata
+		MSGdata = consolidateData2(getPath(dataManager,data_hashes{di}));
+
+		% make sure stimulus is always positive
+		for i = 1:size(MSGdata.PID,2)
+			MSGdata.PID(:,i) = MSGdata.PID(:,i) - min(MSGdata.PID(:,i));
+		end
+
+
+		% look at timescale of response, fluctuations
+		allmetrics(di).fA_tau = NaN*MSGdata.fly;
+		allmetrics(di).fA_gain_tau = NaN*MSGdata.fly;
+		allmetrics(di).fA_gain_tau_err = NaN*MSGdata.fly;
+		allmetrics(di).S_tau = NaN*MSGdata.fly;
+		allmetrics(di).orn = MSGdata.orn;
+		ft = fittype('A*exp(-x/tau) + B');
+		ft_stim = fittype('A*(1- exp(-x/tau))');
+		x = 1:50e3;
+		for i = 1:width(MSGdata.PID)
+			textbar(i,width(MSGdata.PID))
+			R = MSGdata.fA(5e3+1:55e3,i);
+			if max(R)>0
+				ff = fit(x(:),R,ft,'StartPoint',[max(R) 0 1e3],'Lower',[1 0 10]);
+				allmetrics(di).fA_tau(i) = ff.tau;
+				y = abs(R - ff(x));
+				ff = fit(x(:),y,ft,'StartPoint',[max(y) 0 1e2],'Lower',[1 0 50]);
+				allmetrics(di).fA_gain_tau(i) = ff.tau;
+				cf = confint(ff);
+				allmetrics(di).fA_gain_tau_err(i) = diff(cf(:,3));
+
+				% fit the stimulus too
+				S = MSGdata.PID(5e3+1:55e3,i);
+				ff = fit(x(:),S,ft_stim,'StartPoint',[max(S) 1e2],'Lower',[0 50]);
+				allmetrics(di).S_tau(i) = ff.tau;
+			end
+		end
+	end
+	save('.cache/tau_gain_MSG.mat','allmetrics')
+end
+
+
+figure('outerposition',[0 0 1250 602],'PaperUnits','points','PaperSize',[1250 602]); hold on
+for di = 1
+
+	% plot
+	subplot(1,2,1); hold on
+	for i = 1:max(allmetrics(di).orn)
+		x = i;
+		y = allmetrics(di).fA_tau(allmetrics(di).orn==i);
+		y(y<51) = NaN; % ignore bad fits, because bound was hit
+		y = 1e-3*nonnans(y);
+		if length(y)>1
+			plot(x,median(y),'k.','MarkerSize',40)
+			plot(x,y,'k+')
+		end
+	end
+	set(gca,'XLim',[.5 .5+max(allmetrics(di).orn)],'YLim',[0 50],'XTick',[1:max(allmetrics(di).orn)])
+	xlabel('ORN')
+	ylabel('\tau_{response} (s)')
+	t = [orn_names{di} char(10) odour_names{di}];
+	title(t)
+	deintersectAxes;
+
+	% plot
+	subplot(1,2,2); hold on
+	for i = 1:max(allmetrics(di).orn)
+		x = i;
+		y = allmetrics(di).fA_gain_tau(allmetrics(di).orn==i);
+		y(y<51) = NaN; % ignore bad fits, because bound was hit
+		y = nonnans(y);
+		if length(y)>1
+			plot(x,median(y),'k.','MarkerSize',40)
+			plot(x,y,'k+')
+		end
+	end
+	set(gca,'XLim',[.5 .5+max(allmetrics(di).orn)],'YLim',[0 1e3],'XTick',[1:max(allmetrics(di).orn)])
+	xlabel('ORN')
+	ylabel('\tau_{gain} (ms)')
+	t = [orn_names{di} char(10) odour_names{di}];
+	title(t)
+	deintersectAxes;
+end
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
 end
 
 %% Version Info

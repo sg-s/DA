@@ -1,27 +1,28 @@
-%% asNL.m
-% NL model that slows down as it adapts
+%% LFPmodelv6
+% in this version, K_D adapts through a feed-forward mechanism
+% both k1 and k2 decrease with k_D:
+% k1 ~ 1/k_D^2, k2 ~ 1/k_D
 
-function [R,a,k_D] = adaptingLFPmodel(S,p)
+function [R,a,k_D] = LFPmodelv6(S,p)
 
 	% list parameters for legibility
 
-	% parameters for k1, k2 estimation
-	p.k2;
+	p.kappa1;
+	p.kappa_max;
+	p.kappa_min;
+	p.adap_tau;
 	p.k_min;
-	p.tau_adap;
 
 	% trivial parameters
 	p.R_scale;
 	p.R_offset;
 
-
 	% bounds
-	lb.k1 = 0;
-	lb.k_min = eps;
-	lb.tau_adap = eps;
-
-	ub.k_min = .1;
-	ub.tau_adap = 5; 
+	lb.kappa1 = 0;
+	lb.kappa_max = 0;
+	lb.kappa_min = 0;
+	lb.adap_tau = 0;
+	lb.k_min = 1e-6;
 
 	% work with matrices too
 	if size(S,2) > 1
@@ -42,9 +43,13 @@ function [R,a,k_D] = adaptingLFPmodel(S,p)
 	% use a fixed-step Euler to solve this
 	a = 0*vS;
 	k_D = p.k_min + 0*vS;
+	
+
 	for i = 2:length(vS)
-		k2 = p.k2;
-		k1 = p.k2/k_D(i-1);  
+
+		k2 = p.kappa_max*(1 - ((k_D(i-1))/(k_D(i-1) + p.kappa1))) + p.kappa_min;
+		k1 = k2/k_D(i-1);
+
 		dydt = k1*(1-a(i-1))*vS(i-1) - k2*a(i-1);
 		a(i) = dydt*1e-4 + a(i-1);
 		if a(i) > 1
@@ -53,17 +58,13 @@ function [R,a,k_D] = adaptingLFPmodel(S,p)
 			a(i) = 0;
 		end
 
-		% modify k_D
-		dydt = (1/p.tau_adap)*(vS(i-1) - k_D(i-1));
-		%dydt = k_D(i-1)*(a(i-1) - 1/2)/(p.tau_adap);
-
-
+		% also change k_D
+		dydt = (1/p.adap_tau)*(vS(i-1) - k_D(i-1));
 		k_D(i) = dydt*1e-4 + k_D(i-1);
-
-
 		if k_D(i) < p.k_min
 			k_D(i) = p.k_min;
 		end
+
 
 	end
 

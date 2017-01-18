@@ -351,6 +351,7 @@ end
 %%
 % The following figure shows the responses of three neurons to pulses at various times. There are four columns because we repeated the experiment with two different values of the background stimulus. Note that in every case, the LFP and firing rate responses to the probe pulse are almost identical, independent of the location of the probe pulse relative to the step on in the stimulus background. Note too that in all cases, the neuron is far from saturation, yet the responses are extremely stereotyped. 
 
+clearvars -except being_published
 % first, gather the data
 root = '/data/DA-paper/data-for-paper/tau-gain/v2/'; 
 allfiles = dir([root '*.kontroller']);
@@ -481,6 +482,8 @@ end
 
 %% Estimating timescale of gain control from Gaussian data
 % Can I estimate timescales of gain control from the Gaussian data? In the following figure, I fit exponentials to the firing rates from the Gaussian data, and subtract the responses from these exponential fits. I then estimate the absolute deivation from these expoenentials, and fit another exponential to these absolute deviations, which is my proxy for the timescale of gain control. 
+
+clearvars -except being_published
 
 % define what we want to work on
 data_hashes = {'93ba5d68174e3df9f462a1fc48c581da','bcd4cf4fe12817d084a2b06f981161ee','cd6753c0e4cf02895cd5e2c5cb58aa1a','3ea08ccfa892c6545d74bbdaaa6cbee1','f11c4a5792d0c9fec7c40fd6aa2fce40'};

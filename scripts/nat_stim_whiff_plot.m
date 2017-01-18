@@ -134,91 +134,40 @@ subplot(3,6,13:15); hold on
 xlabel('Time (s)')
 
 
-%% 
-% can we also show the slowdown in the LFP and the constancy of the firing rate response? 
+prettyFig();
 
-clear od
-load('/local-data/DA-paper/data-for-paper/fig7/nat-stim-ab3/combined_data.ORNData','-mat')
-DNSdata.LFP = [];
-DNSdata.fA = [];
-DNSdata.PID = [];
-DNSdata.orn = [];
-for i = length(od):-1:1
-	DNSdata.LFP = [DNSdata.LFP  od(i).LFP];
-	DNSdata.orn = [DNSdata.orn; vectorise(i*ones(od(i).n_trials,1))];
-	DNSdata.fA = [DNSdata.fA  od(i).firing_rate];
-	DNSdata.PID = [DNSdata.PID  od(i).stimulus];
-end
-% remove baseline from stimulus
-for i = 1:size(DNSdata.PID,2)
-	DNSdata.PID(:,i) = DNSdata.PID(:,i) - min(DNSdata.PID(1:5e3,i));
+if being_published
+	snapnow
+	delete(gcf)
 end
 
+%% Are responses saturated?
+% The big question in this dataset is if the responses here are always saturated, and if the stimulus we used is simply too high. We have in this dataset one experiment where the stimulus we used was much smaller. Does this mean that the responses are smaller too? 
 
-S = nanmean(DNSdata.PID(:,DNSdata.orn == 6),2);
-R = nanmean(DNSdata.fA(:,DNSdata.orn == 6),2);
-X = nanmean(DNSdata.LFP(:,DNSdata.orn == 6),2);
+%%
+% In the following figure, I compare the stimulus and response for two neurons, one where we used a very small stimulus, and another where we used the normal stimulus. 
 
-% find all peaks in the stimulus
-[stim_peaks,loc] = findpeaks(S,'MinPeakProminence',.25,'MinPeakDistance',200);
+time = 1e-3*(1:length(od(1).stimulus));
 
-% for each, find a peak in the LFP corresponding to these peaks
-xloc = NaN*loc;
-for i = 1:length(loc)
-	[~,xloc(i)]= max(-X(loc(i):loc(i)+500));
-	xloc(i) = xloc(i) + loc(i);
-end
+figure('outerposition',[0 0 1000 901],'PaperUnits','points','PaperSize',[1000 901]); hold on
+subplot(3,1,1); hold on
+plot(time,mean(od(2).stimulus,2),'r')
+plot(time,mean(od(1).stimulus,2),'k')
+set(gca,'XLim',[1 68])
+ylabel('Stimulus (V)')
 
-% also find a peak in the firing rate
-rloc = NaN*loc;
-for i = 1:length(loc)
-	[~,rloc(i)]= max(R(loc(i):loc(i)+500));
-	rloc(i) = rloc(i) + loc(i);
-end
+subplot(3,1,2); hold on
+plot(time,mean(od(2).LFP,2),'r')
+plot(time,mean(od(1).LFP,2),'k')
+ylabel('\Delta LFP (mV)')
+set(gca,'XLim',[1 68])
 
-x = 0:600; x = x - 200; x = x*1e-3;
-
-subplot(3,6,6); hold on
-plot_this = [ 12     9    46    36    27];
-set(gca,'ColorOrder',parula(length(plot_this)));
-for i = plot_this
-	plot(x,S(loc(i)-300:loc(i)+300))
-end
-set(gca,'XLim',[-.1 .4])
-
-
-subplot(3,6,18); hold on
-ci = 1;
-c = parula(length(plot_this));
-for i = plot_this
-	temp = R(loc(i)-300:loc(i)+300);
-	temp = temp - mean(temp(1:200));
-	plot(x,temp/max(temp),'Color',c(ci,:))
-
-	% find the peak
-	mx = find(temp == max(temp));
-	plot([x(mx) x(mx)],[0 1.5],'--','Color',c(ci,:))
-	ci = ci+1;
-
-end
-set(gca,'YLim',[0 1.1],'XLim',[-.1 .4])
-ylabel('ab3A firing rate (norm)')
-
-subplot(3,6,12); hold on
-ci = 1;
-c = parula(length(plot_this));
-for i = plot_this
-	temp = X(loc(i)-300:loc(i)+300);
-	temp = temp - mean(temp(1:200));
-	plot(x,-temp/min(temp),'Color',c(ci,:))
-
-	% find the peak
-	mx = find(temp == min(temp));
-	plot([x(mx) x(mx)],[-1.5 0],'--','Color',c(ci,:))
-	ci = ci+1;
-end
-set(gca,'YLim',[-1.1 0],'XLim',[-.1 .4])
-ylabel('\Delta LFP (norm)')
+subplot(3,1,3); hold on
+plot(time,mean(od(2).firing_rate,2),'r')
+plot(time,mean(od(1).firing_rate,2),'k')
+ylabel('Firing rate (Hz)')
+xlabel('Time (s)')
+set(gca,'XLim',[1 68])
 
 prettyFig();
 
@@ -227,20 +176,82 @@ if being_published
 	delete(gcf)
 end
 
-% now we attempt to quantify this a little more
 
+%%
+% We notice something very interesting. Even though there is a 7-fold difference in the stimulus amplitude, the LFP and firing rate response amplitudes look identical. Even more curiously, the kinetics of the LFP are markedly different: they're much faster in the lower stimulus case. Are the two neurons adapted to different degrees by the two stimuli? To check, I fit a NL model to each dataset. The following figure shows the input nonlinearities of the best-fit models for the two cases. 
 
-
-% get the sparse naturalistic stimuli 
-load('/local-data/DA-paper/data-for-paper/nat-stim/ab3A_nat_stim.ORNData','-mat')
-
-% remove baseline from stimulus, LFP
-for i = 1:length(od)
-	for j = 1:od(i).n_trials
-		od(i).stimulus(:,j) = od(i).stimulus(:,j) - min(od(i).stimulus(1:5e3,j));
-		od(i).LFP(:,j) = od(i).LFP(:,j) - mean(od(i).LFP(1:5e3,j));
-	end
+for i = 1:2
+	data(i).response = mean(od(i).firing_rate,2);
+	data(i).stimulus = mean(od(i).stimulus,2);
 end
+
+clear p
+p(1).   k0 = 0.0157;
+p(1).tau_z = 1;
+p(1).    B = 0;
+p(1).  n_z = 1;
+p(1).    n = 1;
+p(1). tau1 = 21.6250;
+p(1). tau2 = 16.0820;
+p(1).  n_y = 4.9492;
+p(1).    A = 0.8891;
+p(1).    C = 669.2250;
+
+
+p(2).   k0 = 0.1329;
+p(2).tau_z = 1;
+p(2).    B = 0;
+p(2).  n_z = 1;
+p(2).    n = 1;
+p(2). tau1 = 11.4688;
+p(2). tau2 = 10.6953;
+p(2).  n_y = 7.5352;
+p(2).    A = 0.8891;
+p(2).    C = 892.8285;
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1); hold on
+set(gca,'XScale','log','XTick',[1e-3 1e-2 1e-1 1 10])
+xlabel('S (V)')
+c = [0 0 0; 1 0 0];
+for i = 1:2
+	S = logspace(-3,1,200);
+	x = (S.^p(i).n)./(S.^p(i).n+p(i).k0.^p(i).n);
+	plot(S,x,'Color',c(i,:))
+end
+legend({'Low Stimulus','High Stimulus'},'Location','southeast')
+
+subplot(1,2,2); hold on
+xlabel('S/<S>')
+set(gca,'XScale','log','XTick',[1e-2 1e-1 1 10 100])
+for i = 1:2
+	S = logspace(-3,1,200);
+	x = (S.^p(i).n)./(S.^p(i).n+p(i).k0.^p(i).n);
+	S = S/mean(mean(od(i).stimulus));
+	plot(S,x,'Color',c(i,:))
+end
+plot([1 1],[0 1],'k:')
+plot([1e-2 1e2],[0.5 .5],'k:')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% There is something very bizarre going on here. Our crude observation that the neuron seemed to be more sensitive to the smaller stimulus (because its response was identical to the neuron stimulated with the bigger stimulus) is confirmed by the fact that the best-fit input nonlinearities are significantly different. But if we rescale these input nonlinearities by the *mean stimulus presented to the neuron*, the input nonlinearities collapse onto one another. That's weird -- how do these neurons know to do this? Surely it can't be just by chance that these two neurons had the exact $k_D$ that co-incidentally matched the stimulus? 
+
+%% Version Info
+%
+pFooter;
+
+
+return
+
+%% Quantification
+% In the following section, I quantify some properties of the neuron response. 
 
 % build some metrics for all the data we have
 clear whiffs
@@ -449,7 +460,4 @@ end
 
 
 
-%% Version Info
-%
-pFooter;
 

@@ -23,17 +23,17 @@ p.A;
 p.C; 
 
 % bounds for response
-lb.k0 = .35;
+lb.k0 = 0;
 lb.A = 0;
 lb.C = 0;
-lb.tau1 = 5;
-lb.tau2 = 5;
+lb.tau1 = 1;
+lb.tau2 = 1;
 lb.n_y = 1;
 lb.n = 1;
 
 ub.tau1 = 100;
-ub.tau2 = 200;
-ub.n = 32; 
+ub.tau2 = 300;
+ub.n = 1; 
 ub.n_y = 10;
 
 % bounds for adaptation 

@@ -85,7 +85,74 @@ end
 
 clearvars -except PID odour_name PID_location odour_x_location odour_y_location being_published fan_power
 
-nplots = unique(sum([odour_x_location 1e3*odour_y_location],2));
+%%
+% In the following figure, I show some sample traces of PID measurements of Apple Cider Vinegar plumes, measured at 35 cm from the fan. I plot the data for various values of the distance of the odour source from the fan. Note that odour at 35 cm means that the odour is directly below the PID inlet tube. 
+
+figure('outerposition',[0 0 1000 901],'PaperUnits','points','PaperSize',[1000 901]); hold on
+
+all_x_locations = unique(odour_x_location(strcmp(odour_name,'ACV')));
+all_y_locations = unique(odour_y_location(strcmp(odour_name,'ACV')));
+time = 1e-3*(1:length(PID));
+
+c = 1;
+for i = 1:length(all_x_locations)
+	for j = 1:length(all_y_locations)
+		plot_these = find(odour_x_location == all_x_locations(i) & odour_y_location == all_y_locations(j) & strcmp(odour_name,'ACV') & fan_power);
+		subplot(1,2,c); hold on
+
+		plot(time,PID(:,plot_these(1)),'k')
+
+		plot_these = find(odour_x_location == all_x_locations(i) & odour_y_location == all_y_locations(j) & strcmp(odour_name,'ACV') & ~fan_power);
+		if ~isempty(plot_these)
+			plot(time,PID(:,plot_these(1)),'r')
+		end
+		c = c+1;
+	end
+end
+
+
+prettyFig()
+
+if being_published	
+	snapnow	
+	delete(gcf)
+end
+
+%%
+% Now, I also show some sample of the odour statistics for ethyl aceatete. 
+
+figure('outerposition',[0 0 1000 901],'PaperUnits','points','PaperSize',[1000 901]); hold on
+
+all_x_locations = unique(odour_x_location(strcmp(odour_name,'ethyl_acetate')));
+all_y_locations = unique(odour_y_location(strcmp(odour_name,'ethyl_acetate')));
+time = 1e-3*(1:length(PID));
+
+c = 1;
+cc = parula(6);
+for i = 1:length(all_x_locations)
+	for j = 1:length(all_y_locations)
+		plot_these = find(odour_x_location == all_x_locations(i) & odour_y_location == all_y_locations(j) & strcmp(odour_name,'ethyl_acetate') & fan_power);
+		if isempty(plot_these)
+		else
+			subplot(2,3,c); hold on
+			y = PID(:,plot_these(1)); sy = sort(y); y = y - mean(sy(1:1e3));
+			plot(time,y,'Color',cc(c,:))
+			set(gca,'XLim',[10 15],'YLim',[-0.1 3],'YScale','linear')
+			t = ['x=' oval(odour_x_location(plot_these(1))) ', y=' oval(odour_y_location(plot_these(1)))];
+			title(t)
+
+			% also plot the statistics
+			y = PID(:,plot_these); y = y(:); sy = sort(y); y = y - mean(sy(1:1e3));
+			[hy,hx] = histcounts(y,100); hy = hy/sum(hy);
+			hx = hx(1:end-1) + mean(diff(hx));
+			subplot(2,3,6); hold on
+			plot(hx,hy,'+','Color',cc(c,:))
+			set(gca,'XScale','log','YScale','log','XLim',[1e-4 10],'XTick',logspace(-4,1,6))
+
+			c = c+1;
+		end
+	end
+end
 
 
 prettyFig()

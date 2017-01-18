@@ -6,7 +6,7 @@ pHeader;
 % In this document, I attempt to determine the timescale of gain control from data where we present pulses of odorant on top of a background, at various time-points since background onset. 
 
 % first, gather the data
-root = '/data/DA-paper/data-for-paper/tau-gain/'; 
+root = '/data/DA-paper/data-for-paper/tau-gain/v1/'; 
 allfiles = dir([root '*.kontroller']);
 allfiles(cellfun(@(x) strcmp(x(1),'.'), {allfiles.name})) = [];
 
@@ -345,7 +345,141 @@ if being_published
 	delete(gcf)
 end
 
-%% 
+%% Non-saturated responses
+% One concern in the previous dataset is that the probe pulses can be saturating, and this could be the reason why we don't see any change. So we repeated the experiment with smaller pulses, and even went into a regime where the probe pulse was so small w.r.t to the background that we couldn't see it (but the neuron could). 
+
+%%
+% The following figure shows the responses of three neurons to pulses at various times. There are four columns because we repeated the experiment with two different values of the background stimulus. Note that in every case, the LFP and firing rate responses to the probe pulse are almost identical, independent of the location of the probe pulse relative to the step on in the stimulus background. Note too that in all cases, the neuron is far from saturation, yet the responses are extremely stereotyped. 
+
+% first, gather the data
+root = '/data/DA-paper/data-for-paper/tau-gain/v2/'; 
+allfiles = dir([root '*.kontroller']);
+allfiles(cellfun(@(x) strcmp(x(1),'.'), {allfiles.name})) = [];
+
+S = [];
+fA = [];
+LFP = [];
+fly = [];
+sensillum = [];
+ab = [];
+pulse_time = [];
+
+for i = 1:length(allfiles)
+	clear data spikes ControlParadigm
+	load([root allfiles(i).name],'-mat')
+
+	this_fly = str2double(allfiles(i).name(strfind(allfiles(i).name,'_F')+2));
+	this_ab = str2double(allfiles(i).name(strfind(allfiles(i).name,'_ab')+3));
+	this_sensillum = str2double(allfiles(i).name(strfind(allfiles(i).name,'_S')+2));
+
+	this_S = vertcat(data.PID)'; this_S = this_S(1:10:end,:);
+	this_LFP = vertcat(data.voltage)'; this_LFP = this_LFP(1:10:end,:);
+
+	this_fA = spiketimes2f(vertcat(spikes.A),1e-4*(1:length(vertcat(spikes.A))),1e-3,3e-2);
+
+	this_fly = this_fly*ones(size(this_S,2),1);
+	this_sensillum = this_sensillum*ones(size(this_S,2),1);
+	this_ab = this_ab*ones(size(this_S,2),1);
+
+	% figure out the time of the pulse 
+	n_trials_per_paradigm = cellfun(@width,{data.PID});
+	this_pulse_time = [];
+	for j = 1:length(ControlParadigm)
+		tpt = find(ControlParadigm(j).Outputs(5,:),1,'first')*1e-4 - find(ControlParadigm(j).Outputs(4,:),1,'first')*1e-4;
+		this_pulse_time = [this_pulse_time; zeros(n_trials_per_paradigm(j),1)+tpt];
+	end
+
+	% consolidate
+	fly = [fly; this_fly];
+	sensillum = [sensillum; this_sensillum];
+	pulse_time = [pulse_time; this_pulse_time];
+	S = [S this_S];
+	fA = [fA this_fA];
+	LFP = [LFP this_LFP];
+	ab = [ab; this_ab];
+end
+
+% remove some crappy trials
+rm_this = isnan(sum(LFP)) == 1;
+LFP(:,rm_this) = [];
+S(:,rm_this) = [];
+fA(:,rm_this) = [];
+pulse_time(rm_this) = [];
+sensillum(rm_this) = [];
+fly(rm_this) = [];
+ab(rm_this) = [];
+
+% remove baselines from LFP and stimulus
+for i = 1:length(sensillum)
+	LFP(:,i) = LFP(:,i) - mean(LFP(1:1e3,i));
+	S(:,i) = S(:,i) - min(S(1:end,i));
+end
+
+time = 1e-3*(1:length(S));
+
+all_sensillum = unique(sensillum);
+
+figure('outerposition',[0 0 1411 704],'PaperUnits','points','PaperSize',[1411 704]); hold on
+for si = 1:length(all_sensillum)
+	ts = all_sensillum(si);
+
+	% plot stimulus
+	subplot(3,length(all_sensillum),si); hold on
+	all_pulse_times = unique(pulse_time);
+	c = parula(length(all_pulse_times)+1);
+	for i = 1:length(all_pulse_times)
+		y = mean(S(:,pulse_time == all_pulse_times(i) & sensillum == ts),2);
+		plot(time(1:50:end),y(1:50:end),'Color',c(i,:))
+	end
+	if si == 1
+		ylabel('Stimulus (V)')
+	end
+	set(gca,'XLim',[0 10])
+	title(['ab' oval(mean(ab(sensillum == ts)))])
+
+	% plot LFP
+	subplot(3,length(all_sensillum),length(all_sensillum)+si); hold on
+	all_pulse_times = unique(pulse_time);
+	c = parula(length(all_pulse_times)+1);
+	for i = 1:length(all_pulse_times)
+		y = mean(LFP(:,pulse_time == all_pulse_times(i) & sensillum == ts),2);
+		plot(time(1:50:end),y(1:50:end),'Color',c(i,:))
+	end
+	if si == 1
+		ylabel('\Delta LFP (V)')
+	end
+	set(gca,'XLim',[0 10])
+
+	% plot firing rate
+	subplot(3,length(all_sensillum),2*length(all_sensillum)+si); hold on
+	all_pulse_times = unique(pulse_time);
+	c = parula(length(all_pulse_times)+1);
+	for i = 1:length(all_pulse_times)
+		y = fA(:,pulse_time == all_pulse_times(i) & sensillum == ts);
+		y(:,sum(y)==0) = [];
+		y = mean(y,2);
+		if ~isempty(y)
+			plot(time(1:50:end),y(1:50:end),'Color',c(i,:))
+		end
+	end
+	xlabel('Time (s)')
+	if si  == 1
+		ylabel('Firing rate (Hz)')
+	end
+	set(gca,'XLim',[0 10])
+
+end
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
+%% Estimating timescale of gain control from Gaussian data
 % Can I estimate timescales of gain control from the Gaussian data? In the following figure, I fit exponentials to the firing rates from the Gaussian data, and subtract the responses from these exponential fits. I then estimate the absolute deivation from these expoenentials, and fit another exponential to these absolute deviations, which is my proxy for the timescale of gain control. 
 
 % define what we want to work on

@@ -33,7 +33,7 @@ lb.n = 1;
 
 ub.tau1 = 100;
 ub.tau2 = 300;
-ub.n = 1; 
+ub.n = 8; 
 ub.n_y = 10;
 
 % bounds for adaptation 

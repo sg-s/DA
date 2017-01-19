@@ -145,7 +145,7 @@ end
 % The big question in this dataset is if the responses here are always saturated, and if the stimulus we used is simply too high. We have in this dataset one experiment where the stimulus we used was much smaller. Does this mean that the responses are smaller too? 
 
 %%
-% In the following figure, I compare the stimulus and response for two neurons, one where we used a very small stimulus, and another where we used the normal stimulus. 
+% In the following figure, I compare the stimulus and response for two neurons (ab3A and ab2A), one where we used a very small stimulus, and another where we used the normal stimulus. 
 
 time = 1e-3*(1:length(od(1).stimulus));
 

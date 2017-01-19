@@ -5,11 +5,10 @@ pHeader;
 % In this document, I look at the statistics of real odour plumes. I generate them using a fan blowing over a vial of either Apple Cider Vinegar or ethyl acetate. 
 
 % get data 
-root = '/data/DA-paper/data-for-paper/odor-plumes/';
-root = '~/Desktop/odor-plumes/';
+root = getPath(dataManager,'f24ec4a8dd9169efbfab300baa193579');
 
 % first, gather the data
-allfiles = dir([root '*.kontroller']);
+allfiles = dir([root '/*.kontroller']);
 allfiles(cellfun(@(x) strcmp(x(1),'.'), {allfiles.name})) = [];
 
 odour_x_location = [];
@@ -23,7 +22,7 @@ PID = [];
 for i = 1:length(allfiles)
 	clear data spikes ControlParadigm
 
-	load([root allfiles(i).name],'-mat')
+	load([root '/' allfiles(i).name],'-mat')
 	%disp({ControlParadigm.Name})
 
 	a = strfind(allfiles(i).name,'PID_')+4;
@@ -46,7 +45,7 @@ for i = 1:length(allfiles)
 	this_y = [];
 	this_fan_power = [];
 	for j = 1:length(data)
-		disp(ControlParadigm(j).Name)
+		%disp(ControlParadigm(j).Name)
 		z = strfind(ControlParadigm(j).Name,'cm'); 
 		if length(z) > 1
 			yz = z(2);

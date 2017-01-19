@@ -88,7 +88,7 @@ clearvars -except PID odour_name PID_location odour_x_location odour_y_location 
 noise_floor = 0.0036;
 
 %%
-% In the following figure, I show some sample traces of PID measurements of Apple Cider Vinegar plumes, measured at 35 cm from the fan. I plot the data for various values of the distance of the odour source from the fan. Note that odour at 35 cm means that the odour is directly below the PID inlet tube. Red traces are obtained with the fan turned off. 
+% In the following figure, I show some sample traces of PID measurements of Apple Cider Vinegar plumes, measured at 35 cm from the fan. I plot the data for various values of the distance of the odour source from the fan. Note that odour at 35 cm means that the odour is directly below the PID inlet tube. Red traces are obtained with the fan turned off. I also plot the stimulus distributions of these time series in the final plot. The dashed line in the third plot indicates the noise floor of the PID measurement. 
 
 figure('outerposition',[0 0 1502 501],'PaperUnits','points','PaperSize',[1502 501]); hold on
 
@@ -147,7 +147,7 @@ if being_published
 end
 
 %%
-% Now, I also show some sample of the odour statistics for ethyl aceatete. 
+% The PID could barely detect apple cider vinegar. I therefore switched to ethyl acetate as a proxy and made the same plots as before.  
 
 figure('outerposition',[0 0 1230 901],'PaperUnits','points','PaperSize',[1230 901]); hold on
 

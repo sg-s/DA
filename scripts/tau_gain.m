@@ -6,7 +6,7 @@ pHeader;
 % In this document, I attempt to determine the timescale of gain control from data where we present pulses of odorant on top of a background, at various time-points since background onset. 
 
 % first, gather the data
-root = '/data/DA-paper/data-for-paper/tau-gain/v1/'; 
+root = [getPath(dataManager,'b1840fa24e8f3070315f6a7e83358d4e') oss];
 allfiles = dir([root '*.kontroller']);
 allfiles(cellfun(@(x) strcmp(x(1),'.'), {allfiles.name})) = [];
 
@@ -353,7 +353,7 @@ end
 
 clearvars -except being_published
 % first, gather the data
-root = '/data/DA-paper/data-for-paper/tau-gain/v2/'; 
+root = [getPath(dataManager,'fdd9f9238e58fceac600d9b45f6122da') oss];
 allfiles = dir([root '*.kontroller']);
 allfiles(cellfun(@(x) strcmp(x(1),'.'), {allfiles.name})) = [];
 

@@ -518,6 +518,7 @@ else
 			textbar(i,width(MSGdata.PID))
 			R = MSGdata.fA(5e3+1:55e3,i);
 			if max(R)>0
+				sdf
 				ff = fit(x(:),R,ft,'StartPoint',[max(R) 0 1e3],'Lower',[1 0 10]);
 				allmetrics(di).fA_tau(i) = ff.tau;
 				y = abs(R - ff(x));

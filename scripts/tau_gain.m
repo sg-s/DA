@@ -5,6 +5,15 @@ pHeader;
 %% Estimating the timescale of gain control
 % In this document, I attempt to determine the timescale of gain control from data where we present pulses of odorant on top of a background, at various time-points since background onset. 
 
+   ;;;    ;;;;;;;; ;;;;;;;; ;;;;;;;; ;;     ;; ;;;;;;;;  ;;;;;;;;       ;;   
+  ;; ;;      ;;       ;;    ;;       ;;;   ;;; ;;     ;;    ;;        ;;;;   
+ ;;   ;;     ;;       ;;    ;;       ;;;; ;;;; ;;     ;;    ;;          ;;   
+;;     ;;    ;;       ;;    ;;;;;;   ;; ;;; ;; ;;;;;;;;     ;;          ;;   
+;;;;;;;;;    ;;       ;;    ;;       ;;     ;; ;;           ;;          ;;   
+;;     ;;    ;;       ;;    ;;       ;;     ;; ;;           ;;          ;;   
+;;     ;;    ;;       ;;    ;;;;;;;; ;;     ;; ;;           ;;        ;;;;;; 
+
+
 % first, gather the data
 root = [getPath(dataManager,'b1840fa24e8f3070315f6a7e83358d4e') oss];
 allfiles = dir([root '*.kontroller']);
@@ -345,6 +354,15 @@ if being_published
 	delete(gcf)
 end
 
+   ;;;    ;;;;;;;; ;;;;;;;; ;;;;;;;; ;;     ;; ;;;;;;;;  ;;;;;;;;     ;;;;;;;  
+  ;; ;;      ;;       ;;    ;;       ;;;   ;;; ;;     ;;    ;;       ;;     ;; 
+ ;;   ;;     ;;       ;;    ;;       ;;;; ;;;; ;;     ;;    ;;              ;; 
+;;     ;;    ;;       ;;    ;;;;;;   ;; ;;; ;; ;;;;;;;;     ;;        ;;;;;;;  
+;;;;;;;;;    ;;       ;;    ;;       ;;     ;; ;;           ;;       ;;        
+;;     ;;    ;;       ;;    ;;       ;;     ;; ;;           ;;       ;;        
+;;     ;;    ;;       ;;    ;;;;;;;; ;;     ;; ;;           ;;       ;;;;;;;;; 
+
+
 %% Non-saturated responses
 % One concern in the previous dataset is that the probe pulses can be saturating, and this could be the reason why we don't see any change. So we repeated the experiment with smaller pulses, and even went into a regime where the probe pulse was so small w.r.t to the background that we couldn't see it (but the neuron could). 
 
@@ -478,6 +496,305 @@ if being_published
 	delete(gcf)
 end
 
+   ;;;    ;;;;;;;; ;;;;;;;; ;;;;;;;; ;;     ;; ;;;;;;;;  ;;;;;;;;     ;;;;;;;  
+  ;; ;;      ;;       ;;    ;;       ;;;   ;;; ;;     ;;    ;;       ;;     ;; 
+ ;;   ;;     ;;       ;;    ;;       ;;;; ;;;; ;;     ;;    ;;              ;; 
+;;     ;;    ;;       ;;    ;;;;;;   ;; ;;; ;; ;;;;;;;;     ;;        ;;;;;;;  
+;;;;;;;;;    ;;       ;;    ;;       ;;     ;; ;;           ;;              ;; 
+;;     ;;    ;;       ;;    ;;       ;;     ;; ;;           ;;       ;;     ;; 
+;;     ;;    ;;       ;;    ;;;;;;;; ;;     ;; ;;           ;;        ;;;;;;;  
+
+%%
+% Attempt 3
+% What if the timescale of gain control is very fast? To check this, we repeated the experiment, but sampled gain more densely with probe pulses spaced 100ms apart.  
+
+
+clearvars -except being_published
+% first, gather the data
+root = [getPath(dataManager,'738186abdd0c1b2d05c010ef4206760c') oss];
+allfiles = dir([root '*.kontroller']);
+allfiles(cellfun(@(x) strcmp(x(1),'.'), {allfiles.name})) = [];
+
+S = [];
+fA = [];
+LFP = [];
+fly = [];
+sensillum = [];
+ab = [];
+pulse_time = [];
+
+for i = 1:length(allfiles)
+	clear data spikes ControlParadigm
+	load([root allfiles(i).name],'-mat')
+
+	this_fly = str2double(allfiles(i).name(strfind(allfiles(i).name,'_F')+2));
+	this_ab = str2double(allfiles(i).name(strfind(allfiles(i).name,'_ab')+3));
+	this_sensillum = str2double(allfiles(i).name(strfind(allfiles(i).name,'_S')+2));
+
+	this_S = vertcat(data.PID)'; this_S = this_S(1:10:end,:);
+	this_LFP = vertcat(data.voltage)'; this_LFP = this_LFP(1:10:end,:);
+
+	this_fA = spiketimes2f(vertcat(spikes.A),1e-4*(1:length(vertcat(spikes.A))),1e-3,3e-2);
+
+	this_fly = this_fly*ones(size(this_S,2),1);
+	this_sensillum = this_sensillum*ones(size(this_S,2),1);
+	this_ab = this_ab*ones(size(this_S,2),1);
+
+	% figure out the time of the pulse 
+	n_trials_per_paradigm = cellfun(@width,{data.PID});
+	this_pulse_time = [];
+	for j = 1:length(data)
+		tpt = find(ControlParadigm(j).Outputs(5,:),1,'first')*1e-4 - find(ControlParadigm(j).Outputs(4,:),1,'first')*1e-4;
+		this_pulse_time = [this_pulse_time; zeros(n_trials_per_paradigm(j),1)+tpt];
+	end
+
+	% consolidate
+	fly = [fly; this_fly];
+	sensillum = [sensillum; this_sensillum];
+	pulse_time = [pulse_time; this_pulse_time];
+	S = [S this_S];
+	fA = [fA this_fA];
+	LFP = [LFP this_LFP];
+	ab = [ab; this_ab];
+end
+
+% remove baselines from LFP and stimulus
+for i = 1:length(sensillum)
+	LFP(:,i) = LFP(:,i) - mean(LFP(1:500,i));
+	S(:,i) = S(:,i) - min(S(1:end,i));
+end
+
+
+% remove some crappy trials
+rm_this = isnan(sum(LFP)) == 1 | LFP(end,:) > 2;
+LFP(:,rm_this) = [];
+S(:,rm_this) = [];
+fA(:,rm_this) = [];
+pulse_time(rm_this) = [];
+sensillum(rm_this) = [];
+fly(rm_this) = [];
+ab(rm_this) = [];
+
+time = 1e-3*(1:length(S));
+
+all_sensillum = [2 3 6];
+
+figure('outerposition',[0 0 1411 704],'PaperUnits','points','PaperSize',[1411 704]); hold on
+for si = 1:length(all_sensillum)
+	ts = all_sensillum(si);
+
+	% plot stimulus
+	subplot(3,length(all_sensillum),si); hold on
+	all_pulse_times = unique(pulse_time);
+	c = parula(length(all_pulse_times)+1);
+	for i = 1:length(all_pulse_times)
+		y = mean(S(:,pulse_time == all_pulse_times(i) & sensillum == ts),2);
+		plot(time(1:50:end),y(1:50:end),'Color',c(i,:))
+	end
+	if si == 1
+		ylabel('Stimulus (V)')
+	end
+	set(gca,'XLim',[0 4])
+	title(['ab' oval(mean(ab(sensillum == ts)))])
+
+	% plot LFP
+	subplot(3,length(all_sensillum),length(all_sensillum)+si); hold on
+	all_pulse_times = unique(pulse_time);
+	c = parula(length(all_pulse_times)+1);
+	for i = 1:length(all_pulse_times)
+		y = mean(LFP(:,pulse_time == all_pulse_times(i) & sensillum == ts),2);
+		plot(time(1:50:end),y(1:50:end),'Color',c(i,:))
+	end
+	if si == 1
+		ylabel('\Delta LFP (V)')
+	end
+	set(gca,'XLim',[0 4])
+
+	% plot firing rate
+	subplot(3,length(all_sensillum),2*length(all_sensillum)+si); hold on
+	all_pulse_times = unique(pulse_time);
+	c = parula(length(all_pulse_times)+1);
+	for i = 1:length(all_pulse_times)
+		y = fA(:,pulse_time == all_pulse_times(i) & sensillum == ts);
+		y(:,sum(y)==0) = [];
+		y = mean(y,2);
+		if ~isempty(y)
+			plot(time(1:50:end),y(1:50:end),'Color',c(i,:))
+		end
+	end
+	xlabel('Time (s)')
+	if si  == 1
+		ylabel('Firing rate (Hz)')
+	end
+	set(gca,'XLim',[0 4])
+
+end
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% Now, I quantify how these responses vary as a function of time since background odour onset. I measure the response and the stimulus for each probe pulse, and plot these as a function of the time since the background turns on. 
+
+% compute peak_LFP, etc
+S_max = NaN*pulse_time;
+dS = NaN*pulse_time;
+X_max = NaN*pulse_time;
+dX = NaN*pulse_time;
+R_max = NaN*pulse_time;
+dR= NaN*pulse_time;
+
+for i = 1:length(pulse_time)
+	if pulse_time(i) >= 0 
+		a = round((1 + pulse_time(i))*1e3);
+		z = a + 1e3;
+		S_max(i) = max(S(a:z,i));
+		dS(i) = S_max(i) - mean(S(a:a+10,i));
+
+		X_max(i) = min(LFP(a:z,i));
+		dX(i) = -(X_max(i) - mean(LFP(a:a+10,i)));
+
+		R_max(i) = max(fA(a:z,i));
+		dR(i) = R_max(i) - mean(fA(a:a+10,i));
+	end
+end
+
+R_max(R_max == 0) = NaN;
+dR(dR == 0) = NaN;
+
+LFP_gain = dX./dS;
+fA_gain = dR./dS;
+
+c = lines(length(all_sensillum));
+ft = fittype('A*exp(-x/tau) + B');
+
+figure('outerposition',[0 0 1400 901],'PaperUnits','points','PaperSize',[1400 901]); hold on
+subplot(2,4,1); hold on
+for i = 1:length(all_sensillum)
+	this_sensillum = all_sensillum(i);
+	x = pulse_time(sensillum == this_sensillum);
+	y = S_max(sensillum == this_sensillum);
+	plot(x,y,'.','Color',c(i,:),'MarkerSize',20)
+end
+xlabel('\tau (s)')
+ylabel('S_{max} (V)')
+set(gca,'XLim',[-.1 1.1])
+
+subplot(2,4,2); hold on
+clear l L
+for i = 1:length(all_sensillum)
+	this_sensillum = all_sensillum(i);
+	x = pulse_time(sensillum == this_sensillum);
+	y = dS(sensillum == this_sensillum);
+	rm_this = isnan(y);
+	x(rm_this) = []; y(rm_this) = [];
+	ff = fit(x(:),y(:),ft,'Start',[1 0 .1],'Lower',[0 0 0]);
+	plot(x,y,'.','Color',c(i,:),'MarkerSize',12)
+	l(i) = plot(linspace(min(x),max(x),100),ff(linspace(min(x),max(x),100)),'Color',c(i,:),'LineWidth',3);
+	L{i} = ['\tau=' oval(ff.tau) 's'];	
+	
+end
+legend(l,L)
+xlabel('\tau (s)')
+ylabel('\DeltaS (V)')
+set(gca,'XLim',[-.1 1.1])
+
+subplot(2,4,3); hold on
+for i = 1:length(all_sensillum)
+	this_sensillum = all_sensillum(i);
+	x = pulse_time(sensillum == this_sensillum);
+	y = X_max(sensillum == this_sensillum);
+	plot(x,y,'.','Color',c(i,:),'MarkerSize',20)
+	xlabel('\tau (s)')
+	ylabel('LFP_{peak} (mV)')
+end
+set(gca,'XLim',[-.1 1.1])
+
+subplot(2,4,4); hold on
+for i = 1:length(all_sensillum)
+	this_sensillum = all_sensillum(i);
+	x = pulse_time(sensillum == this_sensillum);
+	y = dX(sensillum == this_sensillum);
+	rm_this = isnan(y);
+	x(rm_this) = []; y(rm_this) = [];
+	ff = fit(x(:),y(:),ft,'Start',[1 0 .5],'Lower',[0 0 .1]);
+	plot(x,y,'.','Color',c(i,:),'MarkerSize',12)
+	l(i) = plot(linspace(min(x),max(x),100),ff(linspace(min(x),max(x),100)),'Color',c(i,:),'LineWidth',3);
+	L{i} = ['\tau=' oval(ff.tau) 's'];	
+end
+xlabel('\tau (s)')
+ylabel('\DeltaLFP (mV)')
+legend(l,L)
+set(gca,'XLim',[-.1 1.1])
+
+subplot(2,4,5); hold on
+for i = 1:length(all_sensillum)
+	this_sensillum = all_sensillum(i);
+	x = pulse_time(sensillum == this_sensillum);
+	y = LFP_gain(sensillum == this_sensillum);
+	rm_this = isnan(y);
+	x(rm_this) = []; y(rm_this) = [];
+	ff = fit(x(x>0),y(x>0),ft,'Start',[1 0 .1],'Lower',[0 0 0]);
+	plot(x,y,'.','Color',c(i,:),'MarkerSize',12)
+	l(i) = plot(linspace(min(x),max(x),100),ff(linspace(min(x),max(x),100)),'Color',c(i,:),'LineWidth',3);
+	L{i} = ['\tau=' oval(ff.tau) 's'];	
+	
+end
+legend(l,L)
+xlabel('\tau (s)')
+set(gca,'XLim',[-.1 1.1])
+ylabel('LFP gain (mV/V)')
+
+subplot(2,4,6); hold on
+clear l
+for i = 1:length(all_sensillum)
+	this_sensillum = all_sensillum(i);
+	x = pulse_time(sensillum == this_sensillum);
+	y = R_max(sensillum == this_sensillum);
+	rm_this = isnan(y);
+	x(rm_this) = []; y(rm_this) = [];
+	ff = fit(x(:),y(:),ft,'Start',[1 0 .1],'Lower',[0 0 0]);
+	plot(x,y,'.','Color',c(i,:),'MarkerSize',12)
+	l(i) = plot(linspace(min(x),max(x),100),ff(linspace(min(x),max(x),100)),'Color',c(i,:),'LineWidth',3);
+	L{i} = ['\tau=' oval(ff.tau) 's'];	
+end
+xlabel('\tau (s)')
+ylabel('R_{max} (Hz)')
+legend(l,L)
+set(gca,'XLim',[-.1 1.1])
+
+subplot(2,4,7); hold on
+for i = 1:length(all_sensillum)
+	this_sensillum = all_sensillum(i);
+	x = pulse_time(sensillum == this_sensillum);
+	y = dR(sensillum == this_sensillum);
+	plot(x,y,'.','Color',c(i,:),'MarkerSize',20)
+	xlabel('\tau (s)')
+	ylabel('\DeltaR (Hz)')
+end
+set(gca,'XLim',[-.1 1.1])
+
+subplot(2,4,8); hold on
+for i = 1:length(all_sensillum)
+	this_sensillum = all_sensillum(i);
+	x = pulse_time(sensillum == this_sensillum);
+	y = fA_gain(sensillum == this_sensillum);
+	plot(x,y,'.','Color',c(i,:),'MarkerSize',20)
+	xlabel('\tau (s)')
+	ylabel('\DeltaR/\DeltaS (Hz/V)')
+end
+set(gca,'XLim',[-.1 1.1])
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 
 %% Estimating timescale of gain control from Gaussian data
@@ -495,7 +812,7 @@ if exist('.cache/tau_gain_MSG.mat','file') == 2
 else
 	allmetrics = struct([]);
 
-	for di = 1:length(data_hashes)
+	for di = 1
 		clear MSGdata
 		MSGdata = consolidateData2(getPath(dataManager,data_hashes{di}));
 
@@ -518,10 +835,9 @@ else
 			textbar(i,width(MSGdata.PID))
 			R = MSGdata.fA(5e3+1:55e3,i);
 			if max(R)>0
-				sdf
-				ff = fit(x(:),R,ft,'StartPoint',[max(R) 0 1e3],'Lower',[1 0 10]);
-				allmetrics(di).fA_tau(i) = ff.tau;
-				y = abs(R - ff(x));
+				y = (abs(bandPass(R,1e3,Inf)));
+
+
 				ff = fit(x(:),y,ft,'StartPoint',[max(y) 0 1e2],'Lower',[1 0 50]);
 				allmetrics(di).fA_gain_tau(i) = ff.tau;
 				cf = confint(ff);

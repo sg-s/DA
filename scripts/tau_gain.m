@@ -797,6 +797,14 @@ if being_published
 end
 
 
+return
+
+
+%% Version Info
+%
+pFooter;
+
+
 %% Estimating timescale of gain control from Gaussian data
 % Can I estimate timescales of gain control from the Gaussian data? In the following figure, I fit exponentials to the firing rates from the Gaussian data, and subtract the responses from these exponential fits. I then estimate the absolute deivation from these expoenentials, and fit another exponential to these absolute deviations, which is my proxy for the timescale of gain control. 
 
@@ -904,9 +912,5 @@ if being_published
 end
 
 
-
-%% Version Info
-%
-pFooter;
 
 

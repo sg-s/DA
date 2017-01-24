@@ -28,7 +28,7 @@ end
 % get the sparse naturalistic stimuli with LFP
 % get this data
 clearvars -except being_published MSGdata
-load('/local-data/DA-paper/data-for-paper/nat-stim/ab3A_nat_stim.ORNData','-mat')
+load(getPath(dataManager,'0f4e4e0686913ee3c4fa450d9e2bb344'),'-mat')
 od(1) = [];
 SNSdata.LFP = [];
 SNSdata.fA = [];
@@ -42,7 +42,7 @@ for i = length(od):-1:1
 end
 
 clear od
-load('/local-data/DA-paper/data-for-paper/fig7/nat-stim-ab3/combined_data.ORNData','-mat')
+load(getPath(dataManager,'aeb361c027b71938021c12a6a12a85cd'),'-mat')
 DNSdata.LFP = [];
 DNSdata.fA = [];
 DNSdata.PID = [];
@@ -64,6 +64,10 @@ clear VSdata
 % remove baseline from stimulus
 VSdata.PID = bsxfun(@minus, VSdata.PID, min(VSdata.PID));
 VSdata.LFP = bsxfun(@minus, VSdata.LFP, mean(VSdata.LFP(1:4000,:)));
+
+% get the variance switching data filters 
+load(getPath(dataManager,'457ee16a326f47992e35a7d5281f9cc4'));
+VSdata.K1 = nanmean(K1,2);
 
  ;;;;;;  ;;;;;;;;     ;;;    ;;;;;;;;   ;;;;;;  ;;;;;;;;    ;;    ;;    ;;;    ;;;;;;;; 
 ;;    ;; ;;     ;;   ;; ;;   ;;     ;; ;;    ;; ;;          ;;;   ;;   ;; ;;      ;;    
@@ -1167,32 +1171,69 @@ end
 
 % remove baseline from all LFP 
 
+PID = VSdata.PID;
+LFP = VSdata.LFP;
 
-example_trial = 4;
-S = VSdata.PID(:,example_trial);
-R = -VSdata.LFP(:,example_trial);
+global_start = 40e3; % 40 seconds
+global_end = length(PID) - 5e3; 
 
-R = R(1e4:end-1e4); 
-R_mean = mean(R);
-R = bandPass(R,5e3,Inf) + R_mean;
-S = S(1e4:end-1e4);
+% filter the LFP
+for i = 1:width(LFP)
+	LFP(:,i) = LFP(:,i) - fastFiltFilt(ones(1e4,1),1e4,LFP(:,i));
+	LFP(:,i) = LFP(:,i)*10; % to get the units right, now in mV
+end
 
-data.stimulus = S;
-data.response = R;
-data.response(1:1e3) = NaN;
+% reshape the LFP signals
+block_length = 1e4;
+reshaped_LFP = LFP(global_start:end-1e4-1,1:width(PID));
+reshaped_LFP = reshape(reshaped_LFP,block_length,width(reshaped_LFP)*length(reshaped_LFP)/block_length);
 
-clear p
-p.   k0 = 0.4115;
-p.tau_z = 1;
-p.    B = 0;
-p.  n_z = 1;
-p.    n = 3.9336;
-p.n = 7;
-p. tau1 = 14.1570;
-p. tau2 = 44.6878;
-p.  n_y = 4.6729;
-p.    A = 0.3812;
-p.    C = 86.2114;
+% also reshape the PID
+reshaped_PID = PID(global_start:end-1e4-1,1:width(PID));
+reshaped_PID = reshape(reshaped_PID,block_length,width(reshaped_PID)*length(reshaped_PID)/block_length);
+
+% throw our NaNs globally. so we're throwing out epochs where the data is incomplete
+rm_this = isnan(sum(reshaped_LFP));
+reshaped_LFP(:,rm_this) = [];
+reshaped_PID(:,rm_this) = [];
+
+% filter to remove spikes
+for i = 1:width(reshaped_LFP)
+	reshaped_LFP(:,i) = filtfilt(ones(30,1),30,reshaped_LFP(:,i));
+end
+
+% project using filter
+ft = 1e-3*(1:length(VSdata.K1)) - .1;
+for i = 1:width(reshaped_PID)
+	K1p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),VSdata.K1,ft);
+end
+
+% calcualte gains while fitting a input nonlinearity -- trialwise
+all_n = 0:8;
+gain_lo = NaN(size(reshaped_PID,2),length(all_n));
+gain_hi = NaN(size(reshaped_PID,2),length(all_n));
+for i = 1:size(reshaped_PID,2)
+	textbar(i,size(reshaped_PID,2))
+	S = reshaped_PID(:,i);
+	R = reshaped_LFP(:,i);
+	k_D = mean(reshaped_PID(1e3:end-1e3));
+	for j = 1:length(all_n)
+		n = all_n(j);
+		if n > 0
+			X = 1./(1 + (k_D./S).^n);
+			X = convolve(1e-3*(1:length(X)),X,VSdata.K1,ft);
+			ff = fit(K1p(1e3:5e3,i),X(1e3:5e3),'poly1');
+			gain_hi(i,j) = ff.p1;
+			ff = fit(K1p(6e3:9.5e3,i),X(6e3:9.5e3),'poly1');
+			gain_lo(i,j) = ff.p1;
+		else
+			ff = fit(K1p(1e3:5e3,i),R(1e3:5e3),'poly1');
+			gain_hi(i,j) = ff.p1;
+			ff = fit(K1p(6e3:9.5e3,i),R(6e3:9.5e3),'poly1');
+			gain_lo(i,j) = ff.p1;
+		end
+	end
+end
 
 
 %% Version Info

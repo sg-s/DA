@@ -1169,6 +1169,9 @@ end
 %%
 % This data seems to strongly constrain the $n$, or the co-operativity parameter of the input Hill function. However, we know from other analysis that only part of the variance gain control occurs at the spiking machinery, and a equal portion occurs at transduction. Thus, if we are to interpret $n$ literally, I need to repeat this fit on the LFP data, as that is our proxy for receptor activity, not the firing rate. 
 
+%%
+% In the following figure, I vary the steepness of the input nonlinearity, and see how well it can account for the observed gain change in the LFP. All data is mean with s.e.m error bars. It looks like this data strongly constrains $n$ to be about 4. 
+
 % remove baseline from all LFP 
 
 PID = VSdata.PID;
@@ -1209,32 +1212,162 @@ for i = 1:width(reshaped_PID)
 end
 
 % calcualte gains while fitting a input nonlinearity -- trialwise
-all_n = 0:8;
-gain_lo = NaN(size(reshaped_PID,2),length(all_n));
-gain_hi = NaN(size(reshaped_PID,2),length(all_n));
-for i = 1:size(reshaped_PID,2)
-	textbar(i,size(reshaped_PID,2))
-	S = reshaped_PID(:,i);
-	R = reshaped_LFP(:,i);
-	k_D = mean(reshaped_PID(1e3:end-1e3));
-	for j = 1:length(all_n)
-		n = all_n(j);
-		if n > 0
-			X = 1./(1 + (k_D./S).^n);
-			X = convolve(1e-3*(1:length(X)),X,VSdata.K1,ft);
-			ff = fit(K1p(1e3:5e3,i),X(1e3:5e3),'poly1');
-			gain_hi(i,j) = ff.p1;
-			ff = fit(K1p(6e3:9.5e3,i),X(6e3:9.5e3),'poly1');
-			gain_lo(i,j) = ff.p1;
-		else
-			ff = fit(K1p(1e3:5e3,i),R(1e3:5e3),'poly1');
-			gain_hi(i,j) = ff.p1;
-			ff = fit(K1p(6e3:9.5e3,i),R(6e3:9.5e3),'poly1');
-			gain_lo(i,j) = ff.p1;
+if exist('.cache/one_model_variance_NL_gain.mat','file') > 0
+else
+	all_n = 0:8;
+	gain_lo = NaN(size(reshaped_PID,2),length(all_n));
+	gain_hi = NaN(size(reshaped_PID,2),length(all_n));
+	r2_lo = NaN(size(reshaped_PID,2),length(all_n));
+	r2_hi = NaN(size(reshaped_PID,2),length(all_n));
+	r2 = NaN(size(reshaped_PID,2),length(all_n));
+	for i = 1:size(reshaped_PID,2)
+		textbar(i,size(reshaped_PID,2))
+		S = reshaped_PID(:,i);
+		R = reshaped_LFP(:,i);
+		k_D = mean(reshaped_PID(1e3:end-1e3));
+		for j = 1:length(all_n)
+			n = all_n(j);
+			if n > 0
+				X = 1./(1 + (k_D./S).^n);
+				X = convolve(1e-3*(1:length(X)),X,VSdata.K1,ft);
+				[ff,gof] = fit(K1p(1e3:5e3,i),X(1e3:5e3),'poly1');
+				r2_hi(i,j) = gof.rsquare;
+				gain_hi(i,j) = ff.p1;
+				[ff,gof] = fit(K1p(6e3:9.5e3,i),X(6e3:9.5e3),'poly1');
+				r2_lo(i,j) = gof.rsquare;
+				gain_lo(i,j) = ff.p1;
+				r2(i,j) = rsquare(K1p(1e3:end-1e3,i),X(1e3:end-1e3));
+			else
+				[ff,gof]  = fit(K1p(1e3:5e3,i),R(1e3:5e3),'poly1');
+				r2_hi(i,j) = gof.rsquare;
+				gain_hi(i,j) = ff.p1;
+				[ff,gof]  = fit(K1p(6e3:9.5e3,i),R(6e3:9.5e3),'poly1');
+				gain_lo(i,j) = ff.p1;
+				r2_lo(i,j) = gof.rsquare;
+				r2(i,j) = rsquare(K1p(1e3:end-1e3,i),R(1e3:end-1e3));
+			end
 		end
 	end
+	save('.cache/one_model_variance_NL_gain.mat','all_n','gain_lo','gain_hi','r2','r2_lo','r2_hi');
 end
 
+% calcualte gains while fitting a input nonlinearity -- trialwise
+if exist('.cache/one_model_variance_aNL_gain.mat','file') > 0
+
+else
+	all_n = 0:8;
+	gain_lo = NaN(size(reshaped_PID,2),length(all_n));
+	gain_hi = NaN(size(reshaped_PID,2),length(all_n));
+	r2_lo = NaN(size(reshaped_PID,2),length(all_n));
+	r2_hi = NaN(size(reshaped_PID,2),length(all_n));
+	r2 = NaN(size(reshaped_PID,2),length(all_n));
+	for i = 1:size(reshaped_PID,2)
+		textbar(i,size(reshaped_PID,2))
+		S = reshaped_PID(:,i);
+		R = reshaped_LFP(:,i);
+		k_D_hi = mean(reshaped_PID(1e3:5e3));
+		k_D_lo = mean(reshaped_PID(6e3:end));
+		for j = 1:length(all_n)
+			n = all_n(j);
+			if n > 0
+				X = NaN*S;
+				X(1:5e3) = 1./(1 + (k_D_hi./S(1:5e3)).^n);
+				X(5e3+1:end) = 1./(1 + (k_D_lo./S(5e3+1:end)).^n);
+				X = convolve(1e-3*(1:length(X)),X,VSdata.K1,ft);
+				[ff,gof] = fit(K1p(1e3:5e3,i),X(1e3:5e3),'poly1');
+				r2_hi(i,j) = gof.rsquare;
+				gain_hi(i,j) = ff.p1;
+				[ff,gof] = fit(K1p(6e3:9.5e3,i),X(6e3:9.5e3),'poly1');
+				r2_lo(i,j) = gof.rsquare;
+				gain_lo(i,j) = ff.p1;
+				r2(i,j) = rsquare(K1p(1e3:end-1e3,i),X(1e3:end-1e3));
+			else
+				[ff,gof]  = fit(K1p(1e3:5e3,i),R(1e3:5e3),'poly1');
+				r2_hi(i,j) = gof.rsquare;
+				gain_hi(i,j) = ff.p1;
+				[ff,gof]  = fit(K1p(6e3:9.5e3,i),R(6e3:9.5e3),'poly1');
+				gain_lo(i,j) = ff.p1;
+				r2_lo(i,j) = gof.rsquare;
+				r2(i,j) = rsquare(K1p(1e3:end-1e3,i),R(1e3:end-1e3));
+			end
+		end
+	end
+	save('.cache/one_model_variance_aNL_gain.mat','all_n','gain_lo','gain_hi','r2','r2_lo','r2_hi');
+end
+
+% make a plot showing the range of gain change in the LFP, and which n accounts for this in the NL model
+figure('outerposition',[0 0 1e3 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+
+
+% first do the unadapting model
+subplot(1,2,1); hold on
+load('.cache/one_model_variance_NL_gain.mat')
+
+temp = gain_lo(:,1)./gain_hi(:,1);
+temp = sort(temp(r2_lo(:,1) > .5 & r2_hi(:,1) > .5));
+m = mean(temp);
+a = mean(temp) - std(temp)/sqrt(length(temp));
+z = mean(temp) + std(temp)/sqrt(length(temp));
+
+plot([0 8],[a a],'k--')
+plot([0 8],[z z],'k--')
+plot([0 8],[m m],'k','LineWidth',3)
+set(gca,'YLim',[0.5 2])
+
+y = NaN*(1:8);
+ye = NaN*(1:8);
+for i = 1:8
+	temp = gain_lo(:,i+1)./gain_hi(:,i+1);
+	temp = (temp(r2_lo(:,i+1) > .8 & r2_hi(:,i+1) > .8));
+	y(i) = mean(temp);
+	ye(i) = sem(temp);
+end
+
+errorbar(1:8,y,ye,'Color','r')
+
+xlabel('n')
+ylabel('gain_{low}/gain_{hi}')
+
+title('NL model')
+
+
+% now the model that accounts for the change in the mean
+subplot(1,2,2); hold on
+load('.cache/one_model_variance_aNL_gain.mat')
+
+temp = gain_lo(:,1)./gain_hi(:,1);
+temp = sort(temp(r2_lo(:,1) > .8 & r2_hi(:,1) > .8));
+m = mean(temp);
+a = mean(temp) - std(temp)/sqrt(length(temp));
+z = mean(temp) + std(temp)/sqrt(length(temp));
+
+plot([0 8],[a a],'k--')
+plot([0 8],[z z],'k--')
+plot([0 8],[m m],'k','LineWidth',3)
+set(gca,'YLim',[0.5 2])
+
+y = NaN*(1:8);
+ye = NaN*(1:8);
+for i = 1:8
+	temp = gain_lo(:,i+1)./gain_hi(:,i+1);
+	temp = (temp(r2_lo(:,i+1) > .5 & r2_hi(:,i+1) > .5));
+	y(i) = mean(temp);
+	ye(i) = sem(temp);
+end
+
+errorbar(1:8,y,ye,'Color','r')
+
+xlabel('n')
+ylabel('gain_{low}/gain_{hi}')
+
+title('Accounting for change in \mu_{stim}')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %% Version Info
 %

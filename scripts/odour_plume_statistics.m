@@ -197,6 +197,202 @@ if being_published
 end
 
 
+%% Neuron responses
+% 
+
+odor = {};
+ab = [];
+sensillum = [];
+S = [];
+fA = [];
+LFP = [];
+fly = [];
+odor_position = {};
+
+
+% assemble data
+root = [getPath(dataManager,'4c7dcd527caa5d3a3f6601aa6139e639') oss '*.kontroller'];
+allfiles = dir(root);
+allfiles(cellfun(@(x) strcmp(x(1),'.'), {allfiles.name})) = [];
+for i = 1:length(allfiles)
+	load(allfiles(i).name,'-mat')
+
+	this_fly = str2double(allfiles(i).name(strfind(allfiles(i).name,'_F')+2));
+	this_ab = str2double(allfiles(i).name(strfind(allfiles(i).name,'_ab')+3));
+	this_sensillum = str2double(allfiles(i).name(strfind(allfiles(i).name,'_S')+2));
+
+	this_S = vertcat(data.PID)'; this_S = this_S(1:10:end,:);
+	this_LFP = vertcat(data.voltage)'; this_LFP = this_LFP(1:10:end,:);
+
+	this_fA = spiketimes2f(vertcat(spikes.A),1e-4*(1:length(vertcat(spikes.A))),1e-3,3e-2);
+	this_fly = this_fly*ones(size(this_S,2),1);
+	this_sensillum = this_sensillum*ones(size(this_S,2),1);
+	this_ab = this_ab*ones(size(this_S,2),1);
+
+
+	% figure out the odour
+	this_odor = '';
+	if any(strfind(allfiles(i).name,'2-butanone'))
+		this_odor = '2-butanone';
+	elseif any(strfind(allfiles(i).name,'ACV'))
+		this_odor = 'ACV';
+	elseif any(strfind(allfiles(i).name,'2ac'))
+		this_odor = '2ac';
+	elseif any(strfind(allfiles(i).name,'ethyl-butyrate'))
+		this_odor = 'ethyl-butyrate';
+	else 
+		error('cant match odor')
+	end
+	this_odor = repmat({this_odor},length(this_ab),1);
+
+	% figure out the odor position
+	this_op = 'center';
+	if any(strfind(allfiles(i).name,'left'))
+		this_op = 'left';
+	end
+	this_op = repmat({this_op},length(this_ab),1);
+
+	% consolidate
+	fly = [fly; this_fly];
+	odor = [odor; this_odor];
+	odor_position = [odor_position; this_op];
+	sensillum = [sensillum; this_sensillum];
+	S = [S this_S];
+	fA = [fA this_fA];
+	LFP = [LFP this_LFP];
+	ab = [ab; this_ab];
+
+end
+
+% remove bad LFP trials
+rm_this = isnan(sum(LFP));
+odor(rm_this) = [];
+ab(rm_this) = [];
+sensillum(rm_this) = [];
+S(:,rm_this) = [];
+fA(:,rm_this) = [];
+LFP(:,rm_this) = [];
+fly(rm_this) = [];
+odor_position(rm_this) = [];
+
+% remove baseline from LFP, and minimum from S
+S = S - min(min(S));
+for i = 1:size(LFP,2)
+	LFP(:,i) = LFP(:,i) - LFP(1,i);
+end
+
+LFP = LFP*10;
+
+all_odors = unique(odor);
+c = 0;
+ncols = 7;
+time = 1e-3*(1:length(S));
+
+figure('outerposition',[0 0 1411 900],'PaperUnits','points','PaperSize',[1411 900]); hold on
+for i = 1:length(all_odors)
+	this_odor = all_odors{i};
+	for this_ab = 2:3
+		if any(find(strcmp(odor,this_odor) & ab == this_ab))
+			c = c+1;
+			
+			these = find(strcmp(odor,this_odor) & ab == this_ab);
+			cc = parula(length(these)+1);
+			for j = 1:length(these)
+				this = these(j);
+				subplot(3,ncols,c); hold on
+				plot(time,S(:,this),'Color',cc(j,:))
+				title(['ab' oval(this_ab) ' ' this_odor])
+
+				subplot(3,ncols,ncols+c); hold on
+				plot(time,LFP(:,this),'Color',cc(j,:))
+
+				subplot(3,ncols,ncols*2+c); hold on
+				plot(time,fA(:,this),'Color',cc(j,:))
+			end
+		end
+	end
+end
+
+
+for i = 1:ncols
+	subplot(3,ncols,i);
+	set(gca,'XLim',[15 20],'YLim',[0 1])
+
+	subplot(3,ncols,ncols+i);
+	set(gca,'XLim',[15 20],'YLim',[-12 2])
+
+	subplot(3,ncols,2*ncols+i);
+	set(gca,'XLim',[15 20],'YLim',[0 120])
+end
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
+% Now I plot the distributions of the stimulus, the LFP and the response for every trial. 
+
+
+all_odors = unique(odor);
+c = 0;
+ncols = 7;
+time = 1e-3*(1:length(S));
+
+figure('outerposition',[0 0 1411 900],'PaperUnits','points','PaperSize',[1411 900]); hold on
+for i = 1:length(all_odors)
+	this_odor = all_odors{i};
+	for this_ab = 2:3
+		if any(find(strcmp(odor,this_odor) & ab == this_ab))
+			c = c+1;
+			these = find(strcmp(odor,this_odor) & ab == this_ab);
+			cc = parula(length(these)+1);
+			for j = 1:length(these)
+				this = these(j);
+				subplot(3,ncols,c); hold on
+				[hy,hx] = histcounts(S(:,this),min([100 length(unique(S(:,this)))]));
+				hx = hx(1:end-1) + mean(diff(hx)); hy = hy/sum(hy);
+				plot(hx,hy,'Color',cc(j,:))
+				title(['ab' oval(this_ab) ' ' this_odor])
+
+				subplot(3,ncols,ncols+c); hold on
+				[hy,hx] = histcounts(LFP(:,this),100);
+				hx = hx(1:end-1) + mean(diff(hx)); hy = hy/sum(hy);
+				plot(hx,hy,'Color',cc(j,:))
+
+				subplot(3,ncols,2*ncols+c); hold on
+				if max(fA(:,this)) > 0
+					[hy,hx] = histcounts(fA(:,this),100);
+					hx = hx(1:end-1) + mean(diff(hx)); hy = hy/sum(hy);
+					plot(hx,hy,'Color',cc(j,:))
+				end
+			end
+		end
+	end
+end
+
+for i = 1:ncols
+	subplot(3,ncols,i);
+	set(gca,'XScale','log')
+
+	% subplot(3,ncols,ncols+i);
+	% set(gca,'XLim',[15 25],'YLim',[-12 2])
+
+	subplot(3,ncols,2*ncols+i);
+	set(gca,'XScale','log','XLim',[1 200],'XTick',[1 10 100])
+end
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
 %% Version Info
 %
 pFooter;

@@ -39,10 +39,10 @@ lb.n_y = 1;
 
 
 % upper bounds
-ub.n_y = 10;
-ub.n_z = 10;
+ub.n_y = 2;
+ub.n_z = 2;
 ub.tau_y = 100;
-ub.tau_z = 500;
+ub.tau_z = 400;
 
 
 

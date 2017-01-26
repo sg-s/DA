@@ -41,7 +41,7 @@ lb.B = 0;
 lb.tau_z = 100;
 lb.n_z = 1;
 
-ub.B = 10;
+ub.B = 0;
 ub.tau_z = 1e3;
 ub.n_z = 1;
 

@@ -198,7 +198,8 @@ end
 
 
 %% Neuron responses
-% 
+% In this section I plot response of neurons to these "real" odor plumes. We placed the PID downstream of the neuron, and the odour was about 10cm from the fly (the closest we could get). The fan was around 30 cm away, and the speed of the fan was varied in these recordings (using varying duty cycles @100Hz to the power system). 
+
 
 odor = {};
 ab = [];
@@ -211,11 +212,11 @@ odor_position = {};
 
 
 % assemble data
-root = [getPath(dataManager,'4c7dcd527caa5d3a3f6601aa6139e639') oss '*.kontroller'];
-allfiles = dir(root);
+root = [getPath(dataManager,'4c7dcd527caa5d3a3f6601aa6139e639') oss];
+allfiles = dir([root '*.kontroller']);
 allfiles(cellfun(@(x) strcmp(x(1),'.'), {allfiles.name})) = [];
 for i = 1:length(allfiles)
-	load(allfiles(i).name,'-mat')
+	load([root allfiles(i).name],'-mat')
 
 	this_fly = str2double(allfiles(i).name(strfind(allfiles(i).name,'_F')+2));
 	this_ab = str2double(allfiles(i).name(strfind(allfiles(i).name,'_ab')+3));
@@ -287,6 +288,9 @@ all_odors = unique(odor);
 c = 0;
 ncols = 7;
 time = 1e-3*(1:length(S));
+
+%%
+% In the following figure, I plot the stimulus, LFP and the firing rate for all the neurons we recorded from to get a sense of the data. 
 
 figure('outerposition',[0 0 1411 900],'PaperUnits','points','PaperSize',[1411 900]); hold on
 for i = 1:length(all_odors)
@@ -383,6 +387,123 @@ for i = 1:ncols
 
 	subplot(3,ncols,2*ncols+i);
 	set(gca,'XScale','log','XLim',[1 200],'XTick',[1 10 100])
+end
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% Now, I plot the cross-correlation functions between the stimulus and the LFP and the firing rate for all the data to get a feel for how well the measured stimulus can predict the observed response. 
+
+all_odors = unique(odor);
+c = 0;
+ncols = 7;
+time = 1e-3*(1:length(S));
+peak_xcorr_LFP = NaN*ab;
+peak_xcorr_fA = NaN*ab;
+
+figure('outerposition',[0 0 1411 600],'PaperUnits','points','PaperSize',[1411 600]); hold on
+for i = 1:length(all_odors)
+	this_odor = all_odors{i};
+	for this_ab = 2:3
+		if any(find(strcmp(odor,this_odor) & ab == this_ab))
+			c = c+1;
+			these = find(strcmp(odor,this_odor) & ab == this_ab);
+			cc = parula(length(these)+1);
+			for j = 1:length(these)
+				this = these(j);
+				
+
+				s = reshape(S(:,this),1e3,60); 
+				x = reshape(LFP(:,this),1e3,60); 
+				f = reshape(fA(:,this),1e3,60); 
+
+				xcorr_x = NaN(2e3-1,60);
+				xcorr_f = NaN(2e3-1,60);
+
+				for k = 1:60
+					s(:,k) = s(:,k) - mean(s(:,k));
+					f(:,k) = f(:,k) - mean(f(:,k));
+					x(:,k) = x(:,k) - mean(x(:,k));
+
+					s(:,k) = s(:,k)/std(s(:,k));
+					f(:,k) = f(:,k)/std(f(:,k));
+					x(:,k) = x(:,k)/std(x(:,k));
+
+					xcorr_x(:,k) = xcorr(x(:,k),s(:,k));
+					if max(f(:,k)) > 0
+						xcorr_f(:,k) = xcorr(f(:,k),s(:,k));
+					end
+				end
+				xcorr_f = nanmean(xcorr_f,2);
+				xcorr_x = nanmean(xcorr_x,2);
+
+				xcorr_x = xcorr_x/1e3;
+				xcorr_f = xcorr_f/1e3;
+
+				peak_xcorr_LFP(this) = max(abs(xcorr_x));
+				peak_xcorr_fA(this) = max(abs(xcorr_f));
+
+				subplot(2,ncols,c); hold on
+				lags = 1e-3*(1:length(xcorr_f)) - 1;
+				plot(lags,xcorr_x,'Color',cc(j,:));
+				title(['ab' oval(this_ab) ' ' this_odor])
+
+				subplot(2,ncols,ncols+c); hold on
+				plot(lags,xcorr_f,'Color',cc(j,:));
+				
+			end
+		end
+	end
+end
+
+for i = 1:ncols
+	subplot(2,ncols,i);
+	set(gca,'YLim',[-1 .5])
+	xlabel('Lag (s)')
+	ylabel('S \otimes LFP')
+
+
+	subplot(2,ncols,ncols+i);
+	set(gca,'YLim',[-.5 1])
+	xlabel('Lag (s)')
+	ylabel('S \otimes F')
+end
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% We see that the overall cross correlation is pretty poor. The best case seems to be with 2-butanone (that the PID is extremely sensitive to). I now back out filters and plot the projected stimulus vs. the response for these cases. 
+
+do_these = find(peak_xcorr_fA>.4);
+
+figure('outerposition',[0 0 1501 703],'PaperUnits','points','PaperSize',[1501 703]); hold on
+for i = 1:length(do_these)
+	do_this = do_these(i);
+	K = fitFilter2Data(S(:,do_this),fA(:,do_this),'offset',200,'reg',1);
+	K = K(100:end-100);
+	filtertime = 1e-3*(1:length(K)) - .1;
+	subplot(2,length(do_these),i); hold on
+	plot(filtertime,K*1e3,'k')
+	title(['ab' oval(ab(do_this)) ' ' odor{do_this}])
+	ylabel('Filter (a.u.)')
+	xlabel('Lag (s)')
+
+	fp = convolve(time,S(:,do_this),K,filtertime);
+	subplot(2,length(do_these),length(do_these)+i); hold on
+	plot(fp,fA(:,do_this),'k')
+	xlabel('Proj. Stim. (V)')
+	ylabel('Firing rate (Hz)')
+
 end
 
 prettyFig();

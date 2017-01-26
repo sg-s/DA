@@ -513,6 +513,40 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% Now, I attempt to pull out response and stimulus peaks on a per-whiff basis, for two odorants and ab2A (the only case where where have reliable stimulus and response measurements). 
+
+
+do_these = find(peak_xcorr_fA>.4);
+
+
+figure('outerposition',[0 0 1000 501],'PaperUnits','points','PaperSize',[1000 501]); hold on
+c = lines(length(do_these));
+clear l L
+for i = 1:length(do_these)
+	do_this = do_these(i);
+	if strcmp(odor{do_this},'2ac')
+		subplot(1,2,1); hold on
+	else
+		subplot(1,2,2); hold on
+	end
+	title(odor{do_this})
+
+	ws = whiffStatistics(S(:,do_this),LFP(:,do_this),fA(:,do_this),300,'MinPeakProminence',max(S(:,do_this))/10);
+
+	plot(ws.stim_peaks,ws.peak_firing_rate,'.','Color',c(i,:),'MarkerSize',20);
+	xlabel('Stim_{peak} (V)')
+	ylabel('ab2A Resp_{peak} (Hz)')
+
+end
+
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %% Version Info
 %

@@ -406,7 +406,7 @@ time = 1e-3*(1:length(S));
 peak_xcorr_LFP = NaN*ab;
 peak_xcorr_fA = NaN*ab;
 
-figure('outerposition',[0 0 1411 600],'PaperUnits','points','PaperSize',[1411 600]); hold on
+figure('outerposition',[0 0 1511 800],'PaperUnits','points','PaperSize',[1511 800]); hold on
 for i = 1:length(all_odors)
 	this_odor = all_odors{i};
 	for this_ab = 2:3
@@ -424,6 +424,7 @@ for i = 1:length(all_odors)
 
 				xcorr_x = NaN(2e3-1,60);
 				xcorr_f = NaN(2e3-1,60);
+				acorr_s = NaN(2e3-1,60);
 
 				for k = 1:60
 					s(:,k) = s(:,k) - mean(s(:,k));
@@ -435,25 +436,33 @@ for i = 1:length(all_odors)
 					x(:,k) = x(:,k)/std(x(:,k));
 
 					xcorr_x(:,k) = xcorr(x(:,k),s(:,k));
+					acorr_s(:,k) = xcorr(s(:,k),s(:,k));
 					if max(f(:,k)) > 0
 						xcorr_f(:,k) = xcorr(f(:,k),s(:,k));
 					end
 				end
 				xcorr_f = nanmean(xcorr_f,2);
 				xcorr_x = nanmean(xcorr_x,2);
+				acorr_s = nanmean(acorr_s,2);
 
 				xcorr_x = xcorr_x/1e3;
 				xcorr_f = xcorr_f/1e3;
+				acorr_s = acorr_s/1e3;
 
 				peak_xcorr_LFP(this) = max(abs(xcorr_x));
 				peak_xcorr_fA(this) = max(abs(xcorr_f));
 
-				subplot(2,ncols,c); hold on
+				subplot(3,ncols,c); hold on
 				lags = 1e-3*(1:length(xcorr_f)) - 1;
-				plot(lags,xcorr_x,'Color',cc(j,:));
+				plot(lags,acorr_s,'Color',cc(j,:));
 				title(['ab' oval(this_ab) ' ' this_odor])
 
-				subplot(2,ncols,ncols+c); hold on
+				subplot(3,ncols,ncols+c); hold on
+				lags = 1e-3*(1:length(xcorr_f)) - 1;
+				plot(lags,xcorr_x,'Color',cc(j,:));
+				
+
+				subplot(3,ncols,2*ncols+c); hold on
 				plot(lags,xcorr_f,'Color',cc(j,:));
 				
 			end
@@ -462,13 +471,18 @@ for i = 1:length(all_odors)
 end
 
 for i = 1:ncols
-	subplot(2,ncols,i);
+	subplot(3,ncols,i); 
+	set(gca,'XScale','log','XLim',[1e-3 1],'XTick',[1e-3 1e-2 1e-1 1])
+	ylabel('S \otimes S')
+	xlabel('Lag (s)')
+
+	subplot(3,ncols,ncols+i);
 	set(gca,'YLim',[-1 .5])
 	xlabel('Lag (s)')
 	ylabel('S \otimes LFP')
 
 
-	subplot(2,ncols,ncols+i);
+	subplot(3,ncols,2*ncols+i);
 	set(gca,'YLim',[-.5 1])
 	xlabel('Lag (s)')
 	ylabel('S \otimes F')
@@ -480,6 +494,7 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
 
 %%
 % We see that the overall cross correlation is pretty poor. The best case seems to be with 2-butanone (that the PID is extremely sensitive to). I now back out filters and plot the projected stimulus vs. the response for these cases. 
@@ -537,6 +552,7 @@ for i = 1:length(do_these)
 	plot(ws.stim_peaks,ws.peak_firing_rate,'.','Color',c(i,:),'MarkerSize',20);
 	xlabel('Stim_{peak} (V)')
 	ylabel('ab2A Resp_{peak} (Hz)')
+	set(gca,'XScale','linear')
 
 end
 

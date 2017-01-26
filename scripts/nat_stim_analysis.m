@@ -333,15 +333,15 @@ end
 clear od
 load(getPath(dataManager,'aeb361c027b71938021c12a6a12a85cd'),'-mat')
 
-figure('outerposition',[0 0 1501 901],'PaperUnits','points','PaperSize',[1501 901]); hold on
+figure('outerposition',[0 0 600 601],'PaperUnits','points','PaperSize',[600 601]); hold on
+c = lines(length(od));
 for i = 1:length(od)
 	S = nanmean(od(i).stimulus,2); S = S - mean(S(1:5e3));
 	R = od(i).firing_rate; 
 	R(:,max(R) == 0 | isnan(max(R))) = [];
 	R = nanmean(R,2);
-	subplot(2,3,i); hold on
 	ws = whiffStatistics(S,R,R,300,'MinPeakProminence',max(S/1e2),'debug',false);
-	plot(ws.stim_peaks,ws.peak_firing_rate,'.','MarkerSize',20,'Color','k')
+	plot(ws.stim_peaks,ws.peak_firing_rate,'.','MarkerSize',20,'Color',c(i,:))
 	set(gca,'YLim',[0 150],'XScale','log')
 	xlabel('Stim_{peak} (V)')
 	ylabel('ab3A resp_{peak} (Hz)')

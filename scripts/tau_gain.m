@@ -797,7 +797,38 @@ if being_published
 end
 
 
-return
+%%
+% What is going on? Why do we see little to no adaptation? Can we account for this with an adapting NL model? Straight away, there is no model we have that can account for the ab2 responses -- how can responses to the pulse at t=0s be smaller than the responses to the isolated pulse? That doesn't make any sense. What about the responses of ab3 here? Well, it turns out that a non-adapting NLN model can account for this. While I fit an adapting NLN model to the data, inspection of the parameters reveals that the best-fit model is one where there is no adaptation, and k_D is a little over the background stimulus level. 
+
+clear p
+p.  tau_z = 562.4531;
+p.      B = 37;
+p.    n_z = 2;
+p.      n = 4;
+p.k_D_min = 1.0142;
+p.   tau1 = 26.4047;
+p.   tau2 = 73.5625;
+p.    n_y = 2;
+p.      A = 0.8851;
+p.      C = 190.1301;
+
+% assemble the data
+clear data
+this_sensillum = 3;
+c = 1;
+for i = 1:length(all_pulse_times)
+	tpt = all_pulse_times(i);
+	if ~isempty(S(:,find(sensillum == all_sensillum(this_sensillum) & pulse_time == tpt)))
+		data(c).stimulus  = nanmean(S(:,find(sensillum == all_sensillum(this_sensillum) & pulse_time == tpt)),2);
+		R = fA(:,find(sensillum == all_sensillum(this_sensillum) & pulse_time == tpt));
+		R(:,sum(R) == 0) = [];
+		data(c).response  = nanmean(R,2);
+		data(c).response = data(c).response(1:3e3);
+		data(c).stimulus = data(c).stimulus(1:3e3);
+		c = c + 1;
+	end
+end
+
 
 
 %% Version Info
@@ -806,111 +837,111 @@ return
 pFooter;
 
 
-%% Estimating timescale of gain control from Gaussian data
+% Estimating timescale of gain control from Gaussian data
 % Can I estimate timescales of gain control from the Gaussian data? In the following figure, I fit exponentials to the firing rates from the Gaussian data, and subtract the responses from these exponential fits. I then estimate the absolute deivation from these expoenentials, and fit another exponential to these absolute deviations, which is my proxy for the timescale of gain control. 
 
-clearvars -except being_published
+% clearvars -except being_published
 
-% define what we want to work on
-data_hashes = {'93ba5d68174e3df9f462a1fc48c581da','bcd4cf4fe12817d084a2b06f981161ee','cd6753c0e4cf02895cd5e2c5cb58aa1a','3ea08ccfa892c6545d74bbdaaa6cbee1','f11c4a5792d0c9fec7c40fd6aa2fce40'};
-odour_names = {'ethyl-acetate','1-pentanol','1-pentanol','2-butanone','isoamyl-acetate'};
-orn_names = {'ab3A','ab3A','ab2A','ab2A','pb1A'};
+% % define what we want to work on
+% data_hashes = {'93ba5d68174e3df9f462a1fc48c581da','bcd4cf4fe12817d084a2b06f981161ee','cd6753c0e4cf02895cd5e2c5cb58aa1a','3ea08ccfa892c6545d74bbdaaa6cbee1','f11c4a5792d0c9fec7c40fd6aa2fce40'};
+% odour_names = {'ethyl-acetate','1-pentanol','1-pentanol','2-butanone','isoamyl-acetate'};
+% orn_names = {'ab3A','ab3A','ab2A','ab2A','pb1A'};
 
-if exist('.cache/tau_gain_MSG.mat','file') == 2
-	load('.cache/tau_gain_MSG.mat','allmetrics')
-else
-	allmetrics = struct([]);
+% if exist('.cache/tau_gain_MSG.mat','file') == 2
+% 	load('.cache/tau_gain_MSG.mat','allmetrics')
+% else
+% 	allmetrics = struct([]);
 
-	for di = 1
-		clear MSGdata
-		MSGdata = consolidateData2(getPath(dataManager,data_hashes{di}));
+% 	for di = 1
+% 		clear MSGdata
+% 		MSGdata = consolidateData2(getPath(dataManager,data_hashes{di}));
 
-		% make sure stimulus is always positive
-		for i = 1:size(MSGdata.PID,2)
-			MSGdata.PID(:,i) = MSGdata.PID(:,i) - min(MSGdata.PID(:,i));
-		end
-
-
-		% look at timescale of response, fluctuations
-		allmetrics(di).fA_tau = NaN*MSGdata.fly;
-		allmetrics(di).fA_gain_tau = NaN*MSGdata.fly;
-		allmetrics(di).fA_gain_tau_err = NaN*MSGdata.fly;
-		allmetrics(di).S_tau = NaN*MSGdata.fly;
-		allmetrics(di).orn = MSGdata.orn;
-		ft = fittype('A*exp(-x/tau) + B');
-		ft_stim = fittype('A*(1- exp(-x/tau))');
-		x = 1:50e3;
-		for i = 1:width(MSGdata.PID)
-			textbar(i,width(MSGdata.PID))
-			R = MSGdata.fA(5e3+1:55e3,i);
-			if max(R)>0
-				y = (abs(bandPass(R,1e3,Inf)));
+% 		% make sure stimulus is always positive
+% 		for i = 1:size(MSGdata.PID,2)
+% 			MSGdata.PID(:,i) = MSGdata.PID(:,i) - min(MSGdata.PID(:,i));
+% 		end
 
 
-				ff = fit(x(:),y,ft,'StartPoint',[max(y) 0 1e2],'Lower',[1 0 50]);
-				allmetrics(di).fA_gain_tau(i) = ff.tau;
-				cf = confint(ff);
-				allmetrics(di).fA_gain_tau_err(i) = diff(cf(:,3));
+% 		% look at timescale of response, fluctuations
+% 		allmetrics(di).fA_tau = NaN*MSGdata.fly;
+% 		allmetrics(di).fA_gain_tau = NaN*MSGdata.fly;
+% 		allmetrics(di).fA_gain_tau_err = NaN*MSGdata.fly;
+% 		allmetrics(di).S_tau = NaN*MSGdata.fly;
+% 		allmetrics(di).orn = MSGdata.orn;
+% 		ft = fittype('A*exp(-x/tau) + B');
+% 		ft_stim = fittype('A*(1- exp(-x/tau))');
+% 		x = 1:50e3;
+% 		for i = 1:width(MSGdata.PID)
+% 			textbar(i,width(MSGdata.PID))
+% 			R = MSGdata.fA(5e3+1:55e3,i);
+% 			if max(R)>0
+% 				y = (abs(bandPass(R,1e3,Inf)));
 
-				% fit the stimulus too
-				S = MSGdata.PID(5e3+1:55e3,i);
-				ff = fit(x(:),S,ft_stim,'StartPoint',[max(S) 1e2],'Lower',[0 50]);
-				allmetrics(di).S_tau(i) = ff.tau;
-			end
-		end
-	end
-	save('.cache/tau_gain_MSG.mat','allmetrics')
-end
+
+% 				ff = fit(x(:),y,ft,'StartPoint',[max(y) 0 1e2],'Lower',[1 0 50]);
+% 				allmetrics(di).fA_gain_tau(i) = ff.tau;
+% 				cf = confint(ff);
+% 				allmetrics(di).fA_gain_tau_err(i) = diff(cf(:,3));
+
+% 				% fit the stimulus too
+% 				S = MSGdata.PID(5e3+1:55e3,i);
+% 				ff = fit(x(:),S,ft_stim,'StartPoint',[max(S) 1e2],'Lower',[0 50]);
+% 				allmetrics(di).S_tau(i) = ff.tau;
+% 			end
+% 		end
+% 	end
+% 	save('.cache/tau_gain_MSG.mat','allmetrics')
+% end
 
 
-figure('outerposition',[0 0 1250 602],'PaperUnits','points','PaperSize',[1250 602]); hold on
-for di = 1
+% figure('outerposition',[0 0 1250 602],'PaperUnits','points','PaperSize',[1250 602]); hold on
+% for di = 1
 
-	% plot
-	subplot(1,2,1); hold on
-	for i = 1:max(allmetrics(di).orn)
-		x = i;
-		y = allmetrics(di).fA_tau(allmetrics(di).orn==i);
-		y(y<51) = NaN; % ignore bad fits, because bound was hit
-		y = 1e-3*nonnans(y);
-		if length(y)>1
-			plot(x,median(y),'k.','MarkerSize',40)
-			plot(x,y,'k+')
-		end
-	end
-	set(gca,'XLim',[.5 .5+max(allmetrics(di).orn)],'YLim',[0 50],'XTick',[1:max(allmetrics(di).orn)])
-	xlabel('ORN')
-	ylabel('\tau_{response} (s)')
-	t = [orn_names{di} char(10) odour_names{di}];
-	title(t)
-	deintersectAxes;
+% 	% plot
+% 	subplot(1,2,1); hold on
+% 	for i = 1:max(allmetrics(di).orn)
+% 		x = i;
+% 		y = allmetrics(di).fA_tau(allmetrics(di).orn==i);
+% 		y(y<51) = NaN; % ignore bad fits, because bound was hit
+% 		y = 1e-3*nonnans(y);
+% 		if length(y)>1
+% 			plot(x,median(y),'k.','MarkerSize',40)
+% 			plot(x,y,'k+')
+% 		end
+% 	end
+% 	set(gca,'XLim',[.5 .5+max(allmetrics(di).orn)],'YLim',[0 50],'XTick',[1:max(allmetrics(di).orn)])
+% 	xlabel('ORN')
+% 	ylabel('\tau_{response} (s)')
+% 	t = [orn_names{di} char(10) odour_names{di}];
+% 	title(t)
+% 	deintersectAxes;
 
-	% plot
-	subplot(1,2,2); hold on
-	for i = 1:max(allmetrics(di).orn)
-		x = i;
-		y = allmetrics(di).fA_gain_tau(allmetrics(di).orn==i);
-		y(y<51) = NaN; % ignore bad fits, because bound was hit
-		y = nonnans(y);
-		if length(y)>1
-			plot(x,median(y),'k.','MarkerSize',40)
-			plot(x,y,'k+')
-		end
-	end
-	set(gca,'XLim',[.5 .5+max(allmetrics(di).orn)],'YLim',[0 1e3],'XTick',[1:max(allmetrics(di).orn)])
-	xlabel('ORN')
-	ylabel('\tau_{gain} (ms)')
-	t = [orn_names{di} char(10) odour_names{di}];
-	title(t)
-	deintersectAxes;
-end
+% 	% plot
+% 	subplot(1,2,2); hold on
+% 	for i = 1:max(allmetrics(di).orn)
+% 		x = i;
+% 		y = allmetrics(di).fA_gain_tau(allmetrics(di).orn==i);
+% 		y(y<51) = NaN; % ignore bad fits, because bound was hit
+% 		y = nonnans(y);
+% 		if length(y)>1
+% 			plot(x,median(y),'k.','MarkerSize',40)
+% 			plot(x,y,'k+')
+% 		end
+% 	end
+% 	set(gca,'XLim',[.5 .5+max(allmetrics(di).orn)],'YLim',[0 1e3],'XTick',[1:max(allmetrics(di).orn)])
+% 	xlabel('ORN')
+% 	ylabel('\tau_{gain} (ms)')
+% 	t = [orn_names{di} char(10) odour_names{di}];
+% 	title(t)
+% 	deintersectAxes;
+% end
 
-prettyFig();
+% prettyFig();
 
-if being_published
-	snapnow
-	delete(gcf)
-end
+% if being_published
+% 	snapnow
+% 	delete(gcf)
+% end
 
 
 

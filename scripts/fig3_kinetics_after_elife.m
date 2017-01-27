@@ -19,20 +19,28 @@ v2struct(MSGdata)
 % remove baseline from PID
 PID = PID - min(min(PID));
 
+% clear p
+% p.      E0 = 20.5000;
+% p.      E1 = 2.2500;
+% p. w_minus = 5.0625;
+% p.  w_plus = 6.5000;
+% p.tau_adap = 7.0625;
+% p.      kT = 35.9375;
+% p.   K_tau = 29.7500;
+
 clear p
-p.      E0 = 20.5000;
-p.      E1 = 2.2500;
-p. w_minus = 5.0625;
-p.  w_plus = 6.5000;
-p.tau_adap = 7.0625;
-p.      kT = 35.9375;
-p.   K_tau = 29.7500;
+p.A = 1200;
+p.B = .2230;
+p.adap_tau = 1004;
+p.K_n = 1;
+p.K_tau = 46;
 
 % generate responses for every trial
 LFP_model = NaN*PID;
 for i = 1:size(PID,2)
 	textbar(i,size(PID,2))
-	LFP_model(30e3:55e3,i) = asNL3(PID(30e3:55e3,i),p);
+	%LFP_model(30e3:55e3,i) = asNL3(PID(30e3:55e3,i),p);
+	LFP_model(:,i) = asNL_euler(PID(:,i),p);
 end
 
 
@@ -202,6 +210,7 @@ for i = 1:max(paradigm)
 	plot(lags,mean(temp,2)/max(mean(temp,2)),'Color',c(i,:))
 end
 
+set(gca,'XScale','log','XLim',[1e-3 1])
 xlabel('Lag (s)')
 ylabel('Autocorrelation (norm)')
 
@@ -212,7 +221,98 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% is this generally observed?
 
+data_hashes = {'bcd4cf4fe12817d084a2b06f981161ee','cd6753c0e4cf02895cd5e2c5cb58aa1a','3ea08ccfa892c6545d74bbdaaa6cbee1','f11c4a5792d0c9fec7c40fd6aa2fce40'};
+odour_names = {'1-pentanol','1-pentanol','2-butanone','isoamyl-acetate'};
+orn_names = {'ab3A','ab2A','ab2A','pb1A'};
+
+
+figure('outerposition',[0 0 900 901],'PaperUnits','points','PaperSize',[900 901]); hold on
+for di = 1:length(data_hashes)
+
+	MSGdata = consolidateData2(getPath(dataManager,data_hashes{di}));
+	MSGdata = cleanMSGdata(MSGdata);
+	v2struct(MSGdata)
+
+	% remove baseline from PID
+	PID = PID - min(min(PID));
+
+
+	LFP_lags = NaN*paradigm;
+	LFP_max_corr = NaN*paradigm;
+	firing_lags = NaN*paradigm;
+	firing_max_corr = NaN*paradigm;
+	a = 35e3+1; z = 55e3;
+	chunk_size = 1e3;
+
+	LFP_xcorr = NaN(chunk_size*2 - 1,20,length(paradigm));
+
+	fA_xcorr = NaN(chunk_size*2 - 1,20,length(paradigm));
+
+	S_a = NaN(chunk_size*2 - 1,20,length(paradigm));
+
+	% compute LFP and firing rate lags
+	for i = 1:length(paradigm)
+		S = PID(a:z,i);
+		X = -raw_LFP(a:z,i);
+		R = fA(a:z,i);
+
+		% reshape into chunks
+		S = reshape(S,chunk_size,length(S)/chunk_size);
+		X = reshape(X,chunk_size,length(X)/chunk_size);
+		R = reshape(R,chunk_size,length(R)/chunk_size);
+
+		S = bsxfun(@minus, S, mean(S));
+		X = bsxfun(@minus, X, mean(X));
+		R = bsxfun(@minus, R, mean(R));
+
+		X_lag = NaN(chunk_size*2-1,size(S,2));
+		R_lag = NaN(chunk_size*2-1,size(S,2));
+		S_acorr = NaN(chunk_size*2-1,size(S,2));
+		for j = 1:size(S,2)
+			X_lag(:,j) = xcorr(X(:,j)/std(X(:,j)),S(:,j)/std(S(:,j)));
+			R_lag(:,j) = xcorr(R(:,j)/std(R(:,j)),S(:,j)/std(S(:,j)));
+			S_acorr(:,j) = xcorr(S(:,j)/std(S(:,j)),S(:,j)/std(S(:,j)));
+		end
+		X_lag = X_lag/chunk_size;
+		LFP_xcorr(:,:,i) = X_lag;
+		X_lag = mean(X_lag,2);
+		[LFP_max_corr(i),loc] = max(X_lag);
+		LFP_lags(i) = loc - 1e3;
+
+		R_lag = R_lag/chunk_size;
+		fA_xcorr(:,:,i) = R_lag;
+		R_lag = mean(R_lag,2);
+		[firing_max_corr(i),loc] = max(R_lag);
+		firing_lags(i) = loc - 1e3;
+
+		S_acorr = S_acorr/chunk_size;
+		S_a(:,:,i) = S_acorr;
+	end
+
+
+	firing_lags(firing_lags<-100) = NaN; % obviously wrong
+
+	ax(di) = autoPlot(length(data_hashes),di); hold on
+
+	% show lags of firing rate and LFP for all doses
+	mean_stim = mean(PID(a:z,:));
+	c = lines(10);
+	LFP_color = c(5,:);
+	firing_color = c(4,:);
+	plot(mean_stim,firing_lags,'.','Color','k','MarkerSize',20);
+	plot(mean_stim,LFP_lags,'.','Color','r','MarkerSize',20);
+	xlabel(ax(di),'\mu_{Stimulus} (V)')
+	ylabel(ax(di),'Lag (ms)')
+	legend({'Firing rate','LFP'},'Location','northwest')
+	set(ax(di),'XLim',[0 1.7],'YLim',[0 200])
+
+
+end
+
+prettyFig;
 
 %% Version Info
 %

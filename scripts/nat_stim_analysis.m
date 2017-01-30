@@ -18,7 +18,7 @@ pHeader;
 % The following figure shows the stimulus and responses from ab3A neurons to ethyl acetate odourant. 
 
 % load the data
-cdata = consolidateKontrollerData(getPath(dataManager,'69fe04e1e1cdaee89a8444cc3f55d34b'));
+cdata = consolidateKontrollerData(getPath(dataManager,'f70e37a7db469b88c0fc79ff5e828e9d'));
 v2struct(cdata); clear cdata
 
 
@@ -165,7 +165,7 @@ end
 % The following figure shows the stimulus and responses from ab3A neurons to 2-butanone odourant. 
 
 % load the data
-cdata = consolidateKontrollerData(getPath(dataManager,'a0ee68028e0a78f8767244eb66711fa2'));
+cdata = consolidateKontrollerData(getPath(dataManager,'b8d40a4b987ccd1926bbd6d4578bbd99'));
 v2struct(cdata); clear cdata
 
 
@@ -439,7 +439,7 @@ end
 % Now I make the same plots, but for a ab3A neuron responding to 2-butanone. 
 
 % get all data 
-cdata = consolidateData2(getPath(dataManager,'63cc89abe87a24e85672e60df3a45cb4'));
+cdata = consolidateData2(getPath(dataManager,'c2bce18a6b0a7e89e9c6832dcc27e39b'));
 [cdata, data] =  assembleScaledNatStim(cdata);
 
 t = 'ab3A -- 2-butanone';

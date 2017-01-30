@@ -71,13 +71,14 @@ AllControlParadigms.Name = '';
 AllControlParadigms.Outputs = [];
 AllControlParadigms(1) = [];
 paradigm_hashes = {};
+original_file_name = {};
 sequence = []; % for each file. 
 
 if ~strcmp(pathname(end),oss)
 	pathname = [pathname oss];
 end
 
-allfiles = dir([pathname '*.mat']);
+allfiles = [dir([pathname '*.mat']); dir([pathname '*.kontroller'])];
 % remove the consolidated data from this
 rm_this = [find(strcmp('cached_log.mat',{allfiles.name})) find(strcmp('consolidated_data.mat',{allfiles.name})) find(strcmp('cached.mat',{allfiles.name})) find(strcmp('template.mat',{allfiles.name}))];
 if ~isempty(rm_this)
@@ -102,7 +103,7 @@ end
 disp('Determining longest data length...')
 ll = 0;
 for i = 1:length(allfiles)
-	load(strcat(pathname,allfiles(i).name));
+	load(strcat(pathname,allfiles(i).name),'-mat');
 	for j = 1:length(data)
 		if ~isempty(data(j).voltage)
 			ll = max([ll length(data(j).voltage)]);
@@ -131,7 +132,7 @@ B_spike_amp = sparse(ll*10,0);
 
 for i = 1:length(allfiles)
 	clear spikes data metadata
-	load(strcat(pathname,allfiles(i).name));
+	load(strcat(pathname,allfiles(i).name),'-mat');
 	disp(strcat(pathname,allfiles(i).name));
 	for j = 1:length(data)
 		clear this_PID this_LFP this_A_spikes this_B_spikes this_hash this_paradigm 
@@ -346,6 +347,7 @@ for i = 1:length(allfiles)
 			
 
 			paradigm = [paradigm  this_paradigm*ones(1,width(this_PID))];
+			original_file_name = [original_file_name; repmat({allfiles(i).name},width(this_PID),1)];
 			orn = [orn  i*ones(1,width(this_PID))];
 
 			% figure out the fly # from the file name
@@ -391,5 +393,6 @@ consolidated_data.B_spikes  = B_spikes;
 consolidated_data.A_spike_amp  = A_spike_amp;
 consolidated_data.B_spike_amp  = B_spike_amp;
 consolidated_data.sequence = sequence;
+consolidated_data.original_file_name = original_file_name;
 save([pathname 'consolidated_data.mat'],'consolidated_data');
 

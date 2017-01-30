@@ -354,6 +354,182 @@ if being_published
 	delete(gcf)
 end
 
+ ;;;;;;   ;;;;;;     ;;;    ;;       ;;;;;;;; ;;;;;;;;  
+;;    ;; ;;    ;;   ;; ;;   ;;       ;;       ;;     ;; 
+;;       ;;        ;;   ;;  ;;       ;;       ;;     ;; 
+ ;;;;;;  ;;       ;;     ;; ;;       ;;;;;;   ;;     ;; 
+      ;; ;;       ;;;;;;;;; ;;       ;;       ;;     ;; 
+;;    ;; ;;    ;; ;;     ;; ;;       ;;       ;;     ;; 
+ ;;;;;;   ;;;;;;  ;;     ;; ;;;;;;;; ;;;;;;;; ;;;;;;;;  
+
+;;    ;;    ;;;    ;;;;;;;;     ;;;;;;  ;;;;;;;; ;;;; ;;     ;; 
+;;;   ;;   ;; ;;      ;;       ;;    ;;    ;;     ;;  ;;;   ;;; 
+;;;;  ;;  ;;   ;;     ;;       ;;          ;;     ;;  ;;;; ;;;; 
+;; ;; ;; ;;     ;;    ;;        ;;;;;;     ;;     ;;  ;; ;;; ;; 
+;;  ;;;; ;;;;;;;;;    ;;             ;;    ;;     ;;  ;;     ;; 
+;;   ;;; ;;     ;;    ;;       ;;    ;;    ;;     ;;  ;;     ;; 
+;;    ;; ;;     ;;    ;;        ;;;;;;     ;;    ;;;; ;;     ;; 
+
+%% Scaled Naturalisitc Stimulus: ab2A and 2-butanone 
+% In this section, I plot responses of ORNs to the naturalistic stimulus and scaled versions of the naturalistic stimulus. Each data set is from the same neuron. 
+
+
+   ;;;    ;;;;;;;;   ;;;;;;;           ;;;;;;;  ;;;;;;;;  ;;     ;; ;;;;;;;; 
+  ;; ;;   ;;     ;; ;;     ;;         ;;     ;; ;;     ;; ;;     ;;    ;;    
+ ;;   ;;  ;;     ;;        ;;                ;; ;;     ;; ;;     ;;    ;;    
+;;     ;; ;;;;;;;;   ;;;;;;;  ;;;;;;;  ;;;;;;;  ;;;;;;;;  ;;     ;;    ;;    
+;;;;;;;;; ;;     ;; ;;                ;;        ;;     ;; ;;     ;;    ;;    
+;;     ;; ;;     ;; ;;                ;;        ;;     ;; ;;     ;;    ;;    
+;;     ;; ;;;;;;;;  ;;;;;;;;;         ;;;;;;;;; ;;;;;;;;   ;;;;;;;     ;;    
+
+
+% get all data 
+cdata = consolidateData2(getPath(dataManager,'4608c42b12191b383c84fea52392ea97'));
+[cdata, data] =  assembleScaledNatStim(cdata);
+
+t = 'ab2A -- 2-butanone';
+plotScaledNatStimData(data,being_published,t);
+
+%%
+% Now, I plot the peak LFP and firing rate response in each whiff as a function of whiff intensity, across all the stimulus presentations. 
+
+plotScaledNatStimWhiffStats(data);
+suptitle(t)
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
+% Now, I extract filters for each case and plot the filters and linear projectins on a per-neuron basis, for the LFP.
+
+plotScaledNatStimFilters(data,'LFP')
+suptitle(t)
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% Now, I extract filters for each case and plot the filters and linear projectins on a per-neuron basis, for the LFP.
+
+plotScaledNatStimFilters(data,'firing')
+suptitle(t)
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+   ;;;    ;;;;;;;;   ;;;;;;;     ;;;             ;;;;;;;  ;;;;;;;;  ;;     ;; ;;;;;;;; 
+  ;; ;;   ;;     ;; ;;     ;;   ;; ;;           ;;     ;; ;;     ;; ;;     ;;    ;;    
+ ;;   ;;  ;;     ;;        ;;  ;;   ;;                 ;; ;;     ;; ;;     ;;    ;;    
+;;     ;; ;;;;;;;;   ;;;;;;;  ;;     ;; ;;;;;;;  ;;;;;;;  ;;;;;;;;  ;;     ;;    ;;    
+;;;;;;;;; ;;     ;;        ;; ;;;;;;;;;         ;;        ;;     ;; ;;     ;;    ;;    
+;;     ;; ;;     ;; ;;     ;; ;;     ;;         ;;        ;;     ;; ;;     ;;    ;;    
+;;     ;; ;;;;;;;;   ;;;;;;;  ;;     ;;         ;;;;;;;;; ;;;;;;;;   ;;;;;;;     ;;    
+
+%% ab3A and 2-butanone.
+% Now I make the same plots, but for a ab3A neuron responding to 2-butanone. 
+
+% get all data 
+cdata = consolidateData2(getPath(dataManager,'63cc89abe87a24e85672e60df3a45cb4'));
+[cdata, data] =  assembleScaledNatStim(cdata);
+
+t = 'ab3A -- 2-butanone';
+plotScaledNatStimData(data,being_published,t);
+
+
+%%
+% Now, I plot the peak LFP and firing rate response in each whiff as a function of whiff intensity, across all the stimulus presentations. 
+
+plotScaledNatStimWhiffStats(data);
+suptitle(t)
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
+% Now, I extract filters for each case and plot the filters and linear projectins on a per-neuron basis, for the LFP.
+
+plotScaledNatStimFilters(data,'LFP')
+suptitle(t)
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% Now, I extract filters for each case and plot the filters and linear projectins on a per-neuron basis, for the LFP.
+
+plotScaledNatStimFilters(data,'firing')
+suptitle(t)
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+   ;;;    ;;;;;;;;   ;;;;;;;     ;;;        ;;;;;;;     ;;;     ;;;;;;  
+  ;; ;;   ;;     ;; ;;     ;;   ;; ;;      ;;     ;;   ;; ;;   ;;    ;; 
+ ;;   ;;  ;;     ;;        ;;  ;;   ;;            ;;  ;;   ;;  ;;       
+;;     ;; ;;;;;;;;   ;;;;;;;  ;;     ;;     ;;;;;;;  ;;     ;; ;;       
+;;;;;;;;; ;;     ;;        ;; ;;;;;;;;;    ;;        ;;;;;;;;; ;;       
+;;     ;; ;;     ;; ;;     ;; ;;     ;;    ;;        ;;     ;; ;;    ;; 
+;;     ;; ;;;;;;;;   ;;;;;;;  ;;     ;;    ;;;;;;;;; ;;     ;;  ;;;;;;  
+
+
+%% ab2A and ethyl acetate.
+% Now I make the same plots, but for a ab2A neuron responding to ethyl acetate. 
+
+% get all data 
+cdata = consolidateData2(getPath(dataManager,'9f359fef5acd000e1a24902d33b460ee'));
+[cdata, data] =  assembleScaledNatStim(cdata);
+
+t = 'ab2A -- ethyl acetate';
+plotScaledNatStimData(data,being_published,t);
+
+
+%%
+% Now, I plot the peak LFP and firing rate response in each whiff as a function of whiff intensity, across all the stimulus presentations. 
+
+plotScaledNatStimWhiffStats(data);
+suptitle(t)
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
+% Now, I extract filters for each case and plot the filters and linear projectins on a per-neuron basis, for the LFP.
+
+plotScaledNatStimFilters(data,'LFP')
+suptitle(t)
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
 %% Version Info
 %
 pFooter;

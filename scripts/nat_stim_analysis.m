@@ -391,6 +391,18 @@ t = 'ab2A -- 2-butanone';
 plotScaledNatStimData(data,being_published,t);
 
 %%
+% Now, for each neuron, I plot the compare the stimulus, LFP and firing rate for the various doses for each neuron. Since the rough temporal structure of the stimulus is the same, this lets us compare the dynamics and scale of the responses directly. In the following figure, each column is data from a single neuron. I plot the stimulus vs. its lowest variant, and the LFP vs. the LFP for the lowest stimulus variant, and so on. 
+
+[fold_changes] = plotScaledNatStimFoldChange1(data,being_published);
+
+%%
+% Now, I compute the fold change in the stimulus, LFP and firing rate as the slope of the lines in these plots, and look at how scaling the stimulus up changes the response in the LFP and the firing rate. 
+
+
+plotScaledNatStimFoldChange2(fold_changes,being_published);
+
+
+%%
 % Now, I plot the peak LFP and firing rate response in each whiff as a function of whiff intensity, across all the stimulus presentations. 
 
 plotScaledNatStimWhiffStats(data);
@@ -427,6 +439,16 @@ if being_published
 	delete(gcf)
 end
 
+% %%
+% % Can we account for the LFP responses of these neurons using a NL model? 
+
+% this_orn = 1;
+% clear fd
+% for i = 1:size(data(this_orn).X,2)
+% 	fd(i).stimulus = [data(this_orn).S(:,i) -data(this_orn).X(:,i)];
+% 	fd(i).response = -data(this_orn).X(:,i);
+% end
+
    ;;;    ;;;;;;;;   ;;;;;;;     ;;;             ;;;;;;;  ;;;;;;;;  ;;     ;; ;;;;;;;; 
   ;; ;;   ;;     ;; ;;     ;;   ;; ;;           ;;     ;; ;;     ;; ;;     ;;    ;;    
  ;;   ;;  ;;     ;;        ;;  ;;   ;;                 ;; ;;     ;; ;;     ;;    ;;    
@@ -444,6 +466,17 @@ cdata = consolidateData2(getPath(dataManager,'c2bce18a6b0a7e89e9c6832dcc27e39b')
 
 t = 'ab3A -- 2-butanone';
 plotScaledNatStimData(data,being_published,t);
+
+%%
+% Now, for each neuron, I plot the compare the stimulus, LFP and firing rate for the various doses for each neuron. Since the rough temporal structure of the stimulus is the same, this lets us compare the dynamics and scale of the responses directly. In the following figure, each column is data from a single neuron. I plot the stimulus vs. its lowest variant, and the LFP vs. the LFP for the lowest stimulus variant, and so on. 
+
+[fold_changes] = plotScaledNatStimFoldChange1(data,being_published);
+
+%%
+% Now, I compute the fold change in the stimulus, LFP and firing rate as the slope of the lines in these plots, and look at how scaling the stimulus up changes the response in the LFP and the firing rate. 
+
+
+plotScaledNatStimFoldChange2(fold_changes,being_published);
 
 
 %%
@@ -501,6 +534,18 @@ cdata = consolidateData2(getPath(dataManager,'9f359fef5acd000e1a24902d33b460ee')
 
 t = 'ab2A -- ethyl acetate';
 plotScaledNatStimData(data,being_published,t);
+
+%%
+% Now, for each neuron, I plot the compare the stimulus, LFP and firing rate for the various doses for each neuron. Since the rough temporal structure of the stimulus is the same, this lets us compare the dynamics and scale of the responses directly. In the following figure, each column is data from a single neuron. I plot the stimulus vs. its lowest variant, and the LFP vs. the LFP for the lowest stimulus variant, and so on. 
+
+[fold_changes] = plotScaledNatStimFoldChange1(data,being_published);
+
+%%
+% Now, I compute the fold change in the stimulus, LFP and firing rate as the slope of the lines in these plots, and look at how scaling the stimulus up changes the response in the LFP and the firing rate. 
+
+
+plotScaledNatStimFoldChange2(fold_changes,being_published);
+
 
 
 %%

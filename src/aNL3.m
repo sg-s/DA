@@ -39,7 +39,7 @@ lb.B = 0;
 lb.tau_z = 1;
 lb.n_z = 0;
 
-ub.B = Inf;
+ub.B = 1e3;
 ub.tau_z = 1000;
 ub.n_z = 3;
 

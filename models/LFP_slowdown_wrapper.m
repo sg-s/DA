@@ -13,12 +13,13 @@ function [lag] = LFP_slowdown_wrapper(S,p)
 
 % ci = 1;
 % clear data
-% lags = [70 95 113 168];
-% for i = [1 8 9 10]
-% 	data(ci).stimulus = PID(30e3:55e3,find(paradigm==i,1,'last'));
-% 	data(ci).response = lags(ci)*ones(length(data(ci).stimulus),1);
+% for i = [1:max(paradigm)]
+% 	data(ci).stimulus = PID(30e3:50e3,find(paradigm==i,1,'last'));
+% 	l = LFP_lags(paradigm==i); l(l<0) = NaN;
+% 	data(ci).response = nanmean(l)*ones(length(data(ci).stimulus),1);
 % 	ci = ci+1;
 % end
+% data(isnan(mean([data.response]))) = [];
 
 
 % list parameters

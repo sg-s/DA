@@ -29,7 +29,7 @@ lb.C = 0;
 lb.tau1 = 1;
 lb.tau2 = 1;
 lb.n_y = 1;
-lb.n = 1;
+lb.n = 4;
 
 ub.tau1 = 100;
 ub.tau2 = 300;
@@ -38,11 +38,11 @@ ub.n_y = 10;
 
 % bounds for adaptation 
 lb.B = 0;
-lb.tau_z = 100;
+lb.tau_z = 10;
 lb.n_z = 1;
 
 ub.B = 0;
-ub.tau_z = 1e3;
+ub.tau_z = 10;
 ub.n_z = 1;
 
 

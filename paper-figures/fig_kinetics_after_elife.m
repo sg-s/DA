@@ -44,10 +44,10 @@ p(4).      kT = 75.9375;
 p(4).   K_tau = 45.7500;
 
 
-data_hashes = {'93ba5d68174e3df9f462a1fc48c581da','bcd4cf4fe12817d084a2b06f981161ee','cd6753c0e4cf02895cd5e2c5cb58aa1a','3ea08ccfa892c6545d74bbdaaa6cbee1'};
-odour_names = {'ethyl-acetate','1-pentanol','1-pentanol','2-butanone'};
-orn_names = {'ab3A','ab3A','ab2A','ab2A'};
-x_limits = [1.7 .03 .16 1.5];
+data_hashes = {'93ba5d68174e3df9f462a1fc48c581da','cd6753c0e4cf02895cd5e2c5cb58aa1a','3ea08ccfa892c6545d74bbdaaa6cbee1'};
+odour_names = {'ethyl-acetate','1-pentanol','2-butanone'};
+orn_names = {'ab3A','ab2A','ab2A'};
+x_limits = [1.7 .15 .85 ];
 
 for di = 1:length(data_hashes)
 
@@ -57,17 +57,6 @@ for di = 1:length(data_hashes)
 
 	% remove baseline from PID for each trial
 	PID = bsxfun(@minus,PID,min(PID));
-
-
-	% generate responses for every trial
-	try
-		LFP_model = NaN*PID;
-		for i = 1:size(PID,2)
-			LFP_model(30e3:55e3,i) = asNL3(PID(30e3:55e3,i),p(di));
-			%LFP_model(:,i) = asNL_euler(PID(:,i),p(di));
-		end
-	catch
-	end
 
 
 	LFP_lags = NaN*paradigm;
@@ -90,26 +79,21 @@ for di = 1:length(data_hashes)
 		S = PID(a:z,i);
 		X = -raw_LFP(a:z,i);
 		R = fA(a:z,i);
-		X_pred = LFP_model(a:z,i);
 
 		% reshape into chunks
 		S = reshape(S,chunk_size,length(S)/chunk_size);
 		X = reshape(X,chunk_size,length(X)/chunk_size);
-		X_pred = reshape(X_pred,chunk_size,length(X_pred)/chunk_size);
 		R = reshape(R,chunk_size,length(R)/chunk_size);
 
 		S = bsxfun(@minus, S, mean(S));
 		X = bsxfun(@minus, X, mean(X));
-		X_pred = bsxfun(@minus, X_pred, mean(X_pred));
 		R = bsxfun(@minus, R, mean(R));
 
 		X_lag = NaN(chunk_size*2-1,size(S,2));
-		X_pred_lag = NaN(chunk_size*2-1,size(S,2));
 		R_lag = NaN(chunk_size*2-1,size(S,2));
 		S_acorr = NaN(chunk_size*2-1,size(S,2));
 		for j = 1:size(S,2)
 			X_lag(:,j) = xcorr(X(:,j)/std(X(:,j)),S(:,j)/std(S(:,j)));
-			X_pred_lag(:,j) = xcorr(X_pred(:,j)/std(X_pred(:,j)),S(:,j)/std(S(:,j)));
 			R_lag(:,j) = xcorr(R(:,j)/std(R(:,j)),S(:,j)/std(S(:,j)));
 			S_acorr(:,j) = xcorr(S(:,j)/std(S(:,j)),S(:,j)/std(S(:,j)));
 		end
@@ -118,11 +102,6 @@ for di = 1:length(data_hashes)
 		X_lag = mean(X_lag,2);
 		[LFP_max_corr(i),loc] = max(X_lag);
 		LFP_lags(i) = loc - 1e3;
-
-		X_pred_lag = X_pred_lag/chunk_size;
-		X_pred_lag = mean(X_pred_lag,2);
-		[~,loc] = max(X_pred_lag);
-		LFP_model_lags(i) = loc - 1e3;
 
 		R_lag = R_lag/chunk_size;
 		fA_xcorr(:,:,i) = R_lag;
@@ -181,33 +160,44 @@ for di = 1:length(data_hashes)
 
 	% show lags of firing rate and LFP for all doses
 	mean_stim = mean(PID(a:z,:));
-	if di == 1
-		LFP_lags(mean_stim > .7 & mean_stim < .9) = NaN; % firingr rates for this data don't exist
-	end
+	
 	c = lines(10);
 	LFP_color = c(5,:);
 	firing_color = c(4,:);
-	for i = 1:max(paradigm)
-		x = nonnans(firing_lags(paradigm==i));
-		errorbar(ax(di+2),mean(mean_stim(paradigm==i)),mean(x),sem(x),'Color',LFP_color)
-		x = nonnans(LFP_lags(paradigm==i));
-		errorbar(ax(di+2),mean(mean_stim(paradigm==i)),mean(x),sem(x),'Color',firing_color)
-
-		x = nonnans(LFP_model_lags(paradigm==i));
-		errorbar(ax(di+2),mean(mean_stim(paradigm==i)),mean(x),sem(x),'Color','r')
-
+	
+	if di == 1
+		x = NaN*(1:max(paradigm));
+		l = NaN*(1:max(paradigm));
+		l_e = NaN*(1:max(paradigm));
+		f = NaN*(1:max(paradigm));
+		f_e = NaN*(1:max(paradigm));
+		for i = 1:max(paradigm)
+			temp = nonnans(firing_lags(paradigm==i));
+			f(i) = mean(temp);
+			f_e(i) = sem(temp);
+			x(i) = mean(mean_stim(paradigm==i));
+			temp = nonnans(LFP_lags(paradigm==i));
+			l(i) = mean(temp);
+			l_e(i) = sem(temp);
+		end
+		errorbar(x,l,l_e,'Color',LFP_color);
+		errorbar(x,f,f_e,'Color',firing_color);
+	else
+		plotPieceWiseLinear(mean_stim,LFP_lags,'Color',LFP_color,'nbins',10);
+		plotPieceWiseLinear(mean_stim,firing_lags,'Color',firing_color,'nbins',10);
 	end
-	%plot(mean_stim,firing_lags,'.','Color',firing_color,'MarkerSize',20);
-	%plot(mean_stim,LFP_lags,'.','Color',LFP_color,'MarkerSize',20);
+		% if di == 1
+		
+		% else
+		% 	% bin nicely, because the paradigms are poorly spaced
+			
+		% end
+
+	
 	xlabel(ax(2+di),'\mu_{Stimulus} (V)')
 	ylabel(ax(2+di),'Lag (ms)')
 
-
-	[LFP_model_lags,idx] = sort(LFP_model_lags);
-	plot(mean_stim(idx),LFP_model_lags,'r.-')
-
-
-	legend({'Firing rate','LFP','LFP model'},'Location','northwest')
+	legend({'Firing rate','LFP'},'Location','northwest')
 	set(ax(2+di),'XLim',[0 x_limits(di)],'YLim',[0 200])
 	title([orn_names{di} ' - ' odour_names{di}])
 
@@ -223,7 +213,45 @@ title(ax(1),'Stimulus \rightarrow LFP')
 title(ax(2),'Stimulus \rightarrow Firing rate')
 
 
+% now show the same thing in the naturalistic stimulus date 
+
+load(getPath(dataManager,'aeb361c027b71938021c12a6a12a85cd'),'-mat')
+
+min_acceptable_corr = .5;
+min_acceptable_lag = 2;
+
+subplot(2,3,6); hold on
+for i = [1 2 3 6]
+	PID = nanmean((od(i).stimulus),2);
+	LFP = nanmean((od(i).LFP),2);
+	fA = od(i).firing_rate;
+	fA(:,sum(fA)==0) = [];
+	fA = mean(fA,2);
+
+	[lag, mean_x, max_corr] = findLagAndMeanInWindow(PID(5e3:end-5e3),-LFP(5e3:end-5e3),1e3,50);
+	rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr;
+	lag(rm_this) = [];
+	mean_x(rm_this) = [];
+	plotPieceWiseLinear(mean_x,lag,'Color',LFP_color,'nbins',10);
+
+	[lag, mean_x, max_corr] = findLagAndMeanInWindow(PID(5e3:end-5e3),fA(5e3:end-5e3),1e3,50);
+	rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr;
+	lag(rm_this) = [];
+	mean_x(rm_this) = [];
+	plotPieceWiseLinear(mean_x,lag,'Color',firing_color,'nbins',10);
+
+
+
+end
+
+xlabel('\mu_{Stimulus} in preceding 1s')
+ylabel('Lag (ms)')
+set(gca,'YLim',[0 200])
+title(['ab3A - ethyl acetate ' char(10) 'naturalistic stimulus'])
+
 prettyFig;
+
+
 
 if being_published	
 	snapnow	

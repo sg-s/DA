@@ -414,6 +414,49 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% From the previous figure, it looks as though there are multiple responses for whiffs of the same magnitude. Is this true? To look into this more closely, I collect whiffs with the same amplitude, and plot the corresponding LFP and firing rate responses. I see that there is variation in the LFP and firing rate responses, and this variation seems to be explained by responses to preceding stimuli. 
+
+s_range = [.8 1.2];
+
+figure('outerposition',[0 0 1501 502],'PaperUnits','points','PaperSize',[1501 502]); hold on
+for i = 1:3
+	ax(i) = subplot(1,3,i); hold on
+end
+
+show_these = [           2       27764
+           2       28790
+           2       59776
+           3       58049];
+
+for i = 2
+	for j = 1:length(show_these)
+		this_stim = show_these(j,1);
+		this_loc = show_these(j,2);
+
+		S = data(i).S(:,this_stim);
+		X = data(i).X(:,this_stim);
+		R = data(i).R(:,this_stim);
+
+		a = this_loc - 300;
+		z = this_loc+300;
+
+		plot(ax(1),S(a:z))
+		plot(ax(2),X(a:z))
+		plot(ax(3),R(a:z))
+
+	end
+end
+ylabel(ax(1),'Stimulus (V)')
+ylabel(ax(2),'LFP (mV)')
+ylabel(ax(3),'Firing rate (Hz)')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %%
 % Now, I extract filters for each case and plot the filters and linear projectins on a per-neuron basis, for the LFP.
@@ -439,15 +482,80 @@ if being_published
 	delete(gcf)
 end
 
-% %%
-% % Can we account for the LFP responses of these neurons using a NL model? 
+%%
+% Can we account for the LFP responses of these neurons using a NL model? 
 
-% this_orn = 1;
-% clear fd
-% for i = 1:size(data(this_orn).X,2)
-% 	fd(i).stimulus = [data(this_orn).S(:,i) -data(this_orn).X(:,i)];
-% 	fd(i).response = -data(this_orn).X(:,i);
-% end
+this_orn = 2;
+clear fd
+for i = 1:size(data(this_orn).X,2)
+	fd(i).stimulus = data(this_orn).S(:,i);% -data(this_orn).X(:,i)];
+	fd(i).stimulus = fd(i).stimulus - min(fd(i).stimulus);
+	fd(i).response = data(this_orn).R(:,i);
+	%fd(i).response(fd(i).response<10) = NaN;
+end
+
+clear p
+p.  k0=0.0933;
+p.tau_z= 100;
+p.    B= 0;
+p.  n_z= 1;
+p.    n= 1;
+p. tau1= 57.2285;
+p. tau2= 34.1191;
+p.  n_y= 1.4170;
+p.    A= 0.7527;
+p.    C= 636.4622;
+
+% generate responses using this model 
+for j = 1:size(data(2).X,2)
+	data(2).P(:,j) = aNLN2(data(2).S(:,j),p);
+end
+
+s_range = [.8 1.2];
+
+figure('outerposition',[0 0 1501 502],'PaperUnits','points','PaperSize',[1501 502]); hold on
+for i = 1:3
+	ax(i) = subplot(1,3,i); hold on
+end
+
+show_these = [           2       27764
+           2       28790
+           2       59776
+           3       58049];
+
+for i = 2
+	c = lines(length(show_these));
+	for j = 1:length(show_these)
+		this_stim = show_these(j,1);
+		this_loc = show_these(j,2);
+
+		S = data(i).S(:,this_stim);
+		X = data(i).X(:,this_stim);
+		R = data(i).R(:,this_stim);
+		P = data(i).P(:,this_stim);
+
+		a = this_loc - 300;
+		z = this_loc+300;
+
+		plot(ax(1),S(a:z))
+		plot(ax(2),X(a:z))
+		plot(ax(3),R(a:z),'Color',c(j,:))
+		plot(ax(3),P(a:z),':','Color',c(j,:))
+
+	end
+end
+ylabel(ax(1),'Stimulus (V)')
+ylabel(ax(2),'LFP (mV)')
+ylabel(ax(3),'Firing rate (Hz)')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
 
    ;;;    ;;;;;;;;   ;;;;;;;     ;;;             ;;;;;;;  ;;;;;;;;  ;;     ;; ;;;;;;;; 
   ;; ;;   ;;     ;; ;;     ;;   ;; ;;           ;;     ;; ;;     ;; ;;     ;;    ;;    

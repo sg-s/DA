@@ -20,6 +20,17 @@ for i = 1:length(data)
 
 		subplot(2,length(data),length(data)+i); hold on
 		plot(ws.stim_peaks,ws.peak_firing_rate,'.','MarkerSize',20,'Color',c(j,:))
+
+		% colour it by stimulus in preceding 300ms
+		% cc = parula(100);
+		% shat = ws.stim_history_length_before_whiff;
+		% shat = shat-min(shat);
+		% shat = shat/max(shat);
+		% shat = 1+floor(shat*99);
+		% shat(isnan(shat)) = 1;
+		% for k = 1:length(ws.stim_peaks)
+		% 	plot(ws.stim_peaks(k),ws.peak_firing_rate(k),'.','MarkerSize',20,'Color',cc(shat(k),:))
+		% end
 		set(gca,'XScale','log','YLim',[0 300])
 		xlabel('Stim_{peak} (V)')
 		ylabel('Firing rate_{peak} (mV)')

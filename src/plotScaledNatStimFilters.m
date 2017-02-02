@@ -4,10 +4,20 @@ w = min([1300 500*length(data)]);
 figure('outerposition',[0 0 w 901],'PaperUnits','points','PaperSize',[1300 901]); hold on
 time = 1e-3*(1:length(data(1).S));
 
-ss = 50;
+ss = 2;
+history_length = 500;
+scatter_size = 20;
+
+
 
 for i = 1:length(data)
 	c = lines(size(data(i).S,2));
+
+	% compute overall sclae
+	shat = computeSmoothedStimulus(data(i).S(:),history_length);
+	MS = max(shat);
+	mS = min(shat);
+
 	for j = 1:size(data(i).S,2)
 		S = data(i).S(:,j);
 		X = data(i).X(:,j);
@@ -38,10 +48,32 @@ for i = 1:length(data)
 		subplot(2,length(data),length(data)+i); hold on
 		switch filter_type
 		case 'LFP' 
-			plot(fp(1:ss:end),X(1:ss:end),'.-','MarkerSize',20,'Color',c(j,:))
+			%plot(fp(1:ss:end),X(1:ss:end),'.-','MarkerSize',20,'Color',c(j,:))
+			% colour by mean stim in preceding 500ms 
+			shat = computeSmoothedStimulus(S,history_length);
+			shat = shat-mS;
+			shat = shat/MS;
+			shat = 1+floor(shat*99);
+			shat(isnan(shat)) = 1;
+
+			% make the output analysis plot
+			cc = parula(100);
+			c = cc(shat,:);
+			scatter(fp(1:ss:end),X(1:ss:end),scatter_size,c(1:ss:end,:),'filled')
 			ylabel('LFP  (mV)')
 		otherwise
-			plot(fp(1:ss:end),R(1:ss:end),'.-','MarkerSize',20,'Color',c(j,:))
+			% colour by mean stim in preceding 500ms 
+			shat = computeSmoothedStimulus(S,history_length);
+			shat = shat-mS;
+			shat = shat/MS;
+			shat = 1+floor(shat*99);
+			shat(isnan(shat)) = 1;
+
+			% make the output analysis plot
+			cc = parula(100);
+			c = cc(shat,:);
+			scatter(fp(1:ss:end),R(1:ss:end),scatter_size,c(1:ss:end,:),'filled')
+			%plot(fp(1:ss:end),R(1:ss:end),'.-','MarkerSize',20,'Color',c(j,:))
 			ylabel('Firing rate  (Hz)')
 		end
 

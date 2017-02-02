@@ -240,8 +240,6 @@ for i = [1 2 3 6]
 	mean_x(rm_this) = [];
 	plotPieceWiseLinear(mean_x,lag,'Color',firing_color,'nbins',10);
 
-
-
 end
 
 xlabel('\mu_{Stimulus} in preceding 1s')

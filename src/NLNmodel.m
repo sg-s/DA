@@ -1,4 +1,4 @@
-% simple NLN model with a single parameter (K_D)
+% simple NLN model with only two parameters (for the input nonlinearity)
 % since we find the filter non-parameterically, we have to give it the response too
 % S is a Tx2 matrix, where S(:,2) is the response we want to fit it to
 % 
@@ -10,9 +10,8 @@ p.n;
 
 
 % bounds
-lb.n = .5;
+lb.n = 1;
 lb.k_D = 1e-2;
-
 ub.n = 4;
 
 T = S(:,2); % target response

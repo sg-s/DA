@@ -8,7 +8,7 @@ function [R,Ky,Kz,k_D,x] = aNLN3(S,p)
 
 % input nonlinearity parameters
 p.tau_z; % timescale of k_D update
-p.B; % prefactor on k_D update
+p.B; % strength of adaptation 
 p.n_z;
 p.n; % steepness of the Hill function
 p.k_D_min;

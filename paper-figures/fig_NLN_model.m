@@ -75,5 +75,26 @@ cdata = consolidateData2(getPath(dataManager,'4608c42b12191b383c84fea52392ea97')
 [cdata, data] =  assembleScaledNatStim(cdata);
 time = 1e-3*(1:length(data(1).S));
 
+% show the time series of the natualistic stimulus
+ax(4) = subplot(4,3,4:5); hold on
+clear l
+l(1) = plot(ax(4),time,data(2).R(:,3),'k');
+% generate responses and plot them too
+
+for j = 1:size(data(2).X,2)
+	data(2).P(:,j) = aNLN4(data(2).S(:,j) - min(data(2).S(:,j)) ,p);
+end
+% fix some trivial scaling
+ff = fit(data(2).P(:),data(2).R(:),'poly1');
+for j = 1:size(data(2).X,2)
+	data(2).P(:,j) = ff(data(2).P(:,j));
+end
+
+l(2) = plot(ax(4),time,data(2).P(:,3),'r');
+legend(l,{'ab2A',['model r^2 = ' oval(rsquare(data(2).P(:,3),data(2).R(:,3)))]})
+
+xlabel(ax(4),'Time (s)')
+ylabel(ax(4),'Firing rate (Hz)')
+
 
 

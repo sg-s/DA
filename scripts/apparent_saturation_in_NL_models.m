@@ -2,6 +2,8 @@
 %% Apparent saturation in NL models
 % In this document, I look at a property of NL models that allow them to code for the duration of brief pulses of signal in the amplitude of the response. This effect is pronounced when signals are close to saturating, and when the duration of the signals is less than the timescale of the filter in the NL model. 
 
+pHeader;
+
 % these parameters come from the model fit to MSG data
 
 k_D = 0.0968;

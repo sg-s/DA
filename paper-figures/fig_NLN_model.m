@@ -1,6 +1,9 @@
 %%
 %  In this document, I fit a single adapting NLN model (aNLN4) to all the data.
 
+pHeader;
+
+
 % get the filter from the Gaussian stimuli 
 clear MSGdata
 MSGdata = consolidateData2(getPath(dataManager,'93ba5d68174e3df9f462a1fc48c581da'));
@@ -11,17 +14,33 @@ for i = 1:size(MSGdata.PID,2)
 	MSGdata.PID(:,i) = MSGdata.PID(:,i) - min(MSGdata.PID(:,i));
 end
 
-a = 25e3; z = 55e3;
-clear data
-for i = 1:max(MSGdata.paradigm)
-	S = MSGdata.PID(:,MSGdata.paradigm==i);
-	R = MSGdata.fA(:,MSGdata.paradigm==i);
-	rm_this = sum(R) == 0;
-	S(:,rm_this) = []; R(:,rm_this) = [];
-	data(i).stimulus = mean(S(a:z,:),2);
-	data(i).response = mean(R(a:z,:),2);
-	data(i).response(1:10e3) = NaN;
-end
+% a = 25e3; z = 55e3;
+% clear data
+% for i = 1:max(MSGdata.paradigm)
+% 	S = MSGdata.PID(:,MSGdata.paradigm==i);
+% 	R = MSGdata.fA(:,MSGdata.paradigm==i);
+% 	rm_this = sum(R) == 0;
+% 	S(:,rm_this) = []; R(:,rm_this) = [];
+% 	data(i).stimulus = mean(S(a:z,:),2);
+% 	data(i).response = mean(R(a:z,:),2);
+% 	data(i).response(1:10e3) = NaN;
+% end
+
+;;     ;;  ;;;;;;;  ;;;;;;;;  ;;;;;;;; ;;       
+;;;   ;;; ;;     ;; ;;     ;; ;;       ;;       
+;;;; ;;;; ;;     ;; ;;     ;; ;;       ;;       
+;; ;;; ;; ;;     ;; ;;     ;; ;;;;;;   ;;       
+;;     ;; ;;     ;; ;;     ;; ;;       ;;       
+;;     ;; ;;     ;; ;;     ;; ;;       ;;       
+;;     ;;  ;;;;;;;  ;;;;;;;;  ;;;;;;;; ;;;;;;;; 
+
+;;;;;;;;     ;;;    ;;;;;;;;     ;;;    ;;     ;;  ;;;;;;  
+;;     ;;   ;; ;;   ;;     ;;   ;; ;;   ;;;   ;;; ;;    ;; 
+;;     ;;  ;;   ;;  ;;     ;;  ;;   ;;  ;;;; ;;;; ;;       
+;;;;;;;;  ;;     ;; ;;;;;;;;  ;;     ;; ;; ;;; ;;  ;;;;;;  
+;;        ;;;;;;;;; ;;   ;;   ;;;;;;;;; ;;     ;;       ;; 
+;;        ;;     ;; ;;    ;;  ;;     ;; ;;     ;; ;;    ;; 
+;;        ;;     ;; ;;     ;; ;;     ;; ;;     ;;  ;;;;;;  
 
 
 clear p
@@ -69,6 +88,147 @@ ylabel(ax(2),'Filter (norm)')
 axes(ax(2))
 axis square
 
+;;     ;;  ;;;;;;   ;;;;;;   
+;;;   ;;; ;;    ;; ;;    ;;  
+;;;; ;;;; ;;       ;;        
+;; ;;; ;;  ;;;;;;  ;;   ;;;; 
+;;     ;;       ;; ;;    ;;  
+;;     ;; ;;    ;; ;;    ;;  
+;;     ;;  ;;;;;;   ;;;;;;   
+
+a = 35e3;
+z = 55e3;
+
+% generate responses using the model 
+if exist('.cache/aNLN4_responses_to_MSG.mat','file') == 0
+	NLN_pred = NaN*MSGdata.PID;
+	for i = 1:length(MSGdata.paradigm)
+		S = MSGdata.PID(:,i) - min(MSGdata.PID(:,i));
+		NLN_pred(:,i) = aNLN4(S,p);
+	end
+	save('.cache/aNLN4_responses_to_MSG.mat','NLN_pred')
+else
+	load('.cache/aNLN4_responses_to_MSG.mat')
+end
+MSGdata.NLN_pred = NLN_pred;
+clear NLN_pred
+
+% back out new linear filters for this
+time = 1e-3*(1:length(MSGdata.PID));
+if exist('.cache/aNLN4_MSG_linear_prediction.mat','file') == 0
+	NLN_fp = NaN*MSGdata.PID;
+	for i = 1:length(MSGdata.paradigm)
+		S = MSGdata.PID(:,i);
+		R = MSGdata.NLN_pred(:,i);
+		K = fitFilter2Data(S(a:z),R(a:z),'filter_length',1e3,'offset',200);
+		K = K(100:end-100);
+		filtertime = 1e-3*(1:length(K)) - .1;
+		NLN_fp(:,i) = convolve(time,S,K,filtertime);
+		K = K/(nanstd(NLN_fp(a:z,i))/nanstd(S(a:z))); % normalise correctly 
+		NLN_fp(:,i) = convolve(time,S,K,filtertime);
+	end
+	save('.cache/aNLN4_MSG_linear_prediction.mat','NLN_fp')
+else
+	load('.cache/aNLN4_MSG_linear_prediction.mat')
+end
+MSGdata.NLN_fp = NLN_fp;
+clear NLN_fp
+
+% recreate the I/O plot 
+subplot(4,3,7); hold on; cla
+ss = 100;
+all_x = 0:0.1:2;
+a = 35e3; z = 55e3;
+c = parula(10);
+for i = 1:max(MSGdata.paradigm) % iterate over all paradigms 
+	y = MSGdata.NLN_pred(a:z,MSGdata.paradigm == i);
+	x = MSGdata.NLN_fp(a:z,MSGdata.paradigm == i);
+	s = MSGdata.PID(a:z,MSGdata.paradigm == i);
+	rm_this = sum(y)==0;
+	y(:,rm_this) = [];
+	x(:,rm_this) = [];
+	s(:,rm_this) = [];
+	y = nanmean(y,2);
+	x = nanmean(x,2);
+	s = nanmean(s,2);
+	x = x - nanmean(x);
+	x = x + nanmean(nanmean(s));
+	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:),'show_error',false,'LineWidth',3);
+end
+
+% compute gains and plot them
+MSGdata.NLN_gain = NaN*MSGdata.paradigm;
+for i = 1:length(MSGdata.paradigm)
+	x = MSGdata.NLN_fp(a:z,i);
+	y = MSGdata.NLN_pred(a:z,i);
+	try
+		ff = fit(x(:),y(:),'poly1');
+		MSGdata.NLN_gain(i) = ff.p1;
+	catch
+	end
+end
+
+subplot(4,3,8); hold on; cla
+mean_stim = nanmean(MSGdata.PID(a:z,:));
+
+% correct for some trivial scaling 
+x = MSGdata.NLN_gain(:);
+y = MSGdata.fA_gain(:);
+rm_this = isnan(x) | isnan(y);
+ff = fit(x(~rm_this),y(~rm_this),'poly1');
+MSGdata.NLN_gain = ff(MSGdata.NLN_gain);
+
+% show gain changes -- gain vs. mean stimulus
+all_x = []; all_y = [];
+for i = 1:max(MSGdata.paradigm)
+	x = mean_stim(MSGdata.paradigm==i);
+	y = MSGdata.NLN_gain(MSGdata.paradigm==i);
+	rm_this = y == 0 | isnan(y);
+	x(rm_this) = []; y(rm_this) = []; 
+	all_x = [all_x(:); x(:)]; all_y = [all_y(:); y(:)];
+	plot(x,y,'+','Color',c(i,:));
+end
+
+% fit a power law with exponent -1
+mean_stim = mean_stim(:);
+g = MSGdata.NLN_gain(:);
+options = fitoptions(fittype('power1'));
+options.Lower = [-Inf -1];
+options.Upper = [Inf -1];
+cf = fit(mean_stim(~isnan(g)),g(~isnan(g)),'power1',options);
+plot(sort(mean_stim),cf(sort(mean_stim)),'r');
+set(gca,'XScale','log','YScale','log','YLim',[10 300],'XLim',[.1 2.5])
+
+% compare model gains to actual gains
+subplot(4,3,9); hold on; cla
+for i = 1:max(MSGdata.paradigm)
+	plot(MSGdata.NLN_gain(MSGdata.paradigm == i),MSGdata.fA_gain(MSGdata.paradigm == i),'+','Color',c(i,:))
+end
+clear l
+l = plot(NaN,NaN,'k+');
+legend(l,['r^2 = ' oval(rsquare(MSGdata.NLN_gain,MSGdata.fA_gain))],'Location','southeast')
+xlabel('Predicted gain (Hz/V)')
+ylabel('Observed gain (Hz/V)')
+plot([0 250],[0 250],'k--')
+
+
+;;    ;;    ;;;    ;;;;;;;; ;;     ;; ;;;;;;;;     ;;;    ;;       
+;;;   ;;   ;; ;;      ;;    ;;     ;; ;;     ;;   ;; ;;   ;;       
+;;;;  ;;  ;;   ;;     ;;    ;;     ;; ;;     ;;  ;;   ;;  ;;       
+;; ;; ;; ;;     ;;    ;;    ;;     ;; ;;;;;;;;  ;;     ;; ;;       
+;;  ;;;; ;;;;;;;;;    ;;    ;;     ;; ;;   ;;   ;;;;;;;;; ;;       
+;;   ;;; ;;     ;;    ;;    ;;     ;; ;;    ;;  ;;     ;; ;;       
+;;    ;; ;;     ;;    ;;     ;;;;;;;  ;;     ;; ;;     ;; ;;;;;;;; 
+
+ ;;;;;;  ;;;;;;;; ;;;; ;;     ;; 
+;;    ;;    ;;     ;;  ;;;   ;;; 
+;;          ;;     ;;  ;;;; ;;;; 
+ ;;;;;;     ;;     ;;  ;; ;;; ;; 
+      ;;    ;;     ;;  ;;     ;; 
+;;    ;;    ;;     ;;  ;;     ;; 
+ ;;;;;;     ;;    ;;;; ;;     ;; 
+
+
 % show the naturalistic stimulus fits
 
 cdata = consolidateData2(getPath(dataManager,'4608c42b12191b383c84fea52392ea97'));
@@ -95,6 +255,47 @@ legend(l,{'ab2A',['model r^2 = ' oval(rsquare(data(2).P(:,3),data(2).R(:,3)))]})
 
 xlabel(ax(4),'Time (s)')
 ylabel(ax(4),'Firing rate (Hz)')
+
+% show r^2 for every whiff
+ax(5) = subplot(4,3,6); hold on
+x = []; y = [];
+for i = 2
+	for j = 1:3
+		S = data(i).S(:,j);
+		P = data(i).P(:,j);
+		R = data(i).R(:,j);
+		ws = whiffStatistics(S,R,R,300,'MinPeakProminence',max(S/1e2),'debug',false);
+		y = [y; ws.peak_firing_rate];
+		ws = whiffStatistics(S,P,P,300,'MinPeakProminence',max(S/1e2),'debug',false);
+		x = [x; ws.peak_firing_rate];
+	end
+end
+clear l
+l = plot(ax(5),x,y,'k.','MarkerSize',20);
+legend(l,['r^2 = ' oval(rsquare(x,y))],'Location','southeast')
+xlabel(ax(5),'NLN model response (Hz)')
+ylabel(ax(5),'ab2A response (Hz)')
+title(ax(5),'Whiff-specific responses')
+set(ax(5),'XLim',[0 300],'YLim',[0 300])
+
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
+
+
+
+%% Version Info
+%
+pFooter;
+
+
 
 
 

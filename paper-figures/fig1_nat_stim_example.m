@@ -43,14 +43,19 @@ end
 
 % show whiff statistics 
 i = 2;
+clear all_x all_y
+all_x = []; all_y = [];
 for j = 1:size(data(i).S,2)
 	S = data(i).S(:,j);
 	X = data(i).X(:,j);
 	R = data(i).R(:,j);
 	ws = whiffStatistics(S,X,R,300,'MinPeakProminence',max(S/1e2),'debug',false);
+	all_x =  [all_x(:); ws.stim_peaks(:)];
+	all_y = [all_y(:); -ws.peak_LFP(:)];
 	plot(ax(4),ws.stim_peaks,ws.peak_LFP,'.','MarkerSize',20,'Color',c(j,:))
 	plot(ax(5),ws.stim_peaks,ws.peak_firing_rate,'.','MarkerSize',20,'Color',c(j,:))
 end
+
 
 % show context-dependent variation in whiff response
 s_range = [.8 1.2];

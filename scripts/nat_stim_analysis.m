@@ -471,6 +471,70 @@ if being_published
 end
 
 %%
+% Can I account for the LFP responses of the ORN using a NL model?
+
+this_orn = 2;
+clear fd
+for i = 1:size(data(this_orn).X,2)
+	S = data(this_orn).S(:,i); S = S - min(S);
+	R = data(this_orn).X(:,i);
+	%fd(i).stimulus = [S R];
+	fd(i).stimulus = S;
+	fd(i).response = -R;
+	%fd(i).response(fd(i).response<10) = NaN;
+end
+
+clear p
+p.k_D = 0.1996;
+p.n = 1.5000;
+
+% generate responses using this model 
+for j = 1:size(data(2).X,2)
+	[data(2).XP(:,j)] = NLModel([data(2).S(:,j) - min(data(2).S(:,j)) data(2).X(:,j)] ,p);
+end
+
+
+figure('outerposition',[0 0 1501 502],'PaperUnits','points','PaperSize',[1501 502]); hold on
+for i = 1:2
+	ax(i) = subplot(1,2,i); hold on
+end
+
+show_these = [2       27764
+           2       28790
+           2       59776
+           3       58049];
+
+for i = 2
+	c = lines(length(show_these));
+	for j = 1:length(show_these)
+		this_stim = show_these(j,1);
+		this_loc = show_these(j,2);
+
+		S = data(i).S(:,this_stim);
+		X = data(i).X(:,this_stim);
+		P = data(i).XP(:,this_stim);
+
+		a = this_loc - 300;
+		z = this_loc+300;
+
+		plot(ax(1),S(a:z))
+		plot(ax(2),X(a:z),'Color',c(j,:))
+		plot(ax(2),P(a:z),':','Color',c(j,:))
+
+	end
+end
+ylabel(ax(1),'Stimulus (V)')
+ylabel(ax(2),'LFP (mV)')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
 % Can we account for the firing rate responses of this ORN using a NLN model? 
 
 this_orn = 2;

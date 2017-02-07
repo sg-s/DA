@@ -156,6 +156,37 @@ end
 %%
 % Based on these simualtions, it looks like there is nothing wrong with my estimation of $n$ from the naturalistic stimulus data, and presumably from the dose response -- this is the "true" n. This leaves with our original problem: sparse stimuli suggest that $n = 1$, and the variance switching experiment suggests that $n=4$
 
+%%
+% What if I fit another kinetic model, where there is an additional filter after the receptor binding unbinding stage? The best fit model still has $n=1$. 
+
+clear p
+p.      n = 1;
+p. k_plus = 60.7500;
+p.k_minus = 10.7500;
+p.      A = -21.4012;
+p.      B = 0.6712;
+p.    tau = 10.5000;
+p.    K_n = 1;
+
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+time = 1e-3*(1:length(data(2).S));
+clear l
+l(1) = plot(time,data(2).X(:,1),'k');
+[R, a] = KineticModelv2(data(2).S(:,1),p);
+l(2) = plot(time,R,'r');
+xlabel('Time (s)')
+ylabel('LFP (mV)')
+legend(l,{'ab2',['kinetic model, r^2 = ' oval(rsquare(R,data(2).X(:,1)))]},'Location','southwest')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
 %% Version Info
 %
 pFooter;

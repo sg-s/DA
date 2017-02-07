@@ -5,7 +5,8 @@ pHeader;
 %% Receptor co-operativity 
 % Are receptors co-operative? If we parameterise the input nonlinearity in a ORN using a Hill function, what is the $n$ parameter? 
 
-%% In the following figure, I plot three dose-response curves from two different odourant-receptor combinations, for both LFP and firing rate. (a) comes from a actual dose-response experiment that Carlotta did. (b-c) come from naturalistic odorant stimulation, where the stimulus was so broadly distributed that it spanned the entire sensitive range of the neuron.  
+%% 
+% In the following figure, I plot three dose-response curves from two different odourant-receptor combinations, for both LFP and firing rate. (a) comes from a actual dose-response experiment that Carlotta did. (b-c) come from naturalistic odorant stimulation, where the stimulus was so broadly distributed that it spanned the entire sensitive range of the neuron.  
 
 % get ab3A dose response
 load(getPath(dataManager,'9e2a3e8664fe4f299b7ec435a0d2c2b1'));

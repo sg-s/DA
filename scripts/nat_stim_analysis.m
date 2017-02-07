@@ -458,17 +458,7 @@ if being_published
 	delete(gcf)
 end
 
-%%
-% Now, I extract filters for each case and plot the filters and linear projectins on a per-neuron basis, for the LFP.
 
-plotScaledNatStimFilters(data,'firing')
-suptitle(t)
-prettyFig();
-
-if being_published
-	snapnow
-	delete(gcf)
-end
 
 %%
 % Can I account for the LFP responses of the ORN using a NL model?
@@ -495,9 +485,18 @@ end
 
 
 figure('outerposition',[0 0 1501 502],'PaperUnits','points','PaperSize',[1501 502]); hold on
-for i = 1:2
-	ax(i) = subplot(1,2,i); hold on
+for i = 1:3
+	ax(i) = subplot(1,3,i); hold on
 end
+
+clear l L
+for i = 1:3
+	l(i) = plot(ax(1),data(2).XP(:,i),data(2).X(:,i));
+	L{i} = ['r^2 = ' oval(rsquare(data(2).XP(:,i),data(2).X(:,i)))];
+end
+legend(l,L,'Location','northwest')
+xlabel(ax(1),'NL model')
+ylabel(ax(1),'\Delta LVP (mV)')
 
 show_these = [2       27764
            2       28790
@@ -517,14 +516,14 @@ for i = 2
 		a = this_loc - 300;
 		z = this_loc+300;
 
-		plot(ax(1),S(a:z))
-		plot(ax(2),X(a:z),'Color',c(j,:))
-		plot(ax(2),P(a:z),':','Color',c(j,:))
+		plot(ax(2),S(a:z))
+		plot(ax(3),X(a:z),'Color',c(j,:))
+		plot(ax(3),P(a:z),':','Color',c(j,:))
 
 	end
 end
-ylabel(ax(1),'Stimulus (V)')
-ylabel(ax(2),'LFP (mV)')
+ylabel(ax(2),'Stimulus (V)')
+ylabel(ax(3),'LFP (mV)')
 
 prettyFig();
 
@@ -533,6 +532,96 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% Even though the non-adapting NL model seems to do a good job, it doesn't seem to be able to capture the context-dependent modulation of LFP responses. What if I fit an adapting NL model to this? Can the addition of an adapting $k_D$ account for the context-dependent response modulation we see in the LFP? In the following figure, I fit an adapting NL model to the LFP data, and examine the same whiffs to see if it has captured the observed variation in the data. 
+
+
+clear p
+p.  k0 = 0.2720;
+p.   B = 10;
+p.   n = 2.3750;
+p.   A = 0.6992;
+p.tauA = 13.8633;
+p.tauB = 57.6250;
+p.   C = 2.6069;
+p.   D = -0.7344;
+
+
+
+% generate responses using this model 
+clear k_D
+k_D = NaN*data(2).S;
+for j = 1:size(data(2).X,2)
+	[data(2).XP(:,j),~,~,k_D(:,j)] = aNL4(fd(j).stimulus ,p);
+end
+data(2).XP = -data(2).XP;
+
+
+figure('outerposition',[0 0 1501 901],'PaperUnits','points','PaperSize',[1501 901]); hold on
+ax(1) = subplot(2,3,1:3); hold on
+for i = 1:3
+	ax(i+1) = subplot(2,3,3+i); hold on
+end
+for i = 1:3
+	plot(ax(1),1e-3*(1:length(k_D)),k_D(:,i))
+end
+xlabel(ax(1),'Time (s)')
+ylabel(ax(1),'k_D')
+
+clear l L
+for i = 1:3
+	l(i) = plot(ax(2),data(2).XP(:,i),data(2).X(:,i));
+	L{i} = ['r^2 = ' oval(rsquare(data(2).XP(:,i),data(2).X(:,i)))];
+end
+legend(l,L,'Location','northwest')
+xlabel(ax(2),'NL model')
+ylabel(ax(2),'\Delta LFP (mV)')
+
+show_these = [2       27764
+           2       28790
+           2       59776
+           3       58049];
+
+for i = 2
+	c = lines(length(show_these));
+	for j = 1:length(show_these)
+		this_stim = show_these(j,1);
+		this_loc = show_these(j,2);
+
+		S = data(i).S(:,this_stim);
+		X = data(i).X(:,this_stim);
+		P = data(i).XP(:,this_stim);
+
+		a = this_loc - 300;
+		z = this_loc+300;
+
+		plot(ax(3),S(a:z))
+		plot(ax(4),X(a:z),'Color',c(j,:))
+		plot(ax(4),P(a:z),':','Color',c(j,:))
+
+	end
+end
+ylabel(ax(3),'Stimulus (V)')
+ylabel(ax(4),'LFP (mV)')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% Now, I extract filters for each case and plot the filters and linear projectins on a per-neuron basis, for the firing rate.
+
+plotScaledNatStimFilters(data,'firing')
+suptitle(t)
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %%
 % Can we account for the firing rate responses of this ORN using a NLN model? 
@@ -552,6 +641,7 @@ p.  k_D = 0.0933;
 p.    n = 1;
 
 % generate responses using this model 
+clear K
 for j = 1:size(data(2).X,2)
 	[data(2).P(:,j),K(:,j)] = NLNmodel([data(2).S(:,j) - min(data(2).S(:,j)) data(2).R(:,j)] ,p);
 end

@@ -26,8 +26,8 @@ p.D;
 lb.k0 = 1e-3;
 ub.k0 = 1;
 
-lb.B = .1;
-ub.B = 10;
+lb.B = 1;
+ub.B = 100;
 
 % filter
 lb.tauA = 3;
@@ -41,8 +41,8 @@ ub.A = 1;
 lb.C = 1e-3;
 ub.C = 6;
 
-lb.n = 2;
-ub.n = 3;
+lb.n = 1;
+ub.n = 4;
 
 lb.D = -100;
 ub.D = 10;

@@ -4,7 +4,7 @@ w = min([1300 500*length(data)]);
 figure('outerposition',[0 0 w 901],'PaperUnits','points','PaperSize',[1300 901]); hold on
 time = 1e-3*(1:length(data(1).S));
 
-ss = 2;
+ss = 10;
 history_length = 500;
 scatter_size = 20;
 

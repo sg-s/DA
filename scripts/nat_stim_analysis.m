@@ -94,53 +94,6 @@ end
 
 
 
-%%
-% Now, I find all whiffs in the stimulus, and plot them, coloured by peak. I also plot the corresponding LFP and firing rate responses. 
-
-figure('outerposition',[0 0 1523 901],'PaperUnits','points','PaperSize',[1523 901]); hold on
-norns = 6;
-for i = 1:norns
-	
-	X = fA(:,orn == i);
-	X(:,sum(X)==0) = [];
-	R = nanmean(X,2);
-	X = nanmean(LFP(:,orn==i),2);
-	S = nanmean(PID(:,orn==i),2);
-	ws = whiffStatistics(S,X,R,300);
-	[ws.stim_peaks,idx] = sort(ws.stim_peaks);
-	ws.stim_peak_loc = ws.stim_peak_loc(idx);
-	c = parula(length(idx));
-
-	a = ws.stim_peak_loc - 200;
-	z = ws.stim_peak_loc + 200;
-
-	subplot(3,norns,i); hold on
-	for j = 1:length(idx)
-		plot(S(a(j):z(j)),'Color',c(j,:))
-	end
-	ylabel('Stimulus (V)')
-
-	subplot(3,norns,i+norns); hold on
-	for j = 1:length(idx)
-		plot(X(a(j):z(j)),'Color',c(j,:))
-	end
-	ylabel('\Delta LFP (mV)')
-
-	subplot(3,norns,i+2*norns); hold on
-	for j = 1:length(idx)
-		plot(R(a(j):z(j)),'Color',c(j,:))
-	end
-	ylabel('Firing rate (Hz)')
-
-end
-
-prettyFig();
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
 
 
    ;;;    ;;;;;;;;   ;;;;;;;  
@@ -237,51 +190,51 @@ if being_published
 	delete(gcf)
 end
 
-%%
+%
 % Now, I find all whiffs in the stimulus, and plot them, coloured by peak. I also plot the corresponding LFP and firing rate responses. 
 
-figure('outerposition',[0 0 1200 901],'PaperUnits','points','PaperSize',[1200 901]); hold on
-for i = 1:2
+% figure('outerposition',[0 0 1200 901],'PaperUnits','points','PaperSize',[1200 901]); hold on
+% for i = 1:2
 	
-	X = fA(:,orn == i);
-	X(:,sum(X)==0) = [];
-	R = nanmean(X,2);
-	X = nanmean(LFP(:,orn==i),2);
-	S = nanmean(PID(:,orn==i),2);
-	ws = whiffStatistics(S,X,R,300);
-	[ws.stim_peaks,idx] = sort(ws.stim_peaks);
-	ws.stim_peak_loc = ws.stim_peak_loc(idx);
-	c = parula(length(idx));
+% 	X = fA(:,orn == i);
+% 	X(:,sum(X)==0) = [];
+% 	R = nanmean(X,2);
+% 	X = nanmean(LFP(:,orn==i),2);
+% 	S = nanmean(PID(:,orn==i),2);
+% 	ws = whiffStatistics(S,X,R,300);
+% 	[ws.stim_peaks,idx] = sort(ws.stim_peaks);
+% 	ws.stim_peak_loc = ws.stim_peak_loc(idx);
+% 	c = parula(length(idx));
 
-	a = ws.stim_peak_loc - 200;
-	z = ws.stim_peak_loc + 200;
+% 	a = ws.stim_peak_loc - 200;
+% 	z = ws.stim_peak_loc + 200;
 
-	subplot(2,3,(i-1)*3+1); hold on
-	for j = 1:length(idx)
-		plot(S(a(j):z(j)),'Color',c(j,:))
-	end
-	ylabel('Stimulus (V)')
+% 	subplot(2,3,(i-1)*3+1); hold on
+% 	for j = 1:length(idx)
+% 		plot(S(a(j):z(j)),'Color',c(j,:))
+% 	end
+% 	ylabel('Stimulus (V)')
 
-	subplot(2,3,(i-1)*3+2); hold on
-	for j = 1:length(idx)
-		plot(X(a(j):z(j)),'Color',c(j,:))
-	end
-	ylabel('\delta LFP (mV)')
+% 	subplot(2,3,(i-1)*3+2); hold on
+% 	for j = 1:length(idx)
+% 		plot(X(a(j):z(j)),'Color',c(j,:))
+% 	end
+% 	ylabel('\delta LFP (mV)')
 
-	subplot(2,3,(i-1)*3+3); hold on
-	for j = 1:length(idx)
-		plot(R(a(j):z(j)),'Color',c(j,:))
-	end
-	ylabel('Firing rate (Hz)')
+% 	subplot(2,3,(i-1)*3+3); hold on
+% 	for j = 1:length(idx)
+% 		plot(R(a(j):z(j)),'Color',c(j,:))
+% 	end
+% 	ylabel('Firing rate (Hz)')
 
-end
+% end
 
-prettyFig();
+% prettyFig();
 
-if being_published
-	snapnow
-	delete(gcf)
-end
+% if being_published
+% 	snapnow
+% 	delete(gcf)
+% end
 
 
 %%
@@ -333,7 +286,7 @@ end
 clear od
 load(getPath(dataManager,'aeb361c027b71938021c12a6a12a85cd'),'-mat')
 
-figure('outerposition',[0 0 600 601],'PaperUnits','points','PaperSize',[600 601]); hold on
+figure('outerposition',[0 0 600 601],'PaperUnits','points','PaperSize',[1200 601]); hold on
 c = lines(length(od));
 for i = 1:length(od)
 	S = nanmean(od(i).stimulus,2); S = S - mean(S(1:5e3));
@@ -461,7 +414,7 @@ end
 
 
 %%
-% Can I account for the LFP responses of the ORN using a NL model?
+% Can I account for the LFP responses of the ORN using a NL model? In the following figure, I fit a NL model to the LFP responses, and compare model predictions to data. 
 
 this_orn = 2;
 clear fd
@@ -624,7 +577,8 @@ if being_published
 end
 
 %%
-% Can we account for the firing rate responses of this ORN using a NLN model? 
+% Can we account for the firing rate responses of this ORN using a NLN model? In the following figure, I fit a non-adapting NLN model to the firing rate data, and compare the model predictions (red) to the data (black). Then, I compare the responses of the model to the responses of the neuron for every single whiff, and find a good agreement. In the bottom row, I show the parameters of the NL model. Note that that the best-fit nonlinearity roughly follows the nonlinearity apparent in the whiff-specific responses. Note also that the filter computed in the presence of the nonlinearity is much sharper, and has a pronounced negative lobe. Finally, I plot the NLN firing rate as a function of the projected stimulus, to show that the NLN model has similar deviations from linearity that we see in the data. 
+
 
 this_orn = 2;
 clear fd
@@ -743,6 +697,9 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% Can the NLN model account for the context-dependent variation we observe? I make the same pot as before where I collect whiffs of similar amplitude, and look at firing rate responses. I also plot the NLN model responses in dotted lines. It looks like the NLN model is partly able to account for this, presumable because of the negative lobe in the filter. 
+
 s_range = [.8 1.2];
 
 figure('outerposition',[0 0 1501 502],'PaperUnits','points','PaperSize',[1501 502]); hold on
@@ -798,7 +755,7 @@ end
 ;;     ;; ;;;;;;;;   ;;;;;;;  ;;     ;;         ;;;;;;;;; ;;;;;;;;   ;;;;;;;     ;;    
 
 %% ab3A and 2-butanone.
-% Now I make the same plots, but for a ab3A neuron responding to 2-butanone. 
+% In this section I look at the responses of ab3A to 2-butanone. The following figure shows the stimulus, LFP and firing rate from a single ORN. 
 
 % get all data 
 cdata = consolidateData2(getPath(dataManager,'c2bce18a6b0a7e89e9c6832dcc27e39b'));
@@ -806,18 +763,6 @@ cdata = consolidateData2(getPath(dataManager,'c2bce18a6b0a7e89e9c6832dcc27e39b')
 
 t = 'ab3A -- 2-butanone';
 plotScaledNatStimData(data,being_published,t);
-
-%%
-% Now, for each neuron, I plot the compare the stimulus, LFP and firing rate for the various doses for each neuron. Since the rough temporal structure of the stimulus is the same, this lets us compare the dynamics and scale of the responses directly. In the following figure, each column is data from a single neuron. I plot the stimulus vs. its lowest variant, and the LFP vs. the LFP for the lowest stimulus variant, and so on. 
-
-[fold_changes] = plotScaledNatStimFoldChange1(data,being_published);
-
-%%
-% Now, I compute the fold change in the stimulus, LFP and firing rate as the slope of the lines in these plots, and look at how scaling the stimulus up changes the response in the LFP and the firing rate. 
-
-
-plotScaledNatStimFoldChange2(fold_changes,being_published);
-
 
 %%
 % Now, I plot the peak LFP and firing rate response in each whiff as a function of whiff intensity, across all the stimulus presentations. 
@@ -866,7 +811,7 @@ end
 
 
 %% ab2A and ethyl acetate.
-% Now I make the same plots, but for a ab2A neuron responding to ethyl acetate. 
+% In this section, I plot the responses of ab2A to ethyl acetate. The following figure shows the stimulus, LFP and firing rate (where available -- the neuron pinches easily, so it's not always there). 
 
 % get all data 
 cdata = consolidateData2(getPath(dataManager,'9f359fef5acd000e1a24902d33b460ee'));
@@ -874,17 +819,6 @@ cdata = consolidateData2(getPath(dataManager,'9f359fef5acd000e1a24902d33b460ee')
 
 t = 'ab2A -- ethyl acetate';
 plotScaledNatStimData(data,being_published,t);
-
-%%
-% Now, for each neuron, I plot the compare the stimulus, LFP and firing rate for the various doses for each neuron. Since the rough temporal structure of the stimulus is the same, this lets us compare the dynamics and scale of the responses directly. In the following figure, each column is data from a single neuron. I plot the stimulus vs. its lowest variant, and the LFP vs. the LFP for the lowest stimulus variant, and so on. 
-
-[fold_changes] = plotScaledNatStimFoldChange1(data,being_published);
-
-%%
-% Now, I compute the fold change in the stimulus, LFP and firing rate as the slope of the lines in these plots, and look at how scaling the stimulus up changes the response in the LFP and the firing rate. 
-
-
-plotScaledNatStimFoldChange2(fold_changes,being_published);
 
 
 

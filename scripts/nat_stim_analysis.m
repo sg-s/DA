@@ -346,7 +346,7 @@ plotScaledNatStimData(data,being_published,t);
 %%
 % Now, I plot the peak LFP and firing rate response in each whiff as a function of whiff intensity, across all the stimulus presentations. 
 
-plotScaledNatStimWhiffStats(data);
+whiff_stats = plotScaledNatStimWhiffStats(data);
 suptitle(t)
 prettyFig();
 
@@ -674,6 +674,9 @@ xlabel('NLN model response (Hz)')
 ylabel('ab2A response (Hz)')
 title('Whiff-specific responses')
 set(gca,'XLim',[0 300],'YLim',[0 300])
+
+
+
 
 % now make a plot of the NLN responses vs. linear projections thereof, and show that we get the same sort of structure. 
 

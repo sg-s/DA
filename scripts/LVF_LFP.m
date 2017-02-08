@@ -395,9 +395,9 @@ if being_published
 end
 
 %% Timescale of gain control. 
-% In this section, I attempt to estimate the timescale of gain control from model fits to this data. Since in this data, there are large, variable excursions on a background, we expect gain control to play an important role. In this model, $k_D$ varies accoridng to:
+% In this section, I attempt to estimate the timescale of gain control from model fits to this data. Since in this data, there are large, variable excursions on a background, we expect gain control to play an important role. In this model, $k_D$ varies according to:
 % 
-% $$\dot{k}_{D}=B*k_{D}\left(a-\nicefrac{1}{2}\right)$$
+% $$\dot{k}_{D}=B*k_{D}(a-1/2)$$
 % 
 
 %%
@@ -406,7 +406,7 @@ end
 
 
 %%
-% In the following figure, in each plot, each line/colour corresponds to data from a single neuron. (a) Shows the stimulus distribution. Note that it is on a log scale. (b) Shows the distribution of $k_D$ around its mean. In the model fits, there appears to be some gain control that changes $k_D$ over the course of the stimulus. How significant is this? (c) shows the ratio of standard deviations of $k_D$ to the standard deviation in the stimulus. Every neuron exhibits non-zero gain control, in the framework of an adapting NLN model. Now, how quickly does the $k_D# vary? (d) shows the autocorrelation functions of $k_D$ for each neuron, cf. autocorrelation functions for the corresponding stimulus. In (e-f), I vary the parameter $B$ in the model, which governs the timescale of gain control (and how much of it is there), and plot $r^2$ of the model vs. the data. In (f), I plot the $r^2$ of the model prediction vs. the autocorrelation time of $k_D$. 
+% In the following figure, in each plot, each line/colour corresponds to data from a single neuron. (a) Shows the stimulus distribution. Note that it is on a log scale. (b) Shows the distribution of $k_D$ around its mean. In the model fits, there appears to be some gain control that changes $k_D$ over the course of the stimulus. How significant is this? (c) shows the ratio of standard deviations of $k_D$ to the standard deviation in the stimulus. Every neuron exhibits non-zero gain control, in the framework of an adapting NLN model. Now, how quickly does the $k_D$ vary? (d) shows the autocorrelation functions of $k_D$ for each neuron, cf. autocorrelation functions for the corresponding stimulus. In (e-f), I vary the parameter $B$ in the model, which governs the timescale of gain control (and how much of it is there), and plot $r^2$ of the model vs. the data. In (f), I plot the $r^2$ of the model prediction vs. the autocorrelation time of $k_D$. 
 
 
 %%

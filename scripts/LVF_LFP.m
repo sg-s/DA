@@ -256,9 +256,15 @@ for i = 1:length(data)
 	legend(l,['n = ' oval(ff.n)],'Location','southeast')
 
 	subplot(2,length(data),length(data)+i); hold on
-	plot(ws.stim_peaks,ws.peak_firing_rate,'.','MarkerSize',20,'Color','k')
+	x = ws.stim_peaks; 
+	y = ws.peak_firing_rate;
+	plot(x,y,'.','MarkerSize',20,'Color','k')
+	% fit a Hill function to this
+	ff = fit(x(~isnan(y)),y(~isnan(y)),ft,'StartPoint',[25 .1 2 0],'Lower',[1 1e-3 .1 -10]);
+	l = plot(sort(x),ff(sort(x)),'r');
+	legend(l,['n = ' oval(ff.n)],'Location','southeast')
 
-	set(gca,'XScale','log','YLim',[0 300])
+	set(gca,'XScale','log','YLim',[0 70])
 	xlabel('Stim_{peak} (V)')
 	ylabel('Firing rate_{peak} (mV)')
 	axis square

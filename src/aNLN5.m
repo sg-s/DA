@@ -36,7 +36,7 @@ ub.B = 1e3;
 lb.tau_y1 = 20;
 ub.tau_y1 = 200;
 
-lb.tau_y2 = 50;
+lb.tau_y2 = 20;
 ub.tau_y2 = 110;
 
 lb.A = .5;
@@ -45,7 +45,7 @@ ub.A = 1;
 lb.C = 1;
 ub.C = 600;
 
-lb.n = 1;
+lb.n = .1;
 ub.n = 4;
 
 

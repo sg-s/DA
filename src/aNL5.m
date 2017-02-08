@@ -31,14 +31,14 @@ ub.Hill_n = 8;
 lb.k0 = 1e-3;
 ub.k0 = 1;
 
-lb.B = 1;
+lb.B = 1e-3;
 ub.B = 1e3;
 
 % filter
 lb.tauA = 3;
 lb.tauB = 10;
-ub.tauA = 40;
-ub.tauB = 140;
+ub.tauA = 100;
+ub.tauB = 290;
 
 lb.A = 0.5;
 ub.A = 1;

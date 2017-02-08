@@ -333,12 +333,12 @@ end
 % clear fd
 % for i = 1:max(orn)
 % 	fd(i).stimulus = data(i).S;
-% 	fd(i).response = -data(i).X;
+% 	fd(i).response = data(i).R;
 % 	fd(i).response(1:1e3) = NaN;
 % end
 
 % for i = 1:max(orn)
-% 	p(i) = fitModel2Data(@aNL5,fd(i),'nsteps',100,'use_parallel',true,'p0',p(i));
+% 	p(i) = fitModel2Data(@aNLN5,fd(i),'nsteps',50,'use_parallel',true,'p0',p(i));
 % end
 
 
@@ -393,6 +393,198 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+%% Timescale of gain control. 
+% In this section, I attempt to estimate the timescale of gain control from model fits to this data. Since in this data, there are large, variable excursions on a background, we expect gain control to play an important role. In this model, $k_D$ varies accoridng to:
+% 
+% $$ \dot{k}_{D}=B*k_{D}\left(a-\nicefrac{1}{2}\right) $$
+% 
+
+%%
+% where B is a free parameter that controls both the "amount" of gain control and its timescale. 
+
+
+
+%%
+% In the following figure, in each plot, each line/colour corresponds to data from a single neuron. (a) Shows the stimulus distribution. Note that it is on a log scale. (b) Shows the distribution of $k_D$ around its mean. In the model fits, there appears to be some gain control that changes $k_D$ over the course of the stimulus. How significant is this? (c) shows the ratio of standard deviations of $k_D$ to the standard deviation in the stimulus. Every neuron exhibits non-zero gain control, in the framework of an adapting NLN model. Now, how quickly does the $k_D# vary? (d) shows the autocorrelation functions of $k_D$ for each neuron, cf. autocorrelation functions for the corresponding stimulus. In (e-f), I vary the parameter $B$ in the model, which governs the timescale of gain control (and how much of it is there), and plot $r^2$ of the model vs. the data. In (f), I plot the $r^2$ of the model prediction vs. the autocorrelation time of $k_D$. 
+
+
+%%
+% Now I make the same plots, but for the firing rate models. 
+
+figure('outerposition',[0 0 1333 801],'PaperUnits','points','PaperSize',[1333 801]); hold on
+clear ax
+for i = 1:6
+	ax(i) = subplot(2,3,i); hold on
+end
+
+c = lines(max(orn));
+for i = 1:max(orn)
+
+	S = nanmean(PID(:,orn==i),2); 
+	R = nanmean(fA(:,orn==i),2);
+	R(:,sum(R)==0)= [];
+	R = nanmean(R,2);
+
+
+	[hy,hx] = histcounts(S);
+	hy = hy/sum(hy);
+	hx = hx(2:end) + mean(diff(hx));
+	plot(ax(1),hx,hy,'Color',c(i,:))
+
+	% run it through the model
+	[~, ~, ~, kD] = aNLN5(S,p(i));
+	plot(ax(3),i,std(kD)/std(S),'+','Color',c(i,:),'MarkerSize',20)
+
+	[hy,hx] = histcounts(kD/mean(kD));
+	hy = hy/sum(hy);
+	hx = hx(2:end) + mean(diff(hx));
+	plot(ax(2),hx,hy,'Color',c(i,:))
+
+	% compute autocorrelation of KD
+	kD = kD(10e3:end);
+	kD = kD - mean(kD);
+	kD = kD/std(kD);
+	[a,lags] = autocorr(kD,length(kD)-1);
+	plot(ax(4),lags,a,':','Color',c(i,:),'LineWidth',2)
+
+	stim = S(10e3:end);
+	stim = stim - mean(stim);
+	stim = stim/std(stim);
+	[a,lags] = autocorr(stim,length(stim)-1);
+	plot(ax(4),lags,a,'Color',c(i,:),'LineWidth',2)
+
+	% now, vary B and calcualte r^2 and autocorrelation of KD
+	all_B = logspace(log10(p(i).B/10),log10(p(i).B*10),21);
+	r2 = NaN*all_B;
+	tau = NaN*all_B;
+	q = p(i);
+	for j = 1:length(all_B)
+		q.B = all_B(j);
+		[Rp, ~, ~, kD] = aNLN5(S,q);
+		r2(j) = rsquare(Rp(20e3:50e3),R(20e3:50e3));
+		% also compute the autocorrelation time
+		kD = kD(10e3:end);
+		kD = kD - mean(kD);
+		kD = kD/std(kD);
+		[a,lags] = autocorr(kD,length(kD)-1);
+		tau(j) = lags(find(a<1/exp(1),1,'first'));
+	end
+	x = logspace(-1,1,21);
+	plot(ax(5),x,r2,'Color',c(i,:))
+	plot(ax(6),tau,r2,'Color',c(i,:))
+end
+
+xlabel(ax(1),'Stimulus (V)')
+ylabel(ax(1),'Probability')
+set(ax(1),'XScale','log')
+
+xlabel(ax(2),'k_{D}/<k_D>')
+ylabel(ax(2),'Probability')
+set(ax(2),'XScale','linear','XLim',[.1 2])
+
+set(ax(3),'YLim',[0 .4])
+xlabel(ax(3),'ORN #')
+ylabel(ax(3),'\sigma_{k_D}/\sigma_{S}')
+
+clear l L
+l(1) = plot(ax(4),NaN,NaN,'k:');
+l(2) = plot(ax(4),NaN,NaN,'k','LineWidth',2);
+legend(l,{'k_D','Stimulus'},'Location','southwest')
+
+set(ax(4),'XScale','log','XLim',[10 1e4],'XTick',[1 10 100 1e3 1e4])
+xlabel(ax(4),'Lag (ms)')
+ylabel(ax(4),'autocorrelation')
+
+xlabel(ax(5),'B/B_{fit}')
+set(ax(5),'XScale','log','XLim',[.1 10])
+ylabel(ax(5),'r^2')
+
+xlabel(ax(6),'\tau_{k_D} (ms)')
+set(ax(6),'XScale','log','XLim',[100 1e4])
+ylabel(ax(6),'r^2')
+
+prettyFig();
+
+labelFigure
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% This looks promising. The fundamental problem here is that in this model, the amount of gain control and the timescale of gain control are deeply linked. This is a problem because we don't know if the model fits the data well because it's getting the timescale of gain control right, or because it's getting the amount right. This method of analysis only tells us what the best value of the parameter B that reproduces the data is -- going from that to the timescale is a bit of a jump.
+
+%%
+% What we instead need is a model where the amount of gain control and the timescale of gain control are seperated. 
+
+
+% clear fd
+% for i = 1:max(orn)
+% 	fd(i).stimulus = data(i).S;
+% 	fd(i).response = data(i).R;
+% 	fd(i).response(1:1e3) = NaN;
+% end
+
+% for i = max(orn):-1:1
+% 	p(i) = fitModel2Data(@aNLN3,fd(i),'nsteps',50,'use_parallel',true,'p0',p(i));
+% end
+
+%%
+% In the following figure, I plot the data vs. the predictions of this model to see how good a fit we can get. 
+
+
+
+load('aNLN3_fits_to_LVF.mat','p')
+
+
+
+figure('outerposition',[0 0 1550 501],'PaperUnits','points','PaperSize',[1550 501]); hold on
+for i = 1:max(orn)
+	% show firing rate fits
+	subplot(1,max(orn),i); hold on
+	R = aNLN3(data(i).S,p(i));
+	plot(R(1e3:end),data(i).R(1e3:end),'k.')
+	legend(['r^2 = ' oval(rsquare(R(1e3:end),data(i).R(1e3:end)))],'Location','southeast')
+	xlabel('NLN model prediction (Hz)')
+	ylabel('Firing rate (Hz)')
+end
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% It seems really good. However, does the model actually use the front-end gain control to achieve this impressive fit? To determine this, I plot the time-dependent $k_D$ as a function of time for the various neuron fits. 
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+for i = 1:max(orn)
+
+	S = nanmean(PID(:,orn==i),2); 
+	[~, ~, ~, kD] = aNLN3(S,p(i));
+	plot(time,kD)
+
+end
+xlabel('Time (s)')
+ylabel('k_D')
+set(gca,'XLim',[0 60],'YLim',[0 0.3])
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
+% It looks like the gain control mechanism isn't being involved at all. Since the fits are really good, I conclude that there is no gain control going on in this data. 
+
+
 
 %% Version Info
 

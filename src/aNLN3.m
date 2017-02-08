@@ -23,27 +23,30 @@ p.A;
 p.C; 
 
 % bounds for response
-lb.A = 0;
-lb.C = 0;
-lb.tau1 = 1;
-lb.tau2 = 1;
+lb.A = 0.5;
+lb.C = 200;
+lb.tau1 = 40;
+lb.tau2 = 50;
 lb.n_y = 1;
 lb.n = 1;
 
-ub.tau1 = 100;
-ub.tau2 = 500;
+ub.tau1 = 70;
+ub.tau2 = 100;
 ub.n = 4; 
 ub.n_y = 2;
+ub.A = 1;
+ub.C = 400;
 
 % bounds for adaptation 
 lb.k_D_min = 1e-4;
 lb.B = 0;
-lb.tau_z = 100;
-lb.n_z = 1;
+lb.tau_z = 1;
+lb.n_z = .1;
 
-ub.k_D_min = 10;
-ub.B = 100;
-ub.tau_z = 2e3;
+
+ub.k_D_min = 1;
+ub.B = 1e3;
+ub.tau_z = 1e3;
 ub.n_z = 2;
 
 

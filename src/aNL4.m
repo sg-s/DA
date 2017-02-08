@@ -33,7 +33,7 @@ ub.B = 100;
 lb.tauA = 3;
 lb.tauB = 10;
 ub.tauA = 40;
-ub.tauB = 140;
+ub.tauB = 190;
 
 lb.A = 0.5;
 ub.A = 1;

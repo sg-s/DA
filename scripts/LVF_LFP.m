@@ -397,7 +397,7 @@ end
 %% Timescale of gain control. 
 % In this section, I attempt to estimate the timescale of gain control from model fits to this data. Since in this data, there are large, variable excursions on a background, we expect gain control to play an important role. In this model, $k_D$ varies accoridng to:
 % 
-% $$ \dot{k}_{D}=B*k_{D}\left(a-\nicefrac{1}{2}\right) $$
+% $$\dot{k}_{D}=B*k_{D}\left(a-\nicefrac{1}{2}\right)$$
 % 
 
 %%

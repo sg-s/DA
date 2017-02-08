@@ -7,16 +7,7 @@
 % To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 
 
-calling_func = dbstack;
-being_published = 0;
-if ~isempty(calling_func)
-	if find(strcmp('publish',{calling_func.name}))
-		being_published = 1;
-		unix(['tag -a publish-failed ',which(mfilename)]);
-		unix(['tag -r published ',which(mfilename)]);
-	end
-end
-tic
+pHeader;
 
 %% 
 % In this document, we attempt to recreate the results from Fig 3 showing fast gain changes with a widely distributed stimulus. 
@@ -25,10 +16,10 @@ tic
 % First, we check that the stimulus is the same as the one we used six months ago (in LargeVarianceFlickering.m). The following plot shows the old stimulus (blue) and the new stimulus (red). 
 
 % load old stimulus
-load('/local-data/DA-paper/large-variance-flicker/2015_01_28_CS_ab3_2_EA.mat')
+load(getPath(dataManager,'b5169f03f72690c1ac6918632fb1f998'))
 PID = data(4).PID;
 
-load('/local-data/DA-paper/large-variance-flicker/2015_01_28_CS_ab3_3_EA.mat')
+load(getPath(dataManager,'baccc203cb85f35cec96172932275a26'))
 PID = vertcat(PID,data(4).PID);
 PID = PID';
 PID = PID(1:10:end,:);
@@ -37,7 +28,7 @@ baseline = mean(PID(1:300,1));
 PID = PID - baseline;
 
 % load new stimulus
-load('/local-data/DA-paper/large-variance-flicker/2015_07_14_LVFtest.mat')
+load(getPath(dataManager,'d779046a10c49b570aba6d8bb665ea62'))
 newPID = data(4).PID';
 newPID = newPID(1:10:end,:);
 time = 1e-3*(1:length(PID));
@@ -49,8 +40,8 @@ newPID = newPID - baseline;
 % plot
 clear l
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-l(1) = errorShade(time(1:10:end),mean2(PID(1:10:end,:)),sem(PID(1:10:end,:)),'Color',[0 0 1]);
-l(2) = errorShade(time(1:10:end),mean2(newPID(1:10:end,:)),sem(newPID(1:10:end,:)),'Color',[1 0 0]);
+l(1) = errorShade(time(1:10:end),mean(PID(1:10:end,:),2),sem(PID(1:10:end,:)'),'Color',[0 0 1]);
+l(2) = errorShade(time(1:10:end),mean(newPID(1:10:end,:),2),sem(newPID(1:10:end,:)'),'Color',[1 0 0]);
 xlabel('Time (s)')
 ylabel('PID (V)')
 set(gca,'XLim',[20 60])
@@ -66,12 +57,12 @@ end
 %%
 % It looks very similar, but smaller, which is expected, as the PID gets less sensitive over time. What if we rescale it? 
 
-ff = fit(mean2(newPID),mean2(PID),'poly1');
+ff = fit(mean(newPID,2),mean(PID,2),'poly1');
 
 clear l
 figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-l(1) = errorShade(time(1:10:end),mean2(PID(1:10:end,:)),sem(PID(1:10:end,:)),'Color',[0 0 1]);
-l(2) = errorShade(time(1:10:end),ff(mean2(newPID(1:10:end,:))),sem(newPID(1:10:end,:)),'Color',[1 0 0]);
+l(1) = errorShade(time(1:10:end),mean(PID(1:10:end,:),2),sem(PID(1:10:end,:)'),'Color',[0 0 1]);
+l(2) = errorShade(time(1:10:end),ff(mean(newPID(1:10:end,:),2)),sem(newPID(1:10:end,:)'),'Color',[1 0 0]);
 xlabel('Time (s)')
 ylabel('PID (V)')
 legend(l,{'January 28 2015','July 14 2015 Rescaled'})
@@ -86,16 +77,20 @@ end
 %% Summary of Data
 % How does the neuron respond to this stimulus? Does the LFP and/or firing rates show evidence for fast gain control? In the following figure, we plot the stimulus, LFP and the response from all the neurons in the dataset. The shading shows the standard error of the mean. Each neuron is in a different colour. The stimulus, the LFP and the firing rates are all highly reproducible. 
 
-p = '/local-data/DA-paper/large-variance-flicker/LFP/';
+p = getPath(dataManager,'c8dc5353a75ce5fcdcfa13139c716bd8');
 [PID, LFP, fA, paradigm, orn, AllControlParadigms, paradigm_hashes,sequence] = consolidateData(p,1);
 
 % set to NaN firing rates that are 0
 fA(:,max(fA) == 0) = NaN;
 
+
+% remove baseline
+PID = PID - min(min(PID));
+
 % throw out trials where we didn't record the LFP, for whatever reason
 not_LFP = 0*orn;
 for i = 1:width(LFP)
-	not_LFP(i) = abs(mean2(LFP(:,i)));
+	not_LFP(i) = abs(mean(LFP(:,i)));
 end
 LFP(:,not_LFP< 0.5) = NaN;
 
@@ -110,8 +105,9 @@ for i = 1:width(LFP)
 	if isempty(z)
 		z = length(LFP);
 	end
+	LFP(:,i) = LFP(:,i) - nanmean(LFP(:,i));
 	try
-		filteredLFP(a:z,i) = 10*bandPass(LFP(a:z,i),1000,10);
+		filteredLFP(a:z,i) = 10*fastBandPass(LFP(a:z,i),1e4,10);
 	catch
 	end
 end
@@ -126,12 +122,19 @@ time = 1e-3*(1:length(PID));
 c = parula(length(unique(orn))+1);
 for i = 1:length(unique(orn))
 	example_orn = i;
+
+
+	S = PID(:,orn==example_orn); 
+	X = filteredLFP(:,orn==example_orn);
+	R = fA(:,orn==example_orn);
+	R(:,sum(R) == 0) = [];
+
 	axes(a(1))
-	errorShade(time,mean2(PID(:,orn==example_orn)),sem(PID(:,orn==example_orn)),'Color',c(i,:),'SubSample',50);
+	errorShade(time,nanmean(S,2),sem(S'),'Color',c(i,:),'SubSample',50);
 	axes(a(2))
-	errorShade(time,mean2(filteredLFP(:,orn==example_orn)),sem(filteredLFP(:,orn==example_orn)),'Color',c(i,:),'SubSample',50);
+	errorShade(time,nanmean(X,2),sem(X'),'Color',c(i,:),'SubSample',50);
 	axes(a(3))
-	errorShade(time,mean2(fA(:,orn==example_orn)),sem(fA(:,orn==example_orn)),'Color',c(i,:),'SubSample',50);
+	errorShade(time,nanmean(fA(:,orn==example_orn),2),sem(fA(:,orn==example_orn)'),'Color',c(i,:),'SubSample',50);
 	
 end
 ylabel(a(1),'Stimulus (V)')
@@ -153,8 +156,8 @@ end
 if ~exist('K','var')
 	K = NaN(1e3,length(unique(orn)));
 	for i = 1:length(unique(orn))
-		resp = mean2(filteredLFP(20e3:55e3,orn==i));
-		stim = mean2(PID(20e3:55e3,orn==i));
+		resp = nanmean(filteredLFP(20e3:55e3,orn==i),2);
+		stim = nanmean(PID(20e3:55e3,orn==i),2);
 		temp = fitFilter2Data(stim,resp,'reg',1,'filter_length',1400,'offset',400);
 		% throw out 200ms on either end
 		temp(1:200) = [];
@@ -166,8 +169,8 @@ end
 if ~exist('K2','var')
 	K2 = NaN(1e3,length(unique(orn)));
 	for i = 1:length(unique(orn))
-		stim = mean2(filteredLFP(20e3:55e3,orn==i));
-		resp = mean2(fA(20e3:55e3,orn==i));
+		stim = nanmean(filteredLFP(20e3:55e3,orn==i),2);
+		resp = nanmean(fA(20e3:55e3,orn==i),2);
 		temp = fitFilter2Data(stim,resp,'reg',1,'filter_length',1400,'offset',400);
 		% throw out 200ms on either end
 		temp(1:200) = [];
@@ -179,8 +182,8 @@ end
 if ~exist('K3','var')
 	K3 = NaN(1e3,length(unique(orn)));
 	for i = 1:length(unique(orn))
-		stim = mean2(PID(20e3:55e3,orn==i));
-		resp = mean2(fA(20e3:55e3,orn==i));
+		stim = nanmean(PID(20e3:55e3,orn==i),2);
+		resp = nanmean(fA(20e3:55e3,orn==i),2);
 		temp = fitFilter2Data(stim,resp,'reg',1,'filter_length',1400,'offset',400);
 		% throw out 200ms on either end
 		temp(1:200) = [];
@@ -216,169 +219,152 @@ if being_published
 	delete(gcf)
 end
 
+%% Whiff Analysis
+% I now analyse the data like I analysed the naturalistic stimulus data -- by whiff. I also fit a Hill function to the LFP responses to see what the $n$ parameter is. 
+
+clear data
+
+for i = 1:max(orn);
+	data(i).S = nanmean(PID(20e3:50e3,orn==i),2); 
+	data(i).X = nanmean(filteredLFP(20e3:50e3,orn==i),2);
+	R = fA(20e3:50e3,orn==i);
+	R(:,sum(R) == 0) = [];
+	data(i).R = nanmean(R,2);
 
 
-
-%% Example Data: Fast Gain Control
-% First, we check if we see evidence for fast gain control in the firing rate output of the neuron. In the following figure, we show the results of standard methods of gain analysis for a randomly chosen example neuron. In the following analysis, we compare the data to a LN model prediction of the data. Any evidence of fast gain control we observe here is therefore not attributable to a output non-linearity.  
-
-
-
-% make LN predictions of the LFP and the response
-fp = NaN(length(fA),length(unique(orn)));
-for i = 1:length(unique(orn))
-	filtertime = 1e-3*(1:1e3)-.2;
-	fp(:,i) = convolve(time,mean2(PID(:,orn==i)),K3(:,i),filtertime);
-	% correct for some trivial scaling
-	a = fp(20e3:55e3,i);
-	b = mean2(fA(20e3:55e3,orn == i));
-	temp  = isnan(a) | isnan(b);
-	temp = fit(a(~temp),b(~temp),'poly5'); 
-	fp(:,i) = temp(fp(:,i));
 end
 
-LFP_pred = NaN(length(fA),length(unique(orn)));
-for i = 1:length(unique(orn))
-	filtertime = 1e-3*(1:1e3)-.2;
-	LFP_pred(:,i) = convolve(time,mean2(PID(:,orn==i)),K(:,i),filtertime);
-	% correct for some trivial scaling
-	a = LFP_pred(:,i);
-	b = mean2(filteredLFP(:,orn == i));
-	temp  = isnan(a) | isnan(b);
-	temp = fit(a(~temp),b(~temp),'poly7'); 
-	LFP_pred(:,i) = temp(LFP_pred(:,i));
+ft = fittype(' hillFit(x,A,k,n,x_offset)');
+
+figure('outerposition',[0 0 1400 611],'PaperUnits','points','PaperSize',[1400 611]); hold on
+for i = 1:length(data)
+	S = data(i).S;
+	X = data(i).X;
+	R = data(i).R;
+	ws = whiffStatistics(S,X,R,300,'MinPeakProminence',max(S/1e2),'debug',false);
+
+	subplot(2,length(data),i); hold on
+	x = ws.stim_peaks;
+	y = -ws.peak_LFP; y = y  - min(y);
+	plot(x,y,'.','MarkerSize',20,'Color','k')
+	set(gca,'XScale','log')
+	ylabel('LFP_{peak} (mV)')
+	axis square
+	% fit a Hill function to this
+	ff = fit(x(~isnan(y)),y(~isnan(y)),ft,'StartPoint',[25 .1 2 0],'Lower',[1 1e-3 .1 -10]);
+	l = plot(sort(x),ff(sort(x)),'r');
+	legend(l,['n = ' oval(ff.n)],'Location','southeast')
+
+	subplot(2,length(data),length(data)+i); hold on
+	plot(ws.stim_peaks,ws.peak_firing_rate,'.','MarkerSize',20,'Color','k')
+
+	set(gca,'XScale','log','YLim',[0 300])
+	xlabel('Stim_{peak} (V)')
+	ylabel('Firing rate_{peak} (mV)')
+	axis square
+
 end
 
-for i = 1
-	% gain analysis -- LN model
-	figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
+prettyFig();
 
-	% first we do the firing rates
-	clear ph
-	ph(3) = subplot(2,2,1); hold on
-	ph(4) = subplot(2,2,2); hold on
-
-	hl_min = .1;
-	hl_max = 10;
-	history_lengths = logspace(log10(hl_min),log10(hl_max),30);
-
-	resp = mean2(fA(:,orn==i));
-	stim = mean2(PID(:,orn==i));
-	pred = (fp(:,i));
-
-	stim = stim(20e3:55e3);
-	pred = pred(20e3:55e3);
-	resp = resp(20e3:55e3);
-
-	% history_lengths = findValidHistoryLengths(1e-3,stim,pred,resp,30,.33);
-	history_lengths = logspace(-1,1,30);
-
-	[p,~,~,~,~,history_lengths]=gainAnalysisWrapper('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'use_cache',1,'engine',@gainAnalysis);
-	title(ph(4),['ORN ',mat2str(i),' Firing Rate'])
-	set(ph(4),'XLim',[.1 10])
-
-	% now do the same for the LFP
-	ph(3) = subplot(2,2,3); hold on
-	ph(4) = subplot(2,2,4); hold on
-
-	resp = mean2(filteredLFP(:,orn==i));
-	pred = LFP_pred(:,i);
-	pred = pred(20e3:55e3);
-	resp = resp(20e3:55e3);
-
-	[p,~,~,~,~,history_lengths]=gainAnalysisWrapper('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'use_cache',1,'engine',@gainAnalysis);
-	title(ph(4),['ORN ',mat2str(i),' LFP'])
-	xlabel(ph(3),'LFP (pred)')
-	ylabel(ph(3),'LFP (data)')
-	set(ph(4),'XLim',[.1 10])
-
-	prettyFig;
-
-	if being_published
-		snapnow
-		delete(gcf)
-	end
+if being_published
+	snapnow
+	delete(gcf)
 end
+
 
 %%
-% Now, we summarise the results from all the data, omitting the scatter plots on the left and the points where the gain is not signifcanlty different on the right. In the following figure, only the best-fit (PCA) lines to the data are shown on the left, and only the points where the gain is statistically different is shown on the right. 
+% It looks like $n<1$. However, this estimate complicated by the fact that I don't know what the absolute value of the LFP is (because of the way the experiment was performed). If I introduce an offset in the y-axis, I can get a very different $n$. Is there another way to estimate $n$? 
 
-figure('outerposition',[0 0 700 700],'PaperUnits','points','PaperSize',[1000 700]); hold on
-clear a
-for i = 1:4
-	a(i) = subplot(2,2,i); hold on
-end
-history_lengths = logspace(-1,1,30);
-
-for i = 1:length(unique(orn))
-	% first we do the firing rates
-	clear ph
-	ph(3) = a(1);
-	ph(4) = a(2);
-	
-	resp = mean2(fA(:,orn==i));
-	stim = mean2(PID(:,orn==i));
-	pred = (fp(:,i));
-
-	stim = stim(20e3:55e3);
-	pred = pred(20e3:55e3);
-	resp = resp(20e3:55e3);
-
-	[p,~,~,~,~,history_lengths,handles]=gainAnalysisWrapper('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(10),'use_cache',1,'engine',@gainAnalysis);
-	
-
-	% cosmetics
-	h=get(ph(3),'Children');
-	rm_this = [];
-	for j = 1:length(h)
-		if strcmp(get(h(j),'Marker'),'.')
-			rm_this = [rm_this j];
-		end
-	end
-	delete(h(rm_this))
-	delete(handles.green_line)
-	delete(handles.red_line)
-	delete(handles.vert_line)
+%% Is there fast gain control? 
+% Now I collect whiffs with the same amplitude, and look at the LFP and firing rate responses to see if there is any difference that could be attributed to stimulus context. 
 
 
+ws = plotScaledNatStimWhiffStats(data,false);
+s_range = [.313 .329];
 
-	% now do the same for the LFP
-	clear ph
-	ph(3) = a(3);
-	ph(4) = a(4);
-
-	resp = mean2(filteredLFP(:,orn==i));
-	pred = LFP_pred(:,i);
-	pred = pred(20e3:55e3);
-	resp = resp(20e3:55e3);
-
-	[p,~,~,~,~,history_lengths,handles] = gainAnalysisWrapper('response',resp,'prediction',pred,'stimulus',stim,'time',1e-3*(1:length(resp)),'ph',ph,'history_lengths',history_lengths,'example_history_length',history_lengths(10),'use_cache',1,'engine',@gainAnalysis);
-	
-	% cosmetics
-	h=get(ph(3),'Children');
-	rm_this = [];
-	for j = 1:length(h)
-		if strcmp(get(h(j),'Marker'),'.')
-			rm_this = [rm_this j];
-		end
-	end
-	delete(h(rm_this))
-	delete(handles.green_line)
-	delete(handles.red_line)
-	delete(handles.vert_line)
+figure('outerposition',[0 0 1501 502],'PaperUnits','points','PaperSize',[1501 502]); hold on
+for i = 1:3
+	ax(i) = subplot(1,3,i); hold on
 end
 
-set(a(2),'YLim',[0.75 1.55])
-set(a(4),'YLim',[.75 1.75])
-xlabel(a(3),'LN Prediction (mV)')
-xlabel(a(1),'LN Prediction (Hz)')
-ylabel(a(3),'LFP (mV)')
-ylabel(a(1),'Firing Rate (Hz)')
-title(a(1),'')
-title(a(3),'')
+show_these = ws(3).stim_peak_loc((ws(3).stim_peaks>s_range(1) & ws(3).stim_peaks<s_range(2)));
 
 
-prettyFig;
+for i = 3
+	for j = 1:length(show_these)
+		this_loc = show_these(j);
+
+		S = data(i).S;
+		X = data(i).X;
+		R = data(i).R;
+
+		a = this_loc - 300;
+		z = this_loc+300;
+
+		if a > 1 && z < length(S)
+			plot(ax(1),S(a:z))
+			plot(ax(2),X(a:z))
+			plot(ax(3),R(a:z))
+		end
+
+	end
+end
+ylabel(ax(1),'Stimulus (V)')
+ylabel(ax(2),'LFP (mV)')
+ylabel(ax(3),'Firing rate (Hz)')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%% Fitting an adapting NL model to the data
+% In this section, I fit an adapting NL and NLN model to the LFP and firing rate to determine what the $n$ is in this data, and to see if that model can account for this data. 
+
+% clear fd
+% for i = 1:max(orn)
+% 	fd(i).stimulus = data(i).S;
+% 	fd(i).response = -data(i).X;
+% 	fd(i).response(1:1e3) = NaN;
+% end
+
+% for i = 1:max(orn)
+% 	p(i) = fitModel2Data(@aNL5,fd(i),'nsteps',100,'use_parallel',true,'p0',p(i));
+% end
+
+
+%%
+% In the following figure, I show the predictions made by adapting NL and NLN models for the LFP and the firing rate. Models were fit individually to each neuron. Each column shows the model fits and data from a single neuron. 
+
+load('aNL5_fits_to_LVF.mat','p')
+p_LFP = p;
+load('aNLN5_fits_to_LVF.mat','p')
+
+
+figure('outerposition',[0 0 1550 811],'PaperUnits','points','PaperSize',[1550 811]); hold on
+for i = 1:max(orn)
+
+	% show firing rate fits
+	subplot(2,max(orn),i); hold on
+	R = aNL5(data(i).S,p_LFP(i));
+	plot(-R(1e3:end),data(i).X(1e3:end),'k.')
+	legend(['r^2 = ' oval(rsquare(-R(1e3:end),data(i).X(1e3:end)))],'Location','southeast')
+	xlabel('NL model prediction (mV)')
+	ylabel('\Delta LFP (mV)')
+
+	% show firing rate fits
+	subplot(2,max(orn),max(orn)+i); hold on
+	R = aNLN5(data(i).S,p(i));
+	plot(R(1e3:end),data(i).R(1e3:end),'k.')
+	legend(['r^2 = ' oval(rsquare(R(1e3:end),data(i).R(1e3:end)))],'Location','southeast')
+	xlabel('NLN model prediction (Hz)')
+	ylabel('Firing rate (Hz)')
+end
+
+prettyFig();
 
 if being_published
 	snapnow
@@ -386,37 +372,22 @@ if being_published
 end
 
 %%
-% As the figure shows, fast gain control is observed in every neuron tested, and we see evidence of fast gain control both in the firing rates and in the LFP. 
+% What are the $n$ parameters in these fits?
 
-%% Version Info
-% The file that generated this document is called:
-disp(mfilename)
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(1:max(orn),[p.Hill_n],'k+-')
+plot(1:max(orn),[p_LFP.Hill_n],'r+-')
+legend({'Firing rate','LFP'})
+xlabel('ORN #')
+ylabel('n in fit')
 
-%%
-% and its md5 hash is:
-Opt.Input = 'file';
-disp(dataHash(strcat(mfilename,'.m'),Opt))
-
-%%
-% This file should be in this commit:
-[status,m]=unix('git rev-parse HEAD');
-if ~status
-	disp(m)
-end
-
-t = toc;
-
-%% 
-% This document was built in: 
-disp(strcat(oval(t,3),' seconds.'))
-
-% tag the file as being published 
-% add homebrew path
-path1 = getenv('PATH');
-path1 = [path1 ':/usr/local/bin'];
-setenv('PATH', path1);
+prettyFig();
 
 if being_published
-	unix(['tag -a published ',which(mfilename)]);
-	unix(['tag -r publish-failed ',which(mfilename)]);
+	snapnow
+	delete(gcf)
 end
+
+%% Version Info
+
+pFooter;

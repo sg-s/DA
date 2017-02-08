@@ -1,15 +1,17 @@
-% this is the LFP variant of aNLN4.m
+% this is the LFP variant of aNLN5.m
 % differences: 
 % monolobed filter instead of a bilobed one
 % adds a offset parameter because we don't know the actual absolute value of the LFP
+% also, here we allow the n parameter of the Hill function to vary
 % 
-function [R, a, b, kD, K] = aNL4(S,p)
+function [R, a, b, kD, K] = aNL5(S,p)
 
 % list parameters for clarity 
 
 % input NL parameters
 p.k0; % minimum k_D 
 p.B; % strength of adaptive changes 
+p.Hill_n;
 
 % this uses pLFPfilter to generate the filter. 
 p.n;
@@ -23,11 +25,14 @@ p.C;
 p.D;
 
 % bounds
+lb.Hill_n = 1;
+ub.Hill_n = 8;
+
 lb.k0 = 1e-3;
 ub.k0 = 1;
 
 lb.B = 1;
-ub.B = 100;
+ub.B = 1e3;
 
 % filter
 lb.tauA = 3;
@@ -44,7 +49,7 @@ ub.C = 6;
 lb.n = 1;
 ub.n = 8;
 
-lb.D = -100;
+lb.D = -20;
 ub.D = 10;
 
 
@@ -62,6 +67,8 @@ vS = interp1(time,S,T); vS(isnan(vS)) = S(1);
 vkD = 0*vS;
 va = 0*vS;
 
+hn = ceil(p.Hill_n);
+
 % use a fixed-step Euler to solve this
 for i = 2:length(vS)
 	dydt = p.B*vkD(i-1)*(va(i-1) - 1/2);
@@ -72,7 +79,8 @@ for i = 2:length(vS)
 	end
 
 	% update a
-	va(i) = 1/(1 + (vkD(i)/vS(i)));
+	KS = (vkD(i)/vS(i))^hn;
+	va(i) = 1/(1 + KS);
 
 end
 

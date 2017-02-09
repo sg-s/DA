@@ -1,29 +1,35 @@
-%% LFPmodelv4
-% binding/unbinding system + adaptation
-% adapting model, k_D changes like in chemotaxis, k1 fixed
+%% LFPmodelv5F
+% adapting model, k_D changes like in chemotaxis, k2 fixed
 % we also impose a minimum k_D 
+% this differs from LFPmodelv5 in that there is also a parameteric filter after the receptor
 
-function [R,a,k_D] = LFPmodelv4(S,p)
+function [R,a,k_D] = LFPmodelv5F(S,p)
 
 	% list parameters for legibility
 	p.n;
-	p.k1;
+	p.k2;
 	p.B; % degree of adaptation
 	p.k_min;
+
+	% filter parameters
+	p.K_n;
+	p.K_tau;
 
 	% trivial parameters
 	p.R_scale;
 	p.R_offset;
 
 	% bounds
-	lb.k1 = 0;
+	lb.k2 = 0;
 	lb.B = 0;
 	lb.k_min = 1e-6;
 	lb.n = 1;
+	lb.K_n = 1;
+	lb.K_tau = 1;
 
-	ub.n = 5;
+	ub.n = 1;
+	ub.K_n = 4;
 	ub.k_min = .1;
-	ub.B = 1e4;
 
 
 
@@ -31,7 +37,7 @@ function [R,a,k_D] = LFPmodelv4(S,p)
 	if size(S,2) > 1
 		R = NaN*S; a = NaN*S; k1 = NaN*S; k2 = NaN*S; k_D = NaN*S; Shat = NaN*S;
 		for i = 1:size(S,2)
-			[R(:,i),a(:,i),k1(:,i),k2(:,i),k_D(:,i),Shat(:,i)] = LFPmodelv4(S(:,i),p);
+			[R(:,i),a(:,i),k1(:,i),k2(:,i),k_D(:,i),Shat(:,i)] = LFPmodelv5(S(:,i),p);
 		end
 		return
 	end
@@ -48,13 +54,13 @@ function [R,a,k_D] = LFPmodelv4(S,p)
 	k_D = p.k_min + 0*vS;
 	
 
-	k1 = p.k1;
+	k2 = p.k2;
 
 	n = ceil(p.n);
 
 	for i = 2:length(vS)
 
-		k2 = k1*k_D(i-1);
+		k1 = k2/k_D(i-1);
 		
 		dydt = k1*(1-a(i-1))*(vS(i-1)^n) - k2*a(i-1);
 		a(i) = dydt*1e-4 + a(i-1);
@@ -78,7 +84,14 @@ function [R,a,k_D] = LFPmodelv4(S,p)
 	% re-interpolate the solution to fit the stimulus
 	a = interp1(T,a,time);
 
-	R = (p.R_offset + a)*p.R_scale;
+	q.tau = p.K_tau;
+	q.n = p.K_n;
+	q.A = 1;
+	K = filter_gamma(1:1e3,q);
+
+	R = filter(K,1,a);
+
+	R = (p.R_offset + R)*p.R_scale;
 
 
 

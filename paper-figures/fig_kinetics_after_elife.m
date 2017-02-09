@@ -197,7 +197,7 @@ for di = 1:length(data_hashes)
 	xlabel(ax(2+di),'\mu_{Stimulus} (V)')
 	ylabel(ax(2+di),'Lag (ms)')
 
-	legend({'Firing rate','LFP'},'Location','northwest')
+	legend({'LFP','Firing rate'},'Location','northwest')
 	set(ax(2+di),'XLim',[0 x_limits(di)],'YLim',[0 200])
 	title([orn_names{di} ' - ' odour_names{di}])
 

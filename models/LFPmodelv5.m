@@ -5,9 +5,9 @@
 function [R,a,k_D] = LFPmodelv5(S,p)
 
 	% list parameters for legibility
-
+	p.n;
 	p.k2;
-	p.adap_tau;
+	p.B; % degree of adaptation
 	p.k_min;
 
 	% trivial parameters
@@ -16,17 +16,21 @@ function [R,a,k_D] = LFPmodelv5(S,p)
 
 	% bounds
 	lb.k2 = 0;
-	lb.adap_tau = 0;
+	lb.B = 0;
 	lb.k_min = 1e-6;
+	lb.n = 1;
+
+	ub.n = 10;
+	ub.k_min = .1;
+	ub.B = 1e9;
 
 
-	ub.adap_tau = 10;
 
 	% work with matrices too
 	if size(S,2) > 1
 		R = NaN*S; a = NaN*S; k1 = NaN*S; k2 = NaN*S; k_D = NaN*S; Shat = NaN*S;
 		for i = 1:size(S,2)
-			[R(:,i),a(:,i),k1(:,i),k2(:,i),k_D(:,i),Shat(:,i)] = adaptingLFPmodel(S(:,i),p);
+			[R(:,i),a(:,i),k1(:,i),k2(:,i),k_D(:,i),Shat(:,i)] = LFPmodelv5(S(:,i),p);
 		end
 		return
 	end
@@ -45,11 +49,13 @@ function [R,a,k_D] = LFPmodelv5(S,p)
 
 	k2 = p.k2;
 
+	n = ceil(p.n);
+
 	for i = 2:length(vS)
 
 		k1 = k2/k_D(i-1);
 		
-		dydt = k1*(1-a(i-1))*vS(i-1) - k2*a(i-1);
+		dydt = k1*(1-a(i-1))*(vS(i-1)^n) - k2*a(i-1);
 		a(i) = dydt*1e-4 + a(i-1);
 		if a(i) > 1
 			a(i) = 1;
@@ -58,7 +64,7 @@ function [R,a,k_D] = LFPmodelv5(S,p)
 		end
 
 		% also change k_D
-		dydt = (1/p.adap_tau)*k_D(i-1)*(a(i-1) - 1/2);
+		dydt = p.B*k_D(i-1)*(a(i-1) - 1/2);
 		k_D(i) = dydt*1e-4 + k_D(i-1);
 		if k_D(i) < p.k_min
 			k_D(i) = p.k_min;

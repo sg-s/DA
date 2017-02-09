@@ -1216,7 +1216,9 @@ if exist('.cache/one_model_variance_NL_gain.mat','file') > 0
 else
 	all_n = 0:8;
 	gain_lo = NaN(size(reshaped_PID,2),length(all_n));
+	gain_lo2 = NaN(size(reshaped_PID,2),length(all_n));
 	gain_hi = NaN(size(reshaped_PID,2),length(all_n));
+	gain_hi2 = NaN(size(reshaped_PID,2),length(all_n));
 	r2_lo = NaN(size(reshaped_PID,2),length(all_n));
 	r2_hi = NaN(size(reshaped_PID,2),length(all_n));
 	r2 = NaN(size(reshaped_PID,2),length(all_n));
@@ -1237,6 +1239,11 @@ else
 				r2_lo(i,j) = gof.rsquare;
 				gain_lo(i,j) = ff.p1;
 				r2(i,j) = rsquare(K1p(1e3:end-1e3,i),X(1e3:end-1e3));
+
+				% also estimate gain using the std. dev. ratios
+				gain_lo2(i,j) = nanstd(X(6e3:9e3))/nanstd(S(6e3:9e3));
+				gain_hi2(i,j) = nanstd(X(1e3:5e3))/nanstd(S(1e3:5e3));
+
 			else
 				[ff,gof]  = fit(K1p(1e3:5e3,i),R(1e3:5e3),'poly1');
 				r2_hi(i,j) = gof.rsquare;
@@ -1292,7 +1299,7 @@ else
 			end
 		end
 	end
-	save('.cache/one_model_variance_aNL_gain.mat','all_n','gain_lo','gain_hi','r2','r2_lo','r2_hi');
+	save('.cache/one_model_variance_aNL_gain.mat','all_n','gain_lo','gain_hi','r2','r2_lo','r2_hi','gain_hi2','gain_lo2');
 end
 
 % make a plot showing the range of gain change in the LFP, and which n accounts for this in the NL model
@@ -1362,6 +1369,129 @@ ylabel('gain_{low}/gain_{hi}')
 
 title('Accounting for change in \mu_{stim}')
 
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+;;;;;;;; ;;     ;; ;;       ;;          ;;       ;;;;;;;; ;;;;;;;;  
+;;       ;;     ;; ;;       ;;          ;;       ;;       ;;     ;; 
+;;       ;;     ;; ;;       ;;          ;;       ;;       ;;     ;; 
+;;;;;;   ;;     ;; ;;       ;;          ;;       ;;;;;;   ;;;;;;;;  
+;;       ;;     ;; ;;       ;;          ;;       ;;       ;;        
+;;       ;;     ;; ;;       ;;          ;;       ;;       ;;        
+;;        ;;;;;;;  ;;;;;;;; ;;;;;;;;    ;;;;;;;; ;;       ;;        
+
+;;     ;;  ;;;;;;;  ;;;;;;;;  ;;;;;;;; ;;       
+;;;   ;;; ;;     ;; ;;     ;; ;;       ;;       
+;;;; ;;;; ;;     ;; ;;     ;; ;;       ;;       
+;; ;;; ;; ;;     ;; ;;     ;; ;;;;;;   ;;       
+;;     ;; ;;     ;; ;;     ;; ;;       ;;       
+;;     ;; ;;     ;; ;;     ;; ;;       ;;       
+;;     ;;  ;;;;;;;  ;;;;;;;;  ;;;;;;;; ;;;;;;;; 
+
+
+%%
+% In this section, I attempt to fit a kinetic model of the LFP (with binding/unbinding explicitly built in) to see what the $n$ parameter is here that accounts for the variance gain control we see in the data. 
+
+clear data
+c = 1;
+
+for i = 1:10:size(reshaped_PID,2)
+	data(c).stimulus = reshaped_PID(:,i);
+	data(c).response = reshaped_LFP(:,i);
+	data(c).response(1:1e3) = NaN;
+	c = c+ 1;
+end
+
+
+%%
+% First, I fit an adapting model that explicitly has binding kinetics to the data. The best-fit parameters of this model are:
+
+clear p
+p.       n = 5;
+p.   k_min = 0.0112;
+p. R_scale = -12.2080;
+p.R_offset = -0.4607;
+p.       B = 2.2062e+09;
+p.      k2 = 3.0297;
+p.     K_n = 0.1406;
+p.   K_tau = 63.1562;
+
+disp(p)
+
+
+% calcualte gains and r2 
+if exist('.cache/one_model_variance_LFPmodelv5F_gain.mat','file') > 0
+
+else
+	all_n = 0:8;
+	gain_lo = NaN(size(reshaped_PID,2),length(all_n));
+	gain_hi = NaN(size(reshaped_PID,2),length(all_n));
+	r2_lo = NaN(size(reshaped_PID,2),length(all_n));
+	r2_hi = NaN(size(reshaped_PID,2),length(all_n));
+	r2 = NaN(size(reshaped_PID,2),length(all_n));
+	for i = 1:size(reshaped_PID,2)
+		textbar(i,size(reshaped_PID,2))
+		S = reshaped_PID(:,i);
+		R = reshaped_LFP(:,i);
+		for j = 1:length(all_n)
+			n = all_n(j);
+			p.n = n;
+			if n > 0
+				X = vectorise(LFPmodelv5F(S,p));
+				if ~any(isnan(X))
+					[ff,gof] = fit(K1p(1e3:5e3,i),X(1e3:5e3),'poly1');
+					r2_hi(i,j) = gof.rsquare;
+					gain_hi(i,j) = ff.p1;
+					[ff,gof] = fit(K1p(6e3:9.5e3,i),X(6e3:9.5e3),'poly1');
+					r2_lo(i,j) = gof.rsquare;
+					gain_lo(i,j) = ff.p1;
+					r2(i,j) = rsquare(R(1e3:end-1e3),X(1e3:end-1e3));
+				end
+			else
+			end
+		end
+	end
+	save('.cache/one_model_variance_LFPmodelv5F_gain.mat','all_n','gain_lo','gain_hi','r2','r2_lo','r2_hi');
+end
+
+
+%%
+% The $n$ parameter is 5, close to what the earlier, simpler analysis reported. What if I force the $n$ to be 1, and re-fit the model? The following figure shows the quality of predictions for the originally fit model, and a new model where I allow all paramters to vary, excpet $n$ which is fixed at 1. Note that the model with $n=5$ performs much better than the model where $n$ is nailed at 1. 
+
+load('.cache/one_model_variance_LFPmodelv5F_gain.mat')
+r2_n5 = r2(:,6);
+
+clear p
+p.       n = 1;
+p.   k_min = 0.0737;
+p. R_scale = -17.8377;
+p.R_offset = -0.5876;
+p.       B = 2.1392e+09;
+p.      k2 = 674.5297;
+p.     K_n = 1;
+p.   K_tau = 85.2766;
+
+% compute r2
+r2_n1 = NaN*r2_n5;
+for i = 1:length(r2_n1)
+	S = reshaped_PID(:,i);
+	R = reshaped_LFP(:,i);
+	X = vectorise(LFPmodelv5F(S,p));
+	r2_n1(i) = rsquare(X,R);
+end
+
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+plot(r2_n1,r2_n5,'k+')
+xlabel('r^2_{n=1}')
+ylabel('r^2_{n=5}')
+plot([0 1],[0 1],'k--')
+set(gca,'XLim',[0 1],'YLim',[0 1])
 prettyFig();
 
 if being_published

@@ -35,7 +35,8 @@ pHeader;
 
 
 %% 
-% Can we see if there is any gain control in this data? I do so by plotting the deviations from the NLN model as a function of the mean stimulus in some preceding window. 
+% Can we see if there is any gain control in this data? In the following figure, I first fit NLN-models neuron-by-neuron to the data. The NLN models have only two parameters (the $k_D$ and the $n$) that are fit parametrically. Other parameters (like the filter) are fit non-parametrically. In the following figure, I plot the results of each neuron in a separate colour. The first plot shows the distribution of the deviations of the NLN model predictions from the measured response. The second plot shows the Spearman correlation between the deviations and the mean stimulus in some preceding window, as a function of window length. Note that these plots tend to have a minimum at some defined timescale. 
+
 
 % get all data 
 cdata = consolidateData2(getPath(dataManager,'4608c42b12191b383c84fea52392ea97'));
@@ -116,7 +117,7 @@ end
 
 
 %% ab3A and 2-butanone.
-%
+% I repeat the same analysis for ab3A and 2-butanone. Since I only have only neuron here, I also plot some extra things like a comparison of the response to the prediction, and a plot of the deviations vs. the mean stimulus in the preceding window.  
 
 % get all data 
 cdata = consolidateData2(getPath(dataManager,'c2bce18a6b0a7e89e9c6832dcc27e39b'));
@@ -162,6 +163,7 @@ if being_published
 end
 
 
+
    ;;;    ;;;;;;;;   ;;;;;;;     ;;;        ;;;;;;;     ;;;     ;;;;;;  
   ;; ;;   ;;     ;; ;;     ;;   ;; ;;      ;;     ;;   ;; ;;   ;;    ;; 
  ;;   ;;  ;;     ;;        ;;  ;;   ;;            ;;  ;;   ;;  ;;       
@@ -169,6 +171,9 @@ end
 ;;;;;;;;; ;;     ;;        ;; ;;;;;;;;;    ;;        ;;;;;;;;; ;;       
 ;;     ;; ;;     ;; ;;     ;; ;;     ;;    ;;        ;;     ;; ;;    ;; 
 ;;     ;; ;;;;;;;;   ;;;;;;;  ;;     ;;    ;;;;;;;;; ;;     ;;  ;;;;;;  
+
+%% ab3A and ethyl acetate
+% In this section, I repeat the analysis but with ethyl acetate naturalistic stimulus applied to ab3A neurons. 
 
 % load the data
 cdata = consolidateKontrollerData(getPath(dataManager,'f70e37a7db469b88c0fc79ff5e828e9d'));

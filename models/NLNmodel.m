@@ -10,8 +10,8 @@ p.n;
 
 
 % bounds
-lb.n = 1;
-lb.k_D = 1e-2;
+lb.n = .5;
+lb.k_D = 0;
 ub.n = 4;
 
 T = S(:,2); % target response

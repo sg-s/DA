@@ -35,7 +35,7 @@ pHeader;
 
 
 %% 
-% Can we see if there is any gain control in this data? In the following figure, I first fit NLN-models neuron-by-neuron to the data. The NLN models have only two parameters (the $k_D$ and the $n$) that are fit parametrically. Other parameters (like the filter) are fit non-parametrically. In the following figure, I plot the results of each neuron in a separate colour. The first plot shows the distribution of the deviations of the NLN model predictions from the measured response. The second plot shows the Spearman correlation between the deviations and the mean stimulus in some preceding window, as a function of window length. Note that these plots tend to have a minimum at some defined timescale. 
+% Can we see if there is any gain control in this data? In the following figure, I first fit NLN-models neuron-by-neuron to the data. The NLN models have only two parameters (the $k_D$ and the $n$) that are fit parametrically. Other parameters (like the filter) are fit non-parametrically. In the following figure, I plot the results of each neuron in a separate colour. The first plot shows the distribution of the deviations of the NLN model predictions from the measured response. The second plot shows the Spearman correlation between the deviations and the mean stimulus in some preceding window, as a function of window length. Note that these plots tend to have a minimum at some defined timescale. The dotted and dashed lines indicate the autocorrelation times for the stimulus and the response respectively. 
 
 
 % get all data 

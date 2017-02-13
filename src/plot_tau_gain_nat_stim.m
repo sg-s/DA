@@ -63,5 +63,12 @@ if ishandle(ax(4))
 	set(ax(4),'XScale','log','XTick',[1 10 100 1e3 1e4 1e5])
 	xlabel(ax(4),'\tau_{gain} (ms)')
 	ylabel(ax(4),'\rho')
+
+	% also plot the stimulus and response auto-correlations
+	tau_stim = autoCorrelationTime(data.S(:));
+	plot(ax(4),[tau_stim tau_stim],[-1 1],':','Color',c)
+	tau_resp = autoCorrelationTime(data.R(:));
+	plot(ax(4),[tau_resp tau_resp],[-1 1],'--','Color',c)
+	set(ax(4),'YLim',[-1 .1])
 end
 

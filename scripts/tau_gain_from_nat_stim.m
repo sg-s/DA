@@ -42,11 +42,11 @@ pHeader;
 cdata = consolidateData2(getPath(dataManager,'4608c42b12191b383c84fea52392ea97'));
 [~, data] =  assembleScaledNatStim(cdata);
 
-this_orn = 3;
+this_orn = 2;
 clear fd
 for i = 1:size(data(this_orn).X,2)
 	S = data(this_orn).S(:,i); S = S - min(S);
-	R = data(this_orn).R(:,i);
+	R = -data(this_orn).X(:,i);
 	fd(i).stimulus = [S R];
 	fd(i).response = R;
 end
@@ -96,8 +96,6 @@ end
 
 
 
-
-
    ;;;    ;;;;;;;;   ;;;;;;;     ;;;    
   ;; ;;   ;;     ;; ;;     ;;   ;; ;;   
  ;;   ;;  ;;     ;;        ;;  ;;   ;;  
@@ -124,16 +122,6 @@ cdata = consolidateData2(getPath(dataManager,'c2bce18a6b0a7e89e9c6832dcc27e39b')
 [~, data] =  assembleScaledNatStim(cdata);
 
 
-% fit a NLN model to this
-% this_orn = 1;
-% clear fd
-% for i = 1:size(data(this_orn).X,2)
-% 	S = data(this_orn).S(:,i); S = S - min(S);
-% 	R = data(this_orn).R(:,i);
-% 	fd(i).stimulus = [S R];
-% 	fd(i).response = R;
-% 	%fd(i).response(fd(i).response<10) = NaN;
-% end
 
 clear p
  p.k_D = 3.5894;
@@ -161,6 +149,7 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
 
 
 

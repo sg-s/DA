@@ -3,15 +3,12 @@ pHeader;
 
 
 %% Estimating n directly from the data
-% 
+% In this document I collect all the data we have, and plot some statistics of the data to get a sense of it. The ultimate goal is to try to directly infer $n$ from the data, without a model. 
 
-figure('outerposition',[0 0 1501 901],'PaperUnits','points','PaperSize',[1501 901]); hold on
+figure('outerposition',[0 0 1001 901],'PaperUnits','points','PaperSize',[1001 901]); hold on
 clear ax
-for i = 1:6
-	ax(i) = subplot(2,3,i); hold on
-	if i < 4
-		set(ax(i),'YLim',[0 8])
-	end
+for i = 1:4
+	ax(i) = subplot(2,2,i); hold on
 end
 
 clear l
@@ -35,19 +32,9 @@ l(1) = plot(ax(1),mean_stim,Rg./Sg,'k+');
 plot(ax(2),mean_resp,Rg./Sg,'k+')
 plot(ax(3),std_resp,Rg./Sg,'k+')
 
-
-Rg = NaN*MSGdata.paradigm;
-Sg = NaN*MSGdata.paradigm;
-for i = 1:length(MSGdata.paradigm)
-	Rg(i) = std(MSGdata.raw_LFP(35e3:55e3,i))/mean(MSGdata.raw_LFP(35e3:55e3,i));
-	Sg(i) = std(MSGdata.PID(35e3:55e3,i))/mean(MSGdata.PID(35e3:55e3,i));
-end
-mean_stim = nanmean(MSGdata.PID(35e3:55e3,:));
-mean_resp = nanmean(MSGdata.raw_LFP(35e3:55e3,:));
-std_resp = nanstd(MSGdata.PID(35e3:55e3,:));
-plot(ax(4),mean_stim,Rg./Sg,'k+');
-plot(ax(5),mean_resp,Rg./Sg,'k+')
-plot(ax(6),std_resp,Rg./Sg,'k+')
+% now plot the same thing vs. the auto-correlation time of the stimulus
+S_tau = autoCorrelationTime(MSGdata.PID(35e3:55e3,:));
+plot(ax(4),S_tau,Rg./Sg,'k+');
 
 
 ;;     ;;    ;;;    ;;;;;;;;  ;;;;    ;;;    ;;    ;;  ;;;;;;  ;;;;;;;; 
@@ -129,24 +116,12 @@ l(3) = plot(ax(1),mean_hi,Rg_hi./Sg_hi,'r+');
 
 
 
-Rg_lo = NaN(size(reshaped_PID,2),1);
-Rg_hi = NaN(size(reshaped_PID,2),1);
-for i = 1:length(Rg_hi)
-	Rg_hi(i) = std(reshaped_LFP(1e3:5e3,i))/mean(reshaped_LFP(1e3:5e3,i));
-	Rg_lo(i) = std(reshaped_LFP(6e3:10e3,i))/mean(reshaped_LFP(6e3:10e3,i));
+S_tau_lo = autoCorrelationTime(reshaped_PID(6e3:9e3,:));
+S_tau_hi = autoCorrelationTime(reshaped_PID(1e3:5e3,:));
 
-end
-plot(ax(5),mean_lo_R,Rg_lo./Sg_lo,'b+')
-plot(ax(5),mean_hi_R,Rg_hi./Sg_hi,'r+')
+plot(ax(4),S_tau_lo,Rg_lo./Sg_lo,'b+')
+plot(ax(4),S_tau_hi,Rg_hi./Sg_hi,'r+')
 
-plot(ax(6),std_lo,Rg_lo./Sg_lo,'b+')
-plot(ax(6),std_hi,Rg_hi./Sg_hi,'r+')
-xlabel('\sigma_S')
-ylabel('(\sigma_{R}/\sigma_{S})*(\mu_{S}/\mu_{R})')
-
-% also plot it on the first plot
-plot(ax(4),mean_lo,Rg_lo./Sg_lo,'b+');
-plot(ax(4),mean_hi,Rg_hi./Sg_hi,'r+');
 
 
  ;;;;;;  ;;;;;;;;     ;;;    ;;;;;;;;   ;;;;;;  ;;;;;;;; 
@@ -185,20 +160,8 @@ std_resp = nanstd(SNSdata.PID(35e3:55e3,:));
 l(4) = plot(ax(1),mean_stim,Rg./Sg,'go');
 plot(ax(2),mean_resp,Rg./Sg,'go')
 plot(ax(3),std_resp,Rg./Sg,'go')
+plot(ax(4),autoCorrelationTime(SNSdata.PID),Rg./Sg,'go')
 
-% now do LFP
-Rg = NaN*SNSdata.orn;
-Sg = NaN*SNSdata.orn;
-for i = 1:length(SNSdata.orn)
-	Rg(i) = std(SNSdata.LFP(35e3:55e3,i))/mean(SNSdata.LFP(35e3:55e3,i));
-	Sg(i) = std(SNSdata.PID(35e3:55e3,i))/mean(SNSdata.PID(35e3:55e3,i));
-end
-mean_stim = nanmean(SNSdata.PID(35e3:55e3,:));
-mean_resp = nanmean(SNSdata.fA(35e3:55e3,:));
-std_resp = nanstd(SNSdata.PID(35e3:55e3,:));
-plot(ax(4),mean_stim,Rg./Sg,'go');
-plot(ax(5),mean_resp,Rg./Sg,'go')
-plot(ax(6),std_resp,Rg./Sg,'go')
 
 
 ;;;;;;;;  ;;;;;;;; ;;    ;;  ;;;;;;  ;;;;;;;; 
@@ -240,20 +203,7 @@ std_resp = nanstd(DNSdata.PID(35e3:55e3,:));
 l(5) = plot(ax(1),mean_stim,Rg./Sg,'gd');
 plot(ax(2),mean_resp,Rg./Sg,'gd')
 plot(ax(3),std_resp,Rg./Sg,'gd')
-
-% now do LFP
-Rg = NaN*DNSdata.orn;
-Sg = NaN*DNSdata.orn;
-for i = 1:length(DNSdata.orn)
-	Rg(i) = std(DNSdata.LFP(35e3:55e3,i))/mean(DNSdata.LFP(35e3:55e3,i));
-	Sg(i) = std(DNSdata.PID(35e3:55e3,i))/mean(DNSdata.PID(35e3:55e3,i));
-end
-mean_stim = nanmean(DNSdata.PID(35e3:55e3,:));
-mean_resp = nanmean(DNSdata.fA(35e3:55e3,:));
-std_resp = nanstd(DNSdata.PID(35e3:55e3,:));
-plot(ax(4),mean_stim,Rg./Sg,'gd');
-plot(ax(5),mean_resp,Rg./Sg,'gd')
-plot(ax(6),std_resp,Rg./Sg,'gd')
+plot(ax(4),autoCorrelationTime(DNSdata.PID),Rg./Sg,'gd')
 
 
 
@@ -284,44 +234,23 @@ l(6) = plot(ax(1),mean_stim,Rg./Sg,'mx');
 plot(ax(2),mean_resp,Rg./Sg,'mx')
 plot(ax(3),std_resp,Rg./Sg,'mx')
 
-% now do LFP
-Rg = NaN*paradigm;
-Sg = NaN*paradigm;
-for i = 1:length(paradigm)
-	Rg(i) = std(LFP(35e3:55e3,i))/mean(LFP(35e3:55e3,i));
-	Sg(i) = std(PID(35e3:55e3,i))/mean(PID(35e3:55e3,i));
-end
-mean_stim = nanmean(PID(35e3:55e3,:));
-mean_resp = nanmean(fA(35e3:55e3,:));
-std_resp = nanstd(PID(35e3:55e3,:));
-plot(ax(4),mean_stim,Rg./Sg,'mx');
-plot(ax(5),mean_resp,Rg./Sg,'mx')
-plot(ax(6),std_resp,Rg./Sg,'mx')
-
+plot(ax(4),autoCorrelationTime(PID),Rg./Sg,'mx')
 
 
 
 set(ax(1),'YLim',[0 8],'XScale','linear')
-xlabel(ax(1),'\mu_{S}')
+xlabel(ax(1),'\mu_{S} (V)')
 ylabel(ax(1),'(\sigma_{R}/\sigma_{S})*(\mu_{S}/\mu_{R})')
 
-xlabel(ax(2),'\mu_{R}')
+xlabel(ax(2),'\mu_{R} (Hz)')
 ylabel(ax(2),'(\sigma_{R}/\sigma_{S})*(\mu_{S}/\mu_{R})')
 set(ax(2),'XLim',[0 60])
 
-xlabel(ax(3),'\sigma_S')
+xlabel(ax(3),'\sigma_S (V)')
 ylabel(ax(3),'(\sigma_{R}/\sigma_{S})*(\mu_{S}/\mu_{R})')
 
-xlabel(ax(4),'\mu_{S}')
+xlabel(ax(4),'\tau_{S} (ms)')
 ylabel(ax(4),'(\sigma_{R}/\sigma_{S})*(\mu_{S}/\mu_{R})')
-
-xlabel(ax(5),'\mu_{R}')
-ylabel(ax(5),'(\sigma_{R}/\sigma_{S})*(\mu_{S}/\mu_{R})')
-
-xlabel(ax(6),'\sigma_S')
-ylabel(ax(6),'(\sigma_{R}/\sigma_{S})*(\mu_{S}/\mu_{R})')
-
-
 
 legend(l,{'Changing \mu','High \sigma','Low \sigma','Sparse nat.','Dense nat.','Exp. Gaussian'})
 

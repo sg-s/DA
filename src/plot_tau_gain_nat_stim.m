@@ -1,14 +1,18 @@
 % helper function, called by tau_gain_nat_stim
 
 
-function [] = plot_tau_gain_nat_stim(data,ax,c)
+function [] = plot_tau_gain_nat_stim(data,ax,c, response_cutoff)
 
 if nargin < 3
 	c = [0 0 0];
 end
 
+if nargin < 4
+	response_cutoff = 30;
+end
+
 deviations = data.R(:) - data.P(:);
-deviations(data.R(:)<30) = NaN;
+deviations(data.R(:)<response_cutoff) = NaN;
 rm_this = isnan(deviations);
 deviations(rm_this) = [];
 

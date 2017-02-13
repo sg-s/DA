@@ -28,10 +28,10 @@ lb.C = 0;
 lb.tau1 = 1;
 lb.tau2 = 2;
 
-lb.n = 1; % constrained by the variance data?
+lb.n = .5; % constrained by the variance data?
 
 % upper bounds
-ub.tau = 5e3;
+ub.tau = 1e4;
 ub.tau1 = 200;
 ub.tau2 = 400;
 ub.n = 32; 

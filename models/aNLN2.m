@@ -28,22 +28,22 @@ lb.A = 0;
 lb.C = 0;
 lb.tau1 = 1;
 lb.tau2 = 1;
-lb.n_y = 1;
-lb.n = 4;
+lb.n_y = .5;
+lb.n = .1;
 
 ub.tau1 = 100;
 ub.tau2 = 300;
-ub.n = 8; 
+ub.n = 2; 
 ub.n_y = 10;
 
 % bounds for adaptation 
-lb.B = 0;
-lb.tau_z = 10;
-lb.n_z = 1;
+lb.B = 1e-3;
+lb.tau_z = 500;
+lb.n_z = .1;
 
-ub.B = 0;
-ub.tau_z = 10;
-ub.n_z = 1;
+ub.B = 1e3;
+ub.tau_z = 5e3;
+ub.n_z = 5;
 
 
 
@@ -53,6 +53,7 @@ t = 0:(length(S)/10);
 Kz = generate_simple_filter(p.tau_z,p.n_z,t);
 temp = abs(Kz); temp = temp/max(temp);
 Kz = Kz(1:find(temp>1e-2,1,'last'));
+Kz = Kz/norm(Kz);
 
 % generate the dynamically updating k_D 
 k_D = p.k0 + p.B*filter(Kz,1,S);

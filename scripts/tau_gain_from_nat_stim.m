@@ -42,15 +42,6 @@ pHeader;
 cdata = consolidateData2(getPath(dataManager,'4608c42b12191b383c84fea52392ea97'));
 [~, data] =  assembleScaledNatStim(cdata);
 
-this_orn = 2;
-clear fd
-for i = 1:size(data(this_orn).X,2)
-	S = data(this_orn).S(:,i); S = S - min(S);
-	R = -data(this_orn).X(:,i);
-	fd(i).stimulus = [S R];
-	fd(i).response = R;
-end
-fd(any(sum(isnan(horzcat(fd.response))))) = [];
 
 clear p
 
@@ -88,6 +79,62 @@ end
 
 prettyFig();
 suptitle('ab2A -- 2-butanone')
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%% 
+% Does an adapting NLN model also have this property? If gain control is on the timescale I identified earlier, does it fit better?
+
+this_orn = 2;
+clear fd
+for i = 1:size(data(this_orn).X,2)
+	S = data(this_orn).S(:,i); S = S - min(S);
+	R = data(this_orn).R(:,i);
+	fd(i).stimulus = S;
+	fd(i).response = R;
+	fd(i).response(1:5e3) = NaN;
+end
+
+clear p
+       k0: 0.0451
+    tau_z: 2424
+        B: 0.6250
+      n_z: 0.1016
+        n: 0.9812
+     tau1: 41.2812
+     tau2: 45.7812
+      n_y: 1.3984
+        A: 0.9340
+        C: 2.7945e+03
+
+p(3).n_z = 5.7220e-07
+p(3). k0 = 0.0556
+p(3).tau = 2.0728e+03
+p(3).  B = 3.2410e-04
+p(3).  n = 0.9878
+
+
+for j = 2
+	S = [data(this_orn).S(:,j) - min(data(this_orn).S(:,j)) data(this_orn).R(:,j)];
+	data(this_orn).P(:,j) = aNLNmodel(S ,p);
+end
+
+figure('outerposition',[0 0 1220 601],'PaperUnits','points','PaperSize',[1220 601]); hold on
+clear ax
+ax(2) = subplot(1,2,1); hold on
+ax(4) = subplot(1,2,2); hold on
+
+c = lines(3);
+
+for i = this_orn
+	plot_tau_gain_nat_stim(data(i),ax,c(i,:),30);
+end
+
+prettyFig();
 
 if being_published
 	snapnow

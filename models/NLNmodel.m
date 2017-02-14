@@ -11,7 +11,7 @@ p.n;
 
 % bounds
 lb.n = .5;
-lb.k_D = 0;
+lb.k_D = 1e-4;
 ub.n = 4;
 
 T = S(:,2); % target response
@@ -34,6 +34,6 @@ R(R<0) = 0;
 rm_this = isnan(R) | isnan(T);
 
 ff = fit(R(~rm_this),T(~rm_this),'poly1');
-R = R*ff.p1;
+R = ff(R);
 
 

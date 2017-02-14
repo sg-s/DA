@@ -28,19 +28,19 @@ end
 
 % hard bounds
 lb.A = 0; lb.B = 0; lb.C = 0; 
-ub.C = 1; 
+ub.C = 0; 
 
 % lower bound
-lb.s0 = -1;
-lb.tau_y = 1; 
-lb.tau_z = 1;
-lb.n_z = 1;
-lb.n_y = 1;
+lb.s0 = -.1;
+lb.tau_y = 2; 
+lb.tau_z = 2;
+lb.n_z = 2;
+lb.n_y = 2;
 
 
 % upper bounds
-ub.n_y = 4;
-ub.n_z = 6;
+ub.n_y = 12;
+ub.n_z = 8;
 ub.tau_y = 100;
 ub.tau_z = 400;
 

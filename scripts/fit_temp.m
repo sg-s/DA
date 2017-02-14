@@ -1,6 +1,7 @@
 % temp script to fit aNLN2 model to nat. stim. data
-
-while 1
+tic
+t = toc;
+while t < 1e4
 
 	% ab2A 2 butanone
 
@@ -22,7 +23,7 @@ while 1
 
 
 		% fit 
-		fitModel2Data(@aNLN2,fd,'nsteps',200,'make_plot',false);
+		p = fitModel2Data(@aNLN2,fd,'nsteps',200,'make_plot',false)
 
 	end
 
@@ -33,18 +34,19 @@ while 1
 	[~, data] =  assembleScaledNatStim(cdata);
 
 
-	S = data(this_orn).S; S = S - min(S);
-	R = data(this_orn).R;
-	fd.stimulus = S;
-	fd.response = R;
-	fd.response(1:5e3) = NaN;
-
-	% fit 
-	fitModel2Data(@aNLN2,fd,'nsteps',200,'make_plot',false);
-
+	clear fd
+	for i = 1:size(data.X,2)
+		S = data.S(:,i); S = S - min(S);
+		R = data.R(:,i);
+		fd(i).stimulus = S;
+		fd(i).response = R;
+		fd(i).response(1:5e3) = NaN;
 	end
 
 
 
+	% fit 
+	p = fitModel2Data(@aNLN2,fd,'nsteps',200,'make_plot',false)
+	t= toc;
+end
 
-end % end infinite loop

@@ -5,7 +5,7 @@ pHeader;
 
 
 %% Validation of estimation of gain control timescale
-%
+% In this document, I attempt to validate methods by which I estimate the timescale of gain control from naturalistic stimuli. 
 
    ;;;    ;;;;;;;;   ;;;;;;;     ;;;    
   ;; ;;   ;;     ;; ;;     ;;   ;; ;;   
@@ -24,13 +24,10 @@ pHeader;
 ;;;;;;;;;         ;;;;;;;;   ;;;;;;;     ;;    ;;     ;; ;;    ;;  ;;;;;;;  ;;    ;; ;;;;;;;; 
 
 
+
+
 %% ab2A and 2-butanone
-% The first dataset I will try this on is with ab2A and 2-butanone. The data we have here is very broadly distributed, as we have the same naturalistic stimulus at three different scales. 
-
-
-
-%% 
-% Can we see if there is any gain control in this data? In the following figure, I first fit NLN-models neuron-by-neuron to the data. The NLN models have only two parameters (the $k_D$ and the $n$) that are fit parametrically. Other parameters (like the filter) are fit non-parametrically. In the following figure, I plot the results of each neuron in a separate colour. The first plot shows the distribution of the deviations of the NLN model predictions from the measured response. The second plot shows the Spearman correlation between the deviations and the mean stimulus in some preceding window, as a function of window length. Note that these plots tend to have a minimum at some defined timescale. The dotted and dashed lines indicate the autocorrelation times for the stimulus and the response respectively. 
+% First, does this method yield somethign when applied to real data?  Can we see if there is any gain control in this data? In the following figure, I first fit NLN-models neuron-by-neuron to the data. The NLN models have only two parameters (the $k_D$ and the $n$) that are fit parametrically. Other parameters (like the filter) are fit non-parametrically. In the following figure, I plot the results of each neuron in a separate colour. The first plot shows the distribution of the deviations of the NLN model predictions from the measured response. The second plot shows the Spearman correlation between the deviations and the mean stimulus in some preceding window, as a function of window length. Note that these plots tend to have a minimum at some defined timescale. The dotted and dashed lines indicate the autocorrelation times for the stimulus and the response respectively. 
 
 
 % get all data 
@@ -136,6 +133,15 @@ end
 %%
 % There seems to be some structure at low firing rates. But since I cut that off anyway in the analysis, it shouldn't matter. 
 
+ ;;;;;;  ;;     ;; ;;;;;;;;  ;;;;;;;  ;;;;;;;; ;;;;;;;;  ;;;;;;  
+;;    ;; ;;     ;;    ;;    ;;     ;; ;;       ;;       ;;    ;; 
+;;       ;;     ;;    ;;    ;;     ;; ;;       ;;       ;;       
+;;       ;;     ;;    ;;    ;;     ;; ;;;;;;   ;;;;;;    ;;;;;;  
+;;       ;;     ;;    ;;    ;;     ;; ;;       ;;             ;; 
+;;    ;; ;;     ;;    ;;    ;;     ;; ;;       ;;       ;;    ;; 
+ ;;;;;;   ;;;;;;;     ;;     ;;;;;;;  ;;       ;;        ;;;;;;  
+
+
 %% Validation: response cutoff
 % In this analysis, I only analyse the responses to whiffs, and neglect deviations from model fit when there is no stimulus. The reason is because when there is no stimulus, the baseline firing of the neuron deviates randomly from the model responses, which are not very meaningful. However, does this cutoff affect this analysis? To determine this, I generate synthetic responses using a NLN model, and then fit a NLN model back to this, and repeat this analysis with different cutoffs. 
 
@@ -193,6 +199,23 @@ end
 
 %%
 % Varying the response cutoff seems to do all sorts of stuff to these plots. Most importantly, it varies the instantaneous correlation. So perhaps we should set the response cutoff so that the instantaneous correlation is zero? That's one thought. While it is troubling that there seems to be some structure in the correlation vs. timescale plots, note that the deviations from the model are tiny, and all these correlations arise from tiny mismatches. 
+
+;;     ;; ;;    ;;  ;;;;;;   ;;;;;;     ;;;    ;;       ;;;;;;;; ;;;;;;;;  
+;;     ;; ;;;   ;; ;;    ;; ;;    ;;   ;; ;;   ;;       ;;       ;;     ;; 
+;;     ;; ;;;;  ;; ;;       ;;        ;;   ;;  ;;       ;;       ;;     ;; 
+;;     ;; ;; ;; ;;  ;;;;;;  ;;       ;;     ;; ;;       ;;;;;;   ;;     ;; 
+;;     ;; ;;  ;;;;       ;; ;;       ;;;;;;;;; ;;       ;;       ;;     ;; 
+;;     ;; ;;   ;;; ;;    ;; ;;    ;; ;;     ;; ;;       ;;       ;;     ;; 
+ ;;;;;;;  ;;    ;;  ;;;;;;   ;;;;;;  ;;     ;; ;;;;;;;; ;;;;;;;; ;;;;;;;;  
+
+;;;;;;;;  ;;;;;;;;    ;;;    ;;;;;;;;   ;;;;;;   ;;;;;;;  ;;    ;; 
+;;     ;; ;;         ;; ;;   ;;     ;; ;;    ;; ;;     ;; ;;;   ;; 
+;;     ;; ;;        ;;   ;;  ;;     ;; ;;       ;;     ;; ;;;;  ;; 
+;;;;;;;;  ;;;;;;   ;;     ;; ;;;;;;;;   ;;;;;;  ;;     ;; ;; ;; ;; 
+;;        ;;       ;;;;;;;;; ;;   ;;         ;; ;;     ;; ;;  ;;;; 
+;;        ;;       ;;     ;; ;;    ;;  ;;    ;; ;;     ;; ;;   ;;; 
+;;        ;;;;;;;; ;;     ;; ;;     ;;  ;;;;;;   ;;;;;;;  ;;    ;; 
+
 
 %%
 % Perhaps a way to combine the effect of the correlation of the deviations and the scale of the deviations would be to use the unscaled Pearson correlation coefficient 
@@ -253,6 +276,15 @@ end
 
 %%
 % As suspected, the synthetic data shows much smaller apparent gain changes compared to the real data. So that's something to keep in mind -- not only do the absolute values of the correlation matter, but also the scale of the deviations. I'm going to use this unscaled Pearson correlation going forward. 
+
+
+;;;; ;;    ;; ;;;;;;;;  ;;     ;; ;;;;;;;;    ;;    ;; ;;       
+ ;;  ;;;   ;; ;;     ;; ;;     ;;    ;;       ;;;   ;; ;;       
+ ;;  ;;;;  ;; ;;     ;; ;;     ;;    ;;       ;;;;  ;; ;;       
+ ;;  ;; ;; ;; ;;;;;;;;  ;;     ;;    ;;       ;; ;; ;; ;;       
+ ;;  ;;  ;;;; ;;        ;;     ;;    ;;       ;;  ;;;; ;;       
+ ;;  ;;   ;;; ;;        ;;     ;;    ;;       ;;   ;;; ;;       
+;;;; ;;    ;; ;;         ;;;;;;;     ;;       ;;    ;; ;;;;;;;; 
 
 
 %% Validation: input nonlinearity 
@@ -319,6 +351,15 @@ if being_published
 	delete(gcf)
 end
 
+;;        ;;;;;;;   ;;;;;;      ;;    ;; ;;       
+;;       ;;     ;; ;;    ;;     ;;;   ;; ;;       
+;;       ;;     ;; ;;           ;;;;  ;; ;;       
+;;       ;;     ;; ;;   ;;;;    ;; ;; ;; ;;       
+;;       ;;     ;; ;;    ;;     ;;  ;;;; ;;       
+;;       ;;     ;; ;;    ;;     ;;   ;;; ;;       
+;;;;;;;;  ;;;;;;;   ;;;;;;      ;;    ;; ;;;;;;;; 
+
+
 %%
 % Now I choose a qualitatively different input nonlinearity -- a log function, and repeat the analysis to see if the timescale we saw in the data pops back up. 
 
@@ -373,6 +414,16 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+    
+
+ ;;;;;;  ;;;;;;;; ;;;; ;;     ;;         ;;;;;;   ;;;;;;;  ;;;;;;;;  ;;;;;;;;  
+;;    ;;    ;;     ;;  ;;;   ;;;        ;;    ;; ;;     ;; ;;     ;; ;;     ;; 
+;;          ;;     ;;  ;;;; ;;;;        ;;       ;;     ;; ;;     ;; ;;     ;; 
+ ;;;;;;     ;;     ;;  ;; ;;; ;;        ;;       ;;     ;; ;;;;;;;;  ;;;;;;;;  
+      ;;    ;;     ;;  ;;     ;;        ;;       ;;     ;; ;;   ;;   ;;   ;;   
+;;    ;;    ;;     ;;  ;;     ;;        ;;    ;; ;;     ;; ;;    ;;  ;;    ;;  
+ ;;;;;;     ;;    ;;;; ;;     ;;         ;;;;;;   ;;;;;;;  ;;     ;; ;;     ;; 
+
 
 %% Validation: effect of stimulus correlation time
 % Do correlations in th stimulus manifest in weird ways and cause us to think that there is gain control when there isn't? To check this, I rescale the stimulus in the time axis and re-do the analysis to see how stimulus correlations can screw with this method. 
@@ -438,8 +489,25 @@ if being_published
 	delete(gcf)
 end
 
+   ;;;    ;;;;;;;;     ;;;    ;;;;;;;;  ;;;;;;;; ;;;; ;;    ;;  ;;;;;;   
+  ;; ;;   ;;     ;;   ;; ;;   ;;     ;;    ;;     ;;  ;;;   ;; ;;    ;;  
+ ;;   ;;  ;;     ;;  ;;   ;;  ;;     ;;    ;;     ;;  ;;;;  ;; ;;        
+;;     ;; ;;     ;; ;;     ;; ;;;;;;;;     ;;     ;;  ;; ;; ;; ;;   ;;;; 
+;;;;;;;;; ;;     ;; ;;;;;;;;; ;;           ;;     ;;  ;;  ;;;; ;;    ;;  
+;;     ;; ;;     ;; ;;     ;; ;;           ;;     ;;  ;;   ;;; ;;    ;;  
+;;     ;; ;;;;;;;;  ;;     ;; ;;           ;;    ;;;; ;;    ;;  ;;;;;;   
+
+;;     ;;  ;;;;;;;  ;;;;;;;;  ;;;;;;;; ;;       
+;;;   ;;; ;;     ;; ;;     ;; ;;       ;;       
+;;;; ;;;; ;;     ;; ;;     ;; ;;       ;;       
+;; ;;; ;; ;;     ;; ;;     ;; ;;;;;;   ;;       
+;;     ;; ;;     ;; ;;     ;; ;;       ;;       
+;;     ;; ;;     ;; ;;     ;; ;;       ;;       
+;;     ;;  ;;;;;;;  ;;;;;;;;  ;;;;;;;; ;;;;;;;; 
+
+
 %% Validation: adapting NLN model
-% In this section, I use an adapting NLN model and attempt to recover the timescale of gain control using this analysis. 
+% In this section, I use an adapting NLN model and attempt to recover the timescale of gain control using this analysis. In the following figure, the first panel shows the autocorrelation function of the dynamically updating $k_D$ in the model. Since it's hard to define the timescale of gain control directly from the parameters of the model, I define the timescale of gain control as the autocorrelation time of the time series of $k_D$. This is indicated by the vertical red line. Note that the unscaled Pearson correlation has a large absolute value (indicating significant deviations from the best-fit model) and that the minimum seems to be roughly in agreement with the red line (the actual gain control timescale). 
 
 clear p
 p.   k0 = 0.0451;

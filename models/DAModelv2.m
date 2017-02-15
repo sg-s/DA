@@ -28,7 +28,7 @@ end
 
 % hard bounds
 lb.A = 0; lb.B = 0; lb.C = 0; 
-ub.C = 0; 
+ub.C = 1; 
 
 % lower bound
 lb.s0 = -.1;

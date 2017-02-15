@@ -7,6 +7,7 @@ function [rho,all_history_lengths] = plot_tau_gain_nat_stim(data,ax,varargin)
 options.c = [0 0 0];
 options.response_cutoff = 30;
 options.method = 'Spearman';
+options.example_history_length = 'min';
 
 if nargout && ~nargin 
 	varargout{1} = options;
@@ -38,30 +39,37 @@ end
 deviations = data.R(:) - data.P(:);
 S = data.S(:); S = S - min(S);
 deviations(data.R(:)<options.response_cutoff) = NaN;
-
 all_history_lengths = [1 unique(round(logspace(1,4.5,30)))];
-rho = NaN*all_history_lengths;
 
-for i = 1:length(all_history_lengths)
-	hl = all_history_lengths(i);
-	Shat = filter(ones(hl,1),hl,S);
+% check cache for results -- otherwise calculate rho
+hash = dataHash([dataHash(options) dataHash(data)]);
+cached_results = cache(hash);
+if isempty(cached_results) || any(isnan(cached_results))
+	rho = NaN*all_history_lengths;
+	for i = 1:length(all_history_lengths)
+		hl = all_history_lengths(i);
+		Shat = filter(ones(hl,1),hl,S);
 
+		% remove nans
+		rm_this = isnan(Shat) | isnan(deviations);
+		x = Shat(~rm_this);
+		y = deviations(~rm_this);
 
-	% remove nans
-	rm_this = isnan(Shat) | isnan(deviations);
-	x = Shat(~rm_this);
-	y = deviations(~rm_this);
-
-	switch options.method
-	case 'Spearman'
-		rho(i) = corr(x(1:10:end),y(1:10:end),'type','Spearman');
-	case 'Pearson'
-		rho(i) = corr(x(1:10:end),y(1:10:end),'type','Pearson');
-	case 'slope'
-		temp = fit(x(1:10:end),y(1:10:end),'poly1');
-		rho(i) = temp.p1;
+		switch options.method
+		case 'Spearman'
+			rho(i) = corr(x(1:10:end),y(1:10:end),'type','Spearman');
+		case 'Pearson'
+			rho(i) = corr(x(1:10:end),y(1:10:end),'type','Pearson');
+		case 'slope'
+			temp = fit(x(1:10:end),y(1:10:end),'poly1');
+			rho(i) = temp.p1;
+		end
 	end
+	cache(hash,rho);
+else
+	rho = cached_results;
 end
+
 
 % show predictions vs. data
 if ishandle(ax(1))
@@ -87,13 +95,17 @@ end
 
 
 if ishandle(ax(3))
-
-	[~,loc] = min(rho);
-	hl = all_history_lengths(loc);
+	if ischar(options.example_history_length)
+		[~,loc] = min(rho);
+		hl = all_history_lengths(loc);
+	else
+		hl = options.example_history_length;
+	end
 	Shat = filter(ones(hl,1),hl,S);
 	rm_this = isnan(deviations) | isnan(Shat);
 
 	[~,plot_data]=plotPieceWiseLinear(Shat(~rm_this),deviations(~rm_this),'nbins',60,'make_plot',false);
+
 
 	plot(ax(3),plot_data.x,plot_data.y,'+','Color',options.c)
 	set(ax(3),'XScale','log')

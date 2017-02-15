@@ -630,6 +630,87 @@ if being_published
 	delete(gcf)
 end
 
+%% Model mismatch
+% There is something very fishy in all analysis. I only see a peak in the correlation vs. timescale plots when the NLN model fits the data poorly. When it does a good job, I see nothing. Is there ever a case where the NLN model fits the data poorly, but the plot of correlation vs. timescale is flat? That would be convincing. 
+
+%%
+% To see this, I fit a DA model to the real data, and use that to generate synthetic data. I then treat that as data and repeat the analysis as before. In the following figure, (a) shows the DA model fit to the real data. The fit is quite good. (b) compares the DA model prediction to a NLN model prediction fit to the DA model. Paradoxically, the fit is quite good -- suggesting that the DA model is using its gain control to mimic the input nonlinearity (or the other way round). (c) shows the autocorrelation functions of the stimulus (black) and $y(t)$ in the DA model. Note that there are weird peaks at $~1s$. (d) Here, I reproduce the analysis of the real data for comparison's sake. (e) Analysis of the DA model responses. This suggests that there is some gain control, and the minimum is close to the actual gain control timescale in the DA model (red line). What is worrying, though is that the minimum in both the data and the synthetic data seems to be at 1s -- which is where there is a weird peak in the stimulus autocorrelation function. I need to go back to this data and check that the minimum in these plots isn't ALWAYS correlated with peaks in the stimulus autocorrelation function. 
+
+clear p_DA
+p_DA.   s0 = -4.8828e-04;
+p_DA.  n_z = 7.1875;
+p_DA.tau_z = 39.3750;
+p_DA.  n_y = 8.5469;
+p_DA.tau_y = 5.9531;
+p_DA.    C = 0.4992;
+p_DA.    A = 3.2929e+03;
+p_DA.    B = 23.5625;
+
+clear syn_data
+syn_data.S =  S;
+[syn_data.R,~,z] = DAModelv2(S,p_DA);
+
+clear p
+p.k_D = 0.1063;
+p.  n = 0.8000;
+
+% generate NLN predictions
+syn_data.P = NLNmodel([syn_data.S syn_data.R],p);
+
+figure('outerposition',[0 0 1300 901],'PaperUnits','points','PaperSize',[1300 901]); hold on
+
+% plot DA model vs actual response
+subplot(2,3,1); hold on
+plot(syn_data.R,data(3).R(:,2),'k.')
+xlabel('DA model (Hz)')
+ylabel('ab2A response (Hz)')
+legend(['r^2=' oval(rsquare(syn_data.R,data(3).R(:,2)))],'Location','southeast')
+
+% show NLN model vs. DA model 
+subplot(2,3,2); hold on
+plot(syn_data.P,syn_data.R,'k.')
+ylabel('DA model (Hz)')
+xlabel('NLN model prediction (Hz)')
+legend(['r^2=' oval(rsquare(syn_data.R,syn_data.P))],'Location','southeast')
+
+% shot the correlations 
+subplot(2,3,3); hold on
+[a,lags] = autocorr(z,6e4);
+plot(lags,a,'r')
+
+[a,lags] = autocorr(S,6e4);
+plot(lags,a,'k')
+legend({'DA model y(t)','Stimulus'})
+set(gca,'XScale','log','XTick',[1 10 100 1e3 1e4 1e5])
+xlabel('Lag (ms)')
+ylabel('Autocorrelation')
+
+% do the analysis on the real data again
+clear ax
+ax(4) = subplot(2,3,4); hold on; axis square
+plot_tau_gain_nat_stim(data(3),ax,'response_cutoff',30,'example_history_length',2e3,'method','unscaled_Pearson');
+set(ax(4),'YLim',[-15 10],'XTick',[1 10 100 1e3 1e4 1e5],'XLim',[1 1e5])
+title('Real data')
+
+% now do the analysis on the DA model
+clear ax
+ax(4) = subplot(2,3,5); hold on; axis square
+plot_tau_gain_nat_stim(syn_data,ax,'response_cutoff',30,'example_history_length',2e3,'method','unscaled_Pearson');
+set(ax(4),'YLim',[-15 10],'XTick',[1 10 100 1e3 1e4 1e5],'XLim',[1 1e5])
+title('DA model synth data')
+act = autoCorrelationTime(z);
+plot(ax(4),[act act],[-100 100],'r','LineWidth',3)
+
+
+prettyFig();
+
+labelFigure
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 %% Version Info
 %

@@ -1,7 +1,7 @@
 % determines the cutoff in the response when the model deviations from the response are uncorrelated with the instantaneous stimulus
 % meant to be used with plot_tau_gain_nat_stim
 
-function rc = findResponseCutoffTauGainPlot(S,R,P,use_spear)
+function rc = findResponseCutoffTauGainPlot(S,R,P,method)
 
 
 S = S(:);
@@ -19,10 +19,18 @@ for i = 1:length(allrc)
 	rm_this = isnan(D) | isnan(S) | R < allrc(i);
 	x = S(~rm_this);
 	y = D(~rm_this);
-	if use_spear
+	switch method
+	case('Spearman')
 		rho(i) = corr(x(1:10:end),y(1:10:end),'type','Spearman');
-	else
+	case('Pearson')
 		rho(i) = corr(x(1:10:end),y(1:10:end),'type','Pearson');
+	case('unscaled_Pearson')
+		x = x - mean(x);
+		y = y - mean(y);
+		rho(i) = mean(x.*y)/sqrt(mean(x.^2));
+	otherwise
+		error('unknown method to determine correlation')
+
 	end
 end
 
@@ -43,10 +51,17 @@ for i = 1:length(allrc)
 	rm_this = isnan(D) | isnan(S) | R < allrc(i);
 	x = S(~rm_this);
 	y = D(~rm_this);
-	if use_spear
+	switch method
+	case('Spearman')
 		rho(i) = corr(x(1:10:end),y(1:10:end),'type','Spearman');
-	else
+	case('Pearson')
 		rho(i) = corr(x(1:10:end),y(1:10:end),'type','Pearson');
+	case('unscaled_Pearson')
+		x = x - mean(x);
+		y = y - mean(y);
+		rho(i) = mean(x.*y)/sqrt(mean(x.^2));
+	otherwise
+		error('unknown method to determine correlation')
 	end
 end
 

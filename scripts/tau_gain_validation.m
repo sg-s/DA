@@ -195,50 +195,45 @@ end
 % Varying the response cutoff seems to do all sorts of stuff to these plots. Most importantly, it varies the instantaneous correlation. So perhaps we should set the response cutoff so that the instantaneous correlation is zero? That's one thought. While it is troubling that there seems to be some structure in the correlation vs. timescale plots, note that the deviations from the model are tiny, and all these correlations arise from tiny mismatches. 
 
 %%
-% Perhaps a way to combine the effect of the correlation of the deviations and the scale of the deviations would be to measure the slope of the plot of deviations vs. mean stimulus in the preceding window. 
+% Perhaps a way to combine the effect of the correlation of the deviations and the scale of the deviations would be to use the unscaled Pearson correlation coefficient 
+%
+% $$ P_{unscaled}(x,y)=\frac{{\displaystyle \sum_{i}(x_{i}-\bar{x})(y_{i}-\bar{y})}}{\sqrt{\sum_{i}(x_{i}-\bar{x})^{2}}} $$
+% 
+% which has the units of Hz, where $y$ is the deviations and $x$ is the mean stimulus in preceding window. 
 
 
-figure('outerposition',[0 0 1501 901],'PaperUnits','points','PaperSize',[1501 901]); hold on
+figure('outerposition',[0 0 1112 901],'PaperUnits','points','PaperSize',[1112 901]); hold on
 
 clear ax
-ax(2) = subplot(2,4,1); hold on; axis square
-ax(3) = subplot(2,4,2); hold on; axis square
-ax(4) = subplot(2,4,3); hold on; axis square
+ax(2) = subplot(2,3,1); hold on; axis square
+ax(3) = subplot(2,3,2); hold on; axis square
+ax(4) = subplot(2,3,3); hold on; axis square
 
-clear ax2
-ax2(4) = subplot(2,4,4); hold on; axis square
 
 all_cutoffs = [0 5 10 20];
 c = parula(length(all_cutoffs)+1);
 
 for i = 1:length(all_cutoffs)
-	plot_tau_gain_nat_stim(data(3),ax,'c',c(i,:),'example_history_length',1e3,'method','slope','response_cutoff',all_cutoffs(i));
-	plot_tau_gain_nat_stim(data(3),ax2,'c',c(i,:),'example_history_length',1e3,'method','Spearman','response_cutoff',all_cutoffs(i));
+	plot_tau_gain_nat_stim(data(3),ax,'c',c(i,:),'example_history_length',1e3,'method','unscaled_Pearson','response_cutoff',all_cutoffs(i));
 end
 
-set(ax(4),'YLim',[-500 200])
+set(ax(4),'YLim',[-15 10])
 set(ax(3),'YLim',[-30 30],'XLim',[1e-4 1])
 title(ax(4),'Real data')
 title(ax(2),'Real data')
-set(ax2(4),'YLim',[-1 1])
 
 % now do the synthetic data
 
 clear ax
-ax(2) = subplot(2,4,5); hold on; axis square
-ax(3) = subplot(2,4,6); hold on; axis square
-ax(4) = subplot(2,4,7); hold on; axis square
-
-clear ax2
-ax2(4) = subplot(2,4,8); hold on; axis square
+ax(2) = subplot(2,3,4); hold on; axis square
+ax(3) = subplot(2,3,5); hold on; axis square
+ax(4) = subplot(2,3,6); hold on; axis square
 
 for i = 1:length(all_cutoffs)
-	plot_tau_gain_nat_stim(syn_data,ax,'c',c(i,:),'example_history_length',1e3,'response_cutoff',all_cutoffs(i),'method','slope');
-	plot_tau_gain_nat_stim(syn_data,ax2,'c',c(i,:),'example_history_length',1e3,'method','Spearman','response_cutoff',all_cutoffs(i));
+	plot_tau_gain_nat_stim(syn_data,ax,'c',c(i,:),'example_history_length',1e3,'response_cutoff',all_cutoffs(i),'method','unscaled_Pearson');
 end
 
-set(ax(4),'YLim',[-500 200])
-set(ax2(4),'YLim',[-1 1])
+set(ax(4),'YLim',[-15 10])
 set(ax(2),'XLim',[-40 40])
 set(ax(3),'YLim',[-30 30],'XLim',[1e-4 1])
 title(ax(4),'synthetic data')
@@ -257,7 +252,7 @@ if being_published
 end
 
 %%
-% As suspected, the synthetic data shows much smaller apparent gain changes compared to the real data. So that's something to keep in mind -- not only do the absolute values of the correlation matter, but also the scale of the deviations. 
+% As suspected, the synthetic data shows much smaller apparent gain changes compared to the real data. So that's something to keep in mind -- not only do the absolute values of the correlation matter, but also the scale of the deviations. I'm going to use this unscaled Pearson correlation going forward. 
 
 
 %% Validation: input nonlinearity 
@@ -311,12 +306,12 @@ ax(4) = subplot(2,2,4); hold on; axis square
 
 
 for i = 1:length(syn_data)
-	rc = findResponseCutoffTauGainPlot(syn_data(i).S,syn_data(i).R,syn_data(i).P,'true');
-	plot_tau_gain_nat_stim(syn_data(i),ax,'c',c(i,:),'response_cutoff',rc,'example_history_length',1e3);
+	rc = findResponseCutoffTauGainPlot(syn_data(i).S,syn_data(i).R,syn_data(i).P,'unscaled_Pearson');
+	plot_tau_gain_nat_stim(syn_data(i),ax,'c',c(i,:),'response_cutoff',rc,'example_history_length',1e3,'method','unscaled_Pearson');
 end
 suptitle('synthetic data: effect of input nonlinearity mismatch')
-set(ax(4),'YLim',[-1 1])
-set(ax(3),'YLim',[-30 30])
+set(ax(4),'YLim',[-10 10])
+set(ax(3),'YLim',[-10 10])
 prettyFig();
 
 if being_published
@@ -366,11 +361,12 @@ ax(2) = subplot(2,2,2); hold on; axis square
 ax(3) = subplot(2,2,3); hold on; axis square
 ax(4) = subplot(2,2,4); hold on; axis square
 
-plot_tau_gain_nat_stim(syn_data,ax,'c',[0 0 0],'response_cutoff',10,'method','Spearman');
+rc = findResponseCutoffTauGainPlot(syn_data.S,syn_data.R,syn_data.P,'unscaled_Pearson');
+plot_tau_gain_nat_stim(syn_data,ax,'c',[0 0 0],'response_cutoff',rc,'method','unscaled_Pearson');
 
 suptitle('synthetic data')
-set(ax(4),'YLim',[-1 1])
-set(ax(3),'YLim',[-30 30])
+set(ax(4),'YLim',[-10 10])
+set(ax(3),'YLim',[-10 10])
 prettyFig();
 
 if being_published
@@ -429,12 +425,12 @@ ax(4) = subplot(2,2,4); hold on; axis square
 
 
 for i = 1:length(syn_data)
-	rc = findResponseCutoffTauGainPlot(syn_data(i).S,syn_data(i).R,syn_data(i).P,true);
-	plot_tau_gain_nat_stim(syn_data(i),ax,'c',c(i,:),'response_cutoff',rc);
+	rc = findResponseCutoffTauGainPlot(syn_data(i).S,syn_data(i).R,syn_data(i).P,'unscaled_Pearson');
+	plot_tau_gain_nat_stim(syn_data(i),ax,'c',c(i,:),'response_cutoff',rc,'method','unscaled_Pearson');
 end
 suptitle('synthetic data: effect of changing stimulus correlations')
-set(ax(4),'YLim',[-1 1])
-set(ax(3),'YLim',[-30 30])
+set(ax(4),'YLim',[-10 10])
+set(ax(3),'YLim',[-10 10])
 prettyFig();
 
 if being_published
@@ -475,21 +471,90 @@ subplot(2,2,1); hold on
 [a,lags] = autocorr(k_D,length(k_D)-1);
 plot(lags,a,'Color','k')
 
-set(gca,'XScale','log','XTick',[1 10 100 1e3 1e4 1e5])
+act = autoCorrelationTime(k_D);
+plot([act act],[-1 1],'r','LineWidth',3)
+
+set(gca,'XScale','log','XTick',[1 10 100 1e3 1e4 1e5],'YLim',[-.2 1])
 xlabel('lag (ms)')
 ylabel('Autocorrelation')
 title('Autocorrelation of k_D')
+
+
 
 clear ax
 ax(2) = subplot(2,2,2); hold on; axis square
 ax(3) = subplot(2,2,3); hold on; axis square
 ax(4) = subplot(2,2,4); hold on; axis square
 
-plot_tau_gain_nat_stim(syn_data,ax,'c',[0 0 0],'response_cutoff',10,'example_history_length',2e3);
+plot_tau_gain_nat_stim(syn_data,ax,'c',[0 0 0],'response_cutoff',10,'example_history_length',2e3,'method','unscaled_Pearson');
 
 suptitle('synthetic data: adapting NLN model fit with NLN model')
-set(ax(4),'YLim',[-1 1])
+set(ax(4),'YLim',[-30 10],'XTick',[1 10 100 1e3 1e4 1e5],'XLim',[1 1e5])
 set(ax(3),'YLim',[-50 60],'XLim',[1e-5 1e0],'XTick',[1e-5 1e-4 1e-3 1e-2 1e-1 1e0])
+plot(ax(4),[act act],[-50 1e3],'r','LineWidth',3)
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
+% So that looks good. In this section, I vary the timescale of gain control in the adapting model, and repeat this analysis several times so I can estimate how well I can recover the gain control timescale. 
+
+clear p
+p.   k0 = 0.0451;
+p.tau_z = 2424;
+p.    B = 0.6250;
+p.  n_z = 0.1016;
+p.    n = 0.9812;
+p. tau1 = 41.2812;
+p. tau2 = 45.7812;
+p.  n_y = 1.3984;
+p.    A = 0.9340;
+p.    C = 2.7945e+03;
+
+
+
+all_tau_z = linspace(300,6e3,10);
+actual_tau = NaN*all_tau_z;
+
+load('.cache/NLN_fits_to_aNLN.mat','q')
+
+clear syn_data 
+for i = 1:length(all_tau_z)
+	p.tau_z = all_tau_z(i);
+	[R,~,~,k_D] = aNLN2(S,p);
+	syn_data(i).S = S;
+	syn_data(i).R = R;
+	actual_tau(i) = autoCorrelationTime(k_D);
+
+	% generate responses
+	syn_data(i).P = NLNmodel([S R],q(i));
+end
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
+clear ax
+
+estimated_tau = NaN*actual_tau;
+
+c = parula(length(all_tau_z)+1);
+for i = 2:length(syn_data)
+	[rho,all_history_lengths] = plot_tau_gain_nat_stim(syn_data(i),NaN(4,1),'c',c(i,:),'response_cutoff',10,'example_history_length',2e3,'method','unscaled_Pearson','all_history_lengths',round(linspace(min(actual_tau)/2,2*max(actual_tau),30)));
+	[~,idx] = min(rho);
+	estimated_tau(i) = all_history_lengths(idx);
+
+end
+
+l = plot(actual_tau,estimated_tau,'k+');
+set(gca,'XLim',[1e3 5e3],'YLim',[1e3 5e3])
+plot([0 5e3],[0 5e3],'k--')
+r2 = rsquare(actual_tau(2:end),estimated_tau(2:end));
+legend(l,['r^2 = ' oval(r2)],'Location','northwest')
+xlabel('Autocorrelation time of k_D (ms)')
+ylabel('Estimated timescale of gain control (ms)')
+
 prettyFig();
 
 if being_published

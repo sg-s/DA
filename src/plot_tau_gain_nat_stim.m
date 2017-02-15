@@ -8,6 +8,7 @@ options.c = [0 0 0];
 options.response_cutoff = 30;
 options.method = 'Spearman';
 options.example_history_length = 'min';
+options.all_history_lengths = [1 unique(round(logspace(1,4.5,30)))];
 
 if nargout && ~nargin 
 	varargout{1} = options;
@@ -39,7 +40,7 @@ end
 deviations = data.R(:) - data.P(:);
 S = data.S(:); S = S - min(S);
 deviations(data.R(:)<options.response_cutoff) = NaN;
-all_history_lengths = [1 unique(round(logspace(1,4.5,30)))];
+all_history_lengths = options.all_history_lengths;
 
 % check cache for results -- otherwise calculate rho
 hash = dataHash([dataHash(options) dataHash(data)]);
@@ -63,6 +64,10 @@ if isempty(cached_results) || any(isnan(cached_results))
 		case 'slope'
 			temp = fit(x(1:10:end),y(1:10:end),'poly1');
 			rho(i) = temp.p1;
+		case 'unscaled_Pearson'
+			x = x - mean(x);
+			y = y - mean(y);
+			rho(i) = mean(x.*y)/sqrt(mean(x.^2));
 		end
 	end
 	cache(hash,rho);
@@ -124,13 +129,15 @@ if ishandle(ax(4))
 		ylabel(ax(4),'Pearson''s r')
 	case('slope')
 		ylabel(ax(4),'Slope (Hz/V)')
+	case('unscaled_Pearson')
+		ylabel(ax(4),'unscaled Pearson''s r (Hz)')
 	end
 
 	% also plot the stimulus and response auto-correlations
 	tau_stim = autoCorrelationTime(data.S(:));
-	plot(ax(4),[tau_stim tau_stim],[-1 1],':','Color',options.c)
+	plot(ax(4),[tau_stim tau_stim],[-1e4 1e4],':','Color',options.c)
 	tau_resp = autoCorrelationTime(data.R(:));
-	plot(ax(4),[tau_resp tau_resp],[-1 1],'--','Color',options.c)
+	plot(ax(4),[tau_resp tau_resp],[-1e4 1e4],'--','Color',options.c)
 	set(ax(4),'YLim',[-1 .1])
 end
 

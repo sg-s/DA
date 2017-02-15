@@ -109,6 +109,33 @@ end
 %%
 % This doesn't look so different, so that's good. 
 
+%%
+% Now, I plot the residuals as a function of the response to see if there is any structure there. 
+
+figure('outerposition',[0 0 1501 500],'PaperUnits','points','PaperSize',[1501 500]); hold on
+
+for i = 1:length(data)
+	subplot(1,3,i); hold on
+	D = data(i).R(:) - data(i).P(:);
+	x = data(i).R(:);
+	l = plot(x(1:10:end),D(1:10:end),'k.');
+	legend(l,['r^2 = ' oval(rsquare(x,D))],'Location','southeast')
+	set(gca,'YLim',[-80 60])
+	xlabel('Response (Hz)')
+	ylabel('Deviation from NLN model (Hz)')
+end
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
+% There seems to be some structure at low firing rates. But since I cut that off anyway in the analysis, it shouldn't matter. 
+
 %% Validation: response cutoff
 % In this analysis, I only analyse the responses to whiffs, and neglect deviations from model fit when there is no stimulus. The reason is because when there is no stimulus, the baseline firing of the neuron deviates randomly from the model responses, which are not very meaningful. However, does this cutoff affect this analysis? To determine this, I generate synthetic responses using a NLN model, and then fit a NLN model back to this, and repeat this analysis with different cutoffs. 
 

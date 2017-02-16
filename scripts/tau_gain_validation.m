@@ -712,7 +712,7 @@ if being_published
 end
 
 %%
-% What if I use a simple linear model and then fit a NLN model to the data? Do I still see something that could be interpreted as gain control?
+% What if I use a simple LN model and then fit a NLN model to the data? Do I still see something that could be interpreted as gain control? In the following section, I use the following LN model to generate responses: a simple linear followed by a rectification, and then a square root. The NLN model that I fit to the data has only a rectification for the output nonlinearity, so cannot really mimic this LN model well. 
 
 R = 10*convolve(time,S,K,filtertime);
 R(R<0)=0;

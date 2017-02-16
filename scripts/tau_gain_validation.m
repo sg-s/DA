@@ -711,6 +711,63 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% What if I use a simple linear model and then fit a NLN model to the data? Do I still see something that could be interpreted as gain control?
+
+R = 10*convolve(time,S,K,filtertime);
+R(R<0)=0;
+R = 50*sqrt(R);
+
+clear syn_data
+syn_data.S =  S;
+syn_data.R = R;
+
+clear p
+p.k_D = 0.3566;
+p.  n = 1.25;
+
+% generate NLN predictions
+syn_data.P = NLNmodel([syn_data.S syn_data.R],p);
+
+figure('outerposition',[0 0 1502 505],'PaperUnits','points','PaperSize',[1502 505]); hold on
+
+subplot(1,3,1); hold on
+plot(syn_data.P,syn_data.R,'k.')
+ylabel('Linear model (Hz)')
+xlabel('NLN model prediction (Hz)')
+legend(['r^2=' oval(rsquare(syn_data.R,syn_data.P))],'Location','southeast')
+
+% shot the correlations 
+subplot(1,3,2); hold on
+
+[a,lags] = autocorr(S,6e4);
+plot(lags,a,'k')
+legend({'Stimulus'})
+set(gca,'XScale','log','XTick',[1 10 100 1e3 1e4 1e5])
+xlabel('Lag (ms)')
+ylabel('Autocorrelation')
+
+% do the analysis on the real data again
+clear ax
+ax(4) = subplot(1,3,3); hold on; axis square
+plot_tau_gain_nat_stim(data(3),ax,'response_cutoff',40,'example_history_length',2e3,'method','unscaled_Pearson');
+set(ax(4),'YLim',[-15 10],'XTick',[1 10 100 1e3 1e4 1e5],'XLim',[1 1e5])
+
+
+% now do the analysis on the DA model
+clear ax
+ax(4) = subplot(1,3,3); hold on; axis square
+plot_tau_gain_nat_stim(syn_data,ax,'c',[1 0 0],'response_cutoff',30,'example_history_length',2e3,'method','unscaled_Pearson');
+set(ax(4),'YLim',[-15 10],'XTick',[1 10 100 1e3 1e4 1e5],'XLim',[1 1e5])
+title('{\color{black}Data } {\color{red}Linear model}');
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 %% Version Info
 %

@@ -12,7 +12,7 @@ p.n;
 % bounds
 lb.n = .5;
 lb.k_D = 1e-4;
-ub.n = 4;
+ub.n = 10;
 
 T = S(:,2); % target response
 S = S(:,1); 

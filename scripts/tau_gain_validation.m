@@ -750,7 +750,7 @@ ylabel('Autocorrelation')
 % do the analysis on the real data again
 clear ax
 ax(4) = subplot(1,3,3); hold on; axis square
-plot_tau_gain_nat_stim(data(3),ax,'response_cutoff',40,'example_history_length',2e3,'method','unscaled_Pearson');
+plot_tau_gain_nat_stim(data(3),ax,'response_cutoff',30,'example_history_length',2e3,'method','unscaled_Pearson');
 set(ax(4),'YLim',[-15 10],'XTick',[1 10 100 1e3 1e4 1e5],'XLim',[1 1e5])
 
 

@@ -89,7 +89,7 @@ end
 % show linear analysis output plot
 
 
-ss = 50;
+ss = 1;
 
 % compute filters from this neuron
 clear K1 K2
@@ -120,9 +120,9 @@ for j = 1:size(data(i).S,2)
 	Rp = convolve(time,S,K2(:,j),filtertime);
 
  
-	Xl(j) = plot(ax(9),Xp(1:ss:end),X(1:ss:end),'Color',c(j,:));
+	Xl(j) = plot(ax(9),Xp(1:ss:end),X(1:ss:end),'.','Color',c(j,:));
 	XL{j} = ['r^2 = ' oval(rsquare(Xp,X))];
-	Rl(j) = plot(ax(10),Rp(1:ss:end),R(1:ss:end),'Color',c(j,:));
+	Rl(j) = plot(ax(10),Rp(1:ss:end),R(1:ss:end),'.','Color',c(j,:));
 	RL{j} = ['r^2 = ' oval(rsquare(Rp,R))];
 
 end
@@ -180,7 +180,10 @@ for i = [4 5 9 10]
 	ax(i).Position(3:4) = .22;
 end
 
-
+% flip all the LFP axes
+set(ax(4),'YDir','reverse')
+set(ax(2),'YDir','reverse')
+set(ax(7),'YDir','reverse')
 
 prettyFig()
 
@@ -188,6 +191,15 @@ if being_published
 	snapnow	
 	delete(gcf)
 end
+
+ ;;;;;;  ;;     ;; ;;;;;;;;  ;;;;;;;;     ;;;;;;;; ;;;;  ;;;;;;   
+;;    ;; ;;     ;; ;;     ;; ;;     ;;    ;;        ;;  ;;    ;;  
+;;       ;;     ;; ;;     ;; ;;     ;;    ;;        ;;  ;;        
+ ;;;;;;  ;;     ;; ;;;;;;;;  ;;;;;;;;     ;;;;;;    ;;  ;;   ;;;; 
+      ;; ;;     ;; ;;        ;;           ;;        ;;  ;;    ;;  
+;;    ;; ;;     ;; ;;        ;;           ;;        ;;  ;;    ;;  
+ ;;;;;;   ;;;;;;;  ;;        ;;           ;;       ;;;;  ;;;;;;   
+
 
 %% Supplement 1 
 % In this supplement, we show the filters, and estabilish the linear analysis that we do is not complicated by filter extraction in these conditions, and that we see the same behaviour more gnerally, on other neurons. 

@@ -414,28 +414,35 @@ end
 
 
 %%
-% Can I account for the LFP responses of the ORN using a NL model? In the following figure, I fit a NL model to the LFP responses, and compare model predictions to data. 
+% Can I account for the LFP responses of the ORN using the LFP model where reaction rates slow down?
+
+return
 
 this_orn = 2;
 clear fd
 for i = 1:size(data(this_orn).X,2)
 	S = data(this_orn).S(:,i); S = S - min(S);
 	R = data(this_orn).X(:,i);
-	%fd(i).stimulus = [S R];
 	fd(i).stimulus = S;
 	fd(i).response = -R;
-	%fd(i).response(fd(i).response<10) = NaN;
+	fd(i).response(1:5e3) = NaN;
 end
 
 clear p
-p.k_D = 0.1996;
-p.n = 1.5000;
+p.           k0 = 0.1000;
+p.            w = 3.6250;
+p.            B = 30.7500;
+p.        K_tau = 21.7500;
+p.output_offset = -0.0192;
+p. output_scale = 19.5000;
+p.            n = 1;
 
 % generate responses using this model 
 for j = 1:size(data(2).X,2)
-	[data(2).XP(:,j)] = NLModel([data(2).S(:,j) - min(data(2).S(:,j)) data(2).X(:,j)] ,p);
+	[data(2).XP(:,j),~,kD(:,j)] = asNL5(data(2).S(:,j) - min(data(2).S(:,j)) ,p);
 end
 
+data(2).XP = - data(2).XP;
 
 figure('outerposition',[0 0 1501 502],'PaperUnits','points','PaperSize',[1501 502]); hold on
 for i = 1:3
@@ -470,8 +477,8 @@ for i = 2
 		z = this_loc+300;
 
 		plot(ax(2),S(a:z))
-		plot(ax(3),X(a:z),'Color',c(j,:))
-		plot(ax(3),P(a:z),':','Color',c(j,:))
+		%plot(ax(3),X(a:z),'Color',c(j,:))
+		plot(ax(3),P(a:z),'Color',c(j,:))
 
 	end
 end

@@ -50,7 +50,7 @@ p.tau_y1 = 27.1055;
 p.tau_y2 = 96.9453;
 p.     A = 0.7000;
 p.     C = 178.9440;
-p.     n = 2;
+p.     n = 1;
 
 
 figure('outerposition',[0 0 1101 901],'PaperUnits','points','PaperSize',[1101 901]); hold on
@@ -282,6 +282,44 @@ ylabel(ax(5),'ab2A response (Hz)')
 title(ax(5),'Whiff-specific responses')
 set(ax(5),'XLim',[0 300],'YLim',[0 300])
 
+
+
+
+ ;;;;;;  ;;        ;;;;;;;  ;;      ;; ;;;;;;;;   ;;;;;;;  ;;      ;; ;;    ;; 
+;;    ;; ;;       ;;     ;; ;;  ;;  ;; ;;     ;; ;;     ;; ;;  ;;  ;; ;;;   ;; 
+;;       ;;       ;;     ;; ;;  ;;  ;; ;;     ;; ;;     ;; ;;  ;;  ;; ;;;;  ;; 
+ ;;;;;;  ;;       ;;     ;; ;;  ;;  ;; ;;     ;; ;;     ;; ;;  ;;  ;; ;; ;; ;; 
+      ;; ;;       ;;     ;; ;;  ;;  ;; ;;     ;; ;;     ;; ;;  ;;  ;; ;;  ;;;; 
+;;    ;; ;;       ;;     ;; ;;  ;;  ;; ;;     ;; ;;     ;; ;;  ;;  ;; ;;   ;;; 
+ ;;;;;;  ;;;;;;;;  ;;;;;;;   ;;;  ;;;  ;;;;;;;;   ;;;;;;;   ;;;  ;;;  ;;    ;; 
+
+subplot(4,3,12); hold on
+
+
+% generate responses using model
+clear p
+p.k0 = 0.1;
+p.w = 0.7593;
+p.B = 1.3425;
+p.K_tau = 10;
+p.output_offset = -0.5168;
+p.output_scale = -17.621;
+p.n = 1;
+
+X = NaN*MSGdata.LFP;
+for i = 1:length(MSGdata.paradigm)
+	textbar(i,length(MSGdata.paradigm))
+	S = MSGdata.PID(:,i); S = S -min(S);
+	X(:,i) = asNL5(S,p);
+end
+
+% compute the lags
+lags = NaN*MSGdata.paradigm;
+for i = 1:length(MSGdata.paradigm)
+	S = MSGdata.PID(35e3:55e3,i); S = S - mean(S); S = S/std(S);
+	R = X(35e3:55e3,i); R = R - mean(R); R = R/std(R);
+	lags(i) = finddelay(S,R);
+end
 
 prettyFig('fs',12);
 

@@ -53,12 +53,11 @@ p.     C = 178.9440;
 p.     n = 1;
 
 
-figure('outerposition',[0 0 1101 901],'PaperUnits','points','PaperSize',[1101 901]); hold on
+figure('outerposition',[0 0 800 999],'PaperUnits','points','PaperSize',[800 999]); hold on
 clear ax
-ax(1) = subplot(4,3,1); hold on
-ax(2) = subplot(4,3,2); hold on
-ax(3) = subplot(4,3,3); hold on
-
+ax(1) = subplot(5,3,1); hold on
+ax(2) = subplot(5,3,2); hold on
+ax(3) = subplot(5,3,3); hold on
 
 % first, show 3 nonlinearities from the Gaussians with the right colours 
 c = parula(11);
@@ -135,7 +134,7 @@ MSGdata.NLN_fp = NLN_fp;
 clear NLN_fp
 
 % recreate the I/O plot 
-subplot(4,3,7); hold on; cla
+ax(7) = subplot(5,3,7); hold on; cla
 ss = 100;
 all_x = 0:0.1:2;
 a = 35e3; z = 55e3;
@@ -155,8 +154,8 @@ for i = 1:max(MSGdata.paradigm) % iterate over all paradigms
 	x = x + nanmean(nanmean(s));
 	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:),'show_error',false,'LineWidth',3);
 end
-xlabel('Projected stimulus (V)')
-ylabel('NLN response (Hz)')
+xlabel(ax(7),'Projected stimulus (V)')
+ylabel(ax(7),'NLN response (Hz)')
 
 % compute gains and plot them
 MSGdata.NLN_gain = NaN*MSGdata.paradigm;
@@ -170,7 +169,7 @@ for i = 1:length(MSGdata.paradigm)
 	end
 end
 
-subplot(4,3,8); hold on; cla
+ax(8) = subplot(5,3,8); hold on; cla
 mean_stim = nanmean(MSGdata.PID(a:z,:));
 
 % correct for some trivial scaling 
@@ -188,7 +187,7 @@ for i = 1:max(MSGdata.paradigm)
 	rm_this = y == 0 | isnan(y);
 	x(rm_this) = []; y(rm_this) = []; 
 	all_x = [all_x(:); x(:)]; all_y = [all_y(:); y(:)];
-	plot(x,y,'+','Color',c(i,:));
+	plot(ax(8),x,y,'+','Color',c(i,:));
 end
 
 % fit a power law with exponent -1
@@ -198,22 +197,22 @@ options = fitoptions(fittype('power1'));
 options.Lower = [-Inf -1];
 options.Upper = [Inf -1];
 cf = fit(mean_stim(~isnan(g)),g(~isnan(g)),'power1',options);
-plot(sort(mean_stim),cf(sort(mean_stim)),'r');
-set(gca,'XScale','log','YScale','log','YLim',[10 300],'XLim',[.1 2.5])
-xlabel('\mu_{Stimulus} (V)')
-ylabel('NLN gain (Hz/V)')
+plot(ax(8),sort(mean_stim),cf(sort(mean_stim)),'r');
+set(ax(8),'XScale','log','YScale','log','YLim',[10 300],'XLim',[.1 2.5])
+xlabel(ax(8),'\mu_{Stimulus} (V)')
+ylabel(ax(8),'NLN gain (Hz/V)')
 
 % compare model gains to actual gains
-subplot(4,3,9); hold on; cla
+ax(9) = subplot(5,3,9); hold on; cla
 for i = 1:max(MSGdata.paradigm)
-	plot(MSGdata.NLN_gain(MSGdata.paradigm == i),MSGdata.fA_gain(MSGdata.paradigm == i),'+','Color',c(i,:))
+	plot(ax(9),MSGdata.NLN_gain(MSGdata.paradigm == i),MSGdata.fA_gain(MSGdata.paradigm == i),'+','Color',c(i,:))
 end
 clear l
-l = plot(NaN,NaN,'k+');
+l = plot(ax(9),NaN,NaN,'k+');
 legend(l,['r^2 = ' oval(rsquare(MSGdata.NLN_gain,MSGdata.fA_gain))],'Location','southeast')
-xlabel('NLN gain (Hz/V)')
-ylabel('Observed gain (Hz/V)')
-plot([0 250],[0 250],'k--')
+xlabel(ax(9),'NLN gain (Hz/V)')
+ylabel(ax(9),'Observed gain (Hz/V)')
+plot(ax(9),[0 250],[0 250],'k--')
 
 
 ;;    ;;    ;;;    ;;;;;;;; ;;     ;; ;;;;;;;;     ;;;    ;;       
@@ -240,7 +239,7 @@ cdata = consolidateData2(getPath(dataManager,'4608c42b12191b383c84fea52392ea97')
 time = 1e-3*(1:length(data(1).S));
 
 % show the time series of the natualistic stimulus
-ax(4) = subplot(4,3,4:5); hold on
+ax(4) = subplot(5,3,4); hold on
 clear l
 l(1) = plot(ax(4),time,data(2).R(:,3),'k');
 % generate responses and plot them too
@@ -260,8 +259,35 @@ legend(l,{'ab2A',['model r^2 = ' oval(rsquare(data(2).P(:,3),data(2).R(:,3)))]})
 xlabel(ax(4),'Time (s)')
 ylabel(ax(4),'Firing rate (Hz)')
 
+% show responses during the whiffs of approx same magnitude to show variation in response. 
+
+ax(5) = subplot(5,3,5); hold on
+
+show_these = [           2       27764
+           2       28790
+           2       59776
+           3       58049];
+
+for i = 2
+	for j = 1:length(show_these)
+		this_stim = show_these(j,1);
+		this_loc = show_these(j,2);
+
+		R = data(i).R(:,this_stim);
+
+		a = this_loc - 300;
+		z = this_loc+300;
+
+		plot(ax(5),R(a:z))
+
+	end
+end
+ylabel(ax(5),'Firing rate (Hz)')
+set(ax(4),'XLim',[20 30])
+
+
 % show r^2 for every whiff
-ax(5) = subplot(4,3,6); hold on
+ax(5) = subplot(5,3,6); hold on
 x = []; y = [];
 for i = 2
 	for j = 1:3
@@ -282,8 +308,88 @@ ylabel(ax(5),'ab2A response (Hz)')
 title(ax(5),'Whiff-specific responses')
 set(ax(5),'XLim',[0 300],'YLim',[0 300])
 
+;;       ;;;;;;;; ;;;;;;;;     ;;     ;;  ;;;;;;   ;;;;;;   
+;;       ;;       ;;     ;;    ;;;   ;;; ;;    ;; ;;    ;;  
+;;       ;;       ;;     ;;    ;;;; ;;;; ;;       ;;        
+;;       ;;;;;;   ;;;;;;;;     ;; ;;; ;;  ;;;;;;  ;;   ;;;; 
+;;       ;;       ;;           ;;     ;;       ;; ;;    ;;  
+;;       ;;       ;;           ;;     ;; ;;    ;; ;;    ;;  
+;;;;;;;; ;;       ;;           ;;     ;;  ;;;;;;   ;;;;;;   
 
 
+ax(15) = subplot(5,3,15); hold on
+
+a = 35e3; z = 55e3; 
+clear fd
+for i = 1:length(MSGdata.paradigm)
+	fd(i).stimulus = MSGdata.PID(a:z,i);
+	R = MSGdata.raw_LFP(:,i);
+	x = a:z;
+	ff = fit(x(:),R(a:z),'poly1');
+	R = R - ff(1:length(R));
+	fd(i).response = R(a:z);
+	fd(i).response(1:5e3) = NaN;
+end
+
+% generate responses using model
+clear p
+p.k0 = 0.1;
+p.w = 0.6343;
+p.B = 1.5984;
+p.K_tau = 4.07;
+p.output_offset = -0.508;
+p.output_scale = -23.17;
+p.n = 1;
+
+% generate responses using the model 
+if exist('.cache/asNL5_responses_to_MSG.mat','file') == 0
+	
+	LFP_pred = NaN*MSGdata.LFP;
+	for i = 1:length(MSGdata.paradigm)
+		textbar(i,length(MSGdata.paradigm))
+		S = MSGdata.PID(:,i); S = S -min(S);
+		LFP_pred(:,i) = asNL5(S,p);
+	end
+	save('.cache/asNL5_responses_to_MSG.mat','LFP_pred')
+else
+	load('.cache/asNL5_responses_to_MSG.mat')
+end
+MSGdata.LFP_pred = LFP_pred;
+clear LFP_pred
+
+% back out new linear filters for this
+a = 35e3; z = 55e3;
+time = 1e-3*(1:length(MSGdata.PID));
+if exist('.cache/asNLN5_MSG_linear_prediction.mat','file') == 0
+	LFP_pred_linear = NaN*MSGdata.PID;
+	for i = 1:length(MSGdata.paradigm)
+		S = MSGdata.PID(:,i);
+		R = MSGdata.LFP_pred(:,i);
+		K = fitFilter2Data(S(a:z),R(a:z),'filter_length',1e3,'offset',200);
+		K = K(100:end-100);
+		filtertime = 1e-3*(1:length(K)) - .1;
+		LFP_pred_linear(:,i) = convolve(time,S,K,filtertime);
+		K = K/(nanstd(LFP_pred_linear(a:z,i))/nanstd(S(a:z))); % normalise correctly 
+		LFP_pred_linear(:,i) = convolve(time,S,K,filtertime);
+	end
+	save('.cache/asNLN5_MSG_linear_prediction.mat','LFP_pred_linear')
+else
+	load('.cache/asNLN5_MSG_linear_prediction.mat')
+end
+MSGdata.LFP_pred_linear = LFP_pred_linear;
+clear LFP_pred_linear
+
+% compute gains and plot them
+MSGdata.LFP_gain = NaN*MSGdata.paradigm;
+for i = 1:length(MSGdata.paradigm)
+	x = MSGdata.LFP_pred_linear(a:z,i);
+	y = MSGdata.LFP_pred(a:z,i);
+	try
+		ff = fit(x(:),y(:),'poly1');
+		MSGdata.LFP_gain(i) = ff.p1;
+	catch
+	end
+end
 
  ;;;;;;  ;;        ;;;;;;;  ;;      ;; ;;;;;;;;   ;;;;;;;  ;;      ;; ;;    ;; 
 ;;    ;; ;;       ;;     ;; ;;  ;;  ;; ;;     ;; ;;     ;; ;;  ;;  ;; ;;;   ;; 
@@ -293,33 +399,16 @@ set(ax(5),'XLim',[0 300],'YLim',[0 300])
 ;;    ;; ;;       ;;     ;; ;;  ;;  ;; ;;     ;; ;;     ;; ;;  ;;  ;; ;;   ;;; 
  ;;;;;;  ;;;;;;;;  ;;;;;;;   ;;;  ;;;  ;;;;;;;;   ;;;;;;;   ;;;  ;;;  ;;    ;; 
 
-subplot(4,3,12); hold on
-
-
-% generate responses using model
-clear p
-p.k0 = 0.1;
-p.w = 0.7593;
-p.B = 1.3425;
-p.K_tau = 10;
-p.output_offset = -0.5168;
-p.output_scale = -17.621;
-p.n = 1;
-
-X = NaN*MSGdata.LFP;
-for i = 1:length(MSGdata.paradigm)
-	textbar(i,length(MSGdata.paradigm))
-	S = MSGdata.PID(:,i); S = S -min(S);
-	X(:,i) = asNL5(S,p);
-end
 
 % compute the lags
 lags = NaN*MSGdata.paradigm;
 for i = 1:length(MSGdata.paradigm)
 	S = MSGdata.PID(35e3:55e3,i); S = S - mean(S); S = S/std(S);
-	R = X(35e3:55e3,i); R = R - mean(R); R = R/std(R);
+	R = LFP_pred(35e3:55e3,i); R = R - mean(R); R = R/std(R);
 	lags(i) = finddelay(S,R);
 end
+
+
 
 prettyFig('fs',12);
 
@@ -422,7 +511,7 @@ for i = 1:width(reshaped_LFP)
 end
 
 
-subplot(4,4,13); hold on
+subplot(5,4,13); hold on
 [~,data_hi] = plotPieceWiseLinear(vectorise(NL_fp(1e3:5e3,:)),-vectorise(reshaped_LFP(1e3:5e3,:)),'Color',[1 0 0],'nbins',30);
 [~,data_lo] = plotPieceWiseLinear(vectorise(NL_fp(6e3:9e3,:)),-vectorise(reshaped_LFP(6e3:9e3,:)),'Color',[0 0 1],'nbins',30);
 

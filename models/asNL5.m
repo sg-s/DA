@@ -19,7 +19,7 @@ function [R,a,kD,F,H] = asNL5(S,p)
 
 	% bounds 
 	lb.n = 1;
-	lb.K_tau = 10;
+	lb.K_tau = 1;
 	lb.k0 = 1e-3;
 	lb.w = 0;
 	lb.B = 0;

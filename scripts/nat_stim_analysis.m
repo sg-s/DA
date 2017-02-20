@@ -416,7 +416,6 @@ end
 %%
 % Can I account for the LFP responses of the ORN using the LFP model where reaction rates slow down?
 
-return
 
 this_orn = 2;
 clear fd

@@ -59,6 +59,8 @@ ax(1) = subplot(5,3,1); hold on
 ax(2) = subplot(5,3,2); hold on
 ax(3) = subplot(5,3,3); hold on
 
+
+
 % first, show 3 nonlinearities from the Gaussians with the right colours 
 c = parula(11);
 for i = [2 6 10]
@@ -83,7 +85,7 @@ axis square
 plot(ax(2),K/norm(K),'k')
 set(ax(2),'XLim',[0 600])
 xlabel(ax(2),'Lag (ms)')
-ylabel(ax(2),'Filter (norm)')
+ylabel(ax(2),'Filter K (norm)')
 axes(ax(2))
 axis square
 
@@ -155,7 +157,8 @@ for i = 1:max(MSGdata.paradigm) % iterate over all paradigms
 	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:),'show_error',false,'LineWidth',3);
 end
 xlabel(ax(7),'Projected stimulus (V)')
-ylabel(ax(7),'NLN response (Hz)')
+ylabel(ax(7),'Model response (Hz)')
+set(ax(7),'XLim',[0 2],'YLim',[0 60])
 
 % compute gains and plot them
 MSGdata.NLN_gain = NaN*MSGdata.paradigm;
@@ -200,7 +203,7 @@ cf = fit(mean_stim(~isnan(g)),g(~isnan(g)),'power1',options);
 plot(ax(8),sort(mean_stim),cf(sort(mean_stim)),'r');
 set(ax(8),'XScale','log','YScale','log','YLim',[10 300],'XLim',[.1 2.5])
 xlabel(ax(8),'\mu_{Stimulus} (V)')
-ylabel(ax(8),'NLN gain (Hz/V)')
+ylabel(ax(8),'Model gain (Hz/V)')
 
 % compare model gains to actual gains
 ax(9) = subplot(5,3,9); hold on; cla
@@ -210,9 +213,36 @@ end
 clear l
 l = plot(ax(9),NaN,NaN,'k+');
 legend(l,['r^2 = ' oval(rsquare(MSGdata.NLN_gain,MSGdata.fA_gain))],'Location','southeast')
-xlabel(ax(9),'NLN gain (Hz/V)')
+xlabel(ax(9),'Model gain (Hz/V)')
 ylabel(ax(9),'Observed gain (Hz/V)')
 plot(ax(9),[0 250],[0 250],'k--')
+set(ax(9),'XLim',[0 250],'YLim',[0 250])
+
+% compute lags for each 
+c = lines(5);
+firing_color = c(4,:);
+
+
+% compute the lags
+lags = NaN*MSGdata.paradigm;
+for i = 1:length(MSGdata.paradigm)
+	S = MSGdata.PID(35e3:55e3,i); S = S - mean(S); S = S/std(S);
+	R = MSGdata.NLN_pred(35e3:55e3,i); R = R - mean(R); R = R/std(R);
+	lags(i) = finddelay(S,R);
+end
+
+
+y = NaN*(1:10);
+ye = y;x = y;
+for i = 1:10
+	y(i) = nanmean(lags(MSGdata.paradigm == i));
+	x(i) = nanmean(mean_stim(MSGdata.paradigm == i));
+	ye(i) = nanstd(lags(MSGdata.paradigm == i));
+end
+subplot(5,3,15); hold on
+set(gca,'YLim',[0 200])
+errorbar(x,y,ye,'Color',firing_color)
+
 
 
 ;;    ;;    ;;;    ;;;;;;;; ;;     ;; ;;;;;;;;     ;;;    ;;       
@@ -254,7 +284,19 @@ for j = 1:size(data(2).X,2)
 end
 
 l(2) = plot(ax(4),time,data(2).P(:,3),'r');
-legend(l,{'ab2A',['model r^2 = ' oval(rsquare(data(2).P(:,3),data(2).R(:,3)))]})
+legend(l,{'ab2A',['model r^2 = ' oval(rsquare(data(2).P(:,3),data(2).R(:,3)))]},'Location','northwest')
+
+% show the output nonlinearity for ab3A
+x = linspace(-.5,1,100);
+y = x*p.C;
+y(y<0) = 0;
+clear l
+l(1) = plot(ax(3),x,y,'r--');
+l(2) = plot(ax(3),x,y*ff.p1,'r');
+legend(l,{'ab3A','ab2A'},'Location','northwest')
+set(ax(3),'XLim',[-.5 1 ],'YLim',[0 300])
+xlabel(ax(3),'K \otimes a')
+ylabel(ax(3),'Firing rate (Hz)')
 
 xlabel(ax(4),'Time (s)')
 ylabel(ax(4),'Firing rate (Hz)')
@@ -277,17 +319,18 @@ for i = 2
 
 		a = this_loc - 300;
 		z = this_loc+300;
-
-		plot(ax(5),R(a:z))
+		t = 1:length(R(a:z)); t = t - 300;
+		plot(ax(5),t,R(a:z))
 
 	end
 end
 ylabel(ax(5),'Firing rate (Hz)')
+xlabel(ax(5),'Time since whiff (ms)')
 set(ax(4),'XLim',[20 30])
 
 
 % show r^2 for every whiff
-ax(5) = subplot(5,3,6); hold on
+ax(6) = subplot(5,3,6); hold on
 x = []; y = [];
 for i = 2
 	for j = 1:3
@@ -301,12 +344,13 @@ for i = 2
 	end
 end
 clear l
-l = plot(ax(5),x,y,'k.','MarkerSize',20);
+l = plot(ax(6),x,y,'.','MarkerSize',20,'Color',[.5 .5 .5]);
 legend(l,['r^2 = ' oval(rsquare(x,y))],'Location','southeast')
-xlabel(ax(5),'NLN model response (Hz)')
-ylabel(ax(5),'ab2A response (Hz)')
-title(ax(5),'Whiff-specific responses')
-set(ax(5),'XLim',[0 300],'YLim',[0 300])
+plot(ax(6),[0 300],[0 300],'k--')
+xlabel(ax(6),' Model response (Hz)')
+ylabel(ax(6),'ab2A response (Hz)')
+title(ax(6),'Whiff-specific responses')
+set(ax(6),'XLim',[0 300],'YLim',[0 300])
 
 ;;       ;;;;;;;; ;;;;;;;;     ;;     ;;  ;;;;;;   ;;;;;;   
 ;;       ;;       ;;     ;;    ;;;   ;;; ;;    ;; ;;    ;;  
@@ -357,209 +401,135 @@ end
 MSGdata.LFP_pred = LFP_pred;
 clear LFP_pred
 
-% back out new linear filters for this
-a = 35e3; z = 55e3;
-time = 1e-3*(1:length(MSGdata.PID));
-if exist('.cache/asNLN5_MSG_linear_prediction.mat','file') == 0
-	LFP_pred_linear = NaN*MSGdata.PID;
-	for i = 1:length(MSGdata.paradigm)
-		S = MSGdata.PID(:,i);
-		R = MSGdata.LFP_pred(:,i);
-		K = fitFilter2Data(S(a:z),R(a:z),'filter_length',1e3,'offset',200);
-		K = K(100:end-100);
-		filtertime = 1e-3*(1:length(K)) - .1;
-		LFP_pred_linear(:,i) = convolve(time,S,K,filtertime);
-		K = K/(nanstd(LFP_pred_linear(a:z,i))/nanstd(S(a:z))); % normalise correctly 
-		LFP_pred_linear(:,i) = convolve(time,S,K,filtertime);
-	end
-	save('.cache/asNLN5_MSG_linear_prediction.mat','LFP_pred_linear')
-else
-	load('.cache/asNLN5_MSG_linear_prediction.mat')
-end
-MSGdata.LFP_pred_linear = LFP_pred_linear;
-clear LFP_pred_linear
-
-% compute gains and plot them
-MSGdata.LFP_gain = NaN*MSGdata.paradigm;
-for i = 1:length(MSGdata.paradigm)
-	x = MSGdata.LFP_pred_linear(a:z,i);
-	y = MSGdata.LFP_pred(a:z,i);
-	try
-		ff = fit(x(:),y(:),'poly1');
-		MSGdata.LFP_gain(i) = ff.p1;
-	catch
-	end
-end
-
- ;;;;;;  ;;        ;;;;;;;  ;;      ;; ;;;;;;;;   ;;;;;;;  ;;      ;; ;;    ;; 
-;;    ;; ;;       ;;     ;; ;;  ;;  ;; ;;     ;; ;;     ;; ;;  ;;  ;; ;;;   ;; 
-;;       ;;       ;;     ;; ;;  ;;  ;; ;;     ;; ;;     ;; ;;  ;;  ;; ;;;;  ;; 
- ;;;;;;  ;;       ;;     ;; ;;  ;;  ;; ;;     ;; ;;     ;; ;;  ;;  ;; ;; ;; ;; 
-      ;; ;;       ;;     ;; ;;  ;;  ;; ;;     ;; ;;     ;; ;;  ;;  ;; ;;  ;;;; 
-;;    ;; ;;       ;;     ;; ;;  ;;  ;; ;;     ;; ;;     ;; ;;  ;;  ;; ;;   ;;; 
- ;;;;;;  ;;;;;;;;  ;;;;;;;   ;;;  ;;;  ;;;;;;;;   ;;;;;;;   ;;;  ;;;  ;;    ;; 
-
 
 % compute the lags
 lags = NaN*MSGdata.paradigm;
 for i = 1:length(MSGdata.paradigm)
 	S = MSGdata.PID(35e3:55e3,i); S = S - mean(S); S = S/std(S);
-	R = LFP_pred(35e3:55e3,i); R = R - mean(R); R = R/std(R);
+	R = MSGdata.LFP_pred(35e3:55e3,i); R = R - mean(R); R = R/std(R);
 	lags(i) = finddelay(S,R);
+end
+
+y = NaN*(1:10);
+ye = y;x = y;
+for i = 1:10
+	y(i) = nanmean(lags(MSGdata.paradigm == i));
+	x(i) = nanmean(mean_stim(MSGdata.paradigm == i));
+	ye(i) = nanstd(lags(MSGdata.paradigm == i));
+end
+subplot(5,3,15); hold on
+c = lines(5);
+LFP_color = c(5,:);
+errorbar(x,y,ye,'Color',LFP_color)
+xlabel('\mu_{Stimulus} (V)')
+ylabel('Lag (ms)')
+
+;;       ;;;;;;;; ;;;;;;;;     ;;    ;;    ;;;    ;;;;;;;;     ;;;;;;  ;;;;;;;; ;;;; ;;     ;; 
+;;       ;;       ;;     ;;    ;;;   ;;   ;; ;;      ;;       ;;    ;;    ;;     ;;  ;;;   ;;; 
+;;       ;;       ;;     ;;    ;;;;  ;;  ;;   ;;     ;;       ;;          ;;     ;;  ;;;; ;;;; 
+;;       ;;;;;;   ;;;;;;;;     ;; ;; ;; ;;     ;;    ;;        ;;;;;;     ;;     ;;  ;; ;;; ;; 
+;;       ;;       ;;           ;;  ;;;; ;;;;;;;;;    ;;             ;;    ;;     ;;  ;;     ;; 
+;;       ;;       ;;           ;;   ;;; ;;     ;;    ;;       ;;    ;;    ;;     ;;  ;;     ;; 
+;;;;;;;; ;;       ;;           ;;    ;; ;;     ;;    ;;        ;;;;;;     ;;    ;;;; ;;     ;; 
+
+
+% get all data 
+cdata = consolidateData2(getPath(dataManager,'4608c42b12191b383c84fea52392ea97'));
+[cdata, data] =  assembleScaledNatStim(cdata);
+
+
+this_orn = 2;
+clear fd
+for i = 1:size(data(this_orn).X,2)
+	S = data(this_orn).S(:,i); S = S - min(S);
+	R = data(this_orn).X(:,i);
+	fd(i).stimulus = S;
+	fd(i).response = -R;
+	fd(i).response(1:5e3) = NaN;
+end
+
+clear p
+p.           k0 = 0.1000;
+p.            w = 3.6250;
+p.            B = 30.7500;
+p.        K_tau = 21.7500;
+p.output_offset = -0.0192;
+p. output_scale = 24.7;
+p.            n = 1;
+
+% generate responses using this model 
+for j = 1:size(data(2).X,2)
+	data(2).XP(:,j) = -asNL5(data(2).S(:,j) - min(data(2).S(:,j)) ,p);
 end
 
 
 
+
+% show r^2 for every whiff
+ax(13) = subplot(5,3,13); hold on
+x = []; y = [];
+for i = 2
+	for j = 1:3
+		S = data(i).S(:,j);
+		P = data(i).XP(:,j);
+		R = data(i).X(:,j);
+		ws = whiffStatistics(S,R,R,300,'MinPeakProminence',max(S/1e2),'debug',false);
+		y = [y; ws.peak_firing_rate];
+		ws = whiffStatistics(S,P,P,300,'MinPeakProminence',max(S/1e2),'debug',false);
+		x = [x; ws.peak_firing_rate];
+	end
+end
+clear l
+
+l = plot(ax(13),x,y,'.','MarkerSize',20,'Color',[.5 .5 .5]);
+legend(l,['r^2 = ' oval(rsquare(x,y))],'Location','northwest')
+xlabel(ax(13),'LFP model response (mV)')
+ylabel(ax(13),'ab2 LFP response (mV)')
+title(ax(13),'Whiff-specific responses')
+plot(ax(13),[-18 0],[-18 0],'k--')
+set(ax(13),'XLim',[-18 0],'YLim',[-18 0],'YDir','reverse','XDir','reverse')
+
+
+% show context-dep. gain control
+ax(14) = subplot(5,3,14); hold on
+show_these = [2       27764
+           2       28790
+           2       59776
+           3       58049];
+
+for i = 2
+	c = lines(length(show_these));
+	for j = 1:length(show_these)
+		this_stim = show_these(j,1);
+		this_loc = show_these(j,2);
+
+		P = data(i).XP(:,this_stim);
+
+		a = this_loc - 300;
+		z = this_loc+300;
+
+		t = 1:length(P(a:z)); t = t - 300;
+		plot(ax(14),t,P(a:z),'Color',c(j,:))
+
+	end
+end
+ylabel(ax(14),'LFP (mV)')
+xlabel(ax(14),'Time since whiff (ms)')
+set(ax(14),'YDir','reverse')
+
 prettyFig('fs',12);
+
+deintersectAxes(ax(4))
+deintersectAxes(ax(5))
+deintersectAxes(ax(8))
+deintersectAxes(ax(14))
 
 if being_published
 	snapnow
 	delete(gcf)
 end
 
-return
 
-
-;;     ;;    ;;;    ;;;;;;;;  ;;;;    ;;;    ;;    ;;  ;;;;;;  ;;;;;;;; 
-;;     ;;   ;; ;;   ;;     ;;  ;;    ;; ;;   ;;;   ;; ;;    ;; ;;       
-;;     ;;  ;;   ;;  ;;     ;;  ;;   ;;   ;;  ;;;;  ;; ;;       ;;       
-;;     ;; ;;     ;; ;;;;;;;;   ;;  ;;     ;; ;; ;; ;; ;;       ;;;;;;   
- ;;   ;;  ;;;;;;;;; ;;   ;;    ;;  ;;;;;;;;; ;;  ;;;; ;;       ;;       
-  ;; ;;   ;;     ;; ;;    ;;   ;;  ;;     ;; ;;   ;;; ;;    ;; ;;       
-   ;;;    ;;     ;; ;;     ;; ;;;; ;;     ;; ;;    ;;  ;;;;;;  ;;;;;;;; 
-
-
-% get the variance switching data
-clear VSdata
-[VSdata.PID, VSdata.LFP, VSdata.fA, VSdata.paradigm, VSdata.orn, VSdata.fly] = consolidateData(getPath(dataManager,'e30707e8e8ef6c0d832eee31eaa585aa'),1);
-% remove baseline from stimulus
-VSdata.PID = bsxfun(@minus, VSdata.PID, min(VSdata.PID));
-VSdata.LFP = bsxfun(@minus, VSdata.LFP, mean(VSdata.LFP(1:4000,:)));
-
-% get the variance switching data filters 
-load(getPath(dataManager,'457ee16a326f47992e35a7d5281f9cc4'));
-VSdata.K1 = nanmean(K1,2);
-
-
-% % this fits the data
-% this_trial = 2;
-% clear data
-% data.response = -LFP(50e3:90e3,this_trial);
-% data.stimulus = PID(50e3:90e3,this_trial);
-% data.response(1:10e3) = NaN;
-
-PID = VSdata.PID;
-LFP = VSdata.LFP;
-
-global_start = 40e3; % 40 seconds
-global_end = length(PID) - 15e3; 
-
-% generate responses using the LFP model
-clear p
-p.  n  =2.1805;
-p.   A = 0.5680;
-p.tauA = 31.7382;
-p.tauB = 124.2783;
-p.   C = 0.9932;
-p.   D = -9.7793;
-p.  k0 = 0.3723;
-p.   B = 0.1006;
-
-NL_pred = NaN*LFP;
-for i = 1:width(LFP)
-	NL_pred(:,i) = aNL4(PID(:,i),p);
-end
-
-
-
-% filter to remove spikes
-for i = 1:width(LFP)
-	LFP(:,i) = filtfilt(ones(30,1),30,LFP(:,i));
-end
-
-
-% reshape the LFP signals
-block_length = 1e4;
-reshaped_LFP = LFP(global_start:end-1e4-1,1:width(PID));
-reshaped_LFP = reshape(reshaped_LFP,block_length,width(reshaped_LFP)*length(reshaped_LFP)/block_length);
-
-% also reshape the PID
-reshaped_PID = PID(global_start:end-1e4-1,1:width(PID));
-reshaped_PID = reshape(reshaped_PID,block_length,width(reshaped_PID)*length(reshaped_PID)/block_length);
-
-% also reshape the prediction
-reshaped_NL_pred = NL_pred(global_start:end-1e4-1,1:width(NL_pred));
-reshaped_NL_pred = reshape(reshaped_NL_pred,block_length,width(reshaped_NL_pred)*length(reshaped_NL_pred)/block_length);
-
-% throw our NaNs globally. so we're throwing out epochs where the data is incomplete
-rm_this = isnan(sum(reshaped_LFP));
-reshaped_LFP(:,rm_this) = [];
-reshaped_PID(:,rm_this) = [];
-reshaped_NL_pred(:,rm_this) = [];
-
-
-% use the parameteric filter to project the stimulus, skipping the input nonlinearity 
-[~, ~, ~, ~, K] = aNL4(reshaped_PID(:,1),p);
-filtertime = 1e-3*(1:length(K));
-NL_fp = NaN*reshaped_NL_pred;
-time = 1e-3*(1:length(reshaped_LFP));
-for i = 1:width(reshaped_LFP)
-	NL_fp(:,i) = convolve(time,reshaped_PID(:,i),K,filtertime);	
-
-	% remove mean from every trial
-	NL_fp(:,i) = NL_fp(:,i) - nanmean(NL_fp(1e3:end,i));
-end
-
-
-subplot(5,4,13); hold on
-[~,data_hi] = plotPieceWiseLinear(vectorise(NL_fp(1e3:5e3,:)),-vectorise(reshaped_LFP(1e3:5e3,:)),'Color',[1 0 0],'nbins',30);
-[~,data_lo] = plotPieceWiseLinear(vectorise(NL_fp(6e3:9e3,:)),-vectorise(reshaped_LFP(6e3:9e3,:)),'Color',[0 0 1],'nbins',30);
-
-% compute the model gain as a function of the standard deviation of the stimulus 
-
-% correct the projected by a 1/S scaling
-NL_fp_corrected = NL_fp;
-for i = 1:width(NL_fp_corrected)
-	NL_fp_corrected(1:5e3,i) = NLN_fp(1:5e3,i)/mean(reshaped_PID(1e3:4e3,i));
-	NL_fp_corrected(5e3+1:end,i) = NLN_fp(5e3+1:end,i)/mean(reshaped_PID(6e3:9e3,i));
-end
-
-NL_fp_corrected = NL_fp_corrected*mean(reshaped_PID(:)); % overall correction to get the units right
-
-
-% compute gains per trial on the corrected data
-lo_gain = NaN(width(reshaped_PID),1);
-hi_gain = NaN(width(reshaped_PID),1);
-for i = 1:width(reshaped_PID)
-	y = reshaped_NL_pred(1e3:4e3,i);
-	x = NL_fp(1e3:4e3,i);
-	try
-		ff = fit(x(:),y(:),'poly1');
-		hi_gain(i) = ff.p1;
-	catch
-	end
-
-	y = reshaped_NL_pred(6e3:9e3,i);
-	x = NL_fp(6e3:9e3,i);
-	try
-		ff = fit(x(:),y(:),'poly1');
-		lo_gain(i) = ff.p1;
-	catch
-	end
-end
-
-lo_gain(lo_gain==0) = NaN;
-hi_gain(hi_gain==0) = NaN;
-
-
-% show gain as function of contrast
-subplot(4,4,14); hold on
-x = std(reshaped_PID(1e3:4e3,:));
-plot(x,hi_gain,'r+')
-x = std(reshaped_PID(6e3:9e3,:));
-plot(x,lo_gain,'b+')
-xlabel('\sigma_{Stimulus} (V)')
-ylabel('ab3A ORN gain (Hz/V)')
 
 %% Version Info
 %

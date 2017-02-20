@@ -1,0 +1,461 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     17888,        451]
+NotebookOptionsPosition[     16849,        412]
+NotebookOutlinePosition[     17236,        429]
+CellTagsIndexPosition[     17193,        426]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["single state receptor model", "Subsection",
+ CellChangeTimes->{{3.688305896069001*^9, 3.6883058992591248`*^9}, {
+  3.688306088890873*^9, 3.6883060988341913`*^9}}],
+
+Cell["\<\
+in single state receptor model we do not distinguish between inactive and \
+active receptors and there is only one dissociation constant Ki . We write \
+activity as a Boltzmann distribution\
+\>", "Text",
+ CellChangeTimes->{{3.6883059023473673`*^9, 3.688305937207506*^9}, {
+  3.688306101962785*^9, 3.688306151912651*^9}, {3.6883067951796083`*^9, 
+  3.688306833071946*^9}, {3.688306871070825*^9, 3.688306883157715*^9}}],
+
+Cell[BoxData[
+ FractionBox["1", 
+  RowBox[{"1", "+", 
+   RowBox[{"Exp", "[", 
+    RowBox[{"e0", "+", 
+     RowBox[{"e1", " ", "m"}], "-", 
+     RowBox[{"n", " ", 
+      RowBox[{"Log", "[", 
+       RowBox[{"s", "/", "Ki"}], "]"}]}]}], "]"}]}]]], "Input",
+ CellChangeTimes->{{3.688306170376101*^9, 3.6883061866051073`*^9}, 
+   3.688306858725731*^9}],
+
+Cell["\<\
+m here is an internal variable that is changed when adaptation takes place. 
+e1 m is change in free energy due to adaptation
+e0 is an extra parameter that could be absorbed in Ki. Just shifts entire \
+thing left or right
+n control steepness of dose responses. Note that all have same slope\
+\>", "Text",
+ CellChangeTimes->{{3.6883068907689657`*^9, 3.6883069472613153`*^9}}],
+
+Cell["in this formulism changing m is the same as ", "Text",
+ CellChangeTimes->{{3.688306991555397*^9, 3.688307013468862*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"e1", " ", "\[CapitalDelta]m"}], "\[Equal]", 
+  RowBox[{"n", " ", 
+   RowBox[{"Log", "[", "\[CapitalDelta]Ki", "]"}]}]}]], "Input",
+ CellChangeTimes->{{3.688307020544096*^9, 3.688307077596861*^9}}],
+
+Cell["so:", "Text",
+ CellChangeTimes->{{3.688307116938116*^9, 3.6883071175530977`*^9}}],
+
+Cell[BoxData[
+ RowBox[{"\[CapitalDelta]Ki", " ", "\[Equal]", " ", 
+  SuperscriptBox["\[ExponentialE]", 
+   RowBox[{
+    FractionBox["e1", "n"], "\[CapitalDelta]m"}]]}]], "Input",
+ CellChangeTimes->{{3.688307084002137*^9, 3.688307110474101*^9}}],
+
+Cell["\<\
+So this simple formulism lets you have a dose response and change its Kd \
+\>", "Text",
+ CellChangeTimes->{{3.688307146543991*^9, 3.6883071728556747`*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Manipulate", "[", 
+  RowBox[{
+   RowBox[{"LogLinearPlot", "[", 
+    RowBox[{
+     RowBox[{"Evaluate", "[", 
+      RowBox[{
+       FractionBox["1", 
+        RowBox[{"1", "+", 
+         RowBox[{"Exp", "[", 
+          RowBox[{"e0", "+", 
+           RowBox[{"e1", " ", "m"}], "-", 
+           RowBox[{"n", " ", 
+            RowBox[{"Log", "[", 
+             RowBox[{"s", "/", "Ki"}], "]"}]}]}], "]"}]}]], "/.", 
+       RowBox[{"m", "\[Rule]", 
+        RowBox[{"Range", "[", 
+         RowBox[{"0", ",", "8"}], "]"}]}]}], "]"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"s", ",", 
+       RowBox[{"Ki", "/", "100"}], ",", 
+       RowBox[{"100", "Ki"}]}], "}"}], ",", 
+     RowBox[{"PlotRange", "\[Rule]", 
+      RowBox[{"{", 
+       RowBox[{"All", ",", 
+        RowBox[{"{", 
+         RowBox[{"0", ",", "1"}], "}"}]}], "}"}]}]}], "]"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"Ki", ",", "0.1"}], "}"}], ",", "0.001", ",", "1000"}], "}"}], 
+   ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"e0", ",", 
+       RowBox[{"-", "2"}]}], "}"}], ",", 
+     RowBox[{"-", "10"}], ",", "10"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"e1", ",", "0.5"}], "}"}], ",", 
+     RowBox[{"-", "10"}], ",", "10"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"n", ",", "1"}], "}"}], ",", "1", ",", "10"}], "}"}]}], 
+  "]"}]], "Input",
+ CellChangeTimes->{{3.688304924559853*^9, 3.6883052874211283`*^9}, {
+  3.6883053570630302`*^9, 3.688305375783477*^9}, {3.688305516737441*^9, 
+  3.688305666003131*^9}, {3.688305735747229*^9, 3.68830576618928*^9}, {
+  3.688305951002792*^9, 3.6883059620116243`*^9}, {3.688306201760757*^9, 
+  3.688306238867775*^9}, {3.688306533542417*^9, 3.688306564473565*^9}}],
+
+Cell[BoxData[
+ TagBox[
+  StyleBox[
+   DynamicModuleBox[{$CellContext`e0$$ = -2.5599999999999996`, \
+$CellContext`e1$$ = 0.40000000000000036`, $CellContext`Ki$$ = 
+    0.001, $CellContext`n$$ = 1, Typeset`show$$ = True, 
+    Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
+    Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
+    "\"untitled\"", Typeset`specs$$ = {{{
+       Hold[$CellContext`Ki$$], 0.1}, 0.001, 1000}, {{
+       Hold[$CellContext`e0$$], -2}, -10, 10}, {{
+       Hold[$CellContext`e1$$], 0.5}, -10, 10}, {{
+       Hold[$CellContext`n$$], 1}, 1, 10}}, Typeset`size$$ = {
+    720., {231., 242.}}, Typeset`update$$ = 0, Typeset`initDone$$, 
+    Typeset`skipInitDone$$ = True, $CellContext`Ki$361993$$ = 
+    0, $CellContext`e0$361994$$ = 0, $CellContext`e1$361995$$ = 
+    0, $CellContext`n$361996$$ = 0}, 
+    DynamicBox[Manipulate`ManipulateBoxes[
+     1, StandardForm, 
+      "Variables" :> {$CellContext`e0$$ = -2, $CellContext`e1$$ = 
+        0.5, $CellContext`Ki$$ = 0.1, $CellContext`n$$ = 1}, 
+      "ControllerVariables" :> {
+        Hold[$CellContext`Ki$$, $CellContext`Ki$361993$$, 0], 
+        Hold[$CellContext`e0$$, $CellContext`e0$361994$$, 0], 
+        Hold[$CellContext`e1$$, $CellContext`e1$361995$$, 0], 
+        Hold[$CellContext`n$$, $CellContext`n$361996$$, 0]}, 
+      "OtherVariables" :> {
+       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
+        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
+        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
+         Typeset`skipInitDone$$}, "Body" :> LogLinearPlot[
+        Evaluate[
+         ReplaceAll[
+         1/(1 + Exp[$CellContext`e0$$ + $CellContext`e1$$ $CellContext`m - \
+$CellContext`n$$ Log[$CellContext`s/$CellContext`Ki$$]]), $CellContext`m -> 
+          Range[0, 8]]], {$CellContext`s, $CellContext`Ki$$/100, 
+         100 $CellContext`Ki$$}, PlotRange -> {All, {0, 1}}], 
+      "Specifications" :> {{{$CellContext`Ki$$, 0.1}, 0.001, 
+         1000}, {{$CellContext`e0$$, -2}, -10, 
+         10}, {{$CellContext`e1$$, 0.5}, -10, 10}, {{$CellContext`n$$, 1}, 1, 
+         10}}, "Options" :> {}, "DefaultOptions" :> {}],
+     ImageSizeCache->{804., {356., 367.}},
+     SingleEvaluation->True],
+    Deinitialization:>None,
+    DynamicModuleValues:>{},
+    SynchronousInitialization->True,
+    UndoTrackedVariables:>{Typeset`show$$, Typeset`bookmarkMode$$},
+    UnsavedVariables:>{Typeset`initDone$$},
+    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
+   Deployed->True,
+   StripOnInput->False],
+  Manipulate`InterpretManipulate[1]]], "Output",
+ CellChangeTimes->{
+  3.688306364892263*^9, 3.688306420880031*^9, {3.6883065466456423`*^9, 
+   3.6883065657734623`*^9}}]
+}, Open  ]],
+
+Cell["\<\
+with single state receptor model we can only have one slope: all dose \
+responses have same slope.
+\
+\>", "Text",
+ CellChangeTimes->{{3.688306479447774*^9, 3.688306515258897*^9}, {
+   3.688306581436764*^9, 3.6883066937599154`*^9}, 3.688306904731341*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["two state model", "Subsection",
+ CellChangeTimes->{{3.688305896069001*^9, 3.6883058992591248`*^9}}],
+
+Cell["\<\
+in two state model there is a Ki and a Ka for dissociation constant when \
+receptor is in active or inactive form. This could be for example active \
+OrOrco pair or inactivated OrOrco pair... i.e. possible this activity \
+switches back and forth between two states. If in addition n > 1 then we have \
+a MCW model.\
+\>", "Text",
+ CellChangeTimes->{{3.6883059023473673`*^9, 3.688305937207506*^9}, {
+  3.6883067114816513`*^9, 3.688306785770548*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Manipulate", "[", 
+  RowBox[{
+   RowBox[{"LogLinearPlot", "[", 
+    RowBox[{
+     RowBox[{"Evaluate", "[", 
+      RowBox[{
+       FractionBox["1", 
+        RowBox[{"1", "+", 
+         RowBox[{"Exp", "[", 
+          RowBox[{"e0", "+", 
+           RowBox[{"e1", " ", "m"}], "-", 
+           RowBox[{"n", " ", 
+            RowBox[{"Log", "[", 
+             FractionBox[
+              RowBox[{"1", "+", 
+               RowBox[{"s", "/", "Ki"}]}], 
+              RowBox[{"1", "+", 
+               RowBox[{"s", "/", "Ka"}]}]], "]"}]}]}], "]"}]}]], "/.", 
+       RowBox[{"m", "\[Rule]", 
+        RowBox[{"Range", "[", 
+         RowBox[{"0", ",", "8"}], "]"}]}]}], "]"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"s", ",", 
+       RowBox[{"Ki", "/", "100"}], ",", 
+       RowBox[{"100", "Ka"}]}], "}"}], ",", 
+     RowBox[{"PlotRange", "\[Rule]", 
+      RowBox[{"{", 
+       RowBox[{"All", ",", 
+        RowBox[{"{", 
+         RowBox[{"0", ",", "1"}], "}"}]}], "}"}]}]}], "]"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"Ki", ",", "0.1"}], "}"}], ",", "0.001", ",", "1000"}], "}"}], 
+   ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"Ka", ",", "1000"}], "}"}], ",", "0.001", ",", "10000"}], "}"}],
+    ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"e0", ",", "1"}], "}"}], ",", 
+     RowBox[{"-", "10"}], ",", "10"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"e1", ",", "1"}], "}"}], ",", 
+     RowBox[{"-", "10"}], ",", "10"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"n", ",", "1"}], "}"}], ",", "1", ",", "10"}], "}"}]}], 
+  "]"}]], "Input",
+ CellChangeTimes->{{3.688304924559853*^9, 3.6883052874211283`*^9}, {
+  3.6883053570630302`*^9, 3.688305375783477*^9}, {3.688305516737441*^9, 
+  3.688305666003131*^9}, {3.688305735747229*^9, 3.68830576618928*^9}, {
+  3.688305951002792*^9, 3.6883059620116243`*^9}}],
+
+Cell[BoxData[
+ TagBox[
+  StyleBox[
+   DynamicModuleBox[{$CellContext`e0$$ = -0.08000000000000007, \
+$CellContext`e1$$ = 0.5999999999999996, $CellContext`Ka$$ = 
+    1290., $CellContext`Ki$$ = 43., $CellContext`n$$ = 1, Typeset`show$$ = 
+    True, Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
+    Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
+    "\"untitled\"", Typeset`specs$$ = {{{
+       Hold[$CellContext`Ki$$], 0.1}, 0.001, 1000}, {{
+       Hold[$CellContext`Ka$$], 1000}, 0.001, 10000}, {{
+       Hold[$CellContext`e0$$], 1}, -10, 10}, {{
+       Hold[$CellContext`e1$$], 1}, -10, 10}, {{
+       Hold[$CellContext`n$$], 1}, 1, 10}}, Typeset`size$$ = {
+    720., {234., 245.}}, Typeset`update$$ = 0, Typeset`initDone$$, 
+    Typeset`skipInitDone$$ = True, $CellContext`Ki$369555$$ = 
+    0, $CellContext`Ka$369556$$ = 0, $CellContext`e0$369557$$ = 
+    0, $CellContext`e1$369558$$ = 0, $CellContext`n$369559$$ = 0}, 
+    DynamicBox[Manipulate`ManipulateBoxes[
+     1, StandardForm, 
+      "Variables" :> {$CellContext`e0$$ = 1, $CellContext`e1$$ = 
+        1, $CellContext`Ka$$ = 1000, $CellContext`Ki$$ = 
+        0.1, $CellContext`n$$ = 1}, "ControllerVariables" :> {
+        Hold[$CellContext`Ki$$, $CellContext`Ki$369555$$, 0], 
+        Hold[$CellContext`Ka$$, $CellContext`Ka$369556$$, 0], 
+        Hold[$CellContext`e0$$, $CellContext`e0$369557$$, 0], 
+        Hold[$CellContext`e1$$, $CellContext`e1$369558$$, 0], 
+        Hold[$CellContext`n$$, $CellContext`n$369559$$, 0]}, 
+      "OtherVariables" :> {
+       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
+        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
+        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
+         Typeset`skipInitDone$$}, "Body" :> LogLinearPlot[
+        Evaluate[
+         ReplaceAll[
+         1/(1 + Exp[$CellContext`e0$$ + $CellContext`e1$$ $CellContext`m - \
+$CellContext`n$$ 
+            Log[(1 + $CellContext`s/$CellContext`Ki$$)/(
+              1 + $CellContext`s/$CellContext`Ka$$)]]), $CellContext`m -> 
+          Range[0, 8]]], {$CellContext`s, $CellContext`Ki$$/100, 
+         100 $CellContext`Ka$$}, PlotRange -> {All, {0, 1}}], 
+      "Specifications" :> {{{$CellContext`Ki$$, 0.1}, 0.001, 
+         1000}, {{$CellContext`Ka$$, 1000}, 0.001, 
+         10000}, {{$CellContext`e0$$, 1}, -10, 
+         10}, {{$CellContext`e1$$, 1}, -10, 10}, {{$CellContext`n$$, 1}, 1, 
+         10}}, "Options" :> {}, "DefaultOptions" :> {}],
+     ImageSizeCache->{804., {375., 386.}},
+     SingleEvaluation->True],
+    Deinitialization:>None,
+    DynamicModuleValues:>{},
+    SynchronousInitialization->True,
+    UndoTrackedVariables:>{Typeset`show$$, Typeset`bookmarkMode$$},
+    UnsavedVariables:>{Typeset`initDone$$},
+    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
+   Deployed->True,
+   StripOnInput->False],
+  Manipulate`InterpretManipulate[1]]], "Output",
+ GeneratedCell->False,
+ CellAutoOverwrite->False,
+ CellChangeTimes->{{3.6883051805423117`*^9, 3.688305288432612*^9}, 
+   3.688305377294265*^9, {3.688305559637487*^9, 3.688305584259273*^9}, {
+   3.6883056318324823`*^9, 3.68830566661502*^9}, {3.688305741050375*^9, 
+   3.688305767901463*^9}, {3.6883059625190287`*^9, 3.6883059904702177`*^9}, 
+   3.6883075522384443`*^9}],
+
+Cell[BoxData[
+ TagBox[
+  StyleBox[
+   DynamicModuleBox[{$CellContext`e0$$ = 
+    1.2599999999999998`, $CellContext`e1$$ = 1., $CellContext`Ka$$ = 
+    1950., $CellContext`Ki$$ = 0.1, $CellContext`n$$ = 1, Typeset`show$$ = 
+    True, Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
+    Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
+    "\"untitled\"", Typeset`specs$$ = {{{
+       Hold[$CellContext`Ki$$], 0.1}, 0.001, 1000}, {{
+       Hold[$CellContext`Ka$$], 1000}, 0.001, 10000}, {{
+       Hold[$CellContext`e0$$], 1}, -10, 10}, {{
+       Hold[$CellContext`e1$$], 1}, -10, 10}, {{
+       Hold[$CellContext`n$$], 1}, 1, 10}}, Typeset`size$$ = {
+    720., {235., 245.}}, Typeset`update$$ = 0, Typeset`initDone$$, 
+    Typeset`skipInitDone$$ = True, $CellContext`Ki$235022$$ = 
+    0, $CellContext`Ka$235023$$ = 0, $CellContext`e0$235024$$ = 
+    0, $CellContext`e1$235025$$ = 0, $CellContext`n$235026$$ = 0}, 
+    DynamicBox[Manipulate`ManipulateBoxes[
+     1, StandardForm, 
+      "Variables" :> {$CellContext`e0$$ = 1, $CellContext`e1$$ = 
+        1, $CellContext`Ka$$ = 1000, $CellContext`Ki$$ = 
+        0.1, $CellContext`n$$ = 1}, "ControllerVariables" :> {
+        Hold[$CellContext`Ki$$, $CellContext`Ki$235022$$, 0], 
+        Hold[$CellContext`Ka$$, $CellContext`Ka$235023$$, 0], 
+        Hold[$CellContext`e0$$, $CellContext`e0$235024$$, 0], 
+        Hold[$CellContext`e1$$, $CellContext`e1$235025$$, 0], 
+        Hold[$CellContext`n$$, $CellContext`n$235026$$, 0]}, 
+      "OtherVariables" :> {
+       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
+        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
+        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
+         Typeset`skipInitDone$$}, "Body" :> LogLinearPlot[
+        Evaluate[
+         ReplaceAll[
+         1/(1 + Exp[$CellContext`e0$$ + $CellContext`e1$$ $CellContext`m - \
+$CellContext`n$$ 
+            Log[(1 + $CellContext`s/$CellContext`Ki$$)/(
+              1 + $CellContext`s/$CellContext`Ka$$)]]), $CellContext`m -> 
+          Range[0, 8]]], {$CellContext`s, $CellContext`Ki$$/100, 
+         100 $CellContext`Ka$$}, PlotRange -> {All, {0, 1}}], 
+      "Specifications" :> {{{$CellContext`Ki$$, 0.1}, 0.001, 
+         1000}, {{$CellContext`Ka$$, 1000}, 0.001, 
+         10000}, {{$CellContext`e0$$, 1}, -10, 
+         10}, {{$CellContext`e1$$, 1}, -10, 10}, {{$CellContext`n$$, 1}, 1, 
+         10}}, "Options" :> {}, "DefaultOptions" :> {}],
+     ImageSizeCache->{804., {427., 439.}},
+     SingleEvaluation->True],
+    Deinitialization:>None,
+    DynamicModuleValues:>{},
+    SynchronousInitialization->True,
+    UndoTrackedVariables:>{Typeset`show$$, Typeset`bookmarkMode$$},
+    UnsavedVariables:>{Typeset`initDone$$},
+    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
+   Deployed->True,
+   StripOnInput->False],
+  Manipulate`InterpretManipulate[1]]], "Output",
+ GeneratedCell->False,
+ CellAutoOverwrite->False,
+ CellChangeTimes->{{3.6883051805423117`*^9, 3.688305288432612*^9}, 
+   3.688305377294265*^9, {3.688305559637487*^9, 3.688305584259273*^9}, {
+   3.6883056318324823`*^9, 3.68830566661502*^9}, {3.688305741050375*^9, 
+   3.688305767901463*^9}, {3.6883059625190287`*^9, 3.6883059904702177`*^9}}]
+}, Open  ]]
+}, Open  ]]
+},
+WindowSize->{1100, 1003},
+WindowMargins->{{458, Automatic}, {129, Automatic}},
+Magnification:>2. Inherited,
+FrontEndVersion->"11.0 for Mac OS X x86 (32-bit, 64-bit Kernel) (July 28, \
+2016)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 168, 2, 87, "Subsection"],
+Cell[751, 26, 427, 7, 136, "Text"],
+Cell[1181, 35, 347, 10, 98, "Input"],
+Cell[1531, 47, 383, 7, 250, "Text"],
+Cell[1917, 56, 126, 1, 60, "Text"],
+Cell[2046, 59, 231, 5, 63, "Input"],
+Cell[2280, 66, 87, 1, 60, "Text"],
+Cell[2370, 69, 244, 5, 74, "Input"],
+Cell[2617, 76, 165, 3, 98, "Text"],
+Cell[CellGroupData[{
+Cell[2807, 83, 1808, 52, 378, "Input"],
+Cell[4618, 137, 2745, 54, 777, "Output"]
+}, Open  ]],
+Cell[7378, 194, 263, 6, 136, "Text"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[7678, 205, 105, 1, 87, "Subsection"],
+Cell[7786, 208, 457, 8, 212, "Text"],
+Cell[CellGroupData[{
+Cell[8268, 220, 1967, 59, 444, "Input"],
+Cell[10238, 281, 3311, 63, 815, "Output"],
+Cell[13552, 346, 3269, 62, 898, "Output"]
+}, Open  ]]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)
+

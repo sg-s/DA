@@ -518,6 +518,117 @@ if being_published
 	delete(gcf)
 end
 
+clearvars -except being_published
+
+
+% supp figure
+% Can a NL model fit to the LFP show context-dependent response modulation? 
+
+cdata = consolidateData2(getPath(dataManager,'4608c42b12191b383c84fea52392ea97'));
+[cdata, data] =  assembleScaledNatStim(cdata);
+
+clear fd
+for i = 1:3
+	fd(i).response = data(2).X(:,i);
+	S = data(2).S(:,i); S = S - min(S);
+	fd(i).stimulus = [S fd(i).response];
+end
+
+
+
+clear p
+p.k_D = 0.20742;
+p.n = 1.475;
+
+% generate predictions
+clear K
+for i = 1:3
+	S = data(2).S(:,i); S = S - min(S);
+	R = data(2).X(:,i); R = R - min(R);
+	[data(2).XP(:,i) ,K(:,i)] = NLModel([S R],p);
+end
+
+
+figure('outerposition',[0 0 1403 801],'PaperUnits','points','PaperSize',[1403 801]); hold on
+% first show the best fit model
+x = logspace(-2,2,100);
+y = 1./(1+(p.k_D./x).^p.n);
+subplot(2,4,1); hold on
+plot(x,y,'k')
+set(gca,'XScale','log')
+xlabel('Stimulus')
+ylabel('a')
+
+
+subplot(2,4,5); hold on
+filtertime = 1:length(K); filtertime = filtertime - 50;
+errorShade(filtertime,mean(K,2),std(K,[],2),'Color','k');
+xlabel('Filter lag (ms)')
+ylabel('Filter (norm)')
+set(gca,'YDir','reverse')
+
+% show one trace
+example_trace = 3;
+subplot(2,4,2:4); hold on
+time = 1:length(data(2).S); time = time*1e-3;
+clear l
+l(1) = plot(time,data(2).X(:,example_trace),'k');
+l(2) = plot(time,data(2).XP(:,example_trace),'r');
+set(gca,'XLim',[0 70],'YDir','reverse')
+xlabel('Time (s)')
+ylabel('\Delta LFP (mV)')
+r2 = rsquare(data(2).X(:,example_trace),data(2).XP(:,example_trace));
+legend(l,{'ab2 LFP',['NL model, r^2 = ' oval(r2)]},'Location','northwest')
+
+
+ax(6) = subplot(2,4,6); hold on
+ax(7) = subplot(2,4,7); hold on
+ax(8) = subplot(2,4,8); hold on
+show_these = [2       27764
+           2       28790
+           2       59776
+           3       58049];
+
+for i = 2
+	for j = 1:length(show_these)
+		this_stim = show_these(j,1);
+		this_loc = show_these(j,2);
+
+		S = data(i).S(:,this_stim);
+		X = data(i).X(:,this_stim);
+		XP = data(i).XP(:,this_stim);
+
+		a = this_loc - 300;
+		z = this_loc+300;
+
+		t = (1:length(S(a:z))) - 300;
+
+		plot(ax(6),t,S(a:z))
+		plot(ax(7),t,X(a:z))
+		plot(ax(8),t,XP(a:z))
+
+	end
+end
+
+xlabel(ax(6),'Time since whiff (ms)')
+ylabel(ax(6),'Stimulus (V)')
+
+xlabel(ax(7),'Time since whiff (ms)')
+ylabel(ax(7),'ab2 LFP (mV)')
+set(ax(7),'YDir','reverse')
+
+xlabel(ax(8),'Time since whiff (ms)')
+ylabel(ax(8),'NL model (mV)')
+set(ax(8),'YDir','reverse')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
 
 %% Version Info
 %

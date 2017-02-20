@@ -517,12 +517,16 @@ ylabel(ax(14),'LFP (mV)')
 xlabel(ax(14),'Time since whiff (ms)')
 set(ax(14),'YDir','reverse')
 
-prettyFig('fs',12);
+% add the cartoon
+ax_fig = subplot(5,3,10:12); hold on
+axes(ax_fig)
+o = imread('../images/lfp-model-cartoon.png');
+imagesc(o);
+axis ij
+axis image
+axis off
 
-deintersectAxes(ax(4))
-deintersectAxes(ax(5))
-deintersectAxes(ax(8))
-deintersectAxes(ax(14))
+prettyFig('fs',12);
 
 if being_published
 	snapnow

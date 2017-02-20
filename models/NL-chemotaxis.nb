@@ -1,0 +1,579 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 11.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       158,          7]
+NotebookDataLength[     19911,        571]
+NotebookOptionsPosition[     18098,        509]
+NotebookOutlinePosition[     18484,        526]
+CellTagsIndexPosition[     18441,        523]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+
+Cell[CellGroupData[{
+Cell["Srinivas \[OpenCurlyQuote] model", "Section",
+ CellChangeTimes->{{3.692538420028545*^9, 3.6925384234598017`*^9}}],
+
+Cell["if we want Kd proportional to \[LeftAngleBracket]s\[RightAngleBracket] \
+then ", "Text",
+ CellChangeTimes->{{3.69253986441012*^9, 3.692539892065956*^9}}],
+
+Cell[BoxData[
+ RowBox[{"Kd", " ", "=", " ", 
+  RowBox[{"Kd0", 
+   RowBox[{"(", 
+    RowBox[{"1", "+", 
+     RowBox[{"\[Beta]", " ", 
+      RowBox[{"\[LeftAngleBracket]", "s", "\[RightAngleBracket]"}]}]}], 
+    ")"}]}]}]], "Input",
+ CellChangeTimes->{{3.692539916264697*^9, 3.6925399352312*^9}, {
+  3.692540099107915*^9, 3.692540126878504*^9}, {3.692540158812688*^9, 
+  3.6925401959761353`*^9}}],
+
+Cell["\<\
+Note that we choose this form so that when \[LeftAngleBracket]s\
+\[RightAngleBracket]=0 we get Kd0 instead of 0.  Next we put everything in a \
+form similar to that in bacterial chemotaxis:\
+\>", "Text",
+ CellChangeTimes->{{3.6925399503392153`*^9, 3.6925399511292477`*^9}, {
+  3.692540199968219*^9, 3.692540223914486*^9}, {3.692540280428423*^9, 
+  3.692540311414083*^9}}],
+
+Cell[BoxData[
+ RowBox[{"a", " ", "=", " ", 
+  RowBox[{
+   FractionBox[
+    SuperscriptBox["s", "n"], 
+    RowBox[{
+     SuperscriptBox["s", "n"], "+", 
+     SuperscriptBox["Kd", "n"]}]], "=", 
+   RowBox[{
+    FractionBox["1", 
+     RowBox[{"1", "+", 
+      SuperscriptBox["\[ExponentialE]", 
+       RowBox[{"n", " ", 
+        RowBox[{"Log", "[", 
+         FractionBox["Kd", "s"], "]"}]}]]}]], "=", 
+    RowBox[{
+     FractionBox["1", 
+      RowBox[{"1", "+", 
+       SuperscriptBox["\[ExponentialE]", 
+        RowBox[{
+         RowBox[{"n", " ", 
+          RowBox[{"Log", "[", 
+           FractionBox["Kd0", "s"], "]"}]}], " ", "+", 
+         RowBox[{"n", " ", 
+          RowBox[{"Log", "[", 
+           RowBox[{"1", "+", 
+            RowBox[{"\[Beta]", " ", 
+             RowBox[{"\[LeftAngleBracket]", "s", "\[RightAngleBracket]"}]}]}],
+            "]"}]}]}]]}]], "=", 
+     FractionBox["1", 
+      RowBox[{"1", "+", 
+       SuperscriptBox["\[ExponentialE]", 
+        RowBox[{
+         RowBox[{"m", "[", 
+          RowBox[{"\[LeftAngleBracket]", "s", "\[RightAngleBracket]"}], "]"}],
+          "+", 
+         RowBox[{"n", " ", 
+          RowBox[{"Log", "[", 
+           FractionBox["Kd0", "s"], "]"}]}]}]]}]]}]}]}]}]], "Input",
+ CellChangeTimes->{{3.69253976757738*^9, 3.6925398105523252`*^9}, 
+   3.692540314999085*^9, {3.692540345228717*^9, 3.692540429269908*^9}, {
+   3.692540676030752*^9, 3.692540687341608*^9}, {3.692540827208332*^9, 
+   3.6925408359761257`*^9}}],
+
+Cell["this last equality holds if", "Text",
+ CellChangeTimes->{{3.692540692765427*^9, 3.692540697494112*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"m", "[", 
+   RowBox[{"\[LeftAngleBracket]", "s", "\[RightAngleBracket]"}], "]"}], "=", 
+  RowBox[{"n", " ", 
+   RowBox[{"Log", "[", 
+    RowBox[{"1", "+", 
+     RowBox[{"\[Beta]", " ", 
+      RowBox[{"\[LeftAngleBracket]", "s", "\[RightAngleBracket]"}]}]}], 
+    "]"}]}]}]], "Input",
+ CellChangeTimes->{{3.6925407078651657`*^9, 3.692540724180174*^9}, {
+  3.692540840824213*^9, 3.692540844176757*^9}}],
+
+Cell["\<\
+So as \[LeftAngleBracket]s\[RightAngleBracket] increases the m increases. \
+Putting back in the original equation for Kd we see that \
+\>", "Text",
+ CellChangeTimes->{{3.6925408540653553`*^9, 3.692540872603921*^9}, {
+  3.692540904297051*^9, 3.692540914553092*^9}, {3.692541068437841*^9, 
+  3.692541069396634*^9}}],
+
+Cell[BoxData[
+ RowBox[{"Kd", " ", "=", " ", 
+  RowBox[{"Kd0", " ", 
+   SuperscriptBox["\[ExponentialE]", 
+    FractionBox[
+     RowBox[{"m", "[", 
+      RowBox[{"\[LeftAngleBracket]", "s", "\[RightAngleBracket]"}], "]"}], 
+     "n"]]}]}]], "Input",
+ CellChangeTimes->{{3.692540934765613*^9, 3.692540954960178*^9}}],
+
+Cell[CellGroupData[{
+
+Cell["problems:", "Subsubsection",
+ CellChangeTimes->{{3.692538430580422*^9, 3.692538432612767*^9}}],
+
+Cell["\<\
+with this simple form for a is that there is NO spontaneous activity: when \
+s=0 we necessarily have a=0. 
+
+What mechanism generate the log dependency of m on \[LeftAngleBracket]s\
+\[RightAngleBracket]? Seems very ad hoc.\
+\>", "Text",
+ CellChangeTimes->{{3.692536686131976*^9, 3.6925367554767714`*^9}, {
+  3.6925368668585377`*^9, 3.69253690937598*^9}, {3.692537004171034*^9, 
+  3.6925370048518257`*^9}, {3.692537473285638*^9, 3.69253750713004*^9}, {
+  3.692538457415883*^9, 3.692538464752677*^9}, {3.692543413782488*^9, 
+  3.692543446794005*^9}}]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Equivalence with bacterial chemotaxis", "Section",
+ CellChangeTimes->{{3.692538486316572*^9, 3.6925384966445227`*^9}, {
+  3.692556849638731*^9, 3.692556858737413*^9}}],
+
+Cell["\<\
+Here I show that in bacterial chemotaxis this log dependency of m on \
+\[LeftAngleBracket]s\[RightAngleBracket] emerges naturally.
+
+The free energy in this case is  \
+\>", "Text",
+ CellChangeTimes->{{3.692534690294354*^9, 3.692534721761035*^9}, {
+  3.692538638862212*^9, 3.692538650094713*^9}, {3.692543456019597*^9, 
+  3.692543513932126*^9}}],
+
+Cell[BoxData[
+ RowBox[{"F", " ", "=", " ", 
+  RowBox[{"e0", " ", "+", " ", 
+   RowBox[{"e1", " ", "m"}], " ", "+", " ", 
+   RowBox[{"n", " ", 
+    RowBox[{"Log", "[", 
+     RowBox[{
+      RowBox[{"(", 
+       RowBox[{"1", "+", 
+        RowBox[{"s", "/", "Ki"}]}], ")"}], "/", 
+      RowBox[{"(", 
+       RowBox[{"1", "+", 
+        RowBox[{"s", "/", "Ka"}]}], ")"}]}], "]"}]}]}]}]], "Input",
+ CellChangeTimes->{{3.692534723739677*^9, 3.6925347579019623`*^9}}],
+
+Cell["Here Ka >> Ki . The expression for a is", "Text",
+ CellChangeTimes->{{3.6925389797617607`*^9, 3.6925389814249907`*^9}, {
+  3.692541616608938*^9, 3.6925416479635963`*^9}}],
+
+Cell[BoxData[
+ RowBox[{"a", "=", 
+  RowBox[{
+   FractionBox["1", 
+    RowBox[{"1", "+", 
+     SuperscriptBox["\[ExponentialE]", 
+      RowBox[{"e0", "+", 
+       RowBox[{"e1", " ", "m"}], "+", 
+       RowBox[{"n", " ", 
+        RowBox[{"Log", "[", 
+         FractionBox[
+          RowBox[{"1", "+", 
+           RowBox[{"s", "/", "Ki"}]}], 
+          RowBox[{"1", "+", 
+           RowBox[{"s", "/", "Ka"}]}]], "]"}]}]}]]}]], "=", 
+   RowBox[{
+    FractionBox["1", 
+     RowBox[{"1", "+", 
+      RowBox[{
+       SuperscriptBox[
+        RowBox[{"(", 
+         FractionBox[
+          RowBox[{"1", "+", 
+           RowBox[{"s", "/", "Ki"}]}], 
+          RowBox[{"1", "+", 
+           RowBox[{"s", "/", "Ka"}]}]], ")"}], "n"], " ", 
+       SuperscriptBox["\[ExponentialE]", 
+        RowBox[{"e0", "+", 
+         RowBox[{"e1", " ", "m"}]}]]}]}]], "=", 
+    RowBox[{
+     FractionBox[
+      SuperscriptBox["s", "n"], 
+      RowBox[{
+       SuperscriptBox["s", "n"], "+", 
+       RowBox[{
+        SuperscriptBox["k", "n"], " ", 
+        SuperscriptBox["\[ExponentialE]", 
+         RowBox[{"e0", "+", 
+          RowBox[{"e1", " ", "m"}]}]]}]}]], "=", 
+     FractionBox[
+      SuperscriptBox["s", "n"], 
+      RowBox[{
+       SuperscriptBox["s", "n"], "+", 
+       SuperscriptBox["Kd", "n"]}]]}]}]}]}]], "Input",
+ CellChangeTimes->{{3.692534311321409*^9, 3.692534391018588*^9}, {
+  3.6925352335765867`*^9, 3.692535260443727*^9}, {3.692535323922821*^9, 
+  3.692535339789755*^9}, {3.6925358358995943`*^9, 3.692535836363675*^9}, {
+  3.69253899797388*^9, 3.692539004151637*^9}, {3.6925390765495977`*^9, 
+  3.692539085734623*^9}}],
+
+Cell["\<\
+Note that when m=0 and s=0 we have a not zero. When the system is adapted it \
+goes back to a0 and therefore F goes back to F0=Log[1/a0-1]. This can be used \
+to find how m changes as a function of mean s. BEcause m\[CloseCurlyQuote][t] \
+only depends on a it is guaranteed that a will go back to a0 when the \
+background is \[LeftAngleBracket]s\[RightAngleBracket]. The value of m in \
+this case is such that \
+\>", "Text",
+ CellChangeTimes->{{3.6925347942419233`*^9, 3.692534837711247*^9}, {
+  3.692535446674437*^9, 3.692535450010867*^9}, {3.692538818876713*^9, 
+  3.692538820972975*^9}, {3.692541722868677*^9, 3.692541767458124*^9}, {
+  3.692541806726272*^9, 3.6925419056196547`*^9}, {3.6925419620918818`*^9, 
+  3.6925420458452044`*^9}}],
+
+Cell[BoxData[
+ RowBox[{"F0", "=", 
+  RowBox[{"e0", "+", 
+   RowBox[{"e1", " ", 
+    RowBox[{"m", "[", 
+     RowBox[{"\[LeftAngleBracket]", "s", "\[RightAngleBracket]"}], "]"}]}], 
+   "+", 
+   RowBox[{"n", " ", 
+    RowBox[{"Log", "[", 
+     FractionBox[
+      RowBox[{"1", "+", 
+       RowBox[{
+        RowBox[{"\[LeftAngleBracket]", "s", "\[RightAngleBracket]"}], "/", 
+        "Ki"}]}], 
+      RowBox[{"1", "+", 
+       RowBox[{
+        RowBox[{"\[LeftAngleBracket]", "s", "\[RightAngleBracket]"}], "/", 
+        "Ka"}]}]], "]"}]}]}]}]], "Input",
+ CellChangeTimes->{{3.692541927823737*^9, 3.6925419506038227`*^9}}],
+
+Cell["from this we get", "Text",
+ CellChangeTimes->{{3.6925420643361053`*^9, 3.692542066855373*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"e0", "+", 
+   RowBox[{"e1", " ", 
+    RowBox[{"m", "[", 
+     RowBox[{"\[LeftAngleBracket]", "s", "\[RightAngleBracket]"}], "]"}]}]}], 
+  "=", 
+  RowBox[{"F0", "-", 
+   RowBox[{"n", " ", 
+    RowBox[{"Log", "[", 
+     FractionBox[
+      RowBox[{"1", "+", 
+       RowBox[{
+        RowBox[{"\[LeftAngleBracket]", "s", "\[RightAngleBracket]"}], "/", 
+        "Ki"}]}], 
+      RowBox[{"1", "+", 
+       RowBox[{
+        RowBox[{"\[LeftAngleBracket]", "s", "\[RightAngleBracket]"}], "/", 
+        "Ka"}]}]], "]"}]}]}]}]], "Input",
+ CellChangeTimes->{{3.692542075272149*^9, 3.6925420830198936`*^9}}],
+
+Cell["\<\
+As we can see we caould have an internal variable M[\[LeftAngleBracket]s\
+\[RightAngleBracket]]=e0+e1 m[\[LeftAngleBracket]s\[RightAngleBracket]]-F0 \
+that varies as \
+\>", "Text",
+ CellChangeTimes->{{3.692542221915867*^9, 3.692542247925606*^9}, {
+  3.6925423026541967`*^9, 3.692542305284307*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"M", "[", 
+   RowBox[{"\[LeftAngleBracket]", "s", "\[RightAngleBracket]"}], "]"}], " ", 
+  "=", " ", 
+  RowBox[{
+   RowBox[{"n", " ", 
+    RowBox[{"Log", "[", 
+     FractionBox[
+      RowBox[{"1", "+", 
+       RowBox[{
+        RowBox[{"\[LeftAngleBracket]", "s", "\[RightAngleBracket]"}], "/", 
+        "Ki"}]}], 
+      RowBox[{"1", "+", 
+       RowBox[{
+        RowBox[{"\[LeftAngleBracket]", "s", "\[RightAngleBracket]"}], "/", 
+        "Ka"}]}]], "]"}]}], "\[TildeEqual]", 
+   RowBox[{"n", " ", 
+    RowBox[{"Log", "[", 
+     RowBox[{"1", "+", 
+      RowBox[{
+       RowBox[{"\[LeftAngleBracket]", "s", "\[RightAngleBracket]"}], "/", 
+       "Ki"}]}], "]"}]}]}]}]], "Input",
+ CellChangeTimes->{{3.6925422515546494`*^9, 3.692542290003614*^9}}],
+
+Cell[TextData[{
+ "This is essentially the same functional form as before. The last \
+approximation comes from Ka >> s >> Ki. \n\n",
+ StyleBox["IMPORTANT", "Subsubsection"],
+ "\nthe dependency of M on \[LeftAngleBracket]s\[RightAngleBracket] does NOT \
+come from some functional form of the dynamics of adaptation. It results from \
+the topology of the dynamical system which guarantees a stable fixed point, \
+i.e. that m\[CloseCurlyQuote][t] is function of a only and not of s. "
+}], "Text",
+ CellChangeTimes->{{3.692542326311329*^9, 3.692542345305263*^9}, {
+  3.692542396000555*^9, 3.692542443022004*^9}, {3.6925424753209753`*^9, 
+  3.692542676307234*^9}, {3.692542731233877*^9, 3.692542811924265*^9}, {
+  3.6925428617554493`*^9, 3.6925429628708487`*^9}, {3.692543544969265*^9, 
+  3.692543566298253*^9}, {3.692543603303385*^9, 3.69254361368747*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{
+   RowBox[{"m", "'"}], "[", "t", "]"}], " ", "=", " ", 
+  RowBox[{"G", "[", 
+   RowBox[{"a", "[", "t", "]"}], "]"}]}]], "Input",
+ CellChangeTimes->{{3.6925436093057337`*^9, 3.692543609307467*^9}}],
+
+Cell["\<\
+So we can have all sorts of adaptation mechanisms G. As long as the rate of \
+changes of m depend on a (G function of a) and have one fixed point we \
+automatically get.\
+\>", "Text",
+ CellChangeTimes->{
+  3.692543576036396*^9, 3.692543621864131*^9, {3.692543678407814*^9, 
+   3.692543679760693*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"m", "[", 
+   RowBox[{"\[LeftAngleBracket]", "s", "\[RightAngleBracket]"}], "]"}], " ", 
+  "\[Proportional]", 
+  RowBox[{"Log", "[", 
+   RowBox[{"1", "+", 
+    RowBox[{
+     RowBox[{"\[LeftAngleBracket]", "s", "\[RightAngleBracket]"}], "/", 
+     "Ki"}]}], "]"}]}]], "Input",
+ CellChangeTimes->{{3.692543624110133*^9, 3.692543636220207*^9}, {
+  3.692543667117996*^9, 3.692543667878091*^9}}],
+
+Cell["which then gives the Weber law", "Text",
+ CellChangeTimes->{{3.692543683599543*^9, 3.692543695153008*^9}}],
+
+Cell[CellGroupData[{
+
+Cell["Question:", "Subsubsection",
+ CellChangeTimes->{{3.6925435914937077`*^9, 3.692543593668664*^9}}],
+
+Cell["how does baseline of LFP vary with \[LeftAngleBracket]s\
+\[RightAngleBracket]?", "Text",
+ CellChangeTimes->{3.692543599062167*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["plot", "Subsubsection",
+ CellChangeTimes->{{3.692543762298551*^9, 3.6925437628814993`*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Manipulate", "[", 
+  RowBox[{
+   RowBox[{"LogLinearPlot", "[", 
+    RowBox[{
+     FractionBox["1", 
+      RowBox[{"1", "+", 
+       FractionBox[
+        RowBox[{"k", " ", 
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{"e0", "+", 
+           RowBox[{"e1", " ", "m"}]}]]}], "s"]}]], ",", 
+     RowBox[{"{", 
+      RowBox[{"s", ",", 
+       RowBox[{"1", "/", "100"}], ",", "100"}], "}"}], ",", 
+     RowBox[{"PlotRange", "\[Rule]", "All"}]}], "]"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"e0", ",", "0"}], "}"}], ",", 
+     RowBox[{"-", "10"}], ",", "10"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"e1", ",", "1"}], "}"}], ",", 
+     RowBox[{"-", "10"}], ",", "10"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"m", ",", "0"}], "}"}], ",", 
+     RowBox[{"-", "10"}], ",", "10"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{
+     RowBox[{"{", 
+      RowBox[{"k", ",", "1"}], "}"}], ",", "0.01", ",", "100"}], "}"}]}], 
+  "]"}]], "Input",
+ CellChangeTimes->{{3.692533432897594*^9, 3.692533718046158*^9}, {
+   3.692533788992894*^9, 3.692533794143721*^9}, {3.692533964078005*^9, 
+   3.692533968868939*^9}, {3.692534263476761*^9, 3.692534302157935*^9}, {
+   3.6925372115913*^9, 3.6925372151909246`*^9}, {3.692537749842483*^9, 
+   3.692537780260757*^9}, 3.6925378448223133`*^9}],
+
+Cell[BoxData[
+ TagBox[
+  StyleBox[
+   DynamicModuleBox[{$CellContext`e0$$ = 0, $CellContext`e1$$ = 
+    1, $CellContext`k$$ = 1, $CellContext`m$$ = 0.35999999999999943`, 
+    Typeset`show$$ = True, Typeset`bookmarkList$$ = {}, 
+    Typeset`bookmarkMode$$ = "Menu", Typeset`animator$$, Typeset`animvar$$ = 
+    1, Typeset`name$$ = "\"untitled\"", Typeset`specs$$ = {{{
+       Hold[$CellContext`e0$$], 0}, -10, 10}, {{
+       Hold[$CellContext`e1$$], 1}, -10, 10}, {{
+       Hold[$CellContext`m$$], 0}, -10, 10}, {{
+       Hold[$CellContext`k$$], 1}, 0.01, 100}}, Typeset`size$$ = {
+    540., {161., 169.}}, Typeset`update$$ = 0, Typeset`initDone$$, 
+    Typeset`skipInitDone$$ = True, $CellContext`e0$271864$$ = 
+    0, $CellContext`e1$271865$$ = 0, $CellContext`m$271866$$ = 
+    0, $CellContext`k$271867$$ = 0}, 
+    DynamicBox[Manipulate`ManipulateBoxes[
+     1, StandardForm, 
+      "Variables" :> {$CellContext`e0$$ = 0, $CellContext`e1$$ = 
+        1, $CellContext`k$$ = 1, $CellContext`m$$ = 0}, "ControllerVariables" :> {
+        Hold[$CellContext`e0$$, $CellContext`e0$271864$$, 0], 
+        Hold[$CellContext`e1$$, $CellContext`e1$271865$$, 0], 
+        Hold[$CellContext`m$$, $CellContext`m$271866$$, 0], 
+        Hold[$CellContext`k$$, $CellContext`k$271867$$, 0]}, 
+      "OtherVariables" :> {
+       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
+        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
+        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
+         Typeset`skipInitDone$$}, "Body" :> 
+      LogLinearPlot[
+       1/(1 + $CellContext`k$$ (
+          E^($CellContext`e0$$ + $CellContext`e1$$ \
+$CellContext`m$$)/$CellContext`s)), {$CellContext`s, 1/100, 100}, PlotRange -> 
+        All], "Specifications" :> {{{$CellContext`e0$$, 0}, -10, 
+         10}, {{$CellContext`e1$$, 1}, -10, 10}, {{$CellContext`m$$, 0}, -10, 
+         10}, {{$CellContext`k$$, 1}, 0.01, 100}}, "Options" :> {}, 
+      "DefaultOptions" :> {}],
+     ImageSizeCache->{606., {267., 275.}},
+     SingleEvaluation->True],
+    Deinitialization:>None,
+    DynamicModuleValues:>{},
+    SynchronousInitialization->True,
+    UndoTrackedVariables:>{Typeset`show$$, Typeset`bookmarkMode$$},
+    UnsavedVariables:>{Typeset`initDone$$},
+    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
+   Deployed->True,
+   StripOnInput->False],
+  Manipulate`InterpretManipulate[1]]], "Output",
+ CellChangeTimes->{3.692537846473671*^9, 3.692543747189567*^9}]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Bacterial chemotaxis-like model", "Section",
+ CellChangeTimes->{{3.692556864986837*^9, 3.69255686943496*^9}}],
+
+Cell[BoxData[{
+ RowBox[{"a", " ", "==", " ", 
+  FractionBox["1", 
+   RowBox[{"1", "+", 
+    SuperscriptBox["\[ExponentialE]", 
+     RowBox[{"e0", "+", 
+      RowBox[{"e1", " ", "m"}], "+", 
+      RowBox[{"n", " ", 
+       RowBox[{"Log", "[", 
+        RowBox[{"1", "+", 
+         RowBox[{
+          RowBox[{"\[LeftAngleBracket]", "s", "\[RightAngleBracket]"}], "/", 
+          "Ki"}]}], "]"}]}]}]]}]]}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"m", "'"}], "[", "t", "]"}], "\[Equal]", 
+  FractionBox["1", "2"]}]}], "Input",
+ CellChangeTimes->{{3.6925573160017633`*^9, 3.6925574381693497`*^9}}]
+}, Open  ]]
+},
+WindowSize->{963, 1164},
+WindowMargins->{{Automatic, 342}, {76, Automatic}},
+Magnification:>1.5 Inherited,
+FrontEndVersion->"11.0 for Mac OS X x86 (32-bit, 64-bit Kernel) (July 28, \
+2016)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{}
+*)
+(*CellTagsIndex
+CellTagsIndex->{}
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[CellGroupData[{
+Cell[580, 22, 119, 1, 95, "Section"],
+Cell[702, 25, 159, 2, 46, "Text"],
+Cell[864, 29, 394, 10, 48, "Input"],
+Cell[1261, 41, 381, 7, 76, "Text"],
+Cell[1645, 50, 1470, 42, 87, "Input"],
+Cell[3118, 94, 109, 1, 46, "Text"],
+Cell[3230, 97, 435, 11, 48, "Input"],
+Cell[3668, 110, 323, 6, 76, "Text"],
+Cell[3994, 118, 314, 8, 56, "Input"],
+Cell[CellGroupData[{
+Cell[4333, 130, 100, 1, 52, "Subsubsection"],
+Cell[4436, 133, 557, 11, 135, "Text"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[5042, 150, 173, 2, 95, "Section"],
+Cell[5218, 154, 353, 8, 135, "Text"],
+Cell[5574, 164, 458, 13, 48, "Input"],
+Cell[6035, 179, 176, 2, 46, "Text"],
+Cell[6214, 183, 1614, 48, 91, "Input"],
+Cell[7831, 233, 750, 12, 164, "Text"],
+Cell[8584, 247, 616, 18, 76, "Input"],
+Cell[9203, 267, 100, 1, 46, "Text"],
+Cell[9306, 270, 628, 19, 76, "Input"],
+Cell[9937, 291, 307, 6, 76, "Text"],
+Cell[10247, 299, 779, 23, 76, "Input"],
+Cell[11029, 324, 851, 13, 232, "Text"],
+Cell[11883, 339, 231, 6, 48, "Input"],
+Cell[12117, 347, 310, 7, 76, "Text"],
+Cell[12430, 356, 424, 11, 48, "Input"],
+Cell[12857, 369, 112, 1, 46, "Text"],
+Cell[CellGroupData[{
+Cell[12994, 374, 102, 1, 52, "Subsubsection"],
+Cell[13099, 377, 136, 2, 46, "Text"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[13272, 384, 97, 1, 52, "Subsubsection"],
+Cell[CellGroupData[{
+Cell[13394, 389, 1408, 40, 180, "Input"],
+Cell[14805, 431, 2490, 48, 566, "Output"]
+}, Open  ]]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[17356, 486, 115, 1, 95, "Section"],
+Cell[17474, 489, 608, 17, 131, "Input"]
+}, Open  ]]
+}
+]
+*)
+

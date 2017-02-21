@@ -629,6 +629,131 @@ if being_published
 end
 
 
+ ;;;;;;  ;;;;;;;; ;;;; ;;     ;; ;;     ;; ;;       ;;     ;;  ;;;;;;  
+;;    ;;    ;;     ;;  ;;;   ;;; ;;     ;; ;;       ;;     ;; ;;    ;; 
+;;          ;;     ;;  ;;;; ;;;; ;;     ;; ;;       ;;     ;; ;;       
+ ;;;;;;     ;;     ;;  ;; ;;; ;; ;;     ;; ;;       ;;     ;;  ;;;;;;  
+      ;;    ;;     ;;  ;;     ;; ;;     ;; ;;       ;;     ;;       ;; 
+;;    ;;    ;;     ;;  ;;     ;; ;;     ;; ;;       ;;     ;; ;;    ;; 
+ ;;;;;;     ;;    ;;;; ;;     ;;  ;;;;;;;  ;;;;;;;;  ;;;;;;;   ;;;;;;  
+
+ ;;;;;;  ;;;;;;;;    ;;;    ;;;;;;;; ;;;;  ;;;;;;  ;;;;;;;; ;;;;  ;;;;;;   ;;;;;;  
+;;    ;;    ;;      ;; ;;      ;;     ;;  ;;    ;;    ;;     ;;  ;;    ;; ;;    ;; 
+;;          ;;     ;;   ;;     ;;     ;;  ;;          ;;     ;;  ;;       ;;       
+ ;;;;;;     ;;    ;;     ;;    ;;     ;;   ;;;;;;     ;;     ;;  ;;        ;;;;;;  
+      ;;    ;;    ;;;;;;;;;    ;;     ;;        ;;    ;;     ;;  ;;             ;; 
+;;    ;;    ;;    ;;     ;;    ;;     ;;  ;;    ;;    ;;     ;;  ;;    ;; ;;    ;; 
+ ;;;;;;     ;;    ;;     ;;    ;;    ;;;;  ;;;;;;     ;;    ;;;;  ;;;;;;   ;;;;;;  
+
+cdata = consolidateData2(getPath(dataManager,'4608c42b12191b383c84fea52392ea97'));
+
+
+figure('outerposition',[0 0 1200 801],'PaperUnits','points','PaperSize',[1200 801]); hold on
+
+subplot(2,3,1); hold on
+
+% plot pdf of whiff intensities 
+
+% show whiff statistics 
+S = cdata.PID(:,cdata.orn==4); 
+S = bsxfun(@minus,S,min(S));
+S = S(:);
+ws = whiffStatistics(S,0*S,0*S,300,'MinPeakProminence',max(S/1e2),'debug',false);
+
+
+[y,x] = histcounts(vertcat(ws.stim_peaks),30);
+y = y/sum(y); x = x(2:end)+mean(diff(x));
+plot(x,y,'k+')
+
+m = fittype('log((a./x).*exp(-x./b))');
+ff = fit(x(y>0)',log(y(y>0))',m,'Upper',[10 100],'Lower',[0 1],'StartPoint',[.14 10.37]);
+x = logspace(-1,2,100);
+plot(sort(x),exp(ff(sort(x))),'r')
+
+set(gca,'XScale','log','YScale','log','XTick',[.1 1 10 100],'YTick',[1e-3 1e-2 1e-1 1],'XLim',[.1 100],'YLim',[1e-3 1])
+xlabel('Whiff intensity (V)')
+ylabel('Probability')
+
+th(2) = text(5, .5,'$\sim\frac{1}{c}\exp\left(-\frac{c}{C}\right)$','interpreter','latex','Color','r','FontSize',20);
+
+% plot whiff durations 
+[ons,offs] = computeOnsOffs(S>.01);
+wd = offs - ons; wd(wd<10) = []; % whiffs this brief are artifacts 
+
+subplot(2,3,2); hold on
+[y,x] = histcounts(wd,50);
+y = y/sum(y); x = x(2:end)+mean(diff(x));
+plot(x,y,'k+')
+set(gca,'XScale','log','YScale','log')
+
+a = 1; m = fittype('a + n*x');
+xx = vectorise(log(x)); yy = vectorise(log(y));
+ff = fit(xx(yy>-Inf),yy(yy>-Inf),m,'Upper',[Inf -1.5],'Lower',[-Inf -1.5],'StartPoint',[6 -1.5]);
+plot(x,exp(ff(log(x))),'r')
+xlabel('Whiff duration (ms)')
+ylabel('Probability')
+th(3) = text(1e3, .1,'$\sim t_{w}^{-\frac{3}{2}}$','interpreter','latex','Color','r','FontSize',20);
+
+% plot blank durations 
+[ons,offs] = computeOnsOffs(S<.01);
+wd = offs - ons; wd(wd<10) = []; % whiffs this brief are artifacts 
+
+subplot(2,3,3); hold on
+[y,x] = histcounts(wd,50);
+y = y/sum(y); x = x(2:end)+mean(diff(x));
+plot(x,y,'k+')
+set(gca,'XScale','log','YScale','log','YLim',[1e-3 1])
+
+a = 1; m = fittype('a + n*x');
+xx = vectorise(log(x)); yy = vectorise(log(y));
+ff = fit(xx(yy>-Inf),yy(yy>-Inf),m,'Upper',[Inf -1.5],'Lower',[-Inf -1.5],'StartPoint',[6 -1.5]);
+plot(x,exp(ff(log(x))),'r')
+xlabel('Blank duration (ms)')
+ylabel('Probability')
+th(3) = text(1e4, .1,'$\sim t_{b}^{-\frac{3}{2}}$','interpreter','latex','Color','r','FontSize',20);
+
+% now compute the correlation between the mean and variance across many windows 
+window_sizes = factor2(length(S));
+window_sizes = window_sizes(window_sizes < 1e4 & window_sizes > 10);
+r2 = NaN*window_sizes;
+for i = 1:length(window_sizes)
+	tS = reshape(S,window_sizes(i),length(S)/window_sizes(i));
+	r2(i) = rsquare(mean(tS),std(tS));
+end
+
+subplot(2,3,5); hold on
+plot(window_sizes,r2,'k+')
+xlabel('Window size (ms)')
+ylabel('r^2_{\mu,\sigma}')
+set(gca,'XScale','log','XTick',[10 100 1e3 1e4])
+
+subplot(2,3,4); hold on
+ws = window_sizes(27);
+tS = reshape(S,ws,length(S)/ws);
+plot(mean(tS),std(tS),'.','Color',[.3 .3 .3])
+plot([1e-4 100],[1e-4 100],'k--')
+set(gca,'XScale','log','YScale','log','XLim',[1e-2 10],'YLim',[1e-2 10],'XTick',[1e-2 1e-1 1 10])
+xlabel('\mu_{S} in preceding 400ms(V)')
+ylabel('\sigma_{S} in preceding 400ms (V)')
+
+% now show the autocorrelation function
+subplot(2,3,6); hold on
+S = cdata.PID(:,cdata.orn==4); 
+S = bsxfun(@minus,S,min(S));
+for i = 1:size(S,2)
+	[ac(:,i),lags] = autocorr(S(:,i),length(S)-1);
+end
+errorShade(lags,mean(ac,2),std(ac,[],2),'Color',[0 0 0]);
+set(gca,'XScale','log','XTick',[1 10 100 1e3 1e4 1e5])
+xlabel('Lag (ms)')
+ylabel('Autocorrelation')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %% Version Info
 %

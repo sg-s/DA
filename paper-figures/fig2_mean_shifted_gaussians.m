@@ -100,6 +100,8 @@ end
 ss = 100;
 all_x = 0:0.1:2;
 axes(ax(5)), hold(ax(5),'on')
+
+clear th
 for i = 1:max(paradigm) % iterate over all paradigms 
 	y = fA(a:z,paradigm == i);
 	x = fA_pred(a:z,paradigm == i);
@@ -113,8 +115,22 @@ for i = 1:max(paradigm) % iterate over all paradigms
 	s = nanmean(s,2);
 	x = x - nanmean(x);
 	x = x + nanmean(nanmean(s));
+	
 	[~,orn_io_data(i)] = plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:),'show_error',false,'LineWidth',3);
+	t = oval(rsquare(x,y));
+	t = t(2:end);
+	th(i) = text(.05+max(orn_io_data(i).x),5+max(orn_io_data(i).y),t,'Color',c(i,:));
+
 end
+
+% fix a few positions
+P = [
+    0.3238   61.0108         0    0.5068   61.6890         0    0.5693  56.8031         0    0.5647   51.2603         0    0.6709   46.8964         0    0.6753   42.5207         0    0.8600   42.1649         0 1.0810   40.1730         0    1.3000   34.1413         0    1.6061 35.0734         0];
+P = reshape(P,3,10);
+for i = 1:10
+	th(i).Position = P(:,i);
+end
+
 
 mean_stim = nanmean(PID(a:z,:));
 
@@ -136,16 +152,15 @@ set(ax(6),'XScale','log','YScale','log','YLim',[10 300],'XLim',[.1 2.5])
 
 % rescale by Weber law
 ss = 50;
-allx = [];
-ally = [];
+
 axes(ax(7)), hold(ax(7),'on')
 for i = 1:8 % iterate over all paradigms 
 	y = nanmean(fA(a:z,paradigm == i),2);
 	x = nanmean(fA_pred(a:z,paradigm == i),2);
 	s = nanmean(PID(a:z,paradigm == i),2);
 
-	allx = [allx mean(y) + cf(mean(s))*(x(1:ss:end))];
-	ally = [ally y(1:ss:end)];
+	% x = x - nanmean(x);
+	% x = x + nanmean(nanmean(s));
 
 	x = cf(nanmean(s))*(x);
 	x = x - nanmean(x);
@@ -218,6 +233,8 @@ if being_published
 	delete(gcf)
 end
 
+return
+
  ;;;;;;  ;;     ;; ;;;;;;;;  ;;;;;;;;     ;;;;;;;; ;;;;  ;;;;;;   
 ;;    ;; ;;     ;; ;;     ;; ;;     ;;    ;;        ;;  ;;    ;;  
 ;;       ;;     ;; ;;     ;; ;;     ;;    ;;        ;;  ;;        
@@ -270,8 +287,6 @@ if being_published
 	snapnow
 	delete(gcf)
 end
-
-return
 
 %  ######  ##     ## ########  ########     ######## ####  ######   
 % ##    ## ##     ## ##     ## ##     ##    ##        ##  ##    ##  
@@ -358,6 +373,7 @@ rm_this = isnan(single_K_gain) | single_K_gain == 0;
 mean_stim(rm_this) = NaN;
 single_K_gain(rm_this) = NaN;
 
+c = parula(10);
 for i = 1:width(PID)
 	plot(ax(4),mean_stim(i),single_K_gain(i),'+','Color',c(paradigm(i),:))
 end

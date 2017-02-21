@@ -407,7 +407,7 @@ ax(3).Position(3) = .53;
 set(ax(2),'YLim',ax(1).YLim)
 set(ax(4),'YLim',ax(3).YLim)
 
-xlabel(ax(5),['Projected stimulus/' char(10) 'mean stimulus (a.u.)'])
+xlabel(ax(5),['Projected stimulus/' char(10) 'mean stimulus'])
 ylabel(ax(5),'ab3A firing rate (norm)')
 
 ax(6).XLim = [0 .22];
@@ -420,59 +420,6 @@ labelFigure('x_offset',-.025)
 
 ax(5).XLim(1) = 0;
 ax(5).YLim(1) = 0;
-
-if being_published
-	snapnow
-	delete(gcf)
-end
-
-%% Fitting NLN models
-% Can a static NLN model explain variance adaptation? To check, I fit this data with a static NLN model. I then generate responses using the best-fit parameters, and plot the I/O curves vs. these generated responses. 
-
-clear data
-c = 1;
-for i = 31:50:width(reshaped_fA)
-	data(c).response = reshaped_fA(:,i);
-	data(c).stimulus = [reshaped_PID(:,i) reshaped_fA(:,i)];
-	c = c + 1;
-end
-
-clear p
-p.n = 3.5;
-p.k_D = .6;
-
-% generate respnses
-NLNpred = reshaped_fA*NaN;
-for i = 1:width(reshaped_fA)
-	if ~being_published
-		textbar(i,width(reshaped_PID))
-	end
-	try
-		NLNpred(:,i) = NLNmodel([reshaped_PID(:,i) reshaped_fA(:,i)],p);
-	catch
-	end
-end
-
-
-figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-x = NLNpred(1e3:5e3,:);
-y = reshaped_fA(1e3:5e3,:);
-rm_this = (isnan(sum(y)) | isnan(sum(x)) | max(y) < 40 | min(y) > 10);
-x(:,rm_this) = []; y(:,rm_this) = []; 
-[~,data_hi] = plotPieceWiseLinear(x,y,'nbins',50,'make_plot',false);
-plot(data_hi.x,data_hi.y,'r')
-
-x = NLNpred(6e3:end,:);
-y = reshaped_fA(6e3:end,:);
-rm_this = (isnan(sum(y)) | max(y) < 40 | min(y) > 10);
-x(:,rm_this) = []; y(:,rm_this) = []; 
-[~,data_lo] = plotPieceWiseLinear(x,y,'nbins',50,'make_plot',false);
-plot(data_lo.x,data_lo.y,'b')
-
-xlabel('NLN prediction (Hz)')
-ylabel('ORN response (Hz)')
-
-prettyFig();
 
 if being_published
 	snapnow
@@ -497,14 +444,14 @@ clear ax
 for i = 1:6
 	ax(i) = subplot(2,3,i); hold on
 end
-% first do variance switching data...
+
 
 % 1. mean vs. sigma of the stimulus showing small change in mean ~~~~~~~~~~~~~~~~~~~~~~~~
-plot(ax(4),std(reshaped_PID(1e3:4e3,:)),mean(reshaped_PID(1e3:4e3,:)),'r+');
-plot(ax(4),std(reshaped_PID(6e3:9e3,:)),mean(reshaped_PID(6e3:9e3,:)),'b+');
-set(ax(4),'XLim',[0 .21],'YLim',[0 .6])
-xlabel(ax(4),'\sigma_{Stimulus} (V)')
-ylabel(ax(4),'\mu_{Stimulus} (V)')
+plot(ax(1),std(reshaped_PID(1e3:4e3,:)),mean(reshaped_PID(1e3:4e3,:)),'r+');
+plot(ax(1),std(reshaped_PID(6e3:9e3,:)),mean(reshaped_PID(6e3:9e3,:)),'b+');
+set(ax(1),'XLim',[0 .21],'YLim',[0 .6])
+xlabel(ax(1),'\sigma_{Stimulus} (V)')
+ylabel(ax(1),'\mu_{Stimulus} (V)')
 
 % 2. uncorrected I/O curves ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 % high contrast
@@ -513,7 +460,7 @@ y = reshaped_fA(1e3:5e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)) | max(y) < 40 | min(y) > 10);
 x(:,rm_this) = []; y(:,rm_this) = []; 
 [~,data_hi] = plotPieceWiseLinear(x,y,'nbins',50,'make_plot',false);
-plot(ax(5),data_hi.x,data_hi.y,'r')
+plot(ax(2),data_hi.x,data_hi.y,'r')
 
 % low contrast
 x = fA_pred(6e3:9e3,:);
@@ -521,65 +468,72 @@ y = reshaped_fA(6e3:9e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)) | max(y) < 40 | min(y) > 10);
 x(:,rm_this) = []; y(:,rm_this) = [];
 [~,data_lo] = plotPieceWiseLinear(x,y,'nbins',50,'make_plot',false);
-plot(ax(5),data_lo.x,data_lo.y,'b')
-xlabel(ax(5),'Projected stimulus')
-ylabel(ax(5),'ab3A firing rate (Hz)')
-set(ax(5),'XLim',[0 1.4],'YLim',[0 60])
+plot(ax(2),data_lo.x,data_lo.y,'b')
+xlabel(ax(2),'Projected stimulus')
+ylabel(ax(2),'ab3A firing rate (Hz)')
+set(ax(2),'XLim',[0 1.4],'YLim',[0 60])
 
 % 3. uncorrected gain vs. sigma stim ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 lo_gain(lo_gain==0) = NaN;
 hi_gain(hi_gain==0) = NaN;
 x = std(reshaped_PID(1e3:4e3,:));
-plot(x,hi_gain,'r+')
+plot(ax(3),x,hi_gain,'r+')
 x = std(reshaped_PID(6e3:9e3,:));
-plot(ax(6),x,lo_gain,'b+')
-xlabel(ax(6),'\sigma_{Stimulus} (V)')
-ylabel(ax(6),'ab3A ORN gain (Hz/V)')
-set(ax(6),'XLim',[0 .25],'YLim',[0 150])
+plot(ax(3),x,lo_gain,'b+')
+xlabel(ax(3),'\sigma_{Stimulus} (V)')
+ylabel(ax(3),'ab3A ORN gain (Hz/V)')
+set(ax(3),'XLim',[0 .25],'YLim',[0 150])
 
-% now do nat. stim, and for that, load the data
-load('nat_stim_stats')
-load('nat_stim_data')
+% show r2 for each trial as a function of the sigma 
+r2_lo = NaN*zeros(size(reshaped_PID,2),1);
+r2_hi = NaN*zeros(size(reshaped_PID,2),1);
 
-% 4. mu vs. sigma for nat. stim
-plot(ax(1),nat_stim_stats.sigma,nat_stim_stats.mu,'.','Color',[.5 .5 .5])
-ylabel(ax(1),'\mu_{stimulus} (V)')
-xlabel(ax(1),'\sigma_{stimulus} (V)')
-set(ax(1),'YScale','log','XScale','log','XLim',[1e-3 1e1],'XTick',[1e-3 1e-2 1e-1 1e0 1e1],'YLim',[1e-3 1e1],'YTick',[1e-3 1e-2 1e-1 1 10])
-plot(ax(1),[1e-3 10],[1e-3 10],'k--')
-
-% 5. show the rsquare of the mean and variance as a function of box size
-plot(ax(2),nat_stim_stats.all_block_sizes,nat_stim_stats.r2,'k+')
-set(ax(2),'XScale','log','XTick',[1 1e1 1e2 1e3 1e4],'XLim',[1 1.1e4])
-xlabel(ax(2),'Window length (ms)')
-ylabel(ax(2),'r^2 (\mu, \sigma)')
-
-% 6. gain as function of the std. dev. in the naturalistic stimulus
-% plot whiff gain vs. std. dev. stimulus preceding whiff
-l(1) = plot(ax(3),ab3.std_stim,ab3.gain,'k+');
-l(2) = plot(ax(3),ab2.std_stim,ab2.gain,'ko');
-set(ax(3),'XScale','log','YScale','log')
-legend2 = legend(l,{'ab3A','ab2A'},'Location','southwest');
-history_length = 300;
-xlabel(ax(3),['\sigma_{Stimulus} in preceding ' oval(history_length) 'ms (V)'])
-ylabel(ax(3),'ORN gain (Hz/V) ')
-
-% fit a inverse relationship to all the data
-options = fitoptions(fittype('power1'));
-options.Lower = [-Inf -1];
-options.Upper = [Inf -1];
-ff = fit([ab2.std_stim; ab3.std_stim],[ab2.gain; ab3.gain],'power1',options);
-ff.a = 10;
-plot(ax(3),sort([ab2.std_stim; ab3.std_stim]),ff(sort([ab2.std_stim; ab3.std_stim])),'r');
-
-prettyFig('fs',.5,'lw',2,'font_units','centimeters','FixLogX',true,'FixLogY',true)
-labelFigure('font_size',25)
-
-for i = 1:3
-	deintersectAxes(ax(i))
+for i = 1:width(reshaped_PID)
+	x = fA_pred(1e3:5e3,i); y = reshaped_fA(1e3:5e3,i);
+	try
+		r2_hi(i) = rsquare(x,y);
+	catch
+	end
+	x = fA_pred(6e3:9e3,i); y = reshaped_fA(6e3:9e3,i);
+	try
+		r2_lo(i) = rsquare(x,y);
+	catch
+	end
 end
 
+plot(ax(5),std(reshaped_PID(1e3:4e3,:)),r2_hi,'r+');
+plot(ax(5),std(reshaped_PID(6e3:9e3,:)),r2_lo,'b+');
+xlabel(ax(5),'\sigma_{Stimulus} (V)')
+ylabel(ax(5),'r^2 (Linear projection, data)')
+plot(ax(5),[0 .2],[nanmedian(r2_hi) nanmedian(r2_hi)],'r--')
+plot(ax(5),[0 .2],[nanmedian(r2_lo) nanmedian(r2_lo)],'b--')
+set(ax(5),'XLim',[0 0.2],'YLim',[0 1])
 
+% now plot r2 vs gain
+plot(ax(6),hi_gain2,r2_hi,'r+');
+plot(ax(6),lo_gain2,r2_lo,'b+');
+xlabel(ax(6),'Gain (Hz/V)')
+ylabel(ax(6),'r^2 (Linear projection, data)')
+plot(ax(6),[0 150],[nanmedian(r2_hi) nanmedian(r2_hi)],'r--')
+plot(ax(6),[0 150],[nanmedian(r2_lo) nanmedian(r2_lo)],'b--')
+set(ax(6),'XLim',[0 150],'YLim',[0 1])
+
+% show the filter
+filtertime = 1:800; filtertime = filtertime - 100;
+
+hi_filter = squeeze(nanmean(K2(1,:,:),3));
+lo_filter = squeeze(nanmean(K2(2,:,:),3));
+one_filter = mean(squeeze(nanmean(K2(:,:,:),3)));
+
+clear l
+l(1) = plot(ax(4),filtertime,lo_filter,'b');
+l(2) = plot(ax(4),filtertime,hi_filter,'r');
+l(3) = plot(ax(4),filtertime,one_filter,'k','LineWidth',3);
+legend(l,{'Low variance','High variance','Averaged filter'})
+xlabel(ax(4),'Lag (ms)')
+ylabel(ax(4),'Filter (norm)')
+
+prettyFig();
 
 if being_published
 	snapnow
@@ -587,88 +541,13 @@ if being_published
 end
 
 
-% % 3. gain as ratio of std. devs. -- no correction for mean ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-% subplot(2,3,3), hold on
-% x = std(reshaped_PID(1e3:4e3,:));
-% y = std(reshaped_fA(1e3:4e3,:))./x; 
-% y(y==0) = NaN;
-% plot(x,y,'r+')
-% x = std(reshaped_PID(6e3:9e3,:));
-% y = std(reshaped_fA(6e3:9e3,:))./x; 
-% y(y==0) = NaN;
-% plot(x,y,'b+')
-% ylabel('\sigma_{Firing rate}/\sigma_{Stimulus} (a.u.)')
-% xlabel(gca,'\sigma_{Stimulus} (V)')
-% set(gca,'XLim',[0 .22],'YLim',[0 300])
 
 
 
 
 
 
-% % 5. gain as ratio of std. devs. -- corrected for mean ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-% subplot(2,3,5), hold on
-% x = std(reshaped_PID(1e3:4e3,:));
-% y = std(reshaped_fA(1e3:4e3,:))./x; 
-% y = y.*mean(reshaped_PID(1e3:4e3,:));
-% y(y==0) = NaN;
-% plot(x,y,'r+')
-% x = std(reshaped_PID(6e3:9e3,:));
-% y = std(reshaped_fA(6e3:9e3,:))./x; 
-% y = y.*mean(reshaped_PID(6e3:9e3,:));
-% y(y==0) = NaN;
-% plot(x,y,'b+')
-% ylabel('(\sigma_{Firing rate}/\sigma_{Stimulus})\times \mu_{Stimulus} (a.u.)')
-% xlabel(gca,'\sigma_{Stimulus} (V)')
-% set(gca,'XLim',[0 .22],'YLim',[0 150])
 
-% % 6. this plot compares the Laughlin predicted gains in the two cases ~~~~~~~~~~~~~~~~~~~
-% subplot(2,3,4), hold on
-% x = std(reshaped_PID(1e3:4e3,:));
-% plot(x,laughlin_hi_gain,'r+')
-% x = std(reshaped_PID(6e3:9e3,:));
-% plot(x,laughlin_lo_gain,'b+')
-% ylabel(gca,'c.d.f slope (a.u.)')
-% xlabel(gca,'\sigma_{Stimulus} (V)')
-% set(gca,'XLim',[0 .22])
-
-
-% % show r^2 of gain estimates as a function of time 
-% subplot(2,3,3); hold on
-% cla
-% plot(time,gain_r2,'+','Color',[.4 .4 .4])
-% set(gca,'YLim',[0 1],'XLim',[0 10])
-% xlabel('Time since switch (s)')
-% ylabel('r^2 (Proj. Stim., Response)')
-% plot([0 10],[.8 .8],'k--')
-
-
-
-
-
-% ########  ##    ## ##    ##    ###    ##     ## ####  ######   ######      #######  ######## 
-% ##     ##  ##  ##  ###   ##   ## ##   ###   ###  ##  ##    ## ##    ##    ##     ## ##       
-% ##     ##   ####   ####  ##  ##   ##  #### ####  ##  ##       ##          ##     ## ##       
-% ##     ##    ##    ## ## ## ##     ## ## ### ##  ##  ##        ######     ##     ## ######   
-% ##     ##    ##    ##  #### ######### ##     ##  ##  ##             ##    ##     ## ##       
-% ##     ##    ##    ##   ### ##     ## ##     ##  ##  ##    ## ##    ##    ##     ## ##       
-% ########     ##    ##    ## ##     ## ##     ## ####  ######   ######      #######  ##  
-
-%  ######      ###    #### ##    ## 
-% ##    ##    ## ##    ##  ###   ## 
-% ##         ##   ##   ##  ####  ## 
-% ##   #### ##     ##  ##  ## ## ## 
-% ##    ##  #########  ##  ##  #### 
-% ##    ##  ##     ##  ##  ##   ### 
-%  ######   ##     ## #### ##    ## 
-
-%  ######   #######  ##    ## ######## ########   #######  ##       
-% ##    ## ##     ## ###   ##    ##    ##     ## ##     ## ##       
-% ##       ##     ## ####  ##    ##    ##     ## ##     ## ##       
-% ##       ##     ## ## ## ##    ##    ########  ##     ## ##       
-% ##       ##     ## ##  ####    ##    ##   ##   ##     ## ##       
-% ##    ## ##     ## ##   ###    ##    ##    ##  ##     ## ##       
-%  ######   #######  ##    ##    ##    ##     ##  #######  ######## 
 
 % now do the supplementary figure showing dynamics of gain change
 
@@ -918,6 +797,58 @@ end
 % 	delete(gcf)
 % end
 
+%% Fitting NLN models
+% Can a static NLN model explain variance adaptation? To check, I fit this data with a static NLN model. I then generate responses using the best-fit parameters, and plot the I/O curves vs. these generated responses. 
+
+clear data
+c = 1;
+for i = 31:50:width(reshaped_fA)
+	data(c).response = reshaped_fA(:,i);
+	data(c).stimulus = [reshaped_PID(:,i) reshaped_fA(:,i)];
+	c = c + 1;
+end
+
+clear p
+p.n = 3.5;
+p.k_D = .6;
+
+% generate respnses
+NLNpred = reshaped_fA*NaN;
+for i = 1:width(reshaped_fA)
+	if ~being_published
+		textbar(i,width(reshaped_PID))
+	end
+	try
+		NLNpred(:,i) = NLNmodel([reshaped_PID(:,i) reshaped_fA(:,i)],p);
+	catch
+	end
+end
+
+
+figure('outerposition',[0 0 500 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+x = NLNpred(1e3:5e3,:);
+y = reshaped_fA(1e3:5e3,:);
+rm_this = (isnan(sum(y)) | isnan(sum(x)) | max(y) < 40 | min(y) > 10);
+x(:,rm_this) = []; y(:,rm_this) = []; 
+[~,data_hi] = plotPieceWiseLinear(x,y,'nbins',50,'make_plot',false);
+plot(data_hi.x,data_hi.y,'r')
+
+x = NLNpred(6e3:end,:);
+y = reshaped_fA(6e3:end,:);
+rm_this = (isnan(sum(y)) | max(y) < 40 | min(y) > 10);
+x(:,rm_this) = []; y(:,rm_this) = []; 
+[~,data_lo] = plotPieceWiseLinear(x,y,'nbins',50,'make_plot',false);
+plot(data_lo.x,data_lo.y,'b')
+
+xlabel('NLN prediction (Hz)')
+ylabel('ORN response (Hz)')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 
 %% Version Info

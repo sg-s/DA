@@ -186,12 +186,6 @@ for di = 1:length(data_hashes)
 		plotPieceWiseLinear(mean_stim,LFP_lags,'Color',LFP_color,'nbins',10);
 		plotPieceWiseLinear(mean_stim,firing_lags,'Color',firing_color,'nbins',10);
 	end
-		% if di == 1
-		
-		% else
-		% 	% bin nicely, because the paradigms are poorly spaced
-			
-		% end
 
 	
 	xlabel(ax(2+di),'\mu_{Stimulus} (V)')
@@ -214,41 +208,38 @@ title(ax(2),'Stimulus \rightarrow Firing rate')
 
 
 % now show the same thing in the naturalistic stimulus date 
-
-load(getPath(dataManager,'aeb361c027b71938021c12a6a12a85cd'),'-mat')
-
 min_acceptable_corr = .5;
-min_acceptable_lag = 2;
+min_acceptable_lag = 10;
 
 subplot(2,3,6); hold on
-for i = [1 2 3 6]
-	PID = nanmean((od(i).stimulus),2);
-	LFP = nanmean((od(i).LFP),2);
-	fA = od(i).firing_rate;
-	fA(:,sum(fA)==0) = [];
-	fA = mean(fA,2);
+load(getPath(dataManager,'aeb361c027b71938021c12a6a12a85cd'),'-mat')
 
-	[lag, mean_x, max_corr] = findLagAndMeanInWindow(PID(5e3:end-5e3),-LFP(5e3:end-5e3),1e3,50);
-	rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr;
-	lag(rm_this) = [];
-	mean_x(rm_this) = [];
-	plotPieceWiseLinear(mean_x,lag,'Color',LFP_color,'nbins',10);
+PID = nanmean([od.stimulus],2);
+LFP = nanmean([od.LFP],2);
+fA = [od.firing_rate];
+fA(:,sum(fA)==0) = [];
+fA = nanmean(fA,2);
 
-	[lag, mean_x, max_corr] = findLagAndMeanInWindow(PID(5e3:end-5e3),fA(5e3:end-5e3),1e3,50);
-	rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr;
-	lag(rm_this) = [];
-	mean_x(rm_this) = [];
-	plotPieceWiseLinear(mean_x,lag,'Color',firing_color,'nbins',10);
+[lag, mean_x, max_corr] = findLagAndMeanInWindow(PID(5e3:end-5e3),-LFP(5e3:end-5e3),1e3,50);
+rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr;
+lag(rm_this) = [];
+mean_x(rm_this) = [];
+plotPieceWiseLinear(mean_x,lag,'Color',LFP_color,'nbins',10);
 
-end
+[lag, mean_x, max_corr] = findLagAndMeanInWindow(PID(5e3:end-5e3),fA(5e3:end-5e3),1e3,50);
+rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr;
+lag(rm_this) = [];
+mean_x(rm_this) = [];
+plotPieceWiseLinear(mean_x,lag,'Color',firing_color,'nbins',10);
 
 xlabel('\mu_{Stimulus} in preceding 1s')
 ylabel('Lag (ms)')
 set(gca,'YLim',[0 200])
-title(['ab3A - ethyl acetate ' char(10) 'naturalistic stimulus'])
+title(['ab3A - ethyl acetate' char(10) 'naturalistic stimulus'])
 
 prettyFig;
 
+labelFigure('x_offset',.01)
 
 
 if being_published	

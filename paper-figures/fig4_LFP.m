@@ -129,12 +129,11 @@ set(msg_lfp_gain_plot,'XScale','log','YScale','log','YLim',[1 100],'XLim',[.1 2]
 axes(msg_lfp_gain_plot)
 th = text(.8, 10,'$\sim 1/s$','interpreter','latex','Color','r','FontSize',20);
 
-
 % show firing machinery I/o curves
 axes(msg_firing_io_plot)
 for i = 1:max(paradigm) % iterate over all paradigms 
 	y = nanmean(fA(a:z,paradigm == i),2);
-	x = .1*nanmean(K2p(a:z,paradigm == i),2);
+	x = .01*nanmean(K2p(a:z,paradigm == i),2);
 	x = x - nanmean(x);
 	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:));
 end
@@ -143,11 +142,11 @@ ylabel(msg_firing_io_plot,'ab3A firing rate (Hz)')
 
 % show firing machinery gain
 for i = 1:length(paradigm)
-	plot(msg_firing_gain_plot,mean_stim(i),10*K2_gain(i),'+','Color',c(paradigm(i),:))
+	plot(msg_firing_gain_plot,mean_stim(i),100*K2_gain(i),'+','Color',c(paradigm(i),:))
 end
 xlabel(msg_firing_gain_plot,'\mu_{Stimulus} (V)')
 ylabel(msg_firing_gain_plot,'ab3A firing gain (Hz/mV)')
-set(msg_firing_gain_plot,'XScale','log','YScale','log','YLim',[1e-1 1e1],'XLim',[.1 2])
+set(msg_firing_gain_plot,'XScale','log','YScale','log','YLim',[1e0 1e2],'XLim',[.1 2])
 
 clear msg_data
 msg_data.PID = PID;
@@ -155,13 +154,15 @@ msg_data.LFP = dLFP;
 msg_data.fA = fA;
 msg_data.paradigm = paradigm;
 
-%  ######   #######  ##    ## ######## ########     ###     ######  ######## 
-% ##    ## ##     ## ###   ##    ##    ##     ##   ## ##   ##    ##    ##    
-% ##       ##     ## ####  ##    ##    ##     ##  ##   ##  ##          ##    
-% ##       ##     ## ## ## ##    ##    ########  ##     ##  ######     ##    
-% ##       ##     ## ##  ####    ##    ##   ##   #########       ##    ##    
-% ##    ## ##     ## ##   ###    ##    ##    ##  ##     ## ##    ##    ##    
-%  ######   #######  ##    ##    ##    ##     ## ##     ##  ######     ##    
+
+;;     ;;    ;;;    ;;;;;;;;  ;;;;    ;;;    ;;    ;;  ;;;;;;  ;;;;;;;; 
+;;     ;;   ;; ;;   ;;     ;;  ;;    ;; ;;   ;;;   ;; ;;    ;; ;;       
+;;     ;;  ;;   ;;  ;;     ;;  ;;   ;;   ;;  ;;;;  ;; ;;       ;;       
+;;     ;; ;;     ;; ;;;;;;;;   ;;  ;;     ;; ;; ;; ;; ;;       ;;;;;;   
+ ;;   ;;  ;;;;;;;;; ;;   ;;    ;;  ;;;;;;;;; ;;  ;;;; ;;       ;;       
+  ;; ;;   ;;     ;; ;;    ;;   ;;  ;;     ;; ;;   ;;; ;;    ;; ;;       
+   ;;;    ;;     ;; ;;     ;; ;;;; ;;     ;; ;;    ;;  ;;;;;;  ;;;;;;;; 
+
 
 clearvars -except dm msg_data being_published opacity ax lo_gain_firing hi_gain_firing lo_gain_firing_corrected hi_gain_firing_corrected lo_gain_total hi_gain_total hi_gain_total_corrected lo_gain_total_corrected msg_cartoon_plot var_cartoon_plot msg_lfp_io_plot msg_lfp_gain_plot msg_firing_gain_plot var_lfp_io_plot var_lfp_gain_plot var_firing_io_plot var_firing_gain_plot msg_firing_io_plot
 
@@ -480,6 +481,8 @@ if being_published
 	snapnow	
 	delete(gcf)
 end
+
+return
 
 
 %% Supplementary Figure

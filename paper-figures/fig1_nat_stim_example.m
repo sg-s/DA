@@ -120,9 +120,9 @@ for j = 1:size(data(i).S,2)
 	Rp = convolve(time,S,K2(:,j),filtertime);
 
  
-	Xl(j) = plot(ax(9),Xp(1:ss:end),X(1:ss:end),'.','Color',c(j,:));
+	Xl(j) = plot(ax(9),Xp(1:ss:end),X(1:ss:end),'Color',c(j,:));
 	XL{j} = ['r^2 = ' oval(rsquare(Xp,X))];
-	Rl(j) = plot(ax(10),Rp(1:ss:end),R(1:ss:end),'.','Color',c(j,:));
+	Rl(j) = plot(ax(10),Rp(1:ss:end),R(1:ss:end),'Color',c(j,:));
 	RL{j} = ['r^2 = ' oval(rsquare(Rp,R))];
 
 end
@@ -187,10 +187,25 @@ set(ax(7),'YDir','reverse')
 
 prettyFig()
 
+shrinkDataInPlot(ax(1),2)
+shrinkDataInPlot(ax(2),2)
+shrinkDataInPlot(ax(3),2)
+
+shrinkDataInPlot(ax(9),10)
+shrinkDataInPlot(ax(10),10)
+
+% label things
+labels = char(97:110);
+for i = 1:length(ax)
+	labelAxes(ax(i),labels(i),'x_offset',0,'y_offset',0.01,'font_size',24);
+end
+
 if being_published	
 	snapnow	
 	delete(gcf)
 end
+
+
 
  ;;;;;;  ;;     ;; ;;;;;;;;  ;;;;;;;;     ;;;;;;;; ;;;;  ;;;;;;   
 ;;    ;; ;;     ;; ;;     ;; ;;     ;;    ;;        ;;  ;;    ;;  

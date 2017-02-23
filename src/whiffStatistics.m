@@ -33,8 +33,7 @@ else
 	error('Inputs need to be name value pairs')
 end
 
-Shat = filter(ones(300,1),history_length,S);
-
+Shat = filter(ones(history_length,1),history_length,S);
 
 [ws.stim_peaks, ws.stim_peak_loc] = findpeaks(S,'MinPeakProminence',options.MinPeakProminence,'MinPeakDistance',options.MinPeakDistance);
 

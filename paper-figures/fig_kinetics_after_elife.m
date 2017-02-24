@@ -14,36 +14,6 @@ LFP_color = c(4,:);
 firing_color = c(5,:);
 
 
-clear p
-p.      E0 = 20.5000;
-p.      E1 = 2.2500;
-p. w_minus = 5.0625;
-p.  w_plus = 6.5000;
-p.tau_adap = 7.0625;
-p.      kT = 35.9375;
-p.   K_tau = 29.7500;
-
-
-
-
- p(2).      E0 = 56.5000;
- p(2).      E1 = 2.3750;
- p(2). w_minus = 6.0625;
- p(2).  w_plus = 10;
- p(2).tau_adap = 2.0625;
- p(2).      kT = 35.9375;
- p(2).   K_tau = 67.7500;
-
-
-p(4).      E0 = 36.5000;
-p(4).      E1 = 1.7500;
-p(4). w_minus = 10.0625;
-p(4).  w_plus = 6.5000;
-p(4).tau_adap = 2.6875;
-p(4).      kT = 75.9375;
-p(4).   K_tau = 45.7500;
-
-
 data_hashes = {'93ba5d68174e3df9f462a1fc48c581da','cd6753c0e4cf02895cd5e2c5cb58aa1a','3ea08ccfa892c6545d74bbdaaa6cbee1'};
 odour_names = {'ethyl-acetate','1-pentanol','2-butanone'};
 orn_names = {'ab3A','ab2A','ab2A'};
@@ -125,6 +95,7 @@ for di = 1:length(data_hashes)
 	if di == 1
 		ax(1) = subplot(2,3,1); hold on
 		ax(2) = subplot(2,3,2); hold on
+		ax(3) = subplot(2,3,3); hold on
 		% compare LFP cross correlations at the lowest and highest dose
 		c = parula(max(paradigm)+1);
 		temp = LFP_xcorr(:,:,paradigm==1);
@@ -148,6 +119,16 @@ for di = 1:length(data_hashes)
 		lags = 1e-3*(1:length(temp)) - 1;
 		plot(ax(2),lags,nanmean(temp,2)/max(nanmean(temp,2)),'Color',c(10,:))
 
+		% also compare auto-correlations of the stimulus at high and low 
+		c = parula(max(paradigm)+1);
+		temp = S_a(:,:,paradigm==1);
+		temp = reshape(temp,2*chunk_size - 1, size(temp,2)*size(temp,3));
+		lags = 1e-3*(1:length(temp)) - 1;
+		plot(ax(3),lags,mean(temp,2)/max(mean(temp,2)),'Color',c(1,:))
+		temp = S_a(:,:,paradigm==10);
+		temp = reshape(temp,2*chunk_size - 1, size(temp,2)*size(temp,3));
+		lags = 1e-3*(1:length(temp)) - 1;
+		plot(ax(3),lags,nanmean(temp,2)/max(nanmean(temp,2)),'Color',c(10,:))
 
 
 	end
@@ -156,7 +137,7 @@ for di = 1:length(data_hashes)
 	firing_lags(firing_lags<-100) = NaN; % obviously wrong
 
 
-	ax(2+di) = subplot(2,3,2+di); hold on
+	ax(3+di) = subplot(2,3,3+di); hold on
 
 	% show lags of firing rate and LFP for all doses
 	mean_stim = mean(PID(a:z,:));
@@ -188,54 +169,58 @@ for di = 1:length(data_hashes)
 	end
 
 	
-	xlabel(ax(2+di),'\mu_{Stimulus} (V)')
-	ylabel(ax(2+di),'Lag (ms)')
+	xlabel(ax(3+di),'\mu_{Stimulus} (V)')
+	ylabel(ax(3+di),'Lag (ms)')
 
 	legend({'LFP','Firing rate'},'Location','northwest')
-	set(ax(2+di),'XLim',[0 x_limits(di)],'YLim',[0 200])
+	set(ax(3+di),'XLim',[0 x_limits(di)],'YLim',[0 200])
 	title([orn_names{di} ' - ' odour_names{di}])
 
 end
 
 set(ax(1),'XLim',[0 1],'YLim',[-.5 1.1])
 set(ax(2),'XLim',[0 1],'YLim',[-.5 1.1])
+set(ax(3),'XLim',[0 1],'YLim',[-.5 1.1])
 xlabel(ax(1),'Lag (s)')
 xlabel(ax(2),'Lag (s)')
+xlabel(ax(3),'Lag (s)')
 ylabel(ax(1),'Cross correlation (norm)')
 ylabel(ax(2),'Cross correlation (norm)')
+ylabel(ax(3),'Autocorrelation (norm)')
 title(ax(1),'Stimulus \rightarrow LFP')
 title(ax(2),'Stimulus \rightarrow Firing rate')
+title(ax(3),'Stimulus auto-correlation')
 
 
 % now show the same thing in the naturalistic stimulus date 
-min_acceptable_corr = .5;
-min_acceptable_lag = 10;
+% min_acceptable_corr = .5;
+% min_acceptable_lag = 10;
 
-subplot(2,3,6); hold on
-load(getPath(dataManager,'aeb361c027b71938021c12a6a12a85cd'),'-mat')
+% subplot(2,3,6); hold on
+% load(getPath(dataManager,'aeb361c027b71938021c12a6a12a85cd'),'-mat')
 
-PID = nanmean([od.stimulus],2);
-LFP = nanmean([od.LFP],2);
-fA = [od.firing_rate];
-fA(:,sum(fA)==0) = [];
-fA = nanmean(fA,2);
+% PID = nanmean([od.stimulus],2);
+% LFP = nanmean([od.LFP],2);
+% fA = [od.firing_rate];
+% fA(:,sum(fA)==0) = [];
+% fA = nanmean(fA,2);
 
-[lag, mean_x, max_corr] = findLagAndMeanInWindow(PID(5e3:end-5e3),-LFP(5e3:end-5e3),1e3,50);
-rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr;
-lag(rm_this) = [];
-mean_x(rm_this) = [];
-plotPieceWiseLinear(mean_x,lag,'Color',LFP_color,'nbins',10);
+% [lag, mean_x, max_corr] = findLagAndMeanInWindow(PID(5e3:end-5e3),-LFP(5e3:end-5e3),1e3,50);
+% rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr;
+% lag(rm_this) = [];
+% mean_x(rm_this) = [];
+% plotPieceWiseLinear(mean_x,lag,'Color',LFP_color,'nbins',10);
 
-[lag, mean_x, max_corr] = findLagAndMeanInWindow(PID(5e3:end-5e3),fA(5e3:end-5e3),1e3,50);
-rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr;
-lag(rm_this) = [];
-mean_x(rm_this) = [];
-plotPieceWiseLinear(mean_x,lag,'Color',firing_color,'nbins',10);
+% [lag, mean_x, max_corr] = findLagAndMeanInWindow(PID(5e3:end-5e3),fA(5e3:end-5e3),1e3,50);
+% rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr;
+% lag(rm_this) = [];
+% mean_x(rm_this) = [];
+% plotPieceWiseLinear(mean_x,lag,'Color',firing_color,'nbins',10);
 
-xlabel('\mu_{Stimulus} in preceding 1s')
-ylabel('Lag (ms)')
-set(gca,'YLim',[0 200])
-title(['ab3A - ethyl acetate' char(10) 'naturalistic stimulus'])
+% xlabel('\mu_{Stimulus} in preceding 1s')
+% ylabel('Lag (ms)')
+% set(gca,'YLim',[0 200])
+% title(['ab3A - ethyl acetate' char(10) 'naturalistic stimulus'])
 
 prettyFig;
 

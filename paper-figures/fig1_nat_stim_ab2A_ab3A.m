@@ -8,29 +8,55 @@ pHeader;
 
 
 % make the figure and all subplots 
-figure('outerposition',[0 0 1302 1001],'PaperUnits','points','PaperSize',[1000 1001]); hold on
+figure('outerposition',[0 0 1000 1001],'PaperUnits','points','PaperSize',[1000 1001]); hold on
 clear ax
-% time series
-ax.S = subplot(4,4,1:2); hold on
-ax.X = subplot(4,4,5:6); hold on
-ax.R = subplot(4,4,9:10); hold on
+
+% time series for ab3A
+ax.ab3A_S = subplot(7,4,1:3); hold on
+ax.ab3A_X = subplot(7,4,5:7); hold on
+ax.ab3A_R = subplot(7,4,9:11); hold on
+
+% time series for ab2A
+ax.ab2A_S = subplot(7,4,13:15); hold on
+ax.ab2A_X = subplot(7,4,17:19); hold on
+ax.ab2A_R = subplot(7,4,21:23); hold on
 
 % zooms into time series, one for ab3A, one for ab2A 
-ax.ab3A_S = subplot(4,4,3); hold on
-ax.ab3A_X = subplot(4,4,7); hold on
-ax.ab3A_R = subplot(4,4,11); hold on
+ax.ab3A_SZ = subplot(7,4,4); hold on
+ax.ab3A_XZ = subplot(7,4,8); hold on
+ax.ab3A_RZ = subplot(7,4,12); hold on
 
-ax.ab2A_S = subplot(4,4,4); hold on
-ax.ab2A_X = subplot(4,4,8); hold on
-ax.ab2A_R = subplot(4,4,12); hold on
+ax.ab2A_SZ = subplot(7,4,16); hold on
+ax.ab2A_XZ = subplot(7,4,20); hold on
+ax.ab2A_RZ = subplot(7,4,24); hold on
+
+% filters + projections for ab2A 
+ax.X_proj = subplot(7,4,25); hold on
+ax.R_proj = subplot(7,4,26); hold on
 
 % dose response for ab2A
-ax.ab2A_drX = subplot(4,4,13); hold on
-ax.ab2A_drR = subplot(4,4,14); hold on
+ax.ab2A_drX = subplot(7,4,27); hold on
+ax.ab2A_drR = subplot(7,4,28); hold on
 
-% dose response for ab3A
-ax.ab3A_drX = subplot(4,4,15); hold on
-ax.ab3A_drR = subplot(4,4,16); hold on
+% add insets showing that whiffs don't change, but responses do
+ax.ab3A_SZi = axes; hold on
+ax.ab3A_SZi.Position = [.88 .89 .05 .05];
+
+ax.ab3A_XZi = axes; hold on
+ax.ab3A_XZi.Position = [.88 .75 .05 .05];
+
+ax.ab3A_RZi = axes; hold on
+ax.ab3A_RZi.Position = [.88 .63 .05 .05];
+
+ax.ab2A_SZi = axes; hold on
+ax.ab2A_SZi.Position = [.88 .51 .05 .05];
+
+ax.ab2A_XZi = axes; hold on
+ax.ab2A_XZi.Position = [.88 .39 .05 .05];
+
+ax.ab2A_RZi = axes; hold on
+ax.ab2A_RZi.Position = [.88 .28 .05 .05];
+
 
    ;;;    ;;;;;;;;   ;;;;;;;     ;;;    
   ;; ;;   ;;     ;; ;;     ;;   ;; ;;   
@@ -48,9 +74,9 @@ cdata = consolidateData2(getPath(dataManager,'4608c42b12191b383c84fea52392ea97')
 time = 1e-3*(1:length(data(1).S));
 
 % plot the data
-plot(ax.S,time,data(2).S(:,1),'b')
-plot(ax.X,time,data(2).X(:,1),'b')
-plot(ax.R,time,data(2).R(:,1),'b')
+plot(ax.ab2A_S,time,data(2).S(:,1),'k')
+plot(ax.ab2A_X,time,data(2).X(:,1),'k')
+plot(ax.ab2A_R,time,data(2).R(:,1),'k')
 
 % show whiff statistics 
 i = 2;
@@ -63,8 +89,8 @@ for j = 1:size(data(i).S,2)
 	ws = whiffStatistics(S,X,R,300,'MinPeakProminence',max(S/1e2),'debug',false);
 	all_x =  [all_x(:); ws.stim_peaks(:)];
 	all_y = [all_y(:); -ws.peak_LFP(:)];
-	plot(ax.ab2A_drX,ws.stim_peaks,ws.peak_LFP,'.','MarkerSize',20,'Color','b')
-	plot(ax.ab2A_drR,ws.stim_peaks,ws.peak_firing_rate,'.','MarkerSize',20,'Color','b')
+	plot(ax.ab2A_drX,ws.stim_peaks,ws.peak_LFP,'.','MarkerSize',20,'Color','k')
+	plot(ax.ab2A_drR,ws.stim_peaks,ws.peak_firing_rate,'.','MarkerSize',20,'Color','k')
 end
 
 
@@ -90,12 +116,58 @@ for i = 2
 
 		t = (1:length(S(a:z))) - 300;
 
-		plot(ax.ab2A_S,t,S(a:z))
-		plot(ax.ab2A_X,t,X(a:z))
-		plot(ax.ab2A_R,t,R(a:z))
+		plot(ax.ab2A_SZ,t,S(a:z))
+		plot(ax.ab2A_XZ,t,X(a:z))
+		plot(ax.ab2A_RZ,t,R(a:z))
 
 	end
 end
+
+% show some statistics about these chosen whiffs
+S_int = NaN*(1:4);
+S_int_err = NaN*(1:4);
+X_int = NaN*(1:4);
+X_int_err = NaN*(1:4);
+R_int = NaN*(1:4);
+R_int_err = NaN*(1:4);
+
+for i = 1:length(show_these)
+	this_paradigm = show_these(i,1); 
+
+	PID = data(2).S(:,this_paradigm);
+	LFP = data(2).X(:,this_paradigm);
+	fA =  data(2).R(:,this_paradigm);
+
+	temp = nanmean(PID(show_these(i,2):show_these(i,2)+10,:));
+	S_int(i) = nanmean(temp);
+	S_int_err(i) = nanstd(temp)/sqrt(length(temp));
+
+	temp = nanmean(LFP(show_these(i,2)+90:show_these(i,2)+100,:));
+	X_int(i) = nanmean(temp);
+	X_int_err(i) = nanstd(temp)/sqrt(length(temp));
+
+	temp = nanmean(fA(show_these(i,2)+60:show_these(i,2)+80,:));
+	R_int(i) = nanmean(temp);
+	R_int_err(i) = nanstd(temp)/sqrt(length(temp));
+
+end
+
+cla(ax.ab2A_SZi)
+cla(ax.ab2A_XZi)
+cla(ax.ab2A_RZi)
+c = lines(10);
+
+[~,~,S_order] = unique(S_int);
+[~,~,X_order] = unique(X_int); X_order = 5 - X_order;
+[~,~,R_order] = unique(R_int);
+
+for i = 1:length(show_these)
+	superbar(ax.ab2A_SZi,S_order(i),S_int(i),'E',S_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
+	superbar(ax.ab2A_XZi,X_order(i),X_int(i),'E',X_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
+	superbar(ax.ab2A_RZi,R_order(i),R_int(i),'E',R_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
+
+end
+
 
    ;;;    ;;;;;;;;   ;;;;;;;     ;;;    
   ;; ;;   ;;     ;; ;;     ;;   ;; ;;   
@@ -107,7 +179,8 @@ end
 
 
 % now do the ab3A analysis
-cdata = consolidateData2(getPath(dataManager,'f70e37a7db469b88c0fc79ff5e828e9d'));
+cdata = consolidateData2(getPath(dataManager,'11f83bf78ccad7d44fee8e92dd65602f'));
+
 
 % first remove min stimulus from every trace, and fix the LFP
 for i = 1:size(cdata.PID,2)
@@ -115,29 +188,29 @@ for i = 1:size(cdata.PID,2)
 	cdata.LFP(:,i) = cdata.LFP(:,i) - mean(cdata.LFP(1:5e3,i));
 end
 
-example_orn = 4;
+cdata.LFP = cdata.LFP*10;
 
-S = cdata.PID(:,cdata.orn == example_orn);
-X = 10*cdata.LFP(:,cdata.orn == example_orn);
-R = cdata.fA(:,cdata.orn == example_orn);
+example_orn = 1;
+
+PID = cdata.PID(:,cdata.orn == example_orn);
+LFP = cdata.LFP(:,cdata.orn == example_orn);
+fA = cdata.fA(:,cdata.orn == example_orn);
+
+S = mean(cdata.PID(:,cdata.orn == example_orn),2);
+X = mean(cdata.LFP(:,cdata.orn == example_orn),2);
+R = mean(cdata.fA(:,cdata.orn == example_orn),2);
 
 rm_this = isnan(sum(S)) | max(R) == 0;
 S(:,rm_this) = []; X(:,rm_this) = []; R(:,rm_this) = [];
 
 % plot the data
-plot(ax.S,time,mean(S,2),'k')
-plot(ax.X,time,mean(X,2),'k')
-plot(ax.R,time,mean(R,2),'k')
+plot(ax.ab3A_S,time,mean(S,2),'k')
+plot(ax.ab3A_X,time,mean(X,2),'k')
+plot(ax.ab3A_R,time,mean(R,2),'k')
 
 
 clear all_x all_y
 all_x = []; all_y = [];
-
-ws = whiffStatistics(mean(S,2),mean(X,2),mean(R,2),300,'MinPeakProminence',max(S(:,j))/1e2,'debug',false);
-all_x =  [all_x(:); ws.stim_peaks(:)];
-all_y = [all_y(:); -ws.peak_LFP(:)];
-plot(ax.ab3A_drX,ws.stim_peaks,ws.peak_LFP,'.','MarkerSize',20,'Color','k')
-plot(ax.ab3A_drR,ws.stim_peaks,ws.peak_firing_rate,'.','MarkerSize',20,'Color','k')
 
 
 
@@ -145,11 +218,12 @@ plot(ax.ab3A_drR,ws.stim_peaks,ws.peak_firing_rate,'.','MarkerSize',20,'Color','
 % now show fast gain control
 % show context-dependent variation in whiff response
 
-show_these = [21103 64353 64869];
+% show_these = [21103 64353 64869];
+show_these = [6112 26669 28413 64360];
 
-cla(ax.ab3A_S)
-cla(ax.ab3A_X)
-cla(ax.ab3A_R)
+cla(ax.ab3A_SZ)
+cla(ax.ab3A_XZ)
+cla(ax.ab3A_RZ)
 
 
 for j = 1:length(show_these)
@@ -164,42 +238,79 @@ for j = 1:length(show_these)
 
 	t = (1:length(tS(a:z))) - 300;
 
-	plot(ax.ab3A_S,t,tS(a:z))
-	plot(ax.ab3A_X,t,tX(a:z))
-	plot(ax.ab3A_R,t,tR(a:z))
+	plot(ax.ab3A_SZ,t,tS(a:z))
+	plot(ax.ab3A_XZ,t,tX(a:z))
+	plot(ax.ab3A_RZ,t,tR(a:z))
 
 end
 
 
-ylabel(ax.S,'Stimulus (V)')
-clear l
-l(1) = plot(ax.S,NaN,NaN,'k.','MarkerSize',20);
-l(2) = plot(ax.S,NaN,NaN,'b.','MarkerSize',20);
-legend(l,{'2-butanone','ethyl acetate'},'Location','northwest')
-set(ax.S,'XLim',[0 70])
+% show some statistics about these chosen whiffs
+S_int = NaN*show_these;
+S_int_err = NaN*show_these;
+X_int = NaN*show_these;
+X_int_err = NaN*show_these;
+R_int = NaN*show_these;
+R_int_err = NaN*show_these;
 
-ylabel(ax.X,'\Delta LFP (mV)')
-l(1) = plot(ax.X,NaN,NaN,'k.','MarkerSize',20);
-l(2) = plot(ax.X,NaN,NaN,'b.','MarkerSize',20);
-lh1 = legend(l,{'ab2','ab3'},'Location','northwest');
-set(ax.X,'YDir','reverse')
-set(ax.X,'XLim',[0 70])
+for i = 1:length(show_these)
+	temp = nanmean(PID(show_these(i):show_these(i)+10,:));
+	S_int(i) = nanmean(temp);
+	S_int_err(i) = nanstd(temp)/sqrt(length(temp));
 
-xlabel(ax.R,'Time (s)')
-ylabel(ax.R,'Firing rate (Hz)')
-l(1) = plot(ax.R,NaN,NaN,'k.','MarkerSize',20);
-l(2) = plot(ax.R,NaN,NaN,'b.','MarkerSize',20);
-lh2 = legend(l,{'ab2A','ab3A'},'Location','northwest');
-set(ax.R,'XLim',[0 70])
+	temp = nanmean(LFP(show_these(i)+90:show_these(i)+100,:));
+	X_int(i) = nanmean(temp);
+	X_int_err(i) = nanstd(temp)/sqrt(length(temp));
 
-set(ax.ab2A_X,'YDir','reverse')
+	temp = nanmean(fA(show_these(i)+90:show_these(i)+100,:));
+	R_int(i) = nanmean(temp);
+	R_int_err(i) = nanstd(temp)/sqrt(length(temp));
+
+end
+
+cla(ax.ab3A_SZi)
+cla(ax.ab3A_XZi)
+cla(ax.ab3A_RZi)
+c = lines(10);
+
+[~,~,S_order] = unique(S_int);
+[~,~,X_order] = unique(X_int); X_order = max(X_order)+1 - X_order;
+[~,~,R_order] = unique(R_int);
+
+for i = 1:length(show_these)
+	superbar(ax.ab3A_SZi,S_order(i),S_int(i),'E',S_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
+	superbar(ax.ab3A_XZi,X_order(i),X_int(i),'E',X_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
+	superbar(ax.ab3A_RZi,R_order(i),R_int(i),'E',R_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
+
+end
+
+
+ylabel(ax.ab3A_S,'ethyl acetate (V)')
+set(ax.ab3A_S,'XLim',[0 70])
+
+ylabel(ax.ab3A_X,'ab3 \DeltaLFP (mV)')
+set(ax.ab3A_X,'XLim',[0 70])
 set(ax.ab3A_X,'YDir','reverse')
 
-title(ax.ab2A_S,'ab2A - 2-butanone')
-title(ax.ab3A_S,'ab3A - ethyl acetate')
+ylabel(ax.ab3A_R,'ab3A firing rate (Hz)')
+set(ax.ab3A_R,'XLim',[0 70])
 
-xlabel(ax.ab2A_R,'Time since whiff (ms)')
-xlabel(ax.ab3A_R,'Time since whiff (ms)')
+
+ylabel(ax.ab2A_S,'2-butanone (V)')
+set(ax.ab2A_S,'XLim',[0 70])
+
+ylabel(ax.ab2A_X,'ab2 \DeltaLFP (mV)')
+set(ax.ab2A_X,'XLim',[0 70])
+set(ax.ab2A_X,'YDir','reverse')
+
+ylabel(ax.ab2A_R,'ab2A firing rate (Hz)')
+set(ax.ab2A_R,'XLim',[0 70])
+xlabel(ax.ab2A_R,'Time (s)')
+
+set(ax.ab3A_XZ,'YDir','reverse')
+set(ax.ab2A_XZ,'YDir','reverse')
+xlabel(ax.ab2A_RZ,'Time since whiff (ms)')
+
 
 xlabel(ax.ab2A_drX,'Whiff amplitude (V)')
 ylabel(ax.ab2A_drX,'ab2 LFP response (mV)')
@@ -209,13 +320,7 @@ xlabel(ax.ab2A_drR,'Whiff amplitude (V)')
 ylabel(ax.ab2A_drR,'ab2A firing rate (Hz)')
 set(ax.ab2A_drR,'XScale','log','XLim',[1e-2 1e1],'XTick',[1e-2 1e-1 1e0 1e1 1e2])
 
-xlabel(ax.ab3A_drR,'Whiff amplitude (V)')
-ylabel(ax.ab3A_drR,'ab3A firing rate (Hz)')
-set(ax.ab3A_drR,'XScale','log','XLim',[1e-1 1e2],'XTick',[1e-1 1e0 1e1 1e2])
-
-xlabel(ax.ab3A_drX,'Whiff amplitude (V)')
-ylabel(ax.ab3A_drX,'ab3 LFP response (mV)')
-set(ax.ab3A_drX,'XScale','log','XLim',[1e-1 1e2],'YDir','reverse','XTick',[1e-1 1e0 1e1 1e2])
+return
 
 % move things around
 ax.S.Position = [0.1300 0.8 0.3628 0.13];

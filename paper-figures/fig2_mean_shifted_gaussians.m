@@ -18,6 +18,8 @@ A_spikes = cdata.A_spikes;
 B_spikes = cdata.B_spikes;
 cdata = cleanMSGdata(cdata);
 
+K = (mean(cdata.K2(:,cdata.paradigm==1),2));
+
 v2struct(cdata)
 
 clearvars LFP_pred LFP_gain fB cdata
@@ -100,6 +102,7 @@ end
 ss = 100;
 all_x = 0:0.1:2;
 axes(ax(5)), hold(ax(5),'on')
+
 
 clear th
 for i = 1:max(paradigm) % iterate over all paradigms 
@@ -241,6 +244,125 @@ end
       ;; ;;     ;; ;;        ;;           ;;        ;;  ;;    ;;  
 ;;    ;; ;;     ;; ;;        ;;           ;;        ;;  ;;    ;;  
  ;;;;;;   ;;;;;;;  ;;        ;;           ;;       ;;;;  ;;;;;;   
+
+%% Supp figure showing that NL models can't reproduce this, but if we vary the k_D, it can
+
+figure('outerposition',[0 0 1300 901],'PaperUnits','points','PaperSize',[1300 901]); hold on
+
+% show the input nonlinearity 
+kD = mean(mean(PID(a:z,:)));
+
+x = logspace(-2,2,100);
+
+A = 1./(1+ (kD./x));
+
+subplot(2,3,1); hold on
+plot(x,A,'k');
+set(gca,'XScale','log')
+xlabel('Stimulus (V)')
+ylabel('a')
+
+% show the filter
+subplot(2,3,2); hold on
+plot(filtertime,K/norm(K),'k')
+set(gca,'XLim',[-.1 .6])
+xlabel('Lag (ms)')
+ylabel('Filter (norm)')
+
+% generate responses using this model
+NL_pred = NaN*fA;
+for i = 1:size(fA,2)
+	S = PID(:,i);
+	S = 1./(1 + kD./S);
+	NL_pred(:,i) = convolve(time,S,K,filtertime);
+end
+
+% make the i/o plot
+
+
+subplot(2,3,3); hold on
+for i = 1:max(paradigm) % iterate over all paradigms 
+	y = 100*NL_pred(a:z,paradigm == i);
+	x = convolve(time,PID(:,i),K,filtertime); x = x(a:z);
+	s = PID(a:z,paradigm == i);
+	rm_this = sum(y)==0;
+	y(:,rm_this) = [];
+	x(:,rm_this) = [];
+	s(:,rm_this) = [];
+	y = nanmean(y,2);
+	x = nanmean(x,2);
+	s = nanmean(s,2);
+	x = x - nanmean(x);
+	x = x + nanmean(nanmean(s));
+	
+	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:),'show_error',false,'LineWidth',3);
+end
+xlabel('Projected Stimulus (V)')
+ylabel('Prediction (Hz)')
+
+% now vary the kD with the mean stimulus
+
+% show the input nonlinearity 
+
+x = logspace(-2,2,100);
+
+subplot(2,3,4); hold on
+for i = 1:max(paradigm)
+	kD = mean(mean(PID(a:z,paradigm==i)));
+	A = 1./(1+ (kD./x));
+	plot(x,A,'Color',c(i,:));
+end
+set(gca,'XScale','log')
+xlabel('Stimulus (V)')
+ylabel('a')
+
+% show the filter
+subplot(2,3,5); hold on
+plot(filtertime,K/norm(K),'k')
+set(gca,'XLim',[-.1 .6])
+xlabel('Lag (ms)')
+ylabel('Filter (norm)')
+
+% generate responses using this model
+NL_pred = NaN*fA;
+for i = 1:size(fA,2)
+	kD = mean(mean(PID(a:z,i)));
+	S = PID(:,i);
+	S = 1./(1 + kD./S);
+	NL_pred(:,i) = convolve(time,S,K,filtertime);
+end
+
+% make the i/o plot
+subplot(2,3,6); hold on
+for i = 1:max(paradigm) % iterate over all paradigms 
+	y = 100*NL_pred(a:z,paradigm == i);
+	x = convolve(time,PID(:,i),K,filtertime); x = x(a:z);
+	s = PID(a:z,paradigm == i);
+	rm_this = sum(y)==0;
+	y(:,rm_this) = [];
+	x(:,rm_this) = [];
+	s(:,rm_this) = [];
+	y = nanmean(y,2);
+	x = nanmean(x,2);
+	s = nanmean(s,2);
+	x = x - nanmean(x);
+	x = x + nanmean(nanmean(s));
+	
+	plotPieceWiseLinear(x,y,'nbins',50,'Color',c(i,:),'show_error',false,'LineWidth',3);
+end
+xlabel('Projected Stimulus (V)')
+ylabel('Prediction (Hz)')
+
+prettyFig();
+labelFigure('x_offset',0,'font_size',28)
+
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
 
 %% Supp Fig for eLIFE
 

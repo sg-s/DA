@@ -173,19 +173,21 @@ K = fitFilter2Data(data(2).S(:,1),data(2).X(:,1),'offset',200);
 K = K(100:end-100);
 filtertime = (1:length(K)) - 100;
 fp = convolve(1:length(data(2).S(:)),data(2).S(:),K,filtertime);
-plot(ax.X_proj,fp,data(2).X(:),'k')
+l = plot(ax.X_proj,fp,data(2).X(:),'k');
 set(ax.X_proj,'YDir','reverse','XDir','reverse','XLim',[-4 0],'YLim',[-30 0])
 xlabel(ax.X_proj,'Projected stimulus (V)')
 ylabel(ax.X_proj,'ab2 LFP (mV)')
+legend(l,['r^2 = ' oval(rsquare(fp,data(2).X(:)))],'Location','southeast');
 
 K = fitFilter2Data(data(2).S(:,1),data(2).R(:,1),'offset',200); 
 K = K(100:end-100);
 filtertime = (1:length(K)) - 100;
 fp = convolve(1:length(data(2).S(:)),data(2).S(:),K,filtertime);
-plot(ax.R_proj,fp,data(2).R(:),'k')
+l  =plot(ax.R_proj,fp,data(2).R(:),'k');
 set(ax.R_proj,'XLim',[0 5],'YLim',[0 300])
 xlabel(ax.R_proj,'Projected stimulus (V)')
 ylabel(ax.R_proj,'ab2A firing rate (Hz)')
+legend(l,['r^2 = ' oval(rsquare(fp,data(2).R(:)))],'Location','southeast');
 
    ;;;    ;;;;;;;;   ;;;;;;;     ;;;    
   ;; ;;   ;;     ;; ;;     ;;   ;; ;;   
@@ -412,17 +414,18 @@ ax.ab2A_drR.Position = [0.8 0.15 .16 .16];
 
 
 % label things
+
 labelAxes(ax.ab3A_S,'a','x_offset',-.05,'font_size',24);
 labelAxes(ax.ab2A_S,'b','x_offset',-.05,'font_size',24);
 
 labelAxes(ax.X_proj,'c','x_offset',-.025,'font_size',24);
 labelAxes(ax.R_proj,'d','x_offset',-.025,'font_size',24);
 
-labelAxes(ax.ab3A_SZ,'e','x_offset',-.025,'font_size',24);
-labelAxes(ax.ab2A_SZ,'f','x_offset',-.025,'font_size',24);
+labelAxes(ax.ab3A_SZ,'g','x_offset',-.025,'font_size',24);
+labelAxes(ax.ab2A_SZ,'h','x_offset',-.025,'font_size',24);
 
-labelAxes(ax.ab2A_drX,'g','x_offset',-.025,'font_size',24);
-labelAxes(ax.ab2A_drR,'h','x_offset',-.025,'font_size',24);
+labelAxes(ax.ab2A_drX,'e','x_offset',-.025,'font_size',24);
+labelAxes(ax.ab2A_drR,'f','x_offset',-.025,'font_size',24);
 
 
 % deintersect the dose-response axes
@@ -452,8 +455,6 @@ th = text(.1,.1,'ab2A responses to 2-butanone');
 th.Position  = [.3 .65];
 th.FontSize = 18;
 th.Parent = canvas;
-
-return
 
 % shrink data in plot
 shrinkDataInPlot(ax.ab2A_S,2)

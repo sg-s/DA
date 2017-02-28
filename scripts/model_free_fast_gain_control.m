@@ -45,7 +45,7 @@ cdata = consolidateData2(getPath(dataManager,'4608c42b12191b383c84fea52392ea97')
 %%
 % (d-f) Similar analysis, but for the firing rates. 
 
- [s,x,r,whiff_s,group] = binnedWhiffGainAnalysis(data(2).S,data(2).X,data(2).R);
+[s,x,r,whiff_s,group] = binnedWhiffGainAnalysis(data(2).S,data(2).X,data(2).R);
 
 figure('outerposition',[0 0 1400 901],'PaperUnits','points','PaperSize',[1400 901]); hold on
 subplot(2,3,1); hold on
@@ -160,6 +160,8 @@ if being_published
 	snapnow
 	delete(gcf)
 end
+
+return
 
 ;;     ;;    ;;;    ;;       ;;;; ;;;;;;;;     ;;;    ;;;;;;;; ;;;;  ;;;;;;;  ;;    ;; 
 ;;     ;;   ;; ;;   ;;        ;;  ;;     ;;   ;; ;;      ;;     ;;  ;;     ;; ;;;   ;; 

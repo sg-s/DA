@@ -250,7 +250,7 @@ end
 figure('outerposition',[0 0 1300 901],'PaperUnits','points','PaperSize',[1300 901]); hold on
 
 % show the input nonlinearity 
-kD = mean(mean(PID(a:z,:)));
+kD = mean(mean(PID(a:z,paradigm==1)));
 
 x = logspace(-2,2,100);
 
@@ -264,6 +264,7 @@ ylabel('a')
 
 % show the filter
 subplot(2,3,2); hold on
+filtertime = (1:length(K))*1e-3 - .1;
 plot(filtertime,K/norm(K),'k')
 set(gca,'XLim',[-.1 .6])
 xlabel('Lag (ms)')
@@ -361,7 +362,6 @@ if being_published
 	snapnow
 	delete(gcf)
 end
-
 
 
 %% Supp Fig for eLIFE

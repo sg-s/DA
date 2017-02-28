@@ -13,6 +13,20 @@ c = lines(5);
 LFP_color = c(4,:);
 firing_color = c(5,:);
 
+main_fig = figure('outerposition',[0 0 1200 901],'PaperUnits','points','PaperSize',[1200 901]); hold on
+ax.lfp_xcorr = subplot(2,3,1); hold on
+ax.firing_xcorr = subplot(2,3,2); hold on
+ax.odor_lags(1) = subplot(2,3,3); hold on
+ax.odor_lags(2) = subplot(2,3,4); hold on
+ax.odor_lags(3) = subplot(2,3,5); hold on
+ax.light_lags = subplot(2,3,6); hold on
+
+supp_fig = figure('outerposition',[0 0 1000 501],'PaperUnits','points','PaperSize',[1000 501]); hold on
+ax.autocorr1 = subplot(1,2,1); hold on
+ax.autocorr2 = subplot(1,2,2); hold on
+
+
+clear lfp_stats firing_stats
 
 data_hashes = {'93ba5d68174e3df9f462a1fc48c581da','cd6753c0e4cf02895cd5e2c5cb58aa1a','3ea08ccfa892c6545d74bbdaaa6cbee1'};
 odour_names = {'ethyl-acetate','1-pentanol','2-butanone'};
@@ -93,19 +107,17 @@ for di = 1:length(data_hashes)
 	end
 
 	if di == 1
-		ax(1) = subplot(2,3,1); hold on
-		ax(2) = subplot(2,3,2); hold on
-		ax(3) = subplot(2,3,3); hold on
+
 		% compare LFP cross correlations at the lowest and highest dose
 		c = parula(max(paradigm)+1);
 		temp = LFP_xcorr(:,:,paradigm==1);
 		temp = reshape(temp,2*chunk_size - 1, size(temp,2)*size(temp,3));
 		lags = 1e-3*(1:length(temp)) - 1;
-		plot(ax(1),lags,mean(temp,2)/max(mean(temp,2)),'Color',c(1,:))
+		plot(ax.lfp_xcorr,lags,mean(temp,2)/max(mean(temp,2)),'Color',c(1,:))
 		temp = LFP_xcorr(:,:,paradigm==10);
 		temp = reshape(temp,2*chunk_size - 1, size(temp,2)*size(temp,3));
 		lags = 1e-3*(1:length(temp)) - 1;
-		plot(ax(1),lags,mean(temp,2)/max(mean(temp,2)),'Color',c(10,:))
+		plot(ax.lfp_xcorr,lags,mean(temp,2)/max(mean(temp,2)),'Color',c(10,:))
 
 
 		% compare firing cross correlations at the lowest and highest dose
@@ -113,22 +125,22 @@ for di = 1:length(data_hashes)
 		temp = fA_xcorr(:,:,paradigm==1);
 		temp = reshape(temp,2*chunk_size - 1, size(temp,2)*size(temp,3));
 		lags = 1e-3*(1:length(temp)) - 1;
-		plot(ax(2),lags,mean(temp,2)/max(mean(temp,2)),'Color',c(1,:))
+		plot(ax.firing_xcorr,lags,mean(temp,2)/max(mean(temp,2)),'Color',c(1,:))
 		temp = fA_xcorr(:,:,paradigm==10);
 		temp = reshape(temp,2*chunk_size - 1, size(temp,2)*size(temp,3));
 		lags = 1e-3*(1:length(temp)) - 1;
-		plot(ax(2),lags,nanmean(temp,2)/max(nanmean(temp,2)),'Color',c(10,:))
+		plot(ax.firing_xcorr,lags,nanmean(temp,2)/max(nanmean(temp,2)),'Color',c(10,:))
 
 		% also compare auto-correlations of the stimulus at high and low 
 		c = parula(max(paradigm)+1);
 		temp = S_a(:,:,paradigm==1);
 		temp = reshape(temp,2*chunk_size - 1, size(temp,2)*size(temp,3));
 		lags = 1e-3*(1:length(temp)) - 1;
-		plot(ax(3),lags,mean(temp,2)/max(mean(temp,2)),'Color',c(1,:))
+		plot(ax.autocorr1,lags,mean(temp,2)/max(mean(temp,2)),'Color',c(1,:))
 		temp = S_a(:,:,paradigm==10);
 		temp = reshape(temp,2*chunk_size - 1, size(temp,2)*size(temp,3));
 		lags = 1e-3*(1:length(temp)) - 1;
-		plot(ax(3),lags,nanmean(temp,2)/max(nanmean(temp,2)),'Color',c(10,:))
+		plot(ax.autocorr1,lags,nanmean(temp,2)/max(nanmean(temp,2)),'Color',c(10,:))
 
 
 	end
@@ -137,8 +149,6 @@ for di = 1:length(data_hashes)
 	firing_lags(firing_lags<-100) = NaN; % obviously wrong
 
 
-	ax(3+di) = subplot(2,3,3+di); hold on
-
 	% show lags of firing rate and LFP for all doses
 	mean_stim = mean(PID(a:z,:));
 	
@@ -146,6 +156,9 @@ for di = 1:length(data_hashes)
 	LFP_color = c(5,:);
 	firing_color = c(4,:);
 	
+	[lfp_stats(di).rho,lfp_stats(di).p] = spear(mean_stim,LFP_lags);
+	[firing_stats(di).rho,firing_stats(di).p] = spear(mean_stim,firing_lags);
+
 	if di == 1
 		x = NaN*(1:max(paradigm));
 		l = NaN*(1:max(paradigm));
@@ -161,67 +174,141 @@ for di = 1:length(data_hashes)
 			l(i) = mean(temp);
 			l_e(i) = sem(temp);
 		end
-		errorbar(x,l,l_e,'Color',LFP_color);
-		errorbar(x,f,f_e,'Color',firing_color);
+		errorbar(ax.odor_lags(di),x,l,l_e,'Color',LFP_color);
+		errorbar(ax.odor_lags(di),x,f,f_e,'Color',firing_color);
 	else
-		plotPieceWiseLinear(mean_stim,LFP_lags,'Color',LFP_color,'nbins',10);
-		plotPieceWiseLinear(mean_stim,firing_lags,'Color',firing_color,'nbins',10);
+		plotPieceWiseLinear(ax.odor_lags(di),mean_stim,LFP_lags,'Color',LFP_color,'nbins',10);
+		plotPieceWiseLinear(ax.odor_lags(di),mean_stim,firing_lags,'Color',firing_color,'nbins',10);
 	end
 
-	
-	xlabel(ax(3+di),'\mu_{Stimulus} (V)')
-	ylabel(ax(3+di),'Lag (ms)')
+	xlabel(ax.odor_lags(di),'\mu_{Stimulus} (V)')
+	ylabel(ax.odor_lags(di),'Lag (ms)')
 
-	legend({'LFP','Firing rate'},'Location','northwest')
-	set(ax(3+di),'XLim',[0 x_limits(di)],'YLim',[0 200])
-	title([orn_names{di} ' - ' odour_names{di}])
+	set(ax.odor_lags(di),'XLim',[0 x_limits(di)],'YLim',[0 200])
+	title(ax.odor_lags(di),[orn_names{di} ' - ' odour_names{di}])
 
 end
 
-set(ax(1),'XLim',[0 1],'YLim',[-.5 1.1])
-set(ax(2),'XLim',[0 1],'YLim',[-.5 1.1])
-set(ax(3),'XLim',[0 1],'YLim',[-.5 1.1])
-xlabel(ax(1),'Lag (s)')
-xlabel(ax(2),'Lag (s)')
-xlabel(ax(3),'Lag (s)')
-ylabel(ax(1),'Cross correlation (norm)')
-ylabel(ax(2),'Cross correlation (norm)')
-ylabel(ax(3),'Autocorrelation (norm)')
-title(ax(1),'Stimulus \rightarrow LFP')
-title(ax(2),'Stimulus \rightarrow Firing rate')
-title(ax(3),'Stimulus auto-correlation')
+clear l
+l(1) = plot(ax.odor_lags(1),NaN,NaN,'Color',LFP_color,'Marker','.','MarkerSize',24,'LineStyle','none');
+l(2) = plot(ax.odor_lags(1),NaN,NaN,'Color',firing_color,'Marker','.','MarkerSize',24,'LineStyle','none');
+legend(l,{'LFP','Firing rate'},'Location','northwest')
 
 
-% now show the same thing in the naturalistic stimulus date 
-% min_acceptable_corr = .5;
-% min_acceptable_lag = 10;
+set(ax.lfp_xcorr,'XLim',[0 1],'YLim',[-.5 1.1])
+set(ax.firing_xcorr,'XLim',[0 1],'YLim',[-.5 1.1])
+set(ax.autocorr1,'XLim',[0 1],'YLim',[-.5 1.1])
+xlabel(ax.lfp_xcorr,'Lag (s)')
+xlabel(ax.firing_xcorr,'Lag (s)')
+xlabel(ax.autocorr1,'Lag (s)')
+ylabel(ax.lfp_xcorr,'Cross correlation (norm)')
+ylabel(ax.firing_xcorr,'Cross correlation (norm)')
+ylabel(ax.autocorr1,'Autocorrelation (norm)')
+title(ax.lfp_xcorr,'Stimulus \rightarrow LFP')
+title(ax.firing_xcorr,'Stimulus \rightarrow Firing rate')
+title(ax.autocorr1,'Stimulus auto-correlation')
 
-% subplot(2,3,6); hold on
-% load(getPath(dataManager,'aeb361c027b71938021c12a6a12a85cd'),'-mat')
+% add some statistics for each plot 
+for i = 1:3
+	rho = lfp_stats(i).rho;
+	p = lfp_stats(i).p;
+	if p < 1e-4 
+		tp = 'p<10^-^4';
+	else
+		tp = ['p = ' oval(p)];
+	end
+	t = ['\rho = ' oval(rho), ', ' tp];
+	th(i) = text(.4,100,t);
+	th(i).Parent = ax.odor_lags(i);
+	th(i).Color = LFP_color;
+	th(i).FontSize = 18;
+end
 
-% PID = nanmean([od.stimulus],2);
-% LFP = nanmean([od.LFP],2);
-% fA = [od.firing_rate];
-% fA(:,sum(fA)==0) = [];
-% fA = nanmean(fA,2);
+th(1).Position = [.1 110];
+th(2).Position = [.01 150];
+th(3).Position = [.1 120];
 
-% [lag, mean_x, max_corr] = findLagAndMeanInWindow(PID(5e3:end-5e3),-LFP(5e3:end-5e3),1e3,50);
-% rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr;
-% lag(rm_this) = [];
-% mean_x(rm_this) = [];
-% plotPieceWiseLinear(mean_x,lag,'Color',LFP_color,'nbins',10);
 
-% [lag, mean_x, max_corr] = findLagAndMeanInWindow(PID(5e3:end-5e3),fA(5e3:end-5e3),1e3,50);
-% rm_this = lag<min_acceptable_lag | max_corr < min_acceptable_corr;
-% lag(rm_this) = [];
-% mean_x(rm_this) = [];
-% plotPieceWiseLinear(mean_x,lag,'Color',firing_color,'nbins',10);
+% add some statistics for each plot 
+for i = 1:3
+	rho = firing_stats(i).rho;
+	p = firing_stats(i).p;
+	tp = ['p = ' oval(p)];
+	t = ['\rho = ' oval(rho), ', ' tp];
+	th2(i) = text(.4,100,t);
+	th2(i).Parent = ax.odor_lags(i);
+	th2(i).Color = firing_color;
+	th2(i).FontSize = 18;
+end
 
-% xlabel('\mu_{Stimulus} in preceding 1s')
-% ylabel('Lag (ms)')
-% set(gca,'YLim',[0 200])
-% title(['ab3A - ethyl acetate' char(10) 'naturalistic stimulus'])
+th2(1).Position = [.1 20];
+th2(2).Position = [.01 20];
+th2(3).Position = [.1 20];
 
+% now show that it speeds up with light 
+
+;;       ;;;;  ;;;;;;   ;;     ;; ;;;;;;;; 
+;;        ;;  ;;    ;;  ;;     ;;    ;;    
+;;        ;;  ;;        ;;     ;;    ;;    
+;;        ;;  ;;   ;;;; ;;;;;;;;;    ;;    
+;;        ;;  ;;    ;;  ;;     ;;    ;;    
+;;        ;;  ;;    ;;  ;;     ;;    ;;    
+;;;;;;;; ;;;;  ;;;;;;   ;;     ;;    ;;    
+
+
+pHeader;
+dm = dataManager;
+
+% build the LED map
+x = [.75:0.05:1.1 1.2:.1:3.6 3.8 4 4.2 4.5];
+x = [0:0.1:0.7 x];
+y = [0 4 12.8 24.1 36.2 48.1 60 70 95 114 134 151 167 184 201 219 236 252 269 283 299 314 328 343 357 370 383 394 404 413 419 422 422 421 419 418 417];
+y = [0*(0:0.1:0.7) y ];
+light_power_fit = fit(x(:),y(:),'spline');
+
+[~, ~, fA, paradigm, orn, fly, AllControlParadigms] = consolidateData(dm.getPath('38901017007c50ea52637891619ab91c'),true);
+
+
+% make new vectors for mean and range of the stimulus
+a = 25e3; z = 55e3;
+LED = NaN*fA;
+r = NaN*paradigm; m = NaN*paradigm;
+light_s = NaN*paradigm; light_m = NaN*paradigm;
+for i = 1:length(paradigm)
+	temp = AllControlParadigms(paradigm(i)).Name;
+	r(i) = (str2double(temp(3:strfind(temp,'_')-1)));
+	m(i) = (str2double(temp(strfind(temp,'_')+3:end)));
+	LED(:,i) = light_power_fit(AllControlParadigms(paradigm(i)).Outputs(1,1:10:end));
+	light_s(i) = std(LED(a:z,i));
+	light_m(i) = mean(LED(a:z,i));
+end
+
+% find delays for every trial
+lags = NaN*m;
+warning off
+for i = 1:length(lags)
+	lags(i) = finddelay(LED(a:z,i),fA(a:z,i));
+end
+warning on
+lags(lags==0) = NaN;
+
+plotPieceWiseLinear(ax.light_lags,light_m,lags,'nbins',5);
+xlabel(ax.light_lags,'Mean light power (\muW)')
+ylabel(ax.light_lags,'Firing lag (ms)')
+set(ax.light_lags,'YLim',[60 80])
+title(ax.light_lags,'ab3A - light')
+
+% add some statistics for each plot 
+[rho,p] = spear(light_m,lags);
+tp = 'p < 10^-^4';
+t = ['\rho = ' oval(rho), ', ' tp];
+th3 = text(.4,100,t);
+th3.Parent = ax.light_lags;
+th3.Color = [0 0 0];
+th3.FontSize = 18;
+th3.Position = [100 75];
+
+figure(main_fig)
 prettyFig;
 
 labelFigure('x_offset',.01)

@@ -8,7 +8,7 @@ pHeader;
 
 
 % make the figure and all subplots 
-figure('outerposition',[0 0 1000 1001],'PaperUnits','points','PaperSize',[1000 1001]); hold on
+figure('outerposition',[0 0 900 1001],'PaperUnits','points','PaperSize',[900 1001]); hold on
 clear ax
 
 % time series for ab3A
@@ -168,6 +168,24 @@ for i = 1:length(show_these)
 
 end
 
+% show response vs. projected stimulus
+K = fitFilter2Data(data(2).S(:,1),data(2).X(:,1),'offset',200); 
+K = K(100:end-100);
+filtertime = (1:length(K)) - 100;
+fp = convolve(1:length(data(2).S(:)),data(2).S(:),K,filtertime);
+plot(ax.X_proj,fp,data(2).X(:),'k')
+set(ax.X_proj,'YDir','reverse','XDir','reverse','XLim',[-4 0],'YLim',[-30 0])
+xlabel(ax.X_proj,'Projected stimulus (V)')
+ylabel(ax.X_proj,'ab2 LFP (mV)')
+
+K = fitFilter2Data(data(2).S(:,1),data(2).R(:,1),'offset',200); 
+K = K(100:end-100);
+filtertime = (1:length(K)) - 100;
+fp = convolve(1:length(data(2).S(:)),data(2).S(:),K,filtertime);
+plot(ax.R_proj,fp,data(2).R(:),'k')
+set(ax.R_proj,'XLim',[0 5],'YLim',[0 300])
+xlabel(ax.R_proj,'Projected stimulus (V)')
+ylabel(ax.R_proj,'ab2A firing rate (Hz)')
 
    ;;;    ;;;;;;;;   ;;;;;;;     ;;;    
   ;; ;;   ;;     ;; ;;     ;;   ;; ;;   
@@ -285,25 +303,27 @@ for i = 1:length(show_these)
 end
 
 
-ylabel(ax.ab3A_S,'ethyl acetate (V)')
-set(ax.ab3A_S,'XLim',[0 70])
+prettyFig('fs',12,'plw',1.5);
 
-ylabel(ax.ab3A_X,'ab3 \DeltaLFP (mV)')
-set(ax.ab3A_X,'XLim',[0 70])
-set(ax.ab3A_X,'YDir','reverse')
+ylabel(ax.ab3A_S,['Stimulus' char(10) '(V)'])
+set(ax.ab3A_S,'XLim',[0 70],'XTick',[])
 
-ylabel(ax.ab3A_R,'ab3A firing rate (Hz)')
+ylabel(ax.ab3A_X,['\DeltaLFP' char(10) '(mV)'])
+set(ax.ab3A_X,'XLim',[0 70],'YLim',[-20 2])
+set(ax.ab3A_X,'YDir','reverse','XTick',[])
+
+ylabel(ax.ab3A_R,['Firing' char(10) 'rate (Hz)'])
 set(ax.ab3A_R,'XLim',[0 70])
 
 
-ylabel(ax.ab2A_S,'2-butanone (V)')
-set(ax.ab2A_S,'XLim',[0 70])
+ylabel(ax.ab2A_S,['Stimulus' char(10) '(V)'])
+set(ax.ab2A_S,'XLim',[0 70],'XTick',[])
 
-ylabel(ax.ab2A_X,'ab2 \DeltaLFP (mV)')
-set(ax.ab2A_X,'XLim',[0 70])
+ylabel(ax.ab2A_X,['\DeltaLFP' char(10) '(mV)'])
+set(ax.ab2A_X,'XLim',[0 70],'XTick',[])
 set(ax.ab2A_X,'YDir','reverse')
 
-ylabel(ax.ab2A_R,'ab2A firing rate (Hz)')
+ylabel(ax.ab2A_R,['Firing' char(10) 'rate (Hz)'])
 set(ax.ab2A_R,'XLim',[0 70])
 xlabel(ax.ab2A_R,'Time (s)')
 
@@ -313,50 +333,150 @@ xlabel(ax.ab2A_RZ,'Time since whiff (ms)')
 
 
 xlabel(ax.ab2A_drX,'Whiff amplitude (V)')
-ylabel(ax.ab2A_drX,'ab2 LFP response (mV)')
+ylabel(ax.ab2A_drX,'ab2 LFP (mV)')
 set(ax.ab2A_drX,'XScale','log','XLim',[1e-2 1e1],'YDir','reverse','XTick',[1e-2 1e-1 1e0 1e1 1e2])
 
 xlabel(ax.ab2A_drR,'Whiff amplitude (V)')
 ylabel(ax.ab2A_drR,'ab2A firing rate (Hz)')
 set(ax.ab2A_drR,'XScale','log','XLim',[1e-2 1e1],'XTick',[1e-2 1e-1 1e0 1e1 1e2])
 
-return
+% clean up the zoom plots
+ax.ab3A_SZ.XTick = [];
+ax.ab3A_XZ.XTick = [];
+ax.ab2A_SZ.XTick = [];
+ax.ab2A_XZ.XTick = [];
+
+ax.ab3A_SZ.XLim = [-300 300];
+ax.ab3A_XZ.XLim = [-300 300];
+ax.ab2A_RZ.XLim = [-300 300];
+ax.ab2A_SZ.XLim = [-300 300];
+ax.ab2A_XZ.XLim = [-300 300];
+ax.ab3A_RZ.XLim = [-300 300];
+
+
+% clean up the insets a little
+ax.ab3A_SZi.XTick = [];
+ax.ab3A_XZi.XTick = [];
+ax.ab3A_RZi.XTick = [];
+ax.ab2A_SZi.XTick = [];
+ax.ab2A_XZi.XTick = [];
+ax.ab2A_RZi.XTick = [];
+
+ax.ab3A_SZi.YLim = [0 0.4];
+ax.ab3A_SZi.YTick = [0 0.4];
+
+ax.ab3A_XZi.YLim = [-15 0];
+ax.ab3A_XZi.YTick = [-15 0];
+ax.ab3A_XZi.YDir  = 'reverse'; 
+
+ax.ab3A_RZi.YLim = [0 160];
+ax.ab3A_RZi.YTick = [0 150];
+
+ax.ab2A_SZi.YLim = [0 1];
+ax.ab2A_SZi.YTick = [0 1];
+ax.ab2A_XZi.YLim = [-20 0];
+ax.ab2A_XZi.YTick = [-20 0];
+ax.ab2A_XZi.YDir  = 'reverse'; 
+ax.ab2A_RZi.YLim = [0 250];
+ax.ab2A_RZi.YTick = [0 250];
 
 % move things around
-ax.S.Position = [0.1300 0.8 0.3628 0.13];
-ax.ab2A_S.Position([2 4]) = [0.8 0.13];
-ax.ab3A_S.Position([2 4]) = [0.8 0.13];
+ax.ab3A_S.Position = [0.1300 0.88 0.57 0.07];
+ax.ab3A_X.Position = [0.1300 0.80 0.57 0.07];
+ax.ab3A_R.Position = [0.1300 0.72 0.57 0.07];
+ax.ab2A_S.Position = [0.1300 0.56 0.57 0.07];
+ax.ab2A_X.Position = [0.1300 0.48 0.57 0.07];
+ax.ab2A_R.Position = [0.1300 0.4 0.57 0.07];
 
-ax.X.Position = [0.1300 0.6 0.3628 0.13];
-ax.ab2A_X.Position([2 4]) = [0.6 0.13];
-ax.ab3A_X.Position([2 4]) = [0.6 0.13];
+ax.ab3A_SZ.Position = [0.76 0.88 0.13 0.07];
+ax.ab3A_XZ.Position = [0.76 0.80 0.13 0.07];
+ax.ab3A_RZ.Position = [0.76 0.72 0.13 0.07];
+ax.ab2A_SZ.Position = [0.76 0.56 0.13 0.07];
+ax.ab2A_XZ.Position = [0.76 0.48 0.13 0.07];
+ax.ab2A_RZ.Position = [0.76 0.40 0.13 0.07];
 
-ax.R.Position = [0.1300 0.4 0.3628 0.13];
-ax.ab2A_R.Position([2 4]) = [0.4 0.13];
-ax.ab3A_R.Position([2 4]) = [0.4 0.13];
-
-ax.ab2A_drX.Position = [0.1 0.1100 0.16 0.2];
-ax.ab2A_drR.Position = [0.325 0.1100 0.16 0.2];
-
-ax.ab3A_drX.Position = [0.55 0.1100 0.16 0.2];
-ax.ab3A_drR.Position = [0.775 0.1100 0.16 0.2];
-
-lh1.Position = [0.1736 0.6828 0.0530 0.0438];
-lh1.Position = [0.1720    0.4778    0.0614    0.0438];
+ax.ab3A_SZi.Position = [0.93 0.88 0.05 0.05];
+ax.ab3A_XZi.Position = [0.93 0.80 0.05 0.05];
+ax.ab3A_RZi.Position = [0.93 0.72 0.05 0.05];
+ax.ab2A_SZi.Position = [0.93 0.56 0.05 0.05];
+ax.ab2A_XZi.Position = [0.93 0.48 0.05 0.05];
+ax.ab2A_RZi.Position = [0.93 0.40 0.05 0.05];
 
 
+% make the bottom four plots bigger
+ax.X_proj.Position = [0.1 0.15 .16 .16];
+ax.R_proj.Position = [0.33 0.15 .16 .16];
 
-prettyFig();
+ax.ab2A_drX.Position = [0.57 0.15 .16 .16];
+ax.ab2A_drR.Position = [0.8 0.15 .16 .16];
+
+
+% label things
+labelAxes(ax.ab3A_S,'a','x_offset',-.05,'font_size',24);
+labelAxes(ax.ab2A_S,'b','x_offset',-.05,'font_size',24);
+
+labelAxes(ax.X_proj,'c','x_offset',-.025,'font_size',24);
+labelAxes(ax.R_proj,'d','x_offset',-.025,'font_size',24);
+
+labelAxes(ax.ab3A_SZ,'e','x_offset',-.025,'font_size',24);
+labelAxes(ax.ab2A_SZ,'f','x_offset',-.025,'font_size',24);
+
+labelAxes(ax.ab2A_drX,'g','x_offset',-.025,'font_size',24);
+labelAxes(ax.ab2A_drR,'h','x_offset',-.025,'font_size',24);
+
+
+% deintersect the dose-response axes
+
+ax.ab2A_drX.XLim(2) = 11;
+ax.ab2A_drX.YLim(2) = 0;
+ax.ab2A_drR.XLim(2) = 11;
+ax.ab2A_drR.YLim(1) = 0;
+
+deintersectAxes(ax.ab2A_drX)
+deintersectAxes(ax.ab2A_drR)
+
+% add some text saying which dataset is which
+canvas = axes;
+canvas.Position = [0 0 1 1];
+canvas.XTick = []; 
+canvas.YTick = [];
+uistack(canvas,'bottom');
+
+th = text(.1,.1,'ab3A responses to ethyl acetate');
+th.Position  = [.3 .97];
+th.FontSize = 18;
+th.Parent = canvas;
+
+
+th = text(.1,.1,'ab2A responses to 2-butanone');
+th.Position  = [.3 .65];
+th.FontSize = 18;
+th.Parent = canvas;
+
+return
+
+% shrink data in plot
+shrinkDataInPlot(ax.ab2A_S,2)
+shrinkDataInPlot(ax.ab2A_X,2)
+shrinkDataInPlot(ax.ab2A_R,2)
+
+shrinkDataInPlot(ax.ab3A_S,2)
+shrinkDataInPlot(ax.ab3A_X,2)
+shrinkDataInPlot(ax.ab3A_R,2)
+
+
+shrinkDataInPlot(ax.X_proj,2)
+shrinkDataInPlot(ax.R_proj,2)
 
 if being_published
 	snapnow
 	delete(gcf)
 end
+
+
+
+
 return
-
-
-
-
 
 
 

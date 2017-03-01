@@ -9,6 +9,7 @@ options.history_length = 300;
 options.bin_size = .1; % [90% - 110%]
 options.min_n = 4; 
 options.min_shat_range = .9;
+options.whiff_height_frac = .01;
 
 if nargout && ~nargin 
 	varargout{1} = options;
@@ -38,7 +39,7 @@ else
 end
 
 for j = 1:size(S,2)
-	ws(j) = whiffStatistics(S(:,j),X(:,j),R(:,j),options.history_length,'MinPeakProminence',max(S(:,j)/1e2),'debug',false);
+	ws(j) = whiffStatistics(S(:,j),X(:,j),R(:,j),options.history_length,'MinPeakProminence',max(S(:,j)*options.whiff_height_frac),'debug',false);
 end
 
 pS = vertcat(ws.stim_peaks);

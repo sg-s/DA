@@ -13,7 +13,7 @@ c = lines(5);
 LFP_color = c(4,:);
 firing_color = c(5,:);
 
-main_fig = figure('outerposition',[0 0 1200 901],'PaperUnits','points','PaperSize',[1200 901]); hold on
+main_fig = figure('outerposition',[0 0 1300 901],'PaperUnits','points','PaperSize',[1300 901]); hold on
 ax.lfp_xcorr = subplot(2,3,1); hold on
 ax.firing_xcorr = subplot(2,3,2); hold on
 ax.odor_lags(1) = subplot(2,3,3); hold on
@@ -245,6 +245,8 @@ th2(1).Position = [.1 20];
 th2(2).Position = [.01 20];
 th2(3).Position = [.1 20];
 
+
+
 % now show that it speeds up with light 
 
 ;;       ;;;;  ;;;;;;   ;;     ;; ;;;;;;;; 
@@ -256,7 +258,6 @@ th2(3).Position = [.1 20];
 ;;;;;;;; ;;;;  ;;;;;;   ;;     ;;    ;;    
 
 
-pHeader;
 dm = dataManager;
 
 % build the LED map
@@ -266,7 +267,7 @@ y = [0 4 12.8 24.1 36.2 48.1 60 70 95 114 134 151 167 184 201 219 236 252 269 28
 y = [0*(0:0.1:0.7) y ];
 light_power_fit = fit(x(:),y(:),'spline');
 
-[~, ~, fA, paradigm, orn, fly, AllControlParadigms] = consolidateData(dm.getPath('38901017007c50ea52637891619ab91c'),true);
+[~, ~, fA, paradigm, orn, fly, AllControlParadigms] = consolidateData(dm.getPath('76ad69b63717ab07183afe0bba30cb4d'),true);
 
 
 % make new vectors for mean and range of the stimulus
@@ -292,10 +293,20 @@ end
 warning on
 lags(lags==0) = NaN;
 
-plotPieceWiseLinear(ax.light_lags,light_m,lags,'nbins',5);
+
+ll = unique(light_m);
+x = NaN*ll; y = NaN*ll; ye = NaN*ll;
+for i = 1:length(ll)
+	this = light_m == ll(i);
+	x(i) = ll(i);
+	y(i) = nanmean(lags(this));
+	ye(i) = nanstd(lags(this))/sqrt(sum(this));
+end
+errorbar(ax.light_lags,x,y,ye,'Color','k')
+
 xlabel(ax.light_lags,'Mean light power (\muW)')
 ylabel(ax.light_lags,'Firing lag (ms)')
-set(ax.light_lags,'YLim',[60 80])
+set(ax.light_lags,'YLim',[55 75],'XLim',[0 150])
 title(ax.light_lags,'ab3A - light')
 
 % add some statistics for each plot 
@@ -306,7 +317,7 @@ th3 = text(.4,100,t);
 th3.Parent = ax.light_lags;
 th3.Color = [0 0 0];
 th3.FontSize = 18;
-th3.Position = [100 75];
+th3.Position = [50 58];
 
 figure(main_fig)
 prettyFig;
@@ -318,6 +329,61 @@ if being_published
 	snapnow	
 	delete(gcf)
 end
+
+
+
+
+% dm = dataManager;
+
+% % build the LED map
+% x = [.75:0.05:1.1 1.2:.1:3.6 3.8 4 4.2 4.5];
+% x = [0:0.1:0.7 x];
+% y = [0 4 12.8 24.1 36.2 48.1 60 70 95 114 134 151 167 184 201 219 236 252 269 283 299 314 328 343 357 370 383 394 404 413 419 422 422 421 419 418 417];
+% y = [0*(0:0.1:0.7) y ];
+% light_power_fit = fit(x(:),y(:),'spline');
+
+% [~, ~, fA, paradigm, orn, fly, AllControlParadigms] = consolidateData(dm.getPath('38901017007c50ea52637891619ab91c'),true);
+
+
+% % make new vectors for mean and range of the stimulus
+% a = 25e3; z = 55e3;
+% LED = NaN*fA;
+% r = NaN*paradigm; m = NaN*paradigm;
+% light_s = NaN*paradigm; light_m = NaN*paradigm;
+% for i = 1:length(paradigm)
+% 	temp = AllControlParadigms(paradigm(i)).Name;
+% 	r(i) = (str2double(temp(3:strfind(temp,'_')-1)));
+% 	m(i) = (str2double(temp(strfind(temp,'_')+3:end)));
+% 	LED(:,i) = light_power_fit(AllControlParadigms(paradigm(i)).Outputs(1,1:10:end));
+% 	light_s(i) = std(LED(a:z,i));
+% 	light_m(i) = mean(LED(a:z,i));
+% end
+
+% % find delays for every trial
+% lags = NaN*m;
+% warning off
+% for i = 1:length(lags)
+% 	lags(i) = finddelay(LED(a:z,i),fA(a:z,i));
+% end
+% warning on
+% lags(lags==0) = NaN;
+
+% plotPieceWiseLinear(ax.light_lags,light_m,lags,'nbins',5);
+% xlabel(ax.light_lags,'Mean light power (\muW)')
+% ylabel(ax.light_lags,'Firing lag (ms)')
+% set(ax.light_lags,'YLim',[60 80])
+% title(ax.light_lags,'ab3A - light')
+
+% % add some statistics for each plot 
+% [rho,p] = spear(light_m,lags);
+% tp = 'p < 10^-^4';
+% t = ['\rho = ' oval(rho), ', ' tp];
+% th3 = text(.4,100,t);
+% th3.Parent = ax.light_lags;
+% th3.Color = [0 0 0];
+% th3.FontSize = 18;
+% th3.Position = [100 75];
+
 
 
 %% Version Info

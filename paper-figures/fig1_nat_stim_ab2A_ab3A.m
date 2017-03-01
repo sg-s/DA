@@ -475,144 +475,139 @@ if being_published
 end
 
 
+ ;;;;;;  ;;     ;; ;;;;;;;;  ;;;;;;;;     ;;;;;;;; ;;;;  ;;;;;;   
+;;    ;; ;;     ;; ;;     ;; ;;     ;;    ;;        ;;  ;;    ;;  
+;;       ;;     ;; ;;     ;; ;;     ;;    ;;        ;;  ;;        
+ ;;;;;;  ;;     ;; ;;;;;;;;  ;;;;;;;;     ;;;;;;    ;;  ;;   ;;;; 
+      ;; ;;     ;; ;;        ;;           ;;        ;;  ;;    ;;  
+;;    ;; ;;     ;; ;;        ;;           ;;        ;;  ;;    ;;  
+ ;;;;;;   ;;;;;;;  ;;        ;;           ;;       ;;;;  ;;;;;;   
 
 
-return
+ ;;;;;;  ;;;;;;;; ;;;; ;;     ;; ;;     ;; ;;       ;;     ;;  ;;;;;;  
+;;    ;;    ;;     ;;  ;;;   ;;; ;;     ;; ;;       ;;     ;; ;;    ;; 
+;;          ;;     ;;  ;;;; ;;;; ;;     ;; ;;       ;;     ;; ;;       
+ ;;;;;;     ;;     ;;  ;; ;;; ;; ;;     ;; ;;       ;;     ;;  ;;;;;;  
+      ;;    ;;     ;;  ;;     ;; ;;     ;; ;;       ;;     ;;       ;; 
+;;    ;;    ;;     ;;  ;;     ;; ;;     ;; ;;       ;;     ;; ;;    ;; 
+ ;;;;;;     ;;    ;;;; ;;     ;;  ;;;;;;;  ;;;;;;;;  ;;;;;;;   ;;;;;;  
+
+ ;;;;;;  ;;;;;;;;    ;;;    ;;;;;;;; ;;;;  ;;;;;;  ;;;;;;;; ;;;;  ;;;;;;   ;;;;;;  
+;;    ;;    ;;      ;; ;;      ;;     ;;  ;;    ;;    ;;     ;;  ;;    ;; ;;    ;; 
+;;          ;;     ;;   ;;     ;;     ;;  ;;          ;;     ;;  ;;       ;;       
+ ;;;;;;     ;;    ;;     ;;    ;;     ;;   ;;;;;;     ;;     ;;  ;;        ;;;;;;  
+      ;;    ;;    ;;;;;;;;;    ;;     ;;        ;;    ;;     ;;  ;;             ;; 
+;;    ;;    ;;    ;;     ;;    ;;     ;;  ;;    ;;    ;;     ;;  ;;    ;; ;;    ;; 
+ ;;;;;;     ;;    ;;     ;;    ;;    ;;;;  ;;;;;;     ;;    ;;;;  ;;;;;;   ;;;;;;  
+
+cdata = consolidateData2(getPath(dataManager,'4608c42b12191b383c84fea52392ea97'));
 
 
+figure('outerposition',[0 0 1200 801],'PaperUnits','points','PaperSize',[1200 801]); hold on
+
+subplot(2,3,1); hold on
+
+% plot pdf of whiff intensities 
+
+% show whiff statistics 
+S = cdata.PID(:,cdata.orn==4); 
+S = bsxfun(@minus,S,min(S));
+S = S(:);
+ws = whiffStatistics(S,0*S,0*S,300,'MinPeakProminence',max(S/1e2),'debug',false);
 
 
+[y,x] = histcounts(vertcat(ws.stim_peaks),30);
+y = y/sum(y); x = x(2:end)+mean(diff(x));
+plot(x,y,'k+')
 
+m = fittype('log((a./x).*exp(-x./b))');
+ff = fit(x(y>0)',log(y(y>0))',m,'Upper',[10 100],'Lower',[0 1],'StartPoint',[.14 10.37]);
+x = logspace(-1,2,100);
+plot(sort(x),exp(ff(sort(x))),'r')
 
+set(gca,'XScale','log','YScale','log','XTick',[.1 1 10 100],'YTick',[1e-3 1e-2 1e-1 1],'XLim',[.1 100],'YLim',[1e-3 1])
+xlabel('Whiff intensity (V)')
+ylabel('Probability')
 
+th(2) = text(5, .5,'$\sim\frac{1}{c}\exp\left(-\frac{c}{C}\right)$','interpreter','latex','Color','r','FontSize',20);
 
+% plot whiff durations 
+[ons,offs] = computeOnsOffs(S>.01);
+wd = offs - ons; wd(wd<10) = []; % whiffs this brief are artifacts 
 
+subplot(2,3,2); hold on
+[y,x] = histcounts(wd,50);
+y = y/sum(y); x = x(2:end)+mean(diff(x));
+plot(x,y,'k+')
+set(gca,'XScale','log','YScale','log')
 
+a = 1; m = fittype('a + n*x');
+xx = vectorise(log(x)); yy = vectorise(log(y));
+ff = fit(xx(yy>-Inf),yy(yy>-Inf),m,'Upper',[Inf -1.5],'Lower',[-Inf -1.5],'StartPoint',[6 -1.5]);
+plot(x,exp(ff(log(x))),'r')
+xlabel('Whiff duration (ms)')
+ylabel('Probability')
+th(3) = text(1e3, .1,'$\sim t_{w}^{-\frac{3}{2}}$','interpreter','latex','Color','r','FontSize',20);
 
+% plot blank durations 
+[ons,offs] = computeOnsOffs(S<.01);
+wd = offs - ons; wd(wd<10) = []; % whiffs this brief are artifacts 
 
+subplot(2,3,3); hold on
+[y,x] = histcounts(wd,50);
+y = y/sum(y); x = x(2:end)+mean(diff(x));
+plot(x,y,'k+')
+set(gca,'XScale','log','YScale','log','YLim',[1e-3 1])
 
+a = 1; m = fittype('a + n*x');
+xx = vectorise(log(x)); yy = vectorise(log(y));
+ff = fit(xx(yy>-Inf),yy(yy>-Inf),m,'Upper',[Inf -1.5],'Lower',[-Inf -1.5],'StartPoint',[6 -1.5]);
+plot(x,exp(ff(log(x))),'r')
+xlabel('Blank duration (ms)')
+ylabel('Probability')
+th(3) = text(1e4, .1,'$\sim t_{b}^{-\frac{3}{2}}$','interpreter','latex','Color','r','FontSize',20);
 
-
-
-
-
-
-% show linear analysis output plot
-
-
-ss = 1;
-
-% compute filters from this neuron
-clear K1 K2
-for j = 1:size(data(2).S,2)
-	S = data(2).S(:,j);
-	X = data(2).X(:,j);
-	R = data(2).R(:,j);
-
-	temp1 = fitFilter2Data(S,X,'offset',200);
-	temp2 = fitFilter2Data(S,R,'offset',200);
-	K1(:,j) = temp1(100:end-100);
-	K2(:,j) = temp2(100:end-100);
-end
-filtertime = 1e-3*(1:length(K1)) - .1;
-
-i = 2;
-clear Xl Rl XL RL
-for j = 1:size(data(i).S,2)
-	S = data(i).S(:,j);
-	X = data(i).X(:,j);
-	R = data(i).R(:,j);
-
-	Xp = convolve(time,S,K1(:,j),filtertime);
-	Rp = convolve(time,S,K2(:,j),filtertime);
-	K1(:,j) = K1(:,j)/(nanstd(Xp)/nanstd(S)); % normalise correctly 
-	Xp = convolve(time,S,K1(:,j),filtertime);
-	K2(:,j) = K2(:,j)/(nanstd(Rp)/nanstd(S)); % normalise correctly 
-	Rp = convolve(time,S,K2(:,j),filtertime);
-
- 
-	Xl(j) = plot(ax(9),Xp(1:ss:end),X(1:ss:end),'Color',c(j,:));
-	XL{j} = ['r^2 = ' oval(rsquare(Xp,X))];
-	Rl(j) = plot(ax(10),Rp(1:ss:end),R(1:ss:end),'Color',c(j,:));
-	RL{j} = ['r^2 = ' oval(rsquare(Rp,R))];
-
-end
-legend(Xl,XL,'Location','southeast')
-legend(Rl,RL,'Location','southeast')
-
-
-% axes modifications, labels, etc.
-ylabel(ax(1),'Stimulus (V)')
-set(ax(1),'XLim',[0 70])
-ylabel(ax(2),'\Delta LFP (mV)')
-set(ax(2),'XLim',[0 70])
-ylabel(ax(3),['ab2A firing' char(10) 'rate (Hz)'])
-xlabel(ax(3),'Time (s)')
-set(ax(3),'XLim',[0 70])
-
-xlabel(ax(4),'Whiff intensity (V)')
-ylabel(ax(4),'Peak LFP (mV)')
-set(ax(4),'XScale','log','XLim',[1e-2 1e1],'XTick',[1e-2 1e-1 1e0 1e1])
-axes(ax(4))
-axis square
-
-xlabel(ax(5),'Whiff intensity (V)')
-ylabel(ax(5),'Peak firing rate (Hz)')
-set(ax(5),'XScale','log','YLim',[0 300],'XLim',[1e-2 1e1],'XTick',[1e-2 1e-1 1e0 1e1])
-axes(ax(5))
-axis square
-
-xlabel(ax(8),'Time since whiff (ms)')
-
-xlabel(ax(9),'Projected stimulus (V)')
-ylabel(ax(9),'LFP (mV)')
-set(ax(9),'YDir','reverse','XDir','reverse')
-axes(ax(9))
-axis square
-
-xlabel(ax(10),'Projected stimulus (V)')
-ylabel(ax(10),'Firing rate (Hz)')
-axes(ax(10))
-axis square
-
-
-% move some things around
-ax(1).Position = [0.1300    0.8    0.5689    0.11];
-ax(2).Position = [ 0.1300    0.625    0.5689    0.11];
-ax(3).Position = [ 0.1300    0.475    0.5689    0.11];
-for i = 6:8
-	ax(i).Position(2) = ax(i-5).Position(2);
-	ax(i).Position(4) = ax(i-5).Position(4);
+% now compute the correlation between the mean and variance across many windows 
+window_sizes = factor2(length(S));
+window_sizes = window_sizes(window_sizes < 1e4 & window_sizes > 10);
+r2 = NaN*window_sizes;
+for i = 1:length(window_sizes)
+	tS = reshape(S,window_sizes(i),length(S)/window_sizes(i));
+	r2(i) = rsquare(mean(tS),std(tS));
 end
 
-for i = [4 5 9 10]
-	movePlot(ax(i),'left',.04)
-	ax(i).Position(2) = .15;
-	ax(i).Position(3:4) = .22;
+subplot(2,3,5); hold on
+plot(window_sizes,r2,'k+')
+xlabel('Window size (ms)')
+ylabel('r^2_{\mu,\sigma}')
+set(gca,'XScale','log','XTick',[10 100 1e3 1e4])
+
+subplot(2,3,4); hold on
+ws = window_sizes(27);
+tS = reshape(S,ws,length(S)/ws);
+plot(mean(tS),std(tS),'.','Color',[.3 .3 .3])
+plot([1e-4 100],[1e-4 100],'k--')
+set(gca,'XScale','log','YScale','log','XLim',[1e-2 10],'YLim',[1e-2 10],'XTick',[1e-2 1e-1 1 10])
+xlabel('\mu_{S} in preceding 400ms(V)')
+ylabel('\sigma_{S} in preceding 400ms (V)')
+
+% now show the autocorrelation function
+subplot(2,3,6); hold on
+S = cdata.PID(:,cdata.orn==4); 
+S = bsxfun(@minus,S,min(S));
+for i = 1:size(S,2)
+	[ac(:,i),lags] = autocorr(S(:,i),length(S)-1);
 end
+errorShade(lags,mean(ac,2),std(ac,[],2),'Color',[0 0 0]);
+set(gca,'XScale','log','XTick',[1 10 100 1e3 1e4 1e5])
+xlabel('Lag (ms)')
+ylabel('Autocorrelation')
 
-% flip all the LFP axes
-set(ax(4),'YDir','reverse')
-set(ax(2),'YDir','reverse')
-set(ax(7),'YDir','reverse')
+prettyFig();
+labelFigure('x_offset',0)
 
-prettyFig()
-
-shrinkDataInPlot(ax(1),2)
-shrinkDataInPlot(ax(2),2)
-shrinkDataInPlot(ax(3),2)
-
-shrinkDataInPlot(ax(9),10)
-shrinkDataInPlot(ax(10),10)
-
-% label things
-labels = char(97:110);
-for i = 1:length(ax)
-	labelAxes(ax(i),labels(i),'x_offset',0,'y_offset',0.01,'font_size',24);
-end
-
-if being_published	
-	snapnow	
+if being_published
+	snapnow
 	delete(gcf)
 end
 
@@ -625,26 +620,7 @@ end
 ;;    ;; ;;     ;; ;;        ;;           ;;        ;;  ;;    ;;  
  ;;;;;;   ;;;;;;;  ;;        ;;           ;;       ;;;;  ;;;;;;   
 
-
-%% Supplement 1 
-% In this supplement, we show the filters, and estabilish the linear analysis that we do is not complicated by filter extraction in these conditions, and that we see the same behaviour more gnerally, on other neurons. 
-
-
-% now get filters from the gaussian data
-MSGdata = consolidateData2(getPath(dataManager,'3ea08ccfa892c6545d74bbdaaa6cbee1'));
-MSGdata = cleanMSGdata(MSGdata,'extract_filter',true);
-
-gK1 = MSGdata.K1(:,MSGdata.paradigm<3);
-gK2 = MSGdata.K2(:,MSGdata.paradigm<3);
-
-% make the figure
-figure('outerposition',[0 0 1401 902],'PaperUnits','points','PaperSize',[1401 902]); hold on
-clear ax
-for i = 1:12
-	ax(i) = subplot(3,4,i); hold on
-end
-
- ;;;;;;      ;;;    ;;     ;;  ;;;;;;   ;;;;;;  ;;;;    ;;;    ;;    ;; 
+  ;;;;;;      ;;;    ;;     ;;  ;;;;;;   ;;;;;;  ;;;;    ;;;    ;;    ;; 
 ;;    ;;    ;; ;;   ;;     ;; ;;    ;; ;;    ;;  ;;    ;; ;;   ;;;   ;; 
 ;;         ;;   ;;  ;;     ;; ;;       ;;        ;;   ;;   ;;  ;;;;  ;; 
 ;;   ;;;; ;;     ;; ;;     ;;  ;;;;;;   ;;;;;;   ;;  ;;     ;; ;; ;; ;; 
@@ -661,27 +637,113 @@ end
 ;;       ;;;; ;;;;;;;;    ;;    ;;;;;;;; ;;     ;;  ;;;;;;  
 
 
-% normalise the filters for display
-nK1 = K1; nK2 = K2;
-for i = 1:3
-	nK1(:,i) = K1(:,i)/norm(K1(:,i));
-	nK2(:,i) = K2(:,i)/norm(K2(:,i));
+
+cdata = consolidateData2(getPath(dataManager,'4608c42b12191b383c84fea52392ea97'));
+[cdata, data] =  assembleScaledNatStim(cdata);
+time = 1e-3*(1:length(data(1).S));
+
+% compute filters from this neuron
+clear K1 K2
+for j = 1:size(data(2).S,2)
+	S = data(2).S(:,j);
+	X = data(2).X(:,j);
+	R = data(2).R(:,j);
+
+	temp1 = fitFilter2Data(S,X,'offset',200);
+	temp2 = fitFilter2Data(S,R,'offset',200);
+	K1(:,j) = temp1(100:end-100);
+	K2(:,j) = temp2(100:end-100);
+end
+filtertime = 1e-3*(1:length(K1)) - .1;
+
+i = 2;
+clear Xp Rp
+for j = 1:size(data(i).S,2)
+	S = data(i).S(:,j);
+	X = data(i).X(:,j);
+	R = data(i).R(:,j);
+
+	Xp(:,j) = convolve(time,S,K1(:,j),filtertime);
+	Rp(:,j) = convolve(time,S,K2(:,j),filtertime);
+	K1(:,j) = K1(:,j)/(nanstd(Xp(:,j))/nanstd(S)); % normalise correctly 
+	Xp(:,j) = convolve(time,S,K1(:,j),filtertime);
+	K2(:,j) = K2(:,j)/(nanstd(Rp(:,j))/nanstd(S)); % normalise correctly 
+	Rp(:,j) = convolve(time,S,K2(:,j),filtertime);
+end
+nat.Rp = Rp;
+nat.Xp = Xp;
+
+% now get filters from the gaussian data
+MSGdata = consolidateData2(getPath(dataManager,'3ea08ccfa892c6545d74bbdaaa6cbee1'));
+MSGdata = cleanMSGdata(MSGdata,'extract_filter',true);
+
+gK1 = MSGdata.K1(:,MSGdata.paradigm<3);
+gK2 = MSGdata.K2(:,MSGdata.paradigm<3);
+
+nK1 = nanmean(gK1,2);
+nK2 = nanmean(gK2,2);
+
+i = 2;
+clear Xp Rp
+filtertime = (1:length(nK1))*1e-3 - .1;
+for j = 1:size(data(i).S,2)
+	S = data(i).S(:,j);
+	X = data(i).X(:,j);
+	R = data(i).R(:,j);
+
+	Xp(:,j) = convolve(time,S,nK1,filtertime);
+	Rp(:,j) = convolve(time,S,nK2,filtertime);
+	nK1 = nK1/(nanstd(Xp(:,j))/nanstd(S)); % normalise correctly 
+	Xp(:,j) = convolve(time,S,nK1,filtertime);
+	nK2 = nK2/(nanstd(Rp(:,j))/nanstd(S)); % normalise correctly 
+	Rp(:,j) = convolve(time,S,nK2,filtertime);
+
 end
 
-filtertime = 1e-3*(1:length(nK1)) - .1;
-errorShade(ax(1),filtertime,mean(nK1,2),sem(nK1'),'Color','k');
-errorShade(ax(2),filtertime,mean(nK2,2),sem(nK2'),'Color','k');
+
+
+figure('outerposition',[0 0 1300 901],'PaperUnits','points','PaperSize',[1300 901]); hold on
+clear ax
+for i = 1:6
+	ax(i) = subplot(2,3,i); hold on
+end
+% plot the filers and the projections 
+K1 = K1/norm(K1);
+filtertime = (1:length(K1))*1e-3 - .1;
+errorShade(ax(1),filtertime,nanmean(K1,2),sem(K1'),'Color','k');
+
+K2 = K2/norm(K2);
+errorShade(ax(4),filtertime,nanmean(K2,2),sem(K2'),'Color','k');
+
+gK1 = gK1/norm(gK1);
+filtertime = (1:length(gK1))*1e-3 - .1;
+errorShade(ax(1),filtertime,nanmean(gK1,2),sem(gK1'),'Color','r');
+
+gK2 = gK2/norm(gK2);
+errorShade(ax(4),filtertime,nanmean(gK2,2),sem(gK2'),'Color','r');
+
+
+
+% now plot the projections
+l = plot(ax(2),nat.Xp(:),data(2).X(:),'Color','k');
+r2 = rsquare(nat.Xp(:),data(2).X(:));
+legend(l,['r^2 = ' oval(r2)],'Location','southeast');
+l = plot(ax(5),nat.Rp(:),data(2).R(:),'Color','k');
+r2 = rsquare(nat.Rp(:),data(2).R(:));
+legend(l,['r^2 = ' oval(r2)],'Location','southeast');
+
+plot(ax(3),Xp(:),data(2).X(:),'Color','r')
+plot(ax(6),Rp(:),data(2).R(:),'Color','r')
+
 
 
 % also show the filters, after normalising 
-for i = 1:size(gK1,2)
-	gK1(:,i) = gK1(:,i)/norm(gK1(:,i));
-	gK2(:,i) = gK2(:,i)/norm(gK2(:,i));
-end
+gK1 = gK1/norm(gK1);
+gK2 = gK1/norm(gK2);
 
 filtertime = 1e-3*(1:length(gK1)) - .1;
 errorShade(ax(1),filtertime,mean(gK1,2),sem(gK1'),'Color','r');
-errorShade(ax(2),filtertime,mean(gK2,2),sem(gK2'),'Color','r');
+errorShade(ax(4),filtertime,mean(gK2,2),sem(gK2'),'Color','r');
 
 
 % now project stimulus using the gaussian filters, and see how well it does
@@ -1054,131 +1116,6 @@ if being_published
 end
 
 
- ;;;;;;  ;;;;;;;; ;;;; ;;     ;; ;;     ;; ;;       ;;     ;;  ;;;;;;  
-;;    ;;    ;;     ;;  ;;;   ;;; ;;     ;; ;;       ;;     ;; ;;    ;; 
-;;          ;;     ;;  ;;;; ;;;; ;;     ;; ;;       ;;     ;; ;;       
- ;;;;;;     ;;     ;;  ;; ;;; ;; ;;     ;; ;;       ;;     ;;  ;;;;;;  
-      ;;    ;;     ;;  ;;     ;; ;;     ;; ;;       ;;     ;;       ;; 
-;;    ;;    ;;     ;;  ;;     ;; ;;     ;; ;;       ;;     ;; ;;    ;; 
- ;;;;;;     ;;    ;;;; ;;     ;;  ;;;;;;;  ;;;;;;;;  ;;;;;;;   ;;;;;;  
-
- ;;;;;;  ;;;;;;;;    ;;;    ;;;;;;;; ;;;;  ;;;;;;  ;;;;;;;; ;;;;  ;;;;;;   ;;;;;;  
-;;    ;;    ;;      ;; ;;      ;;     ;;  ;;    ;;    ;;     ;;  ;;    ;; ;;    ;; 
-;;          ;;     ;;   ;;     ;;     ;;  ;;          ;;     ;;  ;;       ;;       
- ;;;;;;     ;;    ;;     ;;    ;;     ;;   ;;;;;;     ;;     ;;  ;;        ;;;;;;  
-      ;;    ;;    ;;;;;;;;;    ;;     ;;        ;;    ;;     ;;  ;;             ;; 
-;;    ;;    ;;    ;;     ;;    ;;     ;;  ;;    ;;    ;;     ;;  ;;    ;; ;;    ;; 
- ;;;;;;     ;;    ;;     ;;    ;;    ;;;;  ;;;;;;     ;;    ;;;;  ;;;;;;   ;;;;;;  
-
-cdata = consolidateData2(getPath(dataManager,'4608c42b12191b383c84fea52392ea97'));
-
-
-figure('outerposition',[0 0 1200 801],'PaperUnits','points','PaperSize',[1200 801]); hold on
-
-subplot(2,3,1); hold on
-
-% plot pdf of whiff intensities 
-
-% show whiff statistics 
-S = cdata.PID(:,cdata.orn==4); 
-S = bsxfun(@minus,S,min(S));
-S = S(:);
-ws = whiffStatistics(S,0*S,0*S,300,'MinPeakProminence',max(S/1e2),'debug',false);
-
-
-[y,x] = histcounts(vertcat(ws.stim_peaks),30);
-y = y/sum(y); x = x(2:end)+mean(diff(x));
-plot(x,y,'k+')
-
-m = fittype('log((a./x).*exp(-x./b))');
-ff = fit(x(y>0)',log(y(y>0))',m,'Upper',[10 100],'Lower',[0 1],'StartPoint',[.14 10.37]);
-x = logspace(-1,2,100);
-plot(sort(x),exp(ff(sort(x))),'r')
-
-set(gca,'XScale','log','YScale','log','XTick',[.1 1 10 100],'YTick',[1e-3 1e-2 1e-1 1],'XLim',[.1 100],'YLim',[1e-3 1])
-xlabel('Whiff intensity (V)')
-ylabel('Probability')
-
-th(2) = text(5, .5,'$\sim\frac{1}{c}\exp\left(-\frac{c}{C}\right)$','interpreter','latex','Color','r','FontSize',20);
-
-% plot whiff durations 
-[ons,offs] = computeOnsOffs(S>.01);
-wd = offs - ons; wd(wd<10) = []; % whiffs this brief are artifacts 
-
-subplot(2,3,2); hold on
-[y,x] = histcounts(wd,50);
-y = y/sum(y); x = x(2:end)+mean(diff(x));
-plot(x,y,'k+')
-set(gca,'XScale','log','YScale','log')
-
-a = 1; m = fittype('a + n*x');
-xx = vectorise(log(x)); yy = vectorise(log(y));
-ff = fit(xx(yy>-Inf),yy(yy>-Inf),m,'Upper',[Inf -1.5],'Lower',[-Inf -1.5],'StartPoint',[6 -1.5]);
-plot(x,exp(ff(log(x))),'r')
-xlabel('Whiff duration (ms)')
-ylabel('Probability')
-th(3) = text(1e3, .1,'$\sim t_{w}^{-\frac{3}{2}}$','interpreter','latex','Color','r','FontSize',20);
-
-% plot blank durations 
-[ons,offs] = computeOnsOffs(S<.01);
-wd = offs - ons; wd(wd<10) = []; % whiffs this brief are artifacts 
-
-subplot(2,3,3); hold on
-[y,x] = histcounts(wd,50);
-y = y/sum(y); x = x(2:end)+mean(diff(x));
-plot(x,y,'k+')
-set(gca,'XScale','log','YScale','log','YLim',[1e-3 1])
-
-a = 1; m = fittype('a + n*x');
-xx = vectorise(log(x)); yy = vectorise(log(y));
-ff = fit(xx(yy>-Inf),yy(yy>-Inf),m,'Upper',[Inf -1.5],'Lower',[-Inf -1.5],'StartPoint',[6 -1.5]);
-plot(x,exp(ff(log(x))),'r')
-xlabel('Blank duration (ms)')
-ylabel('Probability')
-th(3) = text(1e4, .1,'$\sim t_{b}^{-\frac{3}{2}}$','interpreter','latex','Color','r','FontSize',20);
-
-% now compute the correlation between the mean and variance across many windows 
-window_sizes = factor2(length(S));
-window_sizes = window_sizes(window_sizes < 1e4 & window_sizes > 10);
-r2 = NaN*window_sizes;
-for i = 1:length(window_sizes)
-	tS = reshape(S,window_sizes(i),length(S)/window_sizes(i));
-	r2(i) = rsquare(mean(tS),std(tS));
-end
-
-subplot(2,3,5); hold on
-plot(window_sizes,r2,'k+')
-xlabel('Window size (ms)')
-ylabel('r^2_{\mu,\sigma}')
-set(gca,'XScale','log','XTick',[10 100 1e3 1e4])
-
-subplot(2,3,4); hold on
-ws = window_sizes(27);
-tS = reshape(S,ws,length(S)/ws);
-plot(mean(tS),std(tS),'.','Color',[.3 .3 .3])
-plot([1e-4 100],[1e-4 100],'k--')
-set(gca,'XScale','log','YScale','log','XLim',[1e-2 10],'YLim',[1e-2 10],'XTick',[1e-2 1e-1 1 10])
-xlabel('\mu_{S} in preceding 400ms(V)')
-ylabel('\sigma_{S} in preceding 400ms (V)')
-
-% now show the autocorrelation function
-subplot(2,3,6); hold on
-S = cdata.PID(:,cdata.orn==4); 
-S = bsxfun(@minus,S,min(S));
-for i = 1:size(S,2)
-	[ac(:,i),lags] = autocorr(S(:,i),length(S)-1);
-end
-errorShade(lags,mean(ac,2),std(ac,[],2),'Color',[0 0 0]);
-set(gca,'XScale','log','XTick',[1 10 100 1e3 1e4 1e5])
-xlabel('Lag (ms)')
-ylabel('Autocorrelation')
-
-prettyFig();
-
-if being_published
-	snapnow
-	delete(gcf)
-end
 
 %% Version Info
 %

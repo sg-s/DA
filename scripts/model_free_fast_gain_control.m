@@ -161,7 +161,8 @@ if being_published
 	delete(gcf)
 end
 
-return
+%%
+% Now I make another plot where I plot 
 
 ;;     ;;    ;;;    ;;       ;;;; ;;;;;;;;     ;;;    ;;;;;;;; ;;;;  ;;;;;;;  ;;    ;; 
 ;;     ;;   ;; ;;   ;;        ;;  ;;     ;;   ;; ;;      ;;     ;;  ;;     ;; ;;;   ;; 

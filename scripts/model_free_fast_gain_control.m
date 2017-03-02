@@ -162,7 +162,52 @@ if being_published
 end
 
 %%
-% Now I make another plot where I plot 
+% Now I make another plot where I look at how the responses depend on both the stimulus and the mean stimulus in preceding 300 ms, in an attempt to see if I can see this effect in the raw data without throwing anything away.
+
+clear ws
+for j = 1:3
+	ws(j) = whiffStatistics(data(2).S(:,j),data(2).X(:,j),data(2).R(:,j),300,'MinPeakProminence',max(data(2).S(:,j)/100));
+end
+
+% plot the lfp
+X = -vertcat(ws.peak_LFP);
+R = vertcat(ws.peak_firing_rate);
+S = vertcat(ws.stim_peaks);
+Shat = vertcat(ws.stim_history_length_before_whiff);
+
+rm_this = isnan(X) | isnan(R);
+X(rm_this) = []; S(rm_this) = []; Shat(rm_this) = []; R(rm_this) = [];
+
+% make a colors vector
+c = parula(100);
+cX = X - min(X); cX = cX/max(cX); cX = floor(1+cX*99);
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1); hold on
+scatter(S,Shat,256,cX,'filled');
+set(gca,'XScale','log')
+xlabel('Whiff amplitude (V)')
+ylabel('\mu_{Stimulus} in preceding 300ms')
+title('LFP responses')
+
+% make a colors vector
+c = parula(100);
+cX = R - min(R); cX = cX/max(cX); cX = floor(1+cX*99);
+
+subplot(1,2,2); hold on
+scatter(S,Shat,256,cX,'filled');
+set(gca,'XScale','log')
+xlabel('Whiff amplitude (V)')
+ylabel('\mu_{Stimulus} in preceding 300ms')
+title('Firing rate responses')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 
 ;;     ;;    ;;;    ;;       ;;;; ;;;;;;;;     ;;;    ;;;;;;;; ;;;;  ;;;;;;;  ;;    ;; 
 ;;     ;;   ;; ;;   ;;        ;;  ;;     ;;   ;; ;;      ;;     ;;  ;;     ;; ;;;   ;; 

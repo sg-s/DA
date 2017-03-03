@@ -284,7 +284,9 @@ figure('outerposition',[0 0 1200 800],'PaperUnits','points','PaperSize',[1200 80
 % show the stimulus and its statistics
 subplot(2,3,1), hold on
 t = 1e-3*(1:block_length);
-plot(t,reshaped_PID,'Color',[.5 .5 .5])
+for i = 1:20:size(reshaped_calcium_test,2)
+	plot(t,reshaped_PID(:,i),'Color',[.5 .5 .5])
+end
 xlabel('Time since switch (s)')
 ylabel('PID (V)')
 
@@ -304,7 +306,7 @@ xlabel('\sigma_{Stimulus} (V)')
 % show the test ROI calcium signals
 subplot(2,3,2), hold on
 t = 1e-3*(1:block_length);
-for i = 1:size(reshaped_calcium_test,2)
+for i = 1:20:size(reshaped_calcium_test,2)
 	y = reshaped_calcium_test(:,i);
 	y = y/(mean(y(1e3:5e3)));
 	plot(t,y,'Color',[.5 .5 .5])
@@ -328,7 +330,7 @@ title(['t-test p = ' oval(p)])
 % now do the same for the control
 subplot(2,3,3), hold on
 t = 1e-3*(1:block_length);
-for i = 1:size(reshaped_calcium_control,2)
+for i = 1:20:size(reshaped_calcium_control,2)
 	y = reshaped_calcium_control(:,i);
 	y = y/(mean(y(1e3:5e3)));
 	plot(t,y,'Color',[.5 .5 .5])

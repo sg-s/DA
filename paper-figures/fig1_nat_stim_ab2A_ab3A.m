@@ -161,12 +161,17 @@ c = lines(10);
 [~,~,X_order] = unique(X_int); X_order = 5 - X_order;
 [~,~,R_order] = unique(R_int);
 
-for i = 1:length(show_these)
-	superbar(ax.ab2A_SZi,S_order(i),S_int(i),'E',S_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
-	superbar(ax.ab2A_XZi,X_order(i),X_int(i),'E',X_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
-	superbar(ax.ab2A_RZi,R_order(i),R_int(i),'E',R_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
+% show circles to indicate ordering 
+sh.ab2_S1 = scatter(ax.ab2A_SZi,S_order,[2 2 2 2],100,lines(4),'filled');
+sh.ab2_S2 = scatter(ax.ab2A_SZi,X_order,[1 1 1 1],100,lines(4),'filled');
+sh.ab2_X = scatter(ax.ab2A_XZi,X_order,[1 1 1 1],100,lines(4),'filled');
+sh.ab2_R = scatter(ax.ab2A_RZi,R_order,[1 1 1 1],100,lines(4),'filled');
 
-end
+% for i = 1:length(show_these)
+% 	superbar(ax.ab2A_SZi,S_order(i),S_int(i),'E',S_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
+% 	superbar(ax.ab2A_XZi,X_order(i),X_int(i),'E',X_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
+% 	superbar(ax.ab2A_RZi,R_order(i),R_int(i),'E',R_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
+% end
 
 % show response vs. projected stimulus
 K = fitFilter2Data(data(2).S(:,1),data(2).X(:,1),'offset',200); 
@@ -297,12 +302,18 @@ c = lines(10);
 [~,~,X_order] = unique(X_int); X_order = max(X_order)+1 - X_order;
 [~,~,R_order] = unique(R_int);
 
-for i = 1:length(show_these)
-	superbar(ax.ab3A_SZi,S_order(i),S_int(i),'E',S_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
-	superbar(ax.ab3A_XZi,X_order(i),X_int(i),'E',X_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
-	superbar(ax.ab3A_RZi,R_order(i),R_int(i),'E',R_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
+% show circles to indicate ordering 
+sh.ab3_S1 = scatter(ax.ab3A_SZi,S_order,[2 2 2 2],100,lines(4),'filled');
+sh.ab3_S2 = scatter(ax.ab3A_SZi,X_order,[1 1 1 1],100,lines(4),'filled');
+sh.ab3_X = scatter(ax.ab3A_XZi,X_order,[1 1 1 1],100,lines(4),'filled');
+sh.ab3_R = scatter(ax.ab3A_RZi,R_order,[1 1 1 1],100,lines(4),'filled');
 
-end
+% for i = 1:length(show_these)
+% 	superbar(ax.ab3A_SZi,S_order(i),S_int(i),'E',S_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
+% 	superbar(ax.ab3A_XZi,X_order(i),X_int(i),'E',X_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
+% 	superbar(ax.ab3A_RZi,R_order(i),R_int(i),'E',R_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
+
+% end
 
 
 prettyFig('fs',12,'plw',1.5);
@@ -355,32 +366,27 @@ ax.ab2A_SZ.XLim = [-300 300];
 ax.ab2A_XZ.XLim = [-300 300];
 ax.ab3A_RZ.XLim = [-300 300];
 
-
 % clean up the insets a little
-ax.ab3A_SZi.XTick = [];
-ax.ab3A_XZi.XTick = [];
-ax.ab3A_RZi.XTick = [];
-ax.ab2A_SZi.XTick = [];
-ax.ab2A_XZi.XTick = [];
-ax.ab2A_RZi.XTick = [];
-
-ax.ab3A_SZi.YLim = [0 0.4];
-ax.ab3A_SZi.YTick = [0 0.4];
-
-ax.ab3A_XZi.YLim = [-15 0];
-ax.ab3A_XZi.YTick = [-15 0];
-ax.ab3A_XZi.YDir  = 'reverse'; 
-
-ax.ab3A_RZi.YLim = [0 160];
-ax.ab3A_RZi.YTick = [0 150];
-
-ax.ab2A_SZi.YLim = [0 1];
-ax.ab2A_SZi.YTick = [0 1];
-ax.ab2A_XZi.YLim = [-20 0];
-ax.ab2A_XZi.YTick = [-20 0];
-ax.ab2A_XZi.YDir  = 'reverse'; 
-ax.ab2A_RZi.YLim = [0 250];
-ax.ab2A_RZi.YTick = [0 250];
+% ax.ab3A_SZi.XTick = [];
+% ax.ab3A_XZi.XTick = [];
+% ax.ab3A_RZi.XTick = [];
+% ax.ab2A_SZi.XTick = [];
+% ax.ab2A_XZi.XTick = [];
+% ax.ab2A_RZi.XTick = [];
+% ax.ab3A_SZi.YLim = [0 0.4];
+% ax.ab3A_SZi.YTick = [0 0.4];
+% ax.ab3A_XZi.YLim = [-15 0];
+% ax.ab3A_XZi.YTick = [-15 0];
+% ax.ab3A_XZi.YDir  = 'reverse'; 
+% ax.ab3A_RZi.YLim = [0 160];
+% ax.ab3A_RZi.YTick = [0 150];
+% ax.ab2A_SZi.YLim = [0 1];
+% ax.ab2A_SZi.YTick = [0 1];
+% ax.ab2A_XZi.YLim = [-20 0];
+% ax.ab2A_XZi.YTick = [-20 0];
+% ax.ab2A_XZi.YDir  = 'reverse'; 
+% ax.ab2A_RZi.YLim = [0 250];
+% ax.ab2A_RZi.YTick = [0 250];
 
 % move things around
 ax.ab3A_S.Position = [0.1300 0.88 0.57 0.07];
@@ -412,6 +418,16 @@ ax.R_proj.Position = [0.33 0.15 .16 .16];
 ax.ab2A_drX.Position = [0.57 0.15 .16 .16];
 ax.ab2A_drR.Position = [0.8 0.15 .16 .16];
 
+% the insets -- add texts, clean up
+ax.ab2A_SZi.Visible = 'off';
+ax.ab2A_XZi.Visible = 'off';
+ax.ab2A_RZi.Visible = 'off';
+ax.ab3A_SZi.Visible = 'off';
+ax.ab3A_XZi.Visible = 'off';
+ax.ab3A_RZi.Visible = 'off';
+
+ax.ab3A_SZi.YLim = [.7 2];
+ax.ab2A_SZi.YLim = [.7 2];
 
 % label things
 
@@ -474,6 +490,7 @@ if being_published
 	delete(gcf)
 end
 
+return
 
  ;;;;;;  ;;     ;; ;;;;;;;;  ;;;;;;;;     ;;;;;;;; ;;;;  ;;;;;;   
 ;;    ;; ;;     ;; ;;     ;; ;;     ;;    ;;        ;;  ;;    ;;  

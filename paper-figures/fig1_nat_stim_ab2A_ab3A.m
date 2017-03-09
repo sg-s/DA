@@ -805,6 +805,7 @@ for i = 1:3
 	S = data(2).S(:,i); S = S - min(S);
 	R = data(2).X(:,i); R = R - min(R);
 	[data(2).XP(:,i) ,K(:,i)] = NLModel([S R],p);
+	K(:,i) = K(:,i)/norm(K(:,i));
 end
 
 
@@ -813,22 +814,22 @@ figure('outerposition',[0 0 1403 801],'PaperUnits','points','PaperSize',[1403 80
 x = logspace(-2,2,100);
 y = 1./(1+(p.k_D./x).^p.n);
 ax(1) = subplot(2,4,1); hold on
-plot(x,y,'k')
+plot(x,y,'r')
 set(gca,'XScale','log')
 xlabel('Stimulus')
 ylabel('a')
 
 
-ax(5) = subplot(2,4,5); hold on
+ax(2) = subplot(2,4,2); hold on
 filtertime = 1:length(K); filtertime = filtertime - 50;
-errorShade(filtertime,mean(K,2),std(K,[],2),'Color','k');
+errorShade(filtertime,mean(K,2),std(K,[],2),'Color','r');
 xlabel('Filter lag (ms)')
 ylabel('Filter (norm)')
 set(gca,'YDir','reverse')
 
 % show one trace
 example_trace = 3;
-ax(3) = subplot(2,4,2:4); hold on
+ax(3) = subplot(2,4,3:4); hold on
 time = 1:length(data(2).S); time = time*1e-3;
 clear l
 l(1) = plot(time,data(2).X(:,example_trace),'k');
@@ -840,7 +841,37 @@ r2 = rsquare(data(2).X(:,example_trace),data(2).XP(:,example_trace));
 legend(l,{'ab2 LFP',['NL model, r^2 = ' oval(r2)]},'Location','northwest')
 
 
+% now pull out a filter from this
+Khat = NaN*K;
+for i = 1:3
+	S = data(2).S(:,i); S = S - min(S);
+	R = data(2).X(:,i); R = R - min(R);
+	temp = fitFilter2Data(S,R,'filter_length',700,'offset',100);
+	Khat(:,i) = temp(50:end-50);
+	Khat(:,i) = Khat(:,i)/norm(Khat(:,i));
+end
+
+ax(5) = subplot(2,4,5); hold on
+filtertime = 1:length(K); filtertime = filtertime - 50;
+errorShade(filtertime,mean(Khat,2),std(Khat,[],2),'Color','k');
+xlabel('Filter lag (ms)')
+ylabel('Filter K (norm)')
+set(gca,'YDir','reverse')
+
+% make projections using this 
+for i = 1:3
+	data(2).fp(:,i) = (1/3)*convolve(1:length(data(2).S(:,i)),data(2).S(:,i),Khat(:,i),filtertime);
+end
+
 ax(6) = subplot(2,4,6); hold on
+l = plot(data(2).fp(:),data(2).XP(:),'k');
+r2 = ['r^2 = ' oval(rsquare(data(2).fp(:),data(2).XP(:)))];
+legend(l,r2,'Location','southeast')
+xlabel('K \otimes s(t)')
+ylabel('NL model prediction (\Delta mV)')
+set(gca,'XDir','reverse','YDir','reverse','XLim',[-20 0 ])
+
+
 ax(7) = subplot(2,4,7); hold on
 ax(8) = subplot(2,4,8); hold on
 show_these = [2       27764
@@ -861,16 +892,11 @@ for i = 2
 		z = this_loc+300;
 
 		t = (1:length(S(a:z))) - 300;
-
-		plot(ax(6),t,S(a:z))
 		plot(ax(7),t,X(a:z))
 		plot(ax(8),t,XP(a:z))
 
 	end
 end
-
-xlabel(ax(6),'Time since whiff (ms)')
-ylabel(ax(6),'Stimulus (V)')
 
 xlabel(ax(7),'Time since whiff (ms)')
 ylabel(ax(7),'ab2 LFP (mV)')
@@ -881,14 +907,7 @@ ylabel(ax(8),'NL model (mV)')
 set(ax(8),'YDir','reverse')
 
 prettyFig();
-
-labelAxes(ax(1),'a','x_offset',0);
-labelAxes(ax(5),'b','x_offset',0);
-labelAxes(ax(3),'c','x_offset',0);
-labelAxes(ax(6),'d','x_offset',0);
-labelAxes(ax(7),'e','x_offset',0);
-labelAxes(ax(8),'f','x_offset',0);
-
+labelFigure('x_offset',0)
 
 
 if being_published

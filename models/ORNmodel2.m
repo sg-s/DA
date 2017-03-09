@@ -1,23 +1,18 @@
-%% ORNmodel
-% this is the start of a new class of models, where we get k_D to adapt, but not perfectly, so that a(t) doesn't adapt perfectly, and we can use that to speed up responses later on
+%% ORNmodel2
+% a unified model for LFP and firing rate responses
+% in this model, we consider the LFP-> firing rate transformation to be governmed by a ODE system that does something like a differentiating filter, whose timescale depends on kD
 
-function [R,a,b,kD,tau,F,H] = ORNmodel(S,p)
+function [R,a,kD,tau,F,H] = ORNmodel2(S,p)
 
 
 	% receptor binding, slowdown at receptors and adaptation
 	p.w; % omega, attempt rate at jumping from bound to unbound states
 	p.tau_adap; % receptor adaptation time 
-	p.K_a; % half-max for f(kD)
 	p.kD_min;
-
-	% receptor bound fraction -> firing rate
-	p.B; % scaling for input into firing machinery 
-	p.n_firing; 
-	p.K_f; % half max for nonlinearity into firing machinery 
 
 	% speed up in firing rate
 	p.tau_firing; 
-
+	p.C;
 
 	% bounds
 	lb.w = 0;
@@ -27,13 +22,14 @@ function [R,a,b,kD,tau,F,H] = ORNmodel(S,p)
 	lb.n_firing = 1;
 	lb.K_f = 0;
 	lb.tau_firing = 0;
+	lb.kD_min = 1e-3;
 
 
 	% work with matrices too
 	if size(S,2) > 1
-		R = NaN*S; a = NaN*S; b = a; kD = a; tau = a; F = a; H = a;
+		R = NaN*S; a = NaN*S; kD = a; tau = a; F = a; H = a;
 		for i = 1:size(S,2)
-			[R(:,i),a(:,i),b(:,i),kD(:,i),tau(:,i),F(:,i),H(:,i)] = ORNmodel(S(:,i),p);
+			[R(:,i),a(:,i),kD(:,i),tau(:,i),F(:,i),H(:,i)] = ORNmodel2(S(:,i),p);
 		end
 		return
 	end
@@ -54,10 +50,9 @@ function [R,a,b,kD,tau,F,H] = ORNmodel(S,p)
 	% use a fixed-step Euler to solve this
 	for i = 2:length(S_)
 
-		fkD = (1/2)*(kD_(i-1)/(kD_(i-1) + p.K_a));
 
 		% update k_D
-		dydt = (1/p.tau_adap)*kD_(i-1)*(a_(i-1) - fkD);
+		dydt = (1/p.tau_adap)*kD_(i-1)*(a_(i-1) - 1/2);
 
 		kD_(i) = dydt*1e-4 + kD_(i-1);
 		if kD_(i) < p.kD_min
@@ -90,19 +85,14 @@ function [R,a,b,kD,tau,F,H] = ORNmodel(S,p)
 	kD = interp1(T,kD_,time);
 
 
-	% pass this through a nonlinearity 
-	b = a.^p.n_firing;
-	b = b./(b + p.K_f.^p.n_firing);
-	b = b*p.B;
-
 	% now we need to filter it, with the timescale of the filter changing with time 
-	tau = ceil(p.tau_firing*exp(-a));
+	tau = ceil(p.tau_firing*exp(-kD/p.C));
 
 	% filter by solving a ODE that takes a derivative 
-	R = 0*b;
-	for i = 2:length(b)
+	R = 0*a;
+	for i = 2:length(a)
 		if i - tau(i) > 1
-			dydt = b(i) - b(i-tau(i));
+			dydt = a(i) - a(i-tau(i));
 			dydt = dydt/tau(i);
 		else
 			dydt = 0;

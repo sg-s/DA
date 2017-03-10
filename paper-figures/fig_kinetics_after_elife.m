@@ -13,25 +13,30 @@ c = lines(5);
 LFP_color = c(4,:);
 firing_color = c(5,:);
 
-main_fig = figure('outerposition',[0 0 1300 901],'PaperUnits','points','PaperSize',[1300 901]); hold on
-ax.lfp_xcorr = subplot(2,3,1); hold on
-ax.firing_xcorr = subplot(2,3,2); hold on
-ax.odor_lags(1) = subplot(2,3,3); hold on
-ax.odor_lags(2) = subplot(2,3,4); hold on
-ax.odor_lags(3) = subplot(2,3,5); hold on
-ax.light_lags = subplot(2,3,6); hold on
+main_fig = figure('outerposition',[0 0 1400 801],'PaperUnits','points','PaperSize',[1400 801]); hold on
+ax.lfp_xcorr = subplot(2,4,1); hold on
+ax.firing_xcorr = subplot(2,4,2); hold on
+ax.autocorr1 = subplot(2,4,3); hold on
+ax.odor_lags(1) = subplot(2,4,4); hold on
+ax.odor_lags(2) = subplot(2,4,5); hold on
+ax.odor_lags(3) = subplot(2,4,6); hold on
+ax.odor_lags(4) = subplot(2,4,7); hold on
+ax.light_lags = subplot(2,4,8); hold on
 
-supp_fig = figure('outerposition',[0 0 1000 501],'PaperUnits','points','PaperSize',[1000 501]); hold on
-ax.autocorr1 = subplot(1,2,1); hold on
-ax.autocorr2 = subplot(1,2,2); hold on
+% data_hashes = {'93ba5d68174e3df9f462a1fc48c581da','cd6753c0e4cf02895cd5e2c5cb58aa1a','3ea08ccfa892c6545d74bbdaaa6cbee1'};
+% odour_names = {'ethyl-acetate','1-pentanol','2-butanone'};
+% orn_names = {'ab3A','ab2A','ab2A'};
+% x_limits = [1.7 .15 .85 ];
 
 
-clear lfp_stats firing_stats
+% define what we want to work on
 
-data_hashes = {'93ba5d68174e3df9f462a1fc48c581da','cd6753c0e4cf02895cd5e2c5cb58aa1a','3ea08ccfa892c6545d74bbdaaa6cbee1'};
-odour_names = {'ethyl-acetate','1-pentanol','2-butanone'};
-orn_names = {'ab3A','ab2A','ab2A'};
-x_limits = [1.7 .15 .85 ];
+% define what we want to work on
+data_hashes = {'93ba5d68174e3df9f462a1fc48c581da','bcd4cf4fe12817d084a2b06f981161ee','cd6753c0e4cf02895cd5e2c5cb58aa1a','3ea08ccfa892c6545d74bbdaaa6cbee1'};
+odour_names = {'ethyl-acetate','1-pentanol','1-pentanol','2-butanone'};
+orn_names = {'ab3A','ab3A','ab2A','ab2A'};
+x_limits = [1.7 .035 .2 .8];
+nbins = [10 5 10 10 10];
 
 for di = 1:length(data_hashes)
 
@@ -177,8 +182,11 @@ for di = 1:length(data_hashes)
 		errorbar(ax.odor_lags(di),x,l,l_e,'Color',LFP_color);
 		errorbar(ax.odor_lags(di),x,f,f_e,'Color',firing_color);
 	else
-		plotPieceWiseLinear(ax.odor_lags(di),mean_stim,LFP_lags,'Color',LFP_color,'nbins',10);
-		plotPieceWiseLinear(ax.odor_lags(di),mean_stim,firing_lags,'Color',firing_color,'nbins',10);
+		% bad_trials = LFP_lags < 10;
+		% LFP_lags(bad_trials) = NaN;
+		% firing_lags(bad_trials) = NaN;
+		plotPieceWiseLinear(ax.odor_lags(di),mean_stim,LFP_lags,'Color',LFP_color,'nbins',nbins(di));
+		plotPieceWiseLinear(ax.odor_lags(di),mean_stim,firing_lags,'Color',firing_color,'nbins',nbins(di));
 	end
 
 	xlabel(ax.odor_lags(di),'\mu_{Stimulus} (V)')
@@ -209,7 +217,7 @@ title(ax.firing_xcorr,'Stimulus \rightarrow Firing rate')
 title(ax.autocorr1,'Stimulus auto-correlation')
 
 % add some statistics for each plot 
-for i = 1:3
+for i = 1:4
 	rho = lfp_stats(i).rho;
 	p = lfp_stats(i).p;
 	if p < 1e-4 
@@ -224,16 +232,21 @@ for i = 1:3
 	th(i).FontSize = 18;
 end
 
-th(1).Position = [.1 110];
-th(2).Position = [.01 150];
-th(3).Position = [.1 120];
-
+th(1).Position = [.2 142];
+th(2).Position = [.005 160];
+th(3).Position = [.05 160];
+th(4).Position = [.1 140];
+% th(5).Position = [.05 160];
 
 % add some statistics for each plot 
-for i = 1:3
+for i = 1:4
 	rho = firing_stats(i).rho;
 	p = firing_stats(i).p;
-	tp = ['p = ' oval(p)];
+	if p < 1e-4 
+		tp = 'p<10^-^4';
+	else
+		tp = ['p = ' oval(p)];
+	end
 	t = ['\rho = ' oval(rho), ', ' tp];
 	th2(i) = text(.4,100,t);
 	th2(i).Parent = ax.odor_lags(i);
@@ -241,10 +254,11 @@ for i = 1:3
 	th2(i).FontSize = 18;
 end
 
-th2(1).Position = [.1 20];
-th2(2).Position = [.01 20];
-th2(3).Position = [.1 20];
-
+th2(1).Position = [.2 20];
+th2(2).Position = [.005 40];
+th2(3).Position = [.05 20];
+th2(4).Position = [.1 20];
+% th2(5).Position = [.05 20];
 
 
 % now show that it speeds up with light 
@@ -322,7 +336,7 @@ th3.Position = [50 58];
 figure(main_fig)
 prettyFig;
 
-labelFigure('x_offset',.01)
+labelFigure('x_offset',-.01)
 
 
 if being_published	

@@ -426,7 +426,6 @@ if being_published
 	delete(gcf)
 end
 
-return
 
  ;;;;;;  ;;     ;; ;;;;;;;;  ;;;;;;;;         ;;;;;;;; ;;;;  ;;;;;;       
 ;;    ;; ;;     ;; ;;     ;; ;;     ;;        ;;        ;;  ;;    ;;      
@@ -439,28 +438,40 @@ return
 %% Supplementary Figure
 % 
 
-figure('outerposition',[0 0 1101 700],'PaperUnits','points','PaperSize',[1101 700]); hold on
+figure('outerposition',[0 0 1500 799],'PaperUnits','points','PaperSize',[1500 799]); hold on
 clear ax
-for i = 1:6
-	ax(i) = subplot(2,3,i); hold on
+for i = 1:8
+	ax(i) = subplot(2,4,i); hold on
 end
 
 
 % 1. mean vs. sigma of the stimulus showing small change in mean ~~~~~~~~~~~~~~~~~~~~~~~~
 plot(ax(1),std(reshaped_PID(1e3:4e3,:)),mean(reshaped_PID(1e3:4e3,:)),'r+');
 plot(ax(1),std(reshaped_PID(6e3:9e3,:)),mean(reshaped_PID(6e3:9e3,:)),'b+');
-set(ax(1),'XLim',[0 .21],'YLim',[0 .6])
+set(ax(1),'XLim',[0 .21],'YLim',[0 .7])
 xlabel(ax(1),'\sigma_{Stimulus} (V)')
 ylabel(ax(1),'\mu_{Stimulus} (V)')
 
-% 2. uncorrected I/O curves ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+% 2. ratio of std. dev. -- model free gain 
+y = std(reshaped_fA(1e3:4e3,:))./std(reshaped_PID(1e3:4e3,:));
+y(y==0) = NaN; y = y/2;
+plot(ax(2),std(reshaped_PID(1e3:4e3,:)),y,'r+');
+y = std(reshaped_fA(6e3:9e3,:))./std(reshaped_PID(6e3:9e3,:));
+y(y==0) = NaN; y = y/2;
+plot(ax(2),std(reshaped_PID(6e3:9e3,:)),y,'b+');
+set(ax(2),'XLim',[0 .21],'YLim',[0 150])
+xlabel(ax(2),'\sigma_{Stimulus} (V)')
+ylabel(ax(2),'\sigma_{Response}/\sigma_{Stimulus} (Hz/V)')
+
+
+% 3. uncorrected I/O curves ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 % high contrast
 x = fA_pred(1e3:5e3,:);
 y = reshaped_fA(1e3:5e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)) | max(y) < 40 | min(y) > 10);
 x(:,rm_this) = []; y(:,rm_this) = []; 
 [~,data_hi] = plotPieceWiseLinear(x,y,'nbins',50,'make_plot',false);
-plot(ax(2),data_hi.x,data_hi.y,'r')
+plot(ax(3),data_hi.x,data_hi.y,'r')
 
 % low contrast
 x = fA_pred(6e3:9e3,:);
@@ -468,21 +479,21 @@ y = reshaped_fA(6e3:9e3,:);
 rm_this = (isnan(sum(y)) | isnan(sum(x)) | max(y) < 40 | min(y) > 10);
 x(:,rm_this) = []; y(:,rm_this) = [];
 [~,data_lo] = plotPieceWiseLinear(x,y,'nbins',50,'make_plot',false);
-plot(ax(2),data_lo.x,data_lo.y,'b')
-xlabel(ax(2),'Projected stimulus')
-ylabel(ax(2),'ab3A firing rate (Hz)')
-set(ax(2),'XLim',[0 1.4],'YLim',[0 60])
+plot(ax(3),data_lo.x,data_lo.y,'b')
+xlabel(ax(3),'Projected stimulus')
+ylabel(ax(3),'ab3A firing rate (Hz)')
+set(ax(3),'XLim',[0 1.4],'YLim',[0 60])
 
 % 3. uncorrected gain vs. sigma stim ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 lo_gain(lo_gain==0) = NaN;
 hi_gain(hi_gain==0) = NaN;
 x = std(reshaped_PID(1e3:4e3,:));
-plot(ax(3),x,hi_gain,'r+')
+plot(ax(4),x,hi_gain,'r+')
 x = std(reshaped_PID(6e3:9e3,:));
-plot(ax(3),x,lo_gain,'b+')
-xlabel(ax(3),'\sigma_{Stimulus} (V)')
-ylabel(ax(3),'ab3A ORN gain (Hz/V)')
-set(ax(3),'XLim',[0 .25],'YLim',[0 150])
+plot(ax(4),x,lo_gain,'b+')
+xlabel(ax(4),'\sigma_{Stimulus} (V)')
+ylabel(ax(4),'ab3A ORN gain (Hz/V)')
+set(ax(4),'XLim',[0 .21],'YLim',[0 150])
 
 % show r2 for each trial as a function of the sigma 
 r2_lo = NaN*zeros(size(reshaped_PID,2),1);
@@ -501,22 +512,22 @@ for i = 1:width(reshaped_PID)
 	end
 end
 
-plot(ax(5),std(reshaped_PID(1e3:4e3,:)),r2_hi,'r+');
-plot(ax(5),std(reshaped_PID(6e3:9e3,:)),r2_lo,'b+');
-xlabel(ax(5),'\sigma_{Stimulus} (V)')
-ylabel(ax(5),'r^2 (Linear projection, data)')
-plot(ax(5),[0 .2],[nanmedian(r2_hi) nanmedian(r2_hi)],'r--')
-plot(ax(5),[0 .2],[nanmedian(r2_lo) nanmedian(r2_lo)],'b--')
-set(ax(5),'XLim',[0 0.2],'YLim',[0 1])
+plot(ax(6),std(reshaped_PID(1e3:4e3,:)),r2_hi,'r+');
+plot(ax(6),std(reshaped_PID(6e3:9e3,:)),r2_lo,'b+');
+xlabel(ax(6),'\sigma_{Stimulus} (V)')
+ylabel(ax(6),'r^2 (Linear projection, data)')
+plot(ax(6),[0 .2],[nanmedian(r2_hi) nanmedian(r2_hi)],'r--')
+plot(ax(6),[0 .2],[nanmedian(r2_lo) nanmedian(r2_lo)],'b--')
+set(ax(6),'XLim',[0 0.2],'YLim',[0 1])
 
 % now plot r2 vs gain
-plot(ax(6),hi_gain2,r2_hi,'r+');
-plot(ax(6),lo_gain2,r2_lo,'b+');
-xlabel(ax(6),'Gain (Hz/V)')
-ylabel(ax(6),'r^2 (Linear projection, data)')
-plot(ax(6),[0 150],[nanmedian(r2_hi) nanmedian(r2_hi)],'r--')
-plot(ax(6),[0 150],[nanmedian(r2_lo) nanmedian(r2_lo)],'b--')
-set(ax(6),'XLim',[0 150],'YLim',[0 1])
+plot(ax(7),hi_gain2,r2_hi,'r+');
+plot(ax(7),lo_gain2,r2_lo,'b+');
+xlabel(ax(7),'Gain (Hz/V)')
+ylabel(ax(7),'r^2 (Linear projection, data)')
+plot(ax(7),[0 150],[nanmedian(r2_hi) nanmedian(r2_hi)],'r--')
+plot(ax(7),[0 150],[nanmedian(r2_lo) nanmedian(r2_lo)],'b--')
+set(ax(7),'XLim',[0 150],'YLim',[0 1])
 
 % show the filter
 filtertime = 1:800; filtertime = filtertime - 100;
@@ -526,14 +537,18 @@ lo_filter = squeeze(nanmean(K2(2,:,:),3));
 one_filter = mean(squeeze(nanmean(K2(:,:,:),3)));
 
 clear l
-l(1) = plot(ax(4),filtertime,lo_filter,'b');
-l(2) = plot(ax(4),filtertime,hi_filter,'r');
-l(3) = plot(ax(4),filtertime,one_filter,'k','LineWidth',3);
+l(1) = plot(ax(5),filtertime,lo_filter,'b');
+l(2) = plot(ax(5),filtertime,hi_filter,'r');
+l(3) = plot(ax(5),filtertime,one_filter,'k','LineWidth',3);
 legend(l,{'Low variance','High variance','Averaged filter'})
-xlabel(ax(4),'Lag (ms)')
-ylabel(ax(4),'Filter (norm)')
+xlabel(ax(5),'Lag (ms)')
+ylabel(ax(5),'Filter (norm)')
+
+delete(ax(8))
 
 prettyFig();
+
+labelFigure('x_offset',0)
 
 if being_published
 	snapnow
@@ -541,11 +556,150 @@ if being_published
 end
 
 
+ ;;;;;;  ;;     ;; ;;;;;;;;  ;;;;;;;;     ;;;;;;;; ;;;;  ;;;;;;       ;;;;;;;  
+;;    ;; ;;     ;; ;;     ;; ;;     ;;    ;;        ;;  ;;    ;;     ;;     ;; 
+;;       ;;     ;; ;;     ;; ;;     ;;    ;;        ;;  ;;                  ;; 
+ ;;;;;;  ;;     ;; ;;;;;;;;  ;;;;;;;;     ;;;;;;    ;;  ;;   ;;;;     ;;;;;;;  
+      ;; ;;     ;; ;;        ;;           ;;        ;;  ;;    ;;     ;;        
+;;    ;; ;;     ;; ;;        ;;           ;;        ;;  ;;    ;;     ;;        
+ ;;;;;;   ;;;;;;;  ;;        ;;           ;;       ;;;;  ;;;;;;      ;;;;;;;;; 
+
+;;    ;; ;;;; ;;    ;; ;;;;;;;; ;;;;;;;; ;;;;  ;;;;;;   ;;;;;;  
+;;   ;;   ;;  ;;;   ;; ;;          ;;     ;;  ;;    ;; ;;    ;; 
+;;  ;;    ;;  ;;;;  ;; ;;          ;;     ;;  ;;       ;;       
+;;;;;     ;;  ;; ;; ;; ;;;;;;      ;;     ;;  ;;        ;;;;;;  
+;;  ;;    ;;  ;;  ;;;; ;;          ;;     ;;  ;;             ;; 
+;;   ;;   ;;  ;;   ;;; ;;          ;;     ;;  ;;    ;; ;;    ;; 
+;;    ;; ;;;; ;;    ;; ;;;;;;;;    ;;    ;;;;  ;;;;;;   ;;;;;;  
+
+% compute stimulus autocorrelation function 
+xcorr_S_lo = NaN(4e3+1,size(reshaped_PID,2));
+xcorr_S_hi = NaN(4e3+1,size(reshaped_PID,2));
+for i = 1:size(reshaped_PID,2)
+	xcorr_S_hi(:,i) = autocorr(reshaped_PID(1e3:5e3,i),4e3);
+	xcorr_S_lo(:,i) = autocorr(reshaped_PID(6e3:end,i),4e3);
+end
+
+tau_lo = NaN(size(reshaped_PID,2),1);
+tau_hi = NaN(size(reshaped_PID,2),1);
+for i = 1:size(reshaped_PID,2)
+	tau_hi(i) = find(xcorr_S_hi(:,i) < 1/exp(1),1,'first');
+	tau_lo(i) = find(xcorr_S_lo(:,i) < 1/exp(1),1,'first');
+end
+
+% compute cross correlations from stimulus to LFP
+xcorr_X_lo = NaN(8e3+1,size(reshaped_PID,2));
+xcorr_X_hi = NaN(8e3+1,size(reshaped_PID,2));
+for i = 1:size(reshaped_PID,2)
+	S = reshaped_PID(1e3:5e3,i); S = S - mean(S); S = S/std(S);
+	R = reshaped_LFP(1e3:5e3,i); R = R - mean(R); R = R/std(R);
+	xcorr_X_hi(:,i) = xcorr(R,S);
+
+	S = reshaped_PID(6e3:end,i); S = S - mean(S); S = S/std(S);
+	R = reshaped_LFP(6e3:end,i); R = R - mean(R); R = R/std(R);
+	xcorr_X_lo(:,i) = xcorr(R,S);
+end
+
+xcorr_X_lo = -xcorr_X_lo;
+xcorr_X_hi = -xcorr_X_hi;
+
+% compute cross correlations from stimulus to firing rate 
+xcorr_R_lo = NaN(8e3+1,size(reshaped_PID,2));
+xcorr_R_hi = NaN(8e3+1,size(reshaped_PID,2));
+for i = 1:size(reshaped_PID,2)
+	S = reshaped_PID(1e3:5e3,i); S = S - mean(S); S = S/std(S);
+	R = reshaped_fA(1e3:5e3,i); R = R - mean(R); R = R/std(R);
+	xcorr_R_hi(:,i) = xcorr(R,S);
+
+	S = reshaped_PID(6e3:end,i); S = S - mean(S); S = S/std(S);
+	R = reshaped_fA(6e3:end,i); R = R - mean(R); R = R/std(R);
+	xcorr_R_lo(:,i) = xcorr(R,S);
+end
+
+% remove some crap
+r2_cutoff = .6;
+rm_this = max(xcorr_R_lo) > 8e3 | max(xcorr_R_hi) > 8e3 |  max(xcorr_X_lo)/4e3 < r2_cutoff | max(xcorr_X_hi)/4e3 < r2_cutoff;
+xcorr_R_lo(:,rm_this) = NaN;
+xcorr_R_hi(:,rm_this) = NaN;
+xcorr_X_lo(:,rm_this) = NaN;
+xcorr_X_hi(:,rm_this) = NaN;
+
+[~,LFP_lags_lo] = max(xcorr_X_lo);
+[~,LFP_lags_hi] = max(xcorr_X_hi);
+LFP_lags_hi = LFP_lags_hi - 4e3;
+LFP_lags_lo = LFP_lags_lo - 4e3;
+rm_this = abs(LFP_lags_hi) > 200 | abs(LFP_lags_lo) > 200;
+LFP_lags_hi(rm_this) = NaN;
+LFP_lags_lo(rm_this) = NaN;
+
+[~,fA_lags_lo] = max(xcorr_R_lo);
+[~,fA_lags_hi] = max(xcorr_R_hi);
+fA_lags_hi = fA_lags_hi - 4e3;
+fA_lags_lo = fA_lags_lo - 4e3;
+rm_this = abs(fA_lags_hi) > 1e3 | abs(fA_lags_lo) > 1e3;
+fA_lags_hi(rm_this) = NaN;
+fA_lags_lo(rm_this) = NaN;
+
+figure('outerposition',[0 0 1400 800],'PaperUnits','points','PaperSize',[1400 800]); hold on
+subplot(2,3,1); hold on
+lags = 0:length(xcorr_S_lo)-1;
+plot(lags,mean(xcorr_S_lo,2),'Color','b');
+plot(lags,mean(xcorr_S_hi,2),'Color','r');
+set(gca,'XScale','log')
+xlabel('Lag (ms)')
+ylabel('Autocorrelation (norm)')
+
+subplot(2,3,4); hold on
+plot(std(reshaped_PID(1e3:5e3,~rm_this)),tau_hi(~rm_this),'r+')
+plot(std(reshaped_PID(6e3:end,~rm_this)),tau_lo(~rm_this),'b+')
+set(gca,'YLim',[0 100],'XLim',[0 .21])
+xlabel('\sigma_{Stimulus} (V)')
+ylabel('Autocorrelation time (ms)')
+
+subplot(2,3,2); hold on
+lags = (1:length(xcorr_X_lo))-4e3;
+plot(lags,nanmean(xcorr_X_lo,2)/max(nanmean(xcorr_X_lo,2)),'Color','b');
+plot(lags,nanmean(xcorr_X_hi,2)/max(nanmean(xcorr_X_hi,2)),'Color','r');
+xlabel('Lag (ms)')
+set(gca,'XLim',[-200 500])
+ylabel('Cross correlation (norm)')
+title('Stimulus \rightarrow LFP')
+
+subplot(2,3,5); hold on
+plot(std(reshaped_PID(1e3:5e3,:)),LFP_lags_hi,'r+')
+plot(std(reshaped_PID(6e3:end,:)),LFP_lags_lo,'b+')
+set(gca,'YLim',[0 150],'XLim',[0 .21])
+[~,p] = ttest2(LFP_lags_hi,LFP_lags_lo);
+text(.1,20,['p = ' oval(p)])
+xlabel('\sigma_{Stimulus} (V)')
+ylabel('LFP lag (ms)')
+
+subplot(2,3,3); hold on
+lags = (1:length(xcorr_R_lo))-4e3;
+plot(lags,nanmean(xcorr_R_lo,2)/max(nanmean(xcorr_R_lo,2)),'Color','b');
+plot(lags,nanmean(xcorr_R_hi,2)/max(nanmean(xcorr_R_hi,2)),'Color','r');
+xlabel('Lag (ms)')
+set(gca,'XLim',[-200 500])
+ylabel('Cross correlation (norm)')
+title('Stimulus \rightarrow firing rate')
+
+subplot(2,3,6); hold on
+plot(std(reshaped_PID(1e3:5e3,:)),fA_lags_hi,'r+')
+plot(std(reshaped_PID(6e3:end,:)),fA_lags_lo,'b+')
+set(gca,'YLim',[0 110],'XLim',[0 .21])
+[~,p] = ttest2(fA_lags_hi,fA_lags_lo);
+text(.1,20,['p = ' oval(p)])
+xlabel('\sigma_{Stimulus} (V)')
+ylabel('Firing lag (ms)')
 
 
+prettyFig();
+labelFigure('column_first',true,'x_offset',0,'font_size',24)
 
-
-
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 
 

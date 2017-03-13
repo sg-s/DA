@@ -284,17 +284,15 @@ for j = 1:size(data(2).X,2)
 end
 
 l(2) = plot(ax(4),time,data(2).P(:,3),'r');
-legend(l,{'ab2A',['model r^2 = ' oval(rsquare(data(2).P(:,3),data(2).R(:,3)))]},'Location','northwest')
+% legend(l,{'ORN',['model r^2 = ' oval(rsquare(data(2).P(:,3),data(2).R(:,3)))]},'Location','northwest')
 
 % show the output nonlinearity for ab3A
 x = linspace(-.5,1,100);
 y = x*p.C;
 y(y<0) = 0;
 clear l
-l(1) = plot(ax(3),x,y,'r--');
-l(2) = plot(ax(3),x,y*ff.p1,'r');
-legend(l,{'ab3A','ab2A'},'Location','northwest')
-set(ax(3),'XLim',[-.5 1 ],'YLim',[0 300])
+l(1) = plot(ax(3),x,y,'r');
+set(ax(3),'XLim',[-.5 1 ],'YLim',[0 200])
 xlabel(ax(3),'K \otimes a')
 ylabel(ax(3),'Firing rate (Hz)')
 
@@ -348,8 +346,7 @@ l = plot(ax(6),x,y,'.','MarkerSize',20,'Color',[.5 .5 .5]);
 legend(l,['r^2 = ' oval(rsquare(x,y))],'Location','southeast')
 plot(ax(6),[0 300],[0 300],'k--')
 xlabel(ax(6),' Model response (Hz)')
-ylabel(ax(6),'ab2A response (Hz)')
-title(ax(6),'Whiff-specific responses')
+ylabel(ax(6),'ORN response (Hz)')
 set(ax(6),'XLim',[0 300],'YLim',[0 300])
 
 ;;       ;;;;;;;; ;;;;;;;;     ;;     ;;  ;;;;;;   ;;;;;;   
@@ -484,8 +481,7 @@ clear l
 l = plot(ax(13),x,y,'.','MarkerSize',20,'Color',[.5 .5 .5]);
 legend(l,['r^2 = ' oval(rsquare(x,y))],'Location','northwest')
 xlabel(ax(13),'LFP model response (mV)')
-ylabel(ax(13),'ab2 LFP response (mV)')
-title(ax(13),'Whiff-specific responses')
+ylabel(ax(13),'LFP response (mV)')
 plot(ax(13),[-18 0],[-18 0],'k--')
 set(ax(13),'XLim',[-18 0],'YLim',[-18 0],'YDir','reverse','XDir','reverse')
 
@@ -517,8 +513,17 @@ ylabel(ax(14),'LFP (mV)')
 xlabel(ax(14),'Time since whiff (ms)')
 set(ax(14),'YDir','reverse')
 
+% also show the raw traces
+ax(12) = subplot(5,3,12); hold on
+plot(ax(12),time,data(2).XP(:,2),'k')
+plot(ax(12),time,data(2).X(:,2),'r')
+set(ax(12),'XLim',[20 30],'YLim',[-25 5],'YDir','reverse')
+xlabel(ax(12),'Time (s)')
+ylabel(ax(12),'\DeltaLFP (mV)')
+
+
 % add the cartoon
-ax_fig = subplot(5,3,10:12); hold on
+ax_fig = subplot(5,3,10:11); hold on
 axes(ax_fig)
 o = imread('../images/lfp-model-cartoon.png');
 imagesc(o);
@@ -527,6 +532,9 @@ axis image
 axis off
 
 prettyFig('fs',12);
+
+% add labels
+[~,lh] = labelFigure('x_offset',0,'y_offset',0.01);
 
 if being_published
 	snapnow

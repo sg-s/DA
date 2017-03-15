@@ -8,7 +8,7 @@ pHeader;
 
 
 % make the figure and all subplots 
-figure('outerposition',[0 0 900 1001],'PaperUnits','points','PaperSize',[900 1001]); hold on
+figure('outerposition',[0 0 1000 1001],'PaperUnits','points','PaperSize',[1000 1001]); hold on
 clear ax
 
 % time series for ab3A
@@ -41,6 +41,8 @@ ax.ab2A_drR = subplot(7,4,28); hold on
 % add insets showing that whiffs don't change, but responses do
 ax.ab3A_SZi = axes; hold on
 ax.ab3A_SZi.Position = [.88 .89 .05 .05];
+ax.ab3A_SZi2 = axes; hold on
+ax.ab3A_SZi2.Position = [.95 .89 .05 .05];
 
 ax.ab3A_XZi = axes; hold on
 ax.ab3A_XZi.Position = [.88 .75 .05 .05];
@@ -50,6 +52,8 @@ ax.ab3A_RZi.Position = [.88 .63 .05 .05];
 
 ax.ab2A_SZi = axes; hold on
 ax.ab2A_SZi.Position = [.88 .51 .05 .05];
+ax.ab2A_SZi2 = axes; hold on
+ax.ab2A_SZi2.Position = [.95 .51 .05 .05];
 
 ax.ab2A_XZi = axes; hold on
 ax.ab2A_XZi.Position = [.88 .39 .05 .05];
@@ -97,8 +101,8 @@ end
 % show context-dependent variation in whiff response
 s_range = [.8 1.2];
 
-show_these = [2       27764
-           2       28790
+show_these = [2    28790
+           2       27764
            2       59776
            3       58049];
 
@@ -131,6 +135,9 @@ X_int_err = NaN*(1:4);
 R_int = NaN*(1:4);
 R_int_err = NaN*(1:4);
 
+S_before = NaN*(1:4);
+S_before_err = NaN*(1:4);
+
 for i = 1:length(show_these)
 	this_paradigm = show_these(i,1); 
 
@@ -138,17 +145,21 @@ for i = 1:length(show_these)
 	LFP = data(2).X(:,this_paradigm);
 	fA =  data(2).R(:,this_paradigm);
 
+	temp = max(PID(show_these(i,2)-300:show_these(i,2)-100,:));
+	S_before(i) = nanmean(temp);
+	S_before_err(i) = nanstd(temp);
+
 	temp = nanmean(PID(show_these(i,2):show_these(i,2)+10,:));
 	S_int(i) = nanmean(temp);
-	S_int_err(i) = nanstd(temp)/sqrt(length(temp));
+	S_int_err(i) = nanstd(temp);
 
 	temp = nanmean(LFP(show_these(i,2)+90:show_these(i,2)+100,:));
 	X_int(i) = nanmean(temp);
-	X_int_err(i) = nanstd(temp)/sqrt(length(temp));
+	X_int_err(i) = nanstd(temp);
 
 	temp = nanmean(fA(show_these(i,2)+60:show_these(i,2)+80,:));
 	R_int(i) = nanmean(temp);
-	R_int_err(i) = nanstd(temp)/sqrt(length(temp));
+	R_int_err(i) = nanstd(temp);
 
 end
 
@@ -157,21 +168,22 @@ cla(ax.ab2A_XZi)
 cla(ax.ab2A_RZi)
 c = lines(10);
 
-[~,~,S_order] = unique(S_int);
-[~,~,X_order] = unique(X_int); X_order = 5 - X_order;
-[~,~,R_order] = unique(R_int);
+% show whiff statistics
+for i = 1:length(show_these)
+	superbar(ax.ab2A_SZi2,(i),S_int(i),'E',S_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
+	superbar(ax.ab2A_XZi,(i),X_int(i),'E',X_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
+	superbar(ax.ab2A_RZi,(i),R_int(i),'E',R_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
+end
 
-% show circles to indicate ordering 
-sh.ab2_S1 = scatter(ax.ab2A_SZi,S_order,[2 2 2 2],100,lines(4),'filled');
-sh.ab2_S2 = scatter(ax.ab2A_SZi,X_order,[1 1 1 1],100,lines(4),'filled');
-sh.ab2_X = scatter(ax.ab2A_XZi,X_order,[1 1 1 1],100,lines(4),'filled');
-sh.ab2_R = scatter(ax.ab2A_RZi,R_order,[1 1 1 1],100,lines(4),'filled');
+% also show the statistics of the whiff before
+for i = 1:length(show_these)
+	superbar(ax.ab2A_SZi,(i),(S_before(i)),'E',abs((S_before_err(i))),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
 
-% for i = 1:length(show_these)
-% 	superbar(ax.ab2A_SZi,S_order(i),S_int(i),'E',S_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
-% 	superbar(ax.ab2A_XZi,X_order(i),X_int(i),'E',X_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
-% 	superbar(ax.ab2A_RZi,R_order(i),R_int(i),'E',R_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
-% end
+end
+
+set(ax.ab2A_SZi,'YLim',[0 1.5])
+set(ax.ab2A_SZi2,'YLim',[0 1.5])
+
 
 % show response vs. projected stimulus
 K = fitFilter2Data(data(2).S(:,1),data(2).X(:,1),'offset',200); 
@@ -244,7 +256,7 @@ all_x = []; all_y = [];
 % show context-dependent variation in whiff response
 
 % show_these = [21103 64353 64869];
-show_these = [6112 26669 28413 64360];
+show_these = [28413 26669 64360 6112];
 
 cla(ax.ab3A_SZ)
 cla(ax.ab3A_XZ)
@@ -278,10 +290,18 @@ X_int_err = NaN*show_these;
 R_int = NaN*show_these;
 R_int_err = NaN*show_these;
 
+S_before = NaN*(1:4);
+S_before_err = NaN*(1:4);
+
 for i = 1:length(show_these)
 	temp = nanmean(PID(show_these(i):show_these(i)+10,:));
 	S_int(i) = nanmean(temp);
 	S_int_err(i) = nanstd(temp)/sqrt(length(temp));
+
+	temp = max(PID(show_these(i)-300:show_these(i)-100,:));
+	S_before(i) = nanmean(temp);
+	S_before_err(i) = nanstd(temp);
+
 
 	temp = nanmean(LFP(show_these(i)+90:show_these(i)+100,:));
 	X_int(i) = nanmean(temp);
@@ -298,57 +318,48 @@ cla(ax.ab3A_XZi)
 cla(ax.ab3A_RZi)
 c = lines(10);
 
-[~,~,S_order] = unique(S_int);
-[~,~,X_order] = unique(X_int); X_order = max(X_order)+1 - X_order;
-[~,~,R_order] = unique(R_int);
 
-% show circles to indicate ordering 
-sh.ab3_S1 = scatter(ax.ab3A_SZi,S_order,[2 2 2 2],100,lines(4),'filled');
-sh.ab3_S2 = scatter(ax.ab3A_SZi,X_order,[1 1 1 1],100,lines(4),'filled');
-sh.ab3_X = scatter(ax.ab3A_XZi,X_order,[1 1 1 1],100,lines(4),'filled');
-sh.ab3_R = scatter(ax.ab3A_RZi,R_order,[1 1 1 1],100,lines(4),'filled');
+for i = 1:length(show_these)
+	superbar(ax.ab3A_SZi2,i,S_int(i),'E',S_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
+	superbar(ax.ab3A_SZi,i,S_before(i),'E',S_before_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
+	superbar(ax.ab3A_XZi,i,X_int(i),'E',X_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
+	superbar(ax.ab3A_RZi,i,R_int(i),'E',R_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
 
-% for i = 1:length(show_these)
-% 	superbar(ax.ab3A_SZi,S_order(i),S_int(i),'E',S_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
-% 	superbar(ax.ab3A_XZi,X_order(i),X_int(i),'E',X_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
-% 	superbar(ax.ab3A_RZi,R_order(i),R_int(i),'E',R_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
+end
 
-% end
-
+set(ax.ab3A_SZi2,'YLim',[0 2.5])
+set(ax.ab3A_SZi,'YLim',[0 2.5])
+set(ax.ab3A_SZ,'YLim',[0 2.5])
 
 prettyFig('fs',12,'plw',1.5);
 
+% labels, axes clean up -- not position related
+
 ylabel(ax.ab3A_S,['Stimulus' char(10) '(V)'])
 set(ax.ab3A_S,'XLim',[0 70],'XTick',[])
-
 ylabel(ax.ab3A_X,['\DeltaLFP' char(10) '(mV)'])
 set(ax.ab3A_X,'XLim',[0 70],'YLim',[-20 2])
 set(ax.ab3A_X,'YDir','reverse','XTick',[])
-
 ylabel(ax.ab3A_R,['Firing' char(10) 'rate (Hz)'])
 set(ax.ab3A_R,'XLim',[0 70])
-
-
 ylabel(ax.ab2A_S,['Stimulus' char(10) '(V)'])
 set(ax.ab2A_S,'XLim',[0 70],'XTick',[])
-
 ylabel(ax.ab2A_X,['\DeltaLFP' char(10) '(mV)'])
 set(ax.ab2A_X,'XLim',[0 70],'XTick',[])
 set(ax.ab2A_X,'YDir','reverse')
-
 ylabel(ax.ab2A_R,['Firing' char(10) 'rate (Hz)'])
 set(ax.ab2A_R,'XLim',[0 70])
 xlabel(ax.ab2A_R,'Time (s)')
 
+% whiff plots
 set(ax.ab3A_XZ,'YDir','reverse')
 set(ax.ab2A_XZ,'YDir','reverse')
 xlabel(ax.ab2A_RZ,'Time since whiff (ms)')
-
-
 xlabel(ax.ab2A_drX,'Whiff amplitude (V)')
 ylabel(ax.ab2A_drX,'ab2 LFP (mV)')
-set(ax.ab2A_drX,'XScale','log','XLim',[1e-2 1e1],'YDir','reverse','XTick',[1e-2 1e-1 1e0 1e1 1e2])
 
+% dose-response
+set(ax.ab2A_drX,'XScale','log','XLim',[1e-2 1e1],'YDir','reverse','XTick',[1e-2 1e-1 1e0 1e1 1e2])
 xlabel(ax.ab2A_drR,'Whiff amplitude (V)')
 ylabel(ax.ab2A_drR,'ab2A firing rate (Hz)')
 set(ax.ab2A_drR,'XScale','log','XLim',[1e-2 1e1],'XTick',[1e-2 1e-1 1e0 1e1 1e2])
@@ -367,70 +378,68 @@ ax.ab2A_XZ.XLim = [-300 300];
 ax.ab3A_RZ.XLim = [-300 300];
 
 % clean up the insets a little
-% ax.ab3A_SZi.XTick = [];
-% ax.ab3A_XZi.XTick = [];
-% ax.ab3A_RZi.XTick = [];
-% ax.ab2A_SZi.XTick = [];
-% ax.ab2A_XZi.XTick = [];
-% ax.ab2A_RZi.XTick = [];
-% ax.ab3A_SZi.YLim = [0 0.4];
-% ax.ab3A_SZi.YTick = [0 0.4];
-% ax.ab3A_XZi.YLim = [-15 0];
-% ax.ab3A_XZi.YTick = [-15 0];
-% ax.ab3A_XZi.YDir  = 'reverse'; 
-% ax.ab3A_RZi.YLim = [0 160];
-% ax.ab3A_RZi.YTick = [0 150];
-% ax.ab2A_SZi.YLim = [0 1];
-% ax.ab2A_SZi.YTick = [0 1];
-% ax.ab2A_XZi.YLim = [-20 0];
-% ax.ab2A_XZi.YTick = [-20 0];
-% ax.ab2A_XZi.YDir  = 'reverse'; 
-% ax.ab2A_RZi.YLim = [0 250];
-% ax.ab2A_RZi.YTick = [0 250];
+ax.ab3A_SZi.XTick = [];
+ax.ab3A_SZi2.XTick = [];
+ax.ab3A_XZi.XTick = [];
+ax.ab3A_RZi.XTick = [];
+ax.ab2A_SZi.XTick = [];
+ax.ab2A_SZi2.XTick = [];
+ax.ab2A_XZi.XTick = [];
+ax.ab2A_RZi.XTick = [];
+ax.ab3A_SZi.YLim = [0 2.5];
+ax.ab3A_SZi.YTick = [0 1 2];
+ax.ab3A_SZi2.YLim = [0 2.5];
+ax.ab3A_SZi2.YTick = [0 1 2];
+ax.ab3A_XZi.YLim = [-15 0];
+ax.ab3A_XZi.YTick = [-15 0];
+ax.ab3A_XZi.YDir  = 'reverse'; 
+ax.ab3A_RZi.YLim = [0 160];
+ax.ab3A_RZi.YTick = [0 150];
+ax.ab2A_SZi.YLim = [0 1.5];
+ax.ab2A_SZi2.YLim = [0 1.5];
+ax.ab2A_SZi.YTick = [0 1];
+ax.ab2A_SZi2.YTick = [0 1];
+ax.ab2A_XZi.YLim = [-20 0];
+ax.ab2A_XZi.YTick = [-20 0];
+ax.ab2A_XZi.YDir  = 'reverse'; 
+ax.ab2A_RZi.YLim = [0 250];
+ax.ab2A_RZi.YTick = [0 250];
 
-% move things around
-ax.ab3A_S.Position = [0.1300 0.88 0.57 0.07];
-ax.ab3A_X.Position = [0.1300 0.80 0.57 0.07];
-ax.ab3A_R.Position = [0.1300 0.72 0.57 0.07];
-ax.ab2A_S.Position = [0.1300 0.56 0.57 0.07];
-ax.ab2A_X.Position = [0.1300 0.48 0.57 0.07];
-ax.ab2A_R.Position = [0.1300 0.4 0.57 0.07];
+% fix positions of things
+ax.ab3A_S.Position  = [0.13 0.88 0.50 0.07];
+ax.ab3A_X.Position  = [0.13 0.80 0.50 0.07];
+ax.ab3A_R.Position  = [0.13 0.72 0.50 0.07];
+ax.ab2A_S.Position  = [0.13 0.56 0.50 0.07];
+ax.ab2A_X.Position  = [0.13 0.48 0.50 0.07];
+ax.ab2A_R.Position  = [0.13 0.40 0.50 0.07];
 
-ax.ab3A_SZ.Position = [0.76 0.88 0.13 0.07];
-ax.ab3A_XZ.Position = [0.76 0.80 0.13 0.07];
-ax.ab3A_RZ.Position = [0.76 0.72 0.13 0.07];
-ax.ab2A_SZ.Position = [0.76 0.56 0.13 0.07];
-ax.ab2A_XZ.Position = [0.76 0.48 0.13 0.07];
-ax.ab2A_RZ.Position = [0.76 0.40 0.13 0.07];
+ax.ab3A_SZ.Position = [0.68 0.88 0.11 0.07];
+ax.ab3A_XZ.Position = [0.68 0.80 0.11 0.07];
+ax.ab3A_RZ.Position = [0.68 0.72 0.11 0.07];
+ax.ab2A_SZ.Position = [0.68 0.56 0.11 0.07];
+ax.ab2A_XZ.Position = [0.68 0.48 0.11 0.07];
+ax.ab2A_RZ.Position = [0.68 0.40 0.11 0.07];
 
-ax.ab3A_SZi.Position = [0.93 0.88 0.05 0.05];
-ax.ab3A_XZi.Position = [0.93 0.80 0.05 0.05];
-ax.ab3A_RZi.Position = [0.93 0.72 0.05 0.05];
-ax.ab2A_SZi.Position = [0.93 0.56 0.05 0.05];
-ax.ab2A_XZi.Position = [0.93 0.48 0.05 0.05];
-ax.ab2A_RZi.Position = [0.93 0.40 0.05 0.05];
+ax.ab3A_SZi.Position = [0.83 0.88 0.05 0.06];
+
+ax.ab3A_SZi2.Position = [0.93 0.88 0.05 0.06];
+ax.ab3A_XZi.Position  = [0.93 0.80 0.05 0.06];
+ax.ab3A_RZi.Position  = [0.93 0.72 0.05 0.06];
+
+ax.ab2A_SZi.Position  = [0.83 0.56 0.05 0.06];
+ax.ab2A_SZi2.Position = [0.93 0.56 0.05 0.06];
+ax.ab2A_XZi.Position  = [0.93 0.48 0.05 0.06];
+ax.ab2A_RZi.Position  = [0.93 0.40 0.05 0.06];
 
 
 % make the bottom four plots bigger
-ax.X_proj.Position = [0.1 0.15 .16 .16];
-ax.R_proj.Position = [0.33 0.15 .16 .16];
+ax.X_proj.Position = [0.1 0.13 .16 .16];
+ax.R_proj.Position = [0.33 0.13 .16 .16];
 
-ax.ab2A_drX.Position = [0.57 0.15 .16 .16];
-ax.ab2A_drR.Position = [0.8 0.15 .16 .16];
-
-% the insets -- add texts, clean up
-ax.ab2A_SZi.Visible = 'off';
-ax.ab2A_XZi.Visible = 'off';
-ax.ab2A_RZi.Visible = 'off';
-ax.ab3A_SZi.Visible = 'off';
-ax.ab3A_XZi.Visible = 'off';
-ax.ab3A_RZi.Visible = 'off';
-
-ax.ab3A_SZi.YLim = [.7 2];
-ax.ab2A_SZi.YLim = [.7 2];
+ax.ab2A_drX.Position = [0.57 0.13 .16 .16];
+ax.ab2A_drR.Position = [0.8 0.13 .16 .16];
 
 % label things
-
 labelAxes(ax.ab3A_S,'a','x_offset',-.05,'font_size',24);
 labelAxes(ax.ab2A_S,'b','x_offset',-.05,'font_size',24);
 
@@ -445,7 +454,6 @@ labelAxes(ax.ab2A_drR,'f','x_offset',-.025,'font_size',24);
 
 
 % deintersect the dose-response axes
-
 ax.ab2A_drX.XLim(2) = 11;
 ax.ab2A_drX.YLim(2) = 0;
 ax.ab2A_drR.XLim(2) = 11;
@@ -476,12 +484,9 @@ th.Parent = canvas;
 shrinkDataInPlot(ax.ab2A_S,2)
 shrinkDataInPlot(ax.ab2A_X,2)
 shrinkDataInPlot(ax.ab2A_R,2)
-
 shrinkDataInPlot(ax.ab3A_S,2)
 shrinkDataInPlot(ax.ab3A_X,2)
 shrinkDataInPlot(ax.ab3A_R,2)
-
-
 shrinkDataInPlot(ax.X_proj,2)
 shrinkDataInPlot(ax.R_proj,2)
 

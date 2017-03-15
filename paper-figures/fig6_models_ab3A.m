@@ -263,27 +263,47 @@ errorbar(x,y,ye,'Color',firing_color)
 
 
 % show the naturalistic stimulus fits
+cdata = consolidateData2(getPath(dataManager,'11f83bf78ccad7d44fee8e92dd65602f'));
 
-cdata = consolidateData2(getPath(dataManager,'4608c42b12191b383c84fea52392ea97'));
-[cdata, data] =  assembleScaledNatStim(cdata);
-time = 1e-3*(1:length(data(1).S));
+% first remove min stimulus from every trace, and fix the LFP
+for i = 1:size(cdata.PID,2)
+	cdata.PID(:,i) = cdata.PID(:,i) - min(cdata.PID(:,i));
+	cdata.LFP(:,i) = cdata.LFP(:,i) - mean(cdata.LFP(1:5e3,i));
+end
+
+cdata.LFP = cdata.LFP*10;
+
+example_orn = 1;
+
+PID = cdata.PID(:,cdata.orn == example_orn);
+LFP = cdata.LFP(:,cdata.orn == example_orn);
+fA = cdata.fA(:,cdata.orn == example_orn);
+
+S = mean(cdata.PID(:,cdata.orn == example_orn),2);
+X = mean(cdata.LFP(:,cdata.orn == example_orn),2);
+R = mean(cdata.fA(:,cdata.orn == example_orn),2);
+time = 1e-3*(1:length(R));
+
+rm_this = isnan(sum(S)) | max(R) == 0;
+S(:,rm_this) = []; X(:,rm_this) = []; R(:,rm_this) = [];
+
+
 
 % show the time series of the natualistic stimulus
 ax(4) = subplot(5,3,4); hold on
 clear l
-l(1) = plot(ax(4),time,data(2).R(:,3),'k');
+l(1) = plot(ax(4),time,R,'k');
 % generate responses and plot them too
 
-for j = 1:size(data(2).X,2)
-	data(2).P(:,j) = aNLN4(data(2).S(:,j) - min(data(2).S(:,j)) ,p);
-end
-% fix some trivial scaling
-ff = fit(data(2).P(:),data(2).R(:),'poly1');
-for j = 1:size(data(2).X,2)
-	data(2).P(:,j) = ff(data(2).P(:,j));
-end
 
-l(2) = plot(ax(4),time,data(2).P(:,3),'r');
+P = aNLN4(S - min(S) ,p);
+
+
+% fix some trivial scaling
+ff = fit(P(:),R,'poly1');
+P = ff(P);
+
+l(2) = plot(ax(4),time,P,'r');
 % legend(l,{'ORN',['model r^2 = ' oval(rsquare(data(2).P(:,3),data(2).R(:,3)))]},'Location','northwest')
 
 % show the output nonlinearity for ab3A
@@ -298,56 +318,51 @@ ylabel(ax(3),'Firing rate (Hz)')
 
 xlabel(ax(4),'Time (s)')
 ylabel(ax(4),'Firing rate (Hz)')
+set(ax(4),'XLim',[20 30])
 
 % show responses during the whiffs of approx same magnitude to show variation in response. 
 
 ax(5) = subplot(5,3,5); hold on
 
-show_these = [           2       27764
-           2       28790
-           2       59776
-           3       58049];
+% show_these = [21103 64353 64869];
+show_these = [6112 26669 28413 64360];
 
-for i = 2
-	for j = 1:length(show_these)
-		this_stim = show_these(j,1);
-		this_loc = show_these(j,2);
 
-		R = data(i).R(:,this_stim);
+for j = 1:length(show_these)
+	this_loc = show_these(j);
 
-		a = this_loc - 300;
-		z = this_loc+300;
-		t = 1:length(R(a:z)); t = t - 300;
-		plot(ax(5),t,R(a:z))
+	tR = mean(P,2);
 
-	end
+	a = this_loc - 300;
+	z = this_loc + 300;
+
+	t = (1:length(tR(a:z))) - 300;
+
+	plot(ax(5),t,tR(a:z))
+
 end
+
 ylabel(ax(5),'Firing rate (Hz)')
 xlabel(ax(5),'Time since whiff (ms)')
-set(ax(4),'XLim',[20 30])
 
 
 % show r^2 for every whiff
 ax(6) = subplot(5,3,6); hold on
 x = []; y = [];
-for i = 2
-	for j = 1:3
-		S = data(i).S(:,j);
-		P = data(i).P(:,j);
-		R = data(i).R(:,j);
-		ws = whiffStatistics(S,R,R,300,'MinPeakProminence',max(S/1e2),'debug',false);
-		y = [y; ws.peak_firing_rate];
-		ws = whiffStatistics(S,P,P,300,'MinPeakProminence',max(S/1e2),'debug',false);
-		x = [x; ws.peak_firing_rate];
-	end
-end
+
+ws = whiffStatistics(S,R,R,300,'MinPeakProminence',max(S/1e2),'debug',false);
+y = [y; ws.peak_firing_rate];
+ws = whiffStatistics(S,P,P,300,'MinPeakProminence',max(S/1e2),'debug',false);
+x = [x; ws.peak_firing_rate];
+
 clear l
 l = plot(ax(6),x,y,'.','MarkerSize',20,'Color',[.5 .5 .5]);
 legend(l,['r^2 = ' oval(rsquare(x,y))],'Location','southeast')
 plot(ax(6),[0 300],[0 300],'k--')
 xlabel(ax(6),' Model response (Hz)')
 ylabel(ax(6),'ORN response (Hz)')
-set(ax(6),'XLim',[0 300],'YLim',[0 300])
+set(ax(6),'XLim',[50 200],'YLim',[50 200])
+
 
 ;;       ;;;;;;;; ;;;;;;;;     ;;     ;;  ;;;;;;   ;;;;;;   
 ;;       ;;       ;;     ;;    ;;;   ;;; ;;    ;; ;;    ;;  
@@ -431,51 +446,52 @@ ylabel('Lag (ms)')
 
 
 % get all data 
-cdata = consolidateData2(getPath(dataManager,'4608c42b12191b383c84fea52392ea97'));
-[cdata, data] =  assembleScaledNatStim(cdata);
+cdata = consolidateData2(getPath(dataManager,'11f83bf78ccad7d44fee8e92dd65602f'));
 
-
-this_orn = 2;
-clear fd
-for i = 1:size(data(this_orn).X,2)
-	S = data(this_orn).S(:,i); S = S - min(S);
-	R = data(this_orn).X(:,i);
-	fd(i).stimulus = S;
-	fd(i).response = -R;
-	fd(i).response(1:5e3) = NaN;
+% first remove min stimulus from every trace, and fix the LFP
+for i = 1:size(cdata.PID,2)
+	cdata.PID(:,i) = cdata.PID(:,i) - min(cdata.PID(:,i));
+	cdata.LFP(:,i) = cdata.LFP(:,i) - mean(cdata.LFP(1:5e3,i));
 end
+
+cdata.LFP = cdata.LFP*10;
+
+example_orn = 1;
+
+PID = cdata.PID(:,cdata.orn == example_orn);
+LFP = cdata.LFP(:,cdata.orn == example_orn);
+fA = cdata.fA(:,cdata.orn == example_orn);
+
+S = mean(cdata.PID(:,cdata.orn == example_orn),2);
+X = mean(cdata.LFP(:,cdata.orn == example_orn),2);
+R = mean(cdata.fA(:,cdata.orn == example_orn),2);
+time = 1e-3*(1:length(R));
+
+rm_this = isnan(sum(S)) | max(R) == 0;
+S(:,rm_this) = []; X(:,rm_this) = []; R(:,rm_this) = [];
 
 clear p
-p.           k0 = 0.1000;
-p.            w = 3.6250;
-p.            B = 30.7500;
-p.        K_tau = 21.7500;
-p.output_offset = -0.0192;
-p. output_scale = 24.7;
-p.            n = 1;
+p.k0 = 0.09219;
+p.w = 328;
+p.B = 14.375;
+p.K_tau = 36.3;
+p.output_offset = -0.08768;
+p.output_scale = -24.875;
+p.n = 1;
 
 % generate responses using this model 
-for j = 1:size(data(2).X,2)
-	data(2).XP(:,j) = -asNL5(data(2).S(:,j) - min(data(2).S(:,j)) ,p);
-end
-
+XP  = asNL5(S - min(S) ,p);
 
 
 
 % show r^2 for every whiff
 ax(13) = subplot(5,3,13); hold on
 x = []; y = [];
-for i = 2
-	for j = 1:3
-		S = data(i).S(:,j);
-		P = data(i).XP(:,j);
-		R = data(i).X(:,j);
-		ws = whiffStatistics(S,R,R,300,'MinPeakProminence',max(S/1e2),'debug',false);
-		y = [y; ws.peak_firing_rate];
-		ws = whiffStatistics(S,P,P,300,'MinPeakProminence',max(S/1e2),'debug',false);
-		x = [x; ws.peak_firing_rate];
-	end
-end
+ws = whiffStatistics(S,X,X,300,'MinPeakProminence',max(S/1e2),'debug',false);
+y = [y; ws.peak_firing_rate];
+ws = whiffStatistics(S,XP,XP,300,'MinPeakProminence',max(S/1e2),'debug',false);
+x = [x; ws.peak_firing_rate];
+
 clear l
 
 l = plot(ax(13),x,y,'.','MarkerSize',20,'Color',[.5 .5 .5]);
@@ -488,26 +504,18 @@ set(ax(13),'XLim',[-18 0],'YLim',[-18 0],'YDir','reverse','XDir','reverse')
 
 % show context-dep. gain control
 ax(14) = subplot(5,3,14); hold on
-show_these = [2       27764
-           2       28790
-           2       59776
-           3       58049];
+cla(ax(14))
 
-for i = 2
-	c = lines(length(show_these));
-	for j = 1:length(show_these)
-		this_stim = show_these(j,1);
-		this_loc = show_these(j,2);
+show_these = [6112 26669 28413 64360];
 
-		P = data(i).XP(:,this_stim);
+for j = 1:length(show_these)
+	this_loc = show_these(j);
+	a = this_loc - 300;
+	z = this_loc + 300;
+	t = (1:length(XP(a:z))) - 300;
 
-		a = this_loc - 300;
-		z = this_loc+300;
+	plot(ax(14),t,XP(a:z))
 
-		t = 1:length(P(a:z)); t = t - 300;
-		plot(ax(14),t,P(a:z),'Color',c(j,:))
-
-	end
 end
 ylabel(ax(14),'LFP (mV)')
 xlabel(ax(14),'Time since whiff (ms)')
@@ -515,8 +523,8 @@ set(ax(14),'YDir','reverse')
 
 % also show the raw traces
 ax(12) = subplot(5,3,12); hold on
-plot(ax(12),time,data(2).XP(:,2),'k')
-plot(ax(12),time,data(2).X(:,2),'r')
+plot(ax(12),time,XP,'k')
+plot(ax(12),time,X,'r')
 set(ax(12),'XLim',[20 30],'YLim',[-25 5],'YDir','reverse')
 xlabel(ax(12),'Time (s)')
 ylabel(ax(12),'\DeltaLFP (mV)')

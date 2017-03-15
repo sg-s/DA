@@ -333,6 +333,15 @@ th3.Color = [0 0 0];
 th3.FontSize = 18;
 th3.Position = [50 58];
 
+% add legend to the first plot showing what the purple and yellow curves are
+c = parula(11);
+axes(ax.lfp_xcorr)
+th1 = text(.7,1,'Low stimulus','Color',c(1,:));
+th2 = text(.7,.8,'High stimulus','Color',c(10,:));
+
+th1.Position = [.5 1];
+th2.Position = [.5 .88];
+
 figure(main_fig)
 prettyFig;
 

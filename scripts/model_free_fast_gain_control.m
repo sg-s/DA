@@ -168,6 +168,9 @@ end
 %%
 % To push this idea home, I plot the stimulus averaged over tau ms before the whiff for all whiffs that elicited a larger than expected response, vs. stimulus averaged over tau ms before the whiff for all whiffs that elicited a smaller than expected response. To be clear, each dot in this plot corresponds to a set of whiffs, all of similar (around 10%) size, that are split into two groups: one which elicited bigger than expected responses, and another that elicited smaller than expected responses. The mean of each of these groups defines a point in this plot. I then repeat this analysis for many different timescales.  
 
+%%
+% Note that most of the points are below the diagonal line at some timescales, suggesting that the stimulus before smaller than expected responses is LARGER than the stimulus before larger than expected responses. In other words, there is an inverse correlation between gain and the stimulus in the preceding window. 
+
 S = data(2).S; 
 X = data(2).X;
 R = data(2).R;
@@ -187,7 +190,7 @@ stim_peak_loc = vertcat(ws.stim_peak_loc);
 R_peak = vertcat(ws.peak_firing_rate);
 X_peak = vertcat(ws.peak_LFP);
 
-window_size = [100 200 300 500 750 1e3 2e3 5e3];
+window_size = [100 200 300 500 750 1e3 2e3 10e3];
 buffer_size = 50;
 
 clear plot_data
@@ -213,7 +216,10 @@ for oi = 1:length(window_size)
 			% cut out snippets from the stimulus 
 			snippets = NaN(window_size(oi),length(this_set.R));
 			for j = 1:length(this_set.R)
-				snippets(:,j) = S(this_set.S_loc(j)-window_size(oi)-buffer_size+1:this_set.S_loc(j)-buffer_size);
+				try
+					snippets(:,j) = S(this_set.S_loc(j)-window_size(oi)-buffer_size+1:this_set.S_loc(j)-buffer_size);
+				catch
+				end
 			end
 			big_R(i) = mean(mean(snippets(:,this_set.R > mean(this_set.R))));
 			small_R(i) = mean(mean(snippets(:,this_set.R <= mean(this_set.R))));
@@ -276,7 +282,44 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% Now I plot the ratio of the stimulus before bigger than expected and smaller than expected responses as a function of the timescale we look over. This gives us a sense of how strong this effect is, and over what timescale it operates over. Note that the precise form of this plot is heavily dependent on the stimulus that we use. 
 
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1); hold on
+x = window_size;
+y = NaN*window_size;
+ye = NaN*window_size;
+for i = 1:length(window_size)
+	temp = nonnans(plot_data(i).small_X./plot_data(i).big_X);
+	y(i) = mean(temp);
+	ye(i) = sem(temp); 
+end
+errorbar(x,y,ye)
+xlabel('\tau (ms)')
+ylabel(['Stimulus before smaller LFP/' char(10) 'stimulus before bigger LFP'])
+set(gca,'XScale','log','XTick',[10 100 1e3 1e4 1e5],'XLim',[100 1.1e4])
+
+subplot(1,2,2); hold on
+x = window_size;
+y = NaN*window_size;
+ye = NaN*window_size;
+for i = 1:length(window_size)
+	temp = nonnans(plot_data(i).small_R./plot_data(i).big_R);
+	y(i) = mean(temp);
+	ye(i) = sem(temp); 
+end
+errorbar(x,y,ye)
+xlabel('\tau (ms)')
+ylabel(['Stimulus before smaller spiking/' char(10) 'stimulus before bigger spiking'])
+set(gca,'XScale','log','XTick',[10 100 1e3 1e4 1e5],'XLim',[100 1.1e4])
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 %% Analysis pipeline 
 % Now I describe the analysis pipeline I developed to investigate whether variations in response arise from variations in the pulse height, or from the history of the stimulus. This method of analysis is so fiendishly complicated that I made a handy graphic that explains what I'm doing: 

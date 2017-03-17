@@ -7,8 +7,279 @@
 
 pHeader;
 
+
+%%
+% In the following figure, I collect every whiff and measure the response of the neuron to that whiff. I then plot the response (LFP on the left, firing rate on the right), as a function of the whiff amplitude (x-axis) and the mean stimulus in the preceding 300ms (y-axis). The colours indicate the response magnitude (yellow = bigger). It's clear that as the whiff amplitude increases, the response amplitude increases. What is less clear is if the response amplitude decreases if the stimulus in the preceding 300 ms if large. 
+
+cdata = consolidateData2(getPath(dataManager,'4608c42b12191b383c84fea52392ea97'));
+[cdata, data] =  assembleScaledNatStim(cdata);
+
+clear ws
+for j = 1:3
+	ws(j) = whiffStatistics(data(2).S(:,j),data(2).X(:,j),data(2).R(:,j),300,'MinPeakProminence',max(data(2).S(:,j)/100));
+end
+
+% plot the lfp
+X = -vertcat(ws.peak_LFP);
+R = vertcat(ws.peak_firing_rate);
+S = vertcat(ws.stim_peaks);
+Shat = vertcat(ws.stim_history_length_before_whiff);
+
+rm_this = isnan(X) | isnan(R);
+X(rm_this) = []; S(rm_this) = []; Shat(rm_this) = []; R(rm_this) = [];
+
+% make a colors vector
+c = parula(100);
+cX = X - min(X); cX = cX/max(cX); cX = floor(1+cX*99);
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1); hold on
+scatter(S,Shat,256,cX,'filled');
+set(gca,'XScale','log')
+xlabel('Whiff amplitude (V)')
+ylabel('\mu_{Stimulus} in preceding 300ms')
+title('LFP responses')
+
+% make a colors vector
+c = parula(100);
+cX = R - min(R); cX = cX/max(cX); cX = floor(1+cX*99);
+
+subplot(1,2,2); hold on
+scatter(S,Shat,256,cX,'filled');
+set(gca,'XScale','log')
+xlabel('Whiff amplitude (V)')
+ylabel('\mu_{Stimulus} in preceding 300ms')
+title('Firing rate responses')
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+%%
+% To look at this more closely, I collect all responses to all whiffs, and then assign a color based on whether the response is bigger (yellow) or smaller (purple) than I would expect, by comparing it to similar-sized whiffs in the dataset.  In the following plot, I plot the responses, colour coded as indicated, as a function of the time since previous whiff, and the size of the previous whiff. LFP responses are on the left, and firing rate responses are on the right. The lines indicate the averages of the x & y values of all the dots along the x and y axes. Note that the mean of the purple cloud is always lower and to the right of the mean of the yellow cloud, meaning that when responses are smaller than we expect, the previous whiff was large, and occured earlier in the past, than when responses were bigger than we expect.  
+
+S = data(2).S; 
+X = data(2).X;
+R = data(2).R;
+
+clear ws
+for j = 1:3
+	ws(j) = whiffStatistics(data(2).S(:,j),data(2).X(:,j),data(2).R(:,j),300,'MinPeakProminence',max(data(2).S(:,j)/100));
+end
+
+for i = 1:2
+	ws(i+1).stim_peak_loc = ws(i+1).stim_peak_loc + 70e3*i;
+end
+
+stim_peaks = vertcat(ws.stim_peaks);
+stim_peak_loc = vertcat(ws.stim_peak_loc);
+R_peak = vertcat(ws.peak_firing_rate);
+X_peak = vertcat(ws.peak_LFP);
+
+D_whiff_R  = NaN*stim_peaks; % the normalised deivations of the response to this whiff, from other
+D_whiff_X  = NaN*stim_peaks;  
+T_before = stim_peak_loc - circshift(stim_peak_loc,1); % the time to the preceding whiff
+S_before = circshift(stim_peaks,1); % the peak of the preceding whiff
+
+
+for i = 1:length(stim_peaks)
+	set_responses_R = nonnans(R_peak(stim_peaks > stim_peaks(i)*(.9) & stim_peaks < stim_peaks(i)*(1.1)));
+	set_responses_X = -nonnans(X_peak(stim_peaks > stim_peaks(i)*(.9) & stim_peaks < stim_peaks(i)*(1.1)));
+	D_whiff_R(i) = R_peak(i)/mean(set_responses_R);
+	D_whiff_X(i) = -X_peak(i)/mean(set_responses_X);
+	
+end
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1); hold on
+
+% make a colors vector
+c = parula(100);
+cX = D_whiff_X - min(D_whiff_X); cX = cX/max(cX); cX = floor(1+cX*99);
+cX(cX>50) = 100;
+cX(cX<=50) = 1;
+
+y = round(mean(T_before(cX>50)));
+x = mean(S_before(cX>50));
+plot([1e-4 1e4],[y y],'Color',c(100,:),'LineWidth',3)
+plot([x x],[1 1e4],'Color',c(100,:),'LineWidth',3)
+
+y = round(mean(T_before(cX<50)));
+x = mean(S_before(cX<50));
+plot([1e-4 1e4],[y y],'Color',c(1,:),'LineWidth',3)
+plot([x x],[1 1e4],'Color',c(1,:),'LineWidth',3)
+
+
+scatter(S_before(~isnan(cX)),T_before(~isnan(cX)),256,cX(~isnan(cX)),'filled');
+xlabel('Previous whiff size (V)')
+ylabel('Time since previous whiff (ms)')
+title('Deviations in LFP (norm)')
+set(gca,'YLim',[1e2 1e4],'YScale','log','XScale','log','XLim',[1e-2 10])
+
+
+subplot(1,2,2); hold on
+
+% make a colors vector
+c = parula(100);
+cX = D_whiff_R - min(D_whiff_R); cX = cX/max(cX); cX = floor(1+cX*99);
+cX(cX>50) = 100;
+cX(cX<100) = 1;
+
+scatter(S_before,T_before,256,cX,'filled');
+
+y = round(mean(T_before(cX>50)));
+x = mean(S_before(cX>50));
+plot([1e-4 1e4],[y y],'Color',c(100,:),'LineWidth',3)
+plot([x x],[1 1e4],'Color',c(100,:),'LineWidth',3)
+
+y = round(mean(T_before(cX<50)));
+x = mean(S_before(cX<50));
+plot([1e-4 1e4],[y y],'Color',c(1,:),'LineWidth',3)
+plot([x x],[1 1e4],'Color',c(1,:),'LineWidth',3)
+
+
+xlabel('Previous whiff size (V)')
+ylabel('Time since previous whiff (ms)')
+title('Deviations in firing rate (norm)')
+
+set(gca,'YLim',[1e2 1e4],'YScale','log','XScale','log','XLim',[1e-2 10])
+
+% canvas = axes;
+% canvas.Position = [0 0 1 1];
+% canvas.XTick = []; 
+% canvas.YTick = [];
+% uistack(canvas,'bottom');
+
+% ch = colorbar(canvas,'east');
+% caxis([min(D_whiff) max(D_whiff)]);
+% ch.Position = [.92 .1 .01 .8];
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% To push this idea home, I plot the stimulus averaged over tau ms before the whiff for all whiffs that elicited a larger than expected response, vs. stimulus averaged over tau ms before the whiff for all whiffs that elicited a smaller than expected response. To be clear, each dot in this plot corresponds to a set of whiffs, all of similar (around 10%) size, that are split into two groups: one which elicited bigger than expected responses, and another that elicited smaller than expected responses. The mean of each of these groups defines a point in this plot. I then repeat this analysis for many different timescales.  
+
+S = data(2).S; 
+X = data(2).X;
+R = data(2).R;
+
+clear ws
+for j = 1:3
+	ws(j) = whiffStatistics(data(2).S(:,j),data(2).X(:,j),data(2).R(:,j),300,'MinPeakProminence',max(data(2).S(:,j)/100));
+end
+
+for i = 1:2
+	ws(i+1).stim_peak_loc = ws(i+1).stim_peak_loc + 70e3*i;
+end
+S = S(:);
+
+stim_peaks = vertcat(ws.stim_peaks);
+stim_peak_loc = vertcat(ws.stim_peak_loc);
+R_peak = vertcat(ws.peak_firing_rate);
+X_peak = vertcat(ws.peak_LFP);
+
+window_size = [100 200 300 500 750 1e3 2e3 5e3];
+buffer_size = 50;
+
+clear plot_data
+for oi = 1:length(window_size)
+
+	small_X = NaN*stim_peaks;
+	big_X = NaN*stim_peaks;
+
+	small_R = NaN*stim_peaks;
+	big_R = NaN*stim_peaks;
+
+	for i = 1:length(stim_peaks)
+		clear this_set
+		this_set.R = (R_peak(stim_peaks > stim_peaks(i)*(.9) & stim_peaks < stim_peaks(i)*(1.1)));
+		this_set.X = -(X_peak(stim_peaks > stim_peaks(i)*(.9) & stim_peaks < stim_peaks(i)*(1.1)));
+		this_set.S_loc = (stim_peak_loc(stim_peaks > stim_peaks(i)*(.9) & stim_peaks < stim_peaks(i)*(1.1)));
+		rm_this = isnan(this_set.R);
+		this_set.R(rm_this) = [];
+		this_set.X(rm_this) = [];
+		this_set.S_loc(rm_this) = [];
+
+		if length(this_set.R) > 3
+			% cut out snippets from the stimulus 
+			snippets = NaN(window_size(oi),length(this_set.R));
+			for j = 1:length(this_set.R)
+				snippets(:,j) = S(this_set.S_loc(j)-window_size(oi)-buffer_size+1:this_set.S_loc(j)-buffer_size);
+			end
+			big_R(i) = mean(mean(snippets(:,this_set.R > mean(this_set.R))));
+			small_R(i) = mean(mean(snippets(:,this_set.R <= mean(this_set.R))));
+
+			big_X(i) = mean(mean(snippets(:,this_set.X > mean(this_set.X))));
+			small_X(i) = mean(mean(snippets(:,this_set.X <= mean(this_set.X))));
+		end
+	end
+	plot_data(oi).big_R = big_R;
+	plot_data(oi).small_R = small_R;
+
+	plot_data(oi).big_X = big_X;
+	plot_data(oi).small_X = small_X;
+end
+
+figure('outerposition',[0 0 1400 800],'PaperUnits','points','PaperSize',[1400 800]); hold on
+for i = 1:length(plot_data)
+	autoPlot(length(plot_data),i); hold on
+	plot(plot_data(i).small_R,plot_data(i).big_R,'k.','MarkerSize',20)
+	set(gca,'XLim',[1e-3 1],'YLim',[1e-3 1],'XScale','log','YScale','log','XTick',[1e-3 1e-2 1e-1 1e0])
+	plot([1e-6 0.7],[1e-6 0.7],':','Color',[.5 .5 .5])
+	title(['\tau = ' oval(window_size(i)) ' ms'])
+	if i == 1
+		xlabel(['Stimulus \tau ms before smaller' char(10) 'than expected spiking'])
+		ylabel(['Stimulus \tau ms before larger' char(10) 'than expected spiking'])
+	end
+end
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
+%%
+% Now I do the same thing for the LFP. 
+
+figure('outerposition',[0 0 1400 800],'PaperUnits','points','PaperSize',[1400 800]); hold on
+for i = 1:length(plot_data)
+	autoPlot(length(plot_data),i); hold on
+	plot(plot_data(i).small_X,plot_data(i).big_X,'k.','MarkerSize',20)
+	set(gca,'XLim',[1e-3 1],'YLim',[1e-3 1],'XScale','log','YScale','log','XTick',[1e-3 1e-2 1e-1 1e0])
+	plot([1e-6 0.7],[1e-6 0.7],':','Color',[.5 .5 .5])
+	title(['\tau = ' oval(window_size(i)) ' ms'])
+
+	if i == 1
+		xlabel(['Stimulus \tau ms before smaller' char(10) 'than expected LFP'])
+		ylabel(['Stimulus \tau ms before larger' char(10) 'than expected LFP'])
+	end
+end
+
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+
+
 %% Analysis pipeline 
-% This method of analysis is so fiendishly complicated that I made a handy graphic that explains what I'm doing: 
+% Now I describe the analysis pipeline I developed to investigate whether variations in response arise from variations in the pulse height, or from the history of the stimulus. This method of analysis is so fiendishly complicated that I made a handy graphic that explains what I'm doing: 
 
 figure('outerposition',[0 0 1000 655],'PaperUnits','points','PaperSize',[1000 655]); hold on
 % show the cartoons
@@ -26,9 +297,6 @@ if being_published
 end
 
 
-
-cdata = consolidateData2(getPath(dataManager,'4608c42b12191b383c84fea52392ea97'));
-[cdata, data] =  assembleScaledNatStim(cdata);
 
 
 ;;;;;;;;  ;;;;;;;;    ;;;    ;;          ;;;;;;;;     ;;;    ;;;;;;;;    ;;;    
@@ -161,52 +429,7 @@ if being_published
 	delete(gcf)
 end
 
-%%
-% Now I make another plot where I look at how the responses depend on both the stimulus and the mean stimulus in preceding 300 ms, in an attempt to see if I can see this effect in the raw data without throwing anything away.
 
-clear ws
-for j = 1:3
-	ws(j) = whiffStatistics(data(2).S(:,j),data(2).X(:,j),data(2).R(:,j),300,'MinPeakProminence',max(data(2).S(:,j)/100));
-end
-
-% plot the lfp
-X = -vertcat(ws.peak_LFP);
-R = vertcat(ws.peak_firing_rate);
-S = vertcat(ws.stim_peaks);
-Shat = vertcat(ws.stim_history_length_before_whiff);
-
-rm_this = isnan(X) | isnan(R);
-X(rm_this) = []; S(rm_this) = []; Shat(rm_this) = []; R(rm_this) = [];
-
-% make a colors vector
-c = parula(100);
-cX = X - min(X); cX = cX/max(cX); cX = floor(1+cX*99);
-
-figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
-subplot(1,2,1); hold on
-scatter(S,Shat,256,cX,'filled');
-set(gca,'XScale','log')
-xlabel('Whiff amplitude (V)')
-ylabel('\mu_{Stimulus} in preceding 300ms')
-title('LFP responses')
-
-% make a colors vector
-c = parula(100);
-cX = R - min(R); cX = cX/max(cX); cX = floor(1+cX*99);
-
-subplot(1,2,2); hold on
-scatter(S,Shat,256,cX,'filled');
-set(gca,'XScale','log')
-xlabel('Whiff amplitude (V)')
-ylabel('\mu_{Stimulus} in preceding 300ms')
-title('Firing rate responses')
-
-prettyFig();
-
-if being_published
-	snapnow
-	delete(gcf)
-end
 
 
 ;;     ;;    ;;;    ;;       ;;;; ;;;;;;;;     ;;;    ;;;;;;;; ;;;;  ;;;;;;;  ;;    ;; 

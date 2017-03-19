@@ -321,6 +321,75 @@ if being_published
 	delete(gcf)
 end
 
+%%
+% Is there a way to determine what in the preceding stimulus causes these responses to vary from the mean? To do this, I collect all whiffs, and try to back out a linear predictor that uses the past stimulus to determine whether the responses to this whiff will be bigger or smaller than expected. In the following figure, I back out these filters, for the LFP and the firing rate. From the poor goodness of fits, it doesn't look like this works. 
+
+stim_peaks = vertcat(ws.stim_peaks);
+stim_peak_loc = vertcat(ws.stim_peak_loc);
+R_peak = vertcat(ws.peak_firing_rate);
+X_peak = vertcat(ws.peak_LFP);
+X_D = NaN*X_peak;
+R_D = NaN*X_peak;
+Shat = NaN(10,length(X_peak)); % 10 100ms chunks in the past
+S = S - min(S);
+
+% compute deviations from expected values for each whiff
+for i = 1:length(stim_peaks)
+	clear this_set
+	idx = stim_peaks > stim_peaks(i)*(.9) & stim_peaks < stim_peaks(i)*(1.1);
+	this_set.R = (R_peak(idx));
+	this_set.X = -(X_peak(idx));
+	this_set.S_loc = (stim_peak_loc(idx));
+
+	rm_this = isnan(this_set.R);
+	this_set.R(rm_this) = [];
+	this_set.X(rm_this) = [];
+	this_set.S_loc(rm_this) = [];
+
+	if length(this_set.R) > 3
+		R_D(i) = R_peak(i)/mean(this_set.R) - 1; 
+		X_D(i) = X_peak(i)/mean(this_set.X) - 1; 
+		% also assemble the Shat vector
+		if stim_peak_loc(i) > size(Shat,1)*100
+			S_snippet = S(stim_peak_loc(i)-size(Shat,1)*100+1:stim_peak_loc(i));
+			Shat(:,i) = interp1(1:length(S_snippet),S_snippet,linspace(1,length(S_snippet),size(Shat,1)));
+		end
+	end
+end
+
+% remove whiffs for which we could not estimate the deviation because we didn't have enough similarly sized whiffs 
+rm_this = isnan(sum(Shat)) | isnan(R_D)';
+S_ = Shat(:,~rm_this);
+C = S_*S_';
+C = C + eye(length(C))*mean(eig(C));
+
+figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+subplot(1,2,1); hold on
+D_ = X_D(~rm_this);
+K = (C\(S_*D_));
+bar((1:length(K))/10,flipud(K))
+xlabel('Lag (s)')
+ylabel('LFP filter')
+title(['r^2 = ' oval(rsquare(S_'*K,D_))])
+
+subplot(1,2,2); hold on
+D_ = R_D(~rm_this);
+K = (C\(S_*D_));
+bar((1:length(K))/10,flipud(K))
+xlabel('Lag (s)')
+ylabel('Firing filter')
+title(['r^2 = ' oval(rsquare(S_'*K,D_))])
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
+%%
+% This is annoying: while the LFP filter looks "nice", in that it is all negative, the r^2 is 0, meaning this filter has no predictive power. And while the firing rate filter has a nice minimum at ~300ms, it is hard to rule out the contribution of a response filter with a negative lobe from this. 
+
 %% Analysis pipeline 
 % Now I describe the analysis pipeline I developed to investigate whether variations in response arise from variations in the pulse height, or from the history of the stimulus. This method of analysis is so fiendishly complicated that I made a handy graphic that explains what I'm doing: 
 

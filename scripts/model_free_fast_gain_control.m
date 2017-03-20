@@ -390,6 +390,67 @@ end
 %%
 % This is annoying: while the LFP filter looks "nice", in that it is all negative, the r^2 is 0, meaning this filter has no predictive power. And while the firing rate filter has a nice minimum at ~300ms, it is hard to rule out the contribution of a response filter with a negative lobe from this. 
 
+%% Deviation-based analysis
+% In this section, I fit a Hill function to the data, allowing me to compute the deviations each response to each whiff (w.r.t the best-fit Hill function). I then try to determine the origin of variation of these deviations. 
+
+figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
+subplot(2,2,1); hold on
+% compute the "median" for each whiff, and the deviations from the median for each whiff 
+M = NaN*stim_peaks;
+bin_width = .2;
+for i = 1:length(stim_peaks)
+	other_R = X_peak(stim_peaks > stim_peaks(i)*(1-bin_width) & stim_peaks < stim_peaks(i)*(1+bin_width));
+	if length(other_R) > 3
+		M(i) = median(other_R);
+	end
+end
+plot(stim_peaks,X_peak,'k.')
+set(gca,'XScale','log','YDir','reverse')
+D = (X_peak - M)./M;
+D(D==0) = NaN;
+xlabel('Whiff amplitude (V)')
+
+%  plot deviations as a function of whiff intensity to show no correlation 
+subplot(2,2,2); hold on
+plot(stim_peaks,D,'k.','MarkerSize',24);
+[rho,p]=spear(stim_peaks,D);
+legend(['\rho = ' oval(rho), ', p=' oval(p)])
+set(gca,'XScale','log')
+xlabel('Whiff amplitude (V)')
+ylabel('Deviations')
+
+% plot deviations as a function of the preceding stimulus 
+subplot(2,2,3); hold on
+Shat = computeSmoothedStimulus(S,300)';
+plot(Shat(stim_peak_loc),D,'.','Color','k','MarkerSize',20)
+[rho,p]=spear(Shat(stim_peak_loc),D);
+legend(['\rho = ' oval(rho), ', p=' oval(p)])
+xlabel('Stimulus in preceding 300ms')
+ylabel('Deviations')
+
+subplot(2,2,4); hold on
+% plot deviations as a function of previous whiff 
+T_before = stim_peak_loc - circshift(stim_peak_loc,1); % the time to the preceding whiff
+S_before = circshift(stim_peaks,1); % the peak of the preceding whiff
+X_low = [(S_before(D<0)) T_before(D<0)];
+X_high = [(S_before(D>0)) T_before(D>0)];
+plot(X_high(:,1),X_high(:,2),'r.','MarkerSize',48)
+plot(X_low(:,1),X_low(:,2),'b.','MarkerSize',48)
+[H, p, KSstatistic] = kstest_2s_2d(X_low, X_high);
+legend({'D>0','D<0'})
+title(['p = ' oval(p)])
+set(gca,'XScale','log','YScale','log')
+xlabel('Amplitude of previous whiff (V)')
+ylabel('Time since previous whiff (ms)')
+
+
+prettyFig();
+
+if being_published
+	snapnow
+	delete(gcf)
+end
+
 %% Analysis pipeline 
 % Now I describe the analysis pipeline I developed to investigate whether variations in response arise from variations in the pulse height, or from the history of the stimulus. This method of analysis is so fiendishly complicated that I made a handy graphic that explains what I'm doing: 
 

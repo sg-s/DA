@@ -393,55 +393,129 @@ end
 %% Deviation-based analysis
 % In this section, I fit a Hill function to the data, allowing me to compute the deviations each response to each whiff (w.r.t the best-fit Hill function). I then try to determine the origin of variation of these deviations. 
 
-figure('outerposition',[0 0 1000 800],'PaperUnits','points','PaperSize',[1000 800]); hold on
-subplot(2,2,1); hold on
 % compute the "median" for each whiff, and the deviations from the median for each whiff 
-M = NaN*stim_peaks;
+M_X = NaN*stim_peaks;
+M_R = NaN*stim_peaks;
 bin_width = .2;
 for i = 1:length(stim_peaks)
-	other_R = X_peak(stim_peaks > stim_peaks(i)*(1-bin_width) & stim_peaks < stim_peaks(i)*(1+bin_width));
+	other_X = X_peak(stim_peaks > stim_peaks(i)*(1-bin_width) & stim_peaks < stim_peaks(i)*(1+bin_width));
+	other_R = R_peak(stim_peaks > stim_peaks(i)*(1-bin_width) & stim_peaks < stim_peaks(i)*(1+bin_width));
 	if length(other_R) > 3
-		M(i) = median(other_R);
+		M_R(i) = median(other_R);
+		M_X(i) = -median(other_X);
 	end
 end
-plot(stim_peaks,X_peak,'k.')
-set(gca,'XScale','log','YDir','reverse')
-D = (X_peak - M)./M;
-D(D==0) = NaN;
-xlabel('Whiff amplitude (V)')
+
+D_X = (-X_peak - M_X)./M_X;
+D_X(D_X==0) = NaN;
+D_R = (R_peak - M_R)./M_R;
+D_R(D_R==0) = NaN;
+
+
+% % make a plot comparing Hill fit to the medians we compute here 
+% ft = fittype( 'hill4(x,A,K_D,n,x_offset)');
+% x = stim_peaks; y = -X_peak; rm_this = isnan(x) | isnan(y);
+% x(rm_this) = []; y(rm_this) = [];
+% f = fit(x, y, ft, 'StartPoint', [30, 0.5, .7, 0] );
+% figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% plot(stim_peaks,-X_peak,'k.')
+% plot(sort(x),f(sort(x)),'r')
+% plot(stim_peaks,M_X,'b+')
+% set(gca,'XScale','log')
+
+
+figure('outerposition',[0 0 1300 800],'PaperUnits','points','PaperSize',[1300 800]); hold on
 
 %  plot deviations as a function of whiff intensity to show no correlation 
-subplot(2,2,2); hold on
-plot(stim_peaks,D,'k.','MarkerSize',24);
-[rho,p]=spear(stim_peaks,D);
+subplot(2,3,1); hold on
+plot(stim_peaks,D_X,'k.','MarkerSize',24);
+[rho,p]=spear(stim_peaks,D_X);
 legend(['\rho = ' oval(rho), ', p=' oval(p)])
 set(gca,'XScale','log')
 xlabel('Whiff amplitude (V)')
 ylabel('Deviations')
 
-% plot deviations as a function of the preceding stimulus 
-subplot(2,2,3); hold on
+subplot(2,3,4); hold on
+plot(stim_peaks,D_R,'k.','MarkerSize',24);
+[rho,p]=spear(stim_peaks,D_R);
+legend(['\rho = ' oval(rho), ', p=' oval(p)])
+set(gca,'XScale','log')
+xlabel('Whiff amplitude (V)')
+ylabel('Deviations')
+
+
+% plot deviations as a function of the preceding stimulus in 300ms
+subplot(2,3,2); hold on
 Shat = computeSmoothedStimulus(S,300)';
-plot(Shat(stim_peak_loc),D,'.','Color','k','MarkerSize',20)
-[rho,p]=spear(Shat(stim_peak_loc),D);
+plot(Shat(stim_peak_loc),D_X,'.','Color','k','MarkerSize',20)
+[rho,p]=spear(Shat(stim_peak_loc),D_X);
 legend(['\rho = ' oval(rho), ', p=' oval(p)])
 xlabel('Stimulus in preceding 300ms')
 ylabel('Deviations')
 
-subplot(2,2,4); hold on
+subplot(2,3,5); hold on
+Shat = computeSmoothedStimulus(S,300)';
+plot(Shat(stim_peak_loc),D_R,'.','Color','k','MarkerSize',20)
+[rho,p]=spear(Shat(stim_peak_loc),D_R);
+legend(['\rho = ' oval(rho), ', p=' oval(p)])
+xlabel('Stimulus in preceding 300ms')
+ylabel('Deviations')
+
 % plot deviations as a function of previous whiff 
 T_before = stim_peak_loc - circshift(stim_peak_loc,1); % the time to the preceding whiff
 S_before = circshift(stim_peaks,1); % the peak of the preceding whiff
-X_low = [(S_before(D<0)) T_before(D<0)];
-X_high = [(S_before(D>0)) T_before(D>0)];
+X_low = [(S_before(D_X<0)) T_before(D_X<0)];
+X_high = [(S_before(D_X>0)) T_before(D_X>0)];
+R_low = [(S_before(D_R<0)) T_before(D_R<0)];
+R_high = [(S_before(D_R>0)) T_before(D_R>0)];
+
+subplot(2,3,3); hold on
 plot(X_high(:,1),X_high(:,2),'r.','MarkerSize',48)
 plot(X_low(:,1),X_low(:,2),'b.','MarkerSize',48)
-[H, p, KSstatistic] = kstest_2s_2d(X_low, X_high);
+[~, p] = kstest_2s_2d(X_low, X_high);
 legend({'D>0','D<0'})
-title(['p = ' oval(p)])
 set(gca,'XScale','log','YScale','log')
 xlabel('Amplitude of previous whiff (V)')
 ylabel('Time since previous whiff (ms)')
+title(['p = ' oval(p)])
+
+% % fit a quadratic classifier 
+% fX = [R_high; R_low];
+% fY = [ones(length(R_high),1); 2*ones(length(R_low),1)];
+% cqs = fitcdiscr((fX),fY','DiscrimType','quadratic');
+% K = cqs.Coeffs(1,2).Const;
+% L = cqs.Coeffs(1,2).Linear;
+% Q = cqs.Coeffs(1,2).Quadratic;
+% f = @(x1,x2) K + L(1)*x1 + L(2)*x2 + Q(1,1)*x1.^2 + ...
+%     (Q(1,2)+Q(2,1))*x1.*x2 + Q(2,2)*x2.^2;
+% h3 = ezplot(f,([.1e-2 10 100 1e4])); 
+% % h3.Color = 'k';
+% h3.LineWidth = 2;
+
+
+subplot(2,3,6); hold on
+plot(R_high(:,1),R_high(:,2),'r.','MarkerSize',48)
+plot(R_low(:,1),R_low(:,2),'b.','MarkerSize',48)
+[~, p] = kstest_2s_2d(R_low, R_high);
+legend({'D>0','D<0'})
+set(gca,'XScale','log','YScale','log')
+xlabel('Amplitude of previous whiff (V)')
+ylabel('Time since previous whiff (ms)')
+title(['p = ' oval(p)])
+
+
+% % fit a quadratic classifier 
+% fX = [R_high; R_low];
+% fY = [ones(length(R_high),1); 2*ones(length(R_low),1)];
+% cqs = fitcdiscr(fX,fY','DiscrimType','quadratic');
+% K = cqs.Coeffs(1,2).Const;
+% L = cqs.Coeffs(1,2).Linear;
+% Q = cqs.Coeffs(1,2).Quadratic;
+% f = @(x1,x2) K + L(1)*x1 + L(2)*x2 + Q(1,1)*x1.^2 + ...
+%     (Q(1,2)+Q(2,1))*x1.*x2 + Q(2,2)*x2.^2;
+% h3 = ezplot(f,[.1e-2 10 100 1e4]); 
+% h3.Color = 'k';
+% h3.LineWidth = 2;
 
 
 prettyFig();

@@ -36,12 +36,12 @@ p.n; % for the filter, not the nonlinearity
 % bounds
 
 lb.B = 0;
-ub.B = 1;
+ub.B = 1e3;
 
 ub.e_L = 1;
 
 lb.w0 = 1;
-ub.w0 = 300;
+ub.w0 = 3e3;
 
 lb.K_1 = 1e-3;
 ub.K_1 = .1;

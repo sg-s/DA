@@ -43,24 +43,25 @@ end
 ;;        ;;     ;; ;;     ;; ;;     ;; ;;     ;;  ;;;;;;  
 
 clear p
-p.B = 1.1809;
-p.e_L = 0.01;
-p.K_1 = 0.010522;
-p.K_2 = 1000;
-p.tau_y1 = 50;
-p.tau_y2 = 109.4;
-p.A = 0.7999;
-p.n = 1;
-p.C = 291.83;
+p.     B =  0.8289;
+p.tau_y1 =  27;
+p.tau_y2 =  96;
+p.     A =  0.7000;
+p.     n =  1;
+p.     C =  178;
+p.   K_1 =  1.0000e-06;
+p.   e_L =  11.5129;
+p.   K_2 =  1000000;
 
-clear p
-p.    k0 = 0.0968;
-p.     B = 0.8289;
-p.tau_y1 = 27.1055;
-p.tau_y2 = 96.9453;
-p.     A = 0.7000;
-p.     C = 178.9440;
-p.     n = 1;
+% % % these are the best fit parameters for aNLN4
+% clear p
+% p.    k0 = 0.0968;
+% p.     B = 0.8289;
+% p.tau_y1 = 27.1055;
+% p.tau_y2 = 96.9453;
+% p.     A = 0.7000;
+% p.     C = 178.9440;
+% p.     n = 1;
 
 
 figure('outerposition',[0 0 800 999],'PaperUnits','points','PaperSize',[800 999]); hold on
@@ -76,12 +77,14 @@ c = parula(11);
 for i = [2 6 10]
 	this_paradigm = find(MSGdata.paradigm == i,1,'first');
 	S = MSGdata.PID(:,this_paradigm);
-	[R, a, b, kD, K] = aNLN4(S,p);
-	% plot actual curve with mean kD
-	x = logspace(-2,2,100);
-	A = 1./(1 + mean(kD(35e3:55e3))./x);
-	plot(ax(1),x,A,'Color',c(i,:))
-	% now plot the points on it that are actually achieved 
+	[~, a, ~, e0] = bacteriaModelF(S,p);
+
+	x = logspace(-2,2,1e3);
+	Shat = (1 + x/p.K_2)./(1 + x/p.K_1);
+	E = exp(mean(e0(35e3:55e3)) + log(Shat));
+	a_mean = 1./(1 + E);
+	plot(ax(1),x,a_mean,'Color',c(i,:))
+
 	plot(ax(1),S(35e3:55e3),a(35e3:55e3),'.','Color',c(i,:))
 end
 set(ax(1),'XScale','log','XLim',[1e-2 10])
@@ -92,6 +95,11 @@ axes(ax(1))
 axis square
 
 % show the filter 
+q.n = p.n;
+q.tau1 = p.tau_y1;
+q.tau2 = p.tau_y2;
+q.A = p.A;
+K = filter_gamma2(1:1e3,q);
 plot(ax(2),K/norm(K),'k')
 set(ax(2),'XLim',[0 600])
 xlabel(ax(2),'Lag (ms)')
@@ -111,22 +119,22 @@ a = 35e3;
 z = 55e3;
 
 % generate responses using the model 
-if exist('.cache/aNLN4_responses_to_MSG.mat','file') == 0
+if exist('.cache/bacteriaModelF_responses_to_MSG.mat','file') == 0
 	NLN_pred = NaN*MSGdata.PID;
 	for i = 1:length(MSGdata.paradigm)
 		S = MSGdata.PID(:,i) - min(MSGdata.PID(:,i));
-		NLN_pred(:,i) = aNLN4(S,p);
+		NLN_pred(:,i) = bacteriaModelF(S,p);
 	end
-	save('.cache/aNLN4_responses_to_MSG.mat','NLN_pred')
+	save('.cache/bacteriaModelF_responses_to_MSG.mat','NLN_pred')
 else
-	load('.cache/aNLN4_responses_to_MSG.mat')
+	load('.cache/bacteriaModelF_responses_to_MSG.mat')
 end
 MSGdata.NLN_pred = NLN_pred;
 clear NLN_pred
 
 % back out new linear filters for this
 time = 1e-3*(1:length(MSGdata.PID));
-if exist('.cache/aNLN4_MSG_linear_prediction.mat','file') == 0
+if exist('.cache/bacteriaModelF_MSG_linear_prediction.mat','file') == 0
 	NLN_fp = NaN*MSGdata.PID;
 	for i = 1:length(MSGdata.paradigm)
 		S = MSGdata.PID(:,i);
@@ -138,9 +146,9 @@ if exist('.cache/aNLN4_MSG_linear_prediction.mat','file') == 0
 		K = K/(nanstd(NLN_fp(a:z,i))/nanstd(S(a:z))); % normalise correctly 
 		NLN_fp(:,i) = convolve(time,S,K,filtertime);
 	end
-	save('.cache/aNLN4_MSG_linear_prediction.mat','NLN_fp')
+	save('.cache/bacteriaModelF_MSG_linear_prediction.mat','NLN_fp')
 else
-	load('.cache/aNLN4_MSG_linear_prediction.mat')
+	load('.cache/bacteriaModelF_MSG_linear_prediction.mat')
 end
 MSGdata.NLN_fp = NLN_fp;
 clear NLN_fp
@@ -169,6 +177,7 @@ end
 xlabel(ax(7),'Projected stimulus (V)')
 ylabel(ax(7),'Model response (Hz)')
 set(ax(7),'XLim',[0 2],'YLim',[0 60])
+
 
 % compute gains and plot them
 MSGdata.NLN_gain = NaN*MSGdata.paradigm;
@@ -254,7 +263,6 @@ set(gca,'YLim',[0 200])
 errorbar(x,y,ye,'Color',firing_color)
 
 
-
 ;;    ;;    ;;;    ;;;;;;;; ;;     ;; ;;;;;;;;     ;;;    ;;       
 ;;;   ;;   ;; ;;      ;;    ;;     ;; ;;     ;;   ;; ;;   ;;       
 ;;;;  ;;  ;;   ;;     ;;    ;;     ;; ;;     ;;  ;;   ;;  ;;       
@@ -271,6 +279,16 @@ errorbar(x,y,ye,'Color',firing_color)
 ;;    ;;    ;;     ;;  ;;     ;; 
  ;;;;;;     ;;    ;;;; ;;     ;; 
 
+clear p
+p.     B =  0.8289;
+p.tau_y1 =  27;
+p.tau_y2 =  96;
+p.     A =  0.7000;
+p.     n =  1;
+p.     C =  178;
+p.   K_1 =  1.0000e-06;
+p.   e_L =  11.5129;
+p.   K_2 =  1000000;
 
 % show the naturalistic stimulus fits
 cdata = consolidateData2(getPath(dataManager,'11f83bf78ccad7d44fee8e92dd65602f'));
@@ -294,8 +312,7 @@ X = mean(cdata.LFP(:,cdata.orn == example_orn),2);
 R = mean(cdata.fA(:,cdata.orn == example_orn),2);
 time = 1e-3*(1:length(R));
 
-rm_this = isnan(sum(S)) | max(R) == 0;
-S(:,rm_this) = []; X(:,rm_this) = []; R(:,rm_this) = [];
+S = S - min(S);
 
 
 
@@ -303,15 +320,13 @@ S(:,rm_this) = []; X(:,rm_this) = []; R(:,rm_this) = [];
 ax(4) = subplot(5,3,4); hold on
 clear l
 l(1) = plot(ax(4),time,R,'k');
+
 % generate responses and plot them too
-
-
-P = aNLN4(S - min(S) ,p);
-
+P = bacteriaModelF(S - min(S) ,p);
 
 % fix some trivial scaling
 ff = fit(P(:),R,'poly1');
-P = ff(P);
+P = ff(P); P(P<0) = 0;
 
 l(2) = plot(ax(4),time,P,'r');
 % legend(l,{'ORN',['model r^2 = ' oval(rsquare(data(2).P(:,3),data(2).R(:,3)))]},'Location','northwest')
@@ -334,8 +349,7 @@ set(ax(4),'XLim',[20 30])
 
 ax(5) = subplot(5,3,5); hold on
 
-% show_these = [21103 64353 64869];
-show_these = [6112 26669 28413 64360];
+show_these = [28413 26669 64360 6112];
 
 
 for j = 1:length(show_these)
@@ -399,26 +413,28 @@ end
 
 % generate responses using model
 clear p
-p.k0 = 0.1;
-p.w = 0.6343;
-p.B = 1.5984;
-p.K_tau = 4.07;
-p.output_offset = -0.508;
-p.output_scale = -23.17;
+p.B = 1.9453;
+p.e_L = -127;
+p.w0 = 13.969;
+p.K_1 = 0.09866;
+p.K_2 = 45.61;
+p.K_tau = 20;
 p.n = 1;
+p.output_scale = -21.361;
+p.output_offset = 10.818;
 
 % generate responses using the model 
-if exist('.cache/asNL5_responses_to_MSG.mat','file') == 0
+if exist('.cache/bacteriaModelX_responses_to_MSG.mat','file') == 0
 	
 	LFP_pred = NaN*MSGdata.LFP;
 	for i = 1:length(MSGdata.paradigm)
 		textbar(i,length(MSGdata.paradigm))
 		S = MSGdata.PID(:,i); S = S -min(S);
-		LFP_pred(:,i) = asNL5(S,p);
+		LFP_pred(:,i) = bacteriaModelX(S,p);
 	end
-	save('.cache/asNL5_responses_to_MSG.mat','LFP_pred')
+	save('.cache/bacteriaModelX_responses_to_MSG.mat','LFP_pred')
 else
-	load('.cache/asNL5_responses_to_MSG.mat')
+	load('.cache/bacteriaModelX_responses_to_MSG.mat')
 end
 MSGdata.LFP_pred = LFP_pred;
 clear LFP_pred
@@ -477,25 +493,32 @@ X = mean(cdata.LFP(:,cdata.orn == example_orn),2);
 R = mean(cdata.fA(:,cdata.orn == example_orn),2);
 time = 1e-3*(1:length(R));
 
-rm_this = isnan(sum(S)) | max(R) == 0;
-S(:,rm_this) = []; X(:,rm_this) = []; R(:,rm_this) = [];
 S = S - min(S);
 
+show_these = [28413 26669 64360 6112];
+clear fd
+fd.stimulus = S;
+fd.response = NaN*X;
+for i = 1:length(show_these)
+	a = show_these(i) - 200;
+	z = show_these(i) + 200;
+	fd.response(a:z) = X(a:z);
+end
+
+
 clear p
-p.B = 0.3188;
-p.e_L = 0.9639;
-p.w0 = 299.99;
+p.B = 1.4126;
+p.e_L = 0.9483;
+p.w0 = 3000;
 p.K_1 = 0.01;
-p.K_2 = 1;
-p.K_tau = 21.188;
+p.K_2 = 1.5;
+p.K_tau = 28.657;
 p.n = 1;
-p.output_offset = -9.358;
-p.output_scale = 26.156;
+p.output_offset = 8.889;
+p.output_scale = -25.781;
 
 % generate responses using this model 
-XP  = bacteriaModelX(S, p);
-
-
+XP = bacteriaModelX(S, p);
 
 % show r^2 for every whiff
 ax(13) = subplot(5,3,13); hold on

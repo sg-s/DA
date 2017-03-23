@@ -1,8 +1,9 @@
 %% model based on bacterial chemotaxis for the firing rate
 % in this model, receptors are considered to be at steady state at all times 
 % so the only ODE we are solving is the one for the k_D (or equivalent)
+% similar to original model, but with no minimum k_D, and with a parameter that governs the fixed point of the activity. 
 % 
-function [R, a, b, e0] = bacteriaModelF(S,p)
+function [R, a, b, e0] = bacteriaModelF2(S,p)
 
 % work with matrices too
 if size(S,2) > 1
@@ -21,7 +22,7 @@ assert(length(p)==1,'2nd argument should be a structure of length 1')
 
 % input NL parameters
 p.B; % rate of adaptation 
-p.e_L; % minimum k_D
+p.a0; % fixed point of a
 
 p.K_1;
 p.K_2;
@@ -37,30 +38,30 @@ p.C;
 
 % bounds
 
-lb.B = .8289;
-ub.B = .8289;
+lb.B = 0;
+ub.B = 3e3;
 
-lb.e_L = 11.51;
-ub.e_L = 11.51;
+lb.a0 = 0.06562;
+ub.a0 = 0.06562;
 
 lb.K_1 = 1e-3;
-ub.K_1 = 1e-3;
+ub.K_1 = .1;
 
 
-lb.K_2 = 3e5;
-ub.K_2 = 3e5;
+lb.K_2 = 1e3;
+ub.K_2 = 1e4;
 
-lb.tau_y1 = 27;
-ub.tau_y1 = 27;
+lb.tau_y1 = 20;
+ub.tau_y1 = 30;
 
-lb.tau_y2 = 96;
-ub.tau_y2 = 96;
+lb.tau_y2 = 200;
+ub.tau_y2 = 290;
 
-lb.A = .7;
-ub.A = .7;
+lb.A = .2;
+ub.A = .8;
 
 lb.C = 100;
-ub.C = 1e5;
+ub.C = 3000;
 
 lb.n = 1;
 ub.n = 1;
@@ -76,16 +77,17 @@ T = 1e-4:1e-4:max(time);
 S_ = interp1(time,S,T); S_(isnan(S_)) = S(1);
 e0_ = 0*S_;
 a_ = 0*S_;
-a_(1) = 0;
+
+% inital conditions 
+a_(1) = p.a0;
+Shat = (1 + S_(1)/p.K_2)/(1 + S_(1)/p.K_1);
+e0_(1) = log((1-p.a0)/p.a0) - log(Shat);
 
 % use a fixed-step Euler to solve this
 for i = 2:length(S_)
-	dydt = p.B*(a_(i-1) - 1/2);
+	dydt = p.B*(a_(i-1) - p.a0);
 
 	e0_(i) = dydt*1e-4 + e0_(i-1);
-	if e0_(i) < p.e_L
-		e0_(i) = p.e_L;
-	end
 
 	% update a
 	Shat = (1 + S_(i-1)/p.K_2)/(1 + S_(i-1)/p.K_1);

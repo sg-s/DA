@@ -1211,6 +1211,9 @@ for i = 1:width(reshaped_PID)
 	K1p(:,i) = convolve(1e-3*(1:length(reshaped_PID)),reshaped_PID(:,i),VSdata.K1,ft);
 end
 
+
+
+
 % calcualte gains while fitting a input nonlinearity -- trialwise
 if exist('.cache/one_model_variance_NL_gain.mat','file') > 0
 else

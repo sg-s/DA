@@ -41,7 +41,7 @@ ub.B = 1e3;
 ub.e_L = 1;
 
 lb.w0 = 1;
-ub.w0 = 3e3;
+ub.w0 = 3e4;
 
 lb.K_1 = 1e-3;
 ub.K_1 = .1;
@@ -52,8 +52,8 @@ ub.K_2 = 1e3;
 lb.K_tau = 20;
 ub.K_tau = 360;
 
-lb.n = 1;
-ub.n = 1;
+lb.n = .1;
+ub.n = 3;
 
 
 

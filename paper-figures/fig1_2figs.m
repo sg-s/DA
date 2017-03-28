@@ -99,7 +99,6 @@ for j = 1:size(data(i).S,2)
 	plot(ax.ab2A_drR,ws.stim_peaks,ws.peak_firing_rate,'.','MarkerSize',20,'Color','k')
 end
 
-
 % show context-dependent variation in whiff response
 s_range = [.8 1.2];
 

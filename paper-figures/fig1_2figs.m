@@ -286,14 +286,14 @@ l = plot(ax.deviations_X_300ms,Shat(stim_peak_loc),D_X,'.','Color','k','MarkerSi
 [rho,p]=spear(Shat(stim_peak_loc),D_X);
 lh.x_300 = legend(l,['\rho = ' oval(rho), ', p = ' oval(p)]);
 xlabel(ax.deviations_X_300ms,'\mu_{stimulus} in preceding 300ms (V)')
-ylabel(ax.deviations_X_300ms,'LFP deviations D_{LFP}')
+ylabel(ax.deviations_X_300ms,'Fractional LFP deviations D_{LFP}')
 
 Shat = computeSmoothedStimulus(S,300)';
 l = plot(ax.deviations_R_300ms,Shat(stim_peak_loc),D_R,'.','Color','k','MarkerSize',20);
 [rho,p]=spear(Shat(stim_peak_loc),D_R);
 lh.r_300 = legend(l,['\rho = ' oval(rho), ', p < 10^{-5}']);
 xlabel(ax.deviations_R_300ms,'\mu_{stimulus} in preceding 300ms (V)')
-ylabel(ax.deviations_R_300ms,'Firing rate deviations D_{F}')
+ylabel(ax.deviations_R_300ms,'Fractional firing rate deviations D_{F}')
 
 % plot deviations as a function of previous whiff 
 T_before = stim_peak_loc - circshift(stim_peak_loc,1); % the time to the preceding whiff

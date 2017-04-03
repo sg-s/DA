@@ -52,6 +52,20 @@ p.n = 1;
 p.output_scale = -21.361;
 p.output_offset = 10.818;
 
+
+% if you want to fit a model where A is fixed, use this:
+% p.B = 2.0547;
+% p.e_L = 0;
+% p.K_1 = 0.08694;
+% p.K_2 = 1000;
+% p.K_tau = 2.0938;
+% p.n = 1;
+% p.output_scale = -22.056;
+% p.output_offset = 10.92;
+% p.Delta = 0;
+% p.Gamma = 0;
+% p.A = 11.133;
+
 % generate responses using the model 
 if exist('.cache/bacteriaModelX_responses_to_MSG.mat','file') == 0
 	
@@ -164,7 +178,6 @@ time = 1e-3*(1:length(R));
 S = S - min(S);
 
 
-
 % % used for fitting
 % clear fd
 % show_these = [28413 26669 64360 6112];
@@ -176,6 +189,18 @@ S = S - min(S);
 % 	fd.response(a:z) = X(a:z);
 % end
 
+% if you want to use the fixed A model:
+% p.B = 0.05467;
+% p.e_L = 0;
+% p.K_1 = 0.08694;
+% p.K_2 = 10000;
+% p.K_tau = 23.094;
+% p.n = 1;
+% p.output_scale = -29.556;
+% p.output_offset = 13.92;
+% p.Delta = 0;
+% p.Gamma = 0;
+% p.A = 335.1;
 
 clear p
 p.B = 1.4126;

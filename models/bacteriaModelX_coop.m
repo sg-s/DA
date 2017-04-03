@@ -1,15 +1,14 @@
 %% model based on bacterial chemotaxis for the LFP
-% in this model, we consider the full model and keep alpha fixed, 
-% and allow the barrier height to vary
+% 
 % 
 
-function [R, a, w_plus, w_minus, e0] = bacteriaModelX_fixedA(S,p)
+function [R, a, w_plus, w_minus, e0] = bacteriaModelX_coop(S,p)
 
 % work with matrices too
 if size(S,2) > 1
 	R = NaN*S; a = NaN*S;  w_plus = NaN*S; w_minus = NaN*S; e0 = NaN*S; 
 	for i = 1:size(S,2)
-		[R(:,i),a(:,i),w_plus(:,i), w_minus(:,i), e0(:,i)] = bacteriaModelX_fixedA(S(:,i),p);
+		[R(:,i),a(:,i),w_plus(:,i), w_minus(:,i), e0(:,i)] = bacteriaModelX_coop(S(:,i),p);
 	end
 	return
 end
@@ -23,13 +22,12 @@ assert(length(p)==1,'2nd argument should be a structure of length 1')
 % input NL parameters
 p.B; % rate of adaptation 
 p.e_L; % minimum k_D
-p.A;
+p.w0; % attempt frequency
 
-p.Delta;
-p.Gamma; 
+p.m; % cooperativity 
 
-p.K_1;
-p.K_2;
+p.K_on;
+p.K_off;
 
 % filter
 p.K_tau;
@@ -38,33 +36,32 @@ p.n; % for the filter, not the nonlinearity
 
 
 % bounds
+lb.m = 10;
+ub.m = 12;
 
-lb.B = 0;
+lb.B = 10;
 ub.B = 1e3;
 
 lb.e_L = 0;
-ub.e_L = 0;
+ub.e_L = 1e3;
 
-lb.K_1 = 1e-3;
-ub.K_1 = .1;
+lb.w0 = 1e2;
+ub.w0 = Inf;
 
-lb.K_2 = 1e3;
-ub.K_2 = 1e4;
-
-lb.K_tau = 1;
-ub.K_tau = 50;
+lb.K_tau = 17;
+ub.K_tau = 17;
 
 lb.n = 1;
 ub.n = 1;
 
-% reduce the model a bit
-lb.Delta = 0;
-ub.Delta = 0;
+lb.K_on = .1;
+ub.K_on = 1;
 
-lb.Gamma = 0;
-ub.Gamma = 0;
+lb.K_off = 5;
+ub.K_off = 10;
 
 
+lb.output_scale = 0;
 
 % solve the ODE
 time = 1e-3*(1:length(S));
@@ -78,6 +75,12 @@ a_ = 0*S_;
 w_minus = 0*S_;
 w_plus = 0*S_;
 
+m = ceil(p.m);
+
+a_(1) = 1/2;
+Shat = (1 + S_(1)/p.K_off)/(1 + S_(1)/p.K_on);
+e0_(1) = - log(Shat);
+
 % use a fixed-step Euler to solve this
 for i = 2:length(S_)
 	% update e0
@@ -89,14 +92,11 @@ for i = 2:length(S_)
 	end
 
 	% compute rates 
-	denom = 1 + S_(i-1)/p.K_2; 
-	num_num = S_(i-1)*(1 + exp(-e0_(i-1)));
-	num_denom = (p.K_1)*(1 + (p.K_2/p.K_1)*exp(-e0_(i-1))*exp(-p.Gamma));
-	num = 1 + (num_num/num_denom)*exp(-p.Delta);
-	w_plus(i) = p.A*(num/denom)*exp(-p.Gamma)/(1+exp(e0_(i-1)));
+	w_plus(i) = p.w0*((2*p.K_off)/(p.K_off + S_(i-1)))^m;
+	w_plus(i) = w_plus(i)*exp(-e0_(i-1));
 
-	denom = 1 + S_(i-1)/p.K_1; 
-	w_minus(i) = p.A*(num/denom)/(1+exp(-e0_(i-1)));
+	w_minus(i) = p.w0*((2*p.K_on)/(p.K_on + S_(i-1)))^m;
+
 
 	% update a
 	dydt = w_plus(i)*(1-a_(i-1)) - w_minus(i)*a_(i-1);

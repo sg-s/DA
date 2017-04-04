@@ -3,13 +3,13 @@
 % and allow the barrier height to vary
 % 
 
-function [R, a, w_plus, w_minus, e0] = bacteriaModelX_fixedA(S,p)
+function [R, a, w_plus, w_minus, e0] = bacteriaModelX2(S,p)
 
 % work with matrices too
 if size(S,2) > 1
 	R = NaN*S; a = NaN*S;  w_plus = NaN*S; w_minus = NaN*S; e0 = NaN*S; 
 	for i = 1:size(S,2)
-		[R(:,i),a(:,i),w_plus(:,i), w_minus(:,i), e0(:,i)] = bacteriaModelX_fixedA(S(:,i),p);
+		[R(:,i),a(:,i),w_plus(:,i), w_minus(:,i), e0(:,i)] = bacteriaModelX2(S(:,i),p);
 	end
 	return
 end
@@ -22,11 +22,8 @@ assert(length(p)==1,'2nd argument should be a structure of length 1')
 
 % input NL parameters
 p.B; % rate of adaptation 
-p.e_L; % minimum k_D
 p.A;
-
-p.Delta;
-p.Gamma; 
+p.a0;
 
 p.K_1;
 p.K_2;
@@ -39,31 +36,28 @@ p.n; % for the filter, not the nonlinearity
 
 % bounds
 
-lb.B = 2;
-ub.B = 1e3;
+lb.a0 = 0;
+ub.a0 = 1;
 
-lb.e_L = 0;
-ub.e_L = 0;
+lb.A = 0;
+
+lb.B = 1;
+ub.B = 1e3;
 
 lb.K_1 = 1e-3;
 ub.K_1 = .1;
 
-lb.K_2 = 1e4;
+lb.K_2 = 1e3;
 ub.K_2 = 1e5;
 
 lb.K_tau = 1;
-ub.K_tau = 50;
+ub.K_tau = 100;
 
 lb.n = 1;
 ub.n = 1;
 
-% reduce the model a bit
-lb.Delta = 0;
-ub.Delta = 0;
-
-lb.Gamma = 0;
-ub.Gamma = 0;
-
+lb.output_offset = 0;
+ub.output_offset = 0;
 
 
 % solve the ODE
@@ -78,22 +72,26 @@ a_ = 0*S_;
 w_minus = 0*S_;
 w_plus = 0*S_;
 
+a_(1) = p.a0;
+Shat = (1 + S_(1)/p.K_2)/(1 + S_(1)/p.K_1);
+e0_(1) = log((1-p.a0)/p.a0) - log(Shat);
+
 % use a fixed-step Euler to solve this
 for i = 2:length(S_)
 	% update e0
-	dydt = p.B*(a_(i-1) - 1/2);
+	dydt = p.B*(a_(i-1) - p.a0);
 
 	e0_(i) = dydt*1e-4 + e0_(i-1);
-	if e0_(i) < p.e_L
-		e0_(i) = p.e_L;
-	end
+	% if e0_(i) < p.e_L
+	% 	e0_(i) = p.e_L;
+	% end
 
 	% compute rates 
 	denom = 1 + S_(i-1)/p.K_2; 
 	num_num = S_(i-1)*(1 + exp(-e0_(i-1)));
-	num_denom = (p.K_1)*(1 + (p.K_2/p.K_1)*exp(-e0_(i-1))*exp(-p.Gamma));
-	num = 1 + (num_num/num_denom)*exp(-p.Delta);
-	w_plus(i) = p.A*(num/denom)*exp(-p.Gamma)/(1+exp(e0_(i-1)));
+	num_denom = (p.K_1)*(1 + (p.K_2/p.K_1)*exp(-e0_(i-1)));
+	num = 1 + (num_num/num_denom);
+	w_plus(i) = p.A*(num/denom)/(1+exp(e0_(i-1)));
 
 	denom = 1 + S_(i-1)/p.K_1; 
 	w_minus(i) = p.A*(num/denom)/(1+exp(-e0_(i-1)));
@@ -122,7 +120,7 @@ w_minus = interp1(T,w_minus,time);
 t = 0:(length(S)/10);
 K = generate_simple_filter(p.K_tau,p.n,t);
 K = K(1:find(K>1e-2*max(K),1,'last'));
-R = filter(K,1,a);
+R = filter(K,sum(K),a);
 
 
 R = R*p.output_scale;

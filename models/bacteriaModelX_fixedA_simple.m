@@ -3,13 +3,13 @@
 % and allow the barrier height to vary
 % 
 
-function [R, a, w_plus, w_minus, e0] = bacteriaModelX_fixedA(S,p)
+function [R, a, w_plus, w_minus, e0] = bacteriaModelX_fixedA_simple(S,p)
 
 % work with matrices too
 if size(S,2) > 1
 	R = NaN*S; a = NaN*S;  w_plus = NaN*S; w_minus = NaN*S; e0 = NaN*S; 
 	for i = 1:size(S,2)
-		[R(:,i),a(:,i),w_plus(:,i), w_minus(:,i), e0(:,i)] = bacteriaModelX_fixedA(S(:,i),p);
+		[R(:,i),a(:,i),w_plus(:,i), w_minus(:,i), e0(:,i)] = bacteriaModelX_fixedA_simple(S(:,i),p);
 	end
 	return
 end
@@ -24,9 +24,6 @@ assert(length(p)==1,'2nd argument should be a structure of length 1')
 p.B; % rate of adaptation 
 p.e_L; % minimum k_D
 p.A;
-
-p.Delta;
-p.Gamma; 
 
 p.K_1;
 p.K_2;
@@ -57,13 +54,6 @@ ub.K_tau = 50;
 lb.n = 1;
 ub.n = 1;
 
-% reduce the model a bit
-lb.Delta = 0;
-ub.Delta = 0;
-
-lb.Gamma = 0;
-ub.Gamma = 0;
-
 
 
 % solve the ODE
@@ -91,9 +81,9 @@ for i = 2:length(S_)
 	% compute rates 
 	denom = 1 + S_(i-1)/p.K_2; 
 	num_num = S_(i-1)*(1 + exp(-e0_(i-1)));
-	num_denom = (p.K_1)*(1 + (p.K_2/p.K_1)*exp(-e0_(i-1))*exp(-p.Gamma));
-	num = 1 + (num_num/num_denom)*exp(-p.Delta);
-	w_plus(i) = p.A*(num/denom)*exp(-p.Gamma)/(1+exp(e0_(i-1)));
+	num_denom = (p.K_1)*(1 + (p.K_2/p.K_1)*exp(-e0_(i-1)));
+	num = 1 + (num_num/num_denom);
+	w_plus(i) = p.A*(num/denom)/(1+exp(e0_(i-1)));
 
 	denom = 1 + S_(i-1)/p.K_1; 
 	w_minus(i) = p.A*(num/denom)/(1+exp(-e0_(i-1)));

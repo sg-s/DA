@@ -43,19 +43,18 @@ lb.B = 2;
 ub.B = 1e3;
 
 lb.e_L = 0;
-ub.e_L = 0;
 
-lb.K_1 = 1e-3;
-ub.K_1 = .1;
+lb.K_1 = .01;
+ub.K_1 = .01;
 
-lb.K_2 = 1e4;
+lb.K_2 = 10;
 ub.K_2 = 1e5;
 
 lb.K_tau = 1;
 ub.K_tau = 50;
 
 lb.n = 1;
-ub.n = 1;
+ub.n = 3;
 
 % reduce the model a bit
 lb.Delta = 0;

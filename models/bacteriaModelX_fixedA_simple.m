@@ -36,23 +36,25 @@ p.n; % for the filter, not the nonlinearity
 
 % bounds
 
-lb.B = 2;
-ub.B = 1e3;
+lb.B = 1;
+ub.B = 10;
 
 lb.e_L = 0;
-ub.e_L = 0;
 
-lb.K_1 = 1e-3;
-ub.K_1 = .1;
+lb.K_1 = .001;
+ub.K_1 = .01;
 
-lb.K_2 = 1e4;
+lb.K_2 = 1e5;
 ub.K_2 = 1e5;
 
-lb.K_tau = 1;
-ub.K_tau = 50;
+lb.K_tau = 2;
+ub.K_tau = 5;
 
 lb.n = 1;
-ub.n = 1;
+ub.n = 2;
+
+lb.A = 30;
+ub.A = 100;
 
 
 
@@ -67,6 +69,23 @@ a_ = 0*S_;
 
 w_minus = 0*S_;
 w_plus = 0*S_;
+
+% inital conditions 
+a_(1) = .5;
+Shat = (1 + S_(1)/p.K_2)/(1 + S_(1)/p.K_1);
+e0_(1) =  - log(Shat);
+if e0_(1) < p.e_L
+	e0_(1) = p.e_L;
+end
+
+denom = 1 + S_(1)/p.K_2; 
+num_num = S_(1)*(1 + exp(-e0_(1)));
+num_denom = (p.K_1)*(1 + (p.K_2/p.K_1)*exp(-e0_(1)));
+num = 1 + (num_num/num_denom);
+w_plus(1) = p.A*(num/denom)/(1+exp(e0_(1)));
+
+denom = 1 + S_(1)/p.K_1; 
+w_minus(1) = p.A*(num/denom)/(1+exp(-e0_(1)));
 
 % use a fixed-step Euler to solve this
 for i = 2:length(S_)

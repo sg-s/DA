@@ -1,5 +1,5 @@
 %%
-%  In this document, I fit a single adapting NLN model (aNLN4) to all the data.
+%  In this document, I fit a model to LFP and firing rate data from Gaussian and naturalistic stimuli 
 
 pHeader;
 
@@ -40,31 +40,18 @@ for i = 1:length(MSGdata.paradigm)
 	fd(i).response(1:5e3) = NaN;
 end
 
+
 % generate responses using model
 clear p
-p.B = 1.9453;
-p.e_L = -127;
-p.w0 = 13.969;
-p.K_1 = 0.09866;
-p.K_2 = 45.61;
-p.K_tau = 20;
-p.n = 1;
-p.output_scale = -21.361;
-p.output_offset = 10.818;
-
-
-% if you want to fit a model where A is fixed, use this:
-% p.B = 2.0547;
-% p.e_L = 0;
-% p.K_1 = 0.08694;
-% p.K_2 = 1000;
-% p.K_tau = 2.0938;
-% p.n = 1;
-% p.output_scale = -22.056;
-% p.output_offset = 10.92;
-% p.Delta = 0;
-% p.Gamma = 0;
-% p.A = 11.133;
+p.B = 0.1875;
+p.e_L = 0.625;
+p.K_1 = 0.01;
+p.K_2 = 10;
+p.K_tau = 3.407;
+p.n = 4.75;
+p.output_scale = -26.806;
+p.output_offset = 11.545;
+p.A = 93.75;
 
 % generate responses using the model 
 if exist('.cache/bacteriaModelX_responses_to_MSG.mat','file') == 0
@@ -73,7 +60,7 @@ if exist('.cache/bacteriaModelX_responses_to_MSG.mat','file') == 0
 	for i = 1:length(MSGdata.paradigm)
 		textbar(i,length(MSGdata.paradigm))
 		S = MSGdata.PID(:,i); S = S -min(S);
-		LFP_pred(:,i) = bacteriaModelX(S,p);
+		LFP_pred(:,i) = bacteriaModelX_fixedA_simple(S,p);
 	end
 	save('.cache/bacteriaModelX_responses_to_MSG.mat','LFP_pred')
 else
@@ -178,43 +165,31 @@ time = 1e-3*(1:length(R));
 S = S - min(S);
 
 
-% % used for fitting
-% clear fd
-% show_these = [28413 26669 64360 6112];
-% fd.stimulus = S;
-% fd.response = NaN*X;
-% for i = 1:length(show_these)
-% 	a = show_these(i) - 200;
-% 	z = show_these(i) + 200;
-% 	fd.response(a:z) = X(a:z);
-% end
-
-% if you want to use the fixed A model:
-% p.B = 0.05467;
-% p.e_L = 0;
-% p.K_1 = 0.08694;
-% p.K_2 = 10000;
-% p.K_tau = 23.094;
-% p.n = 1;
-% p.output_scale = -29.556;
-% p.output_offset = 13.92;
-% p.Delta = 0;
-% p.Gamma = 0;
-% p.A = 335.1;
+% used for fitting
+clear fd
+show_these = [28413 26669 64360 6112];
+fd.stimulus = S;
+fd.response = NaN*X;
+for i = 1:length(show_these)
+	a = show_these(i) - 200;
+	z = show_these(i) + 200;
+	fd.response(a:z) = X(a:z);
+end
+fd.response = X;
 
 clear p
-p.B = 1.4126;
-p.e_L = 0.9483;
-p.w0 = 3000;
+p.B = 0.1875;
+p.e_L = 0.625;
 p.K_1 = 0.01;
-p.K_2 = 1.5;
-p.K_tau = 28.657;
-p.n = 1;
-p.output_offset = 8.889;
-p.output_scale = -25.781;
+p.K_2 = 10;
+p.K_tau = 3.407;
+p.n = 4.75;
+p.output_scale = -26.806;
+p.output_offset = 11.545;
+p.A = 93.75;
 
 % generate responses using this model 
-XP = bacteriaModelX(S, p);
+XP = bacteriaModelX_fixedA_simple(S, p);
 
 % show r^2 for every whiff
 x = []; y = [];
@@ -296,6 +271,16 @@ return
 
 fig2 = figure('outerposition',[0 0 1100 901],'PaperUnits','points','PaperSize',[1100 901]); hold on
 clear ax
+
+% prepare data to fit 
+a = 35e3; z = 55e3; 
+clear fd
+for i = 1:length(MSGdata.paradigm)
+	fd(i).stimulus = MSGdata.PID(a:z,i);
+	R = MSGdata.fA(:,i);
+	fd(i).response = R(a:z);
+	fd(i).response(1:5e3) = NaN;
+end
 
 clear p
 p.     B =  0.8289;
@@ -548,6 +533,12 @@ R = mean(cdata.fA(:,cdata.orn == example_orn),2);
 time = 1e-3*(1:length(R));
 S = S - min(S);
 
+% prepare fit structure
+clear fd
+fd.stimulus = S - mean(S(1:5e3));
+fd.stimulus(fd.stimulus<0) = 0;
+fd.response = R;
+fd.response(1:5e3) = NaN;
 
 % show the time series of the natualistic stimulus
 ax(7) = subplot(3,3,7); hold on

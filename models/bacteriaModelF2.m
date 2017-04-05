@@ -24,6 +24,8 @@ assert(length(p)==1,'2nd argument should be a structure of length 1')
 p.B; % rate of adaptation 
 p.a0; % fixed point of a
 
+p.e_L; % lower bound on e0
+
 p.K_1;
 p.K_2;
 
@@ -38,33 +40,35 @@ p.C;
 
 % bounds
 
-lb.B = 0;
-ub.B = 3e3;
+lb.B = .1;
+ub.B = 40;
 
-lb.a0 = 0.06562;
-ub.a0 = 0.06562;
+lb.e_L = .1;
 
-lb.K_1 = 1e-3;
-ub.K_1 = .1;
+lb.a0 = 0.1;
+ub.a0 = 0.5;
+
+lb.K_1 = .01;
+ub.K_1 = .01;
 
 
-lb.K_2 = 1e3;
-ub.K_2 = 1e4;
+lb.K_2 = 10;
+ub.K_2 = 1e3;
 
-lb.tau_y1 = 20;
-ub.tau_y1 = 30;
+lb.tau_y1 = 17;
+ub.tau_y1 = 127;
 
-lb.tau_y2 = 200;
-ub.tau_y2 = 290;
+lb.tau_y2 = 56;
+ub.tau_y2 = 296;
 
-lb.A = .2;
+lb.A = .6;
 ub.A = .8;
 
-lb.C = 100;
-ub.C = 3000;
+lb.C = 1;
+ub.C = 1e4;
 
 lb.n = 1;
-ub.n = 1;
+ub.n = 3;
 
 
 
@@ -82,12 +86,19 @@ a_ = 0*S_;
 a_(1) = p.a0;
 Shat = (1 + S_(1)/p.K_2)/(1 + S_(1)/p.K_1);
 e0_(1) = log((1-p.a0)/p.a0) - log(Shat);
+if e0_(1) < p.e_L
+	e0_(1) = p.e_L;
+end
 
 % use a fixed-step Euler to solve this
 for i = 2:length(S_)
 	dydt = p.B*(a_(i-1) - p.a0);
 
 	e0_(i) = dydt*1e-4 + e0_(i-1);
+
+	if e0_(i) < p.e_L
+		e0_(i) = p.e_L;
+	end
 
 	% update a
 	Shat = (1 + S_(i-1)/p.K_2)/(1 + S_(i-1)/p.K_1);

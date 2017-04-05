@@ -42,18 +42,19 @@ end
 
 
 % if you want to fit a model where A is fixed, use this:
-clear p 
-p.B = 2.0058;
-p.e_L = 0;
-p.K_1 = 0.09964;
-p.K_2 = 10000;
-p.K_tau = 2.0938;
-p.n = 1;
-p.output_scale = -22.066;
-p.output_offset = 10.923;
-p.Delta = 0;
-p.Gamma = 0;
-p.A = 10.68;
+clear p
+p.output_scale = -21.301;
+p.output_offset = 10.509;
+
+p.B = 1.2598;
+p.e_L = 0.8642;
+p.K_1 = 1e-2;
+p.K_2 = 100;
+p.K_tau = 4.989;
+p.n = 2;
+p.A = 72.53;
+
+
 
 % generate responses using the model 
 if exist('.cache/bacteriaModelX_fixed_A_responses_to_MSG.mat','file') == 0
@@ -62,7 +63,7 @@ if exist('.cache/bacteriaModelX_fixed_A_responses_to_MSG.mat','file') == 0
 	for i = 1:length(MSGdata.paradigm)
 		textbar(i,length(MSGdata.paradigm))
 		S = MSGdata.PID(:,i); S = S -min(S);
-		LFP_pred(:,i) = bacteriaModelX_fixedA(S,p);
+		LFP_pred(:,i) = bacteriaModelX_fixedA_simple(S,p);
 	end
 	save('.cache/bacteriaModelX_fixed_A_responses_to_MSG.mat','LFP_pred')
 else
@@ -180,19 +181,12 @@ end
 fd.response = X;
 fd.response(1:5e3) = NaN;
 
-clear p
-p.B = 1.4126;
-p.e_L = 0.9483;
-p.w0 = 3000;
-p.K_1 = 0.01;
-p.K_2 = 1.5;
-p.K_tau = 28.657;
-p.n = 1;
-p.output_offset = 8.889;
-p.output_scale = -25.781;
+
+p.output_scale = -25.49;
+p.output_offset = 9.197;
 
 % generate responses using this model 
-XP = bacteriaModelX(S, p);
+XP = bacteriaModelX_fixedA_simple(S, p);
 
 % show r^2 for every whiff
 x = []; y = [];
@@ -231,8 +225,8 @@ set(gca,'YDir','reverse')
 
 % also show the raw traces
 subplot(3,3,7); hold on
-plot(time,XP,'k')
-plot(time,X,'r')
+plot(time,X,'k')
+plot(time,XP,'r')
 xlabel('Time (s)')
 ylabel('\DeltaLFP (mV)')
 set(gca,'XLim',[20 30],'YLim',[-25 5],'YDir','reverse')

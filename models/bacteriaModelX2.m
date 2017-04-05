@@ -1,6 +1,5 @@
 %% model based on bacterial chemotaxis for the LFP
-% in this model, we consider the full model and keep alpha fixed, 
-% and allow the barrier height to vary
+% in this model, we keep Alpha fixed, allowing the barrier height to vary, and also let a0, the asymptotoic activity vary (we don't nail it at 1/2)
 % 
 
 function [R, a, w_plus, w_minus, e0] = bacteriaModelX2(S,p)

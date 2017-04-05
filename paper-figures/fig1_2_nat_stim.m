@@ -1130,8 +1130,8 @@ set(gca,'XDir','reverse','YDir','reverse','XLim',[-20 0 ])
 
 ax(7) = subplot(2,4,7); hold on
 ax(8) = subplot(2,4,8); hold on
-show_these = [2       27764
-           2       28790
+show_these = [2    28790
+           2       27764
            2       59776
            3       58049];
 

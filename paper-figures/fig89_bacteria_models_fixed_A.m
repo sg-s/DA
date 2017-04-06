@@ -8,6 +8,19 @@ clear MSGdata
 MSGdata = consolidateData2(getPath(dataManager,'93ba5d68174e3df9f462a1fc48c581da'));
 MSGdata = cleanMSGdata(MSGdata);
 
+
+% throw our bad traces
+bad_trials = (sum(MSGdata.fA) == 0 | isnan(sum(MSGdata.fA)) |  isnan(sum(MSGdata.LFP)));
+MSGdata.raw_LFP(:,bad_trials) = [];
+MSGdata.LFP_gain(bad_trials) = [];
+MSGdata.LFP(:,bad_trials) = [];
+MSGdata.PID(:,bad_trials) = [];
+MSGdata.fA(:,bad_trials) = [];
+MSGdata.paradigm(bad_trials) = [];
+MSGdata.LFP_pred(:,bad_trials) = [];
+
+linear_pred = MSGdata.LFP_pred;
+
 a = 35e3; z = 55e3; 
 
 % make sure stimulus is always positive
@@ -15,6 +28,8 @@ for i = 1:size(MSGdata.PID,2)
 	MSGdata.PID(:,i) = MSGdata.PID(:,i) - min(MSGdata.PID(:,i));
 end
 mean_stim = nanmean(MSGdata.PID(a:z,:));
+
+
 
 fig1 = figure('outerposition',[0 0 1100 901],'PaperUnits','points','PaperSize',[1100 901]); hold on
 
@@ -48,48 +63,123 @@ p.output_offset = 10.509;
 
 p.B = 1.2598;
 p.e_L = 0.8642;
-p.K_1 = 1e-2;
-p.K_2 = 100;
+p.K_1 = 1e-1;
+p.K_2 = 400;
 p.K_tau = 4.989;
 p.n = 2;
-p.A = 72.53;
-
+p.A = 12.53;
 
 
 % generate responses using the model 
 if exist('.cache/bacteriaModelX_fixed_A_responses_to_MSG.mat','file') == 0
 	
 	LFP_pred = NaN*MSGdata.LFP;
+	w_plus = NaN*MSGdata.LFP;
+	w_minus = NaN*MSGdata.LFP;
+	activity = NaN*MSGdata.LFP;
+	e0 = NaN*MSGdata.LFP;
 	for i = 1:length(MSGdata.paradigm)
 		textbar(i,length(MSGdata.paradigm))
 		S = MSGdata.PID(:,i); S = S -min(S);
-		LFP_pred(:,i) = bacteriaModelX_fixedA_simple(S,p);
+		[LFP_pred(:,i), activity(:,i), w_plus(:,i), w_minus(:,i), e0(:,i)] = bacteriaModelX_fixedA_simple(S,p);
 	end
-	save('.cache/bacteriaModelX_fixed_A_responses_to_MSG.mat','LFP_pred')
+	save('.cache/bacteriaModelX_fixed_A_responses_to_MSG.mat','LFP_pred','w_plus','w_minus','activity','e0')
 else
 	load('.cache/bacteriaModelX_fixed_A_responses_to_MSG.mat')
 end
 MSGdata.LFP_pred = LFP_pred;
-clear LFP_pred
 
+% show a vs. S for different stimulus backgrounds 
+% compute the mean e0 for all paradigms 
+mean_e0 = mean(e0(a:z,:));
+clear show_these
+show_these(1) = find(mean_e0 == min(mean_e0));
+show_these(2) = find(mean_e0 > mean(mean_e0),1,'first');
+show_these(3) = find(mean_e0 == max(mean_e0));
+
+
+subplot(3,4,5); hold on
+c = parula(11);
+for i = 1:length(show_these)
+	this_trial = show_these(i);
+	x = logspace(-2,2,100);
+	Shat = (1 + x./p.K_2)./(1 + x./p.K_1);
+	E = exp(mean_e0(this_trial) + log(Shat));
+	a_bar = 1./(1 + E);
+	this_colour = c(MSGdata.paradigm(this_trial),:);
+	plot(x,a_bar,'Color',this_colour)
+
+	% plot the actual activity on top of this
+	plot(MSGdata.PID(a:z,this_trial),activity(a:z,this_trial),'.','Color',this_colour)
+end
+set(gca,'XScale','log','YLim',[0 1])
+xlabel('Stimulus (V)')
+ylabel('Activity a')
+
+% show w+ and w- as a function of S 
+subplot(3,4,6); hold on
+plot(mean(MSGdata.PID(a:z,:)),mean(w_plus(a:z,:)),'k+')
+set(gca,'XScale','log','YScale','log')
+xlabel('\mu_{Stimulus} (V)')
+ylabel('w_{+/-}')
+set(gca,'XLim',[.1 2],'YLim',[.1 5],'XTick',[.1 1],'YTick',[.1 1])
 
 % compute the lags
-lags = NaN*MSGdata.paradigm;
-for i = 1:length(MSGdata.paradigm)
-	S = MSGdata.PID(35e3:55e3,i); S = S - mean(S); S = S/std(S);
-	R = MSGdata.LFP_pred(35e3:55e3,i); R = R - mean(R); R = R/std(R);
-	lags(i) = finddelay(S,R);
+% now using exactly the same code as in fig 7
+
+% shim
+PID = MSGdata.PID;
+paradigm = MSGdata.paradigm;
+
+% remove baseline from PID for each trial
+PID = bsxfun(@minus,PID,min(PID));
+LFP_lags = NaN*paradigm;
+
+a = 30e3+1; z = 50e3;
+chunk_size = 1e3;
+LFP_xcorr = NaN(chunk_size*2 - 1,20,length(paradigm));
+
+% compute lags
+for i = 1:length(paradigm)
+	S = PID(a:z,i);
+	X = -LFP_pred(a:z,i);
+
+	% reshape into chunks
+	S = reshape(S,chunk_size,length(S)/chunk_size);
+	X = reshape(X,chunk_size,length(X)/chunk_size);
+
+	S = bsxfun(@minus, S, mean(S));
+	X = bsxfun(@minus, X, mean(X));
+
+	X_lag = NaN(chunk_size*2-1,size(S,2));
+	for j = 1:size(S,2)
+		X_lag(:,j) = xcorr(X(:,j)/std(X(:,j)),S(:,j)/std(S(:,j)));
+	end
+	X_lag = X_lag/chunk_size;
+	LFP_xcorr(:,:,i) = X_lag;
+	X_lag = mean(X_lag,2);
+	[LFP_max_corr(i),loc] = max(X_lag);
+	LFP_lags(i) = loc - 1e3;
 end
+
+
+
+% lags = NaN*MSGdata.paradigm;
+% for i = 1:length(MSGdata.paradigm)
+% 	S = MSGdata.PID(35e3:55e3,i); S = S - mean(S); S = S/std(S);
+% 	R = MSGdata.LFP_pred(35e3:55e3,i); R = R - mean(R); R = R/std(R);
+% 	lags(i) = finddelay(S,R);
+% end
 
 y = NaN*(1:10);
 ye = y; x = y;
 for i = 1:10
-	y(i) = nanmean(lags(MSGdata.paradigm == i));
+	y(i) = nanmean(LFP_lags(MSGdata.paradigm == i));
 	x(i) = nanmean(mean_stim(MSGdata.paradigm == i));
-	ye(i) = nanstd(lags(MSGdata.paradigm == i));
+	ye(i) = nanstd(LFP_lags(MSGdata.paradigm == i));
 end
 
-subplot(3,3,6); hold on
+subplot(3,4,9); hold on
 c = lines(5);
 LFP_color = c(5,:);
 errorbar(x,y,ye,'Color',LFP_color)
@@ -97,11 +187,14 @@ xlabel('\mu_{Stimulus} (V)')
 ylabel('Model lag (ms)')
 box off
 
+% compute model gains
+gain = std(MSGdata.LFP_pred(a:z,:))./std(MSGdata.PID(a:z,:));
 
 % gain vs. mean stimulus 
-subplot(3,3,4);  hold on
+subplot(3,4,7);  hold on
 c = parula(11);
-gain = std(MSGdata.LFP_pred(a:z,:))./std(MSGdata.PID(a:z,:));
+
+
 ff = fit(gain(:),MSGdata.LFP_gain(:),'poly1');
 gain = ff(gain);
 for i = 1:10
@@ -124,7 +217,7 @@ xlabel('\mu_{Stimulus} (V)')
 ylabel('Model gain (mV/V)')
 
 % compare model gains to actual gains
-subplot(3,3,5); hold on
+subplot(3,4,8); hold on
 for i = 1:max(MSGdata.paradigm)
 	plot(gain(MSGdata.paradigm == i),MSGdata.LFP_gain(MSGdata.paradigm == i),'+','Color',c(i,:))
 end
@@ -168,23 +261,29 @@ S = S - min(S);
 
 
 % used for fitting
-clear fd
+clear fd2
 show_these = [28413 26669 64360 6112];
-fd.stimulus = S;
-fd.response = NaN*X;
+fd2.stimulus = S;
+fd2.response = NaN*X;
 for i = 1:length(show_these)
 	a = show_these(i) - 200;
 	z = show_these(i) + 200;
-	fd.response(a:z) = X(a:z);
+	fd2.response(a:z) = X(a:z);
 end
 
-fd.response = X;
-fd.response(1:5e3) = NaN;
+fd2.response = X;
+fd2.response(1:5e3) = NaN;
 
-
+clear p
+p.B = 1.2598;
+p.e_L = 0.8642;
+p.K_1 = 1e-2;
+p.K_2 = 400;
+p.K_tau = 4.989;
+p.n = 2;
+p.A = 72.53;
 p.output_scale = -25.49;
 p.output_offset = 9.197;
-
 % generate responses using this model 
 XP = bacteriaModelX_fixedA_simple(S, p);
 
@@ -196,7 +295,7 @@ ws = whiffStatistics(S,XP,XP,300,'MinPeakProminence',max(S/1e2),'debug',false);
 x = [x; ws.peak_firing_rate];
 
 clear l
-subplot(3,3,9); hold on
+subplot(3,4,12); hold on
 l = plot(x,y,'.','MarkerSize',20,'Color',[.5 .5 .5]);
 legend(l,['r^2 = ' oval(rsquare(x,y))],'Location','northwest')
 xlabel('Model response (mV)')
@@ -206,7 +305,7 @@ set(gca,'XLim',[-18 0],'YLim',[-18 0],'YDir','reverse','XDir','reverse')
 
 
 % show context-dep. gain control
-subplot(3,3,8); hold on
+subplot(3,4,11); hold on
 
 show_these = [28413 26669 64360 6112];
 
@@ -224,7 +323,7 @@ xlabel('Time since whiff (ms)')
 set(gca,'YDir','reverse')
 
 % also show the raw traces
-subplot(3,3,7); hold on
+subplot(3,4,10); hold on
 plot(time,X,'k')
 plot(time,XP,'r')
 xlabel('Time (s)')
@@ -237,9 +336,9 @@ th(2) = text(21, -17,'Model','Color','r','FontSize',15);
 
 % add the cartoon
 ax = subplot(3,3,1:3); hold on
-ax.Position = [0 .68 1 .3];
+ax.Position = [.15 .66 .75 .3];
 axes(gca)
-o = imread('../images/bacteria-model-eq.png');
+o = imread('../images/bacteria-model-cartoon.png');
 imagesc(o);
 axis ij
 axis image
@@ -248,7 +347,7 @@ axis off
 prettyFig('fs',15);
 
 [~,lh] = labelFigure('x_offset',0);
-lh(1).Position = [.07 .93 .02 .03];
+lh(1).Position = [.1 .9 .02 .03];
 
 if being_published
 	snapnow

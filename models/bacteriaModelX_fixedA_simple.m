@@ -36,25 +36,26 @@ p.n; % for the filter, not the nonlinearity
 
 % bounds
 
-lb.B = 1;
-ub.B = 10;
+lb.B = 2.9;
+ub.B = 3;
 
-lb.e_L = 0;
+lb.e_L = 0.86;
 
-lb.K_1 = .001;
-ub.K_1 = .01;
 
-lb.K_2 = 1e5;
-ub.K_2 = 1e5;
+lb.K_1 = .01;
+ub.K_1 = 1;
+
+lb.K_2 = 400;
+ub.K_2 = 400;
 
 lb.K_tau = 2;
-ub.K_tau = 5;
+ub.K_tau = 6;
 
 lb.n = 1;
-ub.n = 2;
+ub.n = 5;
 
-lb.A = 30;
-ub.A = 100;
+lb.A = 1;
+ub.A = 120;
 
 
 

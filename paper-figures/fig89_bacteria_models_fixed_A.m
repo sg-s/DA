@@ -57,17 +57,28 @@ end
 
 
 % if you want to fit a model where A is fixed, use this:
-clear p
-p.output_scale = -21.301;
-p.output_offset = 10.509;
+% clear p
+% p.output_scale = -21.301;
+% p.output_offset = 10.509;
 
+% p.B = 1.2598;
+% p.e_L = 0.8642;
+% p.K_1 = 1e-1;
+% p.K_2 = 400;
+% p.K_tau = 4.989;
+% p.n = 2;
+% p.A = 12.53;
+
+clear p
 p.B = 1.2598;
 p.e_L = 0.8642;
-p.K_1 = 1e-1;
+p.K_1 = 1e-2;
 p.K_2 = 400;
 p.K_tau = 4.989;
 p.n = 2;
-p.A = 12.53;
+p.A = 72.53;
+p.output_scale = -25.49;
+p.output_offset = 9.197;
 
 
 % generate responses using the model 
@@ -91,38 +102,38 @@ MSGdata.LFP_pred = LFP_pred;
 
 % show a vs. S for different stimulus backgrounds 
 % compute the mean e0 for all paradigms 
-mean_e0 = mean(e0(a:z,:));
-clear show_these
-show_these(1) = find(mean_e0 == min(mean_e0));
-show_these(2) = find(mean_e0 > mean(mean_e0),1,'first');
-show_these(3) = find(mean_e0 == max(mean_e0));
+% mean_e0 = mean(e0(a:z,:));
+% clear show_these
+% show_these(1) = find(mean_e0 == min(mean_e0));
+% show_these(2) = find(mean_e0 > mean(mean_e0),1,'first');
+% show_these(3) = find(mean_e0 == max(mean_e0));
 
 
-subplot(3,4,5); hold on
-c = parula(11);
-for i = 1:length(show_these)
-	this_trial = show_these(i);
-	x = logspace(-2,2,100);
-	Shat = (1 + x./p.K_2)./(1 + x./p.K_1);
-	E = exp(mean_e0(this_trial) + log(Shat));
-	a_bar = 1./(1 + E);
-	this_colour = c(MSGdata.paradigm(this_trial),:);
-	plot(x,a_bar,'Color',this_colour)
+% subplot(3,4,5); hold on
+% c = parula(11);
+% for i = 1:length(show_these)
+% 	this_trial = show_these(i);
+% 	x = logspace(-2,2,100);
+% 	Shat = (1 + x./p.K_2)./(1 + x./p.K_1);
+% 	E = exp(mean_e0(this_trial) + log(Shat));
+% 	a_bar = 1./(1 + E);
+% 	this_colour = c(MSGdata.paradigm(this_trial),:);
+% 	plot(x,a_bar,'Color',this_colour)
 
-	% plot the actual activity on top of this
-	plot(MSGdata.PID(a:z,this_trial),activity(a:z,this_trial),'.','Color',this_colour)
-end
-set(gca,'XScale','log','YLim',[0 1])
-xlabel('Stimulus (V)')
-ylabel('Activity a')
+% 	% plot the actual activity on top of this
+% 	plot(MSGdata.PID(a:z,this_trial),activity(a:z,this_trial),'.','Color',this_colour)
+% end
+% set(gca,'XScale','log','YLim',[0 1])
+% xlabel('Stimulus (V)')
+% ylabel('Activity a')
 
-% show w+ and w- as a function of S 
-subplot(3,4,6); hold on
-plot(mean(MSGdata.PID(a:z,:)),mean(w_plus(a:z,:)),'k+')
-set(gca,'XScale','log','YScale','log')
-xlabel('\mu_{Stimulus} (V)')
-ylabel('w_{+/-}')
-set(gca,'XLim',[.1 2],'YLim',[.1 5],'XTick',[.1 1],'YTick',[.1 1])
+% % show w+ and w- as a function of S 
+% subplot(3,4,6); hold on
+% plot(mean(MSGdata.PID(a:z,:)),mean(w_plus(a:z,:)),'k+')
+% set(gca,'XScale','log','YScale','log')
+% xlabel('\mu_{Stimulus} (V)')
+% ylabel('w_{+/-}')
+% set(gca,'XLim',[.1 2],'YLim',[.1 5],'XTick',[.1 1],'YTick',[.1 1])
 
 % compute the lags
 % now using exactly the same code as in fig 7
@@ -179,7 +190,7 @@ for i = 1:10
 	ye(i) = nanstd(LFP_lags(MSGdata.paradigm == i));
 end
 
-subplot(3,4,9); hold on
+subplot(3,3,6); hold on
 c = lines(5);
 LFP_color = c(5,:);
 errorbar(x,y,ye,'Color',LFP_color)
@@ -191,7 +202,7 @@ box off
 gain = std(MSGdata.LFP_pred(a:z,:))./std(MSGdata.PID(a:z,:));
 
 % gain vs. mean stimulus 
-subplot(3,4,7);  hold on
+subplot(3,3,4);  hold on
 c = parula(11);
 
 
@@ -217,7 +228,7 @@ xlabel('\mu_{Stimulus} (V)')
 ylabel('Model gain (mV/V)')
 
 % compare model gains to actual gains
-subplot(3,4,8); hold on
+subplot(3,3,5); hold on
 for i = 1:max(MSGdata.paradigm)
 	plot(gain(MSGdata.paradigm == i),MSGdata.LFP_gain(MSGdata.paradigm == i),'+','Color',c(i,:))
 end
@@ -274,18 +285,11 @@ end
 fd2.response = X;
 fd2.response(1:5e3) = NaN;
 
-clear p
-p.B = 1.2598;
-p.e_L = 0.8642;
-p.K_1 = 1e-2;
-p.K_2 = 400;
-p.K_tau = 4.989;
-p.n = 2;
-p.A = 72.53;
-p.output_scale = -25.49;
-p.output_offset = 9.197;
+
 % generate responses using this model 
 XP = bacteriaModelX_fixedA_simple(S, p);
+
+clear p
 
 % show r^2 for every whiff
 x = []; y = [];
@@ -295,7 +299,7 @@ ws = whiffStatistics(S,XP,XP,300,'MinPeakProminence',max(S/1e2),'debug',false);
 x = [x; ws.peak_firing_rate];
 
 clear l
-subplot(3,4,12); hold on
+subplot(3,3,9); hold on
 l = plot(x,y,'.','MarkerSize',20,'Color',[.5 .5 .5]);
 legend(l,['r^2 = ' oval(rsquare(x,y))],'Location','northwest')
 xlabel('Model response (mV)')
@@ -305,7 +309,7 @@ set(gca,'XLim',[-18 0],'YLim',[-18 0],'YDir','reverse','XDir','reverse')
 
 
 % show context-dep. gain control
-subplot(3,4,11); hold on
+subplot(3,3,8); hold on
 
 show_these = [28413 26669 64360 6112];
 
@@ -323,7 +327,7 @@ xlabel('Time since whiff (ms)')
 set(gca,'YDir','reverse')
 
 % also show the raw traces
-subplot(3,4,10); hold on
+subplot(3,3,7); hold on
 plot(time,X,'k')
 plot(time,XP,'r')
 xlabel('Time (s)')
@@ -338,7 +342,7 @@ th(2) = text(21, -17,'Model','Color','r','FontSize',15);
 ax = subplot(3,3,1:3); hold on
 ax.Position = [.15 .66 .75 .3];
 axes(gca)
-o = imread('../images/bacteria-model-cartoon.png');
+o = imread('../images/bacteria-model-cartoon-2.png');
 imagesc(o);
 axis ij
 axis image
@@ -355,6 +359,7 @@ if being_published
 end
 
 return
+
 
 ;;;;;;;; ;;;; ;;;;;;;;  ;;;; ;;    ;;  ;;;;;;      ;;;;;;;;     ;;;    ;;;;;;;; ;;;;;;;; 
 ;;        ;;  ;;     ;;  ;;  ;;;   ;; ;;    ;;     ;;     ;;   ;; ;;      ;;    ;;       

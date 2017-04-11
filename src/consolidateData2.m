@@ -85,6 +85,9 @@ if ~isempty(rm_this)
 	allfiles(rm_this) = [];
 end
 
+% remove motherfucking shit that dropbox creates
+allfiles(cellfun(@(x) strcmp(x(1),'.'),{allfiles.name})) = [];
+
 % always be caching. 
 hash = dataHash(allfiles);
 if options.use_cache

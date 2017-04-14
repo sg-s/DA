@@ -231,10 +231,12 @@ xlabel('Filter lag')
 ylabel('Filter (norm)')
 legend({'Actual','estimated'})
 
-
 prettyFig();
 
 labelFigure('column_first',false,'x_offset',0);
+
+subplot(3,4,12);
+box off
 
 if being_published
 	snapnow

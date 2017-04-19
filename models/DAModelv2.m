@@ -22,8 +22,14 @@ case 0
 case 1
 	error('Not enough input arguments')
 case 2
-	assert(isvector(S),'First argument should be a vector')
 	assert(isstruct(p),'Second argument should be a structure')
+	if size(S,2) > 1
+		R = S; y = S; z = S; Ky = NaN*S; Kz = NaN*S; 
+		for i = 1:size(S,2)
+			[R(:,i), y(:,i), z(:,i)] = DAModelv2(S(:,i),p);
+		end
+		return;
+	end
 end
 
 % hard bounds

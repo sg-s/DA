@@ -201,14 +201,13 @@ ylabel('r(t)')
 % plot gain vs. k_D
 ax(10) = subplot(3,3,9); hold on
 for i = 1:10
-	plot(all_k_d(i),gain(i),'+','Color',c(i,:))
+	plot(1./all_k_d(i),gain(i),'+','Color',c(i,:))
 end
-ff = fit(all_k_d(:),gain(:),'power1');% ,'Upper',[.1 -1],'Lower',[.01 -1]);
-l  =plot(all_k_d,ff(all_k_d),'r');
-set(gca,'XScale','linear','YScale','linear','XLim',[.9e3 1.1e4],'YLim',[0 1e-4])
-uistack(l,'bottom')
+l = plot(NaN,NaN,'k+');
+legend(l,['r^2 = ' oval(rsquare(1./all_k_d,gain))],'Location','southeast')
 
-xlabel('$K_{D}$','interpreter','latex')
+
+xlabel('$1/K_{D}$','interpreter','latex')
 ylabel('Gain (a.u.)')
 
 prettyFig('fs',15)

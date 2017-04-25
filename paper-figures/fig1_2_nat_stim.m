@@ -75,7 +75,7 @@ ax.deviations_prev_whiff_R = subplot(2,4,8); hold on
 
 % get the data
 
-cdata = consolidateData2(getPath(dataManager,'4608c42b12191b383c84fea52392ea97'));
+cdata = consolidateData2(getPath(dataManager,'44e8bf87c54d3d6477f4e7d1c52eab92'));
 [cdata, data] =  assembleScaledNatStim(cdata);
 time = 1e-3*(1:length(data(1).S));
 
@@ -729,7 +729,6 @@ if being_published
 	delete(fig2)
 end
 
-return
 
  ;;;;;;  ;;     ;; ;;;;;;;;  ;;;;;;;;     ;;;;;;;; ;;;;  ;;;;;;   
 ;;    ;; ;;     ;; ;;     ;; ;;     ;;    ;;        ;;  ;;    ;;  
@@ -756,7 +755,7 @@ return
 ;;    ;;    ;;    ;;     ;;    ;;     ;;  ;;    ;;    ;;     ;;  ;;    ;; ;;    ;; 
  ;;;;;;     ;;    ;;     ;;    ;;    ;;;;  ;;;;;;     ;;    ;;;;  ;;;;;;   ;;;;;;  
 
-cdata = consolidateData2(getPath(dataManager,'4608c42b12191b383c84fea52392ea97'));
+cdata = consolidateData2(getPath(dataManager,'44e8bf87c54d3d6477f4e7d1c52eab92'));
 
 
 figure('outerposition',[0 0 1200 801],'PaperUnits','points','PaperSize',[1200 801]); hold on
@@ -894,7 +893,7 @@ end
 
 
 
-cdata = consolidateData2(getPath(dataManager,'4608c42b12191b383c84fea52392ea97'));
+cdata = consolidateData2(getPath(dataManager,'44e8bf87c54d3d6477f4e7d1c52eab92'));
 [cdata, data] =  assembleScaledNatStim(cdata);
 time = 1e-3*(1:length(data(1).S));
 
@@ -1039,7 +1038,7 @@ clearvars -except being_published
 % supp figure
 % Can a NL model fit to the LFP show context-dependent response modulation? 
 
-cdata = consolidateData2(getPath(dataManager,'4608c42b12191b383c84fea52392ea97'));
+cdata = consolidateData2(getPath(dataManager,'44e8bf87c54d3d6477f4e7d1c52eab92'));
 [cdata, data] =  assembleScaledNatStim(cdata);
 
 clear fd

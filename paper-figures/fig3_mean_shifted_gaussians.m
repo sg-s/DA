@@ -174,7 +174,6 @@ end
 
 plot(ax(7),[0 80],[0 80],'r')
 
-
 % cosmetics
 set(ax(1),'XLim',[35 55],'YLim',[0 2])
 set(ax(2),'YLim',[0 2])
@@ -535,10 +534,6 @@ title(ax(4),['ab3A' char(10) 'ethyl acetate'])
 
 % define what we want to work on
 data_hashes = {'bcd4cf4fe12817d084a2b06f981161ee','cd6753c0e4cf02895cd5e2c5cb58aa1a','3ea08ccfa892c6545d74bbdaaa6cbee1','f11c4a5792d0c9fec7c40fd6aa2fce40'};
-% for i = 1:length(data_hashes)
-% 	cdata = consolidateData2(dm.getPath(data_hashes{i}));
-% 	[oval(length(cdata.orn)) ' ' oval(length(unique(cdata.orn))) ' ' oval(length(unique(cdata.fly)))]
-% end
 odour_names = {'1-pentanol','1-pentanol','2-butanone','isoamyl-acetate'};
 orn_names = {'ab3A','ab2A','ab2A','pb1A'};
 
@@ -588,7 +583,82 @@ if being_published
 	delete(gcf)
 end
 
+%% Rescaling generally observed
+% In this supplementary figure, we show the i/o curves rescaled 
 
+a = 35e3; z = 55e3;
+
+figure('outerposition',[0 0 1000 901],'PaperUnits','points','PaperSize',[1000 901]); hold on
+
+for i = 1:length(data_hashes)
+	clear cdata
+	cdata = consolidateData2(dm.getPath(data_hashes{i}));
+	cdata = cleanMSGdata(cdata);
+
+	% fit 1/S to this again
+	mean_stim = vectorise(nanmean(cdata.PID(a:z,:)));
+	fA_gain = cdata.fA_gain(:);
+
+	rm_this = isnan(fA_gain) | fA_gain == 0 | isnan(mean_stim);
+	x = mean_stim(~rm_this);
+	y = fA_gain(~rm_this);
+	options = fitoptions(fittype('poly1'));
+	options.Lower = [-1 -Inf];
+	options.Upper = [-1 Inf];
+	cf_temp = fit(log(x(:)),log(y(:)),'poly1',options);
+	cf = fit(x,y,'power1');
+	warning off
+	cf.a = exp(cf_temp.p2); cf.b = -1;
+	warning on
+
+
+	subplot(2,2,i); hold on
+
+	% if there are too many paradigms, bin them
+	if max(cdata.paradigm) > 10
+		cdata.paradigm = ceil(10*(cdata.paradigm/max(cdata.paradigm)));
+	end
+
+	% plot i/o curves 
+	c = parula(max(cdata.paradigm)+1);
+
+	plot([0 100],[0 100],'r')
+
+	for j = 1:max(cdata.paradigm)
+		x = cdata.fA_pred(a:z,cdata.paradigm == j);
+		y = cdata.fA(a:z,cdata.paradigm == j);
+		s = cdata.PID(a:z,cdata.paradigm == j);
+		rm_this = sum(y) == 0;
+		x(:,rm_this) = [];
+		y(:,rm_this) = [];
+		s(:,rm_this) = [];
+		x = mean(x,2); y = mean(y,2); s = nanmean(s,2);
+		% rescale by mean stimulus
+		
+		x = cf(nanmean(s))*(x);
+		x = x - nanmean(x);
+		x = x + nanmean(y);
+
+		[~,data] = plotPieceWiseLinear(x,y,'nbins',50,'make_plot',false);
+		plot(data.x,data.y,'Color',c(j,:))
+	end
+	set(gca,'XLim',[0 80],'YLim',[0 80])
+	xlabel('Rescaled prediction (Hz)')
+	
+	title(odour_names{i});
+
+	t = [orn_names{i} ' firing rate (Hz)'];
+	ylabel(t)
+end
+
+prettyFig();
+
+labelFigure('x_offset',-0.01)
+
+if being_published
+	snapnow
+	delete(gcf)
+end
 
 return
 

@@ -146,19 +146,19 @@ for i = 1:length(show_these)
 	LFP = data(2).X(:,this_paradigm);
 	fA =  data(2).R(:,this_paradigm);
 
-	temp = max(PID(show_these(i,2)-300:show_these(i,2)-100,:));
+	[temp,loc] = max(PID(show_these(i,2)-300:show_these(i,2)-100,:));
 	S_before(i) = nanmean(temp);
-	S_before_err(i) = nanstd(temp);
+	S_before_err(i) = nanstd(PID(show_these(i,2)-300+loc-50:show_these(i,2)-300+loc+50,:));
 
-	temp = nanmean(PID(show_these(i,2):show_these(i,2)+10,:));
+	temp = (PID(show_these(i,2):show_these(i,2)+10,:));
 	S_int(i) = nanmean(temp);
 	S_int_err(i) = nanstd(temp);
 
-	temp = nanmean(LFP(show_these(i,2)+90:show_these(i,2)+100,:));
+	temp = (LFP(show_these(i,2)+90:show_these(i,2)+100,:));
 	X_int(i) = nanmean(temp);
 	X_int_err(i) = nanstd(temp);
 
-	temp = nanmean(fA(show_these(i,2)+60:show_these(i,2)+80,:));
+	temp = (fA(show_these(i,2)+60:show_these(i,2)+80,:));
 	R_int(i) = nanmean(temp);
 	R_int_err(i) = nanstd(temp);
 
@@ -171,14 +171,15 @@ c = lines(10);
 
 % show whiff statistics
 for i = 1:length(show_these)
-	superbar(ax.ab2A_SZi2,(i),S_int(i),'E',S_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
-	superbar(ax.ab2A_XZi,(i),X_int(i),'E',X_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
-	superbar(ax.ab2A_RZi,(i),R_int(i),'E',R_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
+	superbar(ax.ab2A_SZi2,(i),S_int(i),'E',S_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',[0 0 0],'ErrorbarStyle','|')
+	superbar(ax.ab2A_XZi,(i),X_int(i),'E',X_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',[0 0 0],'ErrorbarStyle','|')
+	superbar(ax.ab2A_RZi,(i),R_int(i),'E',R_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',[0 0 0],'ErrorbarStyle','|')
 end
+
 
 % also show the statistics of the whiff before
 for i = 1:length(show_these)
-	superbar(ax.ab2A_SZi,(i),(S_before(i)),'E',abs((S_before_err(i))),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
+	superbar(ax.ab2A_SZi,(i),(S_before(i)),'E',abs((S_before_err(i))),'BarFaceColor',c(i,:),'ErrorbarColor',[0 0 0],'ErrorbarStyle','|')
 
 end
 
@@ -456,12 +457,11 @@ cla(ax.ab3A_XZi)
 cla(ax.ab3A_RZi)
 c = lines(10);
 
-
 for i = 1:length(show_these)
-	superbar(ax.ab3A_SZi2,i,S_int(i),'E',S_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
-	superbar(ax.ab3A_SZi,i,S_before(i),'E',S_before_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
-	superbar(ax.ab3A_XZi,i,X_int(i),'E',X_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
-	superbar(ax.ab3A_RZi,i,R_int(i),'E',R_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',c(i,:))
+	superbar(ax.ab3A_SZi2,i,S_int(i),'E',S_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',[0 0 0],'ErrorbarStyle','|')
+	superbar(ax.ab3A_SZi,i,S_before(i),'E',S_before_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',[0 0 0],'ErrorbarStyle','|')
+	superbar(ax.ab3A_XZi,i,X_int(i),'E',X_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',[0 0 0],'ErrorbarStyle','|')
+	superbar(ax.ab3A_RZi,i,R_int(i),'E',R_int_err(i),'BarFaceColor',c(i,:),'ErrorbarColor',[0 0 0],'ErrorbarStyle','|')
 
 end
 
@@ -631,8 +631,6 @@ for i = 1:length(fn)
 	end
 end
 
-
-
 spacing = .115;
 inset_height = .07;
 
@@ -720,6 +718,8 @@ labelAxes(ax.deviations_R_300ms,'d','x_offset',-.01,'font_size',24);
 labelAxes(ax.deviations_prev_whiff_X,'e','x_offset',-.01,'font_size',24);
 labelAxes(ax.deviations_prev_whiff_R,'f','x_offset',-.01,'font_size',24);
 
+ax.ab3A_RZ.YTick = [0:50:100];
+ax.ab3A_RZ.YLim = [0 160];
 
 if being_published
 	figure(fig1)
@@ -729,6 +729,8 @@ if being_published
 	delete(fig2)
 end
 
+
+return
 
  ;;;;;;  ;;     ;; ;;;;;;;;  ;;;;;;;;     ;;;;;;;; ;;;;  ;;;;;;   
 ;;    ;; ;;     ;; ;;     ;; ;;     ;;    ;;        ;;  ;;    ;;  
@@ -1094,7 +1096,6 @@ xlabel('Time (s)')
 ylabel('\Delta LFP (mV)')
 r2 = rsquare(data(2).X(:,example_trace),data(2).XP(:,example_trace));
 legend(l,{'ab2 LFP',['NL model, r^2 = ' oval(r2)]},'Location','northwest')
-
 
 % now pull out a filter from this
 Khat = NaN*K;

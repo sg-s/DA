@@ -210,6 +210,37 @@ ylabel(ax.R_proj,'ab2A firing rate (Hz)')
 l = plot(ax.R_proj,NaN,NaN,'Color',[ 1 1 1]);
 legend(l,['r^2 = ' oval(rsquare(fp,data(2).R(:)))],'Location','southeast');
 
+
+% add some insets showing a couple of whiffs 
+figure(fig1)
+ax.ab2A_insetS1 = axes;
+ax.ab2A_insetS1.Position = [0.1833    0.4358    0.0708    0.0506];
+ax.ab2A_insetS2 = axes;
+ax.ab2A_insetS2.Position = [0.363    0.4358    0.0708    0.0506];
+plot(ax.ab2A_insetS1,time,data(2).S(:,2),'k')
+set(ax.ab2A_insetS1,'XLim',1e-3*[show_these(1,2)-200 show_these(1,2)+200],'YLim',[0 2])
+plot(ax.ab2A_insetS2,time,data(2).S(:,2),'k')
+set(ax.ab2A_insetS2,'XLim',1e-3*[show_these(3,2)-200 show_these(3,2)+200],'YLim',[0 2])
+
+set(ax.ab2A_X,'XLim',[0 70],'XTick',[],'YDir','reverse','YLim',[-30 5])
+ax.ab2A_insetX1 = axes;
+ax.ab2A_insetX1.Position = [0.1833    0.3358    0.0708    0.0506];
+ax.ab2A_insetX2 = axes;
+ax.ab2A_insetX2.Position = [0.363    0.3358    0.0708    0.0506];
+plot(ax.ab2A_insetX1,time,data(2).X(:,2),'k')
+plot(ax.ab2A_insetX2,time,data(2).X(:,2),'k')
+set(ax.ab2A_insetX1,'XLim',1e-3*[show_these(1,2)-200 show_these(1,2)+200],'YLim',[-20 0],'YDir','reverse')
+set(ax.ab2A_insetX2,'XLim',1e-3*[show_these(3,2)-200 show_these(3,2)+200],'YLim',[-20 0],'YDir','reverse')
+
+ax.ab2A_insetR1 = axes;
+ax.ab2A_insetR1.Position = [0.1833    0.1655    0.0708    0.0506];
+ax.ab2A_insetR2 = axes;
+ax.ab2A_insetR2.Position = [0.363    0.1655    0.0708    0.0506];
+plot(ax.ab2A_insetR1,time,data(2).R(:,2),'k')
+plot(ax.ab2A_insetR2,time,data(2).R(:,2),'k')
+set(ax.ab2A_insetR1,'XLim',1e-3*[show_these(1,2)-200 show_these(1,2)+200],'YLim',[0 300])
+set(ax.ab2A_insetR2,'XLim',1e-3*[show_these(3,2)-200 show_these(3,2)+200],'YLim',[0 300])
+
 ;;;;;;;;  ;;;;;;;; ;;     ;; ;;;;    ;;;    ;;;;;;;; ;;;;  ;;;;;;;  ;;    ;; 
 ;;     ;; ;;       ;;     ;;  ;;    ;; ;;      ;;     ;;  ;;     ;; ;;;   ;; 
 ;;     ;; ;;       ;;     ;;  ;;   ;;   ;;     ;;     ;;  ;;     ;; ;;;;  ;; 
@@ -394,8 +425,37 @@ all_x = []; all_y = [];
 % now show fast gain control
 % show context-dependent variation in whiff response
 
-% show_these = [21103 64353 64869];
 show_these = [28413 26669 64360 6112];
+
+% add some insets showing a couple of whiffs 
+figure(fig1)
+ax.ab3A_insetS1 = axes;
+ax.ab3A_insetS1.Position = [0.1833    0.76    0.0708    0.0506];
+ax.ab3A_insetS2 = axes;
+ax.ab3A_insetS2.Position = [0.363    0.76    0.0708    0.0506];
+plot(ax.ab3A_insetS1,time,S,'k')
+set(ax.ab3A_insetS1,'XLim',1e-3*[show_these(4)-200 show_these(4)+200],'YLim',[0 1])
+plot(ax.ab3A_insetS2,time,S,'k')
+set(ax.ab3A_insetS2,'XLim',1e-3*[show_these(1)-200 show_these(1)+200],'YLim',[0 1])
+
+set(ax.ab3A_X,'XLim',[0 70],'XTick',[],'YDir','reverse','YLim',[-30 5])
+ax.ab3A_insetX1 = axes;
+ax.ab3A_insetX1.Position = [0.1833    0.65    0.0708    0.0506];
+ax.ab3A_insetX2 = axes;
+ax.ab3A_insetX2.Position = [0.363    0.65    0.0708    0.0506];
+plot(ax.ab3A_insetX1,time,X,'k')
+plot(ax.ab3A_insetX2,time,X,'k')
+set(ax.ab3A_insetX1,'XLim',1e-3*[show_these(4)-200 show_these(4)+200],'YLim',[-20 0],'YDir','reverse')
+set(ax.ab3A_insetX2,'XLim',1e-3*[show_these(1)-200 show_these(1)+200],'YLim',[-20 0],'YDir','reverse')
+
+ax.ab3A_insetR1 = axes;
+ax.ab3A_insetR1.Position = [0.1833    0.55    0.0708    0.0506];
+ax.ab3A_insetR2 = axes;
+ax.ab3A_insetR2.Position = [0.363    0.55    0.0708    0.0506];
+plot(ax.ab3A_insetR1,time,R,'k')
+plot(ax.ab3A_insetR2,time,R,'k')
+set(ax.ab3A_insetR1,'XLim',1e-3*[show_these(4)-200 show_these(4)+200],'YLim',[0 200])
+set(ax.ab3A_insetR2,'XLim',1e-3*[show_these(1)-200 show_these(1)+200],'YLim',[0 200])
 
 cla(ax.ab3A_SZ)
 cla(ax.ab3A_XZ)
@@ -496,8 +556,6 @@ set(ax.ab3A_R,'XLim',[0 70])
 ylabel(ax.ab2A_S,['Stimulus' char(10) '(V)'])
 set(ax.ab2A_S,'XLim',[0 70],'XTick',[])
 ylabel(ax.ab2A_X,['\DeltaLFP' char(10) '(mV)'])
-set(ax.ab2A_X,'XLim',[0 70],'XTick',[])
-set(ax.ab2A_X,'YDir','reverse')
 ylabel(ax.ab2A_R,['Firing' char(10) 'rate (Hz)'])
 set(ax.ab2A_R,'XLim',[0 70])
 xlabel(ax.ab2A_R,'Time (s)')
@@ -720,6 +778,78 @@ labelAxes(ax.deviations_prev_whiff_R,'f','x_offset',-.01,'font_size',24);
 
 ax.ab3A_RZ.YTick = [0:50:100];
 ax.ab3A_RZ.YLim = [0 160];
+
+% some final fucking around with positions
+
+ax.ab2A_insetR1.Position = [0.1583 0.1238 0.0476 0.06];
+ax.ab2A_insetR2.Position = [0.33 0.1238 0.0476 0.06];
+ax.ab2A_insetR1.Box = 'off';
+ax.ab2A_insetR2.Box = 'off';
+ax.ab2A_insetR1.YTick = [];
+ax.ab2A_insetR2.YTick = [];
+ax.ab2A_insetR1.XTick = [];
+ax.ab2A_insetR2.XTick = [];
+
+ax.ab2A_insetX1.Position = [0.1583 0.2479  0.0476 0.06];
+ax.ab2A_insetX2.Position = [0.33 0.2479  0.0476 0.06];
+ax.ab2A_insetX1.Box = 'off';
+ax.ab2A_insetX2.Box = 'off';
+ax.ab2A_insetX1.YTick = [];
+ax.ab2A_insetX2.YTick = [];
+ax.ab2A_insetX1.XTick = [];
+ax.ab2A_insetX2.XTick = [];
+
+ax.ab2A_insetS1.Position = [0.1583 0.3579  0.0476 0.06];
+ax.ab2A_insetS2.Position = [0.33 0.3579  0.0476 0.06];
+ax.ab2A_insetS1.Box = 'off';
+ax.ab2A_insetS2.Box = 'off';
+ax.ab2A_insetS1.YTick = [];
+ax.ab2A_insetS2.YTick = [];
+ax.ab2A_insetS1.XTick = [];
+ax.ab2A_insetS2.XTick = [];
+
+ax.ab3A_insetR1.Position = [0.1786 0.6227 0.0274 0.0544];
+ax.ab3A_insetR2.Position = [0.3173 0.6227 0.0274 0.0544];
+ax.ab3A_insetR1.Box = 'off';
+ax.ab3A_insetR2.Box = 'off';
+ax.ab3A_insetR1.YTick = [];
+ax.ab3A_insetR2.YTick = [];
+ax.ab3A_insetR1.XTick = [];
+ax.ab3A_insetR2.XTick = [];
+
+ax.ab3A_insetX1.Position = [0.1786 0.7352 0.0274 0.0544];
+ax.ab3A_insetX2.Position = [0.3173 0.7352 0.0274 0.0544];
+ax.ab3A_insetX1.Box = 'off';
+ax.ab3A_insetX2.Box = 'off';
+ax.ab3A_insetX1.YTick = [];
+ax.ab3A_insetX2.YTick = [];
+ax.ab3A_insetX1.XTick = [];
+ax.ab3A_insetX2.XTick = [];
+
+ax.ab3A_insetS1.Position = [0.1786 0.8501 0.0274 0.0544];
+ax.ab3A_insetS2.Position = [0.3173 0.8501 0.0274 0.0544];
+ax.ab3A_insetS1.Box = 'off';
+ax.ab3A_insetS2.Box = 'off';
+ax.ab3A_insetS1.YTick = [];
+ax.ab3A_insetS2.YTick = [];
+ax.ab3A_insetS1.XTick = [];
+ax.ab3A_insetS2.XTick = [];
+
+ax.ab3A_insetS1.LineWidth = 1;
+ax.ab3A_insetS2.LineWidth = 1;
+ax.ab3A_insetX1.LineWidth = 1;
+ax.ab3A_insetX2.LineWidth = 1;
+ax.ab3A_insetR1.LineWidth = 1;
+ax.ab3A_insetR2.LineWidth = 1;
+
+ax.ab2A_insetS1.LineWidth = 1;
+ax.ab2A_insetS2.LineWidth = 1;
+ax.ab2A_insetX1.LineWidth = 1;
+ax.ab2A_insetX2.LineWidth = 1;
+ax.ab2A_insetR1.LineWidth = 1;
+ax.ab2A_insetR2.LineWidth = 1;
+
+return
 
 if being_published
 	figure(fig1)

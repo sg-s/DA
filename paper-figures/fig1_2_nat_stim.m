@@ -217,9 +217,9 @@ ax.ab2A_insetS1 = axes;
 ax.ab2A_insetS1.Position = [0.1833    0.4358    0.0708    0.0506];
 ax.ab2A_insetS2 = axes;
 ax.ab2A_insetS2.Position = [0.363    0.4358    0.0708    0.0506];
-plot(ax.ab2A_insetS1,time,data(2).S(:,2),'k')
+plot(ax.ab2A_insetS1,time,data(2).S(:,2),'b')
 set(ax.ab2A_insetS1,'XLim',1e-3*[show_these(1,2)-200 show_these(1,2)+200],'YLim',[0 2])
-plot(ax.ab2A_insetS2,time,data(2).S(:,2),'k')
+plot(ax.ab2A_insetS2,time,data(2).S(:,2),'b')
 set(ax.ab2A_insetS2,'XLim',1e-3*[show_these(3,2)-200 show_these(3,2)+200],'YLim',[0 2])
 
 set(ax.ab2A_X,'XLim',[0 70],'XTick',[],'YDir','reverse','YLim',[-30 5])
@@ -227,8 +227,8 @@ ax.ab2A_insetX1 = axes;
 ax.ab2A_insetX1.Position = [0.1833    0.3358    0.0708    0.0506];
 ax.ab2A_insetX2 = axes;
 ax.ab2A_insetX2.Position = [0.363    0.3358    0.0708    0.0506];
-plot(ax.ab2A_insetX1,time,data(2).X(:,2),'k')
-plot(ax.ab2A_insetX2,time,data(2).X(:,2),'k')
+plot(ax.ab2A_insetX1,time,data(2).X(:,2),'b')
+plot(ax.ab2A_insetX2,time,data(2).X(:,2),'b')
 set(ax.ab2A_insetX1,'XLim',1e-3*[show_these(1,2)-200 show_these(1,2)+200],'YLim',[-20 0],'YDir','reverse')
 set(ax.ab2A_insetX2,'XLim',1e-3*[show_these(3,2)-200 show_these(3,2)+200],'YLim',[-20 0],'YDir','reverse')
 
@@ -236,8 +236,8 @@ ax.ab2A_insetR1 = axes;
 ax.ab2A_insetR1.Position = [0.1833    0.1655    0.0708    0.0506];
 ax.ab2A_insetR2 = axes;
 ax.ab2A_insetR2.Position = [0.363    0.1655    0.0708    0.0506];
-plot(ax.ab2A_insetR1,time,data(2).R(:,2),'k')
-plot(ax.ab2A_insetR2,time,data(2).R(:,2),'k')
+plot(ax.ab2A_insetR1,time,data(2).R(:,2),'b')
+plot(ax.ab2A_insetR2,time,data(2).R(:,2),'b')
 set(ax.ab2A_insetR1,'XLim',1e-3*[show_these(1,2)-200 show_these(1,2)+200],'YLim',[0 300])
 set(ax.ab2A_insetR2,'XLim',1e-3*[show_these(3,2)-200 show_these(3,2)+200],'YLim',[0 300])
 
@@ -433,9 +433,9 @@ ax.ab3A_insetS1 = axes;
 ax.ab3A_insetS1.Position = [0.1833    0.76    0.0708    0.0506];
 ax.ab3A_insetS2 = axes;
 ax.ab3A_insetS2.Position = [0.363    0.76    0.0708    0.0506];
-plot(ax.ab3A_insetS1,time,S,'k')
+plot(ax.ab3A_insetS1,time,S,'b')
 set(ax.ab3A_insetS1,'XLim',1e-3*[show_these(4)-200 show_these(4)+200],'YLim',[0 1])
-plot(ax.ab3A_insetS2,time,S,'k')
+plot(ax.ab3A_insetS2,time,S,'b')
 set(ax.ab3A_insetS2,'XLim',1e-3*[show_these(1)-200 show_these(1)+200],'YLim',[0 1])
 
 set(ax.ab3A_X,'XLim',[0 70],'XTick',[],'YDir','reverse','YLim',[-30 5])
@@ -443,8 +443,8 @@ ax.ab3A_insetX1 = axes;
 ax.ab3A_insetX1.Position = [0.1833    0.65    0.0708    0.0506];
 ax.ab3A_insetX2 = axes;
 ax.ab3A_insetX2.Position = [0.363    0.65    0.0708    0.0506];
-plot(ax.ab3A_insetX1,time,X,'k')
-plot(ax.ab3A_insetX2,time,X,'k')
+plot(ax.ab3A_insetX1,time,X,'b')
+plot(ax.ab3A_insetX2,time,X,'b')
 set(ax.ab3A_insetX1,'XLim',1e-3*[show_these(4)-200 show_these(4)+200],'YLim',[-20 0],'YDir','reverse')
 set(ax.ab3A_insetX2,'XLim',1e-3*[show_these(1)-200 show_these(1)+200],'YLim',[-20 0],'YDir','reverse')
 
@@ -452,8 +452,8 @@ ax.ab3A_insetR1 = axes;
 ax.ab3A_insetR1.Position = [0.1833    0.55    0.0708    0.0506];
 ax.ab3A_insetR2 = axes;
 ax.ab3A_insetR2.Position = [0.363    0.55    0.0708    0.0506];
-plot(ax.ab3A_insetR1,time,R,'k')
-plot(ax.ab3A_insetR2,time,R,'k')
+plot(ax.ab3A_insetR1,time,R,'b')
+plot(ax.ab3A_insetR2,time,R,'b')
 set(ax.ab3A_insetR1,'XLim',1e-3*[show_these(4)-200 show_these(4)+200],'YLim',[0 200])
 set(ax.ab3A_insetR2,'XLim',1e-3*[show_these(1)-200 show_these(1)+200],'YLim',[0 200])
 
@@ -848,8 +848,6 @@ ax.ab2A_insetX1.LineWidth = 1;
 ax.ab2A_insetX2.LineWidth = 1;
 ax.ab2A_insetR1.LineWidth = 1;
 ax.ab2A_insetR2.LineWidth = 1;
-
-return
 
 if being_published
 	figure(fig1)

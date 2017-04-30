@@ -543,7 +543,7 @@ set(ax.ab2A_drX,'XScale','log','XLim',[1e-2 1e1],'YDir','reverse','XTick',[1e-2 
 xlabel(ax.ab2A_drR,'Whiff amplitude (V)')
 ylabel(ax.ab2A_drR,'ab2A firing rate (Hz)')
 xlabel(ax.ab2A_drX,'Whiff amplitude (V)')
-ylabel(ax.ab2A_drX,'ab2 LFP rate (mV)')
+ylabel(ax.ab2A_drX,'ab2 LFP (mV)')
 set(ax.ab2A_drR,'XScale','log','XLim',[1e-2 1e1],'XTick',[1e-2 1e-1 1e0 1e1 1e2])
 
 ylabel(ax.ab3A_S,['Stimulus' char(10) '(V)'])
@@ -610,6 +610,8 @@ h = rectangle('Position',[.3,0,2.7,300]);
 h.EdgeColor = [.95 .95 .95];
 h.FaceColor = [.95 .95 .95];
 uistack(h,'bottom')
+
+uistack(canvas,'bottom')
 
 % deintersect the dose-response axes
 ax.ab2A_drX.XLim(2) = 11;

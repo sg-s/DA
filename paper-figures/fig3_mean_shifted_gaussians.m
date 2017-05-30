@@ -246,7 +246,7 @@ end
 
 %% Supp figure showing that NL models can't reproduce this, but if we vary the k_D, it can
 
-figure('outerposition',[0 0 1300 901],'PaperUnits','points','PaperSize',[1300 901]); hold on
+figure('outerposition',[0 0 1300 702],'PaperUnits','points','PaperSize',[1300 702]); hold on
 
 % show the input nonlinearity 
 kD = mean(mean(PID(a:z,paradigm==1)));
@@ -255,18 +255,30 @@ x = logspace(-2,2,100);
 
 A = 1./(1+ (kD./x));
 
-subplot(2,3,1); hold on
+subplot(2,4,1); hold on
 plot(x,A,'k');
 set(gca,'XScale','log')
-xlabel('Stimulus (V)')
+xlabel('\mu_{Stimulus} (V)')
 ylabel('a')
 
+% plot the gain too
+gain_ax = subplot(2,4,8); hold on
+y = kD./((kD+x).^2);
+plot(gain_ax,x,y,'k');
+
+% now plot the gain for the case where we vary kD dynamically 
+plot(gain_ax,x,1./(4*x),'r')
+set(gain_ax,'XScale','log','YScale','log');
+legend({'Fixed k_D','Adapting k_D'},'Location','southwest')
+xlabel(gain_ax,'\mu_{Stimulus} (V)')
+ylabel(gain_ax,'Steady state gain (a.u.)')
+
 % show the filter
-subplot(2,3,2); hold on
+subplot(2,4,2); hold on
 filtertime = (1:length(K))*1e-3 - .1;
 plot(filtertime,K/norm(K),'k')
 set(gca,'XLim',[-.1 .6])
-xlabel('Lag (ms)')
+xlabel('Lag (s)')
 ylabel('Filter (norm)')
 
 % generate responses using this model
@@ -280,7 +292,7 @@ end
 % make the i/o plot
 
 
-subplot(2,3,3); hold on
+subplot(2,4,3); hold on
 for i = 1:max(paradigm) % iterate over all paradigms 
 	y = 100*NL_pred(a:z,paradigm == i);
 	x = convolve(time,PID(:,i),K,filtertime); x = x(a:z);
@@ -306,21 +318,21 @@ ylabel('Prediction (Hz)')
 
 x = logspace(-2,2,100);
 
-subplot(2,3,4); hold on
+subplot(2,4,5); hold on
 for i = 1:max(paradigm)
 	kD = mean(mean(PID(a:z,paradigm==i)));
 	A = 1./(1+ (kD./x));
 	plot(x,A,'Color',c(i,:));
 end
 set(gca,'XScale','log')
-xlabel('Stimulus (V)')
+xlabel('\mu_{Stimulus} (V)')
 ylabel('a')
 
 % show the filter
-subplot(2,3,5); hold on
+subplot(2,4,6); hold on
 plot(filtertime,K/norm(K),'k')
 set(gca,'XLim',[-.1 .6])
-xlabel('Lag (ms)')
+xlabel('Lag (s)')
 ylabel('Filter (norm)')
 
 % generate responses using this model
@@ -333,7 +345,7 @@ for i = 1:size(fA,2)
 end
 
 % make the i/o plot
-subplot(2,3,6); hold on
+subplot(2,4,7); hold on
 for i = 1:max(paradigm) % iterate over all paradigms 
 	y = 100*NL_pred(a:z,paradigm == i);
 	x = convolve(time,PID(:,i),K,filtertime); x = x(a:z);
@@ -354,13 +366,20 @@ xlabel('Projected Stimulus (V)')
 ylabel('Prediction (Hz)')
 
 prettyFig();
-labelFigure('x_offset',0,'font_size',28)
+[~,lh] = labelFigure('x_offset',0,'font_size',28,'y_offset',.01);
 
+gain_ax.Position(2) = .4;
+gain_ax.Position(1) = .78;
+lh(7).Position(2) = .73;
+lh(7).Position(1) = .76;
+
+return
 
 if being_published
 	snapnow
 	delete(gcf)
 end
+
 
 
 %% Supp Fig for eLIFE

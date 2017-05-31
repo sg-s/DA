@@ -154,6 +154,18 @@ msg_data.LFP = dLFP;
 msg_data.fA = fA;
 msg_data.paradigm = paradigm;
 
+% plot the LFP
+% figure('outerposition',[0 0 1000 500],'PaperUnits','points','PaperSize',[1000 500]); hold on
+% time = 1e-3*(1:60e3);
+% for i = 1:max(paradigm)
+% 	plot(time,mean(LFP(:,paradigm==i),2),'Color',c(i,:))
+% end
+% set(gca,'XLim',[25 45],'YLim',[-3 3])
+% xlabel('Time (s)')
+% ylabel('\Delta LFP (mV)')
+% prettyFig();
+
+
 
 ;;     ;;    ;;;    ;;;;;;;;  ;;;;    ;;;    ;;    ;;  ;;;;;;  ;;;;;;;; 
 ;;     ;;   ;; ;;   ;;     ;;  ;;    ;; ;;   ;;;   ;; ;;    ;; ;;       

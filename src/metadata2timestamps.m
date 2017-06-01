@@ -40,7 +40,7 @@ absolute_time = NaN*loc;
 
 for i = 1:length(loc)
 	temp = txt(loc(i)+length(token)+1:loc(i)+length(token)+50);
-	absolute_time(i) = datenum((strrep(temp(1:strfind(temp,'-0500')-1),'"','')));
+	absolute_time(i) = datenum((strrep(temp(1:strfind(temp,'-0400')-1),'"','')));
 end
 absolute_time = absolute_time(3:2:end);
 

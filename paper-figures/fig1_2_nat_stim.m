@@ -121,9 +121,9 @@ for i = 2
 
 		t = (1:length(S(a:z))) - 300;
 
-		plot(ax.ab2A_SZ,t,S(a:z))
-		plot(ax.ab2A_XZ,t,X(a:z))
-		plot(ax.ab2A_RZ,t,R(a:z))
+		plot(ax.ab2A_SZ,t,S(a:z),'LineWidth',3)
+		plot(ax.ab2A_XZ,t,X(a:z),'LineWidth',3)
+		plot(ax.ab2A_RZ,t,R(a:z),'LineWidth',3)
 
 	end
 end
@@ -474,9 +474,9 @@ for j = 1:length(show_these)
 
 	t = (1:length(tS(a:z))) - 300;
 
-	plot(ax.ab3A_SZ,t,tS(a:z))
-	plot(ax.ab3A_XZ,t,tX(a:z))
-	plot(ax.ab3A_RZ,t,tR(a:z))
+	plot(ax.ab3A_SZ,t,tS(a:z),'LineWidth',3)
+	plot(ax.ab3A_XZ,t,tX(a:z),'LineWidth',3)
+	plot(ax.ab3A_RZ,t,tR(a:z),'LineWidth',3)
 
 end
 

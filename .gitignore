@@ -6,3 +6,5 @@ poster/
 *.key
 *html*
 *.eps
+*.nb
+*.pages
